@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createRecipe, parseRecipe } from '../src/core/recipe.ts';
+import { serializeBundle } from '../src/core/bundle.ts';
+import { sampleEffect } from '../src/core/generator.ts';
+import { duration } from '../src/core/types.ts';
+test('portable bundle restores recipe and contains standard PCM audio',()=>{const r=createRecipe();const text=serializeBundle(r),b=JSON.parse(text);assert.deepEqual(parseRecipe(text),r);const wav=Buffer.from(b.manifest.assets[0].data,'base64');assert.equal(wav.toString('ascii',0,4),'RIFF');assert.equal(wav.toString('ascii',8,12),'WAVE');assert.equal(wav.readUInt32LE(24),48000);assert.ok(text.length<2000000)});
+test('maximum duration bundle remains importable',()=>{const r=createRecipe();r.parameters.charge=1.5;r.parameters.active=3;r.parameters.decay=3;const text=serializeBundle(r);assert.ok(text.length<2000000);assert.deepEqual(parseRecipe(text),r)});
+test('unsupported bundle versions fail explicitly',()=>{assert.throws(()=>parseRecipe(JSON.stringify({format:'vfx-studio-bundle',bundleVersion:2,recipe:createRecipe()})),/bundle version/)});
+test('fractional endpoint stops all geometry at exact authored duration',()=>{const r=createRecipe();const f=sampleEffect(r,duration(r));assert.equal(f.phase,'finished');assert.equal(f.strokes.length+f.particles.length+f.solids.length+f.rings.length,0)});

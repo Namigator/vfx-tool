@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "generatorVersion": "1.0.0",
+  "id": "wind-default",
+  "name": "Wind / Original",
+  "family": "wind",
+  "seed": 42,
+  "source": [
+    -4,
+    1.5,
+    0
+  ],
+  "target": [
+    4,
+    0.12,
+    0
+  ],
+  "parameters": {
+    "scale": 1,
+    "intensity": 1,
+    "count": 80,
+    "spread": 1,
+    "speed": 1,
+    "turbulence": 0.7,
+    "branches": 12,
+    "width": 0.045,
+    "charge": 0.3,
+    "active": 1.8,
+    "decay": 1,
+    "volume": 0.55,
+    "pitch": 1,
+    "color": "#afeee3",
+    "secondaryColor": "#f0fffa"
+  }
+}

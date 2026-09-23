@@ -1,0 +1,216 @@
+{
+  "format": "vfx-planning-handoff",
+  "revision": "1.0",
+  "files": [
+    {
+      "path": "00-START-HERE.md",
+      "bytes": 5780,
+      "sha256": "975574c5e9d315414a00bf262071dd30844678b313e26411a14e3cd4aa204866"
+    },
+    {
+      "path": "01-PRODUCT.md",
+      "bytes": 4732,
+      "sha256": "688b21fcc6ca23643f13549dd3a59830005fe105c00e959a3d43dd593cce40b7"
+    },
+    {
+      "path": "02-BASELINE.md",
+      "bytes": 4278,
+      "sha256": "da886ab5083a38db6342fbfa63fcc9e772af95da334065227db8bcdf3487c286"
+    },
+    {
+      "path": "03-ARCHITECTURE.md",
+      "bytes": 5202,
+      "sha256": "c4875a9eab4f38bd86fae03c9ac0de80517ede184d483a22839a14ea1d4671c7"
+    },
+    {
+      "path": "04-DOCUMENT-FORMAT.md",
+      "bytes": 7101,
+      "sha256": "3a95dc67a367d7716e473a58bc961ff95f1631fffc98b8a92c14771ac2d81e33"
+    },
+    {
+      "path": "05-NODE-CATALOG.md",
+      "bytes": 8299,
+      "sha256": "f4e45f6e080cd6557de1321f5cb0129520c71e53455ca25d24c10b89316f767c"
+    },
+    {
+      "path": "06-GRAPH-SEMANTICS.md",
+      "bytes": 6096,
+      "sha256": "e0ca01d9064646d6188fa1bb596dd6cbb876e79117082be8826a66acba1586f0"
+    },
+    {
+      "path": "07-SIMULATION.md",
+      "bytes": 6998,
+      "sha256": "633ad72e253d926668507075c54a6b31fe16feb5a488f068565fd14c6f2c7bf9"
+    },
+    {
+      "path": "08-RENDERING.md",
+      "bytes": 5625,
+      "sha256": "48bb6fb0644456fdb7f954fa7a9b631646afa5e3589924f17456056cf6761eea"
+    },
+    {
+      "path": "09-MATERIALS.md",
+      "bytes": 5178,
+      "sha256": "919fd751e4cef79ff1a0e5319b2b2e8da5a1f4d47bdc02e4a71e3eb5ccc27b76"
+    },
+    {
+      "path": "10-ASSETS.md",
+      "bytes": 5355,
+      "sha256": "521e5ba89c7308f93619af7027d4e909df2cf333dcd4c7256e9d3682336f3c24"
+    },
+    {
+      "path": "11-AUDIO.md",
+      "bytes": 5353,
+      "sha256": "3d272fba42d742c4d3c75f7fb94200ef0d5265967b2e712969be40b70b6f7f7e"
+    },
+    {
+      "path": "12-EDITOR.md",
+      "bytes": 6184,
+      "sha256": "83029178f718d2b6f4a877fb06f74075e42fe90bd3e571b1429f4ec234d46ca4"
+    },
+    {
+      "path": "13-PERSISTENCE.md",
+      "bytes": 5556,
+      "sha256": "41ceb6bfa61922b67637f1b82921f1c986e229505e30b01c5376929d9b86f0a3"
+    },
+    {
+      "path": "14-MIGRATION.md",
+      "bytes": 4561,
+      "sha256": "f29a7b40abc244d4c296a75d2c057eec9f25b78057eb7ca2a42282df85ccb547"
+    },
+    {
+      "path": "15-PERFORMANCE.md",
+      "bytes": 5054,
+      "sha256": "4aa8b881042f7bfd3a13129c6fbae667866979cccdc8b274ca7b604adcb74f83"
+    },
+    {
+      "path": "16-PORTABILITY.md",
+      "bytes": 4394,
+      "sha256": "fca704f0241911e4b340862c57dbe50a8c6e0b38ae912b19e6e5e8fa8011a2ab"
+    },
+    {
+      "path": "17-ACCEPTANCE.md",
+      "bytes": 5437,
+      "sha256": "adde8ca40a1d6e469640717719ab08e07d6166fde989777ce69f086a68f05879"
+    },
+    {
+      "path": "18-TEST-MATRIX.md",
+      "bytes": 5602,
+      "sha256": "68b8da18c27857c7083a76a9602a42b86c25b6ffcee40e15c4bedd26516e2941"
+    },
+    {
+      "path": "19-WORK-PACKAGES.md",
+      "bytes": 6505,
+      "sha256": "5ecec3b62a7e03aa4022096ea25587699e9ec5bb8196203f7658bbeec86a5b4b"
+    },
+    {
+      "path": "20-AGENT-HANDOFF.md",
+      "bytes": 4707,
+      "sha256": "f1c6fcfa5a14a553a7c9ede28bc54860b202f20f2b6d4db7a84235e07c18854d"
+    },
+    {
+      "path": "21-DECISIONS-RISKS.md",
+      "bytes": 5252,
+      "sha256": "dc5e9eeb850b14206e0cbb3ac7dee71c69324c5ea531cab591039563da4caff3"
+    },
+    {
+      "path": "22-CONFORMANCE-FIXTURES.md",
+      "bytes": 5203,
+      "sha256": "e1c7799e4677e61035d607bdbf40edd67598333dbdc39cdeea364074ea3964ff"
+    },
+    {
+      "path": "23-SOURCES.md",
+      "bytes": 3260,
+      "sha256": "a4243858798a35fc6797cb29d9435e4a3d590a001bd090e2943fd16e3cef4f1d"
+    },
+    {
+      "path": "24-ALGORITHMS.md",
+      "bytes": 7484,
+      "sha256": "b5ee869967fcbba4d775d45794913e9654437517e13eca8e63476cfbf6505579"
+    },
+    {
+      "path": "25-INTERFACE-CONTRACTS.md",
+      "bytes": 9713,
+      "sha256": "a79c9bd82e2c4edb827fe895ece9dd93bf620676c8202940368a6b9d37fa3826"
+    },
+    {
+      "path": "26-PLAN-AUDIT.md",
+      "bytes": 3671,
+      "sha256": "4adbbfb218e2d65abe680a17833c186b86ad2ab54d6b970f212fb97e5ca15805"
+    },
+    {
+      "path": "effects/01-LIGHTNING.md",
+      "bytes": 4667,
+      "sha256": "bdf3599d7a2b614848927348088da2f36084e2e1b3394814aa4622de1562884b"
+    },
+    {
+      "path": "effects/02-FIRE.md",
+      "bytes": 3284,
+      "sha256": "2dc374de48968cf99ab299d1c281819052b3ecad5e21f3ef451d16c196411d04"
+    },
+    {
+      "path": "effects/03-WATER.md",
+      "bytes": 3582,
+      "sha256": "b55b1021c719cf7019e62a6375379f08bc0f9586fee74129e7135d3d185c1c17"
+    },
+    {
+      "path": "effects/04-SHADOW.md",
+      "bytes": 3072,
+      "sha256": "b42007157735e2d9a54195729f7ed400385d060fae57ecfac86af6cfb3b0f856"
+    },
+    {
+      "path": "effects/05-ICE.md",
+      "bytes": 2017,
+      "sha256": "fa110d77a844e38c93157d6718cc8e1fc3bdf8a3d28f9a3046c2900a6c83c8b5"
+    },
+    {
+      "path": "effects/06-EARTH.md",
+      "bytes": 1851,
+      "sha256": "a41c7072e6d3af11e723f59f58ab989e481c2c908aba115eba9ddc3406ff745a"
+    },
+    {
+      "path": "effects/07-WIND.md",
+      "bytes": 1573,
+      "sha256": "4bf12494f48719ed04eb034b371c0d601190a63a730f8b91c44a3251fadb0738"
+    },
+    {
+      "path": "effects/08-POISON.md",
+      "bytes": 1807,
+      "sha256": "1418e25d58d2fa074ec97e3fb036418928c8c9641adf623a6b3d9a03ad31f93b"
+    },
+    {
+      "path": "effects/09-LIGHT.md",
+      "bytes": 1684,
+      "sha256": "658d2661afdf8e15e328437d7319d317a7b042aee78a74557905dfaf1a59f772"
+    },
+    {
+      "path": "effects/10-ENERGY.md",
+      "bytes": 2363,
+      "sha256": "c9d9989b938e1563b4ce0fc8a142d635c302e7d21f8a20be37a99eac762cba3b"
+    },
+    {
+      "path": "plan-audit.json",
+      "bytes": 882,
+      "sha256": "1589cf5fea03698436811f51aa7ebee085da15f75dcb92593629e2f4f53c80d1"
+    },
+    {
+      "path": "references/original-lightning/lightning-arc.html",
+      "bytes": 15239,
+      "sha256": "eca84568a1aae516ee56c69d9b29fcfaf40a280dfee0c2f737012f286e20e988"
+    },
+    {
+      "path": "references/original-lightning/lightning-arc.wav",
+      "bytes": 230444,
+      "sha256": "660cdc8ded061d48435dd0f0141e1f5a4b0357a237e4ed62ba04c07dcc0a7e03"
+    },
+    {
+      "path": "references/original-lightning/lightning-preview.png",
+      "bytes": 15431,
+      "sha256": "2fd6025c8b8553202a0d3bcdd5c62bbf4302b833229b03feaf5f73cc4b8d22d3"
+    },
+    {
+      "path": "references/original-lightning/sha256.json",
+      "bytes": 586,
+      "sha256": "fedef7187461b7b0b40ba6ef4128f2f5ae6a2a25fbc1260164d9296e357afd76"
+    }
+  ]
+}

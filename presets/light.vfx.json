@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "generatorVersion": "1.0.0",
+  "id": "light-default",
+  "name": "Light / Original",
+  "family": "light",
+  "seed": 42,
+  "source": [
+    -4,
+    1.5,
+    0
+  ],
+  "target": [
+    4,
+    0.12,
+    0
+  ],
+  "parameters": {
+    "scale": 1,
+    "intensity": 1,
+    "count": 48,
+    "spread": 1,
+    "speed": 1,
+    "turbulence": 0.7,
+    "branches": 12,
+    "width": 0.045,
+    "charge": 0.65,
+    "active": 1.1,
+    "decay": 1.3,
+    "volume": 0.55,
+    "pitch": 1,
+    "color": "#ffe9a2",
+    "secondaryColor": "#ffffff"
+  }
+}

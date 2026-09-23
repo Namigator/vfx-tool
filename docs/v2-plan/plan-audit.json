@@ -1,0 +1,31 @@
+{
+  "markdownFiles": 37,
+  "words": 25288,
+  "brokenLocalLinks": [],
+  "unresolvedPlaceholders": [],
+  "encodingErrors": [],
+  "workPackages": 28,
+  "badDependencies": [],
+  "testScenarios": 39,
+  "unmappedRequirements": [],
+  "referenceCopies": [
+    {
+      "name": "lightning-arc.html",
+      "identical": true,
+      "sha256": "eca84568a1aae516ee56c69d9b29fcfaf40a280dfee0c2f737012f286e20e988"
+    },
+    {
+      "name": "lightning-arc.wav",
+      "identical": true,
+      "sha256": "660cdc8ded061d48435dd0f0141e1f5a4b0357a237e4ed62ba04c07dcc0a7e03"
+    },
+    {
+      "name": "lightning-preview.png",
+      "identical": true,
+      "sha256": "2fd6025c8b8553202a0d3bcdd5c62bbf4302b833229b03feaf5f73cc4b8d22d3"
+    }
+  ],
+  "passed": true,
+  "scope": "Planning documentation integrity only; no v2 application or visual verification.",
+  "checkedAt": "2026-09-23T21:57:18.043Z"
+}
