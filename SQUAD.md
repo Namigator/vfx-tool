@@ -2,6 +2,12 @@
 
 The user requested Claude workers through the squad skill in visible terminals. This current instruction supersedes the historical plan snapshot that said to work solo. Full design remains docs/v2-plan/00-START-HERE.md.
 
+## Completed WP01b wave
+- Document worker: claude-model, task e9a706c2-f7fc-4119-8a0a-07194571e8f8.
+- Controls worker: claude-controls, task c256b71b-048f-4346-a9eb-6e7e9930b657.
+- [RAN] 108 total tests and TypeScript pass; final review accepted slice [PROXY], see evidence/wp01b/. Workers/reviewer now idle. All Opus5.5 LOW, visible terminals; no nested agents. Shared-file ownership remains with manager. Read docs/implementation/WP01B-WORKER-CONTRACT.md.
+- Existing v1 editor is running at http://127.0.0.1:5174 for user testing. WP01b is not connected to that UI yet.
+
 ## Current status
 [RAN] User renewed Claude sign-in; delegation is operational. WP01a now passes 68 tests and TypeScript; final Claude review accepted only that slice [PROXY]. See evidence/wp01a/README.md. Default is Opus5.5 LOW; final review temporarily used MEDIUM because earlier low reviews skipped assigned files. Both idle wrappers have now been reset to LOW.
 
@@ -9,7 +15,8 @@ The user requested Claude workers through the squad skill in visible terminals. 
 | --- | --- | --- |
 | vfx-manager | Codex coordinator | Assign, monitor, run tests, inspect results, manage Git |
 | claude-model | Claude implementation | WP01a document types, parameter validation, canonical serialization, tests |
-| claude-review | Claude read-only inspector | Contract readiness review, then separate implementation review |
+| claude-review | Claude read-only inspector | Independent code review after each scoped slice |
+| claude-controls | Claude implementation | WP01b controls.ts and tests/v2-controls.test.ts |
 
 Task IDs:
 - worker: 79eae6a7-05a9-4e77-9091-9fbf1b9387de
