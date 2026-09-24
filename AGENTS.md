@@ -3,6 +3,9 @@
 ## Current authority (2026-09-24)
 The user has authorized implementation and specifically requested Claude agents through the squad skill in visible terminals. This supersedes the planning snapshot's solo/planning-only instructions. Codex coordinates; Claude terminal workers implement assigned packages and Claude inspectors review them. Do not spawn nested agents. The full plan is docs/v2-plan/00-START-HERE.md.
 
+## Claude model preference
+Use Opus 5.5 (`claude-opus-5-5`) at low effort by default. The user permits a higher level for a specific task if justified; explain and record each increase. Do not silently change the global default. Low effort never permits skipping explicitly assigned files or checks.
+
 ## Boundaries
 - Work only in assigned files under this project. You are not alone: preserve other agents' edits. Keep v1 usable.
 - No package installations without user approval. Existing React/Three/TypeScript/Vite are approved. New @xyflow/react, fflate and other packages are not yet approved.

@@ -9,6 +9,8 @@ param(
   [string]$Squad = 'F:\Dev2\squad\squad.exe'
 )
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+$OutputEncoding = [Console]::OutputEncoding
 # Process-local setting; inherited by Claude, never changes global user settings.
 $env:CLAUDE_CODE_EFFORT_LEVEL = $Effort
 Set-Location -LiteralPath $Project
@@ -104,6 +106,7 @@ End with a concise summary, changed files (or findings with lines), required che
         $summary = "[UNVERIFIED implementation / PROXY review] Report: $prefix.result.md`n$report"
         if ($summary.Length -gt 12000) { $summary = $summary.Substring(0,12000) }
         SquadCall @('task','complete',$Id,$taskId,'--summary',$summary) | Out-Null
+        SquadCall @('send','--task-id',$taskId,$Id,$Manager,$summary) | Out-Null
         Say 'Task response delivered; waiting for manager review or follow-up.'
       }
     }

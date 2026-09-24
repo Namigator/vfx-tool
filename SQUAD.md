@@ -3,7 +3,7 @@
 The user requested Claude workers through the squad skill in visible terminals. This current instruction supersedes the historical plan snapshot that said to work solo. Full design remains docs/v2-plan/00-START-HERE.md.
 
 ## Current status
-[RAN] Two visible PowerShell terminals launched and both agents joined/acknowledged their tasks. Both Claude executions failed before reading/editing project files: `Failed to authenticate: OAuth session expired and could not be refreshed`. User subsequently renewed sign-in. Both wrappers were restarted and the saved tasks requeued with explicit Opus 5.5 / low effort. Inspect current logs for task outcomes.
+[RAN] User renewed Claude sign-in; delegation is operational. WP01a now passes 68 tests and TypeScript; final Claude review accepted only that slice [PROXY]. See evidence/wp01a/README.md. Default is Opus5.5 LOW; final review temporarily used MEDIUM because earlier low reviews skipped assigned files. Both idle wrappers have now been reset to LOW.
 
 | Agent | Role | Task |
 | --- | --- | --- |
@@ -15,9 +15,9 @@ Task IDs:
 - worker: 79eae6a7-05a9-4e77-9091-9fbf1b9387de
 - inspector: 0eb4eb5a-057f-417f-81a5-e71f17911acd
 
-Both initial tasks submitted responses. Initial worker checks: 11 passing tests, TypeScript failed on the Web Crypto input type. Worker rework task: 07f9aea0-f2b7-4469-9899-91b02f976aa8. Contract clarification review 45a75cac-f516-4f18-9712-bafd75108b51 returned PASS [PROXY]; separate code review still required. Full assignment text is preserved at evidence/squad/first-wave-tasks.txt. Model is explicitly pinned to `claude-opus-5-5`; process-local `CLAUDE_CODE_EFFORT_LEVEL=low` is set before invoking Claude. The user permits higher effort for specific tasks when justified; explain any change and record it. This uses the official environment override: https://code.claude.com/docs/en/model-config#adjust-effort-level. Global Claude settings are untouched.
+All first-wave tasks and corrections have submitted results; do not requeue completed work. Model is pinned to claude-opus-5-5 and process-local CLAUDE_CODE_EFFORT_LEVEL defaults to low. User permits announced, justified per-task increases. Global Claude settings remain untouched. Official configuration: https://code.claude.com/docs/en/model-config#adjust-effort-level.
 
-## Sign in and resume
+## Historical sign-in recovery (do not rerun completed tasks)
 Use the visible login terminal opened by the manager, or run `Start-ClaudeLogin.ps1` from this project. Complete the Anthropic sign-in yourself; never paste tokens or credentials into this chat or project files.
 
 After login, the manager checks `squad agents` and the two terminal processes. If they are still listening, requeue the existing tasks (do not create duplicate tasks):

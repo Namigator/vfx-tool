@@ -1,0 +1,29 @@
+✔ numbers: finite, inclusive range boundaries, integers (2.8461ms)
+✔ boolean, enum, string and asset types (0.313ms)
+✔ colors accept either-case #RRGGBB and alpha in [0,1] with no extra fields (0.6574ms)
+✔ vectors and quaternions (0.5395ms)
+✔ sparse tuples, curve keys and gradient stops are rejected at the hole (0.2889ms)
+✔ exact-key checks use own fields only; null-prototype records are accepted (0.3413ms)
+✔ curves: 2–16 sorted unique keys, domain bounds, spec range on y (0.9587ms)
+✔ effectSeconds curve x: standalone bound [0,10], document duration narrows it (0.6976ms)
+✔ gradients: 2–8 stops, sorted unique, required 0 and 1 endpoints (0.929ms)
+✔ registered records are validated field-by-field against an explicit registry (0.5267ms)
+✔ F1: malformed duration context fails explicitly instead of widening the bound (0.6959ms)
+✔ F2: values reject accessors without calling them, hidden members and exotic containers (0.6174ms)
+✔ F3: semantic canonicalization rejects malformed edge order before sorting (2.6347ms)
+✔ canonical JSON golden vector (hand-derived: sorted keys, no whitespace, -0 as 0) (0.3145ms)
+✔ canonical JSON rejects undefined, holes, cycles, symbols, accessors and exotic objects (0.6542ms)
+✔ canonical JSON never invokes getters or toJSON and does not mutate input (0.744ms)
+✔ Web Crypto SHA-256 adapter matches FIPS 180-2 vectors; adapter is injectable and checked (14.7096ms)
+✔ Web Crypto adapter matches independent node:crypto on the fixture (2.9344ms)
+✔ T06: hash ignores layout, key order and unordered definition order (5.5611ms)
+✔ canonical identity preserves authored color case (conservative invalidation) (5.1956ms)
+✔ T06: hash detects semantic, ordering, asset and version changes (7.8003ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 277.1924
