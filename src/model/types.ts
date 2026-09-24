@@ -80,7 +80,8 @@ export type EditPolicy = 'live' | 'resample';
 export type PortType =
   | 'event' | 'timeWindow' | 'anchor' | 'paths' | 'particles' | 'material'
   | 'visual' | 'audio' | 'presentation' | 'scalarSignal' | 'colorSignal'
-  | 'vec2Signal' | 'vec3Signal' | 'quaternionSignal' | 'booleanSignal' | 'asset';
+  | 'vec2Signal' | 'vec3Signal' | 'quaternionSignal' | 'booleanSignal' | 'asset'
+  | 'meshAsset' | 'textureAsset' | 'audioAsset';
 
 export type PortSpec = {
   id: string; label: string; type: PortType; unit?: Unit;
@@ -107,6 +108,8 @@ export type NodeSpec = {
   type: string; definitionVersion: number;
   inputs: PortSpec[]; outputs: PortSpec[]; parameters: ParameterSpec[];
   disabledBehavior: 'empty' | 'bypass' | 'fallback' | 'protected';
+  /** Explicit primary passthrough for a disabled modifier. */
+  bypass?: { input: string; output: string };
   capabilities: CapabilityRequirement[];
 };
 

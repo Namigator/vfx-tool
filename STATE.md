@@ -1,42 +1,39 @@
 # STATE — VFX Tool
 
-**Goal:** Simple expandable-node VFX/SFX authoring with original-lightning quality, ten rich editable spell defaults and future engine-independent export inputs.
+**Goal:** Expandable-node VFX/SFX authoring with original-lightning quality, ten editable spell defaults, and future engine-independent export inputs.
 
 ## Now
-- [RAN] Full planning handoff preserved at docs/v2-plan/00-START-HERE.md; historical planning audit passed. Git baseline 02c883d preserves v1; branch squad/vfx-v2.
-- User explicitly requested Claude delegation via squad in visible terminals. This supersedes the plan snapshot solo/planning-only instructions. No nested agents.
-- Default model: Claude Opus5.5 (claude-opus-5-5), LOW effort. User allows justified per-task increases. Final WP01a reviewer used MEDIUM after low reviews skipped assigned files; now reset to LOW. Worker stayed LOW.
-- [RAN] WP01a implemented: types, parameter validation, semantic canonical serialization/hash, structural fixture, 22 new tests. All 68 tests pass; latest TypeScript check passes.
-- [PROXY] Claude final review accepts WP01a only. Evidence and remaining limitations: evidence/wp01a/README.md. This does not complete WP01 or prove any visuals.
-- [RAN] No existing app/render/audio/preset code or dependencies changed. No new third-party package installed.
-- WP00 partial: source/reference preserved and baseline checks pass; full-cycle original clip/GPU/dependency vetting remain pending.
-
-- [SAW] Existing v1 app launched on http://127.0.0.1:5174 and lightning preview inspected in browser; tab left playing for user testing. Server PID16300; logs work/dev-server.*.log. This is not v2 visual acceptance.
-- [RAN] WP01b: document validation, parameter/control resolution and nested Group overrides implemented; 108 total tests pass, TypeScript exits0. [PROXY] independent LOW reviewer accepted corrected slice; evidence/wp01b/. All three visible Claude terminals idle, default Opus5.5 LOW. Contract: docs/implementation/WP01B-WORKER-CONTRACT.md.
+- User authorized Claude squad workers in visible terminals; no built-in or nested agents. Default Opus5.5 LOW, higher only justified per task. All current tasks LOW.
+- [RAN] Reviewed WP01a/b model and controls preserved in commits aa4d4d2/9ed648c on squad/vfx-v2. Full plan at docs/v2-plan/00-START-HERE.md.
+- [RAN] WP01c/WP02a foundations: ten-node registry and F01, typed signatures, graph analysis, deterministic random and fixed-step clock. Full170 tests pass; TypeScript exit0. [PROXY] reviewer accepted bounded slice. evidence/wp02a/README.md lists exact limits.
+- Active claude-model task a1c0bd12-d0ae-4cf7-a8b5-d4128ad2e610: src/graph/expand.ts and tests/v2-expand.test.ts.
+- Active claude-controls task59a5638e-0c18-4a30-bf05-771ccaa7a04f: src/runtime/particles.ts and tests/v2-particles.test.ts.
+- Reviewer idle pending these outputs; contract docs/implementation/WP02B-WP03-WORKER-CONTRACT.md. Manager owns tests/Git/shared integration.
+- [SAW] Existing v1 preview reopened and lightning inspected after computer restart: http://127.0.0.1:5174/. PID2244, work/dev-server.*.log. Browser tab marked deliverable. New modules are NOT wired into UI.
 
 ## Next (in order)
-1. Finish WP01 readiness: production registry/parameter metadata and runnable fixtures, remaining T01/T05/T06/T07 coverage; reconcile typed asset ports and interface defaults before WP02 compiler. Do not treat WP01b as full WP01.
-2. Complete WP00 reference capture/environment evidence before renderer acceptance; proceed to WP02 compiler when WP01 contracts/tests pass.
-3. Follow remaining packages through lightning parity WP10-WP12 before other effect families.
+1. Collect group-expansion/particle outputs, run focused checks, independent review, fix findings and checkpoint. Preserve active worker ownership.
+2. Implement enabled-state lowering/descriptors, connect F01 to actual renderer, then editor skeleton; finish production catalog/signal specialization alongside. Do not represent primitives as completed work packages.
+3. Complete original full-cycle reference/GPU evidence before renderer acceptance; lightning parity and reuse gates precede other effect families.
 
 ## Known failed / unverified
-- [UNVERIFIED by agent; user-reported] v1 fire/water/shadow unacceptable; v1 lightning below original.
-- [SAW] Archived original PNG depicts charging only, not discharge.
-- [UNVERIFIED] v2 editor/renderer/audio/performance not implemented or accepted. Actual GPU unknown.
-- [PROXY] Follow-ups: inherited value diagnostic text/code, role-specific asset ports, interface default typing, nonenum choices, unreachable-graph warning paths, default asset references/availability (WP05). Model fixture remains structural, not runnable F01. Pipeline requires validateDocument then resolveParameters before compiler.
-- [UNVERIFIED] Unity/Roblox/Unreal exporters remain outside this phase.
+- [UNVERIFIED by agent; user-reported] v1 fire/water/shadow unacceptable, lightning below original. No visual quality fix yet.
+- [UNVERIFIED] v2 node UI/render/audio/performance not implemented or accepted. Unity/Roblox/Unreal exporters out of this phase.
+- [PROXY] Typed analysis is conservative for group-boundary cycles and driven-zero emission. No signal expression evaluation/disabled fallback rewrite/full budgets yet. Dynamic Constant/PublicParameter deliberately not registered.
+- [PROXY] Interface default typing, production asset default references/availability, complete catalog/material controls and angular units remain. Existing random/clock/registry tests do not establish visual quality.
+- [SAW] Original archived PNG depicts charge only; full-cycle clip/GPU reference still pending.
+- React Flow12.12.0 dependency approval requested through async user question, pending. Do not install until approved. Existing React/Three/TS/Vite approved; @xyflow/react/fflate are additional packages.
 
 ## Environment
-- Everything under F:/Dev2/VFX-Tool; F writes require appropriate Codex permission. Node 24.3.0, erasable TS only.
-- Existing editor 5174; original lightning 5173. Approved React/Three/TypeScript/Vite; new @xyflow/react/fflate require approval.
-- Tests: node --experimental-strip-types --test tests/*.test.ts
-- Types/build: node node_modules/typescript/bin/tsc --noEmit; node node_modules/vite/bin/vite.js build
-- Squad F:/Dev2/squad/squad.exe; manager vfx-manager; visible Claude worker claude-model, controls worker claude-controls, reviewer claude-review. Settings/logs/resume: SQUAD.md.
-- doctor/shot exist under C:/Users/itonk/.claude/tools, not the originally supplied .codex/tools paths. Doctor -Quiet completed without reported issues this session.
+- Root F:/Dev2/VFX-Tool. F writes/squad operations need Codex escalation. Node24.3.0, erasable TS.
+- Tests: node --experimental-strip-types --test tests/*.test.ts; types: node node_modules/typescript/bin/tsc --noEmit.
+- Restored visible terminal PIDs model7216/controls12584/review25964. Process records in .squad/logs/*.process.json authoritative; confirm actual process before restart. No global squad clean.
+- Inspector read-only tools Read/Glob/Grep now use default permission mode; plan mode incorrectly required unavailable plan-file tools. Worker acceptEdits restricted file tools, no shell/network/nested agents. SQUAD.md and tools/squad-agent.ps1.
+- Prior turn hit usage-limit error in automatic approval review. Current user explicitly resumed; new authorized operations succeeded. No approval bypass used.
+- doctor/shot paths: C:/Users/itonk/.claude/tools (not original .codex/tools). Doctor completed after restart.
 
 ## Key files
-- docs/v2-plan/00-START-HERE.md and19-WORK-PACKAGES.md — full design/order;20-AGENT-HANDOFF.md — evidence rules.
-- docs/implementation/WP01-REPRESENTATION-DECISIONS.md — normative clarification of representations/hash/limits.
-- src/model/ and tests/v2-model.test.ts — first implementation slice.
-- evidence/wp01a/ — accepted-slice evidence; SQUAD.md — current agent operations.
-- docs/v2-plan/references/original-lightning/ — preserved original source/audio/image.
+- docs/implementation/WP01-REPRESENTATION-DECISIONS.md, WP01B/WP01C/WP02A contracts — accepted interpretations.
+- docs/implementation/WP02B-WP03-WORKER-CONTRACT.md — current parallel scopes and exact APIs.
+- src/model/, src/graph/, src/runtime/; tests/v2-*.test.ts.
+- evidence/wp01a/, wp01b/, wp02a/, wp03-random/; docs/v2-plan/references/original-lightning/.

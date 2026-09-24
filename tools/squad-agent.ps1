@@ -73,7 +73,7 @@ End with a concise summary, changed files (or findings with lines), required che
       $prefix = Join-Path $logDir "$Id-$taskId"
       $prompt | Set-Content -LiteralPath "$prefix.prompt.txt"
       $toolSet = if ($Role -eq 'inspector') { 'Read,Glob,Grep' } else { 'Read,Edit,Write,Glob,Grep' }
-      $mode = if ($Role -eq 'inspector') { 'plan' } else { 'acceptEdits' }
+      $mode = if ($Role -eq 'inspector') { 'default' } else { 'acceptEdits' }
       $claudeArgs = @('-p','--model',$Model,'--restricted','--tools',$toolSet,'--permission-mode',$mode,'--permission-prompts','none','--strict-mcp-config','--mcp-config','{"mcpServers":{}}','--output-format','stream-json','--verbose')
       $script:engineResult = $null
       $script:latestText = ''

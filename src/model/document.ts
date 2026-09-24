@@ -39,7 +39,7 @@ export const MAX_QUOTED_CODE_POINTS = 48;
 
 const VALUE_TYPES = ['boolean', 'number', 'integer', 'color', 'vec2', 'vec3', 'quaternion', 'enum', 'string', 'asset', 'curve', 'gradient', 'registeredRecord'];
 const UNITS = ['none', 'meter', 'second', 'tick', 'radian', 'metersPerSecond', 'metersPerSecondSquared', 'hertz', 'perSecond', 'linearGain', 'normalized'];
-const PORT_TYPES = ['event', 'timeWindow', 'anchor', 'paths', 'particles', 'material', 'visual', 'audio', 'presentation', 'scalarSignal', 'colorSignal', 'vec2Signal', 'vec3Signal', 'quaternionSignal', 'booleanSignal', 'asset'];
+const PORT_TYPES = ['event', 'timeWindow', 'anchor', 'paths', 'particles', 'material', 'visual', 'audio', 'presentation', 'scalarSignal', 'colorSignal', 'vec2Signal', 'vec3Signal', 'quaternionSignal', 'booleanSignal', 'asset', 'meshAsset', 'textureAsset', 'audioAsset'];
 const DOMAINS = ['constant', 'effectTime', 'normalizedAge', 'pathU'];
 const EDIT_POLICIES = ['live', 'resample'];
 const ASSET_KINDS = ['texture', 'flipbook', 'mesh', 'sound'];
@@ -575,6 +575,15 @@ function nodePorts(ctx: Ctx, info: NodeInfo, side: 'source' | 'target'): Set<str
   const spec = info.spec;
   if (!spec) return null;
   const ports = new Set<string>();
+  // Bridge port identity is fixed; its concrete type comes from its graph interface.
+  if (info.node.type === GROUP_INPUT_NODE_TYPE) {
+    if (side === 'source') ports.add('out');
+    return ports;
+  }
+  if (info.node.type === GROUP_OUTPUT_NODE_TYPE) {
+    if (side === 'target') ports.add('in');
+    return ports;
+  }
   if (side === 'source') for (const o of spec.outputs) ports.add(o.id);
   else {
     for (const i of spec.inputs) ports.add(i.id);
