@@ -1,5 +1,16 @@
+# VFX Tool agent instructions
+
+## Current authority (2026-09-24)
+The user has authorized implementation and specifically requested Claude agents through the squad skill in visible terminals. This supersedes the planning snapshot's solo/planning-only instructions. Codex coordinates; Claude terminal workers implement assigned packages and Claude inspectors review them. Do not spawn nested agents. The full plan is docs/v2-plan/00-START-HERE.md.
+
+## Boundaries
+- Work only in assigned files under this project. You are not alone: preserve other agents' edits. Keep v1 usable.
+- No package installations without user approval. Existing React/Three/TypeScript/Vite are approved. New @xyflow/react, fflate and other packages are not yet approved.
+- Do not commit, switch branches, or stage other agents' changes. Manager owns Git checkpoints and test execution.
+- Native Node tests, erasable TypeScript, no DOM/React/Three in pure model/runtime contracts.
+- Every claim carries evidence: [UNVERIFIED] unchecked changes; [PROXY] static/indirect evidence; [RAN] real executed output; [SAW] actual user-visible capture inspected. Tests do not establish visual quality. Never claim unrun tests passed.
+- Inspect actual visual output for visual acceptance; never weaken the original lightning quality gate. Full reference capture is still pending.
+- Read STATE.md and only the relevant specifications. Report blockers with exact evidence rather than guessing repeatedly.
 
 ## Squad Collaboration
-
-This project uses squad for multi-agent collaboration. Run `squad help` for all commands and usage guide.
-
+Use squad help for supported syntax. Manager ID: vfx-manager. Claude wrappers handle join/receive/ack/report; agents need not run these commands. Manager monitors results and assigns bounded follow-ups. See SQUAD.md for launch, logs and stop instructions.

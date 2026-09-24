@@ -4,3 +4,4 @@ work/
 .pnpm-store/
 *.log
 .squad/
+locks/

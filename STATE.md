@@ -1,42 +1,39 @@
 # STATE — VFX Tool
 
-**Goal:** A simple expandable-node VFX/SFX authoring tool capable of the original lightning's quality, with ten rich game-spell defaults and future engine-independent export inputs.
+**Goal:** A simple expandable-node VFX/SFX authoring tool capable of the original lightning quality, with ten rich game-spell defaults and future engine-independent export inputs.
 
 ## Now
-- Planning handoff saved at docs/v2-plan/00-START-HERE.md; 37 Markdown documents, 28 work packages, 39 test scenarios, ten effect specifications.
-- [RAN] Documentation links, requirement coverage, dependency order and reference checksums audited; report: docs/v2-plan/plan-audit.json.
-- Application implementation for v2 has NOT started. No application source, presets or installed packages changed during planning.
-- User choices: expandable blocks; included assets plus imports; rich game spells. Full shader programming deferred under user's portability condition; configurable materials included.
-- Work solo. No subagents were used. User asked for the full plan before continuing implementation.
-- Historical root PLAN.md points to the new authoritative handoff.
+- Full planning handoff: docs/v2-plan/00-START-HERE.md (37 Markdown docs, 28 work packages, 39 test scenarios).
+- [RAN] Planning links/coverage/dependencies/reference checksums audited before implementation; original planning audit remains a historical baseline.
+- User explicitly authorized Claude agents through squad in visible terminals on 2026-09-24. This supersedes the plan snapshot's solo/planning-only instruction. No nested/built-in agents.
+- [RAN] Git baseline 02c883d preserves v1 plus the full handoff. Active branch: squad/vfx-v2. Existing 46 tests and TypeScript passed at baseline.
+- [RAN] Official installed Claude executable signature is valid (Anthropic, PBC); project-local launcher adapted from existing squad tools. No new third-party package installed.
+- [RAN] Both visible Claude terminals joined and acknowledged tasks, then both failed: OAuth session expired and could not be refreshed. No application files edited. See SQUAD.md for task IDs/resume and .squad/logs for reports.
+- WP00 partial: source/reference preserved and baseline checks pass; full reference clip/GPU/dependency vetting remain pending. Independent WP01 contract slice may proceed; no visual gate claimed.
 
 ## Next (in order)
-1. On implementation request, read the handoff and start WP00: preserve v1 baseline, capture full original lightning cycle, record browser/GPU and vet new dependencies.
-2. Implement graph contracts/runtime/editor slice through WP09, then lightning parity WP10–WP12.
-3. Pass lightning artistic gate before fire/water/shadow, then the other six and final acceptance.
+1. User completes Claude sign-in in the visible login terminal; manager requeues the two saved tasks, monitors and reviews WP01a.
+2. Complete reference capture/environment evidence and WP01 validation before dependent compiler/runtime integration.
+3. Follow WP02–WP12 through lightning parity before expanding effect families.
 
 ## Known failed / unverified
-- [UNVERIFIED by agent; user-reported failure] v1 fire, water and shadow looked unacceptable; lightning quality was substantially below the original.
-- [SAW] Original lightning-preview.png inspected: charging frame only, not full discharge evidence.
-- [UNVERIFIED] v2 visuals/audio/performance are planned, not implemented or tested.
-- [UNVERIFIED] Actual GPU unknown: CIM discovery denied; CPU-only v1 measurements cannot establish render performance.
-- [RAN] Earlier browser discovery was unavailable; reconnect/use supported browser capture for implementation gates.
-- [RAN] doctor.ps1/shot.ps1 absent at instructed paths; do not repeatedly call missing utilities.
-- [UNVERIFIED] Future Unity/Roblox/Unreal exporters remain outside this phase.
+- [UNVERIFIED by agent; user-reported] v1 fire/water/shadow unacceptable; v1 lightning substantially below original.
+- [SAW] Archived original PNG is charging only, not discharge evidence.
+- [UNVERIFIED] v2 visuals/audio/performance not implemented or accepted; actual GPU unknown.
+- [UNVERIFIED] Future Unity/Roblox/Unreal exporters excluded from this phase.
+- [RAN] Original doctor/shot paths under .codex/tools absent; alternatives found under C:/Users/itonk/.claude/tools. Doctor -Quiet completed without reported issues this session.
 
 ## Environment
-- Everything for this handoff is under F:\Dev2\VFX-Tool.
-- Existing editor port 5174; original lightning port 5173.
-- Existing Node 24.3.0; approved/pinned React/Three/TypeScript/Vite dependencies.
-- New @xyflow/react / fflate or other third-party packages need approval before installation/running.
-- [RAN — historical] v1 had 46 passing tests and passing TypeScript/build; not rerun for documentation-only work.
-- Project root is not currently a Git repository.
-- F drive writes require the appropriate tool permission under the current sandbox.
+- Everything belongs under F:/Dev2/VFX-Tool. F drive mutations require appropriate permission under Codex sandbox.
+- Existing editor port 5174; original lightning 5173. Node 24.3.0; no TS parameter properties with strip-types.
+- Approved React/Three/TypeScript/Vite; new @xyflow/react/fflate packages require approval before install/run.
+- Tests: node --experimental-strip-types --test tests/*.test.ts
+- Types/build: node node_modules/typescript/bin/tsc --noEmit; node node_modules/vite/bin/vite.js build
+- Squad: F:/Dev2/squad/squad.exe; manager vfx-manager. See SQUAD.md for visible Claude setup.
 
 ## Key files
-- docs/v2-plan/00-START-HERE.md — handoff index and authority.
-- docs/v2-plan/19-WORK-PACKAGES.md — ordered implementation units and gates.
-- docs/v2-plan/20-AGENT-HANDOFF.md — agent instructions and completion evidence.
-- docs/v2-plan/effects/01-LIGHTNING.md — first visual benchmark.
-- docs/v2-plan/references/original-lightning/ — original HTML/WAV/PNG plus hashes.
-- docs/v2-plan/26-PLAN-AUDIT.md — review findings and integrity evidence.
+- docs/v2-plan/00-START-HERE.md — authority for design, indexed subsystem specs.
+- docs/v2-plan/19-WORK-PACKAGES.md — dependencies and gates.
+- docs/v2-plan/20-AGENT-HANDOFF.md — evidence/completion rules (current delegation authority above supersedes solo text).
+- docs/v2-plan/04-DOCUMENT-FORMAT.md and 25-INTERFACE-CONTRACTS.md — first implementation contracts.
+- docs/v2-plan/references/original-lightning/ — preserved original source/audio/image.
