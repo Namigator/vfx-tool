@@ -3,7 +3,7 @@
 The user requested Claude workers through the squad skill in visible terminals. This current instruction supersedes the historical plan snapshot that said to work solo. Full design remains docs/v2-plan/00-START-HERE.md.
 
 ## Current status
-[RAN] Two visible PowerShell terminals launched and both agents joined/acknowledged their tasks. Both Claude executions failed before reading/editing project files: `Failed to authenticate: OAuth session expired and could not be refreshed`. Implementation is blocked on the user's Claude sign-in. No application files were changed.
+[RAN] Two visible PowerShell terminals launched and both agents joined/acknowledged their tasks. Both Claude executions failed before reading/editing project files: `Failed to authenticate: OAuth session expired and could not be refreshed`. User subsequently renewed sign-in. Both wrappers were restarted and the saved tasks requeued with explicit Opus 5.5 / low effort. Inspect current logs for task outcomes.
 
 | Agent | Role | Task |
 | --- | --- | --- |
@@ -15,7 +15,7 @@ Task IDs:
 - worker: 79eae6a7-05a9-4e77-9091-9fbf1b9387de
 - inspector: 0eb4eb5a-057f-417f-81a5-e71f17911acd
 
-Both tasks remain acknowledged, not complete. Full assignment text is preserved at evidence/squad/first-wave-tasks.txt. The selected installed Claude default reported `claude-opus-5-5`; no model override was supplied.
+Both initial tasks submitted responses. Initial worker checks: 11 passing tests, TypeScript failed on the Web Crypto input type. Worker rework task: 07f9aea0-f2b7-4469-9899-91b02f976aa8. Contract clarification review 45a75cac-f516-4f18-9712-bafd75108b51 returned PASS [PROXY]; separate code review still required. Full assignment text is preserved at evidence/squad/first-wave-tasks.txt. Model is explicitly pinned to `claude-opus-5-5`; process-local `CLAUDE_CODE_EFFORT_LEVEL=low` is set before invoking Claude. The user permits higher effort for specific tasks when justified; explain any change and record it. This uses the official environment override: https://code.claude.com/docs/en/model-config#adjust-effort-level. Global Claude settings are untouched.
 
 ## Sign in and resume
 Use the visible login terminal opened by the manager, or run `Start-ClaudeLogin.ps1` from this project. Complete the Anthropic sign-in yourself; never paste tokens or credentials into this chat or project files.
@@ -25,10 +25,12 @@ After login, the manager checks `squad agents` and the two terminal processes. I
 ```powershell
 squad task requeue 79eae6a7-05a9-4e77-9091-9fbf1b9387de --to claude-model
 squad task requeue 0eb4eb5a-057f-417f-81a5-e71f17911acd --to claude-review
+squad send --task-id 79eae6a7-05a9-4e77-9091-9fbf1b9387de vfx-manager claude-model RESUME_SAVED_TASK
+squad send --task-id 0eb4eb5a-057f-417f-81a5-e71f17911acd vfx-manager claude-review RESUME_SAVED_TASK
 squad receive vfx-manager --wait --timeout 30 --json
 ```
 
-Run these from F:/Dev2/VFX-Tool. If a wrapper exited, inspect its log before relaunching; archive only its own obsolete squad identity after preserving unread messages. Do not clean all squad state. `Start-ClaudeSquad.ps1` launches both roles and refuses to duplicate a live process. For one role use the tools/squad-agent.ps1 parameters in a visible PowerShell window.
+This squad version changes task state on requeue without notifying the worker, so the explicit RESUME_SAVED_TASK messages above are required. The wrapper loads the saved assignment and acknowledges the existing task. Run these from F:/Dev2/VFX-Tool. If a wrapper exited, inspect its log before relaunching; archive only its own obsolete squad identity after preserving unread messages. Do not clean all squad state. `Start-ClaudeSquad.ps1` launches both roles and refuses to duplicate a live process. For one role use the tools/squad-agent.ps1 parameters in a visible PowerShell window.
 
 ## Launcher design and provenance
 Adapted from the already installed C:/Users/itonk/.claude/tools/squad/agent-loop.ps1 and squad-up.ps1. Original tools default Claude to read-only and auto-stage/commit all changes; this project version provides an editing worker and a read-only reviewer, leaves commits to the manager, records errors without completing failed tasks, and uses the correct manager ID.

@@ -3,10 +3,14 @@ param(
   [Parameter(Mandatory)][ValidateSet('worker','inspector')][string]$Role,
   [string]$Project = 'F:\Dev2\VFX-Tool',
   [string]$Manager = 'vfx-manager',
+  [string]$Model = 'claude-opus-5-5',
+  [ValidateSet('low','medium','high','xhigh','max')][string]$Effort = 'low',
   [string]$Claude = 'C:\Users\itonk\AppData\Roaming\Claude\claude-code\2.1.280\claude.exe',
   [string]$Squad = 'F:\Dev2\squad\squad.exe'
 )
 $ErrorActionPreference = 'Stop'
+# Process-local setting; inherited by Claude, never changes global user settings.
+$env:CLAUDE_CODE_EFFORT_LEVEL = $Effort
 Set-Location -LiteralPath $Project
 $logDir = Join-Path $Project '.squad\logs'
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
@@ -24,22 +28,31 @@ function SquadCall([string[]]$CommandArgs) {
   return ($output -join "`n")
 }
 try {
-  Say "Claude $Role starting in $Project. No installations, shell tools, or nested agents."
+  Say "Claude $Role starting with model=$Model effort=$Effort in $Project. No installations, shell tools, or nested agents."
   $joined = SquadCall @('join',$Id,'--role',$Role,'--client','claude','--protocol-version','2')
   if ($joined -notmatch 'Joined as ([^\s]+) \(role:') { throw "Could not determine actual squad ID: $joined" }
   $actualId = $Matches[1]
   if ($actualId -ne $Id) { throw "ID already occupied; assigned $actualId. Manager must reconcile before dispatch." }
-  @{id=$Id; role=$Role; pid=$PID; project=$Project; started=(Get-Date).ToString('o')} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $logDir "$Id.process.json")
+  @{id=$Id; role=$Role; model=$Model; effort=$Effort; pid=$PID; project=$Project; started=(Get-Date).ToString('o')} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $logDir "$Id.process.json")
   # Enter receive immediately after joining; the manager discovers readiness via agents.
   while (-not (Test-Path -LiteralPath $stopFile)) {
     $inbox = SquadCall @('receive',$Id,'--wait','--timeout','30','--json')
     foreach ($line in ($inbox -split "`r?`n")) {
       if (-not $line.Trim()) { continue }
       try { $message = $line | ConvertFrom-Json } catch { Say "Receive note: $line"; continue }
-      if (-not $message.task_id -or $message.kind -ne 'task_assigned') { Say "Message: $($message.content)"; continue }
+      $resume = $message.task_id -and $message.content -eq 'RESUME_SAVED_TASK'
+      if (-not $message.task_id -or ($message.kind -ne 'task_assigned' -and -not $resume)) { Say "Message: $($message.content)"; continue }
       $taskId = $message.task_id
-      $title = $message.task.title
-      $body = $message.task.body
+      if ($resume) {
+        $savedPrompt = Join-Path $logDir "$Id-$taskId.prompt.txt"
+        $savedAssignment = Join-Path $logDir "$Id-$taskId.assignment.txt"
+        if (-not (Test-Path -LiteralPath $savedAssignment)) { Copy-Item -LiteralPath $savedPrompt -Destination $savedAssignment }
+        $title = "Resume saved assignment $taskId"
+        $body = Get-Content -LiteralPath $savedAssignment -Raw
+      } else {
+        $title = $message.task.title
+        $body = $message.task.body
+      }
       SquadCall @('task','ack',$Id,$taskId) | Out-Null
       Say "TASK $taskId : $title"
       $prompt = @"
@@ -59,7 +72,7 @@ End with a concise summary, changed files (or findings with lines), required che
       $prompt | Set-Content -LiteralPath "$prefix.prompt.txt"
       $toolSet = if ($Role -eq 'inspector') { 'Read,Glob,Grep' } else { 'Read,Edit,Write,Glob,Grep' }
       $mode = if ($Role -eq 'inspector') { 'plan' } else { 'acceptEdits' }
-      $claudeArgs = @('-p','--restricted','--tools',$toolSet,'--permission-mode',$mode,'--permission-prompts','none','--strict-mcp-config','--mcp-config','{"mcpServers":{}}','--output-format','stream-json','--verbose')
+      $claudeArgs = @('-p','--model',$Model,'--restricted','--tools',$toolSet,'--permission-mode',$mode,'--permission-prompts','none','--strict-mcp-config','--mcp-config','{"mcpServers":{}}','--output-format','stream-json','--verbose')
       $script:engineResult = $null
       $script:latestText = ''
       $prompt | & $Claude @claudeArgs 2>&1 | ForEach-Object {
