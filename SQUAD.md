@@ -9,7 +9,7 @@ The user requested Claude workers through the squad skill in visible terminals. 
 - Existing v1 editor is running at http://127.0.0.1:5174 for user testing. WP01b is not connected to that UI yet.
 
 ## Current status
-[RAN] User renewed Claude sign-in; delegation is operational. WP01a now passes 68 tests and TypeScript; final Claude review accepted only that slice [PROXY]. See evidence/wp01a/README.md. Default is Opus5.5 LOW; final review temporarily used MEDIUM because earlier low reviews skipped assigned files. Both idle wrappers have now been reset to LOW.
+[RAN] After machine restart, all three visible Claude terminals were recreated and saved tasks recovered. Checkpoint 962a7ed has 170 passing tests and TypeScript exit0; bounded graph-analysis review passed [PROXY]. STATE.md records current task IDs. All current agents use Opus5.5 LOW. Historical WP01a review used MEDIUM, then returned to LOW. Inspector now uses default permission mode with Read/Glob/Grep only, because plan mode demanded unavailable plan-file tools.
 
 | Agent | Role | Task |
 | --- | --- | --- |
@@ -37,7 +37,7 @@ squad send --task-id 0eb4eb5a-057f-417f-81a5-e71f17911acd vfx-manager claude-rev
 squad receive vfx-manager --wait --timeout 30 --json
 ```
 
-This squad version changes task state on requeue without notifying the worker, so the explicit RESUME_SAVED_TASK messages above are required. The wrapper loads the saved assignment and acknowledges the existing task. Run these from F:/Dev2/VFX-Tool. If a wrapper exited, inspect its log before relaunching; archive only its own obsolete squad identity after preserving unread messages. Do not clean all squad state. `Start-ClaudeSquad.ps1` launches both roles and refuses to duplicate a live process. For one role use the tools/squad-agent.ps1 parameters in a visible PowerShell window.
+This squad version changes task state on requeue without notifying the worker, so the explicit RESUME_SAVED_TASK messages above are required. The wrapper loads the saved assignment and acknowledges the existing task. Run these from F:/Dev2/VFX-Tool. If a wrapper exited, inspect its log before relaunching; archive only its own obsolete squad identity after preserving unread messages. Do not clean all squad state. `Start-ClaudeSquad.ps1` launches the two workers and inspector and refuses to duplicate a live process. For one role use the tools/squad-agent.ps1 parameters in a visible PowerShell window.
 
 ## Launcher design and provenance
 Adapted from the already installed C:/Users/itonk/.claude/tools/squad/agent-loop.ps1 and squad-up.ps1. Original tools default Claude to read-only and auto-stage/commit all changes; this project version provides an editing worker and a read-only reviewer, leaves commits to the manager, records errors without completing failed tasks, and uses the correct manager ID.
@@ -61,3 +61,12 @@ For a graceful stop, create .squad/logs/claude-model.stop and/or claude-review.s
 WP01a is only contracts, parameter validation and serialization; full document validation/reference checking and T05 resolution remain WP01b. WP00 full original-lightning clip, GPU evidence and dependency vetting remain pending. No visual gate is passed.
 
 Manager executes targeted Node tests, TypeScript checks and relevant regression checks, forwards concrete output to the worker, and obtains a separate code review. Record outcomes in STATE.md and evidence; do not claim the new editor exists yet.
+
+## Recovery and package policy (2026-09-25)
+- User authorizes new packages only after a Claude inspector vets their exact source, provenance, licenses, dependencies and hooks. Current downloaded evidence: work/package-vetting/index.json; nothing installed yet.
+- Wait for completion reports. Only check worker status/logs after ten minutes without a report. Startup/error recovery checks are separate from work-progress polling.
+- Claude auto-updated to 2.1.281; Authenticode signature Valid, Anthropic PBC. Launcher default updated. If an installed version disappears, inspect and verify the replacement before changing the path.
+- squad leave archives the agent AND clears assigned tasks. Recovery order: stop only the identified failed terminal, leave, launch visible, wait for registration, task requeue TASK --to AGENT, then send --task-id TASK vfx-manager AGENT RESUME_SAVED_TASK. Do not requeue before leave or before registration. A task requeue does not itself deliver the saved prompt.
+- SQLite lock errors are transient: SquadCall now has four bounded attempts for that error only. Other failures still report immediately.
+- Current assignments: preview f56018bf-cdaa-4f71-a45e-84cd0bb52cfc; runtime/adapter review b29336b4-8fdb-4302-b59b-cd7a0b64e833; history 89754809-a5bf-4b54-ba4e-3de336a48575; package vet 2ca2d42b-5a34-4493-b598-dc0b75298f90.
+`nFor a failed wrapper whose squad registration is still active, stop the exact failed terminal and restart squad-agent.ps1 with -ResumeExistingRegistration. Do not leave/requeue: that changes leases and can race preserved inbox messages. The switch is manager-only recovery, never used concurrently with a live wrapper.

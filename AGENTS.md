@@ -8,7 +8,7 @@ Use Opus 5.5 (`claude-opus-5-5`) at low effort by default. The user permits a hi
 
 ## Boundaries
 - Work only in assigned files under this project. You are not alone: preserve other agents' edits. Keep v1 usable.
-- No package installations without user approval. Existing React/Three/TypeScript/Vite are approved. New @xyflow/react, fflate and other packages are not yet approved.
+- User authorizes installing needed packages ONLY after an inspector vets exact package/dependency provenance, license, source, and hooks. Existing React/Three/TypeScript/Vite approved. Manager collects source without executing it; inspector reports acceptance before installation. No repeated permission request needed after PASS.
 - Do not commit, switch branches, or stage other agents' changes. Manager owns Git checkpoints and test execution.
 - Native Node tests, erasable TypeScript, no DOM/React/Three in pure model/runtime contracts.
 - Every claim carries evidence: [UNVERIFIED] unchecked changes; [PROXY] static/indirect evidence; [RAN] real executed output; [SAW] actual user-visible capture inspected. Tests do not establish visual quality. Never claim unrun tests passed.
@@ -17,3 +17,7 @@ Use Opus 5.5 (`claude-opus-5-5`) at low effort by default. The user permits a hi
 
 ## Squad Collaboration
 Use squad help for supported syntax. Manager ID: vfx-manager. Claude wrappers handle join/receive/ack/report; agents need not run these commands. Manager monitors results and assigns bounded follow-ups. See SQUAD.md for launch, logs and stop instructions.
+
+## Reporting cadence
+User requests report-driven coordination. Wait for completion reports; only check a worker for a stall after ten minutes without a report. Do not repeatedly poll its logs/status.
+

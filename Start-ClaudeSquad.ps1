@@ -11,5 +11,7 @@ foreach ($agent in @(@{Id='claude-model';Role='worker'},@{Id='claude-controls';R
   }
   $arguments = @('-NoLogo','-NoProfile','-NoExit','-File',('"{0}"' -f $loop),'-Id',$agent.Id,'-Role',$agent.Role,'-Project',('"{0}"' -f $Project))
   $process = Start-Process -FilePath $pwsh -ArgumentList $arguments -WorkingDirectory $Project -WindowStyle Normal -PassThru
+  Start-Sleep -Milliseconds 800
   Write-Output "Launched visible Claude $($agent.Role): $($agent.Id), terminal PID=$($process.Id)"
 }
+

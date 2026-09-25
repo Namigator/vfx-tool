@@ -5,8 +5,9 @@ param(
   [string]$Manager = 'vfx-manager',
   [string]$Model = 'claude-opus-5-5',
   [ValidateSet('low','medium','high','xhigh','max')][string]$Effort = 'low',
-  [string]$Claude = 'C:\Users\itonk\AppData\Roaming\Claude\claude-code\2.1.280\claude.exe',
-  [string]$Squad = 'F:\Dev2\squad\squad.exe'
+  [string]$Claude = 'C:\Users\itonk\AppData\Roaming\Claude\claude-code\2.1.281\claude.exe',
+  [string]$Squad = 'F:\Dev2\squad\squad.exe',
+  [switch]$ResumeExistingRegistration
 )
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
@@ -25,16 +26,24 @@ function Say([string]$message) {
   Add-Content -LiteralPath $log -Value $line
 }
 function SquadCall([string[]]$CommandArgs) {
-  $output = & $Squad @CommandArgs 2>&1
-  if ($LASTEXITCODE -ne 0) { throw ($output -join "`n") }
-  return ($output -join "`n")
+  for ($attempt = 0; $attempt -lt 4; $attempt++) {
+    $output = & $Squad @CommandArgs 2>&1
+    if ($LASTEXITCODE -eq 0) { return ($output -join "`n") }
+    $failureText = $output -join "`n"
+    if ($failureText -notmatch 'database is locked' -or $attempt -eq 3) { throw $failureText }
+    Start-Sleep -Milliseconds (250 * ($attempt + 1))
+  }
 }
 try {
   Say "Claude $Role starting with model=$Model effort=$Effort in $Project. No installations, shell tools, or nested agents."
+  if ($ResumeExistingRegistration) {
+    $actualId = $Id
+  } else {
   $joined = SquadCall @('join',$Id,'--role',$Role,'--client','claude','--protocol-version','2')
   if ($joined -notmatch 'Joined as ([^\s]+) \(role:') { throw "Could not determine actual squad ID: $joined" }
   $actualId = $Matches[1]
   if ($actualId -ne $Id) { throw "ID already occupied; assigned $actualId. Manager must reconcile before dispatch." }
+  }
   @{id=$Id; role=$Role; model=$Model; effort=$Effort; pid=$PID; project=$Project; started=(Get-Date).ToString('o')} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $logDir "$Id.process.json")
   # Enter receive immediately after joining; the manager discovers readiness via agents.
   while (-not (Test-Path -LiteralPath $stopFile)) {
@@ -55,7 +64,14 @@ try {
         $title = $message.task.title
         $body = $message.task.body
       }
-      SquadCall @('task','ack',$Id,$taskId) | Out-Null
+      try { SquadCall @('task','ack',$Id,$taskId) | Out-Null }
+      catch {
+        if ($_.Exception.Message -match 'is not queued|is not assigned') {
+          Say "Skipped stale assignment notification for $taskId; manager retains task state."
+          continue
+        }
+        throw
+      }
       Say "TASK $taskId : $title"
       $prompt = @"
 You are Claude agent $Id ($Role), assigned by the manager via the squad skill.
@@ -119,3 +135,7 @@ End with a concise summary, changed files (or findings with lines), required che
   & $Squad send $Id $Manager $failure 2>&1 | Out-Null
   throw
 }
+
+
+
+

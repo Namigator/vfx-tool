@@ -34,7 +34,7 @@ export function createF01Document(): EffectDocumentV2 {
           id: 'node-emitter', type: 'Emitter', definitionVersion: 1, label: 'Emitter', enabled: true, randomStreamId: 'rs-emitter',
           params: { shape: 'point', burst: 1, rate: 0, lifetimeMin: 1, lifetimeMax: 1, speedMin: 0, speedMax: 0 },
         },
-        { id: 'node-initial', type: 'InitialProperties', definitionVersion: 1, label: 'Initial properties', enabled: true, randomStreamId: 'rs-initial', params: { sizeMin: 0.1, sizeMax: 0.1 } },
+        { id: 'node-initial', type: 'InitialProperties', definitionVersion: 1, label: 'Initial properties', enabled: true, randomStreamId: 'rs-initial', params: { sizeMin: 0.1, sizeMax: 0.1, rotationMin: 0, rotationMax: 0, angularVelocityMin: 0, angularVelocityMax: 0 } },
         { id: 'node-material', type: 'Material', definitionVersion: 1, label: 'Material', enabled: true, randomStreamId: 'rs-material', params: { template: 'SpriteUnlit' } },
         { id: 'node-billboard', type: 'BillboardRenderer', definitionVersion: 1, label: 'Billboard', enabled: true, randomStreamId: 'rs-billboard', params: {} },
         { id: 'node-output', type: 'EffectOutput', definitionVersion: 1, label: 'Output', enabled: true, randomStreamId: 'rs-output', params: {} },
