@@ -9,6 +9,8 @@
 //   dissolve, rim, softIntersection, faceMode, depthTest and distortion are not registered yet.
 // - BillboardRenderer: size multiplier, envelope and world-axis vector are not registered yet; worldAxis is not renderable in this slice.
 // - Group/GroupInput/GroupOutput ports are per-instance (interface-derived), so none are static here.
+// - Path nodes: HelixPath, RadialPath, PathFollower, PathTransform and ParticlePaths are not registered yet;
+//   RibbonRenderer envelope is not registered yet (same as BillboardRenderer).
 // - Capability identifiers are empty: the vocabulary is defined with the renderer.
 import type { EvaluationDomain, NodeSpec, ParameterSpec, PortSpec } from '../model/types.ts';
 import { TICKS_PER_SECOND, MAX_DURATION_TICKS } from '../model/types.ts';
@@ -147,6 +149,127 @@ function billboardRenderer(): NodeSpec {
   });
 }
 
+// Path nodes (05 "Paths and moving anchors", 25 port table, 24 BranchPath). Bounds mirror the pure
+// runtime cores (runtime/paths.ts MIN/MAX_PATH_SAMPLES, runtime/branches.ts resolveBranchOptions);
+// registry.ts does not import runtime so the graph layer stays independent of it.
+const PATH_SAMPLES_MAX = 128;
+const MAX_BRANCH_COUNT = 64;
+/** Authoring bound for handle offsets, branch lengths and ground height (meters). */
+const PATH_EXTENT_METERS = 20;
+
+const samplesParam = (def: number) =>
+  param({ id: 'samples', label: 'Samples', type: 'integer', unit: 'none', default: def, min: 2, max: PATH_SAMPLES_MAX, step: 1 });
+const endpointInputs = () => [
+  port({ id: 'start', label: 'Start', type: 'anchor', required: true }),
+  port({ id: 'end', label: 'End', type: 'anchor', required: true }),
+];
+const pathsIn = () => port({ id: 'paths', label: 'Paths', type: 'paths', required: true });
+const pathsOut = () => port({ id: 'paths', label: 'Paths', type: 'paths' });
+
+function linePath(): NodeSpec {
+  return node('LinePath', {
+    inputs: endpointInputs(),
+    outputs: [pathsOut()],
+    parameters: [samplesParam(2)],
+    disabledBehavior: 'empty',
+  });
+}
+
+function bezierPath(): NodeSpec {
+  const handle = (id: string, label: string) => param({
+    id, label, type: 'vec3', unit: 'meter', default: [0, 1, 0], min: -PATH_EXTENT_METERS, max: PATH_EXTENT_METERS,
+    description: 'World-space offset from the matching endpoint to its cubic control point.',
+  });
+  return node('BezierPath', {
+    inputs: endpointInputs(),
+    outputs: [pathsOut()],
+    parameters: [handle('startHandle', 'Start handle'), handle('endHandle', 'End handle'), samplesParam(48)],
+    disabledBehavior: 'empty',
+  });
+}
+
+function jaggedPath(): NodeSpec {
+  return node('JaggedPath', {
+    inputs: [pathsIn()],
+    outputs: [pathsOut()],
+    parameters: [
+      param({ id: 'amplitude', label: 'Amplitude', type: 'number', unit: 'meter', default: 0.3, min: 0, max: 10, description: 'Tapers to zero at both endpoints.' }),
+      param({ id: 'regenerationHz', label: 'Regeneration', type: 'number', unit: 'hertz', default: 24, min: 0, max: 60, description: '0 keeps one stable shape.' }),
+      samplesParam(42),
+      param({ id: 'pinned', label: 'Pinned endpoints', type: 'boolean', unit: 'none', default: true }),
+    ],
+    disabledBehavior: 'bypass',
+    bypass: { input: 'paths', output: 'paths' },
+  });
+}
+
+function branchPath(): NodeSpec {
+  const range = (id: string, label: string, unit: 'meter' | 'normalized', def: number, min: number, max: number) =>
+    param({ id, label, type: 'number', unit, default: def, min, max });
+  return node('BranchPath', {
+    inputs: [pathsIn()],
+    outputs: [
+      port({ id: 'trunk', label: 'Trunk', type: 'paths' }),
+      port({ id: 'branches', label: 'Branches', type: 'paths' }),
+    ],
+    parameters: [
+      param({ id: 'count', label: 'Count', type: 'integer', unit: 'none', default: 14, min: 0, max: MAX_BRANCH_COUNT, step: 1 }),
+      param({ id: 'countMode', label: 'Count mode', type: 'enum', unit: 'none', default: 'total', choices: ['total', 'perParent'] }),
+      range('attachmentMin', 'Attachment min', 'normalized', 0.12, 0, 1),
+      range('attachmentMax', 'Attachment max', 'normalized', 0.88, 0, 1),
+      range('lengthMin', 'Length min', 'meter', 0.4, 0, PATH_EXTENT_METERS),
+      range('lengthMax', 'Length max', 'meter', 1.8, 0, PATH_EXTENT_METERS),
+      param({ id: 'spread', label: 'Spread', type: 'number', unit: 'radian', default: 1, min: 0, max: Math.PI }),
+      range('widthMin', 'Width min', 'normalized', 0.2, 0, 1),
+      range('widthMax', 'Width max', 'normalized', 0.4, 0, 1),
+      range('opacityMin', 'Opacity min', 'normalized', 0.2, 0, 1),
+      range('opacityMax', 'Opacity max', 'normalized', 0.48, 0, 1),
+      param({ id: 'groundEndClamp', label: 'Ground end clamp', type: 'boolean', unit: 'none', default: false }),
+      range('groundY', 'Ground height', 'meter', 0, -PATH_EXTENT_METERS, PATH_EXTENT_METERS),
+    ],
+    // Disabled: trunk passes through; the branches output is empty. Forks chain via another BranchPath.
+    disabledBehavior: 'bypass',
+    bypass: { input: 'paths', output: 'trunk' },
+  });
+}
+
+function revealPath(): NodeSpec {
+  return node('RevealPath', {
+    inputs: [pathsIn()],
+    outputs: [pathsOut()],
+    parameters: [
+      param({ id: 'fraction', label: 'Fraction', type: 'number', unit: 'normalized', default: 1, min: 0, max: 1, domains: ['constant', 'effectTime'], description: 'Clips each path at this interpolated arc-length fraction.' }),
+    ],
+    disabledBehavior: 'bypass',
+    bypass: { input: 'paths', output: 'paths' },
+  });
+}
+
+function ribbonRenderer(): NodeSpec {
+  return node('RibbonRenderer', {
+    inputs: [
+      pathsIn(),
+      port({ id: 'material', label: 'Material', type: 'material', required: true }),
+      // Optional: unconnected means the whole document window (25).
+      port({ id: 'window', label: 'Window', type: 'timeWindow' }),
+    ],
+    outputs: [port({ id: 'visual', label: 'Visual', type: 'visual' })],
+    parameters: [
+      param({ id: 'width', label: 'Width', type: 'number', unit: 'meter', default: 0.04, min: 0.001, max: 10, editPolicy: 'live' }),
+      param({
+        id: 'widthOverPath', label: 'Width over path', type: 'curve', unit: 'normalized', curveDomain: 'normalized',
+        default: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] },
+        min: 0, max: 1, editPolicy: 'live', description: 'Width multiplier over path arc fraction.',
+      }),
+      param({ id: 'uvMode', label: 'UV mode', type: 'enum', unit: 'none', default: 'stretch', choices: ['stretch', 'tile'], editPolicy: 'live' }),
+      param({ id: 'uvTileLength', label: 'UV tile length', type: 'number', unit: 'meter', default: 1, min: 0.01, max: 100, editPolicy: 'live', description: 'Tile mode only.' }),
+      param({ id: 'orientation', label: 'Orientation', type: 'enum', unit: 'none', default: 'camera', choices: ['camera', 'parallelTransport'], editPolicy: 'live' }),
+      param({ id: 'renderOrderOffset', label: 'Render order offset', type: 'integer', unit: 'none', default: 0, min: -32, max: 32, step: 1, editPolicy: 'live' }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
 function effectOutput(): NodeSpec {
   return node('EffectOutput', {
     inputs: [
@@ -184,6 +307,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
     anchor(), schedule(), emitter(), initialProperties(), material(), billboardRenderer(),
+    linePath(), bezierPath(), jaggedPath(), branchPath(), revealPath(), ribbonRenderer(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),
   ];
   return new Map(specs.map(s => [`${s.type}@${s.definitionVersion}`, s]));

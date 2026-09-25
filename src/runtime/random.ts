@@ -1,6 +1,7 @@
 // Deterministic random primitives (plan24 "Exact random identity").
 // Pure functions only: no global RNG, no hidden state, no call-order dependence.
 // Object IDs, labels and group paths are never part of a random key.
+// Pattern-local semantic path IDs (plan24 Amendment A1, branches.ts) are not object IDs.
 import { ID_PATTERN } from '../model/types.ts';
 
 export const RANDOM_TUPLE_VERSION = 2;

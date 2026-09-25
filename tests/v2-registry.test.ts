@@ -8,10 +8,10 @@ import { resolveParameters } from '../src/model/controls.ts';
 import { createRegistry, MATERIAL_TEMPLATES } from '../src/graph/registry.ts';
 import { createF01Document } from '../src/graph/fixtures.ts';
 
-const EXPECTED_TYPES = ['Anchor', 'Schedule', 'Emitter', 'InitialProperties', 'Material', 'BillboardRenderer', 'EffectOutput', 'Group', 'GroupInput', 'GroupOutput'];
+const EXPECTED_TYPES = ['Anchor', 'Schedule', 'Emitter', 'InitialProperties', 'Material', 'BillboardRenderer', 'EffectOutput', 'Group', 'GroupInput', 'GroupOutput', 'LinePath', 'BezierPath', 'JaggedPath', 'BranchPath', 'RevealPath', 'RibbonRenderer'];
 const LOWER_CAMEL = /^[a-z][A-Za-z0-9]*$/;
 
-test('registry contains exactly the WP01c catalog at version 1, keyed type@version', () => {
+test('registry contains the current graph catalog at version 1, keyed type@version', () => {
   const reg = createRegistry();
   assert.deepEqual([...reg.keys()].sort(), EXPECTED_TYPES.map(t => `${t}@1`).sort());
   for (const [key, spec] of reg) {
