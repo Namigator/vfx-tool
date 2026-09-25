@@ -8,6 +8,7 @@ import {
   MAX_DESCRIPTION_CODE_POINTS, MAX_DURATION_TICKS, MAX_GRAPHS, MAX_GROUP_DEPTH,
   MAX_INTERFACE_PORTS_PER_DIRECTION, MAX_JSON_BYTES, MAX_JSON_DEPTH, MAX_LABEL_CODE_POINTS,
   MAX_PATH_CODE_POINTS, MAX_STORED_EDGES, MAX_STORED_NODES, MAX_TAG_CODE_POINTS, MAX_TAGS,
+  AUDIO_MIX_INPUT_PORT, AUDIO_MIX_NODE_TYPE, MAX_EDGE_MIX_GAIN, MAX_EDGE_MIX_PAN, MIN_EDGE_MIX_GAIN, MIN_EDGE_MIX_PAN,
   MIN_DURATION_TICKS, RUNTIME_VERSION, SCHEMA_VERSION,
   type Diagnostic, type EffectDocumentV2, type ErrorCode, type NodeSpec, type ParameterSpec,
   type ValidationResult,
@@ -600,7 +601,8 @@ function nodePorts(ctx: Ctx, info: NodeInfo, side: 'source' | 'target'): Set<str
 }
 
 function checkEdge(ctx: Ctx, p: string, e: unknown, graphId: string | undefined) {
-  if (!shape(ctx, p, e, ['id', 'source', 'target', 'order'], [], 'edge')) return;
+  if (!shape(ctx, p, e, ['id', 'source', 'target', 'order'], ['mix'], 'edge')) return;
+  if (hasOwn(e, 'mix')) checkEdgeMix(ctx, `${p}.mix`, e.mix, e.target);
   objectId(ctx, `${p}.id`, e.id);
   if (!Number.isSafeInteger(e.order) || (e.order as number) < 0) err(ctx, 'INVALID_VALUE', `${p}.order`, 'Edge order must be a whole number ≥ 0.');
   for (const side of ['source', 'target'] as const) {
@@ -615,6 +617,28 @@ function checkEdge(ctx: Ctx, p: string, e: unknown, graphId: string | undefined)
     if (ports && !ports.has(end.port)) {
       err(ctx, 'MISSING_REFERENCE', `${sp}.port`, `Node ${quote(end.nodeId)} has no ${side === 'source' ? 'output' : 'input'} port ${quote(end.port)}.`, end.nodeId);
     }
+  }
+}
+
+/** WP04-AUDIO-MIX-CONTRACT.md §5: per-connection mix only on AudioMix `inputs`; never clamped. */
+function checkEdgeMix(ctx: Ctx, p: string, mix: unknown, target: unknown) {
+  const t = isPlainObject(target) ? ctx.nodes.get(target.nodeId as string) : undefined;
+  if (!t || t.node.type !== AUDIO_MIX_NODE_TYPE || (target as Obj).port !== AUDIO_MIX_INPUT_PORT) {
+    err(ctx, 'INVALID_VALUE', p, 'Mix settings are only allowed on edges into an AudioMix "inputs" port.');
+    return;
+  }
+  if (!isPlainObject(mix)) { err(ctx, 'INVALID_VALUE', p, 'Expected mix settings {gain, pan}.'); return; }
+  const extra = Object.keys(mix).filter(k => k !== 'gain' && k !== 'pan');
+  if (extra.length > 0 || !hasOwn(mix, 'gain') || !hasOwn(mix, 'pan')) {
+    err(ctx, 'INVALID_VALUE', p, 'Mix settings must contain exactly gain and pan.');
+    return;
+  }
+  const { gain, pan } = mix;
+  if (!isFiniteNumber(gain) || gain < MIN_EDGE_MIX_GAIN || gain > MAX_EDGE_MIX_GAIN) {
+    err(ctx, 'INVALID_VALUE', `${p}.gain`, `Gain must be a finite number from ${MIN_EDGE_MIX_GAIN} to ${MAX_EDGE_MIX_GAIN}.`);
+  }
+  if (!isFiniteNumber(pan) || pan < MIN_EDGE_MIX_PAN || pan > MAX_EDGE_MIX_PAN) {
+    err(ctx, 'INVALID_VALUE', `${p}.pan`, `Pan must be a finite number from ${MIN_EDGE_MIX_PAN} to ${MAX_EDGE_MIX_PAN}.`);
   }
 }
 

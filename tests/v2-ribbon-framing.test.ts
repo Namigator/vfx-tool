@@ -8,7 +8,7 @@ const path = (points: Vec3[], widthScale = 1): PathData => ({ id: 'p', points, w
 
 test('side attribute: +1 left, -1 right per quad corner', () => {
   const r = new RibbonGeometry();
-  const s = r.update([path([[0, 0, 0], [1, 0, 0], [2, 0, 0]])], { cameraPosition: [0, 0, 10], width: 1 });
+  const s = r.update([path([[0, 0, 0], [1, 0, 0], [2, 0, 0]])], { cameraPosition: [0, 0, 10], width: 1, endFade: 0 });
   const side = Array.from((r.geometry.getAttribute('side').array as Float32Array).subarray(0, s.vertexCount));
   // Two segment quads (start L/R, end L/R each); a straight join adds no fan vertices.
   assert.deepEqual(side, [1, -1, 1, -1, 1, -1, 1, -1]);
@@ -18,7 +18,7 @@ test('side sense stays continuous through a hairpin (no crossed strip)', () => {
   const r = new RibbonGeometry();
   // Camera sits on the path axis near the turn so raw cross(tangent, view) flips sign.
   const pts: Vec3[] = [[-2, 0, 0], [-1, 0, 0], [0, 0, 0], [0, 0, -1], [0, 0, -2]];
-  const s = r.update([path(pts)], { cameraPosition: [0.5, 3, 0.5], width: 0.2 });
+  const s = r.update([path(pts)], { cameraPosition: [0.5, 3, 0.5], width: 0.2, endFade: 0 });
   const a = r.geometry.getAttribute('position').array as Float32Array;
   const sd = r.geometry.getAttribute('side').array as Float32Array;
   const idx = r.geometry.getIndex()!.array as Uint32Array;

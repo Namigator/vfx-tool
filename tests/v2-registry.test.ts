@@ -8,7 +8,7 @@ import { resolveParameters } from '../src/model/controls.ts';
 import { createRegistry, MATERIAL_TEMPLATES } from '../src/graph/registry.ts';
 import { createF01Document } from '../src/graph/fixtures.ts';
 
-const EXPECTED_TYPES = ['Anchor', 'Schedule', 'Emitter', 'InitialProperties', 'Material', 'BillboardRenderer', 'EffectOutput', 'Group', 'GroupInput', 'GroupOutput', 'LinePath', 'BezierPath', 'JaggedPath', 'BranchPath', 'RevealPath', 'RibbonRenderer', 'AudioSource', 'AudioOutput'];
+const EXPECTED_TYPES = ['Anchor', 'Schedule', 'Emitter', 'InitialProperties', 'Material', 'BillboardRenderer', 'EffectOutput', 'Group', 'GroupInput', 'GroupOutput', 'LinePath', 'BezierPath', 'JaggedPath', 'BranchPath', 'RevealPath', 'RadialPath', 'RibbonRenderer', 'AudioSource', 'AudioMix', 'AudioOutput'];
 const LOWER_CAMEL = /^[a-z][A-Za-z0-9]*$/;
 
 test('registry contains the current graph catalog at version 1, keyed type@version', () => {
@@ -93,7 +93,9 @@ test('audio nodes follow plans 11, 24 and 25', () => {
   assert.deepEqual(ports('AudioOutput', 'inputs'), ['audio:audio:one']);
   assert.equal(reg.has('AudioEnvelope@1'), false, 'envelope stays unregistered until its controls are specified');
   assert.equal(reg.has('AudioFilter@1'), false, 'filter deferred until the cutoff curve schema is decided');
-  assert.equal(reg.has('AudioMix@1'), false, 'mix deferred until per-input gain/pan has a representation');
+  assert.deepEqual(ports('AudioMix', 'inputs'), ['inputs:audio:many']);
+  assert.deepEqual(ports('AudioMix', 'outputs'), ['audio:audio:one']);
+  assert.equal(spec('AudioMix').inputs[0].required, false, 'zero inputs is valid silence');
   assert.equal(spec('AudioSource').parameters.some(p => p.id === 'randomStreamId'), false, 'node.randomStreamId is authoritative');
 
   assert.deepEqual(bounds('AudioSource', 'offsetTicks'), ['tick', 0, 36000]);
@@ -104,8 +106,12 @@ test('audio nodes follow plans 11, 24 and 25', () => {
   assert.deepEqual(bounds('AudioSource', 'pulseDuty'), ['normalized', 0.05, 0.95]);
   assert.deepEqual(spec('AudioSource').parameters.find(p => p.id === 'source')!.choices, ['oscillator', 'noise', 'chirp']);
   assert.deepEqual(spec('AudioOutput').parameters, []);
+  assert.deepEqual(spec('AudioMix').parameters.map(p => p.id), ['masterGain'], 'per-input gain/pan live on edge.mix');
+  const master = spec('AudioMix').parameters[0];
+  assert.deepEqual([master.type, master.unit, master.default, master.min, master.max, master.step, master.editPolicy], ['number', 'linearGain', 1, 0, 1, 0.01, 'live']);
 
   assert.equal(spec('AudioSource').disabledBehavior, 'empty');
+  assert.deepEqual([spec('AudioMix').disabledBehavior, spec('AudioMix').bypass], ['empty', undefined]);
   assert.deepEqual([spec('AudioOutput').disabledBehavior, spec('AudioOutput').bypass], ['bypass', { input: 'audio', output: 'audio' }]);
 });
 

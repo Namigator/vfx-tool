@@ -71,11 +71,13 @@ export function createF01Document(): EffectDocumentV2 {
 // BranchPath (fine forks on the branches). The trunk feeds four stacked RibbonRenderers (halo/outer/inner/
 // core, reference widths, colors and opacities); branches get glow + core layers and forks one fine layer.
 // Branch/fork lengths are scaled down from the reference to the 3.2 m preview span. No particle chain and
-// no timing: every layer is visible from tick 0 until charge/impact and a signal graph exist. Ribbon
-// parameters stay at their defaults except width/renderOrderOffset.
+// charge timing: the bolt layers are visible from tick 0; only the impact-spark layer is windowed. Ribbon
+// parameters stay at their defaults except width/renderOrderOffset, and endFade 0 on the four trunk layers
+// so the bolt stays full-width up to the target anchor where the impact burst sits.
 export function createL01Document(): EffectDocumentV2 {
-  const ribbon = (id: string, label: string, width: number, renderOrderOffset: number) =>
-    ({ id, type: 'RibbonRenderer', definitionVersion: 1, label, enabled: true, randomStreamId: `rs-${id.slice(5)}`, params: { width, renderOrderOffset } });
+  const ribbon = (id: string, label: string, width: number, renderOrderOffset: number, extra: Record<string, number> = {}) =>
+    ({ id, type: 'RibbonRenderer', definitionVersion: 1, label, enabled: true, randomStreamId: `rs-${id.slice(5)}`, params: { width, renderOrderOffset, ...extra } });
+  const trunk = { endFade: 0 };
   const material = (id: string, label: string, srgb: string, opacity: number, emission: number) =>
     ({ id, type: 'Material', definitionVersion: 1, label, enabled: true, randomStreamId: `rs-${id.slice(5)}`, params: { template: 'SpriteUnlit', blend: 'additive', tint: { srgb, alpha: 1 }, opacity, emission } });
   return {
@@ -118,13 +120,25 @@ export function createL01Document(): EffectDocumentV2 {
         material('node-mat-branch-glow', 'Branch glow material', '#3A7DFF', 0.2, 2),
         material('node-mat-branch-core', 'Branch core material', '#CFEFFF', 0.48, 4),
         material('node-mat-fork', 'Fork material', '#A8E4FF', 0.3, 3),
-        ribbon('node-rib-halo', 'Halo ribbon', 0.43, 0),
-        ribbon('node-rib-outer', 'Outer ribbon', 0.185, 1),
+        ribbon('node-rib-halo', 'Halo ribbon', 0.43, 0, trunk),
+        ribbon('node-rib-outer', 'Outer ribbon', 0.185, 1, trunk),
         ribbon('node-rib-branch-glow', 'Branch glow ribbon', 0.07, 2),
-        ribbon('node-rib-inner', 'Inner ribbon', 0.07, 3),
+        ribbon('node-rib-inner', 'Inner ribbon', 0.07, 3, trunk),
         ribbon('node-rib-fork', 'Fork ribbon', 0.012, 4),
         ribbon('node-rib-branch-core', 'Branch core ribbon', 0.018, 5),
-        ribbon('node-rib-core', 'Core ribbon', 0.026, 6),
+        ribbon('node-rib-core', 'Core ribbon', 0.026, 6, trunk),
+        // Impact sparks: a short radial starburst at the target, disc rotated +90° about X into the XY
+        // (view) plane. One RadialPath feeds a soft cyan glow ribbon and a thin white core ribbon, both
+        // visible only inside the shared ticks 24-36 Schedule window.
+        { id: 'node-impact-window', type: 'Schedule', definitionVersion: 1, label: 'Impact window', enabled: true, randomStreamId: 'rs-impact-window', params: { startTicks: 24, durationTicks: 12, mode: 'window' } },
+        {
+          id: 'node-impact-sparks', type: 'RadialPath', definitionVersion: 1, label: 'Impact sparks', enabled: true, randomStreamId: 'rs-impact-sparks',
+          params: { mode: 'disc', count: 10, lengthMin: 0.18, lengthMax: 0.45, orientation: [Math.SQRT1_2, 0, 0, Math.SQRT1_2] },
+        },
+        material('node-mat-impact-glow', 'Impact glow material', '#4FD8FF', 0.32, 3),
+        material('node-mat-impact', 'Impact spark material', '#F4FDFF', 0.9, 6),
+        ribbon('node-rib-impact-glow', 'Impact glow ribbon', 0.06, 7),
+        ribbon('node-rib-impact', 'Impact spark ribbon', 0.02, 8),
         { id: 'node-output', type: 'EffectOutput', definitionVersion: 1, label: 'Output', enabled: true, randomStreamId: 'rs-output', params: {} },
       ],
       edges: [
@@ -154,6 +168,15 @@ export function createL01Document(): EffectDocumentV2 {
         { ...edge('edge-visual-fork', 'node-rib-fork', 'visual', 'node-output', 'visual'), order: 4 },
         { ...edge('edge-visual-branch-core', 'node-rib-branch-core', 'visual', 'node-output', 'visual'), order: 5 },
         { ...edge('edge-visual-core', 'node-rib-core', 'visual', 'node-output', 'visual'), order: 6 },
+        edge('edge-impact-center', 'node-target', 'out', 'node-impact-sparks', 'center'),
+        edge('edge-impact-paths', 'node-impact-sparks', 'paths', 'node-rib-impact', 'paths'),
+        edge('edge-impact-mat', 'node-mat-impact', 'material', 'node-rib-impact', 'material'),
+        edge('edge-impact-window', 'node-impact-window', 'window', 'node-rib-impact', 'window'),
+        edge('edge-impact-glow-paths', 'node-impact-sparks', 'paths', 'node-rib-impact-glow', 'paths'),
+        edge('edge-impact-glow-mat', 'node-mat-impact-glow', 'material', 'node-rib-impact-glow', 'material'),
+        edge('edge-impact-glow-window', 'node-impact-window', 'window', 'node-rib-impact-glow', 'window'),
+        { ...edge('edge-visual-impact-glow', 'node-rib-impact-glow', 'visual', 'node-output', 'visual'), order: 7 },
+        { ...edge('edge-visual-impact', 'node-rib-impact', 'visual', 'node-output', 'visual'), order: 8 },
       ],
     }],
     controls: [],
@@ -170,6 +193,9 @@ export function createL01Document(): EffectDocumentV2 {
             'node-rib-halo': { x: 1240, y: -480 }, 'node-rib-outer': { x: 1240, y: -320 },
             'node-rib-inner': { x: 1240, y: -160 }, 'node-rib-core': { x: 1240, y: 0 },
             'node-rib-branch-glow': { x: 1240, y: 480 }, 'node-rib-branch-core': { x: 1240, y: 640 }, 'node-rib-fork': { x: 1240, y: 800 },
+            'node-impact-window': { x: 980, y: 1040 }, 'node-impact-sparks': { x: 240, y: 880 },
+            'node-mat-impact': { x: 980, y: 880 }, 'node-rib-impact': { x: 1240, y: 960 },
+            'node-mat-impact-glow': { x: 980, y: 1200 }, 'node-rib-impact-glow': { x: 1240, y: 1120 },
             'node-output': { x: 1500, y: 160 },
           },
           viewport: { x: 0, y: 0, zoom: 1 },

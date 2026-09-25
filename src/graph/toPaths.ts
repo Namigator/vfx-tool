@@ -3,7 +3,7 @@
 // No DOM, React or Three. The input is never mutated (analysis works on a clone).
 //
 // Scope: reachable RibbonRenderer sinks at the root EffectOutput.visual, fed by LinePath/BezierPath
-// generators through JaggedPath/BranchPath/RevealPath modifiers, with an optional Schedule window.
+// (or RadialPath) generators through JaggedPath/BranchPath/RevealPath modifiers, with an optional Schedule window.
 // BillboardRenderer sinks are skipped here (owned by compileParticlePreview); any other reachable node
 // in a ribbon chain returns an addressed error instead of being ignored or approximated.
 //
@@ -27,6 +27,7 @@ import { TICKS_PER_SECOND } from '../model/types.ts';
 import { registryKey } from '../model/controls.ts';
 import { bezierPath, jaggedPath, linePath, revealPath, type PathData } from '../runtime/paths.ts';
 import { branchPaths, type BranchCountMode } from '../runtime/branches.ts';
+import { radialPaths, type RadialMode } from '../runtime/radial.ts';
 import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { createRegistry } from './registry.ts';
@@ -42,6 +43,8 @@ export type PathPreviewLayer = {
   /** Meters, root scale applied. Per-path PathData.widthScale multiplies it. */
   width: number;
   widthOverPath: CurveValue;
+  /** Fraction (0..0.5) of each path's arc length over which both ends taper and fade. */
+  endFade: number;
   uvMode: 'stretch' | 'tile';
   uvTileLength: number;
   orientation: 'camera' | 'parallelTransport';
@@ -70,12 +73,23 @@ export const MAX_PREVIEW_POINTS = 262144;
 const RIBBON_PORTS = ['paths', 'material', 'window'];
 const ENDPOINT_PORTS = ['start', 'end'];
 const MODIFIER_PORTS = ['paths'];
+const RADIAL_PORTS = ['center', 'window'];
 
 type NodeOutputs = Map<string, PathData[]>;
 
 class Fail extends Error {}
 
-export function compilePathPreview(input: unknown, effectTick: number): ValidationResult<PathPreviewPlan> {
+export type PathPreviewOptions = {
+  /**
+   * Set only when the caller has separately compiled and validated the root EffectOutput.audio graph
+   * (e.g. with the audio compiler) and will act on its result. The visual compile then ignores the
+   * root audio edge instead of reporting it; it never validates audio itself. Default false.
+   * Presentation connections are errors regardless.
+   */
+  audioHandled?: boolean;
+};
+
+export function compilePathPreview(input: unknown, effectTick: number, options: PathPreviewOptions = {}): ValidationResult<PathPreviewPlan> {
   if (typeof effectTick !== 'number' || !Number.isInteger(effectTick) || effectTick < 0) {
     return { ok: false, errors: [{ code: 'INVALID_VALUE', severity: 'error', message: `effectTick must be a nonnegative integer; got ${String(effectTick)}.` }] };
   }
@@ -145,7 +159,7 @@ export function compilePathPreview(input: unknown, effectTick: number): Validati
     report('INVALID_VALUE', `Exposed control "${d.controlId}" of Group "${d.groupNodeId}" is driven by a connection; control expressions are not supported by the path preview yet.`, d.groupNodeId);
   }
   const outputId = x.rootOutputNodeId;
-  for (const port of ['audio', 'presentation']) {
+  for (const port of options.audioHandled === true ? ['presentation'] : ['audio', 'presentation']) {
     if (into(outputId, port).length) report('INVALID_VALUE', `EffectOutput.${port} is connected, but ${port} output is not supported by the path preview yet.`, outputId);
   }
 
@@ -260,6 +274,18 @@ export function compilePathPreview(input: unknown, effectTick: number): Validati
         out = new Map([['trunk', r.trunks], ['branches', r.branches]]);
         break;
       }
+      case 'RadialPath': {
+        if (!on) { out = new Map([['paths', []]]); break; }
+        noDrivenParams(n, RADIAL_PORTS);
+        if (into(id, 'window').length) fail('INVALID_VALUE', `RadialPath "${id}" window input is not supported by the path preview yet; gate visibility with the RibbonRenderer window.`, id);
+        const center = anchorOf(n, 'center');
+        out = new Map([['paths', guard(id, () => radialPaths(center, {
+          documentSeed: doc.seed, randomStreamId: n.node.randomStreamId, mode: param(n, 'mode') as RadialMode,
+          count: num(n, 'count'), lengthMin: num(n, 'lengthMin'), lengthMax: num(n, 'lengthMax'),
+          coneAngle: num(n, 'coneAngle'), orientation: param(n, 'orientation') as Quaternion,
+        }))]]);
+        break;
+      }
       default:
         return fail('UNKNOWN_NODE', `Node "${id}" (${n.node.type}) is not supported in a path chain by the path preview.`, id);
     }
@@ -322,6 +348,7 @@ export function compilePathPreview(input: unknown, effectTick: number): Validati
         paths: active ? local.map(p => toWorld(p, transform)) : [],
         width: num(r, 'width') * scale,
         widthOverPath: structuredClone(param(r, 'widthOverPath') as CurveValue),
+        endFade: num(r, 'endFade'),
         uvMode: param(r, 'uvMode') as PathPreviewLayer['uvMode'],
         uvTileLength: num(r, 'uvTileLength') * scale,
         orientation: param(r, 'orientation') as PathPreviewLayer['orientation'],

@@ -4,6 +4,8 @@
 import type { Diagnostic, EffectDocumentV2 } from '../model/types.ts';
 import { analyzeGraph } from '../graph/analyze.ts';
 import { createL01Document } from '../graph/fixtures.ts';
+import { createL01AudioDocument } from '../graph/audioFixtures.ts';
+import { EFFECT_OUTPUT_NODE_TYPE } from '../model/document.ts';
 import { expandGroups } from '../graph/expand.ts';
 import { createRegistry } from '../graph/registry.ts';
 import type { PathPreviewLayer } from '../graph/toPaths.ts';
@@ -48,6 +50,23 @@ export function choosePreviewMode(doc: unknown): PreviewModeChoice {
 /** The browser's lightning demo is the shared editable L01 fixture (three ribbon layers, no hidden recipe). */
 export function createLightningDemoDocument(): EffectDocumentV2 {
   return createL01Document();
+}
+
+/** The browser's "Load lightning demo": L01 plus its validated root audio mix (shared audio fixture). */
+export function createLightningAudioDemoDocument(): EffectDocumentV2 {
+  return createL01AudioDocument();
+}
+
+/**
+ * True when any root-graph edge targets the root EffectOutput `audio` port. Such documents must be compiled
+ * with compileAudio before the visual compiler may be told `audioHandled`. Purely structural; malformed
+ * documents return false so the visual compiler reports their errors as before.
+ */
+export function hasRootAudio(doc: EffectDocumentV2): boolean {
+  const root = doc.graphs?.find(g => g.id === doc.rootGraphId);
+  if (!root) return false;
+  const outputs = new Set(root.nodes.filter(n => n.type === EFFECT_OUTPUT_NODE_TYPE).map(n => n.id));
+  return root.edges.some(e => outputs.has(e.target.nodeId) && e.target.port === 'audio');
 }
 
 function nodeFieldPath(doc: EffectDocumentV2, nodeId: string): string | undefined {

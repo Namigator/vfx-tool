@@ -4,7 +4,9 @@ import type { EffectDocumentV2, NodeDefinition } from '../src/model/types.ts';
 import { createF01Document, createL01Document } from '../src/graph/fixtures.ts';
 import { compilePathPreview } from '../src/graph/toPaths.ts';
 import { compileParticlePreview } from '../src/graph/toParticles.ts';
-import { choosePreviewMode, createLightningDemoDocument, ribbonStyleDiagnostics } from '../src/render/previewMode.ts';
+import { createL01AudioDocument } from '../src/graph/audioFixtures.ts';
+import { compileAudio } from '../src/graph/toAudio.ts';
+import { choosePreviewMode, createLightningAudioDemoDocument, createLightningDemoDocument, hasRootAudio, ribbonStyleDiagnostics } from '../src/render/previewMode.ts';
 import { RibbonGeometry } from '../src/render/RibbonGeometry.ts';
 
 const find = (d: EffectDocumentV2, id: string) => d.graphs[0].nodes.find(n => n.id === id) as NodeDefinition;
@@ -27,16 +29,43 @@ test('lightning demo chooses path mode and renders seven visible ribbon layers f
   assert.deepEqual(choosePreviewMode(d), { mode: 'paths' });
   const r = compilePathPreview(d, 0);
   if (!r.ok) assert.fail(JSON.stringify(r.errors));
-  assert.deepEqual(r.value.layers.map(l => l.nodeId), ['node-rib-halo', 'node-rib-outer', 'node-rib-branch-glow', 'node-rib-inner', 'node-rib-fork', 'node-rib-branch-core', 'node-rib-core']);
+  assert.deepEqual(r.value.layers.map(l => l.nodeId), ['node-rib-halo', 'node-rib-outer', 'node-rib-branch-glow', 'node-rib-inner', 'node-rib-fork', 'node-rib-branch-core', 'node-rib-core', 'node-rib-impact-glow', 'node-rib-impact']);
   assert.deepEqual(ribbonStyleDiagnostics(d, r.value.layers), []);
   const g = new RibbonGeometry();
-  for (const l of r.value.layers) {
+  // The impact glow/core layers are windowed to ticks 24-36 and idle at tick 0.
+  for (const l of r.value.layers.filter(l => !l.nodeId.startsWith('node-rib-impact'))) {
     assert.equal(l.active, true);
     const s = g.update(l.paths, { cameraPosition: [4, 3, 2], width: l.width });
     assert.ok(s.indexCount > 0, `${l.nodeId} draws triangles`);
     assert.ok(s.drawnPaths >= 1, `${l.nodeId} draws at least one path`);
   }
   g.dispose();
+});
+
+test('browser lightning demo is the shared L01 audio fixture with a compilable root audio mix', () => {
+  const d = createLightningAudioDemoDocument();
+  assert.deepEqual(d, createL01AudioDocument());
+  assert.notEqual(createLightningAudioDemoDocument(), createLightningAudioDemoDocument(), 'fresh editable copy each call');
+  assert.equal(hasRootAudio(d), true);
+  const a = compileAudio(d);
+  if (!a.ok) assert.fail(JSON.stringify(a.errors));
+  assert.equal(a.value.mix.sampleRate, 48000);
+  assert.equal(a.value.mix.left.length, a.value.mix.right.length);
+  assert.ok(a.value.mix.left.length > 0);
+  assert.deepEqual(choosePreviewMode(d), { mode: 'paths' });
+  assert.equal(compilePathPreview(d, 0).ok, false, 'visual compile alone must not accept root audio');
+  const v = compilePathPreview(d, 0, { audioHandled: true });
+  if (!v.ok) assert.fail(JSON.stringify(v.errors));
+  assert.deepEqual(ribbonStyleDiagnostics(d, v.value.layers), []);
+});
+
+test('hasRootAudio only reports edges into the root EffectOutput audio port', () => {
+  assert.equal(hasRootAudio(createF01Document()), false);
+  assert.equal(hasRootAudio(createLightningDemoDocument()), false);
+  const d = createLightningAudioDemoDocument();
+  const root = d.graphs.find(g => g.id === d.rootGraphId)!;
+  root.edges = root.edges.filter(e => e.target.port !== 'audio' || !root.nodes.some(n => n.id === e.target.nodeId && n.type === 'EffectOutput'));
+  assert.equal(hasRootAudio(d), false);
 });
 
 test('path compile is deterministic per tick, so scrubbing needs no replay', () => {

@@ -175,11 +175,24 @@ export type NodeDefinition = {
   enabled: boolean; randomStreamId: string;
   params: Record<string, ParameterValue>;
 };
+/** Per-connection mix settings (WP04-AUDIO-MIX-CONTRACT.md); only valid on edges into AudioMix "inputs". */
+export type EdgeMixParams = { gain: number; pan: number };
+export const DEFAULT_EDGE_MIX: Readonly<EdgeMixParams> = Object.freeze({ gain: 1, pan: 0 });
+/** Closed, finite ranges; invalid values are rejected, never clamped. */
+export const MIN_EDGE_MIX_GAIN = 0;
+export const MAX_EDGE_MIX_GAIN = 2;
+export const MIN_EDGE_MIX_PAN = -1;
+export const MAX_EDGE_MIX_PAN = 1;
+export const AUDIO_MIX_NODE_TYPE = 'AudioMix';
+export const AUDIO_MIX_INPUT_PORT = 'inputs';
+
 export type EdgeDefinition = {
   id: string;
   source: { nodeId: string; port: string };
   target: { nodeId: string; port: string };
   order: number;
+  /** Absent = DEFAULT_EDGE_MIX. Present only when the target is AudioMix "inputs". */
+  mix?: EdgeMixParams;
 };
 export type GraphDefinition = {
   id: string; inputs: InterfacePort[]; outputs: InterfacePort[];

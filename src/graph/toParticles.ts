@@ -59,7 +59,17 @@ const IP_PORTS = ['particles'];
 
 class Fail extends Error {}
 
-export function compileParticlePreview(input: unknown): ValidationResult<ParticlePreviewPlan> {
+export type ParticlePreviewOptions = {
+  /**
+   * Set only when the caller has separately compiled and validated the root EffectOutput.audio graph
+   * (e.g. with the audio compiler) and will act on its result. The visual compile then ignores the
+   * root audio edge instead of reporting it; it never validates audio itself. Default false.
+   * Presentation connections are errors regardless.
+   */
+  audioHandled?: boolean;
+};
+
+export function compileParticlePreview(input: unknown, options: ParticlePreviewOptions = {}): ValidationResult<ParticlePreviewPlan> {
   const registry = createRegistry();
   const analysis = analyzeGraph(input, { registry });
   if (!analysis.ok) return analysis;
@@ -116,7 +126,7 @@ export function compileParticlePreview(input: unknown): ValidationResult<Particl
     report('INVALID_VALUE', `Exposed control "${d.controlId}" of Group "${d.groupNodeId}" is driven by a connection; control expressions are not supported by the point preview yet.`, d.groupNodeId);
   }
   const outputId = x.rootOutputNodeId;
-  for (const port of ['audio', 'presentation']) {
+  for (const port of options.audioHandled === true ? ['presentation'] : ['audio', 'presentation']) {
     if (into(outputId, port).length) report('INVALID_VALUE', `EffectOutput.${port} is connected, but ${port} output is not supported by the point preview yet.`, outputId);
   }
 

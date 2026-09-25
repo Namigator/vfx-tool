@@ -63,7 +63,7 @@ test('LinePath ribbon matches the pure runtime and carries renderer/material met
   assert.deepEqual(l.paths, [linePath('p0', S, T, 2)]);
   assert.deepEqual({ ...l, paths: [] }, {
     nodeId: 'n-rib0', window: { startTick: 0, endTick: 120 }, active: true, paths: [], width: 0.04,
-    widthOverPath: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] },
+    widthOverPath: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] }, endFade: 0.12,
     uvMode: 'stretch', uvTileLength: 1, orientation: 'camera', renderOrderOffset: 0,
     color: { srgb: '#FFFFFF', alpha: 1 }, opacity: 1, emission: 0, blend: 'additive', alphaCutoff: 0.5,
   });

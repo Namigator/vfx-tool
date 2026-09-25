@@ -9,7 +9,11 @@ import { createRegistry } from './graph/registry.ts';
 import { compileParticlePreview } from './graph/toParticles.ts';
 import { compilePathPreview } from './graph/toPaths.ts';
 import { createF01Document } from './graph/fixtures.ts';
-import { choosePreviewMode, createLightningDemoDocument, ribbonStyleDiagnostics, type PreviewModeChoice } from './render/previewMode.ts';
+import { compileAudio } from './graph/toAudio.ts';
+import { choosePreviewMode, createLightningAudioDemoDocument, hasRootAudio, ribbonStyleDiagnostics, type PreviewModeChoice } from './render/previewMode.ts';
+import { AudioTransport, type AudioBufferLike, type AudioContextLike, type BufferSourceLike, type PlayResult } from './audio/transport.ts';
+import type { MixResult } from './audio/mix.ts';
+import { encodeWavPcm16Stereo } from './audio/wav.ts';
 import { DocumentHistory, type HistoryNotice, type HistoryResult, type Patch } from './editor/history.ts';
 import GraphCanvas from './editor/GraphCanvas.tsx';
 import NodeInspector from './editor/NodeInspector.tsx';
@@ -26,6 +30,56 @@ function describe(d: Diagnostic): string {
 }
 
 const toText = (doc: EffectDocumentV2) => JSON.stringify(doc, null, 2);
+
+/** The validated canonical mix of one audio compile; the revision changes on every compile. */
+type HeldAudio = { revision: string; mix: MixResult };
+
+const PLAY_FAILURES: Record<Extract<PlayResult, { ok: false }>['reason'], string> = {
+  'no-buffer': 'no mix is loaded.',
+  'suspended': 'the browser kept audio suspended. Click Play sound again.',
+  'resume-rejected': 'the browser refused to start audio.',
+  'stale': 'the request was superseded.',
+  'disposed': 'audio was shut down.',
+  'offset-out-of-range': 'the start position is outside the mix.',
+};
+
+/**
+ * Adapts a native AudioContext to the transport's minimal interface without casts. Buffer sources are
+ * wrapped because the native onended handler takes an Event and a `this`; buffers and connect targets are
+ * checked at runtime to be native Web Audio objects.
+ */
+function browserAudioContext(ctx: AudioContext): AudioContextLike {
+  const wrapSource = (node: AudioBufferSourceNode): BufferSourceLike => {
+    let ended: (() => void) | null = null;
+    node.onended = () => { ended?.(); };
+    return {
+      get buffer(): AudioBufferLike | null { return node.buffer; },
+      set buffer(b: AudioBufferLike | null) {
+        if (b !== null && !(b instanceof AudioBuffer)) throw new TypeError('buffer must be a native AudioBuffer');
+        node.buffer = b;
+      },
+      get onended(): (() => void) | null { return ended; },
+      set onended(f: (() => void) | null) { ended = f; },
+      start: (when: number, offset: number) => node.start(when, offset),
+      stop: () => node.stop(),
+      connect: (destination: unknown) => {
+        if (!(destination instanceof AudioNode)) throw new TypeError('destination must be a native AudioNode');
+        return node.connect(destination);
+      },
+      disconnect: () => node.disconnect(),
+    };
+  };
+  return {
+    get currentTime() { return ctx.currentTime; },
+    get state() { return ctx.state; },
+    get destination() { return ctx.destination; },
+    resume: () => ctx.resume(),
+    createGain: () => ctx.createGain(),
+    createBufferSource: () => wrapSource(ctx.createBufferSource()),
+    createBuffer: (channels: number, length: number, sampleRate: number) => ctx.createBuffer(channels, length, sampleRate),
+    getOutputTimestamp: () => ctx.getOutputTimestamp(),
+  };
+}
 
 /** Graph shown in the canvas: the saved opened graph if it exists, else the root graph. */
 function canvasGraphId(doc: EffectDocumentV2): string {
@@ -46,7 +100,7 @@ export default function PreviewV2() {
   const fileRef = useRef<HTMLInputElement>(null);
   const viewportRef = useRef<PreviewViewport | null>(null);
   const historyRef = useRef<DocumentHistory | null>(null);
-  if (historyRef.current === null) historyRef.current = new DocumentHistory(new URLSearchParams(window.location.search).get('demo') === 'lightning' ? createLightningDemoDocument() : createF01Document());
+  if (historyRef.current === null) historyRef.current = new DocumentHistory(new URLSearchParams(window.location.search).get('demo') === 'lightning' ? createLightningAudioDemoDocument() : createF01Document());
   const [doc, setDoc] = useState<EffectDocumentV2>(() => historyRef.current!.snapshot());
   const [text, setText] = useState(() => toText(doc));
   const [textDirty, setTextDirty] = useState(false);
@@ -67,31 +121,71 @@ export default function PreviewV2() {
   const txCounterRef = useRef(0);
   const textDirtyRef = useRef(false);
   textDirtyRef.current = textDirty;
+  // Audio audition: the canonical mix of the current compile (null when absent/invalid), plus the lazily
+  // created device context and transport. The token invalidates pending plays and end-of-sound timers.
+  const [audio, setAudio] = useState<HeldAudio | null>(null);
+  const [soundStatus, setSoundStatus] = useState('');
+  const audioRef = useRef<HeldAudio | null>(null);
+  const audioRevisionRef = useRef(0);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const transportRef = useRef<AudioTransport | null>(null);
+  const soundTokenRef = useRef(0);
+  const soundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /** Compiles the (structurally valid) document; errors clear the preview instead of keeping stale output. */
+  /** Stops any audition sound and invalidates in-flight Play clicks. */
+  const stopSound = useCallback((status: string) => {
+    soundTokenRef.current++;
+    if (soundTimerRef.current !== null) { clearTimeout(soundTimerRef.current); soundTimerRef.current = null; }
+    transportRef.current?.stop();
+    setSoundStatus(status);
+  }, []);
+
+  /**
+   * Compiles the (structurally valid) document; errors clear the preview instead of keeping stale output.
+   * Root audio is compiled first; only a successful audio compile lets the visual compiler skip the audio edge.
+   */
   const compile = useCallback((d: EffectDocumentV2) => {
     const vp = viewportRef.current;
     setRuntimeErrors([]);
+    stopSound(transportRef.current?.status === 'playing' ? 'Sound stopped: the document changed.' : '');
+    audioRef.current = null;
+    setAudio(null);
+    const fail = (errors: Diagnostic[]) => {
+      vp?.clearPlan();
+      setCompiled(false);
+      setDiagnostics(errors);
+    };
+    let audioWarnings: Diagnostic[] = [];
+    const visualOptions: { audioHandled?: boolean } = {};
+    if (hasRootAudio(d)) {
+      const a = compileAudio(d);
+      if (!a.ok) {
+        setMode(choosePreviewMode(d).mode);
+        fail(a.errors);
+        return;
+      }
+      const held: HeldAudio = { revision: `audio-${++audioRevisionRef.current}`, mix: a.value.mix };
+      audioRef.current = held;
+      setAudio(held);
+      audioWarnings = a.warnings;
+      visualOptions.audioHandled = true;
+    }
     const choice = choosePreviewMode(d);
     setMode(choice.mode);
     if (choice.mode === 'mixed') {
-      vp?.clearPlan();
-      setCompiled(false);
-      setDiagnostics(choice.errors);
+      fail([...choice.errors, ...audioWarnings]);
       return;
     }
     if (choice.mode === 'paths') {
       // Tick 0 validates the document and style; later ticks recompile inside the viewport.
-      const first = compilePathPreview(d, 0);
+      const first = compilePathPreview(d, 0, visualOptions);
       if (!first.ok) {
-        vp?.clearPlan();
-        setCompiled(false);
-        setDiagnostics(first.errors);
+        fail([...first.errors, ...audioWarnings]);
         return;
       }
       const style = ribbonStyleDiagnostics(d, first.value.layers);
       const blocked = style.some(s => s.severity === 'error');
-      setDiagnostics([...first.warnings, ...style]);
+      setDiagnostics([...audioWarnings, ...first.warnings, ...style]);
       if (blocked) {
         vp?.clearPlan();
         setCompiled(false);
@@ -99,19 +193,77 @@ export default function PreviewV2() {
       }
       setCompiled(true);
       const snapshot = structuredClone(d); // Later edits never leak into the running source.
-      vp?.setPathSource(first.value, tick => compilePathPreview(snapshot, tick));
+      vp?.setPathSource(first.value, tick => compilePathPreview(snapshot, tick, visualOptions));
       return;
     }
-    const result = compileParticlePreview(d);
+    const result = compileParticlePreview(d, visualOptions);
     if (!result.ok) {
-      vp?.clearPlan();
-      setCompiled(false);
-      setDiagnostics(result.errors);
+      fail([...result.errors, ...audioWarnings]);
       return;
     }
-    setDiagnostics(result.warnings);
+    setDiagnostics([...audioWarnings, ...result.warnings]);
     setCompiled(true);
     vp?.setPlan(result.value); // Starts paused at tick 0.
+  }, [stopSound]);
+
+  /** User gesture only: lazily creates the AudioContext, loads the current mix and plays it from the start. */
+  const playSound = useCallback(async () => {
+    const held = audioRef.current;
+    if (!held) return;
+    const token = ++soundTokenRef.current;
+    if (soundTimerRef.current !== null) { clearTimeout(soundTimerRef.current); soundTimerRef.current = null; }
+    let transport = transportRef.current;
+    if (!transport) {
+      if (typeof AudioContext !== 'function') { setSoundStatus('Sound unavailable: this browser has no Web Audio AudioContext.'); return; }
+      try {
+        const ctx = new AudioContext();
+        audioContextRef.current = ctx;
+        transport = new AudioTransport(browserAudioContext(ctx));
+        transportRef.current = transport;
+      } catch (e) {
+        setSoundStatus(`Sound unavailable: ${e instanceof Error ? e.message : String(e)}`);
+        return;
+      }
+    }
+    try {
+      if (transport.currentRevision !== held.revision) transport.setMix(held.revision, held.mix);
+    } catch (e) {
+      setSoundStatus(`Sound rejected: ${e instanceof Error ? e.message : String(e)}`);
+      return;
+    }
+    setSoundStatus('Starting sound…');
+    const r = await transport.play(0);
+    if (!mountedRef.current || token !== soundTokenRef.current) return; // Stopped, replaced or unmounted meanwhile.
+    if (audioRef.current !== held) { transport.stop(); return; }
+    if (!r.ok) { setSoundStatus(`Sound not played: ${PLAY_FAILURES[r.reason]}`); return; }
+    setSoundStatus('Playing sound from the start.');
+    const ms = (held.mix.left.length / held.mix.sampleRate) * 1000 + 250;
+    soundTimerRef.current = setTimeout(() => {
+      soundTimerRef.current = null;
+      if (token === soundTokenRef.current) setSoundStatus('Sound finished.');
+    }, ms);
+  }, []);
+
+  /** Downloads the exact mix held for the current audio revision; never re-renders. */
+  const downloadWav = useCallback(() => {
+    const held = audioRef.current;
+    if (!held) return;
+    let bytes: Uint8Array;
+    try {
+      bytes = encodeWavPcm16Stereo(held.mix.left, held.mix.right, held.mix.sampleRate);
+    } catch (e) {
+      setSoundStatus(`WAV export failed: ${e instanceof Error ? e.message : String(e)}`);
+      return;
+    }
+    const name = `${(historyRef.current!.snapshot().name || 'effect').replace(/[^\w.-]+/g, '_')}.wav`;
+    const url = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: 'audio/wav' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
   }, []);
 
   /** Publishes the history's current document to React; the JSON text follows unless it has unapplied edits. */
@@ -206,6 +358,8 @@ export default function PreviewV2() {
     }
     // Diagnostics are still produced without WebGL; the graph canvas stays usable.
     compile(historyRef.current!.snapshot());
+    const initialTick = Number(new URLSearchParams(window.location.search).get('tick'));
+    if (Number.isInteger(initialTick) && initialTick > 0) vp?.seek(initialTick);
     return () => {
       mountedRef.current = false;
       generationRef.current++; // Invalidates in-flight file reads.
@@ -213,6 +367,17 @@ export default function PreviewV2() {
       if (viewportRef.current === vp) viewportRef.current = null;
     };
   }, [compile]);
+
+  // Audio device lifetime: nothing is created until Play sound; unmount releases the transport and context.
+  useEffect(() => () => {
+    soundTokenRef.current++;
+    if (soundTimerRef.current !== null) { clearTimeout(soundTimerRef.current); soundTimerRef.current = null; }
+    transportRef.current?.dispose();
+    transportRef.current = null;
+    const ctx = audioContextRef.current;
+    audioContextRef.current = null;
+    ctx?.close().catch(() => { /* already closed */ });
+  }, []);
 
   // Undo: Ctrl/Cmd+Z. Redo: Ctrl/Cmd+Shift+Z or Ctrl+Y. Suppressed in text inputs, textareas and contenteditable.
   useEffect(() => {
@@ -264,7 +429,7 @@ export default function PreviewV2() {
   };
 
   const resetF01 = () => { replace(toText(createF01Document()), 'Reset to F01'); };
-  const loadLightningDemo = () => { replace(toText(createLightningDemoDocument()), 'Load lightning demo'); };
+  const loadLightningDemo = () => { replace(toText(createLightningAudioDemoDocument()), 'Load lightning demo'); };
   const revertText = () => { setText(toText(doc)); setTextDirty(false); };
 
   const vp = viewportRef.current;
@@ -278,8 +443,8 @@ export default function PreviewV2() {
         <strong>V2 graph preview — {mode === 'paths' ? 'path ribbons' : mode === 'mixed' ? 'unsupported mix' : 'point particles'}</strong>
         <span className="pv2-note">
           {mode === 'paths'
-            ? 'Limited preview of graph data (camera-facing untextured ribbons). No textures, bloom or sound.'
-            : 'Limited preview of graph data (point emitters, camera quads). No textures, bloom or sound.'}
+            ? 'Limited preview of graph data (camera-facing untextured ribbons). No textures or bloom; sound is auditioned separately.'
+            : 'Limited preview of graph data (point emitters, camera quads). No textures or bloom; sound is auditioned separately.'}
         </span>
         <div className="pv2-history" role="group" aria-label="History">
           <button type="button" disabled={!historyFlags.canUndo} onClick={undo} title="Undo (Ctrl/Cmd+Z)">Undo</button>
@@ -340,6 +505,27 @@ export default function PreviewV2() {
             ) : (
               <p className="pv2-muted">No node selected. Select a node in the graph.</p>
             )}
+          </section>
+          <section className="pv2-panel pv2-sound" aria-label="Sound audition">
+            <h2 className="pv2-heading">Sound audition</h2>
+            <p className="pv2-muted">
+              Plays the document's rendered audio mix on its own, from the start. It is not synchronized with the
+              visual preview.
+            </p>
+            <div className="pv2-actions">
+              <button type="button" disabled={!audio} onClick={() => { void playSound(); }}>Play sound</button>
+              <button type="button" disabled={!audio} onClick={() => stopSound('Sound stopped.')}>Stop sound</button>
+              <button type="button" disabled={!audio} onClick={downloadWav}>Download WAV</button>
+            </div>
+            {audio ? (
+              <p className="pv2-muted">
+                Mix: {(audio.mix.left.length / audio.mix.sampleRate).toFixed(2)} s stereo, {audio.mix.sampleRate} Hz
+                {audio.mix.severeLimiting && <span className="pv2-warn"> · severe limiting (peak {audio.mix.prePeak.toFixed(2)})</span>}
+              </p>
+            ) : (
+              <p className="pv2-muted">No valid sound: the document has no root audio, or its audio does not compile (see diagnostics).</p>
+            )}
+            <p className="pv2-muted" role="status" aria-live="polite">{soundStatus}</p>
           </section>
           {editMessages.length > 0 && (
             <ul className="pv2-diags" role="alert">

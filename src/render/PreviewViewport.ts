@@ -468,7 +468,7 @@ export class PreviewViewport {
       for (; i < plan.layers.length; i++) {
         const layer = plan.layers[i];
         // Inactive (outside window) layers carry no paths and draw nothing.
-        drawn += this.#ribbons[i].ribbon.update(layer.active ? layer.paths : [], { cameraPosition, width: layer.width }).drawnPaths;
+        drawn += this.#ribbons[i].ribbon.update(layer.active ? layer.paths : [], { cameraPosition, width: layer.width, endFade: layer.endFade }).drawnPaths;
       }
     } catch (e) {
       const nodeId = plan.layers[i]?.nodeId;

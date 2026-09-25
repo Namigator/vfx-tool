@@ -10,7 +10,8 @@
 .pv2-transport { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-top: 1px solid #222834; }
 .pv2-transport input[type=range] { flex: 1; min-width: 0; min-height: 40px; }
 .pv2-readout { flex: none; font-size: 14px; font-variant-numeric: tabular-nums; color: #aab2c2; white-space: nowrap; }
-.pv2-tech { padding: 0 12px 8px; font-size: 14px; color: #8a92a3; min-width: 0; }
+.pv2-sound .pv2-muted { margin: 6px 0; font-size: 14px; }
+.pv2-tech {padding: 0 12px 8px; font-size: 14px; color: #8a92a3; min-width: 0; }
 .pv2-tech summary { line-height: 40px; cursor: pointer; }
 .pv2-tech code { overflow-wrap: anywhere; word-break: break-all; }
 .pv2 button, .pv2-file { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; min-width: 40px; font-size: 14px; background: #1c2230; color: #d6dae3; border: 1px solid #333b4a; border-radius: 4px; padding: 4px 12px; cursor: pointer; box-sizing: border-box; }
@@ -43,3 +44,15 @@
 .pv2-error { color: #ff8a8a; }
 .pv2-warn { color: #f0c36b; }
 .pv2-ok { color: #8fd694; }
+
+@media (max-width: 700px) {
+  .pv2-header { flex-wrap: wrap; align-items: center; }
+  .pv2-note { flex: 1 0 100%; order: 3; }
+  .pv2-main { flex-direction: column; overflow-y: auto; }
+  .pv2-stage { flex: none; min-height: 0; }
+  .pv2-stage.pv2-expanded { overflow-y: visible; }
+  .pv2-graph { flex: none; height: 320px; }
+  .pv2-side { width: auto; flex: none; min-height: 0; overflow: visible; border-left: 0; border-top: 1px solid #222834; }
+  .pv2-transport { flex-wrap: wrap; }
+  .pv2-transport input[type=range] { min-width: 100px; }
+}

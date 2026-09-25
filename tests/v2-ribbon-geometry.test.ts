@@ -21,7 +21,7 @@ function indices(r: RibbonGeometry, count: number): number[] {
 
 test('vertex/index counts: one quad per segment, no bevel on straight joins', () => {
   const r = new RibbonGeometry();
-  const stats = r.update([path([[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]])], { cameraPosition: cam, width: 1 });
+  const stats = r.update([path([[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]])], { cameraPosition: cam, width: 1, endFade: 0 });
   assert.equal(stats.vertexCount, 12);
   assert.equal(stats.indexCount, 18);
   assert.equal(stats.drawnPaths, 1);
@@ -29,7 +29,7 @@ test('vertex/index counts: one quad per segment, no bevel on straight joins', ()
   assert.ok(positions(r, 12).every(Number.isFinite));
   for (const i of indices(r, 18)) assert.ok(i < 12);
   // A 90° turn adds a round join: centre + 3 arc vertices, one fan triangle per π/8 (4).
-  const bent = r.update([path([[0, 0, 0], [1, 0, 0], [1, 1, 0]])], { cameraPosition: cam, width: 1 });
+  const bent = r.update([path([[0, 0, 0], [1, 0, 0], [1, 1, 0]])], { cameraPosition: cam, width: 1, endFade: 0 });
   assert.equal(bent.vertexCount, 12);
   assert.equal(bent.indexCount, 24);
   r.dispose();
@@ -95,7 +95,8 @@ test('update reuses storage within capacity and grows within budget', () => {
   assert.ok(pos.version > v0);
   const pts: Vec3[] = Array.from({ length: 9 }, (_, i): Vec3 => [i, 0, 0]);
   const stats = r.update([path(pts)], { cameraPosition: cam, width: 1 });
-  assert.equal(stats.vertexCount, 32);
+  // 8 quads + 2 collinear fade-transition splits (arc 0.96 and 7.04) = 10 quads.
+  assert.equal(stats.vertexCount, 36);
   assert.ok(r.pointCapacity >= 9 && r.pointCapacity <= 10);
   assert.throws(() => r.update([path(Array.from({ length: 11 }, (_, i): Vec3 => [i, 0, 0]))], { cameraPosition: cam, width: 1 }), RangeError);
   r.dispose();
@@ -110,10 +111,11 @@ test('degenerate input: short/zero-length paths skipped, duplicate points emit n
     path([[0, 0, 0], [1, 0, 0], [1, 0, 0], [2, 0, 0]]),
   ], { cameraPosition: cam, width: 1 });
   assert.equal(stats.drawnPaths, 1);
-  assert.equal(stats.vertexCount, 8);
+  // 2 segment quads, each split once; each split shares its two boundary vertices.
+  assert.equal(stats.vertexCount, 12);
   assert.equal(stats.skippedSegments, 1);
-  assert.equal(stats.indexCount, 12);
-  assert.ok(positions(r, 8).every(Number.isFinite));
+  assert.equal(stats.indexCount, 24);
+  assert.ok(positions(r, 12).every(Number.isFinite));
   const empty = r.update([], { cameraPosition: cam, width: 1 });
   assert.equal(empty.indexCount, 0);
   assert.equal(r.geometry.drawRange.count, 0);
@@ -158,7 +160,7 @@ test('large→small update: live-only bounds and upload ranges', () => {
 test('long duplicate runs keep neighbour tangents and stay finite', () => {
   const r = new RibbonGeometry({ maxPoints: 5002, initialPoints: 5002 });
   const pts: Vec3[] = [[0, 0, 0], ...Array.from({ length: 5000 }, (): Vec3 => [1, 0, 0]), [2, 0, 0]];
-  const stats = r.update([path(pts)], { cameraPosition: cam, width: 2 });
+  const stats = r.update([path(pts)], { cameraPosition: cam, width: 2, endFade: 0 });
   assert.equal(stats.skippedSegments, 4999);
   assert.equal(stats.indexCount, 12);
   // Second segment starts at the run end (x=1) with tangent +X, so its offset is purely Y.
@@ -284,9 +286,44 @@ test('core and glow widths stay distinct under the default taper', () => {
   const core = pairs(r, sc.vertexCount).map((p) => p.w);
   const sg = r.update([path(pts, 1)], { cameraPosition: cam, width: 1 });
   const glow = pairs(r, sg.vertexCount).map((p) => p.w);
-  assert.equal(core.length, 6);
+  // 3 segments (6 pairs) + fade-transition splits in the first and last segment.
+  assert.equal(core.length, 8);
   assert.equal(glow.length, core.length);
   core.forEach((c, i) => assert.ok(Math.abs(glow[i] / c - 1 / 0.3) < 1e-4));
+  r.dispose();
+});
+
+test('sparse two-point path with default fade reaches full interior opacity on-path', () => {
+  const r = new RibbonGeometry();
+  const pts: Vec3[] = [[0, 0, 0], [2, 0, 0]];
+  const snapshot = JSON.stringify(pts);
+  const s = r.update([path(pts, 1, 0.9)], { cameraPosition: cam, width: 1 });
+  assert.equal(JSON.stringify(pts), snapshot, 'input not mutated');
+  // Split at arc 0.24 and 1.76: 3 collinear sub-quads sharing boundary pairs, no join fans.
+  assert.equal(s.vertexCount, 8);
+  assert.equal(s.indexCount, 18);
+  const sd = Array.from((r.geometry.getAttribute('side').array as Float32Array).subarray(0, 8));
+  assert.ok(sd.every((x) => x !== 0), 'no join centre vertices on collinear splits');
+  const p = pairs(r, s.vertexCount);
+  assert.equal(p[0].op, 0);
+  assert.equal(p[p.length - 1].op, 0);
+  assert.ok(Math.max(...p.map((q) => q.op)) > 0.89, 'interior reaches full opacity');
+  // Exact start/end preserved; taper deterministic.
+  const first = vertex(r, 0), last = vertex(r, 6);
+  assert.ok(Math.abs(first[0]) < 1e-6 && Math.abs(last[0] - 2) < 1e-6);
+  const before = positions(r, 8);
+  r.update([path(pts, 1, 0.9)], { cameraPosition: cam, width: 1 });
+  assert.deepEqual(positions(r, 8), before);
+  assertNoOffPathTriangles(r, pts, 0.5, s.indexCount);
+  // endFade 0: a single full-opacity quad.
+  const z = r.update([path(pts, 1, 0.9)], { cameraPosition: cam, width: 1, endFade: 0 });
+  assert.equal(z.vertexCount, 4);
+  const op = Array.from((r.geometry.getAttribute('opacity').array as Float32Array).subarray(0, 4));
+  assert.ok(op.every((o) => Math.abs(o - 0.9) < 1e-6));
+  // endFade 0.5: both transitions coincide at the midpoint, one split.
+  const h = r.update([path(pts)], { cameraPosition: cam, width: 1, endFade: 0.5 });
+  assert.equal(h.vertexCount, 6);
+  assert.ok(Math.max(...pairs(r, 6).map((q) => q.op)) === 1);
   r.dispose();
 });
 

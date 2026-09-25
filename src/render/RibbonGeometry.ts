@@ -235,20 +235,43 @@ export class RibbonGeometry {
         // Each segment is its own quad offset by its own perpendicular side, so no vertex ever lies
         // farther than the local half-width from the path: short zigzags and reversals cannot fold
         // the strip into off-path shards (a shared-vertex miter strip can).
-        const f0 = fadeAt(arc);
+        // Sparse paths: split the segment at the fade transitions (arc = fadeLength and
+        // totalLength - fadeLength) so the interior reaches full width/opacity. Without this a
+        // two-point path has opacity 0 at both vertices and the whole quad interpolates to invisible.
+        // Sub-quads share this segment's side and emit no joins (they are collinear). The extra
+        // vertices (<= 8 per path) fit the per-point budget since every drawn path has >= 2 points.
+        const arc0 = arc;
         arc += len;
-        const f1 = fadeAt(arc);
+        const cuts: number[] = [];
+        if (fadeLength > EPSILON) {
+          for (const c of [fadeLength, totalLength - fadeLength]) {
+            if (c > arc0 + EPSILON && c < arc - EPSILON && (cuts.length === 0 || Math.abs(c - cuts[0]) > EPSILON)) cuts.push(c);
+          }
+        }
+        cuts.push(arc);
+        const f0 = fadeAt(arc0);
         const w0 = half * (endWidth + (1 - endWidth) * f0);
-        const w1 = half * (endWidth + (1 - endWidth) * f1);
         const o0 = path.opacityScale * f0;
-        const o1 = path.opacityScale * f1;
         const l0 = put(a, side, w0, 1, o0);
-        const r0 = put(a, side, w0, -1, o0);
-        const l1 = put(b, side, w1, 1, o1);
-        const r1 = put(b, side, w1, -1, o1);
-        idx[n] = l0; idx[n + 1] = r0; idx[n + 2] = l1;
-        idx[n + 3] = r0; idx[n + 4] = r1; idx[n + 5] = l1;
-        n += 6;
+        let lPrev = l0;
+        let rPrev = put(a, side, w0, -1, o0);
+        let l1 = l0;
+        for (let k = 0; k < cuts.length; k += 1) {
+          const last = k === cuts.length - 1;
+          const s = (cuts[k] - arc0) / len;
+          // Exact endpoint for the final sub-quad; interpolated arc-length samples otherwise.
+          const q: Vec3 = last ? b : [a[0] + (b[0] - a[0]) * s, a[1] + (b[1] - a[1]) * s, a[2] + (b[2] - a[2]) * s];
+          const f1 = fadeAt(last ? arc : cuts[k]);
+          const w1 = half * (endWidth + (1 - endWidth) * f1);
+          const o1 = path.opacityScale * f1;
+          l1 = put(q, side, w1, 1, o1);
+          const r1 = put(q, side, w1, -1, o1);
+          idx[n] = lPrev; idx[n + 1] = rPrev; idx[n + 2] = l1;
+          idx[n + 3] = rPrev; idx[n + 4] = r1; idx[n + 5] = l1;
+          n += 6;
+          lPrev = l1;
+          rPrev = r1;
+        }
 
         // Round join: fan the outer-corner gap from the join point. The outer sense is resolved per
         // segment (the continuity flip above can swap L/R on turns past 90°, so one shared index

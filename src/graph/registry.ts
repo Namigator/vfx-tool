@@ -9,7 +9,7 @@
 //   dissolve, rim, softIntersection, faceMode, depthTest and distortion are not registered yet.
 // - BillboardRenderer: size multiplier, envelope and world-axis vector are not registered yet; worldAxis is not renderable in this slice.
 // - Group/GroupInput/GroupOutput ports are per-instance (interface-derived), so none are static here.
-// - Path nodes: HelixPath, RadialPath, PathFollower, PathTransform and ParticlePaths are not registered yet;
+// - Path nodes: HelixPath, PathFollower, PathTransform and ParticlePaths are not registered yet;
 //   RibbonRenderer envelope is not registered yet (same as BillboardRenderer).
 // - Capability identifiers are empty: the vocabulary is defined with the renderer.
 import type { EvaluationDomain, NodeSpec, ParameterSpec, PortSpec } from '../model/types.ts';
@@ -245,6 +245,29 @@ function revealPath(): NodeSpec {
   });
 }
 
+// Bounds mirror runtime/radial.ts (24 "Path features required by the presets"). The catalog states the
+// cone angle in degrees (default 30°, [0,180°]); no degree unit exists, so it is stored in radians.
+function radialPath(): NodeSpec {
+  const len = (id: string, label: string, def: number) =>
+    param({ id, label, type: 'number', unit: 'meter', default: def, min: 0.001, max: 50 });
+  return node('RadialPath', {
+    inputs: [
+      port({ id: 'center', label: 'Center', type: 'anchor', required: true }),
+      port({ id: 'window', label: 'Window', type: 'timeWindow' }),
+    ],
+    outputs: [pathsOut()],
+    parameters: [
+      param({ id: 'mode', label: 'Mode', type: 'enum', unit: 'none', default: 'sphere', choices: ['sphere', 'disc', 'cone'], description: 'Sphere/cone pole is local +Y; disc lies in local XZ.' }),
+      param({ id: 'count', label: 'Count', type: 'integer', unit: 'none', default: 32, min: 1, max: 128, step: 1 }),
+      len('lengthMin', 'Length min', 0.6),
+      len('lengthMax', 'Length max', 2.4),
+      param({ id: 'coneAngle', label: 'Cone angle', type: 'number', unit: 'radian', default: Math.PI / 6, min: 0, max: Math.PI, description: 'Half-angle from the axis. Cone mode only.' }),
+      param({ id: 'orientation', label: 'Orientation', type: 'quaternion', unit: 'none', default: [0, 0, 0, 1], description: 'Rotates the local distribution frame (xyzw).' }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
 function ribbonRenderer(): NodeSpec {
   return node('RibbonRenderer', {
     inputs: [
@@ -261,6 +284,10 @@ function ribbonRenderer(): NodeSpec {
         default: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] },
         min: 0, max: 1, editPolicy: 'live', description: 'Width multiplier over path arc fraction.',
       }),
+      param({
+        id: 'endFade', label: 'End fade', type: 'number', unit: 'normalized', default: 0.12, min: 0, max: 0.5, editPolicy: 'live',
+        description: 'Fraction of each path length over which both ends taper and fade out; 0 keeps full width to the ends.',
+      }),
       param({ id: 'uvMode', label: 'UV mode', type: 'enum', unit: 'none', default: 'stretch', choices: ['stretch', 'tile'], editPolicy: 'live' }),
       param({ id: 'uvTileLength', label: 'UV tile length', type: 'number', unit: 'meter', default: 1, min: 0.01, max: 100, editPolicy: 'live', description: 'Tile mode only.' }),
       param({ id: 'orientation', label: 'Orientation', type: 'enum', unit: 'none', default: 'camera', choices: ['camera', 'parallelTransport'], editPolicy: 'live' }),
@@ -274,8 +301,8 @@ function ribbonRenderer(): NodeSpec {
 // pure audio core (audio/synthesis.ts, audio/mix.ts) without importing it. Deliberately omitted until
 // specified: AudioEnvelope (attack/hold/release curves have no units, bounds or curve shape), the Sample
 // source (trim/loop bounds and asset parameter), oscillator frequency curve, noise band emphasis,
-// AudioFilter (cutoff curve schema undecided) and AudioMix (per-input gain/pan cannot live on
-// EdgeDefinition). Noise seeding uses node.randomStreamId, not a parameter.
+// AudioFilter (cutoff curve schema undecided). AudioMix per-input gain/pan live on EdgeDefinition.mix
+// (WP04-AUDIO-MIX-CONTRACT). Noise seeding uses node.randomStreamId, not a parameter.
 const AUDIO_MAX_OFFSET_TICKS = 36000;
 const AUDIO_MAX_DURATION_TICKS = 600;
 const AUDIO_MIN_SYNTH_HZ = 20;
@@ -322,6 +349,19 @@ function audioOutput(): NodeSpec {
   });
 }
 
+// Per-input gain/pan are stored on incoming edges (edge.mix), not as parameters. Disabled contributes
+// nothing; bypass would be ambiguous with many inputs (WP04-AUDIO-MIX-CONTRACT §3).
+function audioMix(): NodeSpec {
+  return node('AudioMix', {
+    inputs: [port({ id: 'inputs', label: 'Inputs', type: 'audio', cardinality: 'many' })],
+    outputs: [audioOut()],
+    parameters: [
+      param({ id: 'masterGain', label: 'Master gain', type: 'number', unit: 'linearGain', default: 1, min: 0, max: 1, step: 0.01, editPolicy: 'live' }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
 function effectOutput(): NodeSpec {
   return node('EffectOutput', {
     inputs: [
@@ -359,8 +399,8 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
     anchor(), schedule(), emitter(), initialProperties(), material(), billboardRenderer(),
-    linePath(), bezierPath(), jaggedPath(), branchPath(), revealPath(), ribbonRenderer(),
-    audioSource(), audioOutput(),
+    linePath(), bezierPath(), jaggedPath(), branchPath(), revealPath(), radialPath(), ribbonRenderer(),
+    audioSource(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),
   ];
   return new Map(specs.map(s => [`${s.type}@${s.definitionVersion}`, s]));

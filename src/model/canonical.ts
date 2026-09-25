@@ -2,7 +2,7 @@
 // WP01-REPRESENTATION-DECISIONS.md). Excludes editor layout, sorts object keys, unordered
 // definitions by ID and root tags by code unit; preserves all other arrays. Edges sort by order
 // then edge ID. Invalid input throws CanonicalError; nothing is dropped, coerced or mutated.
-import { MAX_JSON_DEPTH, type EdgeDefinition, type EffectDocumentV2, type GraphDefinition } from './types.ts';
+import { DEFAULT_EDGE_MIX, MAX_JSON_DEPTH, type EdgeDefinition, type EffectDocumentV2, type GraphDefinition } from './types.ts';
 
 const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 const MAX_PATH_IN_MESSAGE = 200;
@@ -28,6 +28,18 @@ const codeUnitCompare = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const byId = <T extends { id: string }>(a: T, b: T) => codeUnitCompare(a.id, b.id);
 const byEdgeOrder = (a: EdgeDefinition, b: EdgeDefinition) => a.order - b.order || byId(a, b);
 
+/** Exactly {gain:1, pan:0} (pan -0 included); any other shape or value is kept as authored. */
+const isDefaultMix = (m: unknown) =>
+  isRecord(m) && Object.keys(m).length === 2 &&
+  m.gain === DEFAULT_EDGE_MIX.gain && m.pan === DEFAULT_EDGE_MIX.pan;
+
+/** Absent and default mix serialize identically (WP04-AUDIO-MIX-CONTRACT.md §4). Returns a copy; never mutates. */
+function withoutDefaultMix(e: EdgeDefinition): EdgeDefinition {
+  if (!Object.prototype.hasOwnProperty.call(e, 'mix') || !isDefaultMix(e.mix)) return e;
+  const { mix: _mix, ...rest } = e;
+  return rest;
+}
+
 /**
  * Semantic projection: no editor layout, unordered lists sorted. Private; precondition is that the
  * input passed canonicalJson and checkProjectionShape. Duplicate IDs and whole-document shape are
@@ -38,7 +50,7 @@ function semanticProjection(doc: EffectDocumentV2): Omit<EffectDocumentV2, 'edit
   const graph = (g: GraphDefinition): GraphDefinition => ({
     ...g,
     nodes: [...g.nodes].sort(byId),
-    edges: [...g.edges].sort(byEdgeOrder),
+    edges: g.edges.map(withoutDefaultMix).sort(byEdgeOrder),
   });
   return {
     ...rest,
