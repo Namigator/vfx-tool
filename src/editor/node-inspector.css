@@ -1,0 +1,29 @@
+/* Node parameter inspector (NodeInspector.tsx). Controls use 14px text and at least 40px targets. */
+.ni { display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+.ni-params { display: flex; flex-direction: column; gap: 12px; }
+.ni-field, .ni-row { display: flex; flex-direction: column; gap: 4px; }
+.ni-head { display: flex; align-items: center; gap: 8px; min-height: 24px; }
+.ni-name { font-weight: 600; }
+.ni-unit { color: #9aa3b2; font-size: 13px; }
+.ni-input, .ni-reset, .ni-swatch {
+  font-size: 14px; min-height: 40px; box-sizing: border-box;
+  background: #1b1f27; color: #e6e9ef; border: 1px solid #3a4150; border-radius: 4px; padding: 0 10px;
+}
+.ni-input:disabled, .ni-box:disabled, .ni-swatch:disabled { opacity: 0.55; cursor: not-allowed; }
+.ni-input[aria-invalid='true'] { border-color: #e06c75; }
+.ni-num { width: 100%; font-variant-numeric: tabular-nums; }
+.ni-reset { margin-left: auto; min-width: 64px; cursor: pointer; }
+.ni-check { display: flex; align-items: center; gap: 8px; min-height: 40px; cursor: pointer; }
+.ni-box, .ni-check input { width: 22px; height: 22px; margin: 9px 0; }
+.ni-vec { display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 6px; }
+.ni-color { display: flex; align-items: center; gap: 8px; }
+.ni-swatch { width: 56px; padding: 2px; cursor: pointer; }
+.ni-hex { min-width: 72px; }
+.ni-alpha-label { color: #9aa3b2; }
+.ni-color .ni-num { width: 80px; }
+.ni-help { margin: 0; color: #9aa3b2; font-size: 13px; }
+.ni-driven { color: #e5c07b; font-weight: 600; }
+.ni-muted { margin: 0; color: #9aa3b2; }
+.ni-error { margin: 0; color: #e06c75; }
+.ni-unsupported { color: #e5c07b; font-style: italic; }
+.ni :focus-visible { outline: 2px solid #61afef; outline-offset: 2px; }

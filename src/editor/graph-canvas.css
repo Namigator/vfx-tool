@@ -1,0 +1,41 @@
+.gc-root { position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; background: #15171c; color: #e6e8ee; font: 12px/1.35 system-ui, sans-serif; }
+.gc-missing { display: grid; place-items: center; }
+.gc-flow { position: relative; flex: 1 1 auto; min-height: 0; }
+
+.gc-toolbar { flex: none; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px; background: #20242c; border-bottom: 1px solid #343a46; }
+.gc-toolbar button, .gc-toolbar select, .gc-notice button { font: inherit; color: inherit; background: #2c3240; border: 1px solid #465064; border-radius: 4px; padding: 3px 8px; }
+.gc-toolbar button:disabled { opacity: 0.45; }
+.gc-toolbar :is(button, select):focus-visible, .gc-notice button:focus-visible, .gc-enabled input:focus-visible { outline: 2px solid #6aa8ff; outline-offset: 1px; }
+.gc-add { display: inline-flex; gap: 4px; align-items: center; }
+.gc-hint { color: #8b93a5; }
+
+.gc-notice { max-width: 520px; display: flex; gap: 8px; align-items: flex-start; padding: 8px; border-radius: 6px; background: #20242c; border: 1px solid #465064; }
+.gc-notice-error { border-color: #d0574f; background: #2e1d1f; }
+
+.gc-card { min-width: 200px; background: #232833; border: 1px solid #3b4352; border-radius: 6px; box-shadow: 0 1px 3px #0006; }
+.gc-card.gc-selected { border-color: #6aa8ff; box-shadow: 0 0 0 2px #6aa8ff66; }
+.gc-card.gc-disabled { opacity: 0.55; }
+.react-flow__node:focus-visible .gc-card { outline: 2px solid #6aa8ff; }
+.gc-card-head { display: flex; gap: 6px; align-items: center; padding: 5px 8px; border-bottom: 1px solid #3b4352; }
+.gc-title { font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gc-type { color: #8b93a5; }
+.gc-ports { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; }
+.gc-col { display: flex; flex-direction: column; gap: 2px; }
+.gc-port { position: relative; display: flex; gap: 4px; padding: 1px 10px; white-space: nowrap; }
+.gc-port-out { justify-content: flex-end; }
+.gc-port-type { color: #6f7789; font-size: 10px; }
+.gc-handle { width: 9px; height: 9px; background: #8b93a5; border: 1px solid #15171c; }
+.gc-type-particles { background: #e8a33d; }
+.gc-type-material { background: #b77ae6; }
+.gc-type-visual { background: #4fc28a; }
+.gc-type-event, .gc-type-timeWindow { background: #e5d04a; }
+.gc-type-anchor, .gc-type-paths { background: #4fb3e6; }
+.gc-advanced { display: block; margin: 0 8px 4px; font: inherit; font-size: 10px; color: #aab2c3; background: none; border: 1px dashed #465064; border-radius: 4px; padding: 0 6px; cursor: pointer; }
+.gc-advanced:focus-visible { outline: 2px solid #6aa8ff; outline-offset: 1px; }
+.gc-issue { padding: 6px 8px; color: #f0a19b; }
+.gc-status { display: flex; gap: 4px; padding: 0 8px 5px; min-height: 4px; }
+.gc-badge { font-size: 10px; padding: 0 5px; border-radius: 8px; background: #343a46; color: #aab2c3; }
+.gc-badge-warn { background: #5a2f2b; color: #f0a19b; }
+
+.react-flow__edge.selected .react-flow__edge-path { stroke: #6aa8ff; stroke-width: 2.5; }
+
