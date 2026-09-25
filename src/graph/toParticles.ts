@@ -253,8 +253,8 @@ export function compileParticlePreview(input: unknown): ValidationResult<Particl
   for (const c of into(outputId, 'visual')) {
     try {
       const b = sourceNode(c.source, outputId, 'visual');
-      if (b.node.type !== 'BillboardRenderer') fail('UNKNOWN_NODE', `Visual source "${b.node.id}" (${b.node.type}) is not supported by the point preview.`, b.node.id);
       if (done.has(b.node.id) || !b.effectiveEnabled) continue; // Disabled sink contributes nothing.
+      if (b.node.type !== 'BillboardRenderer') fail('UNKNOWN_NODE', `Visual source "${b.node.id}" (${b.node.type}) is not supported by the point preview.`, b.node.id);
       done.add(b.node.id);
       const bid = b.node.id;
       noDrivenParams(b, BILLBOARD_PORTS);

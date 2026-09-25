@@ -18,7 +18,11 @@
 .pv2 button:focus-visible, .pv2 summary:focus-visible { outline: 2px solid #7fb4ff; outline-offset: 2px; }
 .pv2-file-input { display: none; }
 .pv2-history { display: flex; gap: 6px; }
-.pv2-stage > .pv2-host { flex: 5 1 0; min-height: 160px; }
+/* Default keeps a usable preview (>=40vh); expanded makes the map ~75vh and lets the stage scroll to the graph. */
+.pv2-stage > .pv2-host { flex: 0 0 auto; height: max(40vh, 240px); }
+.pv2-stage.pv2-expanded { overflow-y: auto; }
+.pv2-stage.pv2-expanded > .pv2-host { height: max(75vh, 360px); }
+.pv2-stage.pv2-expanded > .pv2-graph { flex: 0 0 auto; height: max(40vh, 220px); }
 /* Graph wrapper includes its toolbar, so it gets slightly more than the preview for roughly equal usable area. */
 .pv2-graph { flex: 6 1 0; min-height: 220px; position: relative; border-top: 1px solid #222834; }
 .pv2-side { width: 420px; display: flex; flex-direction: column; gap: 8px; padding: 8px; border-left: 1px solid #222834; min-height: 0; overflow: auto; }

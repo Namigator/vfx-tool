@@ -1,0 +1,98 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import type { EffectDocumentV2, NodeDefinition } from '../src/model/types.ts';
+import { createF01Document, createL01Document } from '../src/graph/fixtures.ts';
+import { compilePathPreview } from '../src/graph/toPaths.ts';
+import { compileParticlePreview } from '../src/graph/toParticles.ts';
+import { choosePreviewMode, createLightningDemoDocument, ribbonStyleDiagnostics } from '../src/render/previewMode.ts';
+import { RibbonGeometry } from '../src/render/RibbonGeometry.ts';
+
+const find = (d: EffectDocumentV2, id: string) => d.graphs[0].nodes.find(n => n.id === id) as NodeDefinition;
+
+test('F01 stays in point mode and still compiles', () => {
+  const d = createF01Document();
+  assert.deepEqual(choosePreviewMode(d), { mode: 'points' });
+  assert.equal(compileParticlePreview(d).ok, true);
+});
+
+test('lightning demo is the shared L01 fixture, not a duplicate construction', () => {
+  const d = createLightningDemoDocument();
+  assert.deepEqual(d, createL01Document());
+  assert.equal(d.id, 'doc-l01');
+  assert.notEqual(createLightningDemoDocument(), createLightningDemoDocument(), 'fresh editable copy each call');
+});
+
+test('lightning demo chooses path mode and renders seven visible ribbon layers from the node graph', () => {
+  const d = createLightningDemoDocument();
+  assert.deepEqual(choosePreviewMode(d), { mode: 'paths' });
+  const r = compilePathPreview(d, 0);
+  if (!r.ok) assert.fail(JSON.stringify(r.errors));
+  assert.deepEqual(r.value.layers.map(l => l.nodeId), ['node-rib-halo', 'node-rib-outer', 'node-rib-branch-glow', 'node-rib-inner', 'node-rib-fork', 'node-rib-branch-core', 'node-rib-core']);
+  assert.deepEqual(ribbonStyleDiagnostics(d, r.value.layers), []);
+  const g = new RibbonGeometry();
+  for (const l of r.value.layers) {
+    assert.equal(l.active, true);
+    const s = g.update(l.paths, { cameraPosition: [4, 3, 2], width: l.width });
+    assert.ok(s.indexCount > 0, `${l.nodeId} draws triangles`);
+    assert.ok(s.drawnPaths >= 1, `${l.nodeId} draws at least one path`);
+  }
+  g.dispose();
+});
+
+test('path compile is deterministic per tick, so scrubbing needs no replay', () => {
+  const d = createLightningDemoDocument();
+  const a = compilePathPreview(d, 37), b = compilePathPreview(d, 37);
+  assert.deepEqual(a, b);
+});
+
+test('mixed billboard + ribbon documents get an addressed diagnostic instead of dropping a layer', () => {
+  const d = createLightningDemoDocument();
+  const f01 = createF01Document().graphs[0];
+  const g = d.graphs[0];
+  for (const id of ['node-schedule', 'node-emitter', 'node-initial', 'node-material', 'node-billboard']) g.nodes.push(structuredClone(f01.nodes.find(n => n.id === id)!));
+  for (const e of f01.edges) g.edges.push({ ...structuredClone(e), id: `f01-${e.id}`, order: e.target.port === 'visual' ? 3 : e.order });
+  const choice = choosePreviewMode(d);
+  assert.equal(choice.mode, 'mixed');
+  if (choice.mode !== 'mixed') return;
+  assert.equal(choice.errors[0].severity, 'error');
+  assert.equal(choice.errors[0].nodeId, 'node-billboard');
+  assert.match(choice.errors[0].fieldPath ?? '', /^graphs\[0\]\.nodes\[\d+\]$/);
+  assert.match(choice.errors[0].message, /node-rib-halo/);
+
+  find(d, 'node-billboard').enabled = false;
+  assert.deepEqual(choosePreviewMode(d), { mode: 'paths' });
+
+  find(d, 'node-billboard').enabled = true;
+  for (const n of d.graphs[0].nodes) if (n.type === 'RibbonRenderer') n.enabled = false;
+  assert.deepEqual(choosePreviewMode(d), { mode: 'points' });
+  assert.equal(compileParticlePreview(d).ok, true);
+});
+
+test('unsupported ribbon style values are surfaced, never ignored', () => {
+  const d = createLightningDemoDocument();
+  const rib = find(d, 'node-rib-core');
+  rib.params.widthOverPath = { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 0 }] };
+  rib.params.orientation = 'parallelTransport';
+  rib.params.uvMode = 'tile';
+  const r = compilePathPreview(d, 0);
+  if (!r.ok) assert.fail(JSON.stringify(r.errors));
+  const diags = ribbonStyleDiagnostics(d, r.value.layers);
+  const idx = d.graphs[0].nodes.indexOf(rib);
+  assert.deepEqual(diags.map(x => [x.severity, x.nodeId, x.fieldPath]), [
+    ['error', 'node-rib-core', `graphs[0].nodes[${idx}].params.widthOverPath`],
+    ['error', 'node-rib-core', `graphs[0].nodes[${idx}].params.orientation`],
+    ['warning', 'node-rib-core', `graphs[0].nodes[${idx}].params.uvMode`],
+  ]);
+});
+
+test('inactive window layers carry no paths and draw nothing', () => {
+  const d = createLightningDemoDocument();
+  const r = compilePathPreview(d, d.durationTicks);
+  if (!r.ok) assert.fail(JSON.stringify(r.errors));
+  const g = new RibbonGeometry();
+  for (const l of r.value.layers) {
+    assert.equal(l.active, false);
+    assert.equal(g.update(l.active ? l.paths : [], { cameraPosition: [0, 0, 5], width: l.width }).indexCount, 0);
+  }
+  g.dispose();
+});

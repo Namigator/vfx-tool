@@ -6,10 +6,25 @@
 // takes a fresh ParticleSimulation snapshot (new particle state objects). No bloom, textures or sound.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import type { Diagnostic } from '../model/types.ts';
+//
+// Path mode (setPathSource): a document with RibbonRenderer sinks is recompiled per tick by the caller's
+// compile function (pure, deterministic per tick, so scrubbing needs no replay). Each layer owns one
+// RibbonGeometry + mesh, created once per source from the tick-0 plan and rebuilt only when the layer
+// set changes; billboard sides are recomputed when the camera moves.
+import type { Diagnostic, ValidationResult, Vec3 } from '../model/types.ts';
 import type { ParticlePreviewLayer, ParticlePreviewPlan } from '../graph/toParticles.ts';
+import { MAX_PREVIEW_POINTS, type PathPreviewLayer, type PathPreviewPlan } from '../graph/toPaths.ts';
 import { DEFAULT_MAX_LIVE_PARTICLES, PARTICLE_DT, ParticleSimulation, type ParticleState } from '../runtime/particles.ts';
 import { PlaybackClock } from '../runtime/clock.ts';
+import { framePoints, RibbonGeometry, ribbonSoftness, type FramePointSet } from './RibbonGeometry.ts';
+import { pathViewDirection } from './pathView.ts';
+
+/** Fraction of the preview half-extent path framing fills (leaves a margin, never clips). */
+const PATH_FRAME_FILL = 0.85;
+/** Point-mode camera pose; restored when a point plan follows path framing. */
+const DEFAULT_CAMERA: Vec3 = [2.2, 1.6, 3.2];
+const DEFAULT_TARGET: Vec3 = [0, 0.5, 0];
+const DEFAULT_NEAR = 0.01, DEFAULT_FAR = 200;
 
 export const PREVIEW_POOL_SIZE = DEFAULT_MAX_LIVE_PARTICLES;
 /** Largest wall-clock step fed to the clock per frame (tab switches must not jump the preview). */
@@ -21,7 +36,9 @@ export type PreviewFrameInfo = {
   playing: boolean;
   /** Paused because the tab was hidden; resumes only on explicit play. */
   suspended: boolean;
+  /** Live particles (point mode) or drawn ribbon paths (path mode). */
   live: number;
+  mode: 'points' | 'paths' | 'none';
   /** First live particle of the first system, namespaced `${systemId}/${particleId}`; '' if none. */
   sampleParticleId: string;
 };
@@ -66,7 +83,70 @@ void main() {
   #include <colorspace_fragment>
 }`;
 
+const RIBBON_VERTEX = /* glsl */ `
+attribute float opacity;
+attribute float side;
+varying float vOpacity;
+varying float vSide;
+void main() {
+  vOpacity = opacity;
+  vSide = side;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}`;
+
+const RIBBON_FRAGMENT = /* glsl */ `
+uniform vec3 uColor;
+uniform float uAlpha;
+uniform float uEmission;
+uniform float uCutoff;
+uniform float uCutout;
+uniform float uSoftness;
+varying float vOpacity;
+varying float vSide;
+void main() {
+  // Transverse falloff: full on the centreline, fading to 0 at the strip edge over the outer
+  // uSoftness fraction (1 = whole half-width, soft glow; 0 = hard edge).
+  float s = abs(vSide);
+  float edge = uSoftness > 0.0 ? 1.0 - smoothstep(1.0 - uSoftness, 1.0, s) : 1.0;
+  float a = uAlpha * vOpacity * edge;
+  if (uCutout > 0.5) { if (a < uCutoff) discard; a = 1.0; }
+  else if (a <= 0.0) discard;
+  gl_FragColor = vec4(uColor * (1.0 + uEmission), a);
+  #include <colorspace_fragment>
+}`;
+
 type LayerMesh = { layer: ParticlePreviewLayer; mesh: THREE.InstancedMesh; material: THREE.ShaderMaterial };
+type RibbonMesh = { nodeId: string; ribbon: RibbonGeometry; mesh: THREE.Mesh; material: THREE.ShaderMaterial };
+
+/** Per-tick path compile supplied by the caller (e.g. `t => compilePathPreview(doc, t)`). */
+export type PathCompile = (tick: number) => ValidationResult<PathPreviewPlan>;
+
+/** Blend/colour/opacity/emission uniforms and state shared by point and ribbon materials. */
+function materialFor(
+  vertexShader: string, fragmentShader: string,
+  m: { color: { srgb: string; alpha: number }; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout'; alphaCutoff: number },
+): THREE.ShaderMaterial {
+  const cutout = m.blend === 'cutout';
+  return new THREE.ShaderMaterial({
+    vertexShader,
+    fragmentShader,
+    uniforms: {
+      uColor: { value: new THREE.Color().setStyle(m.color.srgb) }, // sRGB → linear working space.
+      uAlpha: { value: m.color.alpha * m.opacity },
+      uEmission: { value: m.emission },
+      uCutoff: { value: m.alphaCutoff },
+      uCutout: { value: cutout ? 1 : 0 },
+    },
+    transparent: !cutout,
+    depthWrite: cutout,
+    blending: m.blend === 'additive' ? THREE.AdditiveBlending : THREE.NormalBlending,
+  });
+}
+
+/** Layer set identity: meshes are rebuilt only when these change between ticks. */
+function ribbonKey(layers: readonly PathPreviewLayer[]): string {
+  return JSON.stringify(layers.map(l => [l.nodeId, l.color, l.opacity, l.emission, l.blend, l.alphaCutoff, l.renderOrderOffset]));
+}
 
 export class PreviewViewport {
   readonly #container: HTMLElement;
@@ -83,6 +163,18 @@ export class PreviewViewport {
   #sims = new Map<string, ParticleSimulation>();
   #snapshots = new Map<string, ParticleState[]>();
   #layers: LayerMesh[] = [];
+  #pathCompile: PathCompile | null = null;
+  #pathPlan: PathPreviewPlan | null = null;
+  #ribbons: RibbonMesh[] = [];
+  #ribbonKey = '';
+  #ribbonCamera = new THREE.Vector3(Number.NaN, 0, 0);
+  #drawnPaths = 0;
+  /** Tick-0 path points framed on entering path mode; refit on resize until cleared. */
+  #frameSets: FramePointSet[] | null = null;
+  /** Set once the user orbits/zooms; path sources then keep the user's direction. */
+  #userOrbited = false;
+  /** Camera was moved by path framing; point plans restore the default pose. */
+  #pathCamera = false;
   #clock: PlaybackClock | null = null;
   #raf = 0;
   #lastTime = -1;
@@ -112,11 +204,13 @@ export class PreviewViewport {
       renderer.domElement.className = 'pv2-canvas';
       container.appendChild(renderer.domElement);
 
-      this.#camera.position.set(2.2, 1.6, 3.2);
+      this.#camera.position.set(...DEFAULT_CAMERA);
       controls = new OrbitControls(this.#camera, renderer.domElement);
-      controls.target.set(0, 0.5, 0);
+      controls.target.set(...DEFAULT_TARGET);
       controls.enableDamping = true;
       controls.update();
+      // Once the user orbits/zooms, resizes stop refitting the path frame.
+      controls.addEventListener('start', () => { this.#frameSets = null; this.#userOrbited = true; });
 
       grid = new THREE.GridHelper(10, 20, 0x3a4150, 0x1d222c);
       this.#scene.add(grid);
@@ -165,27 +259,13 @@ export class PreviewViewport {
   setPlan(plan: ParticlePreviewPlan): void {
     if (this.#disposed) return;
     this.#clearLayers();
+    if (this.#pathCamera) this.#resetCamera(); // Point preview never inherits the path framing.
     this.#plan = plan;
     this.#clock = new PlaybackClock({ durationTicks: plan.durationTicks });
     this.#failed = false;
     this.#suspended = false;
     plan.layers.forEach((layer, i) => {
-      const color = new THREE.Color().setStyle(layer.color.srgb); // sRGB → linear working space.
-      const cutout = layer.blend === 'cutout';
-      const material = new THREE.ShaderMaterial({
-        vertexShader: VERTEX,
-        fragmentShader: FRAGMENT,
-        uniforms: {
-          uColor: { value: color },
-          uAlpha: { value: layer.color.alpha * layer.opacity },
-          uEmission: { value: layer.emission },
-          uCutoff: { value: layer.alphaCutoff },
-          uCutout: { value: cutout ? 1 : 0 },
-        },
-        transparent: !cutout,
-        depthWrite: cutout,
-        blending: layer.blend === 'additive' ? THREE.AdditiveBlending : THREE.NormalBlending,
-      });
+      const material = materialFor(VERTEX, FRAGMENT, layer);
       const mesh = new THREE.InstancedMesh(this.#quad, material, PREVIEW_POOL_SIZE);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       mesh.count = 0;
@@ -197,11 +277,69 @@ export class PreviewViewport {
     this.#replayTo(0);
   }
 
+  /**
+   * Path mode: `plan` is the caller's already-validated tick-0 compile; `compile` produces later ticks.
+   * Starts paused at tick 0. Replaces any point plan.
+   */
+  setPathSource(plan: PathPreviewPlan, compile: PathCompile): void {
+    if (this.#disposed) return;
+    this.#clearLayers();
+    this.#plan = null;
+    this.#pathCompile = compile;
+    this.#clock = new PlaybackClock({ durationTicks: plan.durationTicks });
+    this.#failed = false;
+    this.#suspended = false;
+    const sets: FramePointSet[] = [];
+    for (const layer of plan.layers) if (layer.active) {
+      for (const p of layer.paths) if (p.points.length) sets.push({ points: p.points, pad: (layer.width * p.widthScale) / 2 });
+    }
+    this.#frameSets = sets.length ? sets : null;
+    // Broadside initial view until the user orbits; later edits keep their orbit direction.
+    if (sets.length && !this.#userOrbited) {
+      const cam = this.#camera, target = this.#controls.target;
+      const d = pathViewDirection(sets.map(s => s.points));
+      cam.position.set(target.x + d[0], target.y + d[1], target.z + d[2]);
+    }
+    this.#framePaths();
+    this.#applyPathPlan(plan);
+    this.#emitFrame(true);
+  }
+
+  /** Restores the point-mode camera pose, clip planes and orbit target. */
+  #resetCamera(): void {
+    this.#camera.position.set(...DEFAULT_CAMERA);
+    this.#controls.target.set(...DEFAULT_TARGET);
+    this.#camera.near = DEFAULT_NEAR;
+    this.#camera.far = DEFAULT_FAR;
+    this.#camera.updateProjectionMatrix();
+    this.#controls.update();
+    this.#pathCamera = false;
+    this.#userOrbited = false;
+  }
+
+  /** Fits the tick-0 path points into the view, keeping the current orbit direction. */
+  #framePaths(): void {
+    const sets = this.#frameSets;
+    if (!sets) return;
+    const cam = this.#camera, target = this.#controls.target;
+    const dir = cam.position.clone().sub(target);
+    const f = framePoints(sets, { viewDirection: [dir.x, dir.y, dir.z], fovDeg: cam.fov, aspect: cam.aspect, fill: PATH_FRAME_FILL });
+    if (!f) return;
+    this.#pathCamera = true;
+    target.set(f.target[0], f.target[1], f.target[2]);
+    cam.position.set(f.position[0], f.position[1], f.position[2]);
+    cam.near = Math.max(1e-4, f.distance / 1000);
+    cam.far = Math.max(200, f.distance * 10);
+    cam.updateProjectionMatrix();
+    this.#controls.update();
+  }
+
   /** Removes all output (e.g. when the document no longer compiles). */
   clearPlan(): void {
     if (this.#disposed) return;
     this.#clearLayers();
     this.#plan = null;
+    this.#pathCompile = null;
     this.#clock = null;
     this.#suspended = false;
     this.#emitFrame(true);
@@ -267,9 +405,88 @@ export class PreviewViewport {
     this.#layers = [];
     this.#sims.clear();
     this.#snapshots.clear();
+    this.#clearRibbons();
+    this.#pathCompile = null;
+    this.#pathPlan = null;
+    this.#drawnPaths = 0;
+    this.#frameSets = null;
+  }
+
+  #clearRibbons(): void {
+    for (const r of this.#ribbons) {
+      this.#scene.remove(r.mesh);
+      r.ribbon.dispose();
+      r.material.dispose();
+    }
+    this.#ribbons = [];
+    this.#ribbonKey = '';
+  }
+
+  /** Compiles the path source at `tick` and uploads it; compile/geometry errors stop playback. */
+  #pathTick(tick: number): void {
+    const compile = this.#pathCompile;
+    if (!compile) return;
+    let r: ValidationResult<PathPreviewPlan>;
+    try {
+      r = compile(tick);
+    } catch (e) {
+      return this.#fail([{ code: 'INVALID_VALUE', severity: 'error', message: `Path preview failed at tick ${tick}: ${e instanceof Error ? e.message : String(e)}` }]);
+    }
+    if (!r.ok) return this.#fail(r.errors);
+    this.#applyPathPlan(r.value);
+  }
+
+  /** (Re)builds ribbon meshes when the layer set changed, then rebuilds geometry for the current camera. */
+  #applyPathPlan(plan: PathPreviewPlan): void {
+    this.#pathPlan = plan;
+    const key = ribbonKey(plan.layers);
+    if (key !== this.#ribbonKey) {
+      this.#clearRibbons();
+      plan.layers.forEach((layer, i) => {
+        const ribbon = new RibbonGeometry({ maxPoints: MAX_PREVIEW_POINTS });
+        const material = materialFor(RIBBON_VERTEX, RIBBON_FRAGMENT, layer);
+        material.side = THREE.DoubleSide; // Camera-facing strips can wind either way.
+        material.uniforms.uSoftness = { value: ribbonSoftness(layer.blend) };
+        const mesh = new THREE.Mesh(ribbon.geometry, material);
+        mesh.renderOrder = layer.renderOrderOffset + i * 1e-3;
+        this.#scene.add(mesh);
+        this.#ribbons.push({ nodeId: layer.nodeId, ribbon, mesh, material });
+      });
+      this.#ribbonKey = key;
+    }
+    this.#updateRibbons();
+  }
+
+  /** Billboards every ribbon toward the current camera position. */
+  #updateRibbons(): void {
+    const plan = this.#pathPlan;
+    if (!plan || this.#failed) return;
+    const c = this.#camera.position;
+    const cameraPosition: Vec3 = [c.x, c.y, c.z];
+    let drawn = 0, i = 0;
+    try {
+      for (; i < plan.layers.length; i++) {
+        const layer = plan.layers[i];
+        // Inactive (outside window) layers carry no paths and draw nothing.
+        drawn += this.#ribbons[i].ribbon.update(layer.active ? layer.paths : [], { cameraPosition, width: layer.width }).drawnPaths;
+      }
+    } catch (e) {
+      const nodeId = plan.layers[i]?.nodeId;
+      return this.#fail([{ code: e instanceof RangeError ? 'BUDGET_EXCEEDED' : 'INVALID_VALUE', severity: 'error', message: `Ribbon geometry failed: ${e instanceof Error ? e.message : String(e)}`, ...(nodeId ? { nodeId } : {}) }]);
+    }
+    this.#drawnPaths = drawn;
+    this.#ribbonCamera.copy(c);
   }
 
   #replayTo(tick: number): void {
+    if (this.#pathCompile && this.#clock) {
+      this.#failed = false;
+      this.#clock.pause();
+      this.#clock.seek(tick);
+      this.#pathTick(tick);
+      if (!this.#failed) this.#emitFrame(true);
+      return;
+    }
     const plan = this.#plan, clock = this.#clock;
     if (!plan || !clock) return;
     this.#failed = false;
@@ -315,6 +532,10 @@ export class PreviewViewport {
     this.#clock?.pause();
     this.#snapshots.clear();
     for (const l of this.#layers) l.mesh.count = 0;
+    // Path mode keeps its compile function (restart/scrub retry) but drops all ribbon output.
+    this.#clearRibbons();
+    this.#pathPlan = null;
+    this.#drawnPaths = 0;
     this.#callbacks.onError?.(errors);
     if (this.#disposed) return; // The callback may have disposed the viewport.
     this.#emitFrame(true);
@@ -354,12 +575,13 @@ export class PreviewViewport {
     this.#lastTick = tick;
     this.#lastPlaying = playing;
     this.#lastSuspended = suspended;
-    let live = 0;
+    let live = this.#drawnPaths;
     for (const ps of this.#snapshots.values()) live += ps.length;
     const first = this.#plan?.systems[0];
     const ps = first ? this.#snapshots.get(first.id) : undefined;
+    const mode = this.#pathCompile ? 'paths' : this.#plan ? 'points' : 'none';
     cb({
-      tick, playing, suspended, live,
+      tick, playing, suspended, live, mode,
       durationTicks: clock ? clock.durationTicks : 0,
       sampleParticleId: first && ps && ps.length ? namespacedParticleId(first.id, ps[0].id) : '',
     });
@@ -373,12 +595,20 @@ export class PreviewViewport {
     const clock = this.#clock;
     if (clock && clock.playing && !this.#failed) {
       const r = clock.advance(dt);
-      if (r.ticksAdvanced > 0) this.#advanceSims(r.ticksAdvanced);
-      if (!this.#failed) this.#upload(clock.alpha);
+      if (this.#pathCompile) {
+        // Paths are a pure function of the tick: compile only the landing tick, no interpolation.
+        if (r.ticksAdvanced > 0) this.#pathTick(clock.tick);
+      } else {
+        if (r.ticksAdvanced > 0) this.#advanceSims(r.ticksAdvanced);
+        if (!this.#failed) this.#upload(clock.alpha);
+      }
     }
     this.#emitFrame(false);
     if (this.#disposed) return; // onFrame may have disposed the viewport; never render after dispose.
     this.#controls.update();
+    // Re-billboard ribbons when orbiting (damping keeps moving the camera after input stops).
+    if (this.#pathPlan && !this.#camera.position.equals(this.#ribbonCamera)) this.#updateRibbons();
+    if (this.#disposed) return;
     this.#renderer.render(this.#scene, this.#camera);
   };
 
@@ -388,5 +618,6 @@ export class PreviewViewport {
     this.#renderer.setSize(w, h, false);
     this.#camera.aspect = w / h;
     this.#camera.updateProjectionMatrix();
+    this.#framePaths();
   }
 }

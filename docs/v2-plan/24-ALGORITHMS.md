@@ -50,11 +50,24 @@ Oscillators maintain phase at the canonical sample rate. Sine and triangle use d
 
 Pink noise uses a Voss-McCartney construction with 16 independently seeded held rows. Initialize all rows; at sample index n≥1, update row equal to trailing-zero count of n when <16. Output (sum(rows)+freshWhite)/17. Brown noise state b=clamp(.98*b+.02*white,-1,1), output b; gain is authored separately. Neither generator secretly peak-normalizes each render.
 
+Amendment A2 (WP04 audio synthesis core, random tuple version stays 2; audio noise scheme version 1). Hashing the full tuple for each 48 kHz sample is too expensive, so noise uses per-lane seeds with Weyl stepping:
+- Lane seed: randomTupleHash of the version-2 tuple [2, documentSeed, randomStreamId, eventRandomKey, entityOrdinal, propertyKey, 0]. eventRandomKey and entityOrdinal come from the cue schedule, and randomStreamId is the noise source's own stream ID. None of them is ever an object ID.
+- Lane property keys: `noiseWhite` for the fresh white lane, which all three colors use; `noisePinkRow0`…`noisePinkRow15` for the pink rows. Brown uses only `noiseWhite`, so white, pink and brown with the same identity share the fresh white sequence and differ only in how they filter it.
+- Sample stepping: lane value n (n ≥ 0 is the voice-local sample index) = 2·Mulberry32First((laneSeed + n·0x9E3779B9) mod 2^32) − 1, which is in [−1,1). The Weyl constant 0x9E3779B9 is odd, so n ↦ seed is a bijection over 2^32 indices and no seed repeats inside a voice.
+- Pink: row r is initialized to value 0 of lane `noisePinkRow<r>`. At n ≥ 1, with r = ctz(n) < 16, row r becomes value n of its lane. The output is (Σrows + noiseWhite[n])/17.
+- Brown: b starts at 0, then for each n b = clamp(.98b + .02·noiseWhite[n], −1, 1), and the output is b.
+- Fixed limits: offset 0–36000 integer ticks; duration 1–600 ticks (≤480000 samples per voice); at most 64 voices and 4,800,000 total voice samples per render, all checked before allocation.
+- Triangle: 4|x−.5|−1 with phase x starting at 0, so the first sample is +1. The 5 ms boundary ramp removes that step.
+- Pitch: for synth sources the rendered frequency is min(f·pitchRatio, .45·Fs). Duration does not change. For chirps the rule applies to each instantaneous frequency.
+- Pulse: after the two PolyBLEP edge corrections, the output is hard-clamped to [−1,1]. The edge windows overlap when dt is comparable to duty or 1−duty, and an unclamped sum could reach magnitude 3. The saw is analytically bounded in [−1,1] when dt ≤ .45 and is not clamped.
+Changing any of these items is a random/algorithm contract change and needs a new amendment.
+
 RBJ biquad lowpass/highpass/bandpass uses w0=2πf/Fs, alpha=sin(w0)/(2Q), a0=1+alpha, a1=-2cos(w0), a2=1-alpha. Lowpass b=((1-cos)/2,1-cos,(1-cos)/2); highpass b=((1+cos)/2,-(1+cos),(1+cos)/2); bandpass constant-peak b=(alpha,0,-alpha). Divide all coefficients by a0 and use transposed direct form II. Interpolate cutoff per sample in log frequency; coefficient update at fixed 64-sample boundaries for bounded cost, preserving state.
 
 Canonical mix limiter: y=.891250938*tanh(x/.891250938), then authored master gain ≤1 and 5 ms boundary ramps. Report pre-limiter peak and percentage of samples above .891250938 so severe saturation cannot be hidden. Float-to-PCM clamps [-1,1], multiplies negative samples by 32768 and nonnegative by 32767, then rounds.
 
+Amendment A3 (WP04 stereo mix/WAV, supersedes the preceding canonical mix/PCM paragraph): Sum mono inputs in array order using float64 accumulation at 48 kHz, with equal-power pan gains cos((pan+1)π/4) and sin((pan+1)π/4), except exact hard-pan endpoints (1,0)/(0,1). Per-input gain is 0–2. Apply authored master gain 0–1 before the limiter. Samples with magnitude ≤0.7 pass unchanged; above 0.7 use sign(x)·(0.7+(C−0.7)·tanh((|x|−0.7)/(C−0.7))), where C=10^(−1/20) (−1 dBFS). This transparent knee preserves low-level authored gains, unlike the earlier whole-range tanh. Report pre/post peaks, count and fraction of channel samples above the knee, and severe limiting when pre-peak >2C. The output ends at the last input sample and is capped at 4,800,000 stereo frames; 64 inputs and 4,800,000 total input samples are the other caps. The synthesis/sample source supplies its own 5 ms boundary ramps before mixing; the mixed buffer receives no second ramp. PCM16 clamps to [−1,1], multiplies both signs by 32767, rounds half away from zero, and interleaves left/right little-endian samples. Symmetric quantization avoids a sign-dependent zero bias. The WAV header is RIFF PCM stereo, 48 kHz, 16-bit, block align 4 and byte rate 192,000. These algorithm choices are versioned; changing any of them requires a new amendment and golden/test review.
+
 ## Scope of exactness
 
 These formulas define mathematical behavior. Visual assets and exposed preset values still undergo the named visual gates. Artistic tuning is permitted in preset data, but changing a registered algorithm requires tests, semantic version review and documentation.
-

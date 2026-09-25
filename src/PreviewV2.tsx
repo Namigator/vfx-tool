@@ -7,14 +7,16 @@ import type { Diagnostic, EffectDocumentV2 } from './model/types.ts';
 import { validateDocument } from './model/document.ts';
 import { createRegistry } from './graph/registry.ts';
 import { compileParticlePreview } from './graph/toParticles.ts';
+import { compilePathPreview } from './graph/toPaths.ts';
 import { createF01Document } from './graph/fixtures.ts';
+import { choosePreviewMode, createLightningDemoDocument, ribbonStyleDiagnostics, type PreviewModeChoice } from './render/previewMode.ts';
 import { DocumentHistory, type HistoryNotice, type HistoryResult, type Patch } from './editor/history.ts';
 import GraphCanvas from './editor/GraphCanvas.tsx';
 import NodeInspector from './editor/NodeInspector.tsx';
 import { PreviewViewport, type PreviewFrameInfo } from './render/PreviewViewport.ts';
 import './preview-v2.css';
 
-const EMPTY_FRAME: PreviewFrameInfo = { tick: 0, durationTicks: 0, playing: false, suspended: false, live: 0, sampleParticleId: '' };
+const EMPTY_FRAME: PreviewFrameInfo = { tick: 0, durationTicks: 0, playing: false, suspended: false, live: 0, mode: 'none', sampleParticleId: '' };
 /** Documents larger than this are rejected before reading the file contents. */
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -57,6 +59,8 @@ export default function PreviewV2() {
   const [fatal, setFatal] = useState('');
   const [frame, setFrame] = useState<PreviewFrameInfo>(EMPTY_FRAME);
   const [compiled, setCompiled] = useState(false);
+  const [mode, setMode] = useState<PreviewModeChoice['mode']>('points');
+  const [expanded, setExpanded] = useState(false);
   // Bumped by every document replacement; async file reads apply only if still the latest request.
   const generationRef = useRef(0);
   const mountedRef = useRef(false);
@@ -68,6 +72,36 @@ export default function PreviewV2() {
   const compile = useCallback((d: EffectDocumentV2) => {
     const vp = viewportRef.current;
     setRuntimeErrors([]);
+    const choice = choosePreviewMode(d);
+    setMode(choice.mode);
+    if (choice.mode === 'mixed') {
+      vp?.clearPlan();
+      setCompiled(false);
+      setDiagnostics(choice.errors);
+      return;
+    }
+    if (choice.mode === 'paths') {
+      // Tick 0 validates the document and style; later ticks recompile inside the viewport.
+      const first = compilePathPreview(d, 0);
+      if (!first.ok) {
+        vp?.clearPlan();
+        setCompiled(false);
+        setDiagnostics(first.errors);
+        return;
+      }
+      const style = ribbonStyleDiagnostics(d, first.value.layers);
+      const blocked = style.some(s => s.severity === 'error');
+      setDiagnostics([...first.warnings, ...style]);
+      if (blocked) {
+        vp?.clearPlan();
+        setCompiled(false);
+        return;
+      }
+      setCompiled(true);
+      const snapshot = structuredClone(d); // Later edits never leak into the running source.
+      vp?.setPathSource(first.value, tick => compilePathPreview(snapshot, tick));
+      return;
+    }
     const result = compileParticlePreview(d);
     if (!result.ok) {
       vp?.clearPlan();
@@ -230,6 +264,7 @@ export default function PreviewV2() {
   };
 
   const resetF01 = () => { replace(toText(createF01Document()), 'Reset to F01'); };
+  const loadLightningDemo = () => { replace(toText(createLightningDemoDocument()), 'Load lightning demo'); };
   const revertText = () => { setText(toText(doc)); setTextDirty(false); };
 
   const vp = viewportRef.current;
@@ -240,8 +275,12 @@ export default function PreviewV2() {
   return (
     <div className="pv2">
       <header className="pv2-header">
-        <strong>V2 graph preview — point particles</strong>
-        <span className="pv2-note">Limited preview of graph data (point emitters, camera quads). No textures, bloom or sound.</span>
+        <strong>V2 graph preview — {mode === 'paths' ? 'path ribbons' : mode === 'mixed' ? 'unsupported mix' : 'point particles'}</strong>
+        <span className="pv2-note">
+          {mode === 'paths'
+            ? 'Limited preview of graph data (camera-facing untextured ribbons). No textures, bloom or sound.'
+            : 'Limited preview of graph data (point emitters, camera quads). No textures, bloom or sound.'}
+        </span>
         <div className="pv2-history" role="group" aria-label="History">
           <button type="button" disabled={!historyFlags.canUndo} onClick={undo} title="Undo (Ctrl/Cmd+Z)">Undo</button>
           <button type="button" disabled={!historyFlags.canRedo} onClick={redo} title="Redo (Ctrl/Cmd+Shift+Z)">Redo</button>
@@ -249,7 +288,7 @@ export default function PreviewV2() {
         <a className="pv2-link" href={window.location.pathname}>Back to v1 editor</a>
       </header>
       <main className="pv2-main">
-        <section className="pv2-stage">
+        <section className={expanded ? 'pv2-stage pv2-expanded' : 'pv2-stage'}>
           <div className="pv2-host" ref={hostRef} />
           {fatal && <div className="pv2-overlay pv2-error" role="alert">{fatal}</div>}
           {!fatal && !compiled && <div className="pv2-overlay">No preview: the document does not compile (see diagnostics).</div>}
@@ -263,6 +302,10 @@ export default function PreviewV2() {
               {frame.playing ? 'Pause' : frame.suspended ? 'Resume' : 'Play'}
             </button>
             <button type="button" disabled={disabled} onClick={() => vp?.restart()}>Restart</button>
+            {/* Viewport ResizeObserver refits path framing to the new size until the user orbits. */}
+            <button type="button" aria-pressed={expanded} onClick={() => setExpanded(e => !e)}>
+              {expanded ? 'Collapse preview' : 'Expand preview'}
+            </button>
             <input
               type="range" min={0} max={frame.durationTicks} step={1} value={frame.tick} disabled={disabled}
               aria-label="Tick" onChange={e => vp?.seek(Number(e.target.value))}
@@ -270,7 +313,7 @@ export default function PreviewV2() {
             {/* Not a live region: per-frame tick changes must not be announced. Errors use role="alert". */}
             <span className="pv2-readout" title={frame.sampleParticleId ? `Sample particle ${frame.sampleParticleId}` : undefined}>
               {frame.suspended && <>Paused (tab hidden) · </>}
-              tick {frame.tick}/{frame.durationTicks} · {frame.live} live
+              tick {frame.tick}/{frame.durationTicks} · {frame.live} {frame.mode === 'paths' ? 'paths' : 'live'}
             </span>
           </div>
           {frame.sampleParticleId && (
@@ -315,6 +358,7 @@ export default function PreviewV2() {
               <button type="button" onClick={() => fileRef.current?.click()}>Load file…</button>
               <input ref={fileRef} className="pv2-file-input" type="file" accept=".json,application/json" tabIndex={-1} aria-hidden="true" onChange={onFile} />
               <button type="button" onClick={resetF01}>Reset to F01</button>
+              <button type="button" onClick={loadLightningDemo}>Load lightning demo</button>
               {textDirty && <button type="button" onClick={revertText}>Revert text</button>}
             </div>
             <p className="pv2-muted">Apply, Load and Reset replace the document and clear undo history.</p>
