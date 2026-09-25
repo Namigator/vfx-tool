@@ -46,7 +46,7 @@ export default function PreviewV2() {
   const fileRef = useRef<HTMLInputElement>(null);
   const viewportRef = useRef<PreviewViewport | null>(null);
   const historyRef = useRef<DocumentHistory | null>(null);
-  if (historyRef.current === null) historyRef.current = new DocumentHistory(createF01Document());
+  if (historyRef.current === null) historyRef.current = new DocumentHistory(new URLSearchParams(window.location.search).get('demo') === 'lightning' ? createLightningDemoDocument() : createF01Document());
   const [doc, setDoc] = useState<EffectDocumentV2>(() => historyRef.current!.snapshot());
   const [text, setText] = useState(() => toText(doc));
   const [textDirty, setTextDirty] = useState(false);
@@ -60,7 +60,7 @@ export default function PreviewV2() {
   const [frame, setFrame] = useState<PreviewFrameInfo>(EMPTY_FRAME);
   const [compiled, setCompiled] = useState(false);
   const [mode, setMode] = useState<PreviewModeChoice['mode']>('points');
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(() => new URLSearchParams(window.location.search).get('expand') === '1');
   // Bumped by every document replacement; async file reads apply only if still the latest request.
   const generationRef = useRef(0);
   const mountedRef = useRef(false);

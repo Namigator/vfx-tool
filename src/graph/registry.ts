@@ -270,6 +270,58 @@ function ribbonRenderer(): NodeSpec {
   });
 }
 
+// Audio nodes (11-AUDIO.md, 24 "Audio source definitions" + A2/A3, 25 port table). Bounds mirror the
+// pure audio core (audio/synthesis.ts, audio/mix.ts) without importing it. Deliberately omitted until
+// specified: AudioEnvelope (attack/hold/release curves have no units, bounds or curve shape), the Sample
+// source (trim/loop bounds and asset parameter), oscillator frequency curve, noise band emphasis,
+// AudioFilter (cutoff curve schema undecided) and AudioMix (per-input gain/pan cannot live on
+// EdgeDefinition). Noise seeding uses node.randomStreamId, not a parameter.
+const AUDIO_MAX_OFFSET_TICKS = 36000;
+const AUDIO_MAX_DURATION_TICKS = 600;
+const AUDIO_MIN_SYNTH_HZ = 20;
+const AUDIO_MAX_SYNTH_HZ = 16000;
+const audioIn = () => port({ id: 'audio', label: 'Audio', type: 'audio', required: true });
+const audioOut = () => port({ id: 'audio', label: 'Audio', type: 'audio' });
+
+function audioSource(): NodeSpec {
+  const hz = (id: string, label: string, def: number, description: string) => param({
+    id, label, type: 'number', unit: 'hertz', default: def, min: AUDIO_MIN_SYNTH_HZ, max: AUDIO_MAX_SYNTH_HZ, description,
+  });
+  return node('AudioSource', {
+    inputs: [
+      port({ id: 'trigger', label: 'Trigger', type: 'event', cardinality: 'many' }),
+      port({ id: 'window', label: 'Window', type: 'timeWindow' }),
+    ],
+    outputs: [audioOut()],
+    parameters: [
+      param({ id: 'source', label: 'Source', type: 'enum', unit: 'none', default: 'oscillator', choices: ['oscillator', 'noise', 'chirp'] }),
+      param({ id: 'offsetTicks', label: 'Offset', type: 'integer', unit: 'tick', default: 0, min: 0, max: AUDIO_MAX_OFFSET_TICKS, step: 1, description: 'Delay after each cue.' }),
+      param({ id: 'durationTicks', label: 'Duration', type: 'integer', unit: 'tick', default: 30, min: 1, max: AUDIO_MAX_DURATION_TICKS, step: 1 }),
+      param({ id: 'gain', label: 'Gain', type: 'number', unit: 'linearGain', default: 1, min: 0, max: 2, editPolicy: 'live' }),
+      param({ id: 'pitchRatio', label: 'Pitch ratio', type: 'number', unit: 'none', default: 1, min: 0.25, max: 4, description: 'Synthesized sources only: rendered frequency is min(f*ratio, 0.45*sampleRate); duration is unchanged.' }),
+      param({ id: 'waveform', label: 'Waveform', type: 'enum', unit: 'none', default: 'sine', choices: ['sine', 'triangle', 'saw', 'pulse'], description: 'Oscillator only.' }),
+      hz('frequencyHz', 'Frequency', 440, 'Oscillator only.'),
+      param({ id: 'pulseDuty', label: 'Pulse duty', type: 'number', unit: 'normalized', default: 0.5, min: 0.05, max: 0.95, description: 'Pulse waveform only.' }),
+      param({ id: 'noiseColor', label: 'Noise color', type: 'enum', unit: 'none', default: 'white', choices: ['white', 'pink', 'brown'], description: 'Noise only.' }),
+      hz('chirpStartHz', 'Chirp start', 2000, 'Chirp only.'),
+      hz('chirpEndHz', 'Chirp end', 200, 'Chirp only.'),
+      param({ id: 'chirpSweep', label: 'Chirp sweep', type: 'enum', unit: 'none', default: 'exponential', choices: ['linear', 'exponential'], description: 'Chirp only.' }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
+function audioOutput(): NodeSpec {
+  return node('AudioOutput', {
+    inputs: [audioIn()],
+    outputs: [audioOut()],
+    // Fixed limiter and render stats (24 A3); no authored controls.
+    parameters: [],
+    disabledBehavior: 'bypass',
+    bypass: { input: 'audio', output: 'audio' },
+  });
+}
+
 function effectOutput(): NodeSpec {
   return node('EffectOutput', {
     inputs: [
@@ -308,6 +360,7 @@ export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
     anchor(), schedule(), emitter(), initialProperties(), material(), billboardRenderer(),
     linePath(), bezierPath(), jaggedPath(), branchPath(), revealPath(), ribbonRenderer(),
+    audioSource(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),
   ];
   return new Map(specs.map(s => [`${s.type}@${s.definitionVersion}`, s]));

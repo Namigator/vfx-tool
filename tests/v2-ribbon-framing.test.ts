@@ -6,11 +6,12 @@ import { frameBounds, pathBounds, RibbonGeometry, ribbonSoftness } from '../src/
 
 const path = (points: Vec3[], widthScale = 1): PathData => ({ id: 'p', points, widthScale, opacityScale: 1 });
 
-test('side attribute: +1 left, -1 right per point', () => {
+test('side attribute: +1 left, -1 right per quad corner', () => {
   const r = new RibbonGeometry();
   const s = r.update([path([[0, 0, 0], [1, 0, 0], [2, 0, 0]])], { cameraPosition: [0, 0, 10], width: 1 });
   const side = Array.from((r.geometry.getAttribute('side').array as Float32Array).subarray(0, s.vertexCount));
-  assert.deepEqual(side, [1, -1, 1, -1, 1, -1]);
+  // Two segment quads (start L/R, end L/R each); a straight join adds no fan vertices.
+  assert.deepEqual(side, [1, -1, 1, -1, 1, -1, 1, -1]);
 });
 
 test('side sense stays continuous through a hairpin (no crossed strip)', () => {
@@ -19,10 +20,19 @@ test('side sense stays continuous through a hairpin (no crossed strip)', () => {
   const pts: Vec3[] = [[-2, 0, 0], [-1, 0, 0], [0, 0, 0], [0, 0, -1], [0, 0, -2]];
   const s = r.update([path(pts)], { cameraPosition: [0.5, 3, 0.5], width: 0.2 });
   const a = r.geometry.getAttribute('position').array as Float32Array;
-  for (let i = 1; i < s.vertexCount / 2; i += 1) {
-    const prev = [a[(i - 1) * 6] - a[(i - 1) * 6 + 3], a[(i - 1) * 6 + 1] - a[(i - 1) * 6 + 4], a[(i - 1) * 6 + 2] - a[(i - 1) * 6 + 5]];
-    const cur = [a[i * 6] - a[i * 6 + 3], a[i * 6 + 1] - a[i * 6 + 4], a[i * 6 + 2] - a[i * 6 + 5]];
-    assert.ok(prev[0] * cur[0] + prev[1] * cur[1] + prev[2] * cur[2] >= 0, `side flipped at point ${i}`);
+  const sd = r.geometry.getAttribute('side').array as Float32Array;
+  const idx = r.geometry.getIndex()!.array as Uint32Array;
+  // Each segment quad's first triangle is (startL, startR, endL); join fans contain a side-0 centre.
+  const sides: number[][] = [];
+  for (let k = 0; k < s.indexCount; k += 3) {
+    const [l, rr] = [idx[k], idx[k + 1]];
+    if (sd[l] !== 1 || sd[rr] !== -1 || sd[idx[k + 2]] !== 1) continue;
+    sides.push([a[l * 3] - a[rr * 3], a[l * 3 + 1] - a[rr * 3 + 1], a[l * 3 + 2] - a[rr * 3 + 2]]);
+  }
+  assert.equal(sides.length, 4);
+  for (let i = 1; i < sides.length; i += 1) {
+    const [p, c] = [sides[i - 1], sides[i]];
+    assert.ok(p[0] * c[0] + p[1] * c[1] + p[2] * c[2] >= 0, `side flipped at segment ${i}`);
   }
 });
 

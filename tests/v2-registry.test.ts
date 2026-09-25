@@ -8,7 +8,7 @@ import { resolveParameters } from '../src/model/controls.ts';
 import { createRegistry, MATERIAL_TEMPLATES } from '../src/graph/registry.ts';
 import { createF01Document } from '../src/graph/fixtures.ts';
 
-const EXPECTED_TYPES = ['Anchor', 'Schedule', 'Emitter', 'InitialProperties', 'Material', 'BillboardRenderer', 'EffectOutput', 'Group', 'GroupInput', 'GroupOutput', 'LinePath', 'BezierPath', 'JaggedPath', 'BranchPath', 'RevealPath', 'RibbonRenderer'];
+const EXPECTED_TYPES = ['Anchor', 'Schedule', 'Emitter', 'InitialProperties', 'Material', 'BillboardRenderer', 'EffectOutput', 'Group', 'GroupInput', 'GroupOutput', 'LinePath', 'BezierPath', 'JaggedPath', 'BranchPath', 'RevealPath', 'RibbonRenderer', 'AudioSource', 'AudioOutput'];
 const LOWER_CAMEL = /^[a-z][A-Za-z0-9]*$/;
 
 test('registry contains the current graph catalog at version 1, keyed type@version', () => {
@@ -81,6 +81,32 @@ test('structured ports follow plan 25', () => {
   assert.deepEqual(ports('BillboardRenderer', 'outputs'), ['visual:visual']);
   assert.deepEqual(ports('EffectOutput', 'inputs'), ['visual:visual', 'audio:audio', 'presentation:presentation']);
   assert.ok(reg.get('EffectOutput@1')!.inputs.every(p => p.cardinality === 'many'));
+});
+
+test('audio nodes follow plans 11, 24 and 25', () => {
+  const reg = createRegistry();
+  const spec = (t: string) => reg.get(`${t}@1`)!;
+  const ports = (t: string, side: 'inputs' | 'outputs') => spec(t)[side].map(p => `${p.id}:${p.type}:${p.cardinality}`);
+  const bounds = (t: string, id: string) => { const p = spec(t).parameters.find(x => x.id === id)!; return [p.unit, p.min, p.max]; };
+  assert.deepEqual(ports('AudioSource', 'inputs'), ['trigger:event:many', 'window:timeWindow:one']);
+  for (const t of ['AudioSource', 'AudioOutput']) assert.deepEqual(ports(t, 'outputs'), ['audio:audio:one']);
+  assert.deepEqual(ports('AudioOutput', 'inputs'), ['audio:audio:one']);
+  assert.equal(reg.has('AudioEnvelope@1'), false, 'envelope stays unregistered until its controls are specified');
+  assert.equal(reg.has('AudioFilter@1'), false, 'filter deferred until the cutoff curve schema is decided');
+  assert.equal(reg.has('AudioMix@1'), false, 'mix deferred until per-input gain/pan has a representation');
+  assert.equal(spec('AudioSource').parameters.some(p => p.id === 'randomStreamId'), false, 'node.randomStreamId is authoritative');
+
+  assert.deepEqual(bounds('AudioSource', 'offsetTicks'), ['tick', 0, 36000]);
+  assert.deepEqual(bounds('AudioSource', 'durationTicks'), ['tick', 1, 600]);
+  assert.deepEqual(bounds('AudioSource', 'gain'), ['linearGain', 0, 2]);
+  assert.deepEqual(bounds('AudioSource', 'pitchRatio'), ['none', 0.25, 4]);
+  assert.deepEqual(bounds('AudioSource', 'frequencyHz'), ['hertz', 20, 16000]);
+  assert.deepEqual(bounds('AudioSource', 'pulseDuty'), ['normalized', 0.05, 0.95]);
+  assert.deepEqual(spec('AudioSource').parameters.find(p => p.id === 'source')!.choices, ['oscillator', 'noise', 'chirp']);
+  assert.deepEqual(spec('AudioOutput').parameters, []);
+
+  assert.equal(spec('AudioSource').disabledBehavior, 'empty');
+  assert.deepEqual([spec('AudioOutput').disabledBehavior, spec('AudioOutput').bypass], ['bypass', { input: 'audio', output: 'audio' }]);
 });
 
 test('structural and material parameters', () => {

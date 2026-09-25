@@ -9,6 +9,13 @@ export interface RibbonUpdateOptions {
   cameraPosition: Vec3;
   /** Base full ribbon width in world units; multiplied by each path's widthScale. */
   width: number;
+  /**
+   * Fraction (0..0.5) of each path's arc length over which both ends taper and fade out.
+   * Defaults to DEFAULT_RIBBON_END_FADE; 0 keeps full width and opacity to the ends.
+   */
+  endFade?: number;
+  /** Width multiplier (0..1) reached at the very ends of a tapered path. Defaults to DEFAULT_RIBBON_END_WIDTH. */
+  endWidth?: number;
 }
 
 export interface RibbonUpdateStats {
@@ -21,7 +28,7 @@ export interface RibbonUpdateStats {
 }
 
 export interface RibbonGeometryOptions {
-  /** Hard budget on total path points per update (vertices = 2 * points). */
+  /** Hard budget on total path points per update (vertices <= 12 * points). */
   maxPoints?: number;
   /** Initial allocated point capacity; grows (up to maxPoints) when exceeded. */
   initialPoints?: number;
@@ -29,6 +36,16 @@ export interface RibbonGeometryOptions {
 
 export const DEFAULT_RIBBON_MAX_POINTS = 65536;
 const DEFAULT_INITIAL_POINTS = 256;
+export const DEFAULT_RIBBON_END_FADE = 0.12;
+export const DEFAULT_RIBBON_END_WIDTH = 0.2;
+/** No vertex is ever offset further than this multiple of the local half-width (bevel joins, no miters). */
+export const RIBBON_MITER_LIMIT = 1;
+/** Round joins: one fan triangle per JOIN_STEP radians of turn, at most JOIN_MAX_STEPS (a full reversal). */
+const JOIN_STEP = Math.PI / 8;
+const JOIN_MAX_STEPS = 8;
+/** Worst-case per path point: 4 quad vertices + join centre + (steps-1) arc vertices; 6 + 3*steps indices. */
+const VERTS_PER_POINT = 4 + JOIN_MAX_STEPS;
+const INDICES_PER_POINT = 6 + 3 * JOIN_MAX_STEPS;
 const EPSILON = 1e-9;
 
 type V = [number, number, number];
@@ -61,6 +78,12 @@ function markLive(attribute: THREE.BufferAttribute, count: number): void {
   attribute.addUpdateRange(0, count);
   attribute.needsUpdate = true;
 }
+function dot(a: V, b: V): number {
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+function dir(from: Vec3, to: Vec3): V | null {
+  return normalize(to[0] - from[0], to[1] - from[1], to[2] - from[2]);
+}
 function same(a: Vec3, b: Vec3): boolean {
   return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) <= EPSILON;
 }
@@ -68,8 +91,10 @@ function same(a: Vec3, b: Vec3): boolean {
 /**
  * Owns one BufferGeometry with attributes `position` (vec3), `opacity` (float, the
  * path's opacityScale per vertex) and `side` (float, +1 left / -1 right; interpolates
- * to 0 on the centreline for transverse falloff), plus a Uint32 index. Each path point yields
- * two vertices (left then right); each non-degenerate segment yields two triangles.
+ * to 0 on the centreline for transverse falloff), plus a Uint32 index. Each non-degenerate
+ * segment yields its own quad (4 vertices: start L/R, end L/R; two triangles); each turn between
+ * consecutive segments adds a round outer-corner fan (a centre vertex with side 0, arc vertices at
+ * the half-width; one triangle per π/8 of turn, at most 8).
  * Paths are disjoint: no triangles connect consecutive paths. Storage is reused while
  * the point count fits capacity; update() throws RangeError above `maxPoints`.
  */
@@ -97,7 +122,7 @@ export class RibbonGeometry {
     this.allocate(initial);
   }
 
-  /** Current allocated point capacity (vertices = 2 * capacity). */
+  /** Current allocated point capacity (vertices <= 12 * capacity). */
   get pointCapacity(): number {
     return this.capacity;
   }
@@ -108,6 +133,12 @@ export class RibbonGeometry {
     if (typeof options !== 'object' || options === null) throw new TypeError('options must be an object.');
     assertVec3(options.cameraPosition, 'cameraPosition');
     assertFiniteNonNegative(options.width, 'width');
+    const endFade = options.endFade ?? DEFAULT_RIBBON_END_FADE;
+    const endWidth = options.endWidth ?? DEFAULT_RIBBON_END_WIDTH;
+    assertFiniteNonNegative(endFade, 'endFade');
+    assertFiniteNonNegative(endWidth, 'endWidth');
+    if (endFade > 0.5) throw new RangeError('endFade must be at most 0.5.');
+    if (endWidth > 1) throw new RangeError('endWidth must be at most 1.');
 
     let totalPoints = 0;
     paths.forEach((path, p) => {
@@ -148,75 +179,110 @@ export class RibbonGeometry {
 
       drawnPaths += 1;
       const half = (options.width * path.widthScale) / 2;
-      const base = v;
-      let prevTangent: V | null = null;
+      let totalLength = 0;
+      for (let i = 1; i < count; i += 1) {
+        totalLength += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1], pts[i][2] - pts[i - 1][2]);
+      }
+      const fadeLength = endFade * totalLength;
+      // Longitudinal end taper/fade: smoothstep over fadeLength from each end, so branch tips
+      // and bolt ends dissolve instead of ending in a hard full-width edge.
+      const fadeAt = (arc: number): number => {
+        if (fadeLength <= EPSILON) return 1;
+        const e = Math.min(1, Math.min(arc, totalLength - arc) / fadeLength);
+        return e * e * (3 - 2 * e);
+      };
+      const put = (p: Vec3, side: V, w: number, sign: number, opacity: number): number => {
+        const o = v * 3;
+        pos[o] = p[0] + side[0] * w * sign;
+        pos[o + 1] = p[1] + side[1] * w * sign;
+        pos[o + 2] = p[2] + side[2] * w * sign;
+        op[v] = opacity;
+        sd[v] = sign;
+        v += 1;
+        return v - 1;
+      };
+      let arc = 0;
       let prevSide: V | null = null;
-      let runStart = 0;
-      let runEnd = -1;
-      for (let i = 0; i < count; i += 1) {
-        const p = pts[i];
-        // Tangent from nearest distinct neighbours so duplicate points stay oriented.
-        // Each run of consecutive duplicates is scanned once, keeping this linear.
-        if (i > runEnd) {
-          runStart = i;
-          runEnd = i;
-          while (runEnd < count - 1 && same(pts[runEnd + 1], pts[runStart])) runEnd += 1;
-        }
-        const a = runStart > 0 ? runStart - 1 : 0;
-        const b = runEnd < count - 1 ? runEnd + 1 : count - 1;
-        const tangent: V = normalize(pts[b][0] - pts[a][0], pts[b][1] - pts[a][1], pts[b][2] - pts[a][2])
-          ?? prevTangent ?? [1, 0, 0];
-        prevTangent = tangent;
-
+      let prevT: V | null = null;
+      let prevEnd = -1;
+      for (let i = 0; i < count - 1; i += 1) {
+        const a = pts[i];
+        const b = pts[i + 1];
+        if (same(a, b)) { skippedSegments += 1; continue; }
+        const t = dir(a, b) ?? [1, 0, 0];
+        const len = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+        const view = normalize(cam[0] - (a[0] + b[0]) / 2, cam[1] - (a[1] + b[1]) / 2, cam[2] - (a[2] + b[2]) / 2);
         let side: V | null = null;
-        const view = normalize(cam[0] - p[0], cam[1] - p[1], cam[2] - p[2]);
         if (view) {
-          const c = cross(tangent, view);
-          side = normalize(c[0], c[1], c[2]);
-          if (side && Math.hypot(c[0], c[1], c[2]) < 1e-6) side = null;
+          const c = cross(t, view);
+          if (Math.hypot(c[0], c[1], c[2]) >= 1e-6) side = normalize(c[0], c[1], c[2]);
         }
         if (!side) {
-          // View parallel to tangent (or camera on the point): keep previous side if still
+          // View parallel to the segment (or camera on it): keep previous side if still
           // perpendicular, else use the WP03 stable-frame reference (+Y unless |t.y|>0.99).
           if (prevSide) {
-            const d = prevSide[0] * tangent[0] + prevSide[1] * tangent[1] + prevSide[2] * tangent[2];
-            side = normalize(prevSide[0] - tangent[0] * d, prevSide[1] - tangent[1] * d, prevSide[2] - tangent[2] * d);
+            const d = dot(prevSide, t);
+            side = normalize(prevSide[0] - t[0] * d, prevSide[1] - t[1] * d, prevSide[2] - t[2] * d);
           }
           if (!side) {
-            const ref: V = Math.abs(tangent[1]) > 0.99 ? [1, 0, 0] : [0, 1, 0];
-            const c = cross(tangent, ref);
-            side = normalize(c[0], c[1], c[2]) ?? [0, 0, 1];
+            const ref: V = Math.abs(t[1]) > 0.99 ? [1, 0, 0] : [0, 1, 0];
+            side = normalize(...cross(t, ref)) ?? [0, 0, 1];
           }
         }
-        // Keep the left/right sense continuous: a sign flip between neighbours would cross the
-        // strip over itself (a bow-tie shard). Only the sign changes; the side stays perpendicular.
-        if (prevSide && side[0] * prevSide[0] + side[1] * prevSide[1] + side[2] * prevSide[2] < 0) {
-          side = [-side[0], -side[1], -side[2]];
-        }
-        prevSide = side;
+        // Keep the left/right sense continuous so the transverse `side` falloff never flips.
+        if (prevSide && dot(side, prevSide) < 0) side = [-side[0], -side[1], -side[2]];
 
-        const o = v * 3;
-        pos[o] = p[0] + side[0] * half;
-        pos[o + 1] = p[1] + side[1] * half;
-        pos[o + 2] = p[2] + side[2] * half;
-        pos[o + 3] = p[0] - side[0] * half;
-        pos[o + 4] = p[1] - side[1] * half;
-        pos[o + 5] = p[2] - side[2] * half;
-        op[v] = path.opacityScale;
-        op[v + 1] = path.opacityScale;
-        sd[v] = 1;
-        sd[v + 1] = -1;
-        v += 2;
-      }
-      for (let i = 0; i < count - 1; i += 1) {
-        if (same(pts[i], pts[i + 1])) { skippedSegments += 1; continue; }
-        const l0 = base + i * 2;
-        const r0 = l0 + 1;
-        const l1 = l0 + 2;
-        const r1 = l0 + 3;
+        // Each segment is its own quad offset by its own perpendicular side, so no vertex ever lies
+        // farther than the local half-width from the path: short zigzags and reversals cannot fold
+        // the strip into off-path shards (a shared-vertex miter strip can).
+        const f0 = fadeAt(arc);
+        arc += len;
+        const f1 = fadeAt(arc);
+        const w0 = half * (endWidth + (1 - endWidth) * f0);
+        const w1 = half * (endWidth + (1 - endWidth) * f1);
+        const o0 = path.opacityScale * f0;
+        const o1 = path.opacityScale * f1;
+        const l0 = put(a, side, w0, 1, o0);
+        const r0 = put(a, side, w0, -1, o0);
+        const l1 = put(b, side, w1, 1, o1);
+        const r1 = put(b, side, w1, -1, o1);
         idx[n] = l0; idx[n + 1] = r0; idx[n + 2] = l1;
         idx[n + 3] = r0; idx[n + 4] = r1; idx[n + 5] = l1;
         n += 6;
+
+        // Round join: fan the outer-corner gap from the join point. The outer sense is resolved per
+        // segment (the continuity flip above can swap L/R on turns past 90°, so one shared index
+        // offset would put the wedge on the inner corner and leave the outer corner as a dark notch).
+        // Arc vertices lie at exactly the local half-width with side ±1, so the transverse falloff
+        // stays radial around the corner instead of collapsing across a thin bevel chord.
+        if (prevSide && prevT && prevEnd >= 0 && dot(t, prevT) < 1 - 1e-9) {
+          const reversal = dot(t, prevT) < -1 + 1e-9; // exact reversal: either side may be outer
+          const sp = dot(t, prevSide) > 0 ? -1 : 1; // previous quad's outer sign
+          // This quad's outer sign; on a reversal pick the opposite edge so the cap spans a half-circle.
+          const sc = reversal ? (dot(side, prevSide) > 0 ? -sp : sp) : dot(prevT, side) < 0 ? -1 : 1;
+          const u0: V = [prevSide[0] * sp, prevSide[1] * sp, prevSide[2] * sp];
+          const u1: V = [side[0] * sc, side[1] * sc, side[2] * sc];
+          // Sweep from u0 through the previous forward direction to u1 (π for a full reversal).
+          const phi = Math.atan2(Math.max(0, dot(u1, prevT)), dot(u1, u0));
+          const steps = Math.min(JOIN_MAX_STEPS, Math.max(1, Math.ceil(phi / JOIN_STEP)));
+          const centre = put(a, side, 0, 0, o0);
+          let last = prevEnd + (sp < 0 ? 1 : 0);
+          for (let j = 1; j <= steps; j += 1) {
+            let next = l0 + (sc < 0 ? 1 : 0);
+            if (j < steps) {
+              const ang = (phi * j) / steps;
+              const c = Math.cos(ang), s = Math.sin(ang);
+              const u = normalize(u0[0] * c + prevT[0] * s, u0[1] * c + prevT[1] * s, u0[2] * c + prevT[2] * s) ?? u1;
+              next = put(a, u, w0, 1, o0);
+            }
+            idx[n] = centre; idx[n + 1] = last; idx[n + 2] = next;
+            n += 3;
+            last = next;
+          }
+        }
+        prevSide = side;
+        prevT = t;
+        prevEnd = l1;
       }
     }
 
@@ -245,10 +311,10 @@ export class RibbonGeometry {
     // Three cannot resize uploaded buffers; release GPU copies before swapping storage.
     if (this.capacity > 0) this.geometry.dispose();
     this.capacity = points;
-    this.positions = new Float32Array(points * 2 * 3);
-    this.opacities = new Float32Array(points * 2);
-    this.sides = new Float32Array(points * 2);
-    this.indices = new Uint32Array(Math.max(0, points - 1) * 6);
+    this.positions = new Float32Array(points * VERTS_PER_POINT * 3);
+    this.opacities = new Float32Array(points * VERTS_PER_POINT);
+    this.sides = new Float32Array(points * VERTS_PER_POINT);
+    this.indices = new Uint32Array(points * INDICES_PER_POINT);
     const position = new THREE.BufferAttribute(this.positions, 3);
     const opacity = new THREE.BufferAttribute(this.opacities, 1);
     const side = new THREE.BufferAttribute(this.sides, 1);
