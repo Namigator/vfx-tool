@@ -4,7 +4,7 @@
 
 ## Now
 - Claude Opus 5.5 LOW in visible squad terminals does heavy implementation; Codex coordinates, runs gates, inspects browser. No built-in agents. Wait for squad reports; 10-minute fallback check only.
-- Current branch `squad/vfx-v2`; radial impact, sound graph and browser audition are checkpointed at `75a1d0a`. The latest uncommitted slice adds bolt timing, mixed point/ribbon preview, and billboard life curves. Visual/audio acceptance remains open.
+- Current branch `squad/vfx-v2`; timed bolt reveal, mixed point/ribbon preview, animated charge and audio prototype are checkpointed at `2d74458`. Visual/audio acceptance remains open.
 - [RAN] Full 417 tests pass with zero failures/skips; TypeScript and production build pass. Build warns about the large Three chunk and a third-party `use client` directive.
 - [SAW] Desktop-sized in-app browser: charge grows and brightens from tick12 to23, persists at tick24, partial bolt at25, full bolt reaching target and impact at26, empty map at63. Full-width inspected captures are `evidence/lightning-charge-tick23-2026-09-26.png` and `evidence/lightning-strike-tick26-2026-09-26.png`. The preview is still below original ARC quality.
 - [RAN] Generic RadialPath, sparse ribbon fade splitting, per-ribbon endFade, AudioMix, WAV encoding, audio transport, EffectTimeCurve RevealPath, mixed preview and billboard life curves have automated tests. Offline L01 WAV was written to `evidence/lightning-audio-prototype.wav` (0.50s, 48 kHz stereo PCM16). Browser controls render; real speaker output and a completed browser download remain unobserved.
@@ -23,7 +23,7 @@
 
 ## Environment
 - Root `F:/Dev2/VFX-Tool`; v2 `http://127.0.0.1:5174/?workspace=v2`, v1 `/`. Vite PID in `work/dev-server.pid`; doctor/shot `C:/Users/itonk/.claude/tools/`.
-- F writes/Git/squad usually require escalation. A one-turn direct F write grant was supplied after auto-review hit its usage limit; it may not persist. Git metadata still rejects sandbox-user writes to `.git/index.lock`, even after a direct `.git` grant, so the latest timing slice remains uncommitted. Approved deps ReactFlow12.12.0+19 vetted transitives; any NEW package needs inspector vet before install/run.
+- F writes/Git/squad usually require escalation. A one-turn direct F write grant was supplied after auto-review hit its usage limit; it may not persist. Git metadata rejects sandbox-user writes to `.git/index.lock`; unsandboxed escalation worked once the approval service recovered. Approved deps ReactFlow12.12.0+19 vetted transitives; any NEW package needs inspector vet before install/run.
 - Checks: `node --experimental-strip-types --test tests/*.test.ts`; `node node_modules/typescript/bin/tsc --noEmit`; `node node_modules/vite/bin/vite.js build` (build needs escalation for dist write).
 - Squad manager `vfx-manager`, `F:/Dev2/squad/squad.exe receive vfx-manager --wait --timeout 45 --json`; `SQUAD.md` has recovery. No broad process cleanup.
 
