@@ -1,10 +1,11 @@
 // Fixed-step point particle core (plan07 update order, plan22 F01-F04, plan24 random identity).
 // Minimal runtime: point/cone/sphere/disc/box emission (24-ALGORITHMS "Particle shapes"), one emitter,
-// gravity/drag/ground operators only. Path emission, other forces, trails, collisions, local space and child-event graphs are NOT implemented and are
+// gravity/drag/noise/ground operators. Path emission, other forces, trails, collisions, local space and child-event graphs are NOT implemented and are
 // rejected by validation rather than ignored. Pure data: no DOM, wall clock or global RNG.
 import { MAX_DURATION_TICKS, TICKS_PER_SECOND, ID_PATTERN } from '../model/types.ts';
 import type { Diagnostic, ValidationResult, Vec3 } from '../model/types.ts';
-import { emitterParentRandomKey, sampleUnit } from './random.ts';
+import { emitterParentRandomKey, randomTupleHash, sampleUnit } from './random.ts';
+import { noiseAcceleration, type NoiseFieldSeeds } from './noise.ts';
 
 export const PARTICLE_DT = 1 / TICKS_PER_SECOND;
 /** plan15 hard limits. */
@@ -72,7 +73,9 @@ export type GroundMode = 'kill' | 'slide' | 'bounce';
 export type ParticleOperator =
   | { kind: 'gravity'; acceleration: Vec3 }
   | { kind: 'drag'; coefficient: number }
-  | { kind: 'ground'; mode: GroundMode; restitution: number; friction: number; maxBounces: number };
+  | { kind: 'ground'; mode: GroundMode; restitution: number; friction: number; maxBounces: number }
+  /** 05 NoiseForce: amplitude m/s², frequency 1/m, evolution 1/s of effect time; fields seeded from randomStreamId. */
+  | { kind: 'noise'; mode: 'vector' | 'curl'; amplitude: number; frequency: number; evolution: number; randomStreamId: string };
 
 export type ParticleEmitterDescriptor = {
   documentSeed: number;
@@ -325,6 +328,14 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
       checkKeys(o, ['kind', 'coefficient'], op, e);
       if (!isFiniteNum(o.coefficient) || o.coefficient < 0 || o.coefficient > MAX_DRAG_COEFFICIENT) e.push(err('INVALID_VALUE', `drag.coefficient must be finite in 0..${MAX_DRAG_COEFFICIENT}.`, `${op}.coefficient`));
       else operators.push({ kind: 'drag', coefficient: o.coefficient });
+    } else if (o.kind === 'noise') {
+      checkKeys(o, ['kind', 'mode', 'amplitude', 'frequency', 'evolution', 'randomStreamId'], op, e);
+      let ok = true;
+      if (o.mode !== 'vector' && o.mode !== 'curl') { ok = false; e.push(err('INVALID_VALUE', 'noise.mode must be vector or curl.', `${op}.mode`)); }
+      const bounds: [string, number, number][] = [['amplitude', 0, 100], ['frequency', 0.01, 20], ['evolution', 0, 10]];
+      for (const [k, lo, hi] of bounds) if (!isFiniteNum(o[k]) || (o[k] as number) < lo || (o[k] as number) > hi) { ok = false; e.push(err('INVALID_VALUE', `noise.${k} must be finite in ${lo}..${hi}.`, `${op}.${k}`)); }
+      if (typeof o.randomStreamId !== 'string' || !ID_PATTERN.test(o.randomStreamId)) { ok = false; e.push(err('INVALID_VALUE', 'noise.randomStreamId must be a stored identifier.', `${op}.randomStreamId`)); }
+      if (ok) operators.push({ kind: 'noise', mode: o.mode as 'vector' | 'curl', amplitude: o.amplitude as number, frequency: o.frequency as number, evolution: o.evolution as number, randomStreamId: o.randomStreamId as string });
     } else if (o.kind === 'ground') {
       checkKeys(o, ['kind', 'mode', 'restitution', 'friction', 'maxBounces'], op, e);
       let ok = true;
@@ -462,13 +473,21 @@ export class ParticleSimulation {
       if (op.kind === 'gravity') { ax += op.acceleration[0]; ay += op.acceleration[1]; az += op.acceleration[2]; }
       else if (op.kind === 'drag') dragFactor *= Math.exp(-op.coefficient * dt);
     }
+    const noises = d.operators.flatMap(o => o.kind === 'noise' ? [{ o, seeds: this.#noiseSeeds(o.randomStreamId) }] : []);
+    const na: Vec3 = [0, 0, 0];
     const ground = d.operators.find((o): o is Extract<ParticleOperator, { kind: 'ground' }> => o.kind === 'ground');
     const killed = new Set<ParticleState>();
     for (const p of survivors) {
       const v = p.velocity, x = p.position;
-      v[0] = (v[0] + ax * dt) * dragFactor;
-      v[1] = (v[1] + ay * dt) * dragFactor;
-      v[2] = (v[2] + az * dt) * dragFactor;
+      let px = ax, py = ay, pz = az;
+      for (const { o, seeds } of noises) {
+        // Field sampled at the start-of-tick position; time is effect seconds × evolution.
+        noiseAcceleration(seeds, o.mode, o.amplitude, o.frequency, (n - 1) * dt * o.evolution, x, na);
+        px += na[0]; py += na[1]; pz += na[2];
+      }
+      v[0] = (v[0] + px * dt) * dragFactor;
+      v[1] = (v[1] + py * dt) * dragFactor;
+      v[2] = (v[2] + pz * dt) * dragFactor;
       x[0] += v[0] * dt; x[1] += v[1] * dt; x[2] += v[2] * dt;
       if (ground && x[1] <= 0 && (v[1] <= 0 || x[1] < 0)) {
         if (ground.mode === 'kill') killed.add(p);
@@ -500,6 +519,12 @@ export class ParticleSimulation {
     this.#spawn(n);
     if (this.#failure) return { ok: false, errors: (this.#failure as Diagnostic[]).map((q) => ({ ...q })) };
     return { ok: true, value: this.snapshot(), warnings: [] };
+  }
+
+  #noiseSeeds(streamId: string): NoiseFieldSeeds {
+    const d = this.descriptor;
+    const s = (i: number) => randomTupleHash({ documentSeed: d.documentSeed, randomStreamId: streamId, eventRandomKey: 'noiseField', entityOrdinal: i, propertyKey: 'noise', sampleOrdinal: 0 });
+    return [s(0), s(1), s(2)];
   }
 
   #parentKey(eventRandomKey: string, entityOrdinal: number): string {

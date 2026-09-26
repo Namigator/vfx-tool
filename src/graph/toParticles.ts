@@ -73,7 +73,7 @@ export const DEFAULT_PREVIEW_SIZE = { min: 0.08, max: 0.16 } as const;
 const EMITTER_PORTS = ['anchor', 'paths', 'trigger', 'window', 'aim'];
 const BILLBOARD_PORTS = ['particles', 'material'];
 const IP_PORTS = ['particles'];
-const FORCE_TYPES = ['Gravity', 'Drag', 'GroundCollision'];
+const FORCE_TYPES = ['Gravity', 'Drag', 'NoiseForce', 'GroundCollision'];
 
 class Fail extends Error {}
 
@@ -261,6 +261,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     const operators: ParticleOperator[] = chain.forces.map((f): ParticleOperator => {
       noDrivenParams(f, IP_PORTS);
       if (f.node.type === 'Drag') return { kind: 'drag', coefficient: num(f, 'coefficient') };
+      if (f.node.type === 'NoiseForce') return { kind: 'noise', mode: param(f, 'mode') as 'vector' | 'curl', amplitude: num(f, 'amplitude') * scale, frequency: num(f, 'frequency') / scale, evolution: num(f, 'evolution'), randomStreamId: f.node.randomStreamId };
       if (f.node.type === 'GroundCollision') {
         if (x.connections.some(c => c.source.kind === 'node' && c.source.nodeId === f.node.id && c.source.port === 'collision')) report('INVALID_VALUE', 'GroundCollision collision events are not supported by the preview yet (needs ParticleEvents child emission); disconnect the Collision output.', f.node.id);
         return { kind: 'ground', mode: param(f, 'mode') as 'kill' | 'slide' | 'bounce', restitution: num(f, 'restitution'), friction: num(f, 'friction'), maxBounces: num(f, 'maxBounces') };

@@ -321,3 +321,14 @@ test('GroundCollision compiles to a ground operator; its collision output is an 
   }));
   assert.deepEqual(p.systems[0].descriptor.operators, [{ kind: 'ground', mode: 'kill', restitution: 0.2, friction: 0.5, maxBounces: 2 }]);
 });
+
+test('NoiseForce compiles to a seeded noise operator scaled with the effect transform', () => {
+  const d = f01(dd => {
+    const g = root(dd), into = g.edges.find(e => e.target.nodeId === 'node-billboard' && e.target.port === 'particles')!;
+    g.nodes.push(node('node-noise', 'NoiseForce', { amplitude: 2, frequency: 0.5, mode: 'vector' }));
+    g.edges.push(edge('e-n', into.source.nodeId, 'particles', 'node-noise', 'particles'));
+    into.source = { nodeId: 'node-noise', port: 'particles' };
+    dd.rootTransform.scale = 2;
+  });
+  assert.deepEqual(plan(d).systems[0].descriptor.operators, [{ kind: 'noise', mode: 'vector', amplitude: 4, frequency: 0.25, evolution: 0.5, randomStreamId: 'rs-node-noise' }]);
+});
