@@ -36,6 +36,8 @@ Compact torch: source and target 1.5 m apart, continuous .9 s burst, narrow cone
 Wide burst: 35° cone, .45 s emission, stronger initial velocity, short tongues and more sparse embers.
 No variant is merely a hue change.
 
+Quality reference (non-normative): `docs/v2-plan/references/standalone-flamethrower/flamethrower.html` — four layers (core, tongues, embers, smoke) + light + synthesized audio; user-approved look 2026-09-26. Its tuned density (≈420 tongues/s, 6° cone, low lift) exceeds the table above; prefer the reference where they conflict.
+
 ## Acceptance
 
 Read as fire with bloom off; a directional hot base and changing tongues remain apparent. Smoke rises/fades rather than becoming a gray wall. Compare all three configurations from front-oblique and side, dark/light floor. Listen for clear ignition, shaped rush and controlled crackle. Record captures and user judgment; do not mark complete because particles spawn.

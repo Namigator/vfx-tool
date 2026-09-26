@@ -47,7 +47,7 @@ Secondary forks are another BranchPath node fed by branch output. Recursive bran
 
 | Type | Inputs → outputs | Defaults and bounds |
 | --- | --- | --- |
-| Emitter | A or P, E/window → S | shape point/cone/sphere/disc/box/path; burst 32 [0,4096], rate 0 [0,4096]/s; life .6–1.2 s [1 tick,10 s]; radius .2 m [0,20], cone 20° [0,180°], speed 1–3 m/s [0,100], spread direction +X; world-space default |
+| Emitter | A or P, E/window → S | shape point/cone/sphere/disc/box/path; burst 32 [0,4096], rate 0 [0,4096]/s; life .6–1.2 s [1 tick,10 s]; radius .2 m [0,20], cone 20° [0,180°], speed 1–3 m/s [0,100], spread direction +X; optional `aim` anchor input rotates local +X to point from the emitter position toward that anchor (flame jets, streams); world-space default |
 | InitialProperties | S → S | size .08–.16 m [.001,20], initial rotation 0–2π, angular velocity ±20 rad/s, color white, random frame start false |
 | Gravity | S → S | acceleration (0,-9.81,0), components ±100 m/s² |
 | Drag | S → S | coefficient 0.8 [0,20]/s, exponential velocity damping |
@@ -66,7 +66,7 @@ Event-conditioned emission supports collision/death child systems. It is one-way
 
 | Type | Inputs → outputs | Parameters |
 | --- | --- | --- |
-| BillboardRenderer | S,M → V | alignment camera/velocity/world-axis; size and stretch ratio 1 [1,20]; soft-intersection optional |
+| BillboardRenderer | S,M → V | alignment camera/velocity/world-axis; size and stretch ratio 1 [1,20]; pivot along the stretch axis .5 [0,1] (tongue roots trail, tips lead); flipbook variant row random/fixed; soft-intersection optional |
 | MeshRenderer | S or A,M,mesh → V | built-in/imported static mesh; scale .01–20; tangent orientation optional; instancing |
 | RibbonRenderer | P,M → V | width .04 m [.001,10], width-over-path curve, UV stretch/tile; camera-facing or parallel-transport orientation |
 | ParticleTrail | S,M → V | history .15 s [1 tick,2 s], max 32 points [2,128], width .015 m; independent trail fade after parent death |

@@ -4,7 +4,7 @@
 
 ## Direction (user decision 2026-09-26) — tool first, presets second
 - Stop polishing individual effects feature-by-feature. Build **generic, reusable building blocks** first; presets are assembled from them afterwards, never hand-special-cased.
-- Ease of use is the product: reusable **layer types** (e.g. Flame jet, Smoke, Sparks, Glow, Bolt, Ring) that expose their own big knobs (reach, spread, turbulence, lift, size, heat colour, density), sitting on top of the node graph (graph stays as "advanced"). Per-preset published controls alone are not enough.
+- Ease of use is the product. This is the plan's own Simple view + component templates + published knobs (01, 12) — not a new concept; the failure was execution order (see 27-GAP-AUDIT). Reusable **layer types** (e.g. Flame jet, Smoke, Sparks, Glow, Bolt, Ring) that expose their own big knobs (reach, spread, turbulence, lift, size, heat colour, density), sitting on top of the node graph (graph stays as "advanced"). Per-preset published controls alone are not enough.
 - Ship a **bundled sprite/flipbook library** shared by all effects (flame tongues, smoke puffs, sparks/streaks, soft glows, arcs, splashes…), generated procedurally (no licensing) and bakeable to image files; allow user import.
 - **Acceptance test for "tool finished":** hand the tool to a model (fresh session, no code access, graph/layer UI only) and have it build a good-looking effect — first target: match `docs/v2-plan/references/standalone-flamethrower/flamethrower.html`. Every gap it hits becomes a new generic node/layer feature, then repeat.
 - Quality bars: `docs/v2-plan/references/original-lightning/lightning-arc.html` (lightning) and `docs/v2-plan/references/standalone-flamethrower/flamethrower.html` (fire; open via `http://127.0.0.1:5174/docs/v2-plan/references/standalone-flamethrower/flamethrower.html`, `?t=<sec>` freezes a frame). Flamethrower is a standalone canvas2D demo — 4 layers (core, tongues, embers, smoke) + light + synthesized audio, 8 procedural flame shapes × 12 frames; tuned above 02-FIRE spec (tongues 420/s, cone 6°). [SAW] still frames in the in-app browser only; audio not listened to.
@@ -17,13 +17,13 @@
 - [RAN] Generic RadialPath, sparse ribbon fade splitting, per-ribbon endFade, AudioMix, WAV encoding, audio transport, EffectTimeCurve RevealPath, mixed preview and billboard life curves have automated tests. Offline L01 WAV was written to `evidence/lightning-audio-prototype.wav` (0.50s, 48 kHz stereo PCM16). Browser controls render; real speaker output and a completed browser download remain unobserved.
 - Anthropic spend limit reset at the 2026-09-26 00:11 heartbeat. Claude Opus 5.5 LOW workers resumed in visible squad terminals. Mix/WAV, audio registry, ribbon and audio compiler received independent static reviews; no new packages installed.
 
-## Next (tool-first order)
-1. **Textured materials + flipbook playback** — spec `docs/implementation/WP05-TEXTURED-MATERIALS-FLIPBOOK.md`. Sprite library seed exists: `node tools/bake-sprites.mjs` → `assets/sprites/` (flame-tongue t0–t3 8 shapes × 12 frames, smoke-puff ×4, soft-glow ×4, spark-streak ×4, electric-arc ×4, tileable dissolve-noise, `manifest.json`). Visual check page `/assets/sprites/preview.html` (dark/checker/light). [SAW] all sheets on the preview page; [RAN] `tests/v2-sprite-library.test.ts` (dims + byte-identical rebake). Typed loader `src/assets/spriteLibrary.ts` (parse/validate, getSprite, frameOverLife, half-texel cellUv) [RAN] tested; not yet wired into Material/BillboardRenderer (rest of WP05). Still to bake: water splash, earth debris, ice shards, wind wisps.
-2. **Missing generic particle nodes:** Drag, Gravity/Buoyancy, NoiseForce (coherent turbulence), ColorOverLife (heat gradient), spawn-from-particles (sub-emitter for embers/smoke), ParticleTrail/streaks, PointLight; verify depth sorting with mixed normal/additive blends at ~500 particles.
-3. **Layer-stack UI** with reusable layer types and big knobs mapped onto node params; timeline strip for phases (charge → emit → tail).
-4. Persistence (save/load effects).
-5. **Model build test:** a fresh model builds the flamethrower (then lightning) using only the tool; log every missing capability, add it as a generic node/layer, repeat until it matches the reference.
-6. Then the ten presets built from layers. Lightning leftovers (charge motes, ring/light impact, bolt fade, AV sync, whole-cycle ARC compare, listen to L01 WAV) are done via generic features, not special cases. Engine exporters remain deferred.
+## Next — gap order from docs/v2-plan/27-GAP-AUDIT.md (capability floor, 19-WORK-PACKAGES)
+1. I1 Emitter shapes cone/sphere/disc/box + speed ranges + aim anchor (runtime + compiler + tests + capture).
+2. I4 Appearance: colour over life, rotation/angular velocity, velocity-aligned stretched billboards with pivot.
+3. I3 NoiseForce. 4. I5 Textured flipbook material; rebake library to 10-ASSETS format (4×4, 256 px cells); spec docs/implementation/WP04-TEXTURED-MATERIALS-FLIPBOOK.md.
+5. I6 GroundCollision + ParticleEvents; I7 ParticleTrail/SpriteRenderer/PointLight; I8/I9 Curve, RandomRange, PathFollower.
+6. Then editor Simple view + components (I10), persistence (I11), worker (I12); then resume WP10 lightning and the A-05 model build test.
+Sprite library seed: node tools/bake-sprites.mjs → assets/sprites/ (+ preview.html, typed loader src/assets/spriteLibrary.ts); current cell sizes do not yet conform to 10-ASSETS.
 
 ## Known limits
 - [SAW] L01 charge core/halo grows during ticks0-24, bolt appears over ticks24-26 and impact follows at ticks26-38. The bolt holds broadly static through tick62; charge motes, moving sparks, ring/light, synchronized sound and original ARC quality are still missing.

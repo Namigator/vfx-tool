@@ -1,4 +1,4 @@
-# WP05 — Textured materials, flipbook playback, bundled sprite library
+# WP04/05 — Textured materials, flipbook playback, bundled sprite library
 
 Step 1 of the tool-first direction (STATE.md "Direction"). Goal: any billboard layer can use a shared
 sprite sheet and animate through it over particle life. This is the single biggest realism gap

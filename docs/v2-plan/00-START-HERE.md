@@ -1,12 +1,12 @@
 # VFX Studio v2 — implementation handoff
 
-Revision: 1.0, 2026-09-24. Status: design specification; application implementation has NOT begun.
+Revision: 1.0, 2026-09-24. Status: design specification; implementation is in progress — see ../../STATE.md for current state and [27 Gap audit](27-GAP-AUDIT.md) for catalog coverage.
 
 ## Read this first
 
 Build a desktop browser VFX authoring tool whose users can reach at least the visual richness of the original lightning demo through reusable, editable components. A node editor is the authoring interface, not the deliverable by itself. Ship ten rich game-spell defaults, all constructed with the same nodes and assets available to users.
 
-User decisions: expandable blocks; included assets plus imports; rich game spells; no runtime AI; no engine exporters in this phase. Full shader programming is deferred because arbitrary shader behavior has no established common implementation across Unity, Unreal and Roblox. Configurable material operations remain included. Work solo unless the user subsequently changes their no-subagent instruction.
+User decisions: expandable blocks; included assets plus imports; rich game spells; no runtime AI; no engine exporters in this phase. Full shader programming is deferred because arbitrary shader behavior has no established common implementation across Unity, Unreal and Roblox. Configurable material operations remain included. The user has since authorized delegation (squad workers); keep ownership boundaries and evidence tags.
 
 The user rejected the current fire, water and shadow appearance and identified a large quality gap between the original lightning and the tool. Preserve this feedback as a failed visual acceptance gate. Do not treat existing passing tests as artistic acceptance.
 
@@ -59,6 +59,7 @@ This specification supersedes conflicting decisions in the old root PLAN.md: fix
 | [Wind](effects/07-WIND.md) | Gust structure and sparse tracers |
 | [Poison](effects/08-POISON.md) | Volume, bubbles and drips |
 | [Light](effects/09-LIGHT.md) | Controlled rays, pulse and halo |
+| [27 Gap audit](27-GAP-AUDIT.md) | 2026-09-26 plan/implementation gaps, capability floor status |
 | [Energy](effects/10-ENERGY.md) | Travel, trail and event-driven impact |
 
 ## Delivery order

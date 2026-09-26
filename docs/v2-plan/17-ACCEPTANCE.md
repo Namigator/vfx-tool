@@ -12,6 +12,7 @@ A-01: Graph has real editable internals, typed connections, group interfaces and
 A-02: Moving/renaming/grouping/layout changes preserve state at fixture ticks.
 A-03: Public controls disclose bindings; conflicting drivers and cycles are rejected.
 A-04: From Blank, a user can build a bolt + sparks + sound, then replace sparks with smoke without editing source.
+A-05 (model build test): a fresh agent with UI access only (no source, no hidden nodes) builds an effect matching a standalone reference — first the flamethrower (effects/02) — from Blank. Every missing capability it reports becomes a generic catalog node or control, then the test is repeated. Passing requires user visual approval of the result.
 A-05: Save a reusable group, insert twice, edit one instance, and confirm the other remains unchanged.
 
 ## Gate B — lightning quality floor

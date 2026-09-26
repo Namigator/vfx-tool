@@ -61,6 +61,10 @@ Each family package includes data graph, reusable components, source/provenance 
 | WP26 Final visual/audio review | WP25 | Full ten-family/default/variant evidence matrix and user review | Gates B–G; T25,T34–T36,T39 |
 | WP27 Delivery | WP26 | Runnable build, docs, assets/licenses, package examples, evidence index and known limits | Clean launch/fresh-storage import; all requirements mapped |
 
+## Capability floor (gate before WP10+ artistic work)
+
+Family tuning (WP10 onward) may not resume until these catalog items are registered, compiled, simulated/rendered and covered by tests, with at least one captured preview each: Emitter shapes cone/sphere/disc/box and speed ranges plus aim anchor; Gravity, Drag, NoiseForce; InitialProperties rotation/angular velocity; colour/size/opacity over life; velocity-aligned stretched billboards; textured flipbook material with the included library conforming to 10-ASSETS; GroundCollision and ParticleEvents child emission; ParticleTrail, SpriteRenderer, PointLight; Curve and RandomRange; PathFollower with arrival event. Track status in [27 Gap audit](27-GAP-AUDIT.md). Rationale: the lightning benchmark was tuned on a point-only runtime, which produced effect-specific work instead of reusable capability.
+
 ## Scope discipline
 
 Do not add exporters, shader programming, networking or an AI assistant while these packages are incomplete. Do not perform repeated broad refactors without a failing test or measured constraint. If one capability proves impossible within WebGL2 limits, record the concrete failure and its effect on acceptance; do not weaken the requirement silently.
