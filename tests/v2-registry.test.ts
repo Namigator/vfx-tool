@@ -133,8 +133,8 @@ test('structural and material parameters', () => {
   assert.deepEqual(reg.get('GroupOutput@1')!.parameters.map(p => [p.id, p.type]), [['portId', 'string']]);
   assert.deepEqual(reg.get('Anchor@1')!.parameters.map(p => [p.id, p.type]), [['anchorId', 'string']]);
   const template = reg.get('Material@1')!.parameters.find(p => p.id === 'template')!;
-  assert.deepEqual(template.choices, ['SpriteUnlit']);
-  assert.deepEqual(MATERIAL_TEMPLATES, ['SpriteUnlit']);
+  assert.deepEqual(template.choices, ['SpriteUnlit', 'SpriteTextured']);
+  assert.deepEqual(MATERIAL_TEMPLATES, ['SpriteUnlit', 'SpriteTextured']);
   assert.ok(reg.get('Material@1')!.parameters.every(p => p.type !== 'asset'));
 });
 
@@ -149,7 +149,7 @@ test('defaults are independent across factory calls', () => {
   assert.deepEqual(b.get('InitialProperties@1')!.parameters.find(p => p.id === 'color')!.default, { srgb: '#FFFFFF', alpha: 1 });
   assert.deepEqual(b.get('Emitter@1')!.parameters.find(p => p.id === 'direction')!.default, [1, 0, 0]);
   assert.equal(b.get('Emitter@1')!.inputs.length, 5);
-  assert.deepEqual(b.get('Material@1')!.parameters[0].choices, ['SpriteUnlit']);
+  assert.deepEqual(b.get('Material@1')!.parameters[0].choices, ['SpriteUnlit', 'SpriteTextured']);
   assert.deepEqual(createRegistry(), b);
 });
 

@@ -146,7 +146,6 @@ test('group-wrapped chain compiles to the same plan as F01', () => {
 
 test('unsupported settings are addressed errors, never ignored', () => {
   const cases: Array<[string, NodeDefinition['params'], string]> = [
-    ['node-initial', { randomFrameStart: true }, 'randomFrameStart'],
     ['node-emitter', { shape: 'path' }, 'shape'],
     ['node-emitter', { space: 'local' }, 'space'],
     ['node-billboard', { alignment: 'worldAxis' }, 'alignment'],
@@ -331,4 +330,15 @@ test('NoiseForce compiles to a seeded noise operator scaled with the effect tran
     dd.rootTransform.scale = 2;
   });
   assert.deepEqual(plan(d).systems[0].descriptor.operators, [{ kind: 'noise', mode: 'vector', amplitude: 4, frequency: 0.25, evolution: 0.5, randomStreamId: 'rs-node-noise' }]);
+});
+
+test('SpriteTextured material puts the library sheet and flipbook settings on the layer', () => {
+  const p = plan(f01(d => {
+    set('node-material', { template: 'SpriteTextured', sprite: 'flame-tongue-b' })(d);
+    set('node-billboard', { flipbookMode: 'fps', flipbookFps: 12 })(d);
+    set('node-initial', { randomFrameStart: true })(d);
+  }));
+  const s = p.layers[0].sprite!;
+  assert.deepEqual([s.sheet.id, s.sheet.columns, s.sheet.rows, s.mode, s.fps, s.randomStart], ['flame-tongue-b', 4, 4, 'fps', 12, true]);
+  assert.equal(plan(f01()).layers[0].sprite, undefined);
 });

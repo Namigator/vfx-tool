@@ -48,10 +48,11 @@ export function getSprite(lib: SpriteLibrary, id: string): SpriteSheet {
   return s;
 }
 
-/** Column for a flipbook played once over particle life; normalizedAge 1 lands on the last column. */
+/** Frame index (row-major across the whole atlas) for a flipbook played once over particle life; normalizedAge 1 lands on the last frame. */
 export function frameOverLife(sheet: SpriteSheet, normalizedAge: number): number {
   const a = Math.min(1, Math.max(0, normalizedAge));
-  return Math.min(sheet.columns - 1, Math.floor(a * sheet.columns));
+  const n = sheet.columns * sheet.rows;
+  return Math.min(n - 1, Math.floor(a * n));
 }
 
 /** UV rectangle (v0 at the top row) inset by half a texel so bilinear filtering never bleeds across cells. */
@@ -63,4 +64,20 @@ export function cellUv(sheet: SpriteSheet, column: number, row: number): SpriteC
     u0: (column * sheet.cell[0] + 0.5) / w, u1: ((column + 1) * sheet.cell[0] - 0.5) / w,
     v0: (row * sheet.cell[1] + 0.5) / h, v1: ((row + 1) * sheet.cell[1] - 0.5) / h,
   };
+}
+
+export type FlipbookMode = 'overLife' | 'fps' | 'first';
+
+/**
+ * Atlas cell for one particle. flipbook sheets: overLife plays once over the particle's life (last frame at
+ * age 1), fps loops at a fixed rate from frame 0 or a per-particle random start, first holds frame 0.
+ * variants/texture sheets: a per-particle random cell, fixed for its whole life. randomUnit in [0,1).
+ */
+export function spriteCell(sheet: SpriteSheet, mode: FlipbookMode, fps: number, lifeFraction: number, ageSeconds: number, randomUnit: number, randomStart: boolean): number {
+  const n = sheet.columns * sheet.rows;
+  const pick = Math.min(n - 1, Math.floor(randomUnit * n));
+  if (sheet.kind !== 'flipbook') return pick;
+  if (mode === 'first') return 0;
+  if (mode === 'overLife') return frameOverLife(sheet, lifeFraction);
+  return ((randomStart ? pick : 0) + Math.floor(Math.max(0, ageSeconds) * fps)) % n;
 }

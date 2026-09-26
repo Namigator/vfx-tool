@@ -16,6 +16,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 // both layer kinds comes from layerRenderOrder(renderOrderOffset, visualOrder).
 import type { Diagnostic, ValidationResult, Vec3 } from '../model/types.ts';
 import type { ParticlePreviewLayer, ParticlePreviewPlan } from '../graph/toParticles.ts';
+import { spriteCell } from '../assets/spriteLibrary.ts';
+import { fnv1a32Utf8 } from '../runtime/random.ts';
 import { compileLifeCurve, compileLifeGradient, lifeFraction, sampleLifeCurve, sampleLifeGradient, type LifeCurveSampler, type LifeGradientSampler } from './billboardLife.ts';
 import { MAX_PREVIEW_POINTS, type PathPreviewLayer, type PathPreviewPlan } from '../graph/toPaths.ts';
 import { DEFAULT_MAX_LIVE_PARTICLES, PARTICLE_DT, ParticleSimulation, type ParticleState } from '../runtime/particles.ts';
@@ -70,6 +72,10 @@ attribute float lifeOpacity;
 attribute vec3 lifeColor;
 attribute float spinAngle;
 attribute vec3 worldVelocity;
+attribute float cell;
+uniform vec2 uGrid;
+uniform vec2 uInset;
+varying vec2 vAtlas;
 uniform float uAlign;
 uniform float uStretch;
 uniform float uPivot;
@@ -80,6 +86,10 @@ void main() {
   vUv = uv;
   vLifeOpacity = lifeOpacity;
   vLifeColor = lifeColor;
+  // Atlas cell (row 0 = top of the image; textures are flipY) with a half-texel inset against bleeding.
+  float col = mod(cell, uGrid.x), row = floor(cell / uGrid.x);
+  vec2 cu = clamp(uv, uInset, 1.0 - uInset);
+  vAtlas = vec2((col + cu.x) / uGrid.x, (uGrid.y - 1.0 - row + cu.y) / uGrid.y);
   // Instance matrix carries translation (column 3) and uniform size (column 0.x); quad faces the camera.
   vec4 mv = modelViewMatrix * vec4(instanceMatrix[3].xyz, 1.0);
   // Local quad: pivot shifts the particle along +Y (0 trailing end, 1 leading tip), then stretch along +Y.
@@ -103,12 +113,18 @@ uniform float uCutout;
 varying vec2 vUv;
 varying float vLifeOpacity;
 varying vec3 vLifeColor;
+varying vec2 vAtlas;
+uniform sampler2D uTex;
+uniform float uUseTex;
 void main() {
-  float d = length(vUv - 0.5) * 2.0;
-  float a = uAlpha * vLifeOpacity * (1.0 - smoothstep(0.6, 1.0, d));
+  vec4 t = vec4(1.0);
+  float mask;
+  if (uUseTex > 0.5) { t = texture2D(uTex, vAtlas); mask = t.a; }
+  else { float d = length(vUv - 0.5) * 2.0; mask = 1.0 - smoothstep(0.6, 1.0, d); }
+  float a = uAlpha * vLifeOpacity * mask;
   if (uCutout > 0.5) { if (a < uCutoff) discard; a = 1.0; }
   else if (a <= 0.0) discard;
-  gl_FragColor = vec4(uColor * vLifeColor * (1.0 + uEmission), a);
+  gl_FragColor = vec4(t.rgb * uColor * vLifeColor * (1.0 + uEmission), a);
   #include <colorspace_fragment>
 }`;
 
@@ -338,7 +354,7 @@ export class PreviewViewport {
       const lifeOpacity = new THREE.InstancedBufferAttribute(new Float32Array(PREVIEW_POOL_SIZE).fill(1), 1);
       lifeOpacity.setUsage(THREE.DynamicDrawUsage);
       geometry.setAttribute('lifeOpacity', lifeOpacity);
-      for (const [name, size, fill] of [['lifeColor', 3, 1], ['spinAngle', 1, 0], ['worldVelocity', 3, 0]] as const) {
+      for (const [name, size, fill] of [['lifeColor', 3, 1], ['spinAngle', 1, 0], ['worldVelocity', 3, 0], ['cell', 1, 0]] as const) {
         const attr = new THREE.InstancedBufferAttribute(new Float32Array(PREVIEW_POOL_SIZE * size).fill(fill), size);
         attr.setUsage(THREE.DynamicDrawUsage);
         geometry.setAttribute(name, attr);
@@ -346,6 +362,11 @@ export class PreviewViewport {
       material.uniforms.uAlign = { value: layer.alignment === 'velocity' ? 1 : 0 };
       material.uniforms.uStretch = { value: layer.stretchRatio };
       material.uniforms.uPivot = { value: layer.pivot };
+      const sheet = layer.sprite?.sheet;
+      material.uniforms.uUseTex = { value: sheet ? 1 : 0 };
+      material.uniforms.uGrid = { value: new THREE.Vector2(sheet?.columns ?? 1, sheet?.rows ?? 1) };
+      material.uniforms.uInset = { value: new THREE.Vector2(0.5 / (sheet?.cell[0] ?? 1), 0.5 / (sheet?.cell[1] ?? 1)) };
+      material.uniforms.uTex = { value: sheet ? this.#spriteTexture(sheet.file) : null };
       const mesh = new THREE.InstancedMesh(geometry, material, PREVIEW_POOL_SIZE);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       mesh.count = 0;
@@ -354,6 +375,19 @@ export class PreviewViewport {
       this.#scene.add(mesh);
       this.#layers.push({ layer, mesh, material, sizeSampler: compileLifeCurve(layer.sizeOverLife), opacitySampler: compileLifeCurve(layer.opacityOverLife), colorSampler: compileLifeGradient(layer.colorOverLife) });
     }
+  }
+
+  readonly #textures = new Map<string, THREE.Texture>();
+  /** Included-library atlas, loaded once per file and shared across layers (sRGB, mipmapped). */
+  #spriteTexture(file: string): THREE.Texture {
+    let t = this.#textures.get(file);
+    if (!t) {
+      t = new THREE.TextureLoader().load(`/assets/sprites/${file}`, () => { if (!this.#disposed) this.#emitFrame(true); });
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.anisotropy = 4;
+      this.#textures.set(file, t);
+    }
+    return t;
   }
 
   /**
@@ -457,6 +491,8 @@ export class PreviewViewport {
     this.#controls.dispose();
     this.#clearLayers();
     this.#quad.dispose();
+    for (const t of this.#textures.values()) t.dispose();
+    this.#textures.clear();
     this.#grid.geometry.dispose();
     (this.#grid.material as THREE.Material).dispose();
     this.#ground.geometry.dispose();
@@ -622,8 +658,16 @@ export class PreviewViewport {
       const g = l.mesh.geometry;
       const colAttr = g.getAttribute('lifeColor') as THREE.InstancedBufferAttribute, spinAttr = g.getAttribute('spinAngle') as THREE.InstancedBufferAttribute, velAttr = g.getAttribute('worldVelocity') as THREE.InstancedBufferAttribute;
       const col = colAttr.array as Float32Array, spin = spinAttr.array as Float32Array, vel = velAttr.array as Float32Array;
+      const cellAttr = g.getAttribute('cell') as THREE.InstancedBufferAttribute, cells = cellAttr.array as Float32Array, sprite = l.layer.sprite;
+      // Normal blending needs back-to-front order; additive does not.
+      let order: ParticleState[] = particles ? (particles as ParticleState[]).slice(0, n) : [];
+      if (l.layer.blend === 'normal' && n > 1) {
+        const c = this.#camera.position, d2 = (q: ParticleState) => (q.position[0] - c.x) ** 2 + (q.position[1] - c.y) ** 2 + (q.position[2] - c.z) ** 2;
+        order = order.map(q => [d2(q), q] as const).sort((a, b) => b[0] - a[0]).map(e => e[1]);
+      }
       for (let i = 0; i < n; i++) {
-        const p = (particles as ParticleState[])[i];
+        const p = order[i];
+        if (sprite) cells[i] = spriteCell(sprite.sheet, sprite.mode, sprite.fps, lifeFraction(p.ageTicks, p.lifetimeTicks, alpha), (p.ageTicks + alpha) * PARTICLE_DT, fnv1a32Utf8(p.parentRandomKey) / 4294967296, sprite.randomStart);
         const u = lifeFraction(p.ageTicks, p.lifetimeTicks, alpha);
         const o = i * 16, s = p.size * sampleLifeCurve(l.sizeSampler, u);
         sampleLifeGradient(l.colorSampler, u, rgbaScratch);
@@ -642,7 +686,7 @@ export class PreviewViewport {
       l.mesh.count = n;
       l.mesh.instanceMatrix.needsUpdate = true;
       opAttr.needsUpdate = true;
-      colAttr.needsUpdate = true; spinAttr.needsUpdate = true; velAttr.needsUpdate = true;
+      colAttr.needsUpdate = true; spinAttr.needsUpdate = true; velAttr.needsUpdate = true; cellAttr.needsUpdate = true;
     }
   }
 

@@ -22,11 +22,11 @@
 
 ## Next — gap order from docs/v2-plan/27-GAP-AUDIT.md (capability floor, 19-WORK-PACKAGES)
 1. DONE I1 emitter shapes/speed/aim; DONE I4 appearance (colour over life, spin, velocity stretch, pivot). Recipes: `node mcp/run-steps.mjs mcp/examples/sparks.steps.json`.
-2. DONE GroundCollision, NoiseForce. Next: I5 textured flipbook material (+ rebake library to 10-ASSETS 4×4/256 px), then ParticleEvents child emission, then camera framing that includes particle extents.
+2. DONE GroundCollision, NoiseForce, textured flipbooks (library rebaked to 10-ASSETS). Next: camera framing that includes particle extents (tall/long effects are cropped), then ParticleEvents child emission, then ParticleTrail/SpriteRenderer/PointLight.
 3. — 4. I5 Textured flipbook material; rebake library to 10-ASSETS format (4×4, 256 px cells); spec docs/implementation/WP04-TEXTURED-MATERIALS-FLIPBOOK.md.
 5. I6 GroundCollision + ParticleEvents; I7 ParticleTrail/SpriteRenderer/PointLight; I8/I9 Curve, RandomRange, PathFollower.
 6. Then editor Simple view + components (I10), persistence (I11), worker (I12); then resume WP10 lightning and the A-05 model build test.
-Sprite library seed: node tools/bake-sprites.mjs → assets/sprites/ (+ preview.html, typed loader src/assets/spriteLibrary.ts); current cell sizes do not yet conform to 10-ASSETS.
+Sprite library: `node tools/bake-sprites.mjs` → assets/sprites/ (flame-tongue-a/b, smoke-puff, foam flipbooks 4×4/256; soft-glow, spark-streak, electric-arc, droplet, ripple-ring 2×2; dissolve-noise) + src/assets/builtinSprites.generated.ts; preview /assets/sprites/preview.html.
 
 ## Known limits
 - [SAW] L01 charge core/halo grows during ticks0-24, bolt appears over ticks24-26 and impact follows at ticks26-38. The bolt holds broadly static through tick62; charge motes, moving sparks, ring/light, synchronized sound and original ARC quality are still missing.

@@ -1,0 +1,409 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "flame-jet"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "flame-jet",
+   "durationTicks": 180
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "flame-jet",
+   "anchorId": "source",
+   "position": [
+    -2,
+    1,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "flame-jet",
+   "anchorId": "target",
+   "position": [
+    2,
+    1.1,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "Schedule",
+   "id": "sched",
+   "params": {
+    "startTicks": 10,
+    "durationTicks": 120,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "Emitter",
+   "id": "em",
+   "params": {
+    "shape": "cone",
+    "coneAngle": 0.1,
+    "radius": 0.04,
+    "rate": 600,
+    "burst": 0,
+    "speedMin": 7,
+    "speedMax": 9,
+    "lifetimeMin": 0.4,
+    "lifetimeMax": 0.7
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "InitialProperties",
+   "id": "ip",
+   "params": {
+    "sizeMin": 0.1,
+    "sizeMax": 0.16,
+    "rotationMin": 0,
+    "rotationMax": 0,
+    "angularVelocityMin": 0,
+    "angularVelocityMax": 0,
+    "randomFrameStart": false
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "Gravity",
+   "id": "lift",
+   "params": {
+    "acceleration": [
+     0,
+     2.5,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "NoiseForce",
+   "id": "turb",
+   "params": {
+    "mode": "curl",
+    "amplitude": 5,
+    "frequency": 0.9,
+    "evolution": 1.2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "Drag",
+   "id": "drag",
+   "params": {
+    "coefficient": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "Material",
+   "id": "mat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "flame-tongue-a",
+    "blend": "normal",
+    "opacity": 0.75
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "BillboardRenderer",
+   "id": "bb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 2.4,
+    "pivot": 0.25,
+    "flipbookMode": "overLife",
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.6
+      },
+      {
+       "x": 0.5,
+       "y": 2.2
+      },
+      {
+       "x": 1,
+       "y": 2.6
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.06,
+       "y": 1
+      },
+      {
+       "x": 0.55,
+       "y": 0.8
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    },
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFFFFF",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.5,
+       "color": {
+        "srgb": "#FFE4C0",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#E07040",
+        "alpha": 0.6
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "Material",
+   "id": "coremat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "flame-tongue-b",
+    "blend": "additive",
+    "opacity": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "BillboardRenderer",
+   "id": "core",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 2.6,
+    "pivot": 0.3,
+    "flipbookMode": "overLife",
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.4
+      },
+      {
+       "x": 1,
+       "y": 0.9
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.5,
+       "y": 0.4
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "node-source.out",
+   "to": "em.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "node-target.out",
+   "to": "em.aim"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "sched.window",
+   "to": "em.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "em.particles",
+   "to": "ip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "ip.particles",
+   "to": "lift.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "lift.particles",
+   "to": "turb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "turb.particles",
+   "to": "drag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "drag.particles",
+   "to": "bb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "drag.particles",
+   "to": "core.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "mat.material",
+   "to": "bb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "coremat.material",
+   "to": "core.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "bb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "core.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "flame-jet"
+  },
+  true
+ ],
+ [
+  "vfx_sample_particles",
+  {
+   "docId": "flame-jet",
+   "tick": 80,
+   "show": 0
+  },
+  true
+ ],
+ [
+  "vfx_preview_url",
+  {
+   "docId": "flame-jet"
+  },
+  true
+ ]
+]

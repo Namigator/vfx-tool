@@ -33,6 +33,8 @@ import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { createRegistry } from './registry.ts';
 import { lifeCurveError, OPACITY_OVER_LIFE_BOUNDS, SIZE_OVER_LIFE_BOUNDS } from '../render/billboardLife.ts';
+import { BUILTIN_SPRITES } from '../assets/builtinSprites.generated.ts';
+import type { FlipbookMode, SpriteSheet } from '../assets/spriteLibrary.ts';
 
 export type ParticlePreviewSystem = { id: string; descriptor: ParticleEmitterDescriptor };
 export type ParticlePreviewLayer = {
@@ -59,6 +61,8 @@ export type ParticlePreviewLayer = {
   stretchRatio: number;
   /** Particle position along the stretch axis: 0 trailing end, 1 leading tip. */
   pivot: number;
+  /** Present for SpriteTextured materials: the library sheet and how cells are chosen. */
+  sprite?: { sheet: SpriteSheet; mode: FlipbookMode; fps: number; randomStart: boolean };
 };
 export type ParticlePreviewPlan = {
   durationTicks: number;
@@ -207,7 +211,6 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
 
     for (const ip of chain.enabledInitials) {
       noDrivenParams(ip, IP_PORTS);
-      if (param(ip, 'randomFrameStart') !== false) report('INVALID_VALUE', 'randomFrameStart is not supported by the point preview (no flipbook); turn it off.', ip.node.id, 'randomFrameStart');
     }
 
     // Position: a real anchor is required; Schedule events carry no position.
@@ -350,7 +353,13 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         return fail('MISSING_REFERENCE', `Required input "material" of "${bid}" needs an enabled Material (a disabled Material acts absent).`, bid);
       }
       noDrivenParams(mat, []);
-      if (param(mat, 'template') !== 'SpriteUnlit') report('INVALID_VALUE', 'Only the SpriteUnlit material template is supported.', mat.node.id, 'template');
+      const template = param(mat, 'template');
+      let sprite: ParticlePreviewLayer['sprite'];
+      if (template === 'SpriteTextured') {
+        const sheet = BUILTIN_SPRITES.find(s => s.id === param(mat, 'sprite'));
+        if (!sheet) report('MISSING_REFERENCE', `Material sprite "${String(param(mat, 'sprite'))}" is not in the included library.`, mat.node.id, 'sprite');
+        else sprite = { sheet: structuredClone(sheet) as SpriteSheet, mode: param(b, 'flipbookMode') as FlipbookMode, fps: num(b, 'flipbookFps'), randomStart: false };
+      } else if (template !== 'SpriteUnlit') report('INVALID_VALUE', `Material template "${String(template)}" is not supported.`, mat.node.id, 'template');
 
       const chain = traceChain(bid);
       if (!chain) continue; // Empty source or disabled Emitter: no particles, no layer.
@@ -381,6 +390,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         alignment: alignment === 'velocity' ? 'velocity' : 'camera',
         stretchRatio: num(b, 'stretchRatio'),
         pivot: num(b, 'pivot'),
+        ...(sprite ? { sprite: { ...sprite, randomStart: chain.initial ? param(chain.initial, 'randomFrameStart') === true : false } } : {}),
       });
     } catch (e) {
       if (!(e instanceof Fail)) throw e;

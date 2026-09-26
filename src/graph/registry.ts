@@ -14,9 +14,10 @@
 // - Capability identifiers are empty: the vocabulary is defined with the renderer.
 import type { EvaluationDomain, NodeSpec, ParameterSpec, PortSpec } from '../model/types.ts';
 import { TICKS_PER_SECOND, MAX_DURATION_TICKS } from '../model/types.ts';
+import { BUILTIN_SPRITES } from '../assets/builtinSprites.generated.ts';
 
 export const REGISTRY_DEFINITION_VERSION = 1;
-export const MATERIAL_TEMPLATES = ['SpriteUnlit'];
+export const MATERIAL_TEMPLATES = ['SpriteUnlit', 'SpriteTextured'];
 
 const CONST: EvaluationDomain[] = ['constant'];
 const ONE_TICK_SECONDS = 1 / TICKS_PER_SECOND;
@@ -178,7 +179,8 @@ function material(): NodeSpec {
     inputs: [],
     outputs: [port({ id: 'material', label: 'Material', type: 'material' })],
     parameters: [
-      param({ id: 'template', label: 'Template', type: 'enum', unit: 'none', default: 'SpriteUnlit', choices: [...MATERIAL_TEMPLATES], description: 'Only SpriteUnlit is registered; it needs no texture asset.' }),
+      param({ id: 'template', label: 'Template', type: 'enum', unit: 'none', default: 'SpriteUnlit', choices: [...MATERIAL_TEMPLATES], description: 'SpriteUnlit: soft procedural disc. SpriteTextured: a sprite/flipbook from the included library.' }),
+      param({ id: 'sprite', label: 'Sprite', type: 'enum', unit: 'none', default: 'soft-glow', choices: BUILTIN_SPRITES.map(s => s.id), description: 'Included library sheet (SpriteTextured only). Flipbooks animate; variant sets pick one cell per particle.' }),
       param({ id: 'blend', label: 'Blend', type: 'enum', unit: 'none', default: 'additive', choices: ['normal', 'additive', 'cutout'] }),
       param({ id: 'tint', label: 'Tint', type: 'color', unit: 'none', default: white(), domains: [...signal], editPolicy: 'live' }),
       param({ id: 'opacity', label: 'Opacity', type: 'number', unit: 'normalized', default: 1, min: 0, max: 1, domains: [...signal], editPolicy: 'live' }),
@@ -217,6 +219,8 @@ function billboardRenderer(): NodeSpec {
         default: { stops: [{ position: 0, color: white() }, { position: 1, color: white() }] },
         editPolicy: 'live', description: 'Colour × alpha multiplier over normalized particle age (linear-RGB interpolation).',
       }),
+      param({ id: 'flipbookMode', label: 'Flipbook', type: 'enum', unit: 'none', default: 'overLife', choices: ['overLife', 'fps', 'first'], editPolicy: 'live', description: 'overLife: play once over each particle life; fps: loop at Flipbook FPS; first: hold frame 0.' }),
+      param({ id: 'flipbookFps', label: 'Flipbook FPS', type: 'number', unit: 'hertz', default: 24, min: 0, max: 60, editPolicy: 'live', description: 'Frames per second in fps mode.' }),
       param({ id: 'pivot', label: 'Pivot', type: 'number', unit: 'normalized', default: 0.5, min: 0, max: 1, editPolicy: 'live', description: 'Where the particle sits along the stretch axis: 0 = trailing end, 1 = leading tip.' }),
     ],
     disabledBehavior: 'empty',
