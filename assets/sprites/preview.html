@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Sprite library</title>
+<style>
+body{margin:0;padding:16px;background:#111;color:#ddd;font:13px Arial,sans-serif}
+h2{font-size:14px;margin:18px 0 6px}.row{display:flex;gap:10px;flex-wrap:wrap}
+.bg{padding:6px;border-radius:6px}.dark{background:#07090c}.light{background:#d9d4cc}
+.check{background:repeating-conic-gradient(#555 0 25%,#888 0 50%) 0 0/16px 16px}
+img{display:block;image-rendering:auto;max-width:100%}
+</style></head><body>
+<p>Bundled sprites (<code>node tools/bake-sprites.mjs</code>). Each sheet on dark, checkerboard and light backgrounds.</p>
+<div id="list"></div>
+<script type="module">
+const m=await (await fetch('manifest.json')).json(),list=document.querySelector('#list');
+for(const s of m.sprites){const scale=s.cell[0]*s.columns<200?3:1,w=s.cell[0]*s.columns*scale;
+ list.insertAdjacentHTML('beforeend',`<h2>${s.id} — ${s.columns}×${s.rows} cells of ${s.cell.join('×')}, ${s.blend}</h2><div class="row">${['dark','check','light'].map(b=>`<div class="bg ${b}"><img src="${s.file}" width="${Math.min(w,420)}"></div>`).join('')}</div>`)}
+</script></body></html>

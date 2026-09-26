@@ -68,6 +68,58 @@
       "columns": 4,
       "rows": 1,
       "blend": "normal"
+    },
+    {
+      "id": "soft-glow",
+      "file": "soft-glow.png",
+      "cell": [
+        64,
+        64
+      ],
+      "columns": 4,
+      "rows": 1,
+      "kind": "variants",
+      "blend": "additive",
+      "note": "white; tint via material. cols: tight, medium, wide, core+ring"
+    },
+    {
+      "id": "spark-streak",
+      "file": "spark-streak.png",
+      "cell": [
+        16,
+        64
+      ],
+      "columns": 4,
+      "rows": 1,
+      "kind": "variants",
+      "blend": "additive",
+      "note": "head at top; cols = increasing tail taper; warm white, retint freely"
+    },
+    {
+      "id": "electric-arc",
+      "file": "electric-arc.png",
+      "cell": [
+        128,
+        32
+      ],
+      "columns": 4,
+      "rows": 1,
+      "kind": "variants",
+      "blend": "additive",
+      "note": "endpoints at left/right edge centres; use as stretched quad or ribbon texture"
+    },
+    {
+      "id": "dissolve-noise",
+      "file": "dissolve-noise.png",
+      "cell": [
+        128,
+        128
+      ],
+      "columns": 1,
+      "rows": 1,
+      "kind": "texture",
+      "blend": "n/a",
+      "note": "tileable; for dissolve/erosion thresholds and UV distortion"
     }
   ]
 }

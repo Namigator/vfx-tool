@@ -73,5 +73,44 @@ for (let k = 0; k < 4; k++) for (let y = 0; y < S; y++) for (let x = 0; x < S; x
 }
 writeFileSync(join(outDir, 'smoke-puff.png'), png(S * 4, S, smoke));
 manifest.sprites.push({ id: 'smoke-puff', file: 'smoke-puff.png', kind: 'variants', cell: [S, S], columns: 4, rows: 1, blend: 'normal' });
+// ---- Generic sheet helper: fn(col,row,u,v) -> [r,g,b,a] in 0..1, u/v in 0..1 within the cell.
+function sheet(id, cw, ch, cols, rows, fn, meta) {
+  const W = cw * cols, H = ch * rows, img = new Uint8Array(W * H * 4);
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) {
+    const px = fn(c, r, (x + .5) / cw, (y + .5) / ch), o = ((r * ch + y) * W + c * cw + x) * 4;
+    for (let i = 0; i < 4; i++) img[o + i] = Math.round(255 * clamp(px[i]));
+  }
+  writeFileSync(join(outDir, `${id}.png`), png(W, H, img));
+  manifest.sprites.push({ id, file: `${id}.png`, cell: [cw, ch], columns: cols, rows, ...meta });
+}
+function rng(seed) { let s = seed | 0; return () => { s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+// Soft glows: white, tinted by the material. Columns = tight core, medium, wide halo, hot-core ring.
+const GLOW = [u => Math.exp(-u * u * 18), u => Math.exp(-u * u * 7), u => Math.pow(clamp(1 - u), 2.2), u => Math.exp(-u * u * 30) + .35 * Math.exp(-Math.pow((u - .55) / .12, 2))];
+sheet('soft-glow', 64, 64, 4, 1, (c, _r, u, v) => { const d = Math.hypot(u - .5, v - .5) * 2, a = clamp(GLOW[c](d)) * (1 - smooth(.9, 1, d)); return [1, 1, 1, a]; },
+  { kind: 'variants', blend: 'additive', note: 'white; tint via material. cols: tight, medium, wide, core+ring' });
+
+// Spark streaks: vertical, head at top (-Y), tapering tail. Velocity-aligned billboards.
+sheet('spark-streak', 16, 64, 4, 1, (c, _r, u, v) => {
+  const head = .12 + c * .03, along = v < head ? 1 - smooth(0, head, head - v) * 1 : Math.pow(1 - (v - head) / (1 - head), 1.4 + c * .4);
+  const w = .12 + .1 * along, d = Math.abs(u - .5) * 2, core = Math.exp(-Math.pow(d / w, 2)) * along, halo = Math.exp(-Math.pow(d / (w * 3), 2)) * along * .35;
+  const a = clamp(core + halo); return [1, mix(.75, 1, core), mix(.45, 1, core), a];
+}, { kind: 'variants', blend: 'additive', note: 'head at top; cols = increasing tail taper; warm white, retint freely' });
+
+// Electric arcs: horizontal jagged bolts (midpoint displacement), blue-white. Each column is a new seed.
+const arcs = [0, 1, 2, 3].map(k => { const r = rng(900 + k), n = 33, y = new Float32Array(n); const disp = (a, b, amp) => { if (b - a < 2) return; const m = (a + b) >> 1; y[m] = (y[a] + y[b]) / 2 + (r() - .5) * amp; disp(a, m, amp * .55); disp(m, b, amp * .55); }; y[0] = y[n - 1] = 0; disp(0, n - 1, 1.3); return y; });
+sheet('electric-arc', 128, 32, 4, 1, (c, _r, u, v) => {
+  const y = arcs[c], n = y.length; let d = 9;
+  for (let i = 0; i < n - 1; i++) { const ax = i / (n - 1), bx = (i + 1) / (n - 1), ay = .5 + clamp(y[i] * .55, -.42, .42), by = .5 + clamp(y[i + 1] * .55, -.42, .42), dx = bx - ax, dy = (by - ay) * .25, t = clamp(((u - ax) * dx + (v - ay) * .25 * dy) / (dx * dx + dy * dy)); d = Math.min(d, Math.hypot(u - (ax + dx * t), (v - ay) * .25 - dy * t)); }
+  const end = smooth(0, .06, u) * smooth(0, .06, 1 - u), core = Math.exp(-Math.pow(d / .006, 2)), glow = Math.exp(-Math.pow(d / .03, 2)) * .45;
+  return [mix(.45, 1, core), mix(.75, 1, core), 1, clamp(core + glow) * end];
+}, { kind: 'variants', blend: 'additive', note: 'endpoints at left/right edge centres; use as stretched quad or ribbon texture' });
+
+// Tileable dissolve / erosion noise (grayscale in RGB, alpha 1). Periodic hash so it wraps seamlessly.
+function pnoise(x, y, p, s) { const i = Math.floor(x), j = Math.floor(y), fx = x - i, fy = y - j, ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy), m = q => ((q % p) + p) % p;
+  return mix(mix(hash3(m(i), m(j), s), hash3(m(i + 1), m(j), s), ux), mix(hash3(m(i), m(j + 1), s), hash3(m(i + 1), m(j + 1), s), ux), uy); }
+sheet('dissolve-noise', 128, 128, 1, 1, (_c, _r, u, v) => { let n = 0, a = .5, p = 4; for (let o = 0; o < 5; o++) { n += a * pnoise(u * p, v * p, p, 300 + o); p *= 2; a *= .5; } n /= .96875; return [n, n, n, 1]; },
+  { kind: 'texture', blend: 'n/a', note: 'tileable; for dissolve/erosion thresholds and UV distortion' });
+
 writeFileSync(join(outDir, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
 console.log(`wrote ${manifest.sprites.length} sheets to ${outDir}`);
