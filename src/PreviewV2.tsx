@@ -445,6 +445,17 @@ export default function PreviewV2() {
     });
   };
 
+  // ?doc=<url> loads a document JSON once (e.g. /work/mcp/<id>.json written by the MCP server).
+  const docLoadedRef = useRef(false);
+  useEffect(() => {
+    const url = new URLSearchParams(window.location.search).get('doc');
+    if (!url || docLoadedRef.current) return;
+    docLoadedRef.current = true;
+    fetch(url, { cache: 'no-store' })
+      .then(r => (r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then(t => { replace(t, `Load ${url}`); })
+      .catch(e => { setJsonErrors([{ code: 'MISSING_REFERENCE', severity: 'error', message: `Could not load ${url}: ${e instanceof Error ? e.message : String(e)}` }]); });
+  }, [replace]);
   const resetF01 = () => { replace(toText(createF01Document()), 'Reset to F01'); };
   const loadLightningDemo = () => { replace(toText(createLightningAudioDemoDocument()), 'Load lightning demo'); };
   const revertText = () => { setText(toText(doc)); setTextDirty(false); };

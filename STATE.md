@@ -17,6 +17,9 @@
 - [RAN] Generic RadialPath, sparse ribbon fade splitting, per-ribbon endFade, AudioMix, WAV encoding, audio transport, EffectTimeCurve RevealPath, mixed preview and billboard life curves have automated tests. Offline L01 WAV was written to `evidence/lightning-audio-prototype.wav` (0.50s, 48 kHz stereo PCM16). Browser controls render; real speaker output and a completed browser download remain unobserved.
 - Anthropic spend limit reset at the 2026-09-26 00:11 heartbeat. Claude Opus 5.5 LOW workers resumed in visible squad terminals. Mix/WAV, audio registry, ribbon and audio compiler received independent static reviews; no new packages installed.
 
+## MCP (agent tooling)
+- `.mcp.json` registers server `vfx` → `node --experimental-strip-types --no-warnings mcp/vfx-mcp.ts` (loads in a NEW Claude Code session). Tools: vfx_list_node_types, vfx_describe_node_type, vfx_new_document (blank/f01/forces/lightning/lightning-audio), vfx_open/save/get/set_document, vfx_set_anchor, vfx_add/remove_node, vfx_set_params, vfx_connect/disconnect, vfx_compile, vfx_sample_particles, vfx_render_audio, vfx_preview_url. Docs mirror to work/mcp/<id>.json; editor opens `?workspace=v2&doc=/work/mcp/<id>.json`. [RAN] tests/v2-mcp.test.ts + stdio smoke (work/mcp-smoke.mjs); [SAW] MCP-built fountain in editor. Deps: @modelcontextprotocol/sdk 1.30.1, zod 4.6.5 (user-approved 2026-09-26). Next: WP-MCP2 headless PNG frames.
+
 ## Next — gap order from docs/v2-plan/27-GAP-AUDIT.md (capability floor, 19-WORK-PACKAGES)
 1. I1 Emitter shapes cone/sphere/disc/box + speed ranges + aim anchor (runtime + compiler + tests + capture).
 2. I4 Appearance: colour over life, rotation/angular velocity, velocity-aligned stretched billboards with pivot.

@@ -47,7 +47,7 @@ Status legend: ✅ done, ◐ partial, ✗ missing. "Floor" = part of the P2 capa
 | I10 | Editor (WP07) | Simple view, component templates, published knobs, add-component auto-wire | ✗ graph + inspector only | — |
 | I11 | Persistence (WP08) | save/open/autosave, bundles | ✗ | — |
 | I12 | Runtime (WP03) | worker simulation, seek checkpoints | ✗ main-thread replay | — |
-| I13 | Agent tooling (new) | MCP server so an agent can build/edit/compile/simulate/render/listen to effects without the UI (user request 2026-09-26) | ✗ | — |
+| I13 | Agent tooling (new) | MCP server so an agent can build/edit/compile/simulate/render/listen to effects without the UI (user request 2026-09-26) | ◐ WP-MCP1 core done 2026-09-26: 17 tools (`mcp/server.ts`, `.mcp.json`); visual loop via `vfx_preview_url` + editor `?doc=`; headless PNG render (WP-MCP2) pending | — |
 
 Work order: I13 core (headless) early, since it speeds every later check → I1 → I4 → I3 → I5 → I6 → I7 → I8/I9 → I10 → I11 → I12, then resume WP10 lightning and the
 A-05 model build test. Update the Status column as items land.

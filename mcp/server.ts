@@ -1,0 +1,215 @@
+// VFX Studio MCP server (19-WORK-PACKAGES "Agent tooling", WP-MCP1 headless core). Tools wrap the same
+// pure modules the editor uses — registry, document validation, particle/path/audio compilers and the
+// particle runtime — so there is no MCP-only behaviour. Documents live in memory and are mirrored to
+// work/mcp/<id>.json after every successful change, which the editor opens via ?workspace=v2&doc=...
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import type { Diagnostic, EffectDocumentV2, NodeDefinition, ParameterValue, Vec3 } from '../src/model/types.ts';
+import { validateDocument } from '../src/model/document.ts';
+import { createRegistry } from '../src/graph/registry.ts';
+import { createF01Document, createForcesDemoDocument, createL01Document } from '../src/graph/fixtures.ts';
+import { createL01AudioDocument } from '../src/graph/audioFixtures.ts';
+import { compileParticlePreview } from '../src/graph/toParticles.ts';
+import { compilePathPreview } from '../src/graph/toPaths.ts';
+import { compileAudio } from '../src/graph/toAudio.ts';
+import { sampleParticlesAtTick } from '../src/runtime/particles.ts';
+import { encodeWavPcm16Stereo } from '../src/audio/wav.ts';
+
+export type VfxServerOptions = { root?: string; editorUrl?: string };
+
+const TEMPLATES = ['blank', 'f01', 'forces', 'lightning', 'lightning-audio'] as const;
+const ID = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
+
+type Result = { content: { type: 'text'; text: string }[]; isError?: boolean };
+const ok = (text: string): Result => ({ content: [{ type: 'text', text }] });
+const bad = (text: string): Result => ({ content: [{ type: 'text', text }], isError: true });
+const fmtErrors = (errors: Diagnostic[]) => errors.map(e => `- [${e.code}]${e.nodeId ? ` ${e.nodeId}` : ''}${e.fieldPath ? ` (${e.fieldPath})` : ''}: ${e.message}`).join('\n');
+
+function blankDocument(id: string, name: string): EffectDocumentV2 {
+  const d = createF01Document();
+  d.id = id; d.name = name; d.tags = [];
+  const g = d.graphs[0];
+  g.nodes = g.nodes.filter(n => ['node-source', 'node-target', 'node-output'].includes(n.id));
+  g.edges = [];
+  d.editor.graphs[g.id].nodes = { 'node-source': { x: 0, y: 0 }, 'node-target': { x: 0, y: 160 }, 'node-output': { x: 1040, y: 0 } };
+  return d;
+}
+
+export function createVfxServer(options: VfxServerOptions = {}): McpServer {
+  const root = resolve(options.root ?? process.cwd());
+  const editorUrl = options.editorUrl ?? 'http://127.0.0.1:5174/';
+  const registry = createRegistry();
+  const docs = new Map<string, EffectDocumentV2>();
+  const server = new McpServer({ name: 'vfx-studio', version: '0.1.0' });
+
+  const mirrorPath = (id: string) => join(root, 'work', 'mcp', `${id}.json`);
+  const persist = (d: EffectDocumentV2) => { mkdirSync(dirname(mirrorPath(d.id)), { recursive: true }); writeFileSync(mirrorPath(d.id), JSON.stringify(d, null, 2)); };
+  const getDoc = (id: string) => { const d = docs.get(id); if (!d) throw new Error(`No open document "${id}". Open ones: ${[...docs.keys()].join(', ') || 'none'}.`); return d; };
+  const rootGraph = (d: EffectDocumentV2, graphId?: string) => {
+    const g = d.graphs.find(x => x.id === (graphId ?? d.rootGraphId));
+    if (!g) throw new Error(`Graph "${graphId}" not found.`);
+    return g;
+  };
+  /** Applies a mutation to a copy; commits only if the result passes structural validation. */
+  const mutate = (id: string, fn: (d: EffectDocumentV2) => string): Result => {
+    const next = structuredClone(getDoc(id));
+    const msg = fn(next);
+    const v = validateDocument(next, { registry });
+    if (!v.ok) return bad(`Rejected (document unchanged):\n${fmtErrors(v.errors)}`);
+    docs.set(id, v.value); persist(v.value);
+    return ok(msg);
+  };
+  const tool = <S extends z.ZodRawShape>(name: string, description: string, shape: S, fn: (a: z.infer<z.ZodObject<S>>) => Result) =>
+    server.registerTool(name, { description, inputSchema: shape }, (async (a: z.infer<z.ZodObject<S>>) => {
+      try { return fn(a); } catch (e) { return bad(e instanceof Error ? e.message : String(e)); }
+    }) as never);
+
+  // ---------- catalog ----------
+  tool('vfx_list_node_types', 'List registered node types with their ports. Use vfx_describe_node_type for parameters.', { filter: z.string().optional() }, ({ filter }) => {
+    const lines = [...registry.values()].filter(s => !filter || s.type.toLowerCase().includes(filter.toLowerCase())).map(s =>
+      `${s.type}  in[${s.inputs.map(p => `${p.id}:${p.type}${p.required ? '!' : ''}`).join(', ')}]  out[${s.outputs.map(p => `${p.id}:${p.type}`).join(', ')}]`);
+    return ok(lines.join('\n'));
+  });
+  tool('vfx_describe_node_type', 'Parameters (id, type, unit, default, bounds, choices, description) and ports of one node type.', { type: z.string() }, ({ type }) => {
+    const s = [...registry.values()].find(x => x.type === type);
+    if (!s) return bad(`Unknown node type "${type}".`);
+    return ok(JSON.stringify({ type: s.type, disabledBehavior: s.disabledBehavior, inputs: s.inputs, outputs: s.outputs, parameters: s.parameters }, null, 1));
+  });
+
+  // ---------- documents ----------
+  tool('vfx_new_document', `Create an in-memory document from a template (${TEMPLATES.join(', ')}). "blank" has Source/Target anchors and an EffectOutput only.`,
+    { template: z.enum(TEMPLATES), id: z.string().regex(ID).optional(), name: z.string().optional() }, ({ template, id, name }) => {
+      const fresh = template === 'blank' ? blankDocument('doc', 'Blank') : template === 'f01' ? createF01Document() : template === 'forces' ? createForcesDemoDocument()
+        : template === 'lightning' ? createL01Document() : createL01AudioDocument();
+      fresh.id = id ?? `doc-${template}-${docs.size + 1}`;
+      if (name) fresh.name = name;
+      const v = validateDocument(fresh, { registry });
+      if (!v.ok) return bad(fmtErrors(v.errors));
+      docs.set(fresh.id, v.value); persist(v.value);
+      return ok(`Created "${fresh.id}" from ${template}. Mirror: work/mcp/${fresh.id}.json`);
+    });
+  tool('vfx_open_document', 'Open a document JSON file (path relative to the project root) into memory.', { path: z.string() }, ({ path }) => {
+    const v = validateDocument(JSON.parse(readFileSync(resolve(root, path), 'utf8')), { registry });
+    if (!v.ok) return bad(fmtErrors(v.errors));
+    docs.set(v.value.id, v.value); persist(v.value);
+    return ok(`Opened "${v.value.id}".`);
+  });
+  tool('vfx_save_document', 'Write a document to a JSON file (path relative to the project root; default presets/<id>.vfx.json).', { docId: z.string(), path: z.string().optional() }, ({ docId, path }) => {
+    const p = resolve(root, path ?? join('presets', `${docId}.vfx.json`));
+    mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, JSON.stringify(getDoc(docId), null, 2));
+    return ok(`Saved ${p}`);
+  });
+  tool('vfx_get_document', 'Readable summary: anchors, nodes (non-default params) and edges. full=true returns the raw JSON.', { docId: z.string(), full: z.boolean().optional() }, ({ docId, full }) => {
+    const d = getDoc(docId);
+    if (full) return ok(JSON.stringify(d, null, 1));
+    const out = [`${d.id} "${d.name}" duration ${d.durationTicks} ticks, seed ${d.seed}`, 'anchors: ' + d.anchors.map(a => `${a.id}=${JSON.stringify(a.position)}`).join(' ')];
+    for (const g of d.graphs) {
+      out.push(`graph ${g.id}:`);
+      for (const n of g.nodes) out.push(`  ${n.id} ${n.type}${n.enabled ? '' : ' (disabled)'}${Object.keys(n.params).length ? ' ' + JSON.stringify(n.params) : ''}`);
+      for (const e of g.edges) out.push(`  ${e.id}: ${e.source.nodeId}.${e.source.port} -> ${e.target.nodeId}.${e.target.port}`);
+    }
+    return ok(out.join('\n'));
+  });
+  tool('vfx_set_document', 'Set document duration (ticks, 60/s), seed or name.', { docId: z.string(), durationTicks: z.number().int().optional(), seed: z.number().int().optional(), name: z.string().optional() }, a =>
+    mutate(a.docId, d => { if (a.durationTicks !== undefined) d.durationTicks = a.durationTicks; if (a.seed !== undefined) d.seed = a.seed; if (a.name !== undefined) d.name = a.name; return 'Updated document settings.'; }));
+  tool('vfx_set_anchor', 'Create or move a document anchor (world meters).', { docId: z.string(), anchorId: z.string().regex(ID), position: z.tuple([z.number(), z.number(), z.number()]), name: z.string().optional() }, a =>
+    mutate(a.docId, d => {
+      const ex = d.anchors.find(x => x.id === a.anchorId);
+      if (ex) { ex.position = a.position as Vec3; if (a.name) ex.name = a.name; return `Moved anchor ${a.anchorId}.`; }
+      d.anchors.push({ id: a.anchorId, name: a.name ?? a.anchorId, position: a.position as Vec3 }); return `Added anchor ${a.anchorId}.`;
+    }));
+
+  // ---------- graph editing ----------
+  tool('vfx_add_node', 'Add a node. Unspecified params use registry defaults. Returns the node id.', {
+    docId: z.string(), type: z.string(), id: z.string().regex(ID).optional(), label: z.string().optional(),
+    params: z.record(z.string(), z.unknown()).optional(), enabled: z.boolean().optional(), graphId: z.string().optional(),
+  }, a => mutate(a.docId, d => {
+    const spec = [...registry.values()].find(s => s.type === a.type);
+    if (!spec) throw new Error(`Unknown node type "${a.type}". Use vfx_list_node_types.`);
+    const g = rootGraph(d, a.graphId);
+    let id = a.id ?? `node-${a.type.toLowerCase()}`;
+    if (!a.id) for (let i = 2; g.nodes.some(n => n.id === id); i++) id = `node-${a.type.toLowerCase()}-${i}`;
+    if (g.nodes.some(n => n.id === id)) throw new Error(`Node id "${id}" already exists.`);
+    const node: NodeDefinition = { id, type: spec.type, definitionVersion: spec.definitionVersion, label: a.label ?? spec.type, enabled: a.enabled ?? true, randomStreamId: `rs-${id}`, params: (a.params ?? {}) as Record<string, ParameterValue> };
+    g.nodes.push(node);
+    const layout = d.editor.graphs[g.id]?.nodes;
+    if (layout) layout[id] = { x: 260 * (Object.keys(layout).length % 7), y: 180 * Math.floor(Object.keys(layout).length / 7) + 320 };
+    return `Added ${id} (${spec.type}).`;
+  }));
+  tool('vfx_remove_node', 'Remove a node and every edge touching it.', { docId: z.string(), nodeId: z.string(), graphId: z.string().optional() }, a => mutate(a.docId, d => {
+    const g = rootGraph(d, a.graphId);
+    if (!g.nodes.some(n => n.id === a.nodeId)) throw new Error(`No node "${a.nodeId}".`);
+    g.nodes = g.nodes.filter(n => n.id !== a.nodeId);
+    const before = g.edges.length;
+    g.edges = g.edges.filter(e => e.source.nodeId !== a.nodeId && e.target.nodeId !== a.nodeId);
+    delete d.editor.graphs[g.id]?.nodes[a.nodeId];
+    return `Removed ${a.nodeId} and ${before - g.edges.length} edge(s).`;
+  }));
+  tool('vfx_set_params', 'Merge parameter values into a node (null resets a param to its default); optionally set enabled/label.', {
+    docId: z.string(), nodeId: z.string(), params: z.record(z.string(), z.unknown()).optional(), enabled: z.boolean().optional(), label: z.string().optional(), graphId: z.string().optional(),
+  }, a => mutate(a.docId, d => {
+    const n = rootGraph(d, a.graphId).nodes.find(x => x.id === a.nodeId);
+    if (!n) throw new Error(`No node "${a.nodeId}".`);
+    for (const [k, v] of Object.entries(a.params ?? {})) { if (v === null) delete n.params[k]; else n.params[k] = v as ParameterValue; }
+    if (a.enabled !== undefined) n.enabled = a.enabled;
+    if (a.label !== undefined) n.label = a.label;
+    return `Updated ${a.nodeId}.`;
+  }));
+  tool('vfx_connect', 'Connect "nodeId.port" → "nodeId.port" (output to input).', { docId: z.string(), from: z.string(), to: z.string(), graphId: z.string().optional() }, a => mutate(a.docId, d => {
+    const split = (s: string) => { const i = s.lastIndexOf('.'); if (i < 1) throw new Error(`Expected "nodeId.port", got "${s}".`); return { nodeId: s.slice(0, i), port: s.slice(i + 1) }; };
+    const g = rootGraph(d, a.graphId), source = split(a.from), target = split(a.to);
+    const order = g.edges.filter(e => e.target.nodeId === target.nodeId && e.target.port === target.port).length;
+    let id = `edge-${source.nodeId}-${target.nodeId}`.replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 60);
+    for (let i = 2; g.edges.some(e => e.id === id); i++) id = `${id.replace(/-\d+$/, '')}-${i}`;
+    g.edges.push({ id, source, target, order });
+    return `Connected ${a.from} -> ${a.to} (${id}).`;
+  }));
+  tool('vfx_disconnect', 'Remove an edge by id, or every edge from "node.port" to "node.port".', { docId: z.string(), edgeId: z.string().optional(), from: z.string().optional(), to: z.string().optional(), graphId: z.string().optional() }, a => mutate(a.docId, d => {
+    const g = rootGraph(d, a.graphId), before = g.edges.length;
+    g.edges = g.edges.filter(e => !(a.edgeId ? e.id === a.edgeId : `${e.source.nodeId}.${e.source.port}` === a.from && `${e.target.nodeId}.${e.target.port}` === a.to));
+    if (g.edges.length === before) throw new Error('No matching edge.');
+    return `Removed ${before - g.edges.length} edge(s).`;
+  }));
+
+  // ---------- compile / simulate / listen ----------
+  tool('vfx_compile', 'Compile particles, paths (at tick 0) and audio; report diagnostics and a summary. Always run after editing.', { docId: z.string() }, ({ docId }) => {
+    const d = getDoc(docId), out: string[] = [];
+    const p = compileParticlePreview(d, { audioHandled: true, ribbonsHandled: true });
+    out.push(p.ok ? `particles OK: ${p.value.systems.length} system(s), ${p.value.layers.length} billboard layer(s)` + p.value.systems.map(s => `\n  ${s.id}: shape ${s.descriptor.shape}, ${s.descriptor.bursts.length} burst(s)${s.descriptor.rate ? `, rate ${s.descriptor.rate.perSecond}/s ticks ${s.descriptor.rate.startTick}-${s.descriptor.rate.endTick}` : ''}, ops [${s.descriptor.operators.map(o => o.kind).join(', ')}]`).join('') : `particles FAILED:\n${fmtErrors(p.errors)}`);
+    const r = compilePathPreview(d, 0, { audioHandled: true });
+    out.push(r.ok ? `paths OK at tick 0: ${r.value.layers.length} ribbon layer(s)` : `paths FAILED:\n${fmtErrors(r.errors)}`);
+    const hasAudio = d.graphs.some(g => g.edges.some(e => e.target.nodeId === 'node-output' && e.target.port === 'audio'));
+    if (hasAudio) { const a = compileAudio(d); out.push(a.ok ? `audio OK: ${a.value.kind}, peak ${a.value.mix.postPeak.toFixed(3)}${a.value.mix.severeLimiting ? ' (SEVERE LIMITING)' : ''}` : `audio FAILED:\n${fmtErrors(a.errors)}`); }
+    return ok(out.join('\n'));
+  });
+  tool('vfx_sample_particles', 'Simulate to a tick and report, per particle system, live count, bounding box, mean speed and the first few particles.', { docId: z.string(), tick: z.number().int().min(0), show: z.number().int().min(0).max(50).optional() }, ({ docId, tick, show }) => {
+    const p = compileParticlePreview(getDoc(docId), { audioHandled: true, ribbonsHandled: true });
+    if (!p.ok) return bad(fmtErrors(p.errors));
+    const out: string[] = [];
+    for (const s of p.value.systems) {
+      const r = sampleParticlesAtTick(s.descriptor, Math.min(tick, s.descriptor.durationTicks));
+      if (!r.ok) { out.push(`${s.id}: FAILED\n${fmtErrors(r.errors)}`); continue; }
+      const ps = r.value.particles, lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+      let speed = 0;
+      for (const q of ps) { for (let i = 0; i < 3; i++) { lo[i] = Math.min(lo[i], q.position[i]); hi[i] = Math.max(hi[i], q.position[i]); } speed += Math.hypot(...q.velocity); }
+      const f = (v: number[]) => `[${v.map(x => x.toFixed(2)).join(', ')}]`;
+      out.push(`${s.id}: ${ps.length} live, births total ${r.value.totalBirths}` + (ps.length ? `, bbox ${f(lo)}..${f(hi)}, mean speed ${(speed / ps.length).toFixed(2)} m/s` : ''));
+      for (const q of ps.slice(0, show ?? 3)) out.push(`  age ${q.ageTicks}/${q.lifetimeTicks} pos ${f(q.position)} vel ${f(q.velocity)} size ${q.size.toFixed(3)}`);
+    }
+    return ok(out.join('\n') || 'No particle systems.');
+  });
+  tool('vfx_render_audio', 'Render the root audio mix to a 48 kHz stereo WAV (default work/mcp/<id>.wav) and report peak/limiting.', { docId: z.string(), path: z.string().optional() }, ({ docId, path }) => {
+    const a = compileAudio(getDoc(docId));
+    if (!a.ok) return bad(fmtErrors(a.errors));
+    const m = a.value.mix, p = resolve(root, path ?? join('work', 'mcp', `${docId}.wav`));
+    mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, encodeWavPcm16Stereo(m.left, m.right, m.sampleRate));
+    return ok(`Wrote ${p}: ${(m.left.length / m.sampleRate).toFixed(2)} s, pre-peak ${m.prePeak.toFixed(3)}, post-peak ${m.postPeak.toFixed(3)}, limited ${(m.limitedFraction * 100).toFixed(1)}%${m.severeLimiting ? ' SEVERE' : ''}.`);
+  });
+  tool('vfx_preview_url', 'URL that opens this document in the running editor (vite dev server) for visual inspection.', { docId: z.string() }, ({ docId }) => {
+    persist(getDoc(docId));
+    return ok(`${editorUrl}?workspace=v2&doc=/work/mcp/${encodeURIComponent(docId)}.json`);
+  });
+  return server;
+}
