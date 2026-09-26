@@ -23,6 +23,7 @@ const phaseLabel=document.querySelector('#phase');
 let W=0,H=0,DPR=1,yaw=.32,pitch=.30,distance=12.5,time=0,castAt=-100,seed=1,loop=false,sound=true,audio=null,audioBuffer=null,voice=null;
 // Timeline (s): gather 0-.3, travel .3-.8 (arrival), sustained pour to 1.4, tail reaches target 1.9, droplets/ripples settle to 3.4.
 const TICK=1/60,LAUNCH=.3,TRAVEL=.5,ARRIVE=LAUNCH+TRAVEL,STOP=1.4,TAIL_END=3.4,CYCLE=3.8,ARCH=1.8,BODY_W=.28;
+const LIGHT=(()=>{const v={x:-.45,y:.8,z:-.4},n=Math.hypot(v.x,v.y,v.z);return{x:v.x/n,y:v.y/n,z:v.z/n}})();
 const source={x:-3,y:1.5,z:0},target={x:3,y:.05,z:0},CAM_X=.2;
 const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),mix=(a,b,t)=>a+(b-a)*t,smooth=(a,b,x)=>{let t=clamp((x-a)/(b-a));return t*t*(3-2*t)};
 function randomGenerator(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
@@ -69,6 +70,7 @@ function buildSprites(){
 const P1={x:(source.x+target.x)/2,y:(source.y+target.y)/2+ARCH*2,z:0};
 function pathAt(s){const a=(1-s)*(1-s),b=2*(1-s)*s,c=s*s;return{x:a*source.x+b*P1.x+c*target.x,y:a*source.y+b*P1.y+c*target.y,z:a*source.z+b*P1.z+c*target.z}}
 function pathTan(s){return{x:2*(1-s)*(P1.x-source.x)+2*s*(target.x-P1.x),y:2*(1-s)*(P1.y-source.y)+2*s*(target.y-P1.y),z:0}}
+const SPD0=Math.hypot(pathTan(0).x,pathTan(0).y);
 const headS=t=>clamp((t-LAUNCH)/TRAVEL),tailS=t=>clamp((t-STOP)/TRAVEL);
 
 // ---- Deterministic particles (fixed 60 Hz).
@@ -81,13 +83,14 @@ function addCrown(size){parts.push({kind:'crown',x:target.x+rnd(-.08,.08),y:0,z:
 function addMist(){parts.push({kind:'mist',x:target.x+rnd(-.3,.3),y:rnd(.1,.5),z:rnd(-.3,.3),vx:rnd(-.3,.8),vy:rnd(.2,.7),vz:rnd(-.4,.4),age:0,life:rnd(.6,1.3),size:rnd(.3,.6),shape:Math.floor(rng()*4),rot:rng()*6.3})}
 function addFoam(){const a=rng()*6.28,d=rnd(0,.7);parts.push({kind:'foam',x:target.x+Math.cos(a)*d+.2,y:.012,z:Math.sin(a)*d,age:0,life:rnd(.6,1.3),size:rnd(.35,.8),shape:Math.floor(rng()*4),rot:rng()*6.3})}
 function addRipple(x,z,r0,r1,life,strength,delay=0){if(ripples.length<60)ripples.push({x,z,r0,r1,age:-delay,life,strength,off:rng()*50})}
+function inPuddle(x,z,t){const L=puddleLevel(t);return L>.05&&Math.hypot(x-target.x-.25,z)<(.5+.9*L)*.95}
 function step(dt){const t=simT,h=headS(t),tl=tailS(t),flowing=t>=LAUNCH&&tl<1,impact=t>=ARRIVE&&tl<1;
  if(t<ARRIVE&&t+dt>=ARRIVE){splashDrops(140,1.5,4.5);addCrown(.9);for(let i=0;i<20;i++)addMist();for(let i=0;i<14;i++)addFoam();addRipple(target.x,0,.2,2.2,1,1,0);addRipple(target.x,0,.2,2.2,1,.8,.12);addRipple(target.x,0,.2,2.2,1,.6,.25)}
  const emit=(key,rate,fn)=>{acc[key]+=rate*dt;while(acc[key]>=1){acc[key]--;fn()}};
  if(flowing&&h>tl)emit('stream',tl>0?90:40,()=>{const s=rnd(tl,h),p=pathAt(s),tg=pathTan(s);addDrop({x:p.x,y:p.y+rnd(-.05,.05),z:p.z+rnd(-.06,.06)},{x:tg.x/TRAVEL*.3+rnd(-.5,.5),y:tg.y/TRAVEL*.3+rnd(-.4,.6),z:rnd(-.8,.8)},rnd(.012,tl>0?.05:.03))});
  if(flowing&&h>tl)emit('fleck',160,()=>{const s=rnd(tl,h),p=pathAt(s),tg=pathTan(s),o=rnd(-.5,.5)*BODY_W;parts.push({kind:'fleck',x:p.x,y:p.y+o*.6,z:p.z+o,vx:tg.x/TRAVEL,vy:tg.y/TRAVEL,vz:0,s,age:0,life:rnd(.08,.2),size:rnd(.02,.05)})});
  if(impact){emit('drop',70,()=>splashDrops(1,1,3.5));emit('crown',9,()=>addCrown(rnd(.4,.65)));emit('mist',12,addMist);emit('foam',10,addFoam);emit('ripple',3.5,()=>addRipple(target.x+rnd(-.1,.1),rnd(-.1,.1),.15,1.6,.9,.55))}
- for(const p of parts){if(p.kind==='drop'){p.vy-=9.8*dt;const dr=Math.exp(-.35*dt);p.vx*=dr;p.vz*=dr;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;if(p.y<=.01){p.age=p.life;if(p.r>.018)addRipple(p.x,p.z,.02,mix(.25,.6,p.r/.06),.6,.45)}}
+ for(const p of parts){if(p.kind==='drop'){p.vy-=9.8*dt;const dr=Math.exp(-.35*dt);p.vx*=dr;p.vz*=dr;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;if(p.y<=.01){p.age=p.life;if(p.r>.018&&inPuddle(p.x,p.z,t))addRipple(p.x,p.z,.02,mix(.25,.6,p.r/.06),.6,.45)}}
   else if(p.kind==='fleck'){p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt}else if(p.kind==='mist'){const dr=Math.exp(-1.2*dt);p.vx*=dr;p.vy*=dr;p.vz*=dr;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt}p.age+=dt}
  for(const r of ripples)r.age+=dt;parts=parts.filter(p=>p.age<p.life);ripples=ripples.filter(r=>r.age<r.life);simT+=dt}
 function advanceTo(age){if(age<simT)resetSim(seed);let n=0;while(simT+TICK<=age&&n++<400)step(TICK)}
@@ -108,10 +111,12 @@ function orb(center,rM,t,alpha=1){if(rM<=.005)return;const q=project(center),r=r
  let g=ctx.createRadialGradient(q.x-r*.25,q.y-r*.3,r*.05,q.x,q.y,r*1.05);g.addColorStop(0,'rgba(160,215,235,.28)');g.addColorStop(.7,'rgba(60,130,170,.38)');g.addColorStop(1,'rgba(20,65,95,.7)');ctx.fillStyle=g;ctx.fill();ctx.strokeStyle='rgba(205,240,252,.45)';ctx.lineWidth=1.2;ctx.stroke();
  g=ctx.createRadialGradient(q.x+r*.3,q.y+r*.4,0,q.x+r*.3,q.y+r*.4,r*.45);g.addColorStop(0,'rgba(200,245,255,.35)');g.addColorStop(1,'rgba(200,245,255,0)');ctx.fillStyle=g;ctx.fill();
  ctx.fillStyle='rgba(255,255,255,.85)';ctx.beginPath();ctx.ellipse(q.x-r*.35,q.y-r*.42,r*.16,r*.09,-.6,0,7);ctx.fill();ctx.restore()}
-function stream(t){const h=headS(t),tl=tailS(t);if(h<=tl||t<LAUNCH)return;const N=90,L=[],R=[],C=[],up=[];
- for(let i=0;i<=N;i++){const s=mix(tl,h,i/N),p=pathAt(s),wob={x:p.x,y:p.y+.035*Math.sin(s*24-t*26)+.02*Math.sin(s*57-t*41),z:p.z+.03*Math.sin(s*19-t*23+1)};
-  const toHead=(h-s)*8,fromTail=(s-tl)*8,taper=Math.min(1,.35+toHead*.9)*Math.min(1,tl>0?fromTail*.8+.15:1),w=BODY_W*mix(1,.72,s)*taper,eL=1+.28*(noise2(s*16-t*7,t*1.5,7)-.5)+.12*(noise2(s*43-t*19,3,8)-.5),eR=1+.28*(noise2(s*16-t*7,t*1.5+9,17)-.5)+.12*(noise2(s*43-t*19,5,18)-.5);
+function stream(t){const h=headS(t),tl=tailS(t);if(h<=tl||t<LAUNCH)return;const N=90,L=[],R=[],C=[],up=[],HL=[];
+ for(let i=0;i<=N;i++){const s=mix(tl,h,i/N),p=pathAt(s),g=Math.pow(smooth(.3,1,s),1.5),wob={x:p.x,y:p.y+g*(.045*Math.sin(s*24-t*26)+.025*Math.sin(s*57-t*41)),z:p.z+g*.04*Math.sin(s*19-t*23+1)},t0=pathTan(s),spd=Math.hypot(t0.x,t0.y,t0.z);
+  const toHead=(h-s)*8,fromTail=(s-tl)*8,taper=Math.min(1,.35+toHead*.9)*Math.min(1,tl>0?fromTail*.8+.15:1),w=BODY_W*Math.sqrt(SPD0/spd)*taper,eL=1+g*.4*(noise2(s*16-t*7,t*1.5,7)-.5)+g*.18*(noise2(s*43-t*19,3,8)-.5),eR=1+g*.4*(noise2(s*16-t*7,t*1.5+9,17)-.5)+g*.18*(noise2(s*43-t*19,5,18)-.5);
   const q=project(wob),tg=pathTan(s),q2=project({x:wob.x+tg.x*.01,y:wob.y+tg.y*.01,z:wob.z}),dx=q2.x-q.x,dy=q2.y-q.y,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len,hw=w*q.s*.5,sgn=ny<0?1:-1;
+  {const tn=Math.hypot(t0.x,t0.y,t0.z),T={x:t0.x/tn,y:t0.y/tn,z:t0.z/tn},V={x:-Math.cos(pitch)*Math.sin(yaw),y:Math.sin(pitch),z:-Math.cos(pitch)*Math.cos(yaw)},Hx=LIGHT.x+V.x,Hy=LIGHT.y+V.y,Hz=LIGHT.z+V.z,hn=Math.hypot(Hx,Hy,Hz),d=(Hx*T.x+Hy*T.y+Hz*T.z)/hn,px=Hx/hn-d*T.x,py=Hy/hn-d*T.y,pz=Hz/hn-d*T.z,pn=Math.hypot(px,py,pz)||1,r=w*.5*.8;
+  HL.push({q:project({x:wob.x+px/pn*r,y:wob.y+py/pn*r,z:wob.z+pz/pn*r}),i:Math.pow(clamp(1-d*d),10)*(1-g*.75*smooth(.45,.7,noise2(s*34-t*6,t*3,61)))})}
   C.push(q);L.push({x:q.x+nx*hw*eL,y:q.y+ny*hw*eL});R.push({x:q.x-nx*hw*eR,y:q.y-ny*hw*eR});up.push({x:nx*sgn,y:ny*sgn,hw})}
  const poly=(a,b)=>{ctx.beginPath();a.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));for(let i=b.length-1;i>=0;i--)ctx.lineTo(b[i].x,b[i].y);ctx.closePath()};
  const off=(k)=>C.map((c,i)=>({x:c.x+up[i].x*up[i].hw*k,y:c.y+up[i].y*up[i].hw*k}));const path=(pts)=>{ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y))};
@@ -119,8 +124,7 @@ function stream(t){const h=headS(t),tl=tailS(t);if(h<=tl||t<LAUNCH)return;const 
  poly(off(.85),off(.15));ctx.fillStyle='rgba(215,240,250,.2)';ctx.fill();                         // sky reflection band on the upper side
  poly(off(-.2),off(-.85));ctx.fillStyle='rgba(20,60,85,.16)';ctx.fill();                           // darker refracted underside
  ctx.lineJoin='round';ctx.lineCap='round';path(L);ctx.strokeStyle='rgba(205,238,250,.3)';ctx.lineWidth=1;ctx.stroke();path(R);ctx.stroke(); // fresnel edges
- path(off(.55));ctx.strokeStyle='rgba(240,250,255,.28)';ctx.lineWidth=1.2;ctx.stroke();ctx.setLineDash([46,30,20,70,8,40]);ctx.lineDashOffset=-t*260;path(off(.5));ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=1.8;ctx.stroke(); // flowing specular streaks
- ctx.setLineDash([3,18,8,40]);ctx.lineDashOffset=-t*360;path(off(-.15));ctx.strokeStyle='rgba(225,245,255,.35)';ctx.lineWidth=1;ctx.stroke();ctx.setLineDash([]);ctx.restore();
+ for(let i=1;i<HL.length;i++){const a0=HL[i-1],a1=HL[i],I=(a0.i+a1.i)/2;if(I<.02)continue;ctx.beginPath();ctx.moveTo(a0.q.x,a0.q.y);ctx.lineTo(a1.q.x,a1.q.y);ctx.strokeStyle=`rgba(255,255,255,${I*.22})`;ctx.lineWidth=4.5;ctx.stroke();ctx.strokeStyle=`rgba(255,255,255,${Math.min(1,I*.95)})`;ctx.lineWidth=1.5;ctx.stroke()}ctx.setLineDash([]);ctx.restore();
  if(h<1)orb(pathAt(h),BODY_W*.62,t,.9)}
 function drawAligned(img,p,vel,w,stretch,alpha){const q=project(p),sp=Math.hypot(vel.x,vel.y,vel.z)||1,k=.03/sp,q2=project({x:p.x+vel.x*k,y:p.y+vel.y*k,z:p.z+vel.z*k}),px=w*q.s;if(px<.6||alpha<=.003)return;
  ctx.save();ctx.globalAlpha=alpha;ctx.translate(q.x,q.y);ctx.rotate(Math.atan2(q2.y-q.y,q2.x-q.x)+Math.PI/2);const h=px*stretch;ctx.drawImage(img,-px/2,-h/2,px,h);ctx.restore()}
