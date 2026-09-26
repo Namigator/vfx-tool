@@ -330,3 +330,29 @@ test('shaped descriptors are validated', () => {
     assert.ok(!r.ok && r.errors.some(e => e.fieldPath === path), path);
   }
 });
+
+const dropper = (ground: Record<string, unknown>) => base({
+  sourcePosition: [0, 1, 0], initialVelocity: { kind: 'vector', value: [2, 0, 0] }, durationTicks: 200,
+  lifetimeTicks: { min: 199, max: 199 }, bursts: [{ tick: 0, eventRandomKey: 'k', count: 1 }],
+  operators: [{ kind: 'gravity', acceleration: [0, -9.81, 0] }, ground as never],
+});
+const at = (d: ParticleEmitterDescriptor, tick: number) => { const r = sampleParticlesAtTick(d, tick); if (!r.ok) assert.fail(JSON.stringify(r.errors)); return r.value; };
+
+test('ground collision: kill removes on contact, bounce reflects with restitution then slides, never below y=0', () => {
+  const kill = dropper({ kind: 'ground', mode: 'kill', restitution: 0.2, friction: 0.5, maxBounces: 2 });
+  assert.equal(at(kill, 20).particles.length, 1);
+  assert.equal(at(kill, 40).particles.length, 0, 'killed after reaching the floor (~27 ticks)');
+  assert.equal(at(kill, 40).totalDeaths, 1);
+  const bounce = dropper({ kind: 'ground', mode: 'bounce', restitution: 0.5, friction: 0.2, maxBounces: 2 });
+  let minY = Infinity, sawUp = false;
+  for (let t = 1; t < 199; t++) { const p = at(bounce, t).particles[0]; minY = Math.min(minY, p.position[1]); if (p.position[1] <= 1e-9 && p.velocity[1] > 0.5) sawUp = true; }
+  assert.ok(minY >= 0, 'never below the plane');
+  assert.ok(sawUp, 'bounced upward');
+  const late = at(bounce, 198).particles[0];
+  assert.equal(late.bounces, 2);
+  assert.ok(late.position[1] === 0 && late.velocity[1] === 0, 'resting after max bounces');
+  assert.ok(Math.abs(late.velocity[0]) < 1e-9, 'slide friction stopped it');
+  const slide = dropper({ kind: 'ground', mode: 'slide', restitution: 0.5, friction: 0, maxBounces: 2 });
+  const s = at(slide, 100).particles[0];
+  assert.ok(s.position[1] === 0 && Math.abs(s.velocity[0] - 2) < 1e-9, 'frictionless slide keeps horizontal speed');
+});

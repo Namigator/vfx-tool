@@ -40,7 +40,7 @@ Status legend: ✅ done, ◐ partial, ✗ missing. "Floor" = part of the P2 capa
 | I3 | Forces (WP03) | NoiseForce (curl/vector), Attract, Vortex | ✗ | NoiseForce |
 | I4 | Appearance (WP03/04) | colour over life; rotation + angular velocity; velocity alignment + stretch; pivot | ✅ 2026-09-26: colourOverLife gradient, spin (rotation/angular velocity), velocity alignment + stretch + pivot; [SAW] MCP spark burst (mcp/examples/sparks.steps.json). Spin is [PROXY] (round sprite hides rotation until textures). worldAxis alignment still rejected | yes |
 | I5 | Materials/assets (WP04/05) | textured + flipbook material; baked library conforming to 10 (4×4, 256 px cells) | ◐ library baked but 12×8 / 40×96 cells (non-conforming); loader only | yes |
-| I6 | Events (WP03) | GroundCollision, ParticleEvents, event-conditioned child emission | ✗ | yes |
+| I6 | Events (WP03) | GroundCollision, ParticleEvents, event-conditioned child emission | ◐ GroundCollision kill/slide/bounce ✅ 2026-09-26 ([SAW] mcp/examples/fountain.steps.json); collision/birth/death events + child emission (ParticleEvents) ✗ | yes |
 | I7 | Render (WP04) | ParticleTrail, SpriteRenderer, RingRenderer, PointLight, MeshRenderer | ✗ (RingPath+ribbon only) | Trail, Sprite, Light |
 | I8 | Values (WP02/03) | Constant, Curve, Gradient, ScalarMath, Oscillator, RandomRange, PublicParameter, OffsetAnchor, EventDelay, MergeEvents | ✗ (EffectTimeCurve only) | Curve, RandomRange |
 | I9 | Paths (WP03) | PathFollower (+arrival event), HelixPath, PathTransform, ParticlePaths | ✗ | PathFollower |

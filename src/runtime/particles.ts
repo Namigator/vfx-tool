@@ -1,6 +1,6 @@
 // Fixed-step point particle core (plan07 update order, plan22 F01-F04, plan24 random identity).
 // Minimal runtime: point/cone/sphere/disc/box emission (24-ALGORITHMS "Particle shapes"), one emitter,
-// gravity/drag operators only. Path emission, other forces, trails, collisions, local space and child-event graphs are NOT implemented and are
+// gravity/drag/ground operators only. Path emission, other forces, trails, collisions, local space and child-event graphs are NOT implemented and are
 // rejected by validation rather than ignored. Pure data: no DOM, wall clock or global RNG.
 import { MAX_DURATION_TICKS, TICKS_PER_SECOND, ID_PATTERN } from '../model/types.ts';
 import type { Diagnostic, ValidationResult, Vec3 } from '../model/types.ts';
@@ -62,9 +62,17 @@ export type ParticleBurst = {
 /** Active window startTick <= tick < endTick. */
 export type ParticleRate = { perSecond: number; startTick: number; endTick: number };
 
+export type GroundMode = 'kill' | 'slide' | 'bounce';
+/**
+ * Ground plane y=0 (05 GroundCollision), resolved after integration (07). kill: the particle dies on contact.
+ * bounce: vertical velocity reflects scaled by restitution and tangential velocity is scaled by (1-friction),
+ * up to maxBounces; after that (or in slide mode) the particle rests on the plane and its tangential speed
+ * decreases by friction·9.81·dt per tick (Coulomb-style).
+ */
 export type ParticleOperator =
   | { kind: 'gravity'; acceleration: Vec3 }
-  | { kind: 'drag'; coefficient: number };
+  | { kind: 'drag'; coefficient: number }
+  | { kind: 'ground'; mode: GroundMode; restitution: number; friction: number; maxBounces: number };
 
 export type ParticleEmitterDescriptor = {
   documentSeed: number;
@@ -108,6 +116,8 @@ export type ParticleState = {
   rotation?: number;
   /** Present only when the descriptor has spin. Radians per second. */
   angularVelocity?: number;
+  /** Present once the particle has touched a ground operator's plane. */
+  bounces?: number;
 };
 
 export type ParticleTickSnapshot = {
@@ -315,7 +325,14 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
       checkKeys(o, ['kind', 'coefficient'], op, e);
       if (!isFiniteNum(o.coefficient) || o.coefficient < 0 || o.coefficient > MAX_DRAG_COEFFICIENT) e.push(err('INVALID_VALUE', `drag.coefficient must be finite in 0..${MAX_DRAG_COEFFICIENT}.`, `${op}.coefficient`));
       else operators.push({ kind: 'drag', coefficient: o.coefficient });
-    } else e.push(err('INVALID_VALUE', 'Only gravity and drag operators are implemented.', `${op}.kind`));
+    } else if (o.kind === 'ground') {
+      checkKeys(o, ['kind', 'mode', 'restitution', 'friction', 'maxBounces'], op, e);
+      let ok = true;
+      if (o.mode !== 'kill' && o.mode !== 'slide' && o.mode !== 'bounce') { ok = false; e.push(err('INVALID_VALUE', 'ground.mode must be kill, slide or bounce.', `${op}.mode`)); }
+      for (const k of ['restitution', 'friction'] as const) if (!isFiniteNum(o[k]) || (o[k] as number) < 0 || (o[k] as number) > 1) { ok = false; e.push(err('INVALID_VALUE', `ground.${k} must be finite in 0..1.`, `${op}.${k}`)); }
+      if (!isTickInt(o.maxBounces, 0, 8)) { ok = false; e.push(err('INVALID_VALUE', 'ground.maxBounces must be an integer 0..8.', `${op}.maxBounces`)); }
+      if (ok) operators.push({ kind: 'ground', mode: o.mode as GroundMode, restitution: o.restitution as number, friction: o.friction as number, maxBounces: o.maxBounces as number });
+    } else e.push(err('INVALID_VALUE', 'Only gravity, drag and ground operators are implemented.', `${op}.kind`));
   }
 
   if (e.length) return { ok: false, errors: e };
@@ -443,19 +460,42 @@ export class ParticleSimulation {
     let ax = 0, ay = 0, az = 0, dragFactor = 1;
     for (const op of d.operators) {
       if (op.kind === 'gravity') { ax += op.acceleration[0]; ay += op.acceleration[1]; az += op.acceleration[2]; }
-      else dragFactor *= Math.exp(-op.coefficient * dt);
+      else if (op.kind === 'drag') dragFactor *= Math.exp(-op.coefficient * dt);
     }
+    const ground = d.operators.find((o): o is Extract<ParticleOperator, { kind: 'ground' }> => o.kind === 'ground');
+    const killed = new Set<ParticleState>();
     for (const p of survivors) {
       const v = p.velocity, x = p.position;
       v[0] = (v[0] + ax * dt) * dragFactor;
       v[1] = (v[1] + ay * dt) * dragFactor;
       v[2] = (v[2] + az * dt) * dragFactor;
       x[0] += v[0] * dt; x[1] += v[1] * dt; x[2] += v[2] * dt;
+      if (ground && x[1] <= 0 && (v[1] <= 0 || x[1] < 0)) {
+        if (ground.mode === 'kill') killed.add(p);
+        else {
+          const b = p.bounces ?? 0;
+          x[1] = 0;
+          if (ground.mode === 'bounce' && b < ground.maxBounces && v[1] < -1e-6) {
+            p.bounces = b + 1;
+            v[1] = -v[1] * ground.restitution;
+            v[0] *= 1 - ground.friction; v[2] *= 1 - ground.friction;
+          } else {
+            p.bounces = b;
+            v[1] = Math.max(0, v[1]);
+            const h = Math.hypot(v[0], v[2]), k = h > 0 ? Math.max(0, h - ground.friction * 9.81 * dt) / h : 0;
+            v[0] *= k; v[2] *= k;
+          }
+        }
+      }
       p.ageTicks = n - p.birthTick;
       if (!v.every(Number.isFinite) || !x.every(Number.isFinite)) {
         this.#failure = [{ ...err('INVALID_VALUE', `Particle ${p.id} reached nonfinite state at tick ${n}; emitter stopped.`), nodeId: d.emitterId }];
         return { ok: false, errors: this.#failure.map((q) => ({ ...q })) };
       }
+    }
+    if (killed.size) {
+      this.#particles = survivors.filter(p => !killed.has(p));
+      for (const p of survivors) if (killed.has(p)) { this.#deaths.push(p.id); this.#totalDeaths++; }
     }
     this.#spawn(n);
     if (this.#failure) return { ok: false, errors: (this.#failure as Diagnostic[]).map((q) => ({ ...q })) };

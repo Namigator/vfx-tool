@@ -142,6 +142,21 @@ function drag(): NodeSpec {
   });
 }
 
+function groundCollision(): NodeSpec {
+  return node('GroundCollision', {
+    inputs: [port({ id: 'particles', label: 'Particles', type: 'particles', required: true })],
+    outputs: [port({ id: 'particles', label: 'Particles', type: 'particles' }), port({ id: 'collision', label: 'Collision', type: 'event' })],
+    parameters: [
+      param({ id: 'mode', label: 'Mode', type: 'enum', unit: 'none', default: 'bounce', choices: ['kill', 'slide', 'bounce'], description: 'What happens when a particle reaches the ground plane y=0.' }),
+      param({ id: 'restitution', label: 'Restitution', type: 'number', unit: 'normalized', default: 0.2, min: 0, max: 1, description: 'Fraction of vertical speed kept on each bounce.' }),
+      param({ id: 'friction', label: 'Friction', type: 'number', unit: 'normalized', default: 0.5, min: 0, max: 1, description: 'Tangential speed lost per bounce; sliding deceleration friction·9.81 m/s².' }),
+      param({ id: 'maxBounces', label: 'Max bounces', type: 'integer', unit: 'none', default: 2, min: 0, max: 8, step: 1, description: 'After this many bounces the particle slides.' }),
+    ],
+    disabledBehavior: 'bypass',
+    bypass: { input: 'particles', output: 'particles' },
+  });
+}
+
 function material(): NodeSpec {
   const signal: EvaluationDomain[] = ['constant', 'effectTime', 'normalizedAge'];
   return node('Material', {
@@ -477,7 +492,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 /** Fresh, independent registry each call. */
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
-    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), material(), billboardRenderer(),
+    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), groundCollision(), material(), billboardRenderer(),
     linePath(), bezierPath(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(),
     audioSource(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),

@@ -22,7 +22,7 @@
 
 ## Next — gap order from docs/v2-plan/27-GAP-AUDIT.md (capability floor, 19-WORK-PACKAGES)
 1. DONE I1 emitter shapes/speed/aim; DONE I4 appearance (colour over life, spin, velocity stretch, pivot). Recipes: `node mcp/run-steps.mjs mcp/examples/sparks.steps.json`.
-2. I6 GroundCollision next (MCP sampling showed particles falling through the floor), then I3 NoiseForce.
+2. DONE GroundCollision (I6 part). Next: I3 NoiseForce, then I5 textured flipbook material, then ParticleEvents child emission.
 3. — 4. I5 Textured flipbook material; rebake library to 10-ASSETS format (4×4, 256 px cells); spec docs/implementation/WP04-TEXTURED-MATERIALS-FLIPBOOK.md.
 5. I6 GroundCollision + ParticleEvents; I7 ParticleTrail/SpriteRenderer/PointLight; I8/I9 Curve, RandomRange, PathFollower.
 6. Then editor Simple view + components (I10), persistence (I11), worker (I12); then resume WP10 lightning and the A-05 model build test.

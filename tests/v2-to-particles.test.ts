@@ -311,3 +311,13 @@ test('InitialProperties spin, velocity alignment, stretch, pivot and colour over
   assert.ok(ws.every(v => v >= -2 && v <= 2) && ws.some(v => v < 0) && ws.some(v => v > 0), 'angular velocity sampled per particle');
   assert.equal(plan(f01()).systems[0].descriptor.spin, undefined, 'zero spin keeps the plain descriptor');
 });
+
+test('GroundCollision compiles to a ground operator; its collision output is an addressed error until ParticleEvents exist', () => {
+  const p = plan(f01(d => {
+    const g = root(d), into = g.edges.find(e => e.target.nodeId === 'node-billboard' && e.target.port === 'particles')!;
+    g.nodes.push(node('node-ground', 'GroundCollision', { mode: 'kill' }));
+    g.edges.push(edge('e-g', into.source.nodeId, 'particles', 'node-ground', 'particles'));
+    into.source = { nodeId: 'node-ground', port: 'particles' };
+  }));
+  assert.deepEqual(p.systems[0].descriptor.operators, [{ kind: 'ground', mode: 'kill', restitution: 0.2, friction: 0.5, maxBounces: 2 }]);
+});
