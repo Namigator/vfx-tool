@@ -11,13 +11,18 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 // compile function (pure, deterministic per tick, so scrubbing needs no replay). Each layer owns one
 // RibbonGeometry + mesh, created once per source from the tick-0 plan and rebuilt only when the layer
 // set changes; billboard sides are recomputed when the camera moves.
+//
+// Mixed mode (setMixedSource): point simulations and a path source share one clock; render order of
+// both layer kinds comes from layerRenderOrder(renderOrderOffset, visualOrder).
 import type { Diagnostic, ValidationResult, Vec3 } from '../model/types.ts';
 import type { ParticlePreviewLayer, ParticlePreviewPlan } from '../graph/toParticles.ts';
+import { compileLifeCurve, lifeFraction, sampleLifeCurve, type LifeCurveSampler } from './billboardLife.ts';
 import { MAX_PREVIEW_POINTS, type PathPreviewLayer, type PathPreviewPlan } from '../graph/toPaths.ts';
 import { DEFAULT_MAX_LIVE_PARTICLES, PARTICLE_DT, ParticleSimulation, type ParticleState } from '../runtime/particles.ts';
 import { PlaybackClock } from '../runtime/clock.ts';
 import { framePoints, RibbonGeometry, ribbonSoftness, type FramePointSet } from './RibbonGeometry.ts';
 import { pathViewDirection } from './pathView.ts';
+import { layerRenderOrder } from './layerOrder.ts';
 
 /** Fraction of the preview half-extent path framing fills (leaves a margin, never clips). */
 const PATH_FRAME_FILL = 0.85;
@@ -36,9 +41,9 @@ export type PreviewFrameInfo = {
   playing: boolean;
   /** Paused because the tab was hidden; resumes only on explicit play. */
   suspended: boolean;
-  /** Live particles (point mode) or drawn ribbon paths (path mode). */
+  /** Live particles plus drawn ribbon paths (mixed mode counts both). */
   live: number;
-  mode: 'points' | 'paths' | 'none';
+  mode: 'points' | 'paths' | 'mixed' | 'none';
   /** First live particle of the first system, namespaced `${systemId}/${particleId}`; '' if none. */
   sampleParticleId: string;
 };
@@ -58,9 +63,12 @@ export function namespacedParticleId(systemId: string, particleId: string): stri
 export class WebGLUnavailableError extends Error {}
 
 const VERTEX = /* glsl */ `
+attribute float lifeOpacity;
 varying vec2 vUv;
+varying float vLifeOpacity;
 void main() {
   vUv = uv;
+  vLifeOpacity = lifeOpacity;
   // Instance matrix carries translation (column 3) and uniform size (column 0.x); quad faces the camera.
   vec4 mv = modelViewMatrix * vec4(instanceMatrix[3].xyz, 1.0);
   mv.xy += position.xy * instanceMatrix[0][0];
@@ -74,9 +82,10 @@ uniform float uEmission;
 uniform float uCutoff;
 uniform float uCutout;
 varying vec2 vUv;
+varying float vLifeOpacity;
 void main() {
   float d = length(vUv - 0.5) * 2.0;
-  float a = uAlpha * (1.0 - smoothstep(0.6, 1.0, d));
+  float a = uAlpha * vLifeOpacity * (1.0 - smoothstep(0.6, 1.0, d));
   if (uCutout > 0.5) { if (a < uCutoff) discard; a = 1.0; }
   else if (a <= 0.0) discard;
   gl_FragColor = vec4(uColor * (1.0 + uEmission), a);
@@ -115,7 +124,7 @@ void main() {
   #include <colorspace_fragment>
 }`;
 
-type LayerMesh = { layer: ParticlePreviewLayer; mesh: THREE.InstancedMesh; material: THREE.ShaderMaterial };
+type LayerMesh = { layer: ParticlePreviewLayer; mesh: THREE.InstancedMesh; material: THREE.ShaderMaterial; sizeSampler: LifeCurveSampler; opacitySampler: LifeCurveSampler };
 type RibbonMesh = { nodeId: string; ribbon: RibbonGeometry; mesh: THREE.Mesh; material: THREE.ShaderMaterial };
 
 /** Per-tick path compile supplied by the caller (e.g. `t => compilePathPreview(doc, t)`). */
@@ -145,7 +154,7 @@ function materialFor(
 
 /** Layer set identity: meshes are rebuilt only when these change between ticks. */
 function ribbonKey(layers: readonly PathPreviewLayer[]): string {
-  return JSON.stringify(layers.map(l => [l.nodeId, l.color, l.opacity, l.emission, l.blend, l.alphaCutoff, l.renderOrderOffset]));
+  return JSON.stringify(layers.map(l => [l.nodeId, l.color, l.opacity, l.emission, l.blend, l.alphaCutoff, l.renderOrderOffset, l.visualOrder]));
 }
 
 export class PreviewViewport {
@@ -260,20 +269,10 @@ export class PreviewViewport {
     if (this.#disposed) return;
     this.#clearLayers();
     if (this.#pathCamera) this.#resetCamera(); // Point preview never inherits the path framing.
-    this.#plan = plan;
     this.#clock = new PlaybackClock({ durationTicks: plan.durationTicks });
     this.#failed = false;
     this.#suspended = false;
-    plan.layers.forEach((layer, i) => {
-      const material = materialFor(VERTEX, FRAGMENT, layer);
-      const mesh = new THREE.InstancedMesh(this.#quad, material, PREVIEW_POOL_SIZE);
-      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      mesh.count = 0;
-      mesh.frustumCulled = false;
-      mesh.renderOrder = layer.renderOrderOffset + i * 1e-3;
-      this.#scene.add(mesh);
-      this.#layers.push({ layer, mesh, material });
-    });
+    this.#addPointLayers(plan);
     this.#replayTo(0);
   }
 
@@ -284,11 +283,54 @@ export class PreviewViewport {
   setPathSource(plan: PathPreviewPlan, compile: PathCompile): void {
     if (this.#disposed) return;
     this.#clearLayers();
+    this.#resetCamera();
     this.#plan = null;
-    this.#pathCompile = compile;
     this.#clock = new PlaybackClock({ durationTicks: plan.durationTicks });
     this.#failed = false;
     this.#suspended = false;
+    this.#beginPathSource(plan, compile);
+    this.#emitFrame(true);
+  }
+
+  /**
+   * Mixed mode: point simulations and a per-tick path source share one clock (the longer duration).
+   * Replay/scrub rebuilds the simulations from tick 0 and recompiles the path tick, so both are
+   * deterministic. Layers of both kinds are ordered globally by `visualOrder`. Starts paused at tick 0.
+   */
+  setMixedSource(points: ParticlePreviewPlan, paths: PathPreviewPlan, compile: PathCompile): void {
+    if (this.#disposed) return;
+    this.#clearLayers();
+    this.#resetCamera();
+    this.#clock = new PlaybackClock({ durationTicks: Math.max(points.durationTicks, paths.durationTicks) });
+    this.#failed = false;
+    this.#suspended = false;
+    this.#addPointLayers(points);
+    this.#beginPathSource(paths, compile);
+    this.#replayTo(0);
+  }
+
+  #addPointLayers(plan: ParticlePreviewPlan): void {
+    this.#plan = plan;
+    for (const layer of plan.layers) {
+      const material = materialFor(VERTEX, FRAGMENT, layer);
+      // Per-layer geometry: the per-instance opacity attribute cannot live on the shared quad.
+      const geometry = this.#quad.clone();
+      const lifeOpacity = new THREE.InstancedBufferAttribute(new Float32Array(PREVIEW_POOL_SIZE).fill(1), 1);
+      lifeOpacity.setUsage(THREE.DynamicDrawUsage);
+      geometry.setAttribute('lifeOpacity', lifeOpacity);
+      const mesh = new THREE.InstancedMesh(geometry, material, PREVIEW_POOL_SIZE);
+      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      mesh.count = 0;
+      mesh.frustumCulled = false;
+      mesh.renderOrder = layerRenderOrder(layer.renderOrderOffset, layer.visualOrder);
+      this.#scene.add(mesh);
+      this.#layers.push({ layer, mesh, material, sizeSampler: compileLifeCurve(layer.sizeOverLife), opacitySampler: compileLifeCurve(layer.opacityOverLife) });
+    }
+  }
+
+  /** Frames the tick-0 paths and uploads them; the caller owns the clock and emits the frame. */
+  #beginPathSource(plan: PathPreviewPlan, compile: PathCompile): void {
+    this.#pathCompile = compile;
     const sets: FramePointSet[] = [];
     for (const layer of plan.layers) if (layer.active) {
       for (const p of layer.paths) if (p.points.length) sets.push({ points: p.points, pad: (layer.width * p.widthScale) / 2 });
@@ -302,7 +344,6 @@ export class PreviewViewport {
     }
     this.#framePaths();
     this.#applyPathPlan(plan);
-    this.#emitFrame(true);
   }
 
   /** Restores the point-mode camera pose, clip planes and orbit target. */
@@ -400,6 +441,7 @@ export class PreviewViewport {
     for (const l of this.#layers) {
       this.#scene.remove(l.mesh);
       l.mesh.dispose();
+      l.mesh.geometry.dispose(); // Per-layer quad clone carrying the lifeOpacity attribute.
       l.material.dispose();
     }
     this.#layers = [];
@@ -442,16 +484,16 @@ export class PreviewViewport {
     const key = ribbonKey(plan.layers);
     if (key !== this.#ribbonKey) {
       this.#clearRibbons();
-      plan.layers.forEach((layer, i) => {
+      for (const layer of plan.layers) {
         const ribbon = new RibbonGeometry({ maxPoints: MAX_PREVIEW_POINTS });
         const material = materialFor(RIBBON_VERTEX, RIBBON_FRAGMENT, layer);
         material.side = THREE.DoubleSide; // Camera-facing strips can wind either way.
         material.uniforms.uSoftness = { value: ribbonSoftness(layer.blend) };
         const mesh = new THREE.Mesh(ribbon.geometry, material);
-        mesh.renderOrder = layer.renderOrderOffset + i * 1e-3;
+        mesh.renderOrder = layerRenderOrder(layer.renderOrderOffset, layer.visualOrder);
         this.#scene.add(mesh);
         this.#ribbons.push({ nodeId: layer.nodeId, ribbon, mesh, material });
-      });
+      }
       this.#ribbonKey = key;
     }
     this.#updateRibbons();
@@ -478,35 +520,33 @@ export class PreviewViewport {
     this.#ribbonCamera.copy(c);
   }
 
+  /** Rebuilds point simulations from tick 0 and/or recompiles the path tick; lands paused. */
   #replayTo(tick: number): void {
-    if (this.#pathCompile && this.#clock) {
-      this.#failed = false;
-      this.#clock.pause();
-      this.#clock.seek(tick);
-      this.#pathTick(tick);
-      if (!this.#failed) this.#emitFrame(true);
-      return;
-    }
     const plan = this.#plan, clock = this.#clock;
-    if (!plan || !clock) return;
+    if (!clock || (!plan && !this.#pathCompile)) return;
     this.#failed = false;
-    this.#sims.clear();
-    for (const s of plan.systems) {
-      const created = ParticleSimulation.create(s.descriptor);
-      if (!created.ok) return this.#fail(created.errors.map(e => ({ ...e, nodeId: e.nodeId ?? s.id })));
-      this.#sims.set(s.id, created.value);
-    }
     clock.pause(); // Replays always land paused; restart() resumes explicitly.
     clock.seek(tick);
-    for (const [id, sim] of this.#sims) {
-      while (sim.tick < tick) {
-        const r = sim.advance();
-        if (!r.ok) return this.#fail(r.errors.map(e => ({ ...e, nodeId: e.nodeId ?? id })));
+    if (plan) {
+      this.#sims.clear();
+      for (const s of plan.systems) {
+        const created = ParticleSimulation.create(s.descriptor);
+        if (!created.ok) return this.#fail(created.errors.map(e => ({ ...e, nodeId: e.nodeId ?? s.id })));
+        this.#sims.set(s.id, created.value);
       }
+      for (const [id, sim] of this.#sims) {
+        // Mixed clocks may outlast a system; stop at its own duration as #advanceSims does.
+        const end = Math.min(tick, sim.descriptor.durationTicks);
+        while (sim.tick < end) {
+          const r = sim.advance();
+          if (!r.ok) return this.#fail(r.errors.map(e => ({ ...e, nodeId: e.nodeId ?? id })));
+        }
+      }
+      this.#takeSnapshots();
+      this.#upload(0);
     }
-    this.#takeSnapshots();
-    this.#upload(0);
-    this.#emitFrame(true);
+    this.#pathTick(tick);
+    if (!this.#failed) this.#emitFrame(true);
   }
 
   #advanceSims(ticks: number): void {
@@ -548,9 +588,13 @@ export class PreviewViewport {
       const particles = this.#snapshots.get(l.layer.systemId);
       const n = particles ? Math.min(particles.length, PREVIEW_POOL_SIZE) : 0;
       const m = l.mesh.instanceMatrix.array as Float32Array;
+      const opAttr = l.mesh.geometry.getAttribute('lifeOpacity') as THREE.InstancedBufferAttribute;
+      const op = opAttr.array as Float32Array;
       for (let i = 0; i < n; i++) {
         const p = (particles as ParticleState[])[i];
-        const o = i * 16, s = p.size;
+        const u = lifeFraction(p.ageTicks, p.lifetimeTicks, alpha);
+        const o = i * 16, s = p.size * sampleLifeCurve(l.sizeSampler, u);
+        op[i] = sampleLifeCurve(l.opacitySampler, u);
         m[o] = s; m[o + 1] = 0; m[o + 2] = 0; m[o + 3] = 0;
         m[o + 4] = 0; m[o + 5] = s; m[o + 6] = 0; m[o + 7] = 0;
         m[o + 8] = 0; m[o + 9] = 0; m[o + 10] = s; m[o + 11] = 0;
@@ -561,6 +605,7 @@ export class PreviewViewport {
       }
       l.mesh.count = n;
       l.mesh.instanceMatrix.needsUpdate = true;
+      opAttr.needsUpdate = true;
     }
   }
 
@@ -579,7 +624,7 @@ export class PreviewViewport {
     for (const ps of this.#snapshots.values()) live += ps.length;
     const first = this.#plan?.systems[0];
     const ps = first ? this.#snapshots.get(first.id) : undefined;
-    const mode = this.#pathCompile ? 'paths' : this.#plan ? 'points' : 'none';
+    const mode = this.#pathCompile ? (this.#plan ? 'mixed' : 'paths') : this.#plan ? 'points' : 'none';
     cb({
       tick, playing, suspended, live, mode,
       durationTicks: clock ? clock.durationTicks : 0,
@@ -595,13 +640,10 @@ export class PreviewViewport {
     const clock = this.#clock;
     if (clock && clock.playing && !this.#failed) {
       const r = clock.advance(dt);
-      if (this.#pathCompile) {
-        // Paths are a pure function of the tick: compile only the landing tick, no interpolation.
-        if (r.ticksAdvanced > 0) this.#pathTick(clock.tick);
-      } else {
-        if (r.ticksAdvanced > 0) this.#advanceSims(r.ticksAdvanced);
-        if (!this.#failed) this.#upload(clock.alpha);
-      }
+      if (r.ticksAdvanced > 0 && this.#plan) this.#advanceSims(r.ticksAdvanced);
+      // Paths are a pure function of the tick: compile only the landing tick, no interpolation.
+      if (r.ticksAdvanced > 0 && !this.#failed) this.#pathTick(clock.tick);
+      if (this.#plan && !this.#failed) this.#upload(clock.alpha);
     }
     this.#emitFrame(false);
     if (this.#disposed) return; // onFrame may have disposed the viewport; never render after dispose.

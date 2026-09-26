@@ -19,7 +19,8 @@
 //   to every output point. Ribbon width and UV tile length are scaled by the uniform root scale.
 // - Each path node output is evaluated once per compile even when shared by several ribbons.
 // - Any non-empty connection into a parameter port, and any exposed-control driver, is rejected until
-//   expression evaluation exists. Disabled nodes are not parameter-checked (they contribute no values).
+//   expression evaluation exists. Sole exception: RevealPath.fraction may be driven by
+//   EffectTimeCurve.value (curve sampled at effect seconds; disabled driver falls back to the literal). Disabled nodes are not parameter-checked (they contribute no values).
 // - Validation does not depend on effectTick: geometry is always evaluated; a layer outside its window
 //   (or at/after the document end) is inactive and carries no paths.
 import type { ColorValue, CurveValue, Diagnostic, ErrorCode, ParameterValue, Quaternion, Transform, ValidationResult, Vec3 } from '../model/types.ts';
@@ -28,6 +29,7 @@ import { registryKey } from '../model/controls.ts';
 import { bezierPath, jaggedPath, linePath, revealPath, type PathData } from '../runtime/paths.ts';
 import { branchPaths, type BranchCountMode } from '../runtime/branches.ts';
 import { radialPaths, type RadialMode } from '../runtime/radial.ts';
+import { evaluateCurve } from '../runtime/curves.ts';
 import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { createRegistry } from './registry.ts';
@@ -49,6 +51,8 @@ export type PathPreviewLayer = {
   uvTileLength: number;
   orientation: 'camera' | 'parallelTransport';
   renderOrderOffset: number;
+  /** Index of this sink's first connection among root EffectOutput.visual connections (shared with particle layers). */
+  visualOrder: number;
   /** Material.tint as encoded sRGB. */
   color: ColorValue;
   opacity: number;
@@ -186,6 +190,31 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
     return [p[0], p[1], p[2]];
   };
 
+  /**
+   * RevealPath.fraction: the literal, or an enabled EffectTimeCurve.value sampled at `seconds`
+   * (a disabled driver falls back to the literal). Curve y outside [0,1] is an addressed error.
+   */
+  const drivenFraction = (n: ExpandedNode): number => {
+    const cs = into(n.node.id, 'fraction');
+    if (cs.length === 0) return num(n, 'fraction');
+    if (cs.length > 1) return fail('MULTIPLE_DRIVERS', `Input "fraction" of "${n.node.id}" has ${cs.length} drivers; connect one.`, n.node.id, 'fraction');
+    const s = cs[0].source;
+    const d = sourceNode(s, n.node.id, 'fraction');
+    if (d.node.type !== 'EffectTimeCurve' || s.kind !== 'node' || s.port !== 'value') {
+      return fail('DOMAIN_MISMATCH', `Input "fraction" of "${n.node.id}" is driven by "${d.node.id}" (${d.node.type}); only EffectTimeCurve.value is supported by the path preview.`, n.node.id, 'fraction');
+    }
+    if (!d.effectiveEnabled) return num(n, 'fraction');
+    noDrivenParams(d, []);
+    const curve = param(d, 'curve') as CurveValue;
+    if (curve?.domain !== 'effectSeconds') return fail('DOMAIN_MISMATCH', `EffectTimeCurve "${d.node.id}" curve must use domain "effectSeconds".`, d.node.id, 'curve');
+    try {
+      return evaluateCurve(curve, seconds, { min: 0, max: 1 });
+    } catch (e) {
+      if (e instanceof RangeError || e instanceof TypeError) return fail('INVALID_VALUE', `EffectTimeCurve "${d.node.id}": ${e.message}`, d.node.id, 'curve');
+      throw e;
+    }
+  };
+
   const memo = new Map<string, NodeOutputs>();
   /** Nodes whose evaluation already reported; a second consumer fails silently (one diagnostic per node). */
   const failed = new Set<string>();
@@ -248,8 +277,8 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
       case 'RevealPath': {
         const input = pathsInto(id, 'paths');
         if (!on) { out = new Map([['paths', input]]); break; }
-        noDrivenParams(n, MODIFIER_PORTS);
-        const fraction = num(n, 'fraction');
+        noDrivenParams(n, [...MODIFIER_PORTS, 'fraction']);
+        const fraction = drivenFraction(n);
         out = new Map([['paths', guard(id, () => input.map(p => revealPath(p, fraction)))]]);
         break;
       }
@@ -300,7 +329,8 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
   const layers: PathPreviewLayer[] = [];
   const done = new Set<string>();
   let emittedPoints = 0;
-  for (const c of into(outputId, 'visual')) {
+  const visual = into(outputId, 'visual');
+  for (const [visualOrder, c] of visual.entries()) {
     try {
       const r = sourceNode(c.source, outputId, 'visual');
       if (r.node.type === 'BillboardRenderer') continue; // Particle layers: compileParticlePreview.
@@ -353,6 +383,7 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
         uvTileLength: num(r, 'uvTileLength') * scale,
         orientation: param(r, 'orientation') as PathPreviewLayer['orientation'],
         renderOrderOffset: num(r, 'renderOrderOffset'),
+        visualOrder,
         color: { ...(param(mat, 'tint') as ColorValue) },
         opacity: num(mat, 'opacity'),
         emission: num(mat, 'emission'),

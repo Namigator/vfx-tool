@@ -18,7 +18,7 @@
 // - Schedule event keys are scheduleEventRandomKey(stream, tick, repeatOrdinal); start and end ticks of
 //   one repeat always differ (durationTicks >= 1), so no extra tag is needed. Duplicate keys (the same
 //   Schedule output wired twice) are a DUPLICATE_ID error.
-import type { ColorValue, Diagnostic, ErrorCode, ParameterValue, Quaternion, Transform, ValidationResult, Vec3 } from '../model/types.ts';
+import type { ColorValue, CurveValue, Diagnostic, ErrorCode, ParameterValue, Quaternion, Transform, ValidationResult, Vec3 } from '../model/types.ts';
 import { TICKS_PER_SECOND } from '../model/types.ts';
 import { registryKey } from '../model/controls.ts';
 import { scheduleEventRandomKey } from '../runtime/random.ts';
@@ -29,6 +29,7 @@ import {
 import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { createRegistry } from './registry.ts';
+import { lifeCurveError, OPACITY_OVER_LIFE_BOUNDS, SIZE_OVER_LIFE_BOUNDS } from '../render/billboardLife.ts';
 
 export type ParticlePreviewSystem = { id: string; descriptor: ParticleEmitterDescriptor };
 export type ParticlePreviewLayer = {
@@ -42,6 +43,12 @@ export type ParticlePreviewLayer = {
   blend: 'normal' | 'additive' | 'cutout';
   alphaCutoff: number;
   renderOrderOffset: number;
+  /** Index of this sink's first connection among root EffectOutput.visual connections (shared with ribbon layers). */
+  visualOrder: number;
+  /** Validated normalized-age size multiplier, y in [0,20]; sample with render/billboardLife.ts. */
+  sizeOverLife: CurveValue;
+  /** Validated normalized-age opacity multiplier, y in [0,1]. */
+  opacityOverLife: CurveValue;
 };
 export type ParticlePreviewPlan = {
   durationTicks: number;
@@ -67,6 +74,11 @@ export type ParticlePreviewOptions = {
    * Presentation connections are errors regardless.
    */
   audioHandled?: boolean;
+  /**
+   * Set only when the caller also compiles RibbonRenderer sinks (compilePathPreview) and draws them. The
+   * point compile then skips root RibbonRenderer sinks instead of reporting them. Default false.
+   */
+  ribbonsHandled?: boolean;
 };
 
 export function compileParticlePreview(input: unknown, options: ParticlePreviewOptions = {}): ValidationResult<ParticlePreviewPlan> {
@@ -260,9 +272,11 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
   const systems: ParticlePreviewSystem[] = [];
   const layers: ParticlePreviewLayer[] = [];
   const done = new Set<string>();
-  for (const c of into(outputId, 'visual')) {
+  const visual = into(outputId, 'visual');
+  for (const [visualOrder, c] of visual.entries()) {
     try {
       const b = sourceNode(c.source, outputId, 'visual');
+      if (options.ribbonsHandled === true && b.node.type === 'RibbonRenderer') continue; // Ribbon layers: compilePathPreview.
       if (done.has(b.node.id) || !b.effectiveEnabled) continue; // Disabled sink contributes nothing.
       if (b.node.type !== 'BillboardRenderer') fail('UNKNOWN_NODE', `Visual source "${b.node.id}" (${b.node.type}) is not supported by the point preview.`, b.node.id);
       done.add(b.node.id);
@@ -271,6 +285,14 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       if (param(b, 'alignment') !== 'camera') report('INVALID_VALUE', `Billboard alignment "${String(param(b, 'alignment'))}" is not supported by the point preview; use "camera".`, bid, 'alignment');
       if (num(b, 'stretchRatio') !== 1) report('INVALID_VALUE', 'Billboard stretchRatio is not supported by the point preview; set it to 1.', bid, 'stretchRatio');
       if (param(b, 'softIntersection') !== false) report('INVALID_VALUE', 'Soft intersection is not supported by the point preview; turn it off.', bid, 'softIntersection');
+      const lifeCurve = (id: string, bounds: { min: number; max: number }): CurveValue => {
+        const curve = param(b, id) as CurveValue;
+        const err = lifeCurveError(curve, bounds);
+        if (err !== undefined) report('INVALID_VALUE', `BillboardRenderer "${bid}" ${id}: ${err}`, bid, id);
+        return structuredClone(curve);
+      };
+      const sizeOverLife = lifeCurve('sizeOverLife', SIZE_OVER_LIFE_BOUNDS);
+      const opacityOverLife = lifeCurve('opacityOverLife', OPACITY_OVER_LIFE_BOUNDS);
 
       const mats = into(bid, 'material');
       const mat = mats.length === 1 ? sourceNode(mats[0].source, bid, 'material') : undefined;
@@ -302,6 +324,9 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         blend: param(mat, 'blend') as ParticlePreviewLayer['blend'],
         alphaCutoff: num(mat, 'alphaCutoff'),
         renderOrderOffset: num(b, 'renderOrderOffset'),
+        visualOrder,
+        sizeOverLife,
+        opacityOverLife,
       });
     } catch (e) {
       if (!(e instanceof Fail)) throw e;

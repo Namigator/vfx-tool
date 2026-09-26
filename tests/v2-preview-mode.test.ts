@@ -8,6 +8,8 @@ import { createL01AudioDocument } from '../src/graph/audioFixtures.ts';
 import { compileAudio } from '../src/graph/toAudio.ts';
 import { choosePreviewMode, createLightningAudioDemoDocument, createLightningDemoDocument, hasRootAudio, ribbonStyleDiagnostics } from '../src/render/previewMode.ts';
 import { RibbonGeometry } from '../src/render/RibbonGeometry.ts';
+import { layerRenderOrder, mergeDiagnostics, VISUAL_ORDER_STRIDE } from '../src/render/layerOrder.ts';
+import type { Diagnostic } from '../src/model/types.ts';
 
 const find = (d: EffectDocumentV2, id: string) => d.graphs[0].nodes.find(n => n.id === id) as NodeDefinition;
 
@@ -24,15 +26,15 @@ test('lightning demo is the shared L01 fixture, not a duplicate construction', (
   assert.notEqual(createLightningDemoDocument(), createLightningDemoDocument(), 'fresh editable copy each call');
 });
 
-test('lightning demo chooses path mode and renders seven visible ribbon layers from the node graph', () => {
+test('lightning demo chooses mixed mode and renders seven visible ribbon layers from the node graph', () => {
   const d = createLightningDemoDocument();
-  assert.deepEqual(choosePreviewMode(d), { mode: 'paths' });
-  const r = compilePathPreview(d, 0);
+  assert.deepEqual(choosePreviewMode(d), { mode: 'mixed' });
+  const r = compilePathPreview(d, 40);
   if (!r.ok) assert.fail(JSON.stringify(r.errors));
   assert.deepEqual(r.value.layers.map(l => l.nodeId), ['node-rib-halo', 'node-rib-outer', 'node-rib-branch-glow', 'node-rib-inner', 'node-rib-fork', 'node-rib-branch-core', 'node-rib-core', 'node-rib-impact-glow', 'node-rib-impact']);
   assert.deepEqual(ribbonStyleDiagnostics(d, r.value.layers), []);
   const g = new RibbonGeometry();
-  // The impact glow/core layers are windowed to ticks 24-36 and idle at tick 0.
+  // The bolt is active at tick 40; the impact glow/core layers have ended.
   for (const l of r.value.layers.filter(l => !l.nodeId.startsWith('node-rib-impact'))) {
     assert.equal(l.active, true);
     const s = g.update(l.paths, { cameraPosition: [4, 3, 2], width: l.width });
@@ -52,7 +54,7 @@ test('browser lightning demo is the shared L01 audio fixture with a compilable r
   assert.equal(a.value.mix.sampleRate, 48000);
   assert.equal(a.value.mix.left.length, a.value.mix.right.length);
   assert.ok(a.value.mix.left.length > 0);
-  assert.deepEqual(choosePreviewMode(d), { mode: 'paths' });
+  assert.deepEqual(choosePreviewMode(d), { mode: 'mixed' });
   assert.equal(compilePathPreview(d, 0).ok, false, 'visual compile alone must not accept root audio');
   const v = compilePathPreview(d, 0, { audioHandled: true });
   if (!v.ok) assert.fail(JSON.stringify(v.errors));
@@ -74,27 +76,55 @@ test('path compile is deterministic per tick, so scrubbing needs no replay', () 
   assert.deepEqual(a, b);
 });
 
-test('mixed billboard + ribbon documents get an addressed diagnostic instead of dropping a layer', () => {
+const mixedDocument = (): EffectDocumentV2 => {
   const d = createLightningDemoDocument();
   const f01 = createF01Document().graphs[0];
   const g = d.graphs[0];
   for (const id of ['node-schedule', 'node-emitter', 'node-initial', 'node-material', 'node-billboard']) g.nodes.push(structuredClone(f01.nodes.find(n => n.id === id)!));
   for (const e of f01.edges) g.edges.push({ ...structuredClone(e), id: `f01-${e.id}`, order: e.target.port === 'visual' ? 3 : e.order });
-  const choice = choosePreviewMode(d);
-  assert.equal(choice.mode, 'mixed');
-  if (choice.mode !== 'mixed') return;
-  assert.equal(choice.errors[0].severity, 'error');
-  assert.equal(choice.errors[0].nodeId, 'node-billboard');
-  assert.match(choice.errors[0].fieldPath ?? '', /^graphs\[0\]\.nodes\[\d+\]$/);
-  assert.match(choice.errors[0].message, /node-rib-halo/);
+  return d;
+};
 
-  find(d, 'node-billboard').enabled = false;
+test('mixed billboard + ribbon documents choose mixed mode and compile both layer kinds', () => {
+  const d = mixedDocument();
+  assert.deepEqual(choosePreviewMode(d), { mode: 'mixed' });
+  assert.equal(compileParticlePreview(d).ok, false, 'ribbon sinks are still errors unless ribbonsHandled');
+  const p = compileParticlePreview(d, { ribbonsHandled: true });
+  if (!p.ok) assert.fail(JSON.stringify(p.errors));
+  const r = compilePathPreview(d, 40);
+  if (!r.ok) assert.fail(JSON.stringify(r.errors));
+  assert.deepEqual(p.value.layers.map(l => l.nodeId), ['node-billboard', 'node-bb-charge-halo', 'node-bb-charge-core']);
+  // visualOrder is shared: every root visual sink has a distinct slot across both compilers.
+  const orders = [...p.value.layers, ...r.value.layers].map(l => l.visualOrder);
+  assert.equal(new Set(orders).size, orders.length);
+  assert.deepEqual(r.value.layers.map(l => l.visualOrder), [...r.value.layers.map(l => l.visualOrder)].sort((a, b) => a - b));
+
+  for (const n of d.graphs[0].nodes) if (n.type === 'BillboardRenderer') n.enabled = false;
   assert.deepEqual(choosePreviewMode(d), { mode: 'paths' });
 
-  find(d, 'node-billboard').enabled = true;
+  for (const n of d.graphs[0].nodes) if (n.type === 'BillboardRenderer') n.enabled = true;
   for (const n of d.graphs[0].nodes) if (n.type === 'RibbonRenderer') n.enabled = false;
   assert.deepEqual(choosePreviewMode(d), { mode: 'points' });
   assert.equal(compileParticlePreview(d).ok, true);
+});
+
+test('layerRenderOrder: offset dominates, visual connection order breaks ties', () => {
+  assert.equal(layerRenderOrder(0, 0), 0);
+  assert.ok(layerRenderOrder(0, 1) > layerRenderOrder(0, 0));
+  assert.ok(layerRenderOrder(1, 0) > layerRenderOrder(0, VISUAL_ORDER_STRIDE - 1));
+  assert.ok(layerRenderOrder(-1, 5) < layerRenderOrder(0, 0));
+  assert.throws(() => layerRenderOrder(0, -1), RangeError);
+  assert.throws(() => layerRenderOrder(0, 1.5), RangeError);
+  assert.throws(() => layerRenderOrder(0, VISUAL_ORDER_STRIDE), RangeError);
+  assert.throws(() => layerRenderOrder(Number.NaN, 0), RangeError);
+});
+
+test('mergeDiagnostics keeps order and drops exact duplicates only', () => {
+  const a: Diagnostic = { code: 'INVALID_VALUE', severity: 'error', nodeId: 'n1', message: 'x' };
+  const b: Diagnostic = { code: 'INVALID_VALUE', severity: 'warning', nodeId: 'n1', message: 'x' };
+  const c: Diagnostic = { code: 'MISSING_REFERENCE', severity: 'error', message: 'y' };
+  assert.deepEqual(mergeDiagnostics([a, b], [{ ...a }, c], []), [a, b, c]);
+  assert.deepEqual(mergeDiagnostics(), []);
 });
 
 test('unsupported ribbon style values are surfaced, never ignored', () => {

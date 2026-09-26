@@ -7,7 +7,7 @@
 //   with bounds; they are left out until specified.
 // - Material: only the SpriteUnlit template; texture slots, UV settings, color gradient, opacity curve,
 //   dissolve, rim, softIntersection, faceMode, depthTest and distortion are not registered yet.
-// - BillboardRenderer: size multiplier, envelope and world-axis vector are not registered yet; worldAxis is not renderable in this slice.
+// - BillboardRenderer: envelope and world-axis vector are not registered yet; worldAxis is not renderable in this slice.
 // - Group/GroupInput/GroupOutput ports are per-instance (interface-derived), so none are static here.
 // - Path nodes: HelixPath, PathFollower, PathTransform and ParticlePaths are not registered yet;
 //   RibbonRenderer envelope is not registered yet (same as BillboardRenderer).
@@ -144,6 +144,17 @@ function billboardRenderer(): NodeSpec {
       param({ id: 'stretchRatio', label: 'Stretch ratio', type: 'number', unit: 'none', default: 1, min: 1, max: 20, editPolicy: 'live' }),
       param({ id: 'softIntersection', label: 'Soft intersection', type: 'boolean', unit: 'none', default: false, editPolicy: 'live' }),
       param({ id: 'renderOrderOffset', label: 'Render order offset', type: 'integer', unit: 'none', default: 0, min: -32, max: 32, step: 1, editPolicy: 'live' }),
+      // Life curves: x is the particle's normalized age; constant only (no driven curve yet).
+      param({
+        id: 'sizeOverLife', label: 'Size over life', type: 'curve', unit: 'none', curveDomain: 'normalized',
+        default: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] },
+        min: 0, max: 20, editPolicy: 'live', description: 'Size multiplier over normalized particle age.',
+      }),
+      param({
+        id: 'opacityOverLife', label: 'Opacity over life', type: 'curve', unit: 'normalized', curveDomain: 'normalized',
+        default: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] },
+        min: 0, max: 1, editPolicy: 'live', description: 'Opacity multiplier over normalized particle age.',
+      }),
     ],
     disabledBehavior: 'empty',
   });
@@ -242,6 +253,24 @@ function revealPath(): NodeSpec {
     ],
     disabledBehavior: 'bypass',
     bypass: { input: 'paths', output: 'paths' },
+  });
+}
+
+// Generic effect-time driver: an authored effectSeconds curve sampled at effectTick / TICKS_PER_SECOND
+// (linear/hold, endpoint clamp). Output is a normalized scalar; y outside [0,1] is an error, not clamped.
+// Disabled: consumers fall back to their literal parameter.
+function effectTimeCurve(): NodeSpec {
+  return node('EffectTimeCurve', {
+    inputs: [],
+    outputs: [port({ id: 'value', label: 'Value', type: 'scalarSignal', unit: 'normalized', domains: ['effectTime'] })],
+    parameters: [
+      param({
+        id: 'curve', label: 'Curve', type: 'curve', unit: 'normalized', curveDomain: 'effectSeconds',
+        default: { domain: 'effectSeconds', interpolation: 'linear', keys: [{ x: 0, y: 0 }, { x: 1, y: 1 }] },
+        min: 0, max: 1, description: 'Value over effect time in seconds; clamps to the first/last key outside the key range.',
+      }),
+    ],
+    disabledBehavior: 'fallback',
   });
 }
 
@@ -399,7 +428,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
     anchor(), schedule(), emitter(), initialProperties(), material(), billboardRenderer(),
-    linePath(), bezierPath(), jaggedPath(), branchPath(), revealPath(), radialPath(), ribbonRenderer(),
+    linePath(), bezierPath(), jaggedPath(), branchPath(), revealPath(), radialPath(), ribbonRenderer(), effectTimeCurve(),
     audioSource(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),
   ];

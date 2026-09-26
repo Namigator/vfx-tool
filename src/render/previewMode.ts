@@ -1,6 +1,6 @@
-// V2 preview mode choice (points vs. path ribbons) and ribbon style support checks. Pure: no DOM, React
-// or Three. The point compiler rejects RibbonRenderer sinks and the path compiler skips BillboardRenderer
-// sinks, so a document mixing both would silently lose a layer; it gets an explicit diagnostic instead.
+// V2 preview mode choice (points, path ribbons or mixed) and ribbon style support checks. Pure: no DOM,
+// React or Three. The path compiler skips BillboardRenderer sinks and the point compiler skips
+// RibbonRenderer sinks only with `ribbonsHandled`, so mixed documents must run both compilers.
 import type { Diagnostic, EffectDocumentV2 } from '../model/types.ts';
 import { analyzeGraph } from '../graph/analyze.ts';
 import { createL01Document } from '../graph/fixtures.ts';
@@ -13,11 +13,12 @@ import type { PathPreviewLayer } from '../graph/toPaths.ts';
 export type PreviewModeChoice =
   | { mode: 'points' }
   | { mode: 'paths' }
-  | { mode: 'mixed'; errors: Diagnostic[] };
+  | { mode: 'mixed' };
 
 /**
  * `paths` when a RibbonRenderer feeds root EffectOutput.visual (after group expansion), `mixed` when an
- * enabled BillboardRenderer feeds it too, else `points`. Documents that do not analyze fall back to
+ * enabled BillboardRenderer feeds it too (compile both: particles with `ribbonsHandled`, then paths, and
+ * order layers with layerRenderOrder), else `points`. Documents that do not analyze fall back to
  * `points` so the point compiler reports their errors as before.
  */
 export function choosePreviewMode(doc: unknown): PreviewModeChoice {
@@ -37,14 +38,7 @@ export function choosePreviewMode(doc: unknown): PreviewModeChoice {
   }
   if (ribbons.length === 0) return { mode: 'points' };
   if (billboards.length === 0) return { mode: 'paths' };
-  const d = analysis.value.document;
-  return {
-    mode: 'mixed',
-    errors: [{
-      code: 'INVALID_VALUE', severity: 'error', nodeId: billboards[0], fieldPath: nodeFieldPath(d, billboards[0]),
-      message: `The preview cannot show BillboardRenderer (${billboards.join(', ')}) and RibbonRenderer (${ribbons.join(', ')}) layers together yet. Disable or disconnect one kind to preview the other; nothing is dropped silently.`,
-    }],
-  };
+  return { mode: 'mixed' };
 }
 
 /** The browser's lightning demo is the shared editable L01 fixture (three ribbon layers, no hidden recipe). */

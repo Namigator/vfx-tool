@@ -8,7 +8,7 @@ import { resolveParameters } from '../src/model/controls.ts';
 import { createRegistry, MATERIAL_TEMPLATES } from '../src/graph/registry.ts';
 import { createF01Document } from '../src/graph/fixtures.ts';
 
-const EXPECTED_TYPES = ['Anchor', 'Schedule', 'Emitter', 'InitialProperties', 'Material', 'BillboardRenderer', 'EffectOutput', 'Group', 'GroupInput', 'GroupOutput', 'LinePath', 'BezierPath', 'JaggedPath', 'BranchPath', 'RevealPath', 'RadialPath', 'RibbonRenderer', 'AudioSource', 'AudioMix', 'AudioOutput'];
+const EXPECTED_TYPES = ['Anchor', 'Schedule', 'Emitter', 'InitialProperties', 'Material', 'BillboardRenderer', 'EffectOutput', 'Group', 'GroupInput', 'GroupOutput', 'LinePath', 'BezierPath', 'JaggedPath', 'BranchPath', 'RevealPath', 'RadialPath', 'RibbonRenderer', 'EffectTimeCurve', 'AudioSource', 'AudioMix', 'AudioOutput'];
 const LOWER_CAMEL = /^[a-z][A-Za-z0-9]*$/;
 
 test('registry contains the current graph catalog at version 1, keyed type@version', () => {
@@ -81,6 +81,17 @@ test('structured ports follow plan 25', () => {
   assert.deepEqual(ports('BillboardRenderer', 'outputs'), ['visual:visual']);
   assert.deepEqual(ports('EffectOutput', 'inputs'), ['visual:visual', 'audio:audio', 'presentation:presentation']);
   assert.ok(reg.get('EffectOutput@1')!.inputs.every(p => p.cardinality === 'many'));
+});
+
+test('BillboardRenderer life curves are normalized, flat-1 by default and bounded', () => {
+  const params = createRegistry().get('BillboardRenderer@1')!.parameters;
+  const flat = { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] };
+  for (const [id, max] of [['sizeOverLife', 20], ['opacityOverLife', 1]] as const) {
+    const p = params.find(x => x.id === id)!;
+    assert.deepEqual([p.type, p.curveDomain, p.min, p.max, p.default], ['curve', 'normalized', 0, max, flat], id);
+    const over = { ...flat, keys: [{ x: 0, y: 1 }, { x: 1, y: max + 0.5 }] };
+    assert.ok(validateParameterValue(over, p, id).length > 0, `${id} rejects y > ${max}`);
+  }
 });
 
 test('audio nodes follow plans 11, 24 and 25', () => {

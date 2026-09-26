@@ -47,7 +47,9 @@ test('F01 graph compiles to one point system and one billboard layer with exact 
   });
   assert.deepEqual(p.layers, [{
     nodeId: 'node-billboard', systemId: 'node-initial', color: { srgb: '#FFFFFF', alpha: 1 },
-    opacity: 1, emission: 0, blend: 'additive', alphaCutoff: 0.5, renderOrderOffset: 0,
+    opacity: 1, emission: 0, blend: 'additive', alphaCutoff: 0.5, renderOrderOffset: 0, visualOrder: 0,
+    sizeOverLife: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] },
+    opacityOverLife: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] },
   }]);
   assert.equal(countAt(p, 0), 1);
   assert.equal(countAt(p, 59), 1);
@@ -197,6 +199,25 @@ test('color multiplies in linear RGB and alphas multiply', () => {
     set('node-material', { tint: { srgb: '#808080', alpha: 1 } })(d);
   }));
   assert.deepEqual(p.layers[0].color, { srgb: '#800000', alpha: 0.5 });
+});
+
+test('authored billboard life curves flow into the layer as copies', () => {
+  const size = { domain: 'normalized' as const, interpolation: 'linear' as const, keys: [{ x: 0, y: 0.5 }, { x: 1, y: 4 }] };
+  const opacity = { domain: 'normalized' as const, interpolation: 'hold' as const, keys: [{ x: 0, y: 1 }, { x: 0.8, y: 0 }] };
+  const d = f01(set('node-billboard', { sizeOverLife: size, opacityOverLife: opacity }));
+  const p = plan(d);
+  assert.deepEqual(p.layers[0].sizeOverLife, size);
+  assert.deepEqual(p.layers[0].opacityOverLife, opacity);
+  assert.notEqual(p.layers[0].sizeOverLife, find(d, 'node-billboard').params.sizeOverLife);
+});
+
+test('out-of-bounds life curves are addressed errors', () => {
+  for (const [id, y] of [['sizeOverLife', 25], ['opacityOverLife', 1.5]] as const) {
+    const errors = errorsOf(compileParticlePreview(f01(set('node-billboard', {
+      [id]: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y }] },
+    }))));
+    assert.ok(errors.some(e => (e.fieldPath ?? '').includes(id)), JSON.stringify(errors));
+  }
 });
 
 test('compiling does not mutate the input document', () => {

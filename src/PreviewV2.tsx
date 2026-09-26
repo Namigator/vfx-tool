@@ -18,6 +18,7 @@ import { DocumentHistory, type HistoryNotice, type HistoryResult, type Patch } f
 import GraphCanvas from './editor/GraphCanvas.tsx';
 import NodeInspector from './editor/NodeInspector.tsx';
 import { PreviewViewport, type PreviewFrameInfo } from './render/PreviewViewport.ts';
+import { mergeDiagnostics } from './render/layerOrder.ts';
 import './preview-v2.css';
 
 const EMPTY_FRAME: PreviewFrameInfo = { tick: 0, durationTicks: 0, playing: false, suspended: false, live: 0, mode: 'none', sampleParticleId: '' };
@@ -173,7 +174,23 @@ export default function PreviewV2() {
     const choice = choosePreviewMode(d);
     setMode(choice.mode);
     if (choice.mode === 'mixed') {
-      fail([...choice.errors, ...audioWarnings]);
+      // Both compilers must succeed; the particle compiler leaves ribbon sinks to the path compiler.
+      const points = compileParticlePreview(d, { ...visualOptions, ribbonsHandled: true });
+      const first = compilePathPreview(d, 0, visualOptions);
+      if (!points.ok || !first.ok) {
+        fail(mergeDiagnostics(points.ok ? [] : points.errors, first.ok ? [] : first.errors, audioWarnings));
+        return;
+      }
+      const style = ribbonStyleDiagnostics(d, first.value.layers);
+      setDiagnostics(mergeDiagnostics(audioWarnings, points.warnings, first.warnings, style));
+      if (style.some(s => s.severity === 'error')) {
+        vp?.clearPlan();
+        setCompiled(false);
+        return;
+      }
+      setCompiled(true);
+      const snapshot = structuredClone(d);
+      vp?.setMixedSource(points.value, first.value, tick => compilePathPreview(snapshot, tick, visualOptions));
       return;
     }
     if (choice.mode === 'paths') {
@@ -440,11 +457,13 @@ export default function PreviewV2() {
   return (
     <div className="pv2">
       <header className="pv2-header">
-        <strong>V2 graph preview — {mode === 'paths' ? 'path ribbons' : mode === 'mixed' ? 'unsupported mix' : 'point particles'}</strong>
+        <strong>V2 graph preview — {mode === 'paths' ? 'path ribbons' : mode === 'mixed' ? 'points and ribbons' : 'point particles'}</strong>
         <span className="pv2-note">
           {mode === 'paths'
             ? 'Limited preview of graph data (camera-facing untextured ribbons). No textures or bloom; sound is auditioned separately.'
-            : 'Limited preview of graph data (point emitters, camera quads). No textures or bloom; sound is auditioned separately.'}
+            : mode === 'mixed'
+              ? 'Limited preview of graph data (point emitters and untextured ribbons, layered by visual order). No textures or bloom; sound is auditioned separately.'
+              : 'Limited preview of graph data (point emitters, camera quads). No textures or bloom; sound is auditioned separately.'}
         </span>
         <div className="pv2-history" role="group" aria-label="History">
           <button type="button" disabled={!historyFlags.canUndo} onClick={undo} title="Undo (Ctrl/Cmd+Z)">Undo</button>
@@ -478,7 +497,7 @@ export default function PreviewV2() {
             {/* Not a live region: per-frame tick changes must not be announced. Errors use role="alert". */}
             <span className="pv2-readout" title={frame.sampleParticleId ? `Sample particle ${frame.sampleParticleId}` : undefined}>
               {frame.suspended && <>Paused (tab hidden) · </>}
-              tick {frame.tick}/{frame.durationTicks} · {frame.live} {frame.mode === 'paths' ? 'paths' : 'live'}
+              tick {frame.tick}/{frame.durationTicks} · {frame.live} {frame.mode === 'paths' ? 'paths' : frame.mode === 'mixed' ? 'particles + paths' : 'live'}
             </span>
           </div>
           {frame.sampleParticleId && (

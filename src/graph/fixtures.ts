@@ -70,10 +70,13 @@ export function createF01Document(): EffectDocumentV2 {
 // visual is an ordinary, removable node: a bowed BezierPath → JaggedPath → BranchPath (primary branches) →
 // BranchPath (fine forks on the branches). The trunk feeds four stacked RibbonRenderers (halo/outer/inner/
 // core, reference widths, colors and opacities); branches get glow + core layers and forks one fine layer.
-// Branch/fork lengths are scaled down from the reference to the 3.2 m preview span. No particle chain and
-// charge timing: the bolt layers are visible from tick 0; only the impact-spark layer is windowed. Ribbon
+// Branch/fork lengths are scaled down from the reference to the 3.2 m preview span. A generic point-particle
+// charge core + halo sits at the source through tick 24 (below the bolt); trunk and branch layers share a ticks 24-62 bolt window; impact sparks follow tip arrival at ticks 26-37. Ribbon
 // parameters stay at their defaults except width/renderOrderOffset, and endFade 0 on the four trunk layers
 // so the bolt stays full-width up to the target anchor where the impact burst sits.
+const chargeSizeOverLife = () => ({ domain: 'normalized' as const, interpolation: 'linear' as const, keys: [{ x: 0, y: 1 }, { x: 1, y: 7 }] });
+const chargeOpacityOverLife = () => ({ domain: 'normalized' as const, interpolation: 'linear' as const, keys: [{ x: 0, y: 0.2 }, { x: 1, y: 1 }] });
+
 export function createL01Document(): EffectDocumentV2 {
   const ribbon = (id: string, label: string, width: number, renderOrderOffset: number, extra: Record<string, number> = {}) =>
     ({ id, type: 'RibbonRenderer', definitionVersion: 1, label, enabled: true, randomStreamId: `rs-${id.slice(5)}`, params: { width, renderOrderOffset, ...extra } });
@@ -120,6 +123,19 @@ export function createL01Document(): EffectDocumentV2 {
         material('node-mat-branch-glow', 'Branch glow material', '#3A7DFF', 0.2, 2),
         material('node-mat-branch-core', 'Branch core material', '#CFEFFF', 0.48, 4),
         material('node-mat-fork', 'Fork material', '#A8E4FF', 0.3, 3),
+        // Bolt window: one generic Schedule shared by the four trunk, two branch and fork ribbons, visible
+        // ticks 24-62 (end 63 exclusive).
+        { id: 'node-bolt-window', type: 'Schedule', definitionVersion: 1, label: 'Bolt window', enabled: true, randomStreamId: 'rs-bolt-window', params: { startTicks: 24, durationTicks: 39, mode: 'window' } },
+        // 2-tick strike reveal: one EffectTimeCurve (0 at tick 24 → 1 at tick 26) drives one RevealPath per
+        // distinct path set (trunk, primary branches, forks). Reveals sit after both BranchPaths, so branch
+        // attachment is computed on the full trunk and the layers stay separately editable.
+        {
+          id: 'node-strike-curve', type: 'EffectTimeCurve', definitionVersion: 1, label: 'Strike reveal curve', enabled: true, randomStreamId: 'rs-strike-curve',
+          params: { curve: { domain: 'effectSeconds', interpolation: 'linear', keys: [{ x: 24 / 60, y: 0 }, { x: 26 / 60, y: 1 }] } },
+        },
+        { id: 'node-reveal-trunk', type: 'RevealPath', definitionVersion: 1, label: 'Trunk reveal', enabled: true, randomStreamId: 'rs-reveal-trunk', params: { fraction: 1 } },
+        { id: 'node-reveal-branches', type: 'RevealPath', definitionVersion: 1, label: 'Branch reveal', enabled: true, randomStreamId: 'rs-reveal-branches', params: { fraction: 1 } },
+        { id: 'node-reveal-forks', type: 'RevealPath', definitionVersion: 1, label: 'Fork reveal', enabled: true, randomStreamId: 'rs-reveal-forks', params: { fraction: 1 } },
         ribbon('node-rib-halo', 'Halo ribbon', 0.43, 0, trunk),
         ribbon('node-rib-outer', 'Outer ribbon', 0.185, 1, trunk),
         ribbon('node-rib-branch-glow', 'Branch glow ribbon', 0.07, 2),
@@ -129,8 +145,8 @@ export function createL01Document(): EffectDocumentV2 {
         ribbon('node-rib-core', 'Core ribbon', 0.026, 6, trunk),
         // Impact sparks: a short radial starburst at the target, disc rotated +90° about X into the XY
         // (view) plane. One RadialPath feeds a soft cyan glow ribbon and a thin white core ribbon, both
-        // visible only inside the shared ticks 24-36 Schedule window.
-        { id: 'node-impact-window', type: 'Schedule', definitionVersion: 1, label: 'Impact window', enabled: true, randomStreamId: 'rs-impact-window', params: { startTicks: 24, durationTicks: 12, mode: 'window' } },
+        // Start when the two-tick strike reveal reaches the target, then fade after a short burst.
+        { id: 'node-impact-window', type: 'Schedule', definitionVersion: 1, label: 'Impact window', enabled: true, randomStreamId: 'rs-impact-window', params: { startTicks: 26, durationTicks: 12, mode: 'window' } },
         {
           id: 'node-impact-sparks', type: 'RadialPath', definitionVersion: 1, label: 'Impact sparks', enabled: true, randomStreamId: 'rs-impact-sparks',
           params: { mode: 'disc', count: 10, lengthMin: 0.18, lengthMax: 0.45, orientation: [Math.SQRT1_2, 0, 0, Math.SQRT1_2] },
@@ -139,6 +155,21 @@ export function createL01Document(): EffectDocumentV2 {
         material('node-mat-impact', 'Impact spark material', '#F4FDFF', 0.9, 6),
         ribbon('node-rib-impact-glow', 'Impact glow ribbon', 0.06, 7),
         ribbon('node-rib-impact', 'Impact spark ribbon', 0.02, 8),
+        // Charge: one generic point Emitter at the source bursts once at tick 0 with a 25-tick life,
+        // so it overlaps the first strike tick instead of leaving a blank frame. Two InitialProperties give a white-blue
+        // core and a wide blue halo; each feeds its own BillboardRenderer, ordered below every bolt ribbon.
+        { id: 'node-charge-schedule', type: 'Schedule', definitionVersion: 1, label: 'Charge trigger', enabled: true, randomStreamId: 'rs-charge-schedule', params: { startTicks: 0, durationTicks: 24, mode: 'once' } },
+        {
+          id: 'node-charge-emitter', type: 'Emitter', definitionVersion: 1, label: 'Charge emitter', enabled: true, randomStreamId: 'rs-charge-emitter',
+          params: { shape: 'point', burst: 1, rate: 0, lifetimeMin: 25 / 60, lifetimeMax: 25 / 60, speedMin: 0, speedMax: 0 },
+        },
+        { id: 'node-charge-halo-props', type: 'InitialProperties', definitionVersion: 1, label: 'Charge halo properties', enabled: true, randomStreamId: 'rs-charge-halo-props', params: { sizeMin: 0.2, sizeMax: 0.2, rotationMin: 0, rotationMax: 0, angularVelocityMin: 0, angularVelocityMax: 0 } },
+        { id: 'node-charge-core-props', type: 'InitialProperties', definitionVersion: 1, label: 'Charge core properties', enabled: true, randomStreamId: 'rs-charge-core-props', params: { sizeMin: 0.04, sizeMax: 0.04, rotationMin: 0, rotationMax: 0, angularVelocityMin: 0, angularVelocityMax: 0 } },
+        material('node-mat-charge-halo', 'Charge halo material', '#2E6BFF', 0.22, 2),
+        material('node-mat-charge-core', 'Charge core material', '#DDF4FF', 0.85, 5),
+        // Both charge billboards grow 1x -> 7x over life (halo 0.2 -> 1.4 m, core 0.04 -> 0.28 m) and brighten 0.2 -> 1.
+        { id: 'node-bb-charge-halo', type: 'BillboardRenderer', definitionVersion: 1, label: 'Charge halo', enabled: true, randomStreamId: 'rs-bb-charge-halo', params: { renderOrderOffset: -2, sizeOverLife: chargeSizeOverLife(), opacityOverLife: chargeOpacityOverLife() } },
+        { id: 'node-bb-charge-core', type: 'BillboardRenderer', definitionVersion: 1, label: 'Charge core', enabled: true, randomStreamId: 'rs-bb-charge-core', params: { renderOrderOffset: -1, sizeOverLife: chargeSizeOverLife(), opacityOverLife: chargeOpacityOverLife() } },
         { id: 'node-output', type: 'EffectOutput', definitionVersion: 1, label: 'Output', enabled: true, randomStreamId: 'rs-output', params: {} },
       ],
       edges: [
@@ -147,13 +178,19 @@ export function createL01Document(): EffectDocumentV2 {
         edge('edge-jagged', 'node-base', 'paths', 'node-jagged', 'paths'),
         edge('edge-branch', 'node-jagged', 'paths', 'node-branch', 'paths'),
         edge('edge-fork', 'node-branch', 'branches', 'node-fork', 'paths'),
-        edge('edge-halo-paths', 'node-branch', 'trunk', 'node-rib-halo', 'paths'),
-        edge('edge-outer-paths', 'node-branch', 'trunk', 'node-rib-outer', 'paths'),
-        edge('edge-inner-paths', 'node-branch', 'trunk', 'node-rib-inner', 'paths'),
-        edge('edge-core-paths', 'node-branch', 'trunk', 'node-rib-core', 'paths'),
-        edge('edge-branch-glow-paths', 'node-fork', 'trunk', 'node-rib-branch-glow', 'paths'),
-        edge('edge-branch-core-paths', 'node-fork', 'trunk', 'node-rib-branch-core', 'paths'),
-        edge('edge-fork-paths', 'node-fork', 'branches', 'node-rib-fork', 'paths'),
+        edge('edge-reveal-trunk', 'node-branch', 'trunk', 'node-reveal-trunk', 'paths'),
+        edge('edge-reveal-branches', 'node-fork', 'trunk', 'node-reveal-branches', 'paths'),
+        edge('edge-reveal-forks', 'node-fork', 'branches', 'node-reveal-forks', 'paths'),
+        edge('edge-strike-trunk', 'node-strike-curve', 'value', 'node-reveal-trunk', 'fraction'),
+        edge('edge-strike-branches', 'node-strike-curve', 'value', 'node-reveal-branches', 'fraction'),
+        edge('edge-strike-forks', 'node-strike-curve', 'value', 'node-reveal-forks', 'fraction'),
+        edge('edge-halo-paths', 'node-reveal-trunk', 'paths', 'node-rib-halo', 'paths'),
+        edge('edge-outer-paths', 'node-reveal-trunk', 'paths', 'node-rib-outer', 'paths'),
+        edge('edge-inner-paths', 'node-reveal-trunk', 'paths', 'node-rib-inner', 'paths'),
+        edge('edge-core-paths', 'node-reveal-trunk', 'paths', 'node-rib-core', 'paths'),
+        edge('edge-branch-glow-paths', 'node-reveal-branches', 'paths', 'node-rib-branch-glow', 'paths'),
+        edge('edge-branch-core-paths', 'node-reveal-branches', 'paths', 'node-rib-branch-core', 'paths'),
+        edge('edge-fork-paths', 'node-reveal-forks', 'paths', 'node-rib-fork', 'paths'),
         edge('edge-halo-mat', 'node-mat-halo', 'material', 'node-rib-halo', 'material'),
         edge('edge-outer-mat', 'node-mat-outer', 'material', 'node-rib-outer', 'material'),
         edge('edge-inner-mat', 'node-mat-inner', 'material', 'node-rib-inner', 'material'),
@@ -161,6 +198,13 @@ export function createL01Document(): EffectDocumentV2 {
         edge('edge-branch-glow-mat', 'node-mat-branch-glow', 'material', 'node-rib-branch-glow', 'material'),
         edge('edge-branch-core-mat', 'node-mat-branch-core', 'material', 'node-rib-branch-core', 'material'),
         edge('edge-fork-mat', 'node-mat-fork', 'material', 'node-rib-fork', 'material'),
+        edge('edge-bolt-window-halo', 'node-bolt-window', 'window', 'node-rib-halo', 'window'),
+        edge('edge-bolt-window-outer', 'node-bolt-window', 'window', 'node-rib-outer', 'window'),
+        edge('edge-bolt-window-inner', 'node-bolt-window', 'window', 'node-rib-inner', 'window'),
+        edge('edge-bolt-window-core', 'node-bolt-window', 'window', 'node-rib-core', 'window'),
+        edge('edge-bolt-window-branch-glow', 'node-bolt-window', 'window', 'node-rib-branch-glow', 'window'),
+        edge('edge-bolt-window-branch-core', 'node-bolt-window', 'window', 'node-rib-branch-core', 'window'),
+        edge('edge-bolt-window-fork', 'node-bolt-window', 'window', 'node-rib-fork', 'window'),
         { ...edge('edge-visual-halo', 'node-rib-halo', 'visual', 'node-output', 'visual'), order: 0 },
         { ...edge('edge-visual-outer', 'node-rib-outer', 'visual', 'node-output', 'visual'), order: 1 },
         { ...edge('edge-visual-branch-glow', 'node-rib-branch-glow', 'visual', 'node-output', 'visual'), order: 2 },
@@ -177,6 +221,16 @@ export function createL01Document(): EffectDocumentV2 {
         edge('edge-impact-glow-window', 'node-impact-window', 'window', 'node-rib-impact-glow', 'window'),
         { ...edge('edge-visual-impact-glow', 'node-rib-impact-glow', 'visual', 'node-output', 'visual'), order: 7 },
         { ...edge('edge-visual-impact', 'node-rib-impact', 'visual', 'node-output', 'visual'), order: 8 },
+        edge('edge-visual-charge-trigger', 'node-charge-schedule', 'start', 'node-charge-emitter', 'trigger'),
+        edge('edge-charge-anchor', 'node-source', 'out', 'node-charge-emitter', 'anchor'),
+        edge('edge-charge-halo-emit', 'node-charge-emitter', 'particles', 'node-charge-halo-props', 'particles'),
+        edge('edge-charge-core-emit', 'node-charge-emitter', 'particles', 'node-charge-core-props', 'particles'),
+        edge('edge-charge-halo-particles', 'node-charge-halo-props', 'particles', 'node-bb-charge-halo', 'particles'),
+        edge('edge-charge-core-particles', 'node-charge-core-props', 'particles', 'node-bb-charge-core', 'particles'),
+        edge('edge-charge-halo-mat', 'node-mat-charge-halo', 'material', 'node-bb-charge-halo', 'material'),
+        edge('edge-charge-core-mat', 'node-mat-charge-core', 'material', 'node-bb-charge-core', 'material'),
+        { ...edge('edge-visual-charge-halo', 'node-bb-charge-halo', 'visual', 'node-output', 'visual'), order: 9 },
+        { ...edge('edge-visual-charge-core', 'node-bb-charge-core', 'visual', 'node-output', 'visual'), order: 10 },
       ],
     }],
     controls: [],
@@ -193,9 +247,15 @@ export function createL01Document(): EffectDocumentV2 {
             'node-rib-halo': { x: 1240, y: -480 }, 'node-rib-outer': { x: 1240, y: -320 },
             'node-rib-inner': { x: 1240, y: -160 }, 'node-rib-core': { x: 1240, y: 0 },
             'node-rib-branch-glow': { x: 1240, y: 480 }, 'node-rib-branch-core': { x: 1240, y: 640 }, 'node-rib-fork': { x: 1240, y: 800 },
-            'node-impact-window': { x: 980, y: 1040 }, 'node-impact-sparks': { x: 240, y: 880 },
+            'node-bolt-window': { x: 980, y: -720 }, 'node-impact-window': { x: 980, y: 1040 }, 'node-impact-sparks': { x: 240, y: 880 },
             'node-mat-impact': { x: 980, y: 880 }, 'node-rib-impact': { x: 1240, y: 960 },
             'node-mat-impact-glow': { x: 980, y: 1200 }, 'node-rib-impact-glow': { x: 1240, y: 1120 },
+            'node-strike-curve': { x: 720, y: -240 }, 'node-reveal-trunk': { x: 980, y: 80 },
+            'node-reveal-branches': { x: 980, y: 240 }, 'node-reveal-forks': { x: 980, y: 1360 },
+            'node-charge-schedule': { x: 0, y: -560 }, 'node-charge-emitter': { x: 240, y: -560 },
+            'node-charge-halo-props': { x: 480, y: -720 }, 'node-charge-core-props': { x: 480, y: -560 },
+            'node-mat-charge-halo': { x: 720, y: -880 }, 'node-mat-charge-core': { x: 720, y: -720 },
+            'node-bb-charge-halo': { x: 1240, y: -800 }, 'node-bb-charge-core': { x: 1240, y: -640 },
             'node-output': { x: 1500, y: 160 },
           },
           viewport: { x: 0, y: 0, zoom: 1 },
