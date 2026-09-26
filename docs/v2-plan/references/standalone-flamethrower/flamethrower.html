@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="A playable flamethrower spell. Procedural flame tongues, embers, smoke and synchronized fire audio in an empty arena.">
+<title>BLAZE — Flamethrower</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23ffb070' d='M16 2c2 6 9 9 9 17a9 9 0 0 1-18 0c0-5 3-7 4-11 1 3 2 4 4 5 1-4 1-7 1-11z'/%3E%3C/svg%3E">
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0b0705;color:#fff0e4;font-family:Arial,Helvetica,sans-serif}canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}header{position:absolute;top:36px;left:40px;pointer-events:none}header .eyebrow{font-size:12px;letter-spacing:.24em;color:#b89a86}h1{font-size:42px;font-weight:500;letter-spacing:.13em;margin:10px 0 7px}header p{font-size:14px;color:#c5ab98;margin:0}.status{position:absolute;top:40px;right:40px;display:flex;align-items:center;gap:10px;font-size:12px;letter-spacing:.16em;color:#c9b09f}.status i{width:6px;height:6px;background:#ffb070;border-radius:100%;box-shadow:0 0 12px #ff8a3a}footer{position:absolute;bottom:30px;width:100%;display:flex;flex-direction:column;align-items:center;gap:17px;pointer-events:none}.controls{display:flex;gap:8px;padding:7px;border:1px solid #4a3326;background:#1d130dcc;border-radius:13px;backdrop-filter:blur(14px);pointer-events:auto}button{font:14px Arial,sans-serif;border:1px solid transparent;border-radius:8px;padding:13px 18px;min-height:46px;background:transparent;color:#d6bfad;cursor:pointer;transition:background .2s,color .2s}button:hover{background:#3f2a1d;color:#fff}button:focus-visible{outline:2px solid #ffc89a;outline-offset:3px}#cast{background:#ffd2ad;color:#251207;padding:13px 28px;font-weight:600;box-shadow:0 0 24px #ff9a4a15}#cast:hover{background:#ffe8d4}button[aria-pressed=true]{background:#4b3020;color:#ffe3cc}kbd{font:11px Arial;border:1px solid #99735a75;border-radius:3px;padding:2px 5px;margin-left:12px}.hint{font-size:12px;letter-spacing:.06em;color:#b09682}.corner{position:absolute;bottom:35px;left:40px;font-size:12px;color:#8c7361;letter-spacing:.12em}.meter{position:absolute;right:40px;bottom:38px;display:flex;gap:4px;align-items:flex-end;height:17px}.meter span{width:2px;background:#ffb070;opacity:.45;height:4px;transition:height .08s}.flash{position:absolute;inset:0;background:#ffc08a;pointer-events:none;opacity:0}#error{display:none;position:absolute;inset:30%;text-align:center;color:#ffefe9} @media(max-width:650px){header{top:25px;left:24px}h1{font-size:32px}.status{top:30px;right:24px;font-size:10px}.corner,.meter{display:none}footer{bottom:24px}.controls{gap:2px}button{padding:12px}#cast{padding:12px 17px}kbd{display:none}.hint{font-size:11px}header p{font-size:12px}}
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="Empty dark arena with a directed flamethrower jet of evolving flame tongues, embers and smoke. Click to fire, or drag to orbit."></canvas>
+<header><div class="eyebrow">ELEMENTAL STUDY / 02</div><h1>BLAZE</h1><p>A flamethrower spell.</p></header>
+<div class="status"><i></i><span id="phase" aria-live="off">READY</span></div>
+<footer><div class="controls"><button id="cast">Fire <kbd>SPACE</kbd></button><button id="loop" aria-pressed="false">Loop</button><button id="sound" aria-pressed="true" aria-label="Sound enabled">Sound on</button></div><div class="hint">CLICK TO FIRE &nbsp; · &nbsp; DRAG TO ORBIT &nbsp; · &nbsp; SCROLL TO ZOOM</div></footer>
+<div class="corner">FLAMETHROWER &nbsp; / &nbsp; VFX + SFX</div><div class="meter" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+<div class="flash" id="flash"></div><div id="error" role="alert"></div>
+<script>
+'use strict';
+const canvas=document.querySelector('#scene'),ctx=canvas.getContext('2d',{alpha:false});
+const phaseLabel=document.querySelector('#phase'),flash=document.querySelector('#flash');
+let W=0,H=0,DPR=1,yaw=.32,pitch=.30,distance=12.5,time=0,castAt=-100,seed=1,loop=false,sound=true,audio=null,audioBuffer=null,voice=null;
+// Timeline (seconds, 60 ticks/s): priming 0-.2, emission .2-1.6, tail 1.6-3.6.
+const REACH=1,TICK=1/60,IGNITE=.2,EMIT_END=1.6,TAIL_END=3.6,CYCLE=4;
+const source={x:-3,y:1.2,z:0},target={x:3,y:1.1,z:0},CAM_X=.25;
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),mix=(a,b,t)=>a+(b-a)*t,smooth=(a,b,x)=>{let t=clamp((x-a)/(b-a));return t*t*(3-2*t)};
+function randomGenerator(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+// Coherent value noise (2D for sprite baking, 3D for the turbulence field).
+function hash3(i,j,k){let h=Math.imul(i,374761393)^Math.imul(j,668265263)^Math.imul(k,1440662683);h=Math.imul(h^h>>>13,1274126177);return((h^h>>>16)>>>0)/4294967296}
+function noise2(x,y,s){const i=Math.floor(x),j=Math.floor(y),fx=x-i,fy=y-j,ux=fx*fx*(3-2*fx),uy=fy*fy*(3-2*fy);return mix(mix(hash3(i,j,s),hash3(i+1,j,s),ux),mix(hash3(i,j+1,s),hash3(i+1,j+1,s),ux),uy)}
+function fbm(x,y,s){let v=0,a=.5,f=1;for(let o=0;o<4;o++){v+=a*noise2(x*f,y*f,s+o*17);f*=2.03;a*=.5}return v/.9375}
+function noise3(x,y,z){const i=Math.floor(x),j=Math.floor(y),k=Math.floor(z),fx=x-i,fy=y-j,fz=z-k,ux=fx*fx*(3-2*fx),uy=fy*fy*(3-2*fy),uz=fz*fz*(3-2*fz);const l=(kk)=>mix(mix(hash3(i,j,kk),hash3(i+1,j,kk),ux),mix(hash3(i,j+1,kk),hash3(i+1,j+1,kk),ux),uy);return mix(l(k),l(k+1),uz)}
+function view(p){let px=p.x-CAM_X,x=px*Math.cos(yaw)-p.z*Math.sin(yaw),z=px*Math.sin(yaw)+p.z*Math.cos(yaw),y=p.y-.6;return{x,yy:y*Math.cos(pitch)+z*Math.sin(pitch),zz:-y*Math.sin(pitch)+z*Math.cos(pitch)}}
+function project(p){const v=view(p),scale=Math.min(W/1.45,H*1.48)/(distance+v.zz);return{x:W*.5+v.x*scale,y:H*.52-v.yy*scale,s:scale}}
+function depth(p){return distance+view(p).zz}
+function resize(){W=innerWidth;H=innerHeight;DPR=Math.min(devicePixelRatio||1,2);canvas.width=W*DPR;canvas.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0)}
+addEventListener('resize',resize);resize();
+function line3(points,color,width=1){ctx.beginPath();for(let i=1;i<points.length;i++){let a=points[i-1],b=points[i],da=depth(a),db=depth(b);if(da<1&&db<1)continue;if(da<1||db<1){let t=(1-da)/(db-da),p={x:mix(a.x,b.x,t),y:mix(a.y,b.y,t),z:mix(a.z,b.z,t)};if(da<1)a=p;else b=p}let pa=project(a),pb=project(b);ctx.moveTo(pa.x,pa.y);ctx.lineTo(pb.x,pb.y)}ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke()}
+function glow(x,y,r,color,alpha=1,edge='rgba(255,80,10,0)'){if(r<=0||alpha<=0)return;ctx.save();ctx.globalAlpha=Math.min(1,alpha);let g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,color);g.addColorStop(.13,color);g.addColorStop(1,edge);ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);ctx.restore()}
+function ring(center,r,color,width=1){let pts=[];for(let i=0;i<=80;i++){let a=i/80*Math.PI*2;pts.push({x:center.x+Math.cos(a)*r,y:center.y,z:center.z+Math.sin(a)*r})}line3(pts,color,width)}
+
+// ---- Baked flame atlases: asymmetric tongues with narrow roots, tapering tips, growing dissolve per frame.
+const SW=40,SH=96,FRAMES=12,SHAPES=8,TEMPS=[1,.72,.46,.22];
+const HEAT=[[0,40,6,2],[.2,150,25,5],[.4,230,85,12],[.6,255,150,35],[.8,255,215,110],[1,255,250,225]];
+function heatColor(h){h=clamp(h);for(let i=1;i<HEAT.length;i++){if(h<=HEAT[i][0]){const a=HEAT[i-1],b=HEAT[i],t=(h-a[0])/(b[0]-a[0]);return[mix(a[1],b[1],t),mix(a[2],b[2],t),mix(a[3],b[3],t)]}}return HEAT[HEAT.length-1].slice(1)}
+let tongueSprites=[],smokeSprites=[];
+function makeCanvas(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c}
+function buildSprites(){
+ for(let k=0;k<SHAPES;k++){tongueSprites[k]=TEMPS.map(()=>[]);
+  for(let fi=0;fi<FRAMES;fi++){const dens=new Float32Array(SW*SH),heat=new Float32Array(SW*SH),ph=fi*.38,lean=(k%2?1:-1)*.12;
+   for(let py=0;py<SH;py++){const v=1-(py+.5)/SH;const wp=Math.pow(Math.sin(Math.PI*Math.pow(v,.62)),1.1)*.9+.07*(1-v);const c=((fbm(v*2.2+k*7.1,ph*.6+k*3,91+k)-.5)*1.2+lean)*v;
+    for(let px=0;px<SW;px++){const u=((px+.5)/SW-.5)*2;const n=fbm(u*1.6+k*3.3,v*4.2-ph*1.7,11+k),n2=fbm(u*3.4+k,v*7.5-ph*2.6,29+k);const d=Math.abs(u-c)/Math.max(.03,wp);
+     let de=1-smooth(.5,1,d+(n-.5)*.95);const diss=fi/(FRAMES-1)*.5+Math.pow(v,2.2)*.55;de*=smooth(diss-.08,diss+.22,n2*.65+n*.35+.22);de*=smooth(0,.1,v);
+     const idx=py*SW+px;dens[idx]=clamp(de);heat[idx]=clamp(de*(1.25-.75*v-.5*Math.min(1,d))+(n2-.5)*.15)}}
+   TEMPS.forEach((T,ti)=>{const cv=makeCanvas(SW,SH),cx=cv.getContext('2d'),img=cx.createImageData(SW,SH);
+    for(let i=0;i<SW*SH;i++){const [r,g,b]=heatColor(heat[i]*(.3+.72*T)+.1*T-(1-T)*.12);img.data[i*4]=r;img.data[i*4+1]=g;img.data[i*4+2]=b;img.data[i*4+3]=255*clamp(dens[i]*(.55+.45*T))}
+    cx.putImageData(img,0,0);tongueSprites[k][ti][fi]=cv})}}
+ for(let k=0;k<4;k++){const S=64,cv=makeCanvas(S,S),cx=cv.getContext('2d'),img=cx.createImageData(S,S);
+  for(let y=0;y<S;y++)for(let x=0;x<S;x++){const u=(x+.5)/S-.5,v=(y+.5)/S-.5,r=Math.hypot(u,v)*2;const de=(1-smooth(.25,1,r*1.15+(fbm(u*3+k*5,v*3,51+k)-.5)*.9))*(.55+.45*fbm(u*6,v*6+k,71+k));const i=(y*S+x)*4,g=46+fbm(u*4,v*4,81+k)*22;img.data[i]=g+6;img.data[i+1]=g;img.data[i+2]=g-4;img.data[i+3]=255*clamp(de)}
+  cx.putImageData(img,0,0);smokeSprites[k]=cv}
+}
+
+// ---- Deterministic particle simulation (fixed 60 Hz step).
+const dir=(()=>{let d={x:target.x-source.x,y:target.y-source.y,z:target.z-source.z},l=Math.hypot(d.x,d.y,d.z);return{x:d.x/l,y:d.y/l,z:d.z/l}})();
+const side={x:0,y:0,z:1},upv={x:-dir.y,y:dir.x,z:0};
+const LAYERS={
+ core:{rate:130,speed:[10,13],life:[14,26],cone:3,size:[.08,.28],peak:.4,drag:.12,buoy:.2,turb:1},
+ tongue:{rate:420,speed:[8.5,11],life:[24,45],cone:6,size:[.12,.55],peak:.7,drag:.18,buoy:.45,turb:3},
+ ember:{rate:40,life:[30,72],drag:1.1,buoy:-3.5,turb:4},
+ smoke:{rate:30,life:[60,114],size:[.2,1],drag:1.2,buoy:1.6,turb:2.2}};
+let parts=[],simT=0,rng=randomGenerator(1),acc={core:0,tongue:0,ember:0,smoke:0};
+function resetSim(s){parts=[];simT=0;rng=randomGenerator(s*7919+13);acc={core:0,tongue:0,ember:0,smoke:0}}
+function coneDir(deg){const th=deg*Math.PI/180*Math.sqrt(rng()),ph=rng()*Math.PI*2,c=Math.cos(th),s=Math.sin(th);return{x:dir.x*c+(side.x*Math.cos(ph)+upv.x*Math.sin(ph))*s,y:dir.y*c+(side.y*Math.cos(ph)+upv.y*Math.sin(ph))*s,z:dir.z*c+(side.z*Math.cos(ph)+upv.z*Math.sin(ph))*s}}
+function spawnJet(kind){const L=LAYERS[kind],d=coneDir(L.cone),sp=mix(L.speed[0],L.speed[1],rng())*REACH,sub=rng()*TICK;
+ parts.push({kind,x:source.x+d.x*sp*sub,y:source.y+d.y*sp*sub,z:source.z+d.z*sp*sub,vx:d.x*sp,vy:d.y*sp,vz:d.z*sp,age:sub,life:mix(L.life[0],L.life[1],rng())*TICK,shape:Math.floor(rng()*SHAPES),flip:rng()<.5,grow:.8+rng()*.4,off:rng()*100})}
+function spawnFrom(kind,minF){const pool=parts.filter(p=>p.kind==='tongue'&&p.age/p.life>=minF);if(!pool.length)return;const p=pool[Math.floor(rng()*pool.length)],L=LAYERS[kind];
+ if(kind==='ember')parts.push({kind,x:p.x,y:p.y,z:p.z,vx:p.vx*.45+(rng()-.5)*2.5,vy:p.vy*.3+2+rng()*3,vz:p.vz*.45+(rng()-.5)*2.5,age:0,life:mix(L.life[0],L.life[1],rng())*TICK,size:.8+rng()*1.3,off:rng()*100});
+ else parts.push({kind,x:p.x,y:p.y+.1,z:p.z,vx:p.vx*.35,vy:p.vy*.2+.4,vz:p.vz*.35,age:0,life:mix(L.life[0],L.life[1],rng())*TICK,shape:Math.floor(rng()*4),rot:rng()*6.28,spin:(rng()-.5)*1.4,grow:.8+rng()*.5,off:rng()*100})}
+function step(dt){const t=simT,emit=t>=IGNITE&&t<EMIT_END,ramp=emit?clamp((EMIT_END-t)/.12)*clamp(.35+(t-IGNITE)/.05):0;
+ if(emit){for(const kind of ['core','tongue']){acc[kind]+=LAYERS[kind].rate*ramp*dt;while(acc[kind]>=1){acc[kind]--;spawnJet(kind)}}}
+ if(t>=IGNITE+.05&&t<EMIT_END+.3){acc.ember+=LAYERS.ember.rate*dt;while(acc.ember>=1){acc.ember--;spawnFrom('ember',.15)}}
+ if(t>=IGNITE+.12&&t<EMIT_END+.45){acc.smoke+=LAYERS.smoke.rate*dt;while(acc.smoke>=1){acc.smoke--;spawnFrom('smoke',.45)}}
+ for(const p of parts){const L=LAYERS[p.kind],f=p.age/p.life,turb=L.turb*Math.min(1,p.age*2.5)*(.3+f),q=.55,tt=t*.8+p.off*.01;
+  p.vx+=(noise3(p.x*q,p.y*q,tt)-.5)*2*turb*dt;p.vy+=(noise3(p.y*q+31,p.z*q,tt+7)-.5)*turb*dt;p.vz+=(noise3(p.z*q+57,p.x*q,tt+13)-.5)*2*turb*dt;
+  p.vy+=L.buoy*(p.kind==='tongue'?f*f:1)*dt;const dr=Math.exp(-L.drag*dt);p.vx*=dr;p.vy*=dr;p.vz*=dr;
+  p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;if(p.y<.02){p.y=.02;p.vy=Math.abs(p.vy)*.3;p.vx*=.6;p.vz*=.6}p.age+=dt}
+ parts=parts.filter(p=>p.age<p.life);simT+=dt}
+function advanceTo(age){if(age<simT)resetSim(seed);let n=0;while(simT+TICK<=age&&n++<400)step(TICK)}
+
+// ---- Drawing.
+function lightLevel(t){if(t<0)return 0;if(t<IGNITE)return t/IGNITE*.08;const d=t-IGNITE;return Math.min(1,d/.05)*(t<EMIT_END?1:Math.exp(-(t-EMIT_END)*6))+Math.exp(-d*14)*.6}
+function flicker(t){return .82+.18*noise3(t*11,3.1,.7)+.06*Math.sin(t*63)}
+function ground(t,light){ctx.fillStyle='#0b0705';ctx.fillRect(0,0,W,H);let bg=ctx.createRadialGradient(W*.52,H*.47,0,W*.52,H*.48,W*.65);bg.addColorStop(0,'#241710');bg.addColorStop(.48,'#130c08');bg.addColorStop(1,'#060302');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+ ctx.save();for(let i=-24;i<=24;i++){let alpha=.08*(1-Math.abs(i)/28);line3([{x:i,y:0,z:-24},{x:i,y:0,z:24}],`rgba(200,150,110,${alpha})`,.6);line3([{x:-24,y:0,z:i},{x:24,y:0,z:i}],`rgba(200,150,110,${alpha})`,.6)}
+ ring({x:0,y:.005,z:0},7.5,'#b8825a1e');ring({x:0,y:.005,z:0},7.65,'#b8825a0b');ring({...source,y:.01},.5,'#ffa06644');ring({...target,y:.01},.65,'#ffa06630');
+ if(light>0){ctx.globalCompositeOperation='lighter';for(let k=0;k<4;k++){const along=.6+k*1.5,q=project({x:source.x+dir.x*along,y:.03,z:0});ctx.save();ctx.translate(q.x,q.y);ctx.scale(1,.28);glow(0,0,(1.6+k*.5)*q.s,'rgba(255,120,35,.34)',light*(1-k*.15)*clamp((t-IGNITE)*9-along+.8));ctx.restore()}ctx.globalCompositeOperation='source-over'}
+ ctx.restore()}
+function nozzle(t){const back={x:source.x-dir.x*1.1,y:source.y-dir.y*1.1-.12,z:0},q=project(source);
+ line3([back,source],'#241c17',.2*q.s);line3([back,source],'#4a3c32',.09*q.s);line3([{x:back.x+.25,y:back.y-.02,z:0},{x:back.x+.25,y:back.y-.5,z:0}],'#241c17',.1*q.s);
+ const heat=t<IGNITE?0:t<EMIT_END?Math.min(1,(t-IGNITE)/1.2):Math.exp(-(t-EMIT_END)*.7);if(heat>.01){ctx.globalCompositeOperation='lighter';line3([{x:source.x-dir.x*.3,y:source.y-dir.y*.3,z:0},source],`rgba(255,70,15,${heat*.55})`,.12*q.s);ctx.globalCompositeOperation='source-over'}
+ const pilotOn=t<IGNITE||t>EMIT_END+.1;if(pilotOn){const grow=t>=0&&t<IGNITE?1+t/IGNITE*1.6:1,tip={x:source.x+.05,y:source.y+.02,z:0},p=project(tip);ctx.globalCompositeOperation='lighter';glow(p.x,p.y,.09*q.s*grow,'rgba(80,140,255,.55)',.8,'rgba(40,80,255,0)');drawTongue(tongueSprites[1][0][Math.floor(t*10)%3],tip,{x:.5,y:1,z:0},.07*grow,2.1,.75,false);ctx.globalCompositeOperation='source-over'}}
+function drawTongue(img,p,vel,sizeM,lengthMul,alpha,flip){if(alpha<=.003||depth(p)<1.2)return;const q=project(p),sp=Math.hypot(vel.x,vel.y,vel.z)||1,k=.05/sp,q2=project({x:p.x+vel.x*k,y:p.y+vel.y*k,z:p.z+vel.z*k});
+ const dx=q2.x-q.x,dy=q2.y-q.y,fore=clamp(Math.hypot(dx,dy)/(.05*q.s)),w=sizeM*q.s,h=w*(1+(lengthMul-1)*fore);if(w<.4)return;
+ ctx.save();ctx.globalAlpha=Math.min(1,alpha);ctx.translate(q.x,q.y);ctx.rotate(Math.atan2(dy,dx)+Math.PI/2);if(flip)ctx.scale(-1,1);ctx.drawImage(img,-w/2,-h*.62,w,h);ctx.restore()}
+function jetAxis(p){return{x:p.vx+dir.x*9,y:p.vy*.5+dir.y*9,z:p.vz+dir.z*9}}
+function sizeCurve(L,f,grow){const [a,b]=L.size;const pk=L.peak||.4;return(f<pk?mix(a,b,smooth(0,pk,f)):mix(b,b*.6,(f-pk)/(1-pk)))*grow}
+function paintParticles(){for(const p of parts)p.dd=depth(p);const byDepth=(a,b)=>b.dd-a.dd;
+ // Smoke: separate non-additive layer.
+ for(const p of parts.filter(p=>p.kind==='smoke').sort(byDepth)){const f=p.age/p.life,a=f<.2?mix(.05,.32,f/.2):mix(.32,0,(f-.2)/.8),q=project(p),s=mix(.2,1,Math.pow(f,.6))*p.grow*q.s*2;ctx.save();ctx.globalAlpha=a;ctx.translate(q.x,q.y);ctx.rotate(p.rot+p.spin*p.age);ctx.drawImage(smokeSprites[p.shape],-s/2,-s/2,s,s);ctx.restore()}
+ const tongues=parts.filter(p=>p.kind==='tongue').sort(byDepth);
+ // Flame body: normal blend, temperature cools and silhouettes dissolve over life.
+ for(const p of tongues){const f=p.age/p.life,ti=clamp(Math.floor(f*1.15*4),0,3),fi=Math.min(FRAMES-1,Math.floor(f*FRAMES)),a=smooth(0,.07,f)*(1-smooth(.55,1,f))*.62;drawTongue(tongueSprites[p.shape][ti][fi],p,jetAxis(p),sizeCurve(LAYERS.tongue,f,p.grow),3.1,a,p.flip)}
+ ctx.globalCompositeOperation='lighter';
+ // Restrained emissive accent on young tongues, then the hot narrow core.
+ for(const p of tongues){const f=p.age/p.life;if(f<.45)drawTongue(tongueSprites[p.shape][0][Math.floor(f*FRAMES)],p,jetAxis(p),sizeCurve(LAYERS.tongue,f,p.grow)*.8,3.1,.07*(1-f/.45)*smooth(0,.05,f),p.flip)}
+ for(const p of parts)if(p.kind==='core'){const f=p.age/p.life;drawTongue(tongueSprites[p.shape][0][Math.min(FRAMES-1,Math.floor(f*FRAMES))],p,p,sizeCurve(LAYERS.core,f,p.grow),3.6,.24*(1-smooth(.6,1,f)),p.flip)}
+ for(const p of parts)if(p.kind==='ember'){const f=p.age/p.life,a=(1-f)**1.2*(.6+.4*noise3(p.age*14,p.off,0)),prev={x:p.x-p.vx*.03,y:p.y-p.vy*.03,z:p.z-p.vz*.03},g=Math.round(mix(220,90,f)),b=Math.round(mix(140,20,f));line3([prev,p],`rgba(255,${g},${b},${a})`,p.size);if(f<.5){const q=project(p);glow(q.x,q.y,4,'rgba(255,120,30,.18)',a)}}
+ ctx.globalCompositeOperation='source-over'}
+function ignition(t){const d=t-IGNITE;if(d<0||d>.18)return;const size=mix(.15,.4,clamp(d/.1)),a=d<.1?1:1-(d-.1)/.08,c={x:source.x+dir.x*.25,y:source.y,z:0},q=project(c);ctx.globalCompositeOperation='lighter';glow(q.x,q.y,size*q.s*2.2,'rgba(255,170,70,.55)',a);glow(q.x,q.y,size*q.s*.6,'rgba(255,245,215,.95)',a);ctx.globalCompositeOperation='source-over'}
+function airGlow(t,light){if(light<=0)return;ctx.globalCompositeOperation='lighter';for(let k=0;k<3;k++){const q=project({x:source.x+dir.x*(.8+k*1.6),y:source.y+.15+k*.18,z:0});glow(q.x,q.y,(1.2+k*.5)*q.s,'rgba(255,110,30,.10)',light*(1-k*.2)*clamp((t-IGNITE)*9-(.8+k*1.6)+.8))}ctx.globalCompositeOperation='source-over'}
+
+// ---- Deterministic synthesis: igniter clicks, gas whoomp, shaped rush, crackles and tail.
+function synthesize(rate){const dur=3.8,length=Math.floor(rate*dur),data=new Float32Array(length),rng=randomGenerator(4242),cr=randomGenerator(977),crackles=[];
+ for(let ct=.24;ct<3.1;){const dens=ct<EMIT_END?34:34*Math.exp(-(ct-EMIT_END)*2.1);ct+=-Math.log(1-cr()*.999)/Math.max(1.5,dens);crackles.push({t:ct,a:.12+cr()**2*.55,k:300+cr()*500})}
+ let low=0,mid=0,ph=0,ci=0;
+ for(let i=0;i<length;i++){let t=i/rate,n=rng()*2-1;low+=.02*(n-low);mid+=.18*(n-mid);const hiss=n-mid,band=mid-low;let v=0;
+  for(const c of [.04,.1,.16]){const q=t-c;if(q>=0&&q<.03)v+=hiss*Math.exp(-q*500)*.55}
+  if(t<.26)v+=hiss*.05*smooth(0,.2,t);
+  const d=t-IGNITE;if(d>=0){ph+=2*Math.PI*(38+75*Math.exp(-d*9))/rate;v+=Math.sin(ph)*Math.exp(-d*7)*.8+low*Math.exp(-d*10)*3.2;
+   const env=(1-Math.exp(-d*25))*(t<EMIT_END?1:Math.exp(-(t-EMIT_END)*9)),flut=.82+.18*Math.sin(2*Math.PI*9*t+Math.sin(2*Math.PI*2.3*t)*2);v+=(band*1.7+low*1.9)*env*flut+hiss*env*.08;
+   if(t>EMIT_END)v+=low*1.3*Math.exp(-(t-EMIT_END)*1.5)*(1-Math.exp(-(t-EMIT_END)*20))}
+  while(ci<crackles.length&&crackles[ci].t+.02<t)ci++;for(let j=ci;j<crackles.length&&crackles[j].t<=t;j++){const q=t-crackles[j].t;v+=hiss*Math.exp(-q*crackles[j].k)*crackles[j].a}
+  data[i]=Math.tanh(v*1.3)*.72*Math.min(1,t*150,Math.max(0,(dur-t)*10))}return data}
+async function startAudio(){if(!sound)return;try{if(!audio){audio=new (window.AudioContext||window.webkitAudioContext)();const s=synthesize(audio.sampleRate);audioBuffer=audio.createBuffer(1,s.length,audio.sampleRate);audioBuffer.copyToChannel(s,0)}if(audio.state==='suspended')await audio.resume();if(voice){try{voice.stop()}catch{}}voice=audio.createBufferSource();voice.buffer=audioBuffer;let gain=audio.createGain();gain.gain.value=.7;voice.connect(gain).connect(audio.destination);voice.start()}catch(e){document.querySelector('#sound').textContent='Audio unavailable';console.error(e)}}
+
+const freeze=(()=>{const v=new URLSearchParams(location.search).get('t');return v===null?null:Math.max(0,parseFloat(v)||0)})();
+function cast(withAudio=true){if(freeze!==null||time-castAt<.8)return;castAt=time;seed++;resetSim(seed);if(withAudio)startAudio()}
+let frozenFrames=0;function animate(ms){if(freeze===null||++frozenFrames<40)requestAnimationFrame(animate);time=ms/1000;let age=freeze!==null?freeze:time-castAt;if(freeze===null&&loop&&age>CYCLE&&!document.hidden){cast();age=0}
+ if(age<=TAIL_END+.5)advanceTo(age);const light=lightLevel(age)*flicker(age);
+ ground(age,light);ctx.save();const d=age-IGNITE;if(d>=0&&d<.3){const shake=Math.exp(-d*16)*2.2;ctx.translate(Math.sin(time*120)*shake,Math.cos(time*139)*shake*.5)}
+ nozzle(age);airGlow(age,light);if(age<=TAIL_END+.5)paintParticles();ignition(age);ctx.restore();
+ let vignette=ctx.createRadialGradient(W*.5,H*.5,Math.min(W,H)*.25,W*.5,H*.5,Math.max(W,H)*.65);vignette.addColorStop(0,'#00000000');vignette.addColorStop(1,'#0a0402cc');ctx.fillStyle=vignette;ctx.fillRect(0,0,W,H);
+ flash.style.opacity=d>=0&&d<.08?String((1-d/.08)*.08):'0';
+ const phase=age<0?'READY':age<IGNITE?'PRIMING':age<IGNITE+.12?'IGNITION':age<EMIT_END?'BURNING':age<TAIL_END?'SMOULDERING':'READY';if(phaseLabel.textContent!==phase)phaseLabel.textContent=phase;
+ const lvl=age<0?0:age<EMIT_END?Math.min(1,age/IGNITE):Math.exp(-(age-EMIT_END)*2);document.querySelectorAll('.meter span').forEach((bar,i)=>{bar.style.height=(3+lvl*Math.abs(Math.sin(time*23+i*2.1)*.7+noise3(time*9,i,0)*.3)*13)+'px'});
+}
+document.querySelector('#cast').addEventListener('click',()=>cast());
+document.querySelector('#loop').addEventListener('click',e=>{loop=!loop;e.currentTarget.setAttribute('aria-pressed',loop);if(loop&&time-castAt>1)cast()});
+document.querySelector('#sound').addEventListener('click',e=>{sound=!sound;e.currentTarget.setAttribute('aria-pressed',sound);e.currentTarget.setAttribute('aria-label',sound?'Sound enabled':'Sound disabled');e.currentTarget.textContent=sound?'Sound on':'Sound off';if(!sound&&voice){try{voice.stop()}catch{}}if(sound&&audio?.state==='suspended')audio.resume()});
+addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat&&!/BUTTON|INPUT/.test(document.activeElement.tagName)){e.preventDefault();cast()}});
+let drag=null;canvas.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,moved:0};canvas.setPointerCapture(e.pointerId)});canvas.addEventListener('pointermove',e=>{if(!drag)return;let dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.moved+=Math.abs(dx)+Math.abs(dy);yaw-=dx*.005;pitch=clamp(pitch+dy*.004,.12,.85);drag.x=e.clientX;drag.y=e.clientY});canvas.addEventListener('pointerup',()=>{if(drag&&drag.moved<7)cast();drag=null});canvas.addEventListener('pointercancel',()=>drag=null);canvas.addEventListener('wheel',e=>{e.preventDefault();distance=clamp(distance+e.deltaY*.01,10,28)},{passive:false});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&voice){try{voice.stop()}catch{}}});
+try{buildSprites()}catch(e){const el=document.querySelector('#error');el.style.display='block';el.textContent='Could not build flame sprites: '+e.message}
+window.blaze={cast,stats:()=>({phase:phaseLabel.textContent,audioState:audio?.state||'not started',audioSamples:audioBuffer?.length||0,particles:parts.length,byKind:parts.reduce((m,p)=>(m[p.kind]=(m[p.kind]||0)+1,m),{}),loop,sound}),synthesize};
+if(freeze!==null)resetSim(seed);
+requestAnimationFrame(animate);setTimeout(()=>cast(false),700);
+</script>
+</body></html>

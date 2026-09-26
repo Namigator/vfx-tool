@@ -22,6 +22,7 @@ import { DEFAULT_MAX_LIVE_PARTICLES, PARTICLE_DT, ParticleSimulation, type Parti
 import { PlaybackClock } from '../runtime/clock.ts';
 import { framePoints, RibbonGeometry, ribbonSoftness, type FramePointSet } from './RibbonGeometry.ts';
 import { pathViewDirection } from './pathView.ts';
+import { collectTimelineFrameSets } from './pathFraming.ts';
 import { layerRenderOrder } from './layerOrder.ts';
 
 /** Fraction of the preview half-extent path framing fills (leaves a margin, never clips). */
@@ -328,13 +329,14 @@ export class PreviewViewport {
     }
   }
 
-  /** Frames the tick-0 paths and uploads them; the caller owns the clock and emits the frame. */
+  /**
+   * Frames paths sampled across the effect timeline (fixed during playback) and uploads tick 0;
+   * the caller owns the clock (set before this call) and emits the frame.
+   */
   #beginPathSource(plan: PathPreviewPlan, compile: PathCompile): void {
     this.#pathCompile = compile;
-    const sets: FramePointSet[] = [];
-    for (const layer of plan.layers) if (layer.active) {
-      for (const p of layer.paths) if (p.points.length) sets.push({ points: p.points, pad: (layer.width * p.widthScale) / 2 });
-    }
+    const duration = this.#clock ? this.#clock.durationTicks : plan.durationTicks;
+    const sets: FramePointSet[] = collectTimelineFrameSets(plan, duration, compile);
     this.#frameSets = sets.length ? sets : null;
     // Broadside initial view until the user orbits; later edits keep their orbit direction.
     if (sets.length && !this.#userOrbited) {
@@ -358,7 +360,7 @@ export class PreviewViewport {
     this.#userOrbited = false;
   }
 
-  /** Fits the tick-0 path points into the view, keeping the current orbit direction. */
+  /** Fits the timeline-sampled path points into the view, keeping the current orbit direction. */
   #framePaths(): void {
     const sets = this.#frameSets;
     if (!sets) return;

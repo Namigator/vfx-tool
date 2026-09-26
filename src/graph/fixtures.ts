@@ -76,6 +76,16 @@ export function createF01Document(): EffectDocumentV2 {
 // so the bolt stays full-width up to the target anchor where the impact burst sits.
 const chargeSizeOverLife = () => ({ domain: 'normalized' as const, interpolation: 'linear' as const, keys: [{ x: 0, y: 1 }, { x: 1, y: 7 }] });
 const chargeOpacityOverLife = () => ({ domain: 'normalized' as const, interpolation: 'linear' as const, keys: [{ x: 0, y: 0.2 }, { x: 1, y: 1 }] });
+// Ground ripple: ticks 26-119 (window end 120 exclusive). Radius grows linearly 0.15 -> 5.6 m; opacity is a
+// piecewise-linear approximation of 0.8 * e^(-4u), shifted so it reaches exactly 0 at u = 1.
+export const L01_RIPPLE_START_TICK = 26;
+export const L01_RIPPLE_END_TICK = 120;
+export const L01_RIPPLE_RADIUS = 5.6;
+export const L01_RIPPLE_MIN_RADIUS = 0.15;
+export const L01_RIPPLE_OPACITY = 0.8;
+export const L01_RIPPLE_FADE_KEYS = [0, 0.1, 0.25, 0.5, 0.75, 1];
+export const l01RippleFade = (u: number) => L01_RIPPLE_OPACITY * (Math.exp(-4 * u) - Math.exp(-4)) / (1 - Math.exp(-4));
+const rippleSeconds = (u: number) => (L01_RIPPLE_START_TICK + u * (L01_RIPPLE_END_TICK - L01_RIPPLE_START_TICK)) / 60;
 
 export function createL01Document(): EffectDocumentV2 {
   const ribbon = (id: string, label: string, width: number, renderOrderOffset: number, extra: Record<string, number> = {}) =>
@@ -95,6 +105,7 @@ export function createL01Document(): EffectDocumentV2 {
     anchors: [
       { id: 'source', name: 'Source', position: [-1.6, 0.8, 0] },
       { id: 'target', name: 'Target', position: [1.6, 0.8, 0] },
+      { id: 'ground', name: 'Ground under target', position: [1.6, 0, 0] },
     ],
     durationTicks: 120,
     rootGraphId: 'graph-root',
@@ -170,6 +181,24 @@ export function createL01Document(): EffectDocumentV2 {
         // Both charge billboards grow 1x -> 7x over life (halo 0.2 -> 1.4 m, core 0.04 -> 0.28 m) and brighten 0.2 -> 1.
         { id: 'node-bb-charge-halo', type: 'BillboardRenderer', definitionVersion: 1, label: 'Charge halo', enabled: true, randomStreamId: 'rs-bb-charge-halo', params: { renderOrderOffset: -2, sizeOverLife: chargeSizeOverLife(), opacityOverLife: chargeOpacityOverLife() } },
         { id: 'node-bb-charge-core', type: 'BillboardRenderer', definitionVersion: 1, label: 'Charge core', enabled: true, randomStreamId: 'rs-bb-charge-core', params: { renderOrderOffset: -1, sizeOverLife: chargeSizeOverLife(), opacityOverLife: chargeOpacityOverLife() } },
+        // Ground ripple: a generic XZ RingPath at a ground anchor under the target; two EffectTimeCurves drive
+        // its radiusScale and its material opacity over the ripple window.
+        { id: 'node-ground', type: 'Anchor', definitionVersion: 1, label: 'Ground', enabled: true, randomStreamId: 'rs-ground', params: { anchorId: 'ground' } },
+        { id: 'node-ripple-window', type: 'Schedule', definitionVersion: 1, label: 'Ripple window', enabled: true, randomStreamId: 'rs-ripple-window', params: { startTicks: L01_RIPPLE_START_TICK, durationTicks: L01_RIPPLE_END_TICK - L01_RIPPLE_START_TICK, mode: 'window' } },
+        {
+          id: 'node-ripple-ring', type: 'RingPath', definitionVersion: 1, label: 'Ground ripple ring', enabled: true, randomStreamId: 'rs-ripple-ring',
+          params: { radius: L01_RIPPLE_RADIUS, minRadius: L01_RIPPLE_MIN_RADIUS, radiusScale: 1, samples: 64, orientation: [0, 0, 0, 1] },
+        },
+        {
+          id: 'node-ripple-radius-curve', type: 'EffectTimeCurve', definitionVersion: 1, label: 'Ripple radius curve', enabled: true, randomStreamId: 'rs-ripple-radius-curve',
+          params: { curve: { domain: 'effectSeconds', interpolation: 'linear', keys: [{ x: rippleSeconds(0), y: L01_RIPPLE_MIN_RADIUS / L01_RIPPLE_RADIUS }, { x: rippleSeconds(1), y: 1 }] } },
+        },
+        {
+          id: 'node-ripple-fade-curve', type: 'EffectTimeCurve', definitionVersion: 1, label: 'Ripple fade curve', enabled: true, randomStreamId: 'rs-ripple-fade-curve',
+          params: { curve: { domain: 'effectSeconds', interpolation: 'linear', keys: L01_RIPPLE_FADE_KEYS.map(u => ({ x: rippleSeconds(u), y: u === 1 ? 0 : l01RippleFade(u) })) } },
+        },
+        material('node-mat-ripple', 'Ripple material', '#5FF0FF', L01_RIPPLE_OPACITY, 3),
+        ribbon('node-rib-ripple', 'Ripple ribbon', 0.03, 0, { endFade: 0 }),
         { id: 'node-output', type: 'EffectOutput', definitionVersion: 1, label: 'Output', enabled: true, randomStreamId: 'rs-output', params: {} },
       ],
       edges: [
@@ -231,6 +260,13 @@ export function createL01Document(): EffectDocumentV2 {
         edge('edge-charge-core-mat', 'node-mat-charge-core', 'material', 'node-bb-charge-core', 'material'),
         { ...edge('edge-visual-charge-halo', 'node-bb-charge-halo', 'visual', 'node-output', 'visual'), order: 9 },
         { ...edge('edge-visual-charge-core', 'node-bb-charge-core', 'visual', 'node-output', 'visual'), order: 10 },
+        edge('edge-ripple-center', 'node-ground', 'out', 'node-ripple-ring', 'center'),
+        edge('edge-ripple-radius', 'node-ripple-radius-curve', 'value', 'node-ripple-ring', 'radiusScale'),
+        edge('edge-ripple-fade', 'node-ripple-fade-curve', 'value', 'node-mat-ripple', 'opacity'),
+        edge('edge-ripple-paths', 'node-ripple-ring', 'paths', 'node-rib-ripple', 'paths'),
+        edge('edge-ripple-mat', 'node-mat-ripple', 'material', 'node-rib-ripple', 'material'),
+        edge('edge-ripple-window', 'node-ripple-window', 'window', 'node-rib-ripple', 'window'),
+        { ...edge('edge-visual-ripple', 'node-rib-ripple', 'visual', 'node-output', 'visual'), order: 11 },
       ],
     }],
     controls: [],
@@ -256,6 +292,9 @@ export function createL01Document(): EffectDocumentV2 {
             'node-charge-halo-props': { x: 480, y: -720 }, 'node-charge-core-props': { x: 480, y: -560 },
             'node-mat-charge-halo': { x: 720, y: -880 }, 'node-mat-charge-core': { x: 720, y: -720 },
             'node-bb-charge-halo': { x: 1240, y: -800 }, 'node-bb-charge-core': { x: 1240, y: -640 },
+            'node-ground': { x: 0, y: 1520 }, 'node-ripple-ring': { x: 240, y: 1520 },
+            'node-ripple-radius-curve': { x: 0, y: 1680 }, 'node-ripple-fade-curve': { x: 720, y: 1680 },
+            'node-mat-ripple': { x: 980, y: 1680 }, 'node-ripple-window': { x: 980, y: 1520 }, 'node-rib-ripple': { x: 1240, y: 1600 },
             'node-output': { x: 1500, y: 160 },
           },
           viewport: { x: 0, y: 0, zoom: 1 },

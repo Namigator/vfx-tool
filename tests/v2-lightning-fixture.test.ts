@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { compilePathPreview, type PathPreviewLayer } from '../src/graph/toPaths.ts';
-import { createL01Document } from '../src/graph/fixtures.ts';
+import { createL01Document, l01RippleFade, L01_RIPPLE_FADE_KEYS } from '../src/graph/fixtures.ts';
 import { revealPath } from '../src/runtime/paths.ts';
 import { compileParticlePreview } from '../src/graph/toParticles.ts';
 import { sampleParticlesAtTick } from '../src/runtime/particles.ts';
@@ -21,14 +21,16 @@ const ORDER = ['node-rib-halo', 'node-rib-outer', 'node-rib-branch-glow', 'node-
 const IMPACT_GLOW = 'node-rib-impact-glow';
 const IMPACT = 'node-rib-impact';
 const IMPACTS = [IMPACT_GLOW, IMPACT];
-const total = (layers: { paths: unknown[] }[]) => layers.reduce((s, l) => s + l.paths.length, 0);
+const RIPPLE = 'node-rib-ripple';
+// Bolt + impact path count; the ground ripple ring is checked separately.
+const total = (layers: { nodeId: string; paths: unknown[] }[]) => layers.reduce((s, l) => s + (l.nodeId === RIPPLE ? 0 : l.paths.length), 0);
 
 const BOLT = [...TRUNK, 'node-rib-branch-glow', 'node-rib-branch-core', 'node-rib-fork'];
 
 test('L01 validates and compiles at tick 40 into seven active nonempty bolt layers plus idle impact glow/core layers', () => {
   const r = compilePathPreview(createL01Document(), 40);
   assert.ok(r.ok, JSON.stringify(!r.ok && r.errors));
-  assert.deepEqual(r.value.layers.map(l => l.nodeId), [...ORDER, ...IMPACTS]);
+  assert.deepEqual(r.value.layers.map(l => l.nodeId), [...ORDER, ...IMPACTS, RIPPLE]);
   for (const l of r.value.layers.filter(l => !IMPACTS.includes(l.nodeId))) {
     assert.ok(l.active, l.nodeId);
     assert.ok(l.paths.length > 0 && l.paths.every(p => p.points.length >= 2), l.nodeId);
@@ -241,14 +243,14 @@ test('L01 trunk uses the reference four-layer widths/opacities with distinct mat
   assert.deepEqual(TRUNK.map(id => by(id).width), [0.43, 0.185, 0.07, 0.026]);
   assert.deepEqual(TRUNK.map(id => by(id).opacity), [0.07, 0.17, 0.65, 1]);
   assert.ok(by('node-rib-fork').width < by('node-rib-branch-core').width);
-  assert.equal(new Set(r.value.layers.map(l => l.color.srgb)).size, 9);
+  assert.equal(new Set(r.value.layers.map(l => l.color.srgb)).size, 10);
 });
 
-test('L01 trunk layers use endFade 0 to reach the target; branch, fork and impact layers keep the 0.12 default', () => {
+test('L01 trunk and ripple layers use endFade 0; branch, fork and impact layers keep the 0.12 default', () => {
   for (const tick of [0, 30]) {
     const r = compilePathPreview(createL01Document(), tick);
     assert.ok(r.ok, JSON.stringify(!r.ok && r.errors));
-    for (const l of r.value.layers) assert.equal(l.endFade, TRUNK.includes(l.nodeId) ? 0 : 0.12, `tick ${tick} ${l.nodeId}`);
+    for (const l of r.value.layers) assert.equal(l.endFade, TRUNK.includes(l.nodeId) || l.nodeId === RIPPLE ? 0 : 0.12, `tick ${tick} ${l.nodeId}`);
     assert.equal(total(r.value.layers), tick === 0 ? 0 : 59, `tick ${tick}`);
   }
 });
@@ -273,7 +275,7 @@ test('L01 paths are finite and bounded across the effect', () => {
   for (const tick of [0, 30, 60, 119]) {
     const r = compilePathPreview(createL01Document(), tick);
     assert.ok(r.ok);
-    for (const l of r.value.layers) for (const p of l.paths) for (const [x, y, z] of p.points) {
+    for (const l of r.value.layers.filter(l => l.nodeId !== RIPPLE)) for (const p of l.paths) for (const [x, y, z] of p.points) {
       assert.ok(Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z));
       assert.ok(Math.abs(x) <= 3.2 && y >= -1.2 && y <= 3.2 && Math.abs(z) <= 1.6, `tick ${tick} ${l.nodeId}: ${x},${y},${z}`);
     }
@@ -357,7 +359,7 @@ test('L01 nodes stay removable: dropping the fork ribbon still compiles', () => 
   delete d.editor.graphs['graph-root'].nodes['node-rib-fork'];
   const r = compilePathPreview(d, 0);
   assert.ok(r.ok, JSON.stringify(!r.ok && r.errors));
-  assert.equal(r.value.layers.length, 8);
+  assert.equal(r.value.layers.length, 9);
 });
 
 test('L01 layers can be disabled: disabled halo is skipped, disabled fork BranchPath empties forks', () => {
@@ -368,4 +370,86 @@ test('L01 layers can be disabled: disabled halo is skipped, disabled fork Branch
   assert.ok(!r.value.layers.some(l => l.nodeId === 'node-rib-halo'));
   assert.equal(r.value.layers.find(l => l.nodeId === 'node-rib-fork')!.paths.length, 0);
   assert.equal(r.value.layers.find(l => l.nodeId === 'node-rib-branch-core')!.paths.length, 14);
+});
+
+test('L01 ground ripple topology: ground Anchor -> RingPath -> one RibbonRenderer, two EffectTimeCurve drivers', () => {
+  const d = createL01Document();
+  const g = d.graphs[0];
+  assert.deepEqual(d.anchors.find(a => a.id === 'ground')!.position, [1.6, 0, 0]);
+  const by = (id: string) => g.nodes.find(n => n.id === id)!;
+  assert.deepEqual([by('node-ground').type, by('node-ground').params], ['Anchor', { anchorId: 'ground' }]);
+  const ring = by('node-ripple-ring');
+  assert.equal(ring.type, 'RingPath');
+  assert.deepEqual(ring.params, { radius: 5.6, minRadius: 0.15, radiusScale: 1, samples: 64, orientation: [0, 0, 0, 1] });
+  assert.deepEqual(by('node-ripple-window').params, { startTicks: 26, durationTicks: 94, mode: 'window' });
+  assert.deepEqual(by(RIPPLE).params, { width: 0.03, renderOrderOffset: 0, endFade: 0 });
+  const mat = by('node-mat-ripple').params as Record<string, unknown>;
+  assert.equal(mat.blend, 'additive');
+  assert.equal(g.nodes.filter(n => n.type === 'RingPath').length, 1);
+  const wires = g.edges.filter(e => e.id.startsWith('edge-ripple') || e.id === 'edge-visual-ripple')
+    .map(e => `${e.source.nodeId}.${e.source.port}->${e.target.nodeId}.${e.target.port}`).sort();
+  assert.deepEqual(wires, [
+    'node-ground.out->node-ripple-ring.center',
+    'node-mat-ripple.material->node-rib-ripple.material',
+    'node-rib-ripple.visual->node-output.visual',
+    'node-ripple-fade-curve.value->node-mat-ripple.opacity',
+    'node-ripple-radius-curve.value->node-ripple-ring.radiusScale',
+    'node-ripple-ring.paths->node-rib-ripple.paths',
+    'node-ripple-window.window->node-rib-ripple.window',
+  ]);
+  for (const id of ['node-ripple-radius-curve', 'node-ripple-fade-curve']) {
+    const keys = (by(id).params as unknown as { curve: { keys: { x: number; y: number }[] } }).curve.keys;
+    assert.ok(keys.every(k => k.x >= 0 && k.x <= d.durationTicks / 60), id);
+    assert.equal(keys[0].x, 26 / 60, id);
+    assert.equal(keys.at(-1)!.x, 2, id);
+  }
+});
+
+test('L01 ground ripple radius and opacity at ticks 25, 26, 60, 119, 120', () => {
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+  const u = (tick: number) => Math.min(1, Math.max(0, (tick - 26) / 94));
+  const radius = (tick: number) => Math.max(0.15, 5.6 * lerp(0.15 / 5.6, 1, u(tick)));
+  const fadeY = L01_RIPPLE_FADE_KEYS.map(k => (k === 1 ? 0 : l01RippleFade(k)));
+  const opacity = (tick: number) => {
+    const v = u(tick);
+    const i = Math.min(L01_RIPPLE_FADE_KEYS.length - 2, L01_RIPPLE_FADE_KEYS.findIndex(k => k >= v) - 1);
+    if (i < 0) return fadeY[0];
+    const [a, b] = [L01_RIPPLE_FADE_KEYS[i], L01_RIPPLE_FADE_KEYS[i + 1]];
+    return lerp(fadeY[i], fadeY[i + 1], (v - a) / (b - a));
+  };
+  // Real fixture: visible ticks 26-119 only.
+  for (const [tick, on] of [[25, false], [26, true], [60, true], [119, true], [120, false]] as const) {
+    const r = compilePathPreview(createL01Document(), tick);
+    assert.ok(r.ok, JSON.stringify(!r.ok && r.errors));
+    const l = r.value.layers.find(l => l.nodeId === RIPPLE)!;
+    assert.equal(l.active, on, `tick ${tick}`);
+    assert.equal(l.paths.length, on ? 1 : 0, `tick ${tick}`);
+  }
+  // Probe: same curves with the window opened over every tick (and the document extended past 120) so the
+  // driven values are observable at the inactive ticks 25 and 120 too.
+  const probe = (tick: number) => {
+    const d = createL01Document();
+    d.durationTicks = 121;
+    d.graphs[0].nodes.find(n => n.id === 'node-ripple-window')!.params = { startTicks: 0, durationTicks: 121, mode: 'window' };
+    const r = compilePathPreview(d, tick);
+    assert.ok(r.ok, JSON.stringify(!r.ok && r.errors));
+    return r.value.layers.find(l => l.nodeId === RIPPLE)!;
+  };
+  for (const tick of [25, 26, 60, 119, 120]) {
+    const l = probe(tick);
+    assert.equal(l.paths.length, 1);
+    const pts = l.paths[0].points;
+    assert.equal(pts.length, 65);
+    for (const [x, y, z] of pts) {
+      assert.ok(Math.abs(y) < 1e-12, `tick ${tick} on ground`);
+      assert.ok(Math.abs(Math.hypot(x - 1.6, z) - radius(tick)) < 1e-9, `tick ${tick} radius`);
+    }
+    assert.ok(Math.abs(l.opacity - opacity(tick)) < 1e-9, `tick ${tick} opacity ${l.opacity} vs ${opacity(tick)}`);
+    assert.equal(l.blend, 'additive');
+    assert.equal(l.endFade, 0);
+  }
+  assert.ok(Math.abs(radius(25) - 0.15) < 1e-12 && Math.abs(radius(120) - 5.6) < 1e-12);
+  assert.ok(Math.abs(opacity(26) - 0.8) < 1e-12 && opacity(120) === 0);
+  assert.ok(opacity(60) < opacity(26) && opacity(119) < opacity(60) && opacity(119) > 0);
+  assert.deepEqual(compilePathPreview(createL01Document(), 60), compilePathPreview(createL01Document(), 60));
 });

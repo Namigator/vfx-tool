@@ -297,6 +297,23 @@ function radialPath(): NodeSpec {
   });
 }
 
+// Proof-of-concept closed ring as a path (design e3bbd3e7); bounds mirror runtime/ring.ts.
+// Actual radius = max(minRadius, radius * radiusScale); radiusScale may be driven by EffectTimeCurve.
+function ringPath(): NodeSpec {
+  return node('RingPath', {
+    inputs: [port({ id: 'center', label: 'Center', type: 'anchor', required: true })],
+    outputs: [pathsOut()],
+    parameters: [
+      param({ id: 'radius', label: 'Radius', type: 'number', unit: 'meter', default: 1, min: 0.001, max: 50 }),
+      param({ id: 'minRadius', label: 'Min radius', type: 'number', unit: 'meter', default: 0, min: 0, max: 50, description: 'Lower bound of the actual radius.' }),
+      param({ id: 'radiusScale', label: 'Radius scale', type: 'number', unit: 'normalized', default: 1, min: 0, max: 1, domains: ['constant', 'effectTime'], description: 'Multiplies radius.' }),
+      param({ id: 'samples', label: 'Samples', type: 'integer', unit: 'none', default: 64, min: 8, max: 256, step: 1 }),
+      param({ id: 'orientation', label: 'Orientation', type: 'quaternion', unit: 'none', default: [0, 0, 0, 1], description: 'Rotates the local XZ ring (xyzw).' }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
 function ribbonRenderer(): NodeSpec {
   return node('RibbonRenderer', {
     inputs: [
@@ -428,7 +445,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
     anchor(), schedule(), emitter(), initialProperties(), material(), billboardRenderer(),
-    linePath(), bezierPath(), jaggedPath(), branchPath(), revealPath(), radialPath(), ribbonRenderer(), effectTimeCurve(),
+    linePath(), bezierPath(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(),
     audioSource(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),
   ];

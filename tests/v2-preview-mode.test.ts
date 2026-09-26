@@ -26,12 +26,12 @@ test('lightning demo is the shared L01 fixture, not a duplicate construction', (
   assert.notEqual(createLightningDemoDocument(), createLightningDemoDocument(), 'fresh editable copy each call');
 });
 
-test('lightning demo chooses mixed mode and renders seven visible ribbon layers from the node graph', () => {
+test('lightning demo chooses mixed mode and renders bolt, impact and ripple layers from the node graph', () => {
   const d = createLightningDemoDocument();
   assert.deepEqual(choosePreviewMode(d), { mode: 'mixed' });
   const r = compilePathPreview(d, 40);
   if (!r.ok) assert.fail(JSON.stringify(r.errors));
-  assert.deepEqual(r.value.layers.map(l => l.nodeId), ['node-rib-halo', 'node-rib-outer', 'node-rib-branch-glow', 'node-rib-inner', 'node-rib-fork', 'node-rib-branch-core', 'node-rib-core', 'node-rib-impact-glow', 'node-rib-impact']);
+  assert.deepEqual(r.value.layers.map(l => l.nodeId), ['node-rib-halo', 'node-rib-outer', 'node-rib-branch-glow', 'node-rib-inner', 'node-rib-fork', 'node-rib-branch-core', 'node-rib-core', 'node-rib-impact-glow', 'node-rib-impact', 'node-rib-ripple']);
   assert.deepEqual(ribbonStyleDiagnostics(d, r.value.layers), []);
   const g = new RibbonGeometry();
   // The bolt is active at tick 40; the impact glow/core layers have ended.

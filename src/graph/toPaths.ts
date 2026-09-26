@@ -19,8 +19,8 @@
 //   to every output point. Ribbon width and UV tile length are scaled by the uniform root scale.
 // - Each path node output is evaluated once per compile even when shared by several ribbons.
 // - Any non-empty connection into a parameter port, and any exposed-control driver, is rejected until
-//   expression evaluation exists. Sole exception: RevealPath.fraction may be driven by
-//   EffectTimeCurve.value (curve sampled at effect seconds; disabled driver falls back to the literal). Disabled nodes are not parameter-checked (they contribute no values).
+//   expression evaluation exists. Exceptions: RevealPath.fraction, RingPath.radiusScale and
+//   Material.opacity may be driven by EffectTimeCurve.value (curve sampled at effect seconds; disabled driver falls back to the literal). Disabled nodes are not parameter-checked (they contribute no values).
 // - Validation does not depend on effectTick: geometry is always evaluated; a layer outside its window
 //   (or at/after the document end) is inactive and carries no paths.
 import type { ColorValue, CurveValue, Diagnostic, ErrorCode, ParameterValue, Quaternion, Transform, ValidationResult, Vec3 } from '../model/types.ts';
@@ -29,6 +29,7 @@ import { registryKey } from '../model/controls.ts';
 import { bezierPath, jaggedPath, linePath, revealPath, type PathData } from '../runtime/paths.ts';
 import { branchPaths, type BranchCountMode } from '../runtime/branches.ts';
 import { radialPaths, type RadialMode } from '../runtime/radial.ts';
+import { ringPath } from '../runtime/ring.ts';
 import { evaluateCurve } from '../runtime/curves.ts';
 import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
@@ -191,19 +192,20 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
   };
 
   /**
-   * RevealPath.fraction: the literal, or an enabled EffectTimeCurve.value sampled at `seconds`
+   * A normalized drivable parameter (DRIVABLE: RevealPath.fraction, RingPath.radiusScale,
+   * Material.opacity): the literal, or an enabled EffectTimeCurve.value sampled at `seconds`
    * (a disabled driver falls back to the literal). Curve y outside [0,1] is an addressed error.
    */
-  const drivenFraction = (n: ExpandedNode): number => {
-    const cs = into(n.node.id, 'fraction');
-    if (cs.length === 0) return num(n, 'fraction');
-    if (cs.length > 1) return fail('MULTIPLE_DRIVERS', `Input "fraction" of "${n.node.id}" has ${cs.length} drivers; connect one.`, n.node.id, 'fraction');
+  const drivenScalar = (n: ExpandedNode, id: string): number => {
+    const cs = into(n.node.id, id);
+    if (cs.length === 0) return num(n, id);
+    if (cs.length > 1) return fail('MULTIPLE_DRIVERS', `Input "${id}" of "${n.node.id}" has ${cs.length} drivers; connect one.`, n.node.id, id);
     const s = cs[0].source;
-    const d = sourceNode(s, n.node.id, 'fraction');
+    const d = sourceNode(s, n.node.id, id);
     if (d.node.type !== 'EffectTimeCurve' || s.kind !== 'node' || s.port !== 'value') {
-      return fail('DOMAIN_MISMATCH', `Input "fraction" of "${n.node.id}" is driven by "${d.node.id}" (${d.node.type}); only EffectTimeCurve.value is supported by the path preview.`, n.node.id, 'fraction');
+      return fail('DOMAIN_MISMATCH', `Input "${id}" of "${n.node.id}" is driven by "${d.node.id}" (${d.node.type}); only EffectTimeCurve.value is supported by the path preview.`, n.node.id, id);
     }
-    if (!d.effectiveEnabled) return num(n, 'fraction');
+    if (!d.effectiveEnabled) return num(n, id);
     noDrivenParams(d, []);
     const curve = param(d, 'curve') as CurveValue;
     if (curve?.domain !== 'effectSeconds') return fail('DOMAIN_MISMATCH', `EffectTimeCurve "${d.node.id}" curve must use domain "effectSeconds".`, d.node.id, 'curve');
@@ -278,7 +280,7 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
         const input = pathsInto(id, 'paths');
         if (!on) { out = new Map([['paths', input]]); break; }
         noDrivenParams(n, [...MODIFIER_PORTS, 'fraction']);
-        const fraction = drivenFraction(n);
+        const fraction = drivenScalar(n, 'fraction');
         out = new Map([['paths', guard(id, () => input.map(p => revealPath(p, fraction)))]]);
         break;
       }
@@ -315,6 +317,17 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
         }))]]);
         break;
       }
+      case 'RingPath': {
+        if (!on) { out = new Map([['paths', []]]); break; }
+        noDrivenParams(n, ['center', 'radiusScale']);
+        const center = anchorOf(n, 'center');
+        const radiusScale = drivenScalar(n, 'radiusScale');
+        out = new Map([['paths', [guard(id, () => ringPath(center, {
+          radius: num(n, 'radius'), minRadius: num(n, 'minRadius'), radiusScale,
+          samples: num(n, 'samples'), orientation: param(n, 'orientation') as Quaternion,
+        }))]]]);
+        break;
+      }
       default:
         return fail('UNKNOWN_NODE', `Node "${id}" (${n.node.type}) is not supported in a path chain by the path preview.`, id);
     }
@@ -346,7 +359,8 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
         fail('MISSING_REFERENCE', `Required input "material" of "${rid}" needs an enabled Material (a disabled Material acts absent).`, rid);
         continue;
       }
-      noDrivenParams(mat, []);
+      noDrivenParams(mat, ['opacity']);
+      const opacity = drivenScalar(mat, 'opacity');
       if (param(mat, 'template') !== 'SpriteUnlit') report('INVALID_VALUE', 'Only the SpriteUnlit material template is supported.', mat.node.id, 'template');
 
       let window: PathPreviewLayer['window'] = { startTick: 0, endTick: duration }; // Unconnected: whole document (25).
@@ -385,7 +399,7 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
         renderOrderOffset: num(r, 'renderOrderOffset'),
         visualOrder,
         color: { ...(param(mat, 'tint') as ColorValue) },
-        opacity: num(mat, 'opacity'),
+        opacity,
         emission: num(mat, 'emission'),
         blend: param(mat, 'blend') as PathPreviewLayer['blend'],
         alphaCutoff: num(mat, 'alphaCutoff'),

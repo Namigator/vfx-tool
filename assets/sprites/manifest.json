@@ -1,0 +1,73 @@
+{
+  "generator": "tools/bake-sprites.mjs",
+  "sprites": [
+    {
+      "id": "flame-tongue-t0",
+      "file": "flame-tongue-t0.png",
+      "kind": "flipbook",
+      "cell": [
+        40,
+        96
+      ],
+      "columns": 12,
+      "rows": 8,
+      "temperature": 1,
+      "layout": "rows = shape variants, columns = frames over life (dissolve grows); tip points up (-Y), root at bottom",
+      "blend": "normal (t0 also usable additive as emissive core)"
+    },
+    {
+      "id": "flame-tongue-t1",
+      "file": "flame-tongue-t1.png",
+      "kind": "flipbook",
+      "cell": [
+        40,
+        96
+      ],
+      "columns": 12,
+      "rows": 8,
+      "temperature": 0.72,
+      "layout": "rows = shape variants, columns = frames over life (dissolve grows); tip points up (-Y), root at bottom",
+      "blend": "normal (t0 also usable additive as emissive core)"
+    },
+    {
+      "id": "flame-tongue-t2",
+      "file": "flame-tongue-t2.png",
+      "kind": "flipbook",
+      "cell": [
+        40,
+        96
+      ],
+      "columns": 12,
+      "rows": 8,
+      "temperature": 0.46,
+      "layout": "rows = shape variants, columns = frames over life (dissolve grows); tip points up (-Y), root at bottom",
+      "blend": "normal (t0 also usable additive as emissive core)"
+    },
+    {
+      "id": "flame-tongue-t3",
+      "file": "flame-tongue-t3.png",
+      "kind": "flipbook",
+      "cell": [
+        40,
+        96
+      ],
+      "columns": 12,
+      "rows": 8,
+      "temperature": 0.22,
+      "layout": "rows = shape variants, columns = frames over life (dissolve grows); tip points up (-Y), root at bottom",
+      "blend": "normal (t0 also usable additive as emissive core)"
+    },
+    {
+      "id": "smoke-puff",
+      "file": "smoke-puff.png",
+      "kind": "variants",
+      "cell": [
+        64,
+        64
+      ],
+      "columns": 4,
+      "rows": 1,
+      "blend": "normal"
+    }
+  ]
+}
