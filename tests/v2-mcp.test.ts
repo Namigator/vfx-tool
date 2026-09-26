@@ -23,7 +23,7 @@ async function connect() {
 test('MCP lists the catalog and describes node types', async () => {
   const { client, call } = await connect();
   const tools = (await client.listTools()).tools.map(t => t.name);
-  for (const t of ['vfx_new_document', 'vfx_add_node', 'vfx_connect', 'vfx_compile', 'vfx_sample_particles', 'vfx_render_audio', 'vfx_preview_url']) assert.ok(tools.includes(t), t);
+  for (const t of ['vfx_new_document', 'vfx_add_node', 'vfx_connect', 'vfx_compile', 'vfx_sample_particles', 'vfx_render_audio', 'vfx_preview_url', 'vfx_render_frames']) assert.ok(tools.includes(t), t);
   assert.match((await call('vfx_list_node_types', {})).text, /Emitter +in\[anchor:anchor/);
   assert.match((await call('vfx_describe_node_type', { type: 'Gravity' })).text, /acceleration/);
 });

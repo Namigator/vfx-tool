@@ -4,7 +4,9 @@
 // work/mcp/<id>.json after every successful change, which the editor opens via ?workspace=v2&doc=...
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import type { Diagnostic, EffectDocumentV2, NodeDefinition, ParameterValue, Vec3 } from '../src/model/types.ts';
 import { validateDocument } from '../src/model/document.ts';
@@ -17,12 +19,18 @@ import { compileAudio } from '../src/graph/toAudio.ts';
 import { sampleParticlesAtTick } from '../src/runtime/particles.ts';
 import { encodeWavPcm16Stereo } from '../src/audio/wav.ts';
 
-export type VfxServerOptions = { root?: string; editorUrl?: string };
+export type VfxServerOptions = { root?: string; editorUrl?: string; chromePath?: string };
+
+const CHROME_CANDIDATES = [
+  process.env.VFX_CHROME, 'C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', '/usr/bin/google-chrome', '/usr/bin/chromium', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+];
 
 const TEMPLATES = ['blank', 'f01', 'forces', 'lightning', 'lightning-audio'] as const;
 const ID = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
 
-type Result = { content: { type: 'text'; text: string }[]; isError?: boolean };
+type Content = { type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string };
+type Result = { content: Content[]; isError?: boolean };
 const ok = (text: string): Result => ({ content: [{ type: 'text', text }] });
 const bad = (text: string): Result => ({ content: [{ type: 'text', text }], isError: true });
 const fmtErrors = (errors: Diagnostic[]) => errors.map(e => `- [${e.code}]${e.nodeId ? ` ${e.nodeId}` : ''}${e.fieldPath ? ` (${e.fieldPath})` : ''}: ${e.message}`).join('\n');
@@ -84,7 +92,7 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
       const fresh = template === 'blank' ? blankDocument('doc', 'Blank') : template === 'f01' ? createF01Document() : template === 'forces' ? createForcesDemoDocument()
         : template === 'lightning' ? createL01Document() : createL01AudioDocument();
       fresh.id = id ?? `doc-${template}-${docs.size + 1}`;
-      if (name) fresh.name = name;
+      if (name) fresh.name = name; else if (template === 'blank') fresh.name = fresh.id;
       const v = validateDocument(fresh, { registry });
       if (!v.ok) return bad(fmtErrors(v.errors));
       docs.set(fresh.id, v.value); persist(v.value);
@@ -210,6 +218,27 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
   tool('vfx_preview_url', 'URL that opens this document in the running editor (vite dev server) for visual inspection.', { docId: z.string() }, ({ docId }) => {
     persist(getDoc(docId));
     return ok(`${editorUrl}?workspace=v2&doc=/work/mcp/${encodeURIComponent(docId)}.json`);
+  });
+  tool('vfx_render_frames', 'Render effect frames to PNG with headless Chrome (needs the vite dev server) and return the images. Look at them before claiming anything about the visual result.', {
+    docId: z.string(), ticks: z.array(z.number().int().min(0)).min(1).max(8), width: z.number().int().min(160).max(1920).optional(), height: z.number().int().min(120).max(1080).optional(),
+  }, ({ docId, ticks, width, height }) => {
+    const d = getDoc(docId); persist(d);
+    const chrome = options.chromePath ?? CHROME_CANDIDATES.find(p => p && existsSync(p));
+    if (!chrome) return bad('No Chrome/Edge found; set VFX_CHROME to its executable path.');
+    const dir = join(root, 'work', 'mcp', 'frames'); mkdirSync(dir, { recursive: true });
+    const content: Content[] = [], paths: string[] = [];
+    for (const tick of ticks) {
+      const out = join(dir, `${docId}-t${tick}.png`), profile = mkdtempSync(join(tmpdir(), 'vfx-chrome-'));
+      rmSync(out, { force: true });
+      const url = new URL(`capture.html?doc=/work/mcp/${encodeURIComponent(docId)}.json&tick=${tick}&label=1`, editorUrl).href;
+      spawnSync(chrome, ['--headless=new', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--hide-scrollbars', '--no-first-run', '--no-default-browser-check',
+        `--user-data-dir=${profile}`, `--window-size=${width ?? 960},${height ?? 540}`, '--virtual-time-budget=6000', `--screenshot=${out}`, url], { timeout: 90_000, stdio: 'ignore' });
+      rmSync(profile, { recursive: true, force: true });
+      if (!existsSync(out)) return bad(`Chrome produced no image for tick ${tick}. Is the dev server running at ${editorUrl}?`);
+      content.push({ type: 'image', data: readFileSync(out).toString('base64'), mimeType: 'image/png' }); paths.push(out);
+    }
+    content.unshift({ type: 'text', text: `Rendered ${ticks.length} frame(s): ${paths.join(', ')}` });
+    return { content };
   });
   return server;
 }
