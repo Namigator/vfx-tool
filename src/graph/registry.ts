@@ -115,6 +115,32 @@ function initialProperties(): NodeSpec {
   });
 }
 
+// Force modifiers (05 "Gravity"/"Drag", 07 semi-implicit Euler). Pass-through particle modifiers;
+// disabled acts as bypass. Accelerations are world-space meters/s² scaled by the effect transform scale.
+function gravity(): NodeSpec {
+  return node('Gravity', {
+    inputs: [port({ id: 'particles', label: 'Particles', type: 'particles', required: true })],
+    outputs: [port({ id: 'particles', label: 'Particles', type: 'particles' })],
+    parameters: [
+      param({ id: 'acceleration', label: 'Acceleration', type: 'vec3', unit: 'metersPerSecondSquared', default: [0, -9.81, 0], min: -100, max: 100, description: 'World-space acceleration in m/s². Positive Y gives buoyancy (rising smoke/flame).' }),
+    ],
+    disabledBehavior: 'bypass',
+    bypass: { input: 'particles', output: 'particles' },
+  });
+}
+
+function drag(): NodeSpec {
+  return node('Drag', {
+    inputs: [port({ id: 'particles', label: 'Particles', type: 'particles', required: true })],
+    outputs: [port({ id: 'particles', label: 'Particles', type: 'particles' })],
+    parameters: [
+      param({ id: 'coefficient', label: 'Coefficient', type: 'number', unit: 'perSecond', default: 0.8, min: 0, max: 20, description: 'Exponential velocity damping: velocity *= exp(-coefficient·dt).' }),
+    ],
+    disabledBehavior: 'bypass',
+    bypass: { input: 'particles', output: 'particles' },
+  });
+}
+
 function material(): NodeSpec {
   const signal: EvaluationDomain[] = ['constant', 'effectTime', 'normalizedAge'];
   return node('Material', {
@@ -444,7 +470,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 /** Fresh, independent registry each call. */
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
-    anchor(), schedule(), emitter(), initialProperties(), material(), billboardRenderer(),
+    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), material(), billboardRenderer(),
     linePath(), bezierPath(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(),
     audioSource(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),

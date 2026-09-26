@@ -239,3 +239,39 @@ test('two schedule windows are rejected before particle lowering can drop the ra
   const errors = errorsOf(compileParticlePreview(document));
   assert.ok(errors.some(d => d.nodeId === 'node-emitter' && /window/.test(d.message)), JSON.stringify(errors));
 });
+
+// Inserts Emitter→Initial→[Gravity]→[Drag]→Billboard by rewiring the billboard's particle input.
+function withForces(opts: { gravity?: NodeDefinition['params']; drag?: NodeDefinition['params']; gravityEnabled?: boolean; order?: 'gd' | 'dg' }) {
+  return f01(d => {
+    const g = root(d);
+    const into = g.edges.find(e => e.target.nodeId === 'node-billboard' && e.target.port === 'particles')!;
+    const chain = (opts.order ?? 'gd') === 'gd' ? ['node-gravity', 'node-drag'] : ['node-drag', 'node-gravity'];
+    g.nodes.push(node('node-gravity', 'Gravity', opts.gravity ?? {}, opts.gravityEnabled ?? true), node('node-drag', 'Drag', opts.drag ?? {}));
+    g.edges.push(edge('e-f1', into.source.nodeId, 'particles', chain[0], 'particles'), edge('e-f2', chain[0], 'particles', chain[1], 'particles'));
+    into.source = { nodeId: chain[1], port: 'particles' };
+  });
+}
+
+test('Gravity and Drag compile to operators in declared order; chain identity is the modifier nearest the renderer', () => {
+  const p = plan(withForces({ gravity: { acceleration: [0, -5, 0] }, drag: { coefficient: 2 } }));
+  assert.equal(p.systems[0].id, 'node-drag');
+  assert.deepEqual(p.systems[0].descriptor.operators, [{ kind: 'gravity', acceleration: [0, -5, 0] }, { kind: 'drag', coefficient: 2 }]);
+  assert.equal(p.layers[0].systemId, 'node-drag');
+  const q = plan(withForces({ order: 'dg' }));
+  assert.equal(q.systems[0].id, 'node-gravity');
+  assert.deepEqual(q.systems[0].descriptor.operators, [{ kind: 'drag', coefficient: 0.8 }, { kind: 'gravity', acceleration: [0, -9.81, 0] }]);
+});
+
+test('disabled Gravity bypasses; gravity scales with the effect transform and moves particles', () => {
+  const off = plan(withForces({ gravityEnabled: false, drag: { coefficient: 0 } }));
+  assert.deepEqual(off.systems[0].descriptor.operators, [{ kind: 'drag', coefficient: 0 }]);
+  const scaled = plan(withForces({ gravity: { acceleration: [0, -10, 0] }, drag: { coefficient: 0 } }));
+  const before = sampleParticlesAtTick(scaled.systems[0].descriptor, 0), after = sampleParticlesAtTick(scaled.systems[0].descriptor, 30);
+  if (!before.ok || !after.ok) assert.fail('sample failed');
+  assert.ok(after.value.particles[0].position[1] < before.value.particles[0].position[1] - 1, 'particle falls under gravity');
+  const big = plan(f01(d => { d.rootTransform.scale = 2; }));
+  assert.equal(big.systems.length, 1);
+  const two = compileParticlePreview((() => { const d = withForces({ gravity: { acceleration: [0, -3, 0] } }); d.rootTransform.scale = 2; return d; })());
+  if (!two.ok) assert.fail(JSON.stringify(two.errors));
+  assert.deepEqual(two.value.systems[0].descriptor.operators[0], { kind: 'gravity', acceleration: [0, -6, 0] });
+});

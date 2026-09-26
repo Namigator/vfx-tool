@@ -13,6 +13,9 @@
 //   that node ID. The descriptor keeps the original emitter node ID and randomStreamId.
 // - The last enabled InitialProperties (closest to the renderer) supplies size and color; every enabled
 //   InitialProperties in the chain must still carry neutral rotation/angular velocity and no random frame.
+// - Gravity/Drag modifiers anywhere in the chain become descriptor operators in upstream-to-downstream
+//   (declared) order; a disabled modifier bypasses. Gravity is world-space and scaled by the root transform
+//   scale only (it is not rotated with the effect). Chain identity is the modifier closest to the renderer.
 // - Any non-empty connection into a parameter port, and any exposed-control driver, is rejected until
 //   expression evaluation exists.
 // - Schedule event keys are scheduleEventRandomKey(stream, tick, repeatOrdinal); start and end ticks of
@@ -24,7 +27,7 @@ import { registryKey } from '../model/controls.ts';
 import { scheduleEventRandomKey } from '../runtime/random.ts';
 import {
   DEFAULT_MAX_LIVE_PARTICLES, DEFAULT_MAX_TOTAL_BIRTHS, validateParticleDescriptor,
-  type ParticleBurst, type ParticleEmitterDescriptor, type ParticleRate,
+  type ParticleBurst, type ParticleEmitterDescriptor, type ParticleOperator, type ParticleRate,
 } from '../runtime/particles.ts';
 import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
@@ -63,6 +66,7 @@ export const DEFAULT_PREVIEW_SIZE = { min: 0.08, max: 0.16 } as const;
 const EMITTER_PORTS = ['anchor', 'paths', 'trigger', 'window'];
 const BILLBOARD_PORTS = ['particles', 'material'];
 const IP_PORTS = ['particles'];
+const FORCE_TYPES = ['Gravity', 'Drag'];
 
 class Fail extends Error {}
 
@@ -143,27 +147,32 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
   }
 
   // ---------- chains and systems ----------
-  type Chain = { emitter: ExpandedNode; initial: ExpandedNode | undefined; enabledInitials: ExpandedNode[]; terminalId: string };
+  type Chain = { emitter: ExpandedNode; initial: ExpandedNode | undefined; enabledInitials: ExpandedNode[]; forces: ExpandedNode[]; terminalId: string };
   const traceChain = (billboardId: string): Chain | undefined => {
     const sources = into(billboardId, 'particles');
     if (sources.length === 0) return undefined; // Empty expansion source: no layer.
     if (sources.length > 1) return fail('MULTIPLE_DRIVERS', `BillboardRenderer "${billboardId}" resolves to ${sources.length} particle sources; connect one.`, billboardId);
     let cur = sourceNode(sources[0].source, billboardId, 'particles');
     const enabledInitials: ExpandedNode[] = [];
+    const forces: ExpandedNode[] = []; // Renderer-to-emitter order while tracing.
+    let terminal: string | undefined;
     for (let guard = 0; guard <= nodes.size; guard++) {
       const n = cur.node;
-      if (n.type === 'InitialProperties') {
-        if (cur.effectiveEnabled) enabledInitials.push(cur); // Disabled modifier bypasses.
+      if (n.type === 'InitialProperties' || FORCE_TYPES.includes(n.type)) {
+        if (cur.effectiveEnabled) { // Disabled modifier bypasses.
+          terminal ??= n.id;
+          (n.type === 'InitialProperties' ? enabledInitials : forces).push(cur);
+        }
         const up = into(n.id, 'particles');
         if (up.length === 0) return undefined;
-        if (up.length > 1) return fail('MULTIPLE_DRIVERS', `InitialProperties "${n.id}" resolves to ${up.length} particle sources.`, n.id);
+        if (up.length > 1) return fail('MULTIPLE_DRIVERS', `${n.type} "${n.id}" resolves to ${up.length} particle sources.`, n.id);
         cur = sourceNode(up[0].source, n.id, 'particles');
         continue;
       }
       if (n.type === 'Emitter') {
         if (!cur.effectiveEnabled) return undefined; // Disabled Emitter emits nothing.
         const initial = enabledInitials[0];
-        return { emitter: cur, initial, enabledInitials, terminalId: initial ? initial.node.id : n.id };
+        return { emitter: cur, initial, enabledInitials, forces: forces.reverse(), terminalId: terminal ?? n.id };
       }
       return fail('UNKNOWN_NODE', `Node "${n.id}" (${n.type}) is not supported in a particle chain by the point preview.`, n.id);
     }
@@ -245,6 +254,12 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     }
 
     const scale = transform.scale;
+    const operators: ParticleOperator[] = chain.forces.map((f): ParticleOperator => {
+      noDrivenParams(f, IP_PORTS);
+      if (f.node.type === 'Drag') return { kind: 'drag', coefficient: num(f, 'coefficient') };
+      const a = param(f, 'acceleration') as Vec3;
+      return { kind: 'gravity', acceleration: [a[0] * scale, a[1] * scale, a[2] * scale] };
+    });
     const dir = param(em, 'direction') as Vec3;
     const k = (speedMin * scale) / Math.hypot(dir[0], dir[1], dir[2]);
     const velocity = rotate(transform.rotation, [dir[0] * k, dir[1] * k, dir[2] * k]);
@@ -262,7 +277,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       bursts,
       lifetimeTicks: { min: ticks(num(em, 'lifetimeMin')), max: ticks(num(em, 'lifetimeMax')) },
       size: { min: size.min * scale, max: size.max * scale },
-      operators: [],
+      operators,
     };
     if (rate) d.rate = rate;
     return d;
