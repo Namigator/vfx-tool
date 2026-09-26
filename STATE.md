@@ -22,7 +22,7 @@
 
 ## Next — gap order from docs/v2-plan/27-GAP-AUDIT.md (capability floor, 19-WORK-PACKAGES)
 1. DONE I1 emitter shapes/speed/aim; DONE I4 appearance (colour over life, spin, velocity stretch, pivot). Recipes: `node mcp/run-steps.mjs mcp/examples/sparks.steps.json`.
-2. DONE GroundCollision, NoiseForce, textured flipbooks (library rebaked to 10-ASSETS). Next: camera framing that includes particle extents (tall/long effects are cropped), then ParticleEvents child emission, then ParticleTrail/SpriteRenderer/PointLight.
+2. DONE GroundCollision, NoiseForce, textured flipbooks (library rebaked to 10-ASSETS). DONE camera framing over particle extents (5 timeline samples, 0.75 m min half-extent). Next: ParticleEvents child emission (collision/death/birth → Emitter trigger), then ParticleTrail/SpriteRenderer/PointLight.
 3. — 4. I5 Textured flipbook material; rebake library to 10-ASSETS format (4×4, 256 px cells); spec docs/implementation/WP04-TEXTURED-MATERIALS-FLIPBOOK.md.
 5. I6 GroundCollision + ParticleEvents; I7 ParticleTrail/SpriteRenderer/PointLight; I8/I9 Curve, RandomRange, PathFollower.
 6. Then editor Simple view + components (I10), persistence (I11), worker (I12); then resume WP10 lightning and the A-05 model build test.
@@ -32,7 +32,7 @@ Sprite library: `node tools/bake-sprites.mjs` → assets/sprites/ (flame-tongue-
 - [SAW] L01 charge core/halo grows during ticks0-24, bolt appears over ticks24-26 and impact follows at ticks26-38. The bolt holds broadly static through tick62; charge motes, moving sparks, ring/light, synchronized sound and original ARC quality are still missing.
 - [SAW] Large blue shards and black corner gaps improved after round join rewrite; tight bends retain small bright overlaps. No whole-cycle visual acceptance yet.
 - [UNVERIFIED] Graph-node drag remains inconclusive under single-step browser drag. No full browser lifecycle automation.
-- [PROXY] Mixed billboard+ribbon preview works in current browser, but camera framing ignores particle extents; width shaping, textured UVs and parallel transport unsupported. EffectTimeCurve drives only RevealPath.fraction. Billboard life curves are renderer parameters, not graph-driven signals. AudioMix supports one level and one final limiter, not nested mixes. Invalid root audio blocks the whole preview. Playback uses Web Audio but actual listening/download remains unchecked. Persistence, ten complete presets and exporters remain pending.
+- [PROXY] Mixed billboard+ribbon preview works in current browser, but width shaping, textured UVs and parallel transport unsupported. EffectTimeCurve drives only RevealPath.fraction. Billboard life curves are renderer parameters, not graph-driven signals. AudioMix supports one level and one final limiter, not nested mixes. Invalid root audio blocks the whole preview. Playback uses Web Audio but actual listening/download remains unchecked. Persistence, ten complete presets and exporters remain pending.
 
 ## Backlog (not scheduled)
 - **Realistic water material (Three.js):** move the water look into the tool's renderer — refraction of the scene behind, fresnel/environment reflection, animated normal-map surface, lit textured floor + environment map for something to reflect/refract, caustics. Canvas2D reference `docs/v2-plan/references/standalone-water/water.html` (TIDE) is at its ceiling; user verdict 2026-09-26: "looks computer generated". Matches 03-WATER.md SurfaceTranslucent.

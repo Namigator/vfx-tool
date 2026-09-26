@@ -24,7 +24,7 @@ import { DEFAULT_MAX_LIVE_PARTICLES, PARTICLE_DT, ParticleSimulation, type Parti
 import { PlaybackClock } from '../runtime/clock.ts';
 import { framePoints, RibbonGeometry, ribbonSoftness, type FramePointSet } from './RibbonGeometry.ts';
 import { pathViewDirection } from './pathView.ts';
-import { collectTimelineFrameSets } from './pathFraming.ts';
+import { collectTimelineFrameSets, particleFrameSets } from './pathFraming.ts';
 import { layerRenderOrder } from './layerOrder.ts';
 
 /** Fraction of the preview half-extent path framing fills (leaves a margin, never clips). */
@@ -309,6 +309,8 @@ export class PreviewViewport {
     this.#failed = false;
     this.#suspended = false;
     this.#addPointLayers(plan);
+    const sets = particleFrameSets(plan);
+    if (sets.length) { this.#frameSets = sets; this.#framePaths(); }
     this.#replayTo(0);
   }
 
@@ -341,7 +343,7 @@ export class PreviewViewport {
     this.#failed = false;
     this.#suspended = false;
     this.#addPointLayers(points);
-    this.#beginPathSource(paths, compile);
+    this.#beginPathSource(paths, compile, particleFrameSets(points));
     this.#replayTo(0);
   }
 
@@ -394,10 +396,10 @@ export class PreviewViewport {
    * Frames paths sampled across the effect timeline (fixed during playback) and uploads tick 0;
    * the caller owns the clock (set before this call) and emits the frame.
    */
-  #beginPathSource(plan: PathPreviewPlan, compile: PathCompile): void {
+  #beginPathSource(plan: PathPreviewPlan, compile: PathCompile, extra: FramePointSet[] = []): void {
     this.#pathCompile = compile;
     const duration = this.#clock ? this.#clock.durationTicks : plan.durationTicks;
-    const sets: FramePointSet[] = collectTimelineFrameSets(plan, duration, compile);
+    const sets: FramePointSet[] = [...collectTimelineFrameSets(plan, duration, compile), ...extra];
     this.#frameSets = sets.length ? sets : null;
     // Broadside initial view until the user orbits; later edits keep their orbit direction.
     if (sets.length && !this.#userOrbited) {
@@ -427,7 +429,8 @@ export class PreviewViewport {
     if (!sets) return;
     const cam = this.#camera, target = this.#controls.target;
     const dir = cam.position.clone().sub(target);
-    const f = framePoints(sets, { viewDirection: [dir.x, dir.y, dir.z], fovDeg: cam.fov, aspect: cam.aspect, fill: PATH_FRAME_FILL });
+    // A floor on the framed half-extent keeps tiny effects (one static particle) from filling the whole view.
+    const f = framePoints(sets, { viewDirection: [dir.x, dir.y, dir.z], fovDeg: cam.fov, aspect: cam.aspect, fill: PATH_FRAME_FILL, minHalfExtent: 0.75 });
     if (!f) return;
     this.#pathCamera = true;
     target.set(f.target[0], f.target[1], f.target[2]);

@@ -34,3 +34,16 @@ test('collectTimelineFrameSets: inactive layers ignored', () => {
   const sets = collectTimelineFrameSets(plan([[0, 0, 0]], false), 1, () => { throw new Error('unused'); });
   assert.equal(sets.length, 0);
 });
+
+test('particle frame sets cover the simulated extent across the timeline, padded by size × growth × stretch', async () => {
+  const { particleFrameSets } = await import('../src/render/pathFraming.ts');
+  const { compileParticlePreview } = await import('../src/graph/toParticles.ts');
+  const { createForcesDemoDocument } = await import('../src/graph/fixtures.ts');
+  const r = compileParticlePreview(createForcesDemoDocument());
+  if (!r.ok) throw new Error(JSON.stringify(r.errors));
+  const sets = particleFrameSets(r.value);
+  assert.ok(sets.length >= 3, 'several sample ticks contribute');
+  const xs = sets.flatMap(s => s.points.map(p => p[0]));
+  assert.ok(Math.min(...xs) < -1.5 && Math.max(...xs) > 0, `jet spans from the source toward the target (${Math.min(...xs)}..${Math.max(...xs)})`);
+  assert.ok(sets.every(s => s.pad > 0 && s.points.length <= 512));
+});

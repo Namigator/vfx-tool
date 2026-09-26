@@ -1,5 +1,7 @@
 // Pure helpers for fixed path-preview framing across the whole effect timeline (no DOM/Three).
 import type { PathPreviewPlan } from '../graph/toPaths.ts';
+import type { ParticlePreviewPlan } from '../graph/toParticles.ts';
+import { sampleParticlesAtTick } from '../runtime/particles.ts';
 import type { Vec3 } from '../model/types.ts';
 import type { FramePointSet } from './RibbonGeometry.ts';
 
@@ -44,4 +46,32 @@ export function collectTimelineFrameSets(
     if (r.ok) appendFrameSets(r.value, sets);
   }
   return sets;
+}
+
+/** Most particle positions kept per system per sample tick (even stride), bounding framing cost. */
+export const MAX_FRAMED_PARTICLES_PER_SAMPLE = 512;
+
+/**
+ * Frame sets for point layers: each system replayed to the framing sample ticks; positions padded by the
+ * largest billboard half-extent that system can reach (size × max size-over-life × stretch). Failed
+ * replays are skipped (framing only; playback reports errors).
+ */
+export function particleFrameSets(plan: ParticlePreviewPlan): FramePointSet[] {
+  const out: FramePointSet[] = [];
+  for (const sys of plan.systems) {
+    const layers = plan.layers.filter(l => l.systemId === sys.id);
+    if (!layers.length) continue;
+    const grow = Math.max(...layers.map(l => Math.max(...l.sizeOverLife.keys.map(k => k.y)) * Math.max(1, l.stretchRatio)));
+    const pad = (sys.descriptor.size.max * grow) / 2;
+    for (const tick of framingSampleTicks(sys.descriptor.durationTicks)) {
+      let snap;
+      try { snap = sampleParticlesAtTick(sys.descriptor, tick); } catch { continue; }
+      if (!snap.ok) continue;
+      const ps = snap.value.particles, stride = Math.max(1, Math.ceil(ps.length / MAX_FRAMED_PARTICLES_PER_SAMPLE));
+      const points: Vec3[] = [];
+      for (let i = 0; i < ps.length; i += stride) if (finitePoint(ps[i].position)) points.push(ps[i].position);
+      if (points.length) out.push({ points, pad: Number.isFinite(pad) ? pad : 0 });
+    }
+  }
+  return out;
 }
