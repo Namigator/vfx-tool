@@ -158,6 +158,18 @@ function noiseForce(): NodeSpec {
   });
 }
 
+function particleEvents(): NodeSpec {
+  return node('ParticleEvents', {
+    inputs: [port({ id: 'particles', label: 'Particles', type: 'particles', required: true })],
+    outputs: [port({ id: 'birth', label: 'Birth', type: 'event' }), port({ id: 'death', label: 'Death', type: 'event' })],
+    parameters: [
+      param({ id: 'probability', label: 'Probability', type: 'number', unit: 'normalized', default: 1, min: 0, max: 1, description: 'Chance each particle event is passed on (deterministic per particle).' }),
+      param({ id: 'maxEvents', label: 'Max events', type: 'integer', unit: 'none', default: 256, min: 1, max: 1024, step: 1, description: 'Events after this many (in time order) are not passed on.' }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
 function groundCollision(): NodeSpec {
   return node('GroundCollision', {
     inputs: [port({ id: 'particles', label: 'Particles', type: 'particles', required: true })],
@@ -511,7 +523,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 /** Fresh, independent registry each call. */
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
-    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), groundCollision(), material(), billboardRenderer(),
+    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), groundCollision(), particleEvents(), material(), billboardRenderer(),
     linePath(), bezierPath(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(),
     audioSource(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),

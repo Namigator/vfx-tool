@@ -1,0 +1,374 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "rain"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "rain",
+   "durationTicks": 240
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "rain",
+   "anchorId": "source",
+   "position": [
+    0,
+    4,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rain",
+   "type": "Schedule",
+   "id": "sched",
+   "params": {
+    "startTicks": 0,
+    "durationTicks": 200,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rain",
+   "type": "Emitter",
+   "id": "clouds",
+   "params": {
+    "shape": "box",
+    "direction": [
+     0,
+     -1,
+     0
+    ],
+    "radius": 1.6,
+    "rate": 90,
+    "burst": 0,
+    "speedMin": 6,
+    "speedMax": 7.5,
+    "lifetimeMin": 2,
+    "lifetimeMax": 2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rain",
+   "type": "InitialProperties",
+   "id": "dropsize",
+   "params": {
+    "sizeMin": 0.025,
+    "sizeMax": 0.035,
+    "rotationMin": 0,
+    "rotationMax": 0,
+    "angularVelocityMin": 0,
+    "angularVelocityMax": 0
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rain",
+   "type": "Gravity",
+   "id": "grav"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rain",
+   "type": "GroundCollision",
+   "id": "ground",
+   "params": {
+    "mode": "kill"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rain",
+   "type": "Material",
+   "id": "dropmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "droplet",
+    "blend": "normal",
+    "opacity": 1,
+    "emission": 1.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rain",
+   "type": "BillboardRenderer",
+   "id": "drops",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 6,
+    "pivot": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rain",
+   "type": "Emitter",
+   "id": "splash",
+   "params": {
+    "shape": "cone",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "coneAngle": 0.9,
+    "radius": 0.03,
+    "burst": 7,
+    "rate": 0,
+    "speedMin": 1,
+    "speedMax": 2.4,
+    "lifetimeMin": 0.3,
+    "lifetimeMax": 0.55,
+    "useEventPosition": true
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rain",
+   "type": "InitialProperties",
+   "id": "splashsize",
+   "params": {
+    "sizeMin": 0.04,
+    "sizeMax": 0.07,
+    "rotationMin": 0,
+    "rotationMax": 0,
+    "angularVelocityMin": 0,
+    "angularVelocityMax": 0
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rain",
+   "type": "Gravity",
+   "id": "splashgrav"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rain",
+   "type": "GroundCollision",
+   "id": "splashground",
+   "params": {
+    "mode": "kill"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rain",
+   "type": "Material",
+   "id": "splashmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#CFEFFF",
+     "alpha": 1
+    },
+    "emission": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rain",
+   "type": "BillboardRenderer",
+   "id": "splashes",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 2,
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "node-source.out",
+   "to": "clouds.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "sched.window",
+   "to": "clouds.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "clouds.particles",
+   "to": "dropsize.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "dropsize.particles",
+   "to": "grav.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "grav.particles",
+   "to": "ground.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "ground.particles",
+   "to": "drops.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "dropmat.material",
+   "to": "drops.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "ground.collision",
+   "to": "splash.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "splash.particles",
+   "to": "splashsize.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "splashsize.particles",
+   "to": "splashgrav.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "splashgrav.particles",
+   "to": "splashground.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "splashground.particles",
+   "to": "splashes.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "splashmat.material",
+   "to": "splashes.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "drops.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "splashes.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "rain"
+  },
+  true
+ ],
+ [
+  "vfx_sample_particles",
+  {
+   "docId": "rain",
+   "tick": 150,
+   "show": 0
+  },
+  true
+ ],
+ [
+  "vfx_preview_url",
+  {
+   "docId": "rain"
+  },
+  true
+ ]
+]

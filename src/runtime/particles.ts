@@ -97,6 +97,15 @@ export type ParticleEmitterDescriptor = {
   operators: ParticleOperator[];
 };
 
+/** 05 ParticleEvents / GroundCollision event: carries position, velocity and stable parent identity. */
+export type ParticleEventKind = 'birth' | 'death' | 'collision';
+export type ParticleEvent = {
+  kind: ParticleEventKind; tick: number; particleId: string; parentRandomKey: string;
+  /** Per-particle ordinal of this kind (collision: 0 for the first contact, then per bounce). */
+  ordinal: number;
+  position: Vec3; velocity: Vec3;
+};
+
 export type ParticleLimits = { maxLiveParticles: number; maxTotalBirths: number; maxBurstEvents: number };
 
 export type ParticleState = {
@@ -121,6 +130,8 @@ export type ParticleState = {
   angularVelocity?: number;
   /** Present once the particle has touched a ground operator's plane. */
   bounces?: number;
+  /** Set when the particle came to rest on the ground plane (its resting contact was recorded). */
+  grounded?: boolean;
 };
 
 export type ParticleTickSnapshot = {
@@ -408,24 +419,33 @@ export class ParticleSimulation {
   #burstCursor = 0;
   #failure: Diagnostic[] | null = null;
   readonly #parentKeys = new Map<string, string>();
+  /** Only filled when created with recordEvents (compile-time child emission); the viewport never records. */
+  #record = false;
+  readonly #events: ParticleEvent[] = [];
 
   private constructor(descriptor: ParticleEmitterDescriptor, limits: ParticleLimits) {
     this.descriptor = descriptor;
     this.limits = Object.freeze({ ...limits });
   }
 
-  static create(input: unknown, options?: Partial<ParticleLimits>): ValidationResult<ParticleSimulation> {
+  static create(input: unknown, options?: Partial<ParticleLimits>, recordEvents = false): ValidationResult<ParticleSimulation> {
     const lim = resolveLimits(options);
     if (!lim.ok) return lim;
     const v = validateParticleDescriptor(input, lim.value);
     if (!v.ok) return v;
     const sim = new ParticleSimulation(v.value, lim.value);
+    sim.#record = recordEvents;
     sim.#spawn(0);
     if (sim.#failure) return { ok: false, errors: sim.#failure.map((d) => ({ ...d })) };
     return { ok: true, value: sim, warnings: [] };
   }
 
   get tick(): number { return this.#tick; }
+  /** Events recorded so far (recordEvents only), in occurrence order. */
+  get events(): readonly ParticleEvent[] { return this.#events; }
+  #event(kind: ParticleEventKind, tick: number, p: ParticleState, ordinal: number): void {
+    if (this.#record) this.#events.push({ kind, tick, particleId: p.id, parentRandomKey: p.parentRandomKey, ordinal, position: cloneVec(p.position), velocity: cloneVec(p.velocity) });
+  }
   get failed(): boolean { return this.#failure !== null; }
 
   /** Deep snapshot of the current tick; never aliases internal state. */
@@ -463,7 +483,7 @@ export class ParticleSimulation {
     }
     const survivors: ParticleState[] = [];
     for (const p of this.#particles) {
-      if (p.birthTick + p.lifetimeTicks <= n) { this.#deaths.push(p.id); this.#totalDeaths++; }
+      if (p.birthTick + p.lifetimeTicks <= n) { this.#deaths.push(p.id); this.#totalDeaths++; this.#event('death', n, p, 0); }
       else survivors.push(p);
     }
     this.#particles = survivors;
@@ -490,15 +510,17 @@ export class ParticleSimulation {
       v[2] = (v[2] + pz * dt) * dragFactor;
       x[0] += v[0] * dt; x[1] += v[1] * dt; x[2] += v[2] * dt;
       if (ground && x[1] <= 0 && (v[1] <= 0 || x[1] < 0)) {
-        if (ground.mode === 'kill') killed.add(p);
+        if (ground.mode === 'kill') { x[1] = 0; killed.add(p); this.#event('collision', n, p, 0); this.#event('death', n, p, 0); }
         else {
           const b = p.bounces ?? 0;
           x[1] = 0;
           if (ground.mode === 'bounce' && b < ground.maxBounces && v[1] < -1e-6) {
+            this.#event('collision', n, p, b);
             p.bounces = b + 1;
             v[1] = -v[1] * ground.restitution;
             v[0] *= 1 - ground.friction; v[2] *= 1 - ground.friction;
           } else {
+            if (!p.grounded) { this.#event('collision', n, p, b); p.grounded = true; }
             p.bounces = b;
             v[1] = Math.max(0, v[1]);
             const h = Math.hypot(v[0], v[2]), k = h > 0 ? Math.max(0, h - ground.friction * 9.81 * dt) / h : 0;
@@ -599,6 +621,7 @@ export class ParticleSimulation {
     }
     this.#births.push(id);
     this.#totalBirths++;
+    this.#event('birth', n, this.#particles[this.#particles.length - 1], 0);
     return true;
   }
 
@@ -641,4 +664,16 @@ export function sampleParticlesAtTick(input: unknown, tick: number, options?: Pa
     if (!r.ok) return r;
   }
   return { ok: true, value: sim.snapshot(), warnings: [] };
+}
+
+/** Runs a descriptor to its end and returns every birth/death/collision event (compile-time child emission). */
+export function collectParticleEvents(input: unknown, options?: Partial<ParticleLimits>): ValidationResult<ParticleEvent[]> {
+  const created = ParticleSimulation.create(input, options, true);
+  if (!created.ok) return created;
+  const sim = created.value;
+  while (sim.tick < sim.descriptor.durationTicks) {
+    const r = sim.advance();
+    if (!r.ok) return r;
+  }
+  return { ok: true, value: sim.events.map(e => ({ ...e, position: cloneVec(e.position), velocity: cloneVec(e.velocity) })), warnings: [] };
 }

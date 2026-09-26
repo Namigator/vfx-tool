@@ -342,3 +342,42 @@ test('SpriteTextured material puts the library sheet and flipbook settings on th
   assert.deepEqual([s.sheet.id, s.sheet.columns, s.sheet.rows, s.mode, s.fps, s.randomStart], ['flame-tongue-b', 4, 4, 'fps', 12, true]);
   assert.equal(plan(f01()).layers[0].sprite, undefined);
 });
+
+// Drops fall from the F01 emitter, die on the ground, and a child "splash" emitter bursts at each impact.
+function splashDoc(opts: { via: 'collision' | 'death'; probability?: number; maxEvents?: number }) {
+  return f01(d => {
+    const g = root(d), into = g.edges.find(e => e.target.nodeId === 'node-billboard' && e.target.port === 'particles')!;
+    set('node-emitter', { burst: 40, shape: 'cone', coneAngle: 0.8, direction: [0, 1, 0], speedMin: 1, speedMax: 3 })(d);
+    g.nodes.push(node('node-grav', 'Gravity'), node('node-ground', 'GroundCollision', { mode: 'kill' }),
+      node('node-splash', 'Emitter', { burst: 5, shape: 'sphere', speedMin: 1, speedMax: 1, lifetimeMin: 0.2, lifetimeMax: 0.2, useEventPosition: true }),
+      node('node-splash-bb', 'BillboardRenderer'));
+    g.edges.push(edge('e-g', into.source.nodeId, 'particles', 'node-grav', 'particles'), edge('e-gr', 'node-grav', 'particles', 'node-ground', 'particles'));
+    into.source = { nodeId: 'node-ground', port: 'particles' };
+    if (opts.via === 'collision') g.edges.push(edge('e-hit', 'node-ground', 'collision', 'node-splash', 'trigger'));
+    else {
+      g.nodes.push(node('node-events', 'ParticleEvents', { probability: opts.probability ?? 1, maxEvents: opts.maxEvents ?? 256 }));
+      g.edges.push(edge('e-ev', 'node-ground', 'particles', 'node-events', 'particles'), edge('e-hit', 'node-events', 'death', 'node-splash', 'trigger'));
+    }
+    g.edges.push(edge('e-sp', 'node-splash', 'particles', 'node-splash-bb', 'particles'), edge('e-sm', 'node-material', 'material', 'node-splash-bb', 'material'), edge('e-sv', 'node-splash-bb', 'visual', 'node-output', 'visual', 1));
+  });
+}
+
+test('GroundCollision collision events trigger a child emitter at each impact position', () => {
+  const p = plan(splashDoc({ via: 'collision' }));
+  const splash = p.systems.find(s => s.descriptor.emitterId === 'node-splash')!;
+  assert.equal(splash.descriptor.bursts.length, 40, 'one burst per drop impact');
+  assert.ok(splash.descriptor.bursts.every(b => b.count === 5 && b.position !== undefined && b.position[1] === 0 && b.tick > 0));
+  const r = sampleParticlesAtTick(splash.descriptor, splash.descriptor.bursts[0].tick);
+  if (!r.ok) assert.fail(JSON.stringify(r.errors));
+  assert.ok(r.value.particles.length >= 5);
+});
+
+test('ParticleEvents death events honour probability and maxEvents deterministically', () => {
+  const all = plan(splashDoc({ via: 'death' })).systems.find(s => s.descriptor.emitterId === 'node-splash')!;
+  assert.equal(all.descriptor.bursts.length, 40);
+  const half = plan(splashDoc({ via: 'death', probability: 0.5 })).systems.find(s => s.descriptor.emitterId === 'node-splash')!;
+  assert.ok(half.descriptor.bursts.length > 8 && half.descriptor.bursts.length < 32, `~half (${half.descriptor.bursts.length})`);
+  assert.deepEqual(half, plan(splashDoc({ via: 'death', probability: 0.5 })).systems.find(s => s.descriptor.emitterId === 'node-splash'));
+  const capped = plan(splashDoc({ via: 'death', maxEvents: 7 })).systems.find(s => s.descriptor.emitterId === 'node-splash')!;
+  assert.equal(capped.descriptor.bursts.length, 7);
+});

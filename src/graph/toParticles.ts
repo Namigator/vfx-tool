@@ -24,9 +24,9 @@
 import type { ColorValue, CurveValue, Diagnostic, ErrorCode, GradientValue, ParameterValue, Quaternion, Transform, ValidationResult, Vec3 } from '../model/types.ts';
 import { TICKS_PER_SECOND } from '../model/types.ts';
 import { registryKey } from '../model/controls.ts';
-import { scheduleEventRandomKey } from '../runtime/random.ts';
+import { particleEventRandomKey, sampleUnit, scheduleEventRandomKey } from '../runtime/random.ts';
 import {
-  DEFAULT_MAX_LIVE_PARTICLES, DEFAULT_MAX_TOTAL_BIRTHS, validateParticleDescriptor,
+  DEFAULT_MAX_BURST_EVENTS, DEFAULT_MAX_LIVE_PARTICLES, DEFAULT_MAX_TOTAL_BIRTHS, collectParticleEvents, validateParticleDescriptor,
   type ParticleBurst, type ParticleEmitterDescriptor, type ParticleOperator, type ParticleRate,
 } from '../runtime/particles.ts';
 import { analyzeGraph } from './analyze.ts';
@@ -163,7 +163,11 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     const sources = into(billboardId, 'particles');
     if (sources.length === 0) return undefined; // Empty expansion source: no layer.
     if (sources.length > 1) return fail('MULTIPLE_DRIVERS', `BillboardRenderer "${billboardId}" resolves to ${sources.length} particle sources; connect one.`, billboardId);
-    let cur = sourceNode(sources[0].source, billboardId, 'particles');
+    return traceFrom(sourceNode(sources[0].source, billboardId, 'particles'), billboardId);
+  };
+  /** Walks upstream from `start` (a modifier or the Emitter itself) to the Emitter. */
+  const traceFrom = (start: ExpandedNode, owner: string): Chain | undefined => {
+    let cur = start;
     const enabledInitials: ExpandedNode[] = [];
     const forces: ExpandedNode[] = []; // Renderer-to-emitter order while tracing.
     let terminal: string | undefined;
@@ -187,7 +191,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       }
       return fail('UNKNOWN_NODE', `Node "${n.id}" (${n.type}) is not supported in a particle chain by the point preview.`, n.id);
     }
-    return fail('GRAPH_CYCLE', `Particle chain of "${billboardId}" does not terminate at an Emitter.`, billboardId);
+    return fail('GRAPH_CYCLE', `Particle chain of "${owner}" does not terminate at an Emitter.`, owner);
   };
 
   const transform: Transform = doc.rootTransform;
@@ -199,7 +203,41 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     return s.effectiveEnabled ? s : undefined; // Disabled Schedule emits no events/window.
   };
 
-  const buildDescriptor = (chain: Chain): ParticleEmitterDescriptor => {
+  /**
+   * Child emission (05 ParticleEvents, GroundCollision.collision): the parent chain is compiled and
+   * simulated once (deterministic), and each selected event becomes one burst at the event tick.
+   */
+  const particleEventBursts = (src: ExpandedNode, port: string, childId: string, count: number, usePosition: boolean, depth: number): ParticleBurst[] => {
+    if (depth > 4) return fail('GRAPH_CYCLE', `Particle event chain into "${childId}" is nested deeper than 4 levels.`, childId);
+    noDrivenParams(src, src.node.type === 'ParticleEvents' ? IP_PORTS : IP_PORTS);
+    let start: ExpandedNode | undefined = src;
+    if (src.node.type === 'ParticleEvents') {
+      const up = into(src.node.id, 'particles');
+      if (up.length !== 1) return up.length ? fail('MULTIPLE_DRIVERS', `ParticleEvents "${src.node.id}" resolves to ${up.length} particle sources.`, src.node.id) : [];
+      start = sourceNode(up[0].source, src.node.id, 'particles');
+    }
+    const chain = traceFrom(start, src.node.id);
+    if (!chain) return [];
+    const before = errors.length;
+    const parent = buildDescriptor(chain, depth + 1);
+    if (errors.length !== before) return [];
+    const ev = collectParticleEvents(parent);
+    if (!ev.ok) { errors.push(...ev.errors.map(e => ({ ...e, nodeId: src.node.id }))); return []; }
+    const kind = src.node.type === 'GroundCollision' ? 'collision' : port;
+    let events = ev.value.filter(e => e.kind === kind && e.tick < doc.durationTicks);
+    if (src.node.type === 'ParticleEvents') {
+      const p = num(src, 'probability');
+      if (p < 1) events = events.filter(e => sampleUnit({ documentSeed: doc.seed, randomStreamId: src.node.randomStreamId, eventRandomKey: particleEventRandomKey(e.parentRandomKey, e.kind, e.ordinal), entityOrdinal: 0, propertyKey: 'probability', sampleOrdinal: 0 }) < p);
+      events = events.slice(0, num(src, 'maxEvents'));
+    } else if (events.length > DEFAULT_MAX_BURST_EVENTS) {
+      report('BUDGET_EXCEEDED', `GroundCollision "${src.node.id}" produces ${events.length} collision events; the limit is ${DEFAULT_MAX_BURST_EVENTS}. Route them through ParticleEvents-style thinning (lower rate or kill mode) — nothing is silently dropped.`, src.node.id);
+      return [];
+    }
+    if (count <= 0) return [];
+    return events.map(e => ({ tick: e.tick, eventRandomKey: particleEventRandomKey(e.parentRandomKey, e.kind, e.ordinal), count, ...(usePosition ? { position: [e.position[0], Math.max(0, e.position[1]), e.position[2]] as Vec3 } : {}) }));
+  };
+
+  const buildDescriptor = (chain: Chain, depth = 0): ParticleEmitterDescriptor => {
     const em = chain.emitter;
     const id = em.node.id;
     noDrivenParams(em, EMITTER_PORTS);
@@ -217,8 +255,11 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     let local: Vec3 = [0, 0, 0];
     const anchors = into(id, 'anchor');
     const anchorNode = anchors.length === 1 ? sourceNode(anchors[0].source, id, 'anchor') : undefined;
+    const triggerSources = into(id, 'trigger').map(c => sourceNode(c.source, id, 'trigger'));
+    const eventOnly = triggerSources.length > 0 && into(id, 'window').length === 0 && param(em, 'useEventPosition') === true
+      && triggerSources.every(s => s.node.type === 'ParticleEvents' || s.node.type === 'GroundCollision');
     if (!anchorNode || anchorNode.node.type !== 'Anchor' || !anchorNode.effectiveEnabled) {
-      report('MISSING_REFERENCE', 'Point emitter needs an enabled Anchor connected to its anchor input (Schedule events carry no position).', id);
+      if (!eventOnly) report('MISSING_REFERENCE', 'Emitter needs an enabled Anchor connected to its anchor input (Schedule events carry no position; particle events do when Use event position is on).', id);
     } else {
       const aid = param(anchorNode, 'anchorId') as string;
       const p = anchorPos.get(aid);
@@ -231,6 +272,16 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     const burst = num(em, 'burst');
     const seen = new Set<string>();
     for (const c of into(id, 'trigger')) {
+      const src = sourceNode(c.source, id, 'trigger');
+      if (src.node.type === 'ParticleEvents' || src.node.type === 'GroundCollision') {
+        if (!src.effectiveEnabled) continue;
+        for (const b of particleEventBursts(src, c.source.kind === 'node' ? c.source.port : '', id, burst, param(em, 'useEventPosition') === true, depth)) {
+          if (seen.has(b.eventRandomKey)) continue;
+          seen.add(b.eventRandomKey);
+          bursts.push(b);
+        }
+        continue;
+      }
       const s = scheduleOf(c, id, 'trigger');
       if (!s) continue;
       const start = num(s, 'startTicks'), len = num(s, 'durationTicks');
@@ -266,7 +317,6 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       if (f.node.type === 'Drag') return { kind: 'drag', coefficient: num(f, 'coefficient') };
       if (f.node.type === 'NoiseForce') return { kind: 'noise', mode: param(f, 'mode') as 'vector' | 'curl', amplitude: num(f, 'amplitude') * scale, frequency: num(f, 'frequency') / scale, evolution: num(f, 'evolution'), randomStreamId: f.node.randomStreamId };
       if (f.node.type === 'GroundCollision') {
-        if (x.connections.some(c => c.source.kind === 'node' && c.source.nodeId === f.node.id && c.source.port === 'collision')) report('INVALID_VALUE', 'GroundCollision collision events are not supported by the preview yet (needs ParticleEvents child emission); disconnect the Collision output.', f.node.id);
         return { kind: 'ground', mode: param(f, 'mode') as 'kill' | 'slide' | 'bounce', restitution: num(f, 'restitution'), friction: num(f, 'friction'), maxBounces: num(f, 'maxBounces') };
       }
       const a = param(f, 'acceleration') as Vec3;

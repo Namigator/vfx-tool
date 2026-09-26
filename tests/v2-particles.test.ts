@@ -356,3 +356,21 @@ test('ground collision: kill removes on contact, bounce reflects with restitutio
   const s = at(slide, 100).particles[0];
   assert.ok(s.position[1] === 0 && Math.abs(s.velocity[0] - 2) < 1e-9, 'frictionless slide keeps horizontal speed');
 });
+
+test('collectParticleEvents records births, lifetime deaths and ground contacts with positions', async () => {
+  const { collectParticleEvents } = await import('../src/runtime/particles.ts');
+  const d = base({ durationTicks: 120, sourcePosition: [0, 1, 0], initialVelocity: { kind: 'vector', value: [1, 0, 0] }, lifetimeTicks: { min: 100, max: 100 },
+    bursts: [{ tick: 0, eventRandomKey: 'k', count: 3 }], operators: [{ kind: 'gravity', acceleration: [0, -9.81, 0] }, { kind: 'ground', mode: 'bounce', restitution: 0.5, friction: 0.1, maxBounces: 1 }] });
+  const r = collectParticleEvents(d);
+  if (!r.ok) assert.fail(JSON.stringify(r.errors));
+  const by = (k: string) => r.value.filter(e => e.kind === k);
+  assert.equal(by('birth').length, 3);
+  assert.equal(by('death').length, 3, 'lifetime deaths at tick 100');
+  assert.ok(by('death').every(e => e.tick === 100));
+  const hits = by('collision');
+  assert.equal(hits.length, 6, 'one bounce + one resting contact per particle');
+  assert.ok(hits.every(e => Math.abs(e.position[1]) < 1e-9 && e.position[0] > 0.3));
+  assert.deepEqual(hits.filter(e => e.particleId === hits[0].particleId).map(e => e.ordinal), [0, 1]);
+  const again = collectParticleEvents(d);
+  assert.deepEqual(again.ok && again.value, r.value, 'deterministic');
+});
