@@ -1,0 +1,28 @@
+[
+  ["vfx_new_document", { "template": "blank", "id": "sparks" }],
+  ["vfx_set_anchor", { "docId": "sparks", "anchorId": "source", "position": [0, 0.3, 0] }],
+  ["vfx_add_node", { "docId": "sparks", "type": "Schedule", "id": "sched", "params": { "startTicks": 0, "durationTicks": 1, "mode": "repeat", "repeatCount": 3, "repeatIntervalTicks": 30 } }],
+  ["vfx_add_node", { "docId": "sparks", "type": "Emitter", "id": "em", "params": { "shape": "cone", "direction": [0, 1, 0], "coneAngle": 1.1, "radius": 0.05, "burst": 90, "rate": 0, "speedMin": 3, "speedMax": 8, "lifetimeMin": 0.5, "lifetimeMax": 1.1 } }],
+  ["vfx_add_node", { "docId": "sparks", "type": "InitialProperties", "id": "ip", "params": { "sizeMin": 0.025, "sizeMax": 0.045, "rotationMin": 0, "rotationMax": 0, "angularVelocityMin": 0, "angularVelocityMax": 0 } }],
+  ["vfx_add_node", { "docId": "sparks", "type": "Gravity", "id": "grav" }],
+  ["vfx_add_node", { "docId": "sparks", "type": "Drag", "id": "drag", "params": { "coefficient": 0.9 } }],
+  ["vfx_add_node", { "docId": "sparks", "type": "Material", "id": "mat", "params": { "blend": "additive", "emission": 1 } }],
+  ["vfx_add_node", { "docId": "sparks", "type": "BillboardRenderer", "id": "bb", "params": {
+    "alignment": "velocity", "stretchRatio": 7, "pivot": 0.85,
+    "colorOverLife": { "stops": [
+      { "position": 0, "color": { "srgb": "#FFFFFF", "alpha": 1 } },
+      { "position": 0.3, "color": { "srgb": "#FFC060", "alpha": 1 } },
+      { "position": 0.7, "color": { "srgb": "#FF4010", "alpha": 0.8 } },
+      { "position": 1, "color": { "srgb": "#801000", "alpha": 0 } } ] } } }],
+  ["vfx_connect", { "docId": "sparks", "from": "node-source.out", "to": "em.anchor" }],
+  ["vfx_connect", { "docId": "sparks", "from": "sched.start", "to": "em.trigger" }],
+  ["vfx_connect", { "docId": "sparks", "from": "em.particles", "to": "ip.particles" }],
+  ["vfx_connect", { "docId": "sparks", "from": "ip.particles", "to": "grav.particles" }],
+  ["vfx_connect", { "docId": "sparks", "from": "grav.particles", "to": "drag.particles" }],
+  ["vfx_connect", { "docId": "sparks", "from": "drag.particles", "to": "bb.particles" }],
+  ["vfx_connect", { "docId": "sparks", "from": "mat.material", "to": "bb.material" }],
+  ["vfx_connect", { "docId": "sparks", "from": "bb.visual", "to": "node-output.visual" }],
+  ["vfx_compile", { "docId": "sparks" }, true],
+  ["vfx_sample_particles", { "docId": "sparks", "tick": 12, "show": 0 }, true],
+  ["vfx_preview_url", { "docId": "sparks" }, true]
+]

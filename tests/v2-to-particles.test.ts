@@ -50,6 +50,8 @@ test('F01 graph compiles to one point system and one billboard layer with exact 
     opacity: 1, emission: 0, blend: 'additive', alphaCutoff: 0.5, renderOrderOffset: 0, visualOrder: 0,
     sizeOverLife: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] },
     opacityOverLife: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] },
+    colorOverLife: { stops: [{ position: 0, color: { srgb: '#FFFFFF', alpha: 1 } }, { position: 1, color: { srgb: '#FFFFFF', alpha: 1 } }] },
+    alignment: 'camera', stretchRatio: 1, pivot: 0.5,
   }]);
   assert.equal(countAt(p, 0), 1);
   assert.equal(countAt(p, 59), 1);
@@ -144,12 +146,10 @@ test('group-wrapped chain compiles to the same plan as F01', () => {
 
 test('unsupported settings are addressed errors, never ignored', () => {
   const cases: Array<[string, NodeDefinition['params'], string]> = [
-    ['node-initial', { rotationMax: 1 }, 'rotationMax'],
-    ['node-initial', { angularVelocityMin: -1 }, 'angularVelocityMin'],
     ['node-initial', { randomFrameStart: true }, 'randomFrameStart'],
     ['node-emitter', { shape: 'path' }, 'shape'],
     ['node-emitter', { space: 'local' }, 'space'],
-    ['node-billboard', { alignment: 'velocity' }, 'alignment'],
+    ['node-billboard', { alignment: 'worldAxis' }, 'alignment'],
     ['node-billboard', { softIntersection: true }, 'softIntersection'],
   ];
   for (const [id, params, field] of cases) {
@@ -292,4 +292,22 @@ test('cone emitter with speed range and aim anchor compiles to a shaped, aimed d
 test('aim pointing at the emitter position itself is an addressed error', () => {
   const errs = errorsOf(compileParticlePreview(f01(d => { root(d).edges.push(edge('e-aim', 'node-source', 'out', 'node-emitter', 'aim')); })));
   assert.ok(errs.some(e => e.nodeId === 'node-emitter' && /coincides/.test(e.message)));
+});
+
+test('InitialProperties spin, velocity alignment, stretch, pivot and colour over life flow into the plan', () => {
+  const grad = { stops: [{ position: 0, color: { srgb: '#FFFFFF', alpha: 1 } }, { position: 1, color: { srgb: '#FF2000', alpha: 0 } }] };
+  const p = plan(f01(d => {
+    set('node-initial', { rotationMin: 0, rotationMax: 1, angularVelocityMin: -2, angularVelocityMax: 2 })(d);
+    set('node-billboard', { alignment: 'velocity', stretchRatio: 3, pivot: 0.8, colorOverLife: grad })(d);
+    set('node-emitter', { burst: 20 })(d);
+  }));
+  assert.deepEqual(p.systems[0].descriptor.spin, { rotation: { min: 0, max: 1 }, angularVelocity: { min: -2, max: 2 } });
+  assert.deepEqual([p.layers[0].alignment, p.layers[0].stretchRatio, p.layers[0].pivot], ['velocity', 3, 0.8]);
+  assert.deepEqual(p.layers[0].colorOverLife, grad);
+  const r = sampleParticlesAtTick(p.systems[0].descriptor, 0);
+  if (!r.ok) assert.fail(JSON.stringify(r.errors));
+  const rots = r.value.particles.map(q => q.rotation as number), ws = r.value.particles.map(q => q.angularVelocity as number);
+  assert.ok(rots.every(v => v >= 0 && v <= 1) && new Set(rots).size > 10, 'rotation sampled per particle');
+  assert.ok(ws.every(v => v >= -2 && v <= 2) && ws.some(v => v < 0) && ws.some(v => v > 0), 'angular velocity sampled per particle');
+  assert.equal(plan(f01()).systems[0].descriptor.spin, undefined, 'zero spin keeps the plain descriptor');
 });

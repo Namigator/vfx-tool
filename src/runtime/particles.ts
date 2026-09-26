@@ -27,7 +27,10 @@ export function burstParticleId(emitterId: string, eventRandomKey: string, entit
 }
 
 /** Registry-owned random property keys. */
-export const PARTICLE_PROPERTY_KEYS = { lifetime: 'lifetime', size: 'size', speed: 'speed', dirU: 'dirU', dirV: 'dirV', posU: 'posU', posV: 'posV', posW: 'posW' } as const;
+export const PARTICLE_PROPERTY_KEYS = { lifetime: 'lifetime', size: 'size', speed: 'speed', dirU: 'dirU', dirV: 'dirV', posU: 'posU', posV: 'posV', posW: 'posW', rotation: 'rotation', angularVelocity: 'angularVelocity' } as const;
+
+/** Billboard spin sampled once per particle: rotation (radians) and angular velocity (radians/second). */
+export type ParticleSpin = { rotation: { min: number; max: number }; angularVelocity: { min: number; max: number } };
 
 export type EmitterShape = 'point' | 'cone' | 'sphere' | 'disc' | 'box';
 /**
@@ -74,6 +77,8 @@ export type ParticleEmitterDescriptor = {
   initialVelocity: ParticleVelocitySpec;
   /** Required when shape is not 'point'; when present it defines birth position offset and velocity. */
   emission?: ParticleEmission;
+  /** When present every particle carries rotation/angularVelocity; the renderer uses rotation + w·age. */
+  spin?: ParticleSpin;
   bursts: ParticleBurst[];
   rate?: ParticleRate;
   lifetimeTicks: { min: number; max: number };
@@ -99,6 +104,10 @@ export type ParticleState = {
   size: number;
   position: Vec3;
   velocity: Vec3;
+  /** Present only when the descriptor has spin. Radians at birth. */
+  rotation?: number;
+  /** Present only when the descriptor has spin. Radians per second. */
+  angularVelocity?: number;
 };
 
 export type ParticleTickSnapshot = {
@@ -172,7 +181,7 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
   const e: Diagnostic[] = [];
   if (!isObj(input)) return { ok: false, errors: [err('INVALID_VALUE', 'Particle descriptor must be an object.', 'descriptor')] };
   const p = 'descriptor';
-  checkKeys(input, ['documentSeed', 'durationTicks', 'emitterId', 'randomStreamId', 'shape', 'sourcePosition', 'initialVelocity', 'emission', 'bursts', 'rate', 'lifetimeTicks', 'size', 'operators'], p, e);
+  checkKeys(input, ['documentSeed', 'durationTicks', 'emitterId', 'randomStreamId', 'shape', 'sourcePosition', 'initialVelocity', 'emission', 'spin', 'bursts', 'rate', 'lifetimeTicks', 'size', 'operators'], p, e);
   if (!isUint32(input.documentSeed)) e.push(err('INVALID_VALUE', 'documentSeed must be uint32.', `${p}.documentSeed`));
   const duration = input.durationTicks;
   const durationOk = isTickInt(duration, 1, MAX_DURATION_TICKS);
@@ -274,6 +283,23 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
     else if (isFiniteNum(sz.min) && sz.max < sz.min) e.push(err('INVALID_VALUE', 'size.max must be >= min.', `${p}.size.max`));
   }
 
+  let spin: ParticleSpin | undefined;
+  if (input.spin !== undefined) {
+    const s = input.spin, sp = `${p}.spin`;
+    const range = (r: unknown, lo: number, hi: number) => isObj(r) && isFiniteNum(r.min) && isFiniteNum(r.max) && r.min >= lo && r.max <= hi && r.min <= r.max;
+    if (!isObj(s)) e.push(err('INVALID_VALUE', 'spin must be an object.', sp));
+    else {
+      checkKeys(s, ['rotation', 'angularVelocity'], sp, e);
+      const okR = range(s.rotation, -2 * Math.PI, 2 * Math.PI), okW = range(s.angularVelocity, -20, 20);
+      if (!okR) e.push(err('INVALID_VALUE', 'spin.rotation must be {min,max} within ±2π with min <= max.', `${sp}.rotation`));
+      if (!okW) e.push(err('INVALID_VALUE', 'spin.angularVelocity must be {min,max} within ±20 rad/s with min <= max.', `${sp}.angularVelocity`));
+      if (okR && okW) {
+        const r = s.rotation as Record<string, number>, w = s.angularVelocity as Record<string, number>;
+        spin = { rotation: { min: r.min, max: r.max }, angularVelocity: { min: w.min, max: w.max } };
+      }
+    }
+  }
+
   const operators: ParticleOperator[] = [];
   if (!Array.isArray(input.operators)) e.push(err('INVALID_VALUE', 'operators must be an array.', `${p}.operators`));
   else for (let i = 0, ops: unknown[] = input.operators; i < ops.length; i++) {
@@ -312,6 +338,7 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
   };
   if (rate) d.rate = rate;
   if (emission) d.emission = emission;
+  if (spin) d.spin = spin;
   return { ok: true, value: deepFreeze(d), warnings: [] };
 }
 
@@ -499,6 +526,12 @@ export class ParticleSimulation {
       birthTick: n, lifetimeTicks: lifetime, ageTicks: 0, size,
       position: cloneVec(position), velocity: cloneVec(velocity),
     });
+    if (d.spin) {
+      const p = this.#particles[this.#particles.length - 1], K = PARTICLE_PROPERTY_KEYS;
+      const pick = (r: { min: number; max: number }, key: string) => r.min === r.max ? r.min : r.min + this.#sample(eventRandomKey, entityOrdinal, key) * (r.max - r.min);
+      p.rotation = pick(d.spin.rotation, K.rotation);
+      p.angularVelocity = pick(d.spin.angularVelocity, K.angularVelocity);
+    }
     this.#births.push(id);
     this.#totalBirths++;
     return true;

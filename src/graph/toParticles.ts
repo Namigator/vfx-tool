@@ -21,7 +21,7 @@
 // - Schedule event keys are scheduleEventRandomKey(stream, tick, repeatOrdinal); start and end ticks of
 //   one repeat always differ (durationTicks >= 1), so no extra tag is needed. Duplicate keys (the same
 //   Schedule output wired twice) are a DUPLICATE_ID error.
-import type { ColorValue, CurveValue, Diagnostic, ErrorCode, ParameterValue, Quaternion, Transform, ValidationResult, Vec3 } from '../model/types.ts';
+import type { ColorValue, CurveValue, Diagnostic, ErrorCode, GradientValue, ParameterValue, Quaternion, Transform, ValidationResult, Vec3 } from '../model/types.ts';
 import { TICKS_PER_SECOND } from '../model/types.ts';
 import { registryKey } from '../model/controls.ts';
 import { scheduleEventRandomKey } from '../runtime/random.ts';
@@ -52,6 +52,13 @@ export type ParticlePreviewLayer = {
   sizeOverLife: CurveValue;
   /** Validated normalized-age opacity multiplier, y in [0,1]. */
   opacityOverLife: CurveValue;
+  /** Colour × alpha multiplier over normalized age; document validation owns stop rules. */
+  colorOverLife: GradientValue;
+  alignment: 'camera' | 'velocity';
+  /** Quad length multiplier along its local up axis (velocity direction when velocity-aligned). */
+  stretchRatio: number;
+  /** Particle position along the stretch axis: 0 trailing end, 1 leading tip. */
+  pivot: number;
 };
 export type ParticlePreviewPlan = {
   durationTicks: number;
@@ -200,9 +207,6 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
 
     for (const ip of chain.enabledInitials) {
       noDrivenParams(ip, IP_PORTS);
-      for (const k of ['rotationMin', 'rotationMax', 'angularVelocityMin', 'angularVelocityMax']) {
-        if (num(ip, k) !== 0) report('INVALID_VALUE', `InitialProperties ${k} = ${num(ip, k)} is not supported yet (particles have no rotation); set it to 0.`, ip.node.id, k);
-      }
       if (param(ip, 'randomFrameStart') !== false) report('INVALID_VALUE', 'randomFrameStart is not supported by the point preview (no flipbook); turn it off.', ip.node.id, 'randomFrameStart');
     }
 
@@ -299,6 +303,12 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       operators,
     };
     if (rate) d.rate = rate;
+    if (chain.initial) {
+      const ip = chain.initial, r = [num(ip, 'rotationMin'), num(ip, 'rotationMax')], w = [num(ip, 'angularVelocityMin'), num(ip, 'angularVelocityMax')];
+      if (r[0] > r[1]) report('INVALID_VALUE', 'InitialProperties rotationMin must be <= rotationMax.', ip.node.id, 'rotationMax');
+      if (w[0] > w[1]) report('INVALID_VALUE', 'InitialProperties angularVelocityMin must be <= angularVelocityMax.', ip.node.id, 'angularVelocityMax');
+      if (r.some(v => v !== 0) || w.some(v => v !== 0)) d.spin = { rotation: { min: r[0], max: r[1] }, angularVelocity: { min: w[0], max: w[1] } };
+    }
     if (shaped && shape !== 'path') d.emission = { shape: d.shape, axis, radius: num(em, 'radius') * scale, coneAngle: num(em, 'coneAngle'), speed: { min: speedMin * scale, max: speedMax * scale } };
     return d;
   };
@@ -317,8 +327,8 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       done.add(b.node.id);
       const bid = b.node.id;
       noDrivenParams(b, BILLBOARD_PORTS);
-      if (param(b, 'alignment') !== 'camera') report('INVALID_VALUE', `Billboard alignment "${String(param(b, 'alignment'))}" is not supported by the point preview; use "camera".`, bid, 'alignment');
-      if (num(b, 'stretchRatio') !== 1) report('INVALID_VALUE', 'Billboard stretchRatio is not supported by the point preview; set it to 1.', bid, 'stretchRatio');
+      const alignment = param(b, 'alignment') as string;
+      if (alignment === 'worldAxis') report('INVALID_VALUE', 'Billboard alignment "worldAxis" is not supported by the point preview yet; use "camera" or "velocity".', bid, 'alignment');
       if (param(b, 'softIntersection') !== false) report('INVALID_VALUE', 'Soft intersection is not supported by the point preview; turn it off.', bid, 'softIntersection');
       const lifeCurve = (id: string, bounds: { min: number; max: number }): CurveValue => {
         const curve = param(b, id) as CurveValue;
@@ -362,6 +372,10 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         visualOrder,
         sizeOverLife,
         opacityOverLife,
+        colorOverLife: structuredClone(param(b, 'colorOverLife') as GradientValue),
+        alignment: alignment === 'velocity' ? 'velocity' : 'camera',
+        stretchRatio: num(b, 'stretchRatio'),
+        pivot: num(b, 'pivot'),
       });
     } catch (e) {
       if (!(e instanceof Fail)) throw e;

@@ -16,7 +16,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 // both layer kinds comes from layerRenderOrder(renderOrderOffset, visualOrder).
 import type { Diagnostic, ValidationResult, Vec3 } from '../model/types.ts';
 import type { ParticlePreviewLayer, ParticlePreviewPlan } from '../graph/toParticles.ts';
-import { compileLifeCurve, lifeFraction, sampleLifeCurve, type LifeCurveSampler } from './billboardLife.ts';
+import { compileLifeCurve, compileLifeGradient, lifeFraction, sampleLifeCurve, sampleLifeGradient, type LifeCurveSampler, type LifeGradientSampler } from './billboardLife.ts';
 import { MAX_PREVIEW_POINTS, type PathPreviewLayer, type PathPreviewPlan } from '../graph/toPaths.ts';
 import { DEFAULT_MAX_LIVE_PARTICLES, PARTICLE_DT, ParticleSimulation, type ParticleState } from '../runtime/particles.ts';
 import { PlaybackClock } from '../runtime/clock.ts';
@@ -63,16 +63,34 @@ export function namespacedParticleId(systemId: string, particleId: string): stri
 
 export class WebGLUnavailableError extends Error {}
 
+const rgbaScratch = new Float32Array(4);
+
 const VERTEX = /* glsl */ `
 attribute float lifeOpacity;
+attribute vec3 lifeColor;
+attribute float spinAngle;
+attribute vec3 worldVelocity;
+uniform float uAlign;
+uniform float uStretch;
+uniform float uPivot;
 varying vec2 vUv;
 varying float vLifeOpacity;
+varying vec3 vLifeColor;
 void main() {
   vUv = uv;
   vLifeOpacity = lifeOpacity;
+  vLifeColor = lifeColor;
   // Instance matrix carries translation (column 3) and uniform size (column 0.x); quad faces the camera.
   vec4 mv = modelViewMatrix * vec4(instanceMatrix[3].xyz, 1.0);
-  mv.xy += position.xy * instanceMatrix[0][0];
+  // Local quad: pivot shifts the particle along +Y (0 trailing end, 1 leading tip), then stretch along +Y.
+  vec2 p = vec2(position.x, (position.y + 0.5 - uPivot) * uStretch);
+  float ang = spinAngle;
+  if (uAlign > 0.5) {
+    vec3 vv = (modelViewMatrix * vec4(worldVelocity, 0.0)).xyz;
+    ang = dot(vv.xy, vv.xy) > 1e-10 ? atan(vv.y, vv.x) - 1.5707963 : 0.0;
+  }
+  float c = cos(ang), s = sin(ang);
+  mv.xy += vec2(c * p.x - s * p.y, s * p.x + c * p.y) * instanceMatrix[0][0];
   gl_Position = projectionMatrix * mv;
 }`;
 
@@ -84,12 +102,13 @@ uniform float uCutoff;
 uniform float uCutout;
 varying vec2 vUv;
 varying float vLifeOpacity;
+varying vec3 vLifeColor;
 void main() {
   float d = length(vUv - 0.5) * 2.0;
   float a = uAlpha * vLifeOpacity * (1.0 - smoothstep(0.6, 1.0, d));
   if (uCutout > 0.5) { if (a < uCutoff) discard; a = 1.0; }
   else if (a <= 0.0) discard;
-  gl_FragColor = vec4(uColor * (1.0 + uEmission), a);
+  gl_FragColor = vec4(uColor * vLifeColor * (1.0 + uEmission), a);
   #include <colorspace_fragment>
 }`;
 
@@ -125,7 +144,7 @@ void main() {
   #include <colorspace_fragment>
 }`;
 
-type LayerMesh = { layer: ParticlePreviewLayer; mesh: THREE.InstancedMesh; material: THREE.ShaderMaterial; sizeSampler: LifeCurveSampler; opacitySampler: LifeCurveSampler };
+type LayerMesh = { layer: ParticlePreviewLayer; mesh: THREE.InstancedMesh; material: THREE.ShaderMaterial; sizeSampler: LifeCurveSampler; opacitySampler: LifeCurveSampler; colorSampler: LifeGradientSampler };
 type RibbonMesh = { nodeId: string; ribbon: RibbonGeometry; mesh: THREE.Mesh; material: THREE.ShaderMaterial };
 
 /** Per-tick path compile supplied by the caller (e.g. `t => compilePathPreview(doc, t)`). */
@@ -319,13 +338,21 @@ export class PreviewViewport {
       const lifeOpacity = new THREE.InstancedBufferAttribute(new Float32Array(PREVIEW_POOL_SIZE).fill(1), 1);
       lifeOpacity.setUsage(THREE.DynamicDrawUsage);
       geometry.setAttribute('lifeOpacity', lifeOpacity);
+      for (const [name, size, fill] of [['lifeColor', 3, 1], ['spinAngle', 1, 0], ['worldVelocity', 3, 0]] as const) {
+        const attr = new THREE.InstancedBufferAttribute(new Float32Array(PREVIEW_POOL_SIZE * size).fill(fill), size);
+        attr.setUsage(THREE.DynamicDrawUsage);
+        geometry.setAttribute(name, attr);
+      }
+      material.uniforms.uAlign = { value: layer.alignment === 'velocity' ? 1 : 0 };
+      material.uniforms.uStretch = { value: layer.stretchRatio };
+      material.uniforms.uPivot = { value: layer.pivot };
       const mesh = new THREE.InstancedMesh(geometry, material, PREVIEW_POOL_SIZE);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       mesh.count = 0;
       mesh.frustumCulled = false;
       mesh.renderOrder = layerRenderOrder(layer.renderOrderOffset, layer.visualOrder);
       this.#scene.add(mesh);
-      this.#layers.push({ layer, mesh, material, sizeSampler: compileLifeCurve(layer.sizeOverLife), opacitySampler: compileLifeCurve(layer.opacityOverLife) });
+      this.#layers.push({ layer, mesh, material, sizeSampler: compileLifeCurve(layer.sizeOverLife), opacitySampler: compileLifeCurve(layer.opacityOverLife), colorSampler: compileLifeGradient(layer.colorOverLife) });
     }
   }
 
@@ -592,11 +619,18 @@ export class PreviewViewport {
       const m = l.mesh.instanceMatrix.array as Float32Array;
       const opAttr = l.mesh.geometry.getAttribute('lifeOpacity') as THREE.InstancedBufferAttribute;
       const op = opAttr.array as Float32Array;
+      const g = l.mesh.geometry;
+      const colAttr = g.getAttribute('lifeColor') as THREE.InstancedBufferAttribute, spinAttr = g.getAttribute('spinAngle') as THREE.InstancedBufferAttribute, velAttr = g.getAttribute('worldVelocity') as THREE.InstancedBufferAttribute;
+      const col = colAttr.array as Float32Array, spin = spinAttr.array as Float32Array, vel = velAttr.array as Float32Array;
       for (let i = 0; i < n; i++) {
         const p = (particles as ParticleState[])[i];
         const u = lifeFraction(p.ageTicks, p.lifetimeTicks, alpha);
         const o = i * 16, s = p.size * sampleLifeCurve(l.sizeSampler, u);
-        op[i] = sampleLifeCurve(l.opacitySampler, u);
+        sampleLifeGradient(l.colorSampler, u, rgbaScratch);
+        col[i * 3] = rgbaScratch[0]; col[i * 3 + 1] = rgbaScratch[1]; col[i * 3 + 2] = rgbaScratch[2];
+        op[i] = sampleLifeCurve(l.opacitySampler, u) * rgbaScratch[3];
+        spin[i] = p.rotation === undefined ? 0 : p.rotation + (p.angularVelocity ?? 0) * (p.ageTicks + alpha) * PARTICLE_DT;
+        vel[i * 3] = p.velocity[0]; vel[i * 3 + 1] = p.velocity[1]; vel[i * 3 + 2] = p.velocity[2];
         m[o] = s; m[o + 1] = 0; m[o + 2] = 0; m[o + 3] = 0;
         m[o + 4] = 0; m[o + 5] = s; m[o + 6] = 0; m[o + 7] = 0;
         m[o + 8] = 0; m[o + 9] = 0; m[o + 10] = s; m[o + 11] = 0;
@@ -608,6 +642,7 @@ export class PreviewViewport {
       l.mesh.count = n;
       l.mesh.instanceMatrix.needsUpdate = true;
       opAttr.needsUpdate = true;
+      colAttr.needsUpdate = true; spinAttr.needsUpdate = true; velAttr.needsUpdate = true;
     }
   }
 

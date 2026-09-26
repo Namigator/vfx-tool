@@ -38,7 +38,7 @@ Status legend: ✅ done, ◐ partial, ✗ missing. "Floor" = part of the P2 capa
 | I1 | Emitter (WP03) | shapes cone/sphere/disc/box/path; speed range; aim anchor (P4) | ✅ 2026-09-26 except path shape; [SAW] `?workspace=v2&demo=forces` tick 45 | yes |
 | I2 | Forces (WP03) | Gravity, Drag nodes | ✅ 2026-09-26 | yes |
 | I3 | Forces (WP03) | NoiseForce (curl/vector), Attract, Vortex | ✗ | NoiseForce |
-| I4 | Appearance (WP03/04) | colour over life; rotation + angular velocity; velocity alignment + stretch; pivot | ◐ size/opacity-over-life only (on BillboardRenderer, not an OverLife node — recorded deviation) | yes |
+| I4 | Appearance (WP03/04) | colour over life; rotation + angular velocity; velocity alignment + stretch; pivot | ✅ 2026-09-26: colourOverLife gradient, spin (rotation/angular velocity), velocity alignment + stretch + pivot; [SAW] MCP spark burst (mcp/examples/sparks.steps.json). Spin is [PROXY] (round sprite hides rotation until textures). worldAxis alignment still rejected | yes |
 | I5 | Materials/assets (WP04/05) | textured + flipbook material; baked library conforming to 10 (4×4, 256 px cells) | ◐ library baked but 12×8 / 40×96 cells (non-conforming); loader only | yes |
 | I6 | Events (WP03) | GroundCollision, ParticleEvents, event-conditioned child emission | ✗ | yes |
 | I7 | Render (WP04) | ParticleTrail, SpriteRenderer, RingRenderer, PointLight, MeshRenderer | ✗ (RingPath+ribbon only) | Trail, Sprite, Light |

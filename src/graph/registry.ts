@@ -182,6 +182,12 @@ function billboardRenderer(): NodeSpec {
         default: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] },
         min: 0, max: 1, editPolicy: 'live', description: 'Opacity multiplier over normalized particle age.',
       }),
+      param({
+        id: 'colorOverLife', label: 'Colour over life', type: 'gradient', unit: 'none',
+        default: { stops: [{ position: 0, color: white() }, { position: 1, color: white() }] },
+        editPolicy: 'live', description: 'Colour × alpha multiplier over normalized particle age (linear-RGB interpolation).',
+      }),
+      param({ id: 'pivot', label: 'Pivot', type: 'number', unit: 'normalized', default: 0.5, min: 0, max: 1, editPolicy: 'live', description: 'Where the particle sits along the stretch axis: 0 = trailing end, 1 = leading tip.' }),
     ],
     disabledBehavior: 'empty',
   });

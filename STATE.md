@@ -21,9 +21,9 @@
 - `.mcp.json` registers server `vfx` → `node --experimental-strip-types --no-warnings mcp/vfx-mcp.ts` (loads in a NEW Claude Code session). Tools: vfx_list_node_types, vfx_describe_node_type, vfx_new_document (blank/f01/forces/lightning/lightning-audio), vfx_open/save/get/set_document, vfx_set_anchor, vfx_add/remove_node, vfx_set_params, vfx_connect/disconnect, vfx_compile, vfx_sample_particles, vfx_render_audio, vfx_preview_url. Docs mirror to work/mcp/<id>.json; editor opens `?workspace=v2&doc=/work/mcp/<id>.json`. [RAN] tests/v2-mcp.test.ts + stdio smoke (work/mcp-smoke.mjs); [SAW] MCP-built fountain in editor. Deps: @modelcontextprotocol/sdk 1.30.1, zod 4.6.5 (user-approved 2026-09-26). Next: WP-MCP2 headless PNG frames.
 
 ## Next — gap order from docs/v2-plan/27-GAP-AUDIT.md (capability floor, 19-WORK-PACKAGES)
-1. I1 Emitter shapes cone/sphere/disc/box + speed ranges + aim anchor (runtime + compiler + tests + capture).
-2. I4 Appearance: colour over life, rotation/angular velocity, velocity-aligned stretched billboards with pivot.
-3. I3 NoiseForce. 4. I5 Textured flipbook material; rebake library to 10-ASSETS format (4×4, 256 px cells); spec docs/implementation/WP04-TEXTURED-MATERIALS-FLIPBOOK.md.
+1. DONE I1 emitter shapes/speed/aim; DONE I4 appearance (colour over life, spin, velocity stretch, pivot). Recipes: `node mcp/run-steps.mjs mcp/examples/sparks.steps.json`.
+2. I6 GroundCollision next (MCP sampling showed particles falling through the floor), then I3 NoiseForce.
+3. — 4. I5 Textured flipbook material; rebake library to 10-ASSETS format (4×4, 256 px cells); spec docs/implementation/WP04-TEXTURED-MATERIALS-FLIPBOOK.md.
 5. I6 GroundCollision + ParticleEvents; I7 ParticleTrail/SpriteRenderer/PointLight; I8/I9 Curve, RandomRange, PathFollower.
 6. Then editor Simple view + components (I10), persistence (I11), worker (I12); then resume WP10 lightning and the A-05 model build test.
 Sprite library seed: node tools/bake-sprites.mjs → assets/sprites/ (+ preview.html, typed loader src/assets/spriteLibrary.ts); current cell sizes do not yet conform to 10-ASSETS.
