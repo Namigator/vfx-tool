@@ -147,8 +147,7 @@ test('unsupported settings are addressed errors, never ignored', () => {
     ['node-initial', { rotationMax: 1 }, 'rotationMax'],
     ['node-initial', { angularVelocityMin: -1 }, 'angularVelocityMin'],
     ['node-initial', { randomFrameStart: true }, 'randomFrameStart'],
-    ['node-emitter', { speedMin: 1, speedMax: 2 }, 'speedMax'],
-    ['node-emitter', { shape: 'cone' }, 'shape'],
+    ['node-emitter', { shape: 'path' }, 'shape'],
     ['node-emitter', { space: 'local' }, 'space'],
     ['node-billboard', { alignment: 'velocity' }, 'alignment'],
     ['node-billboard', { softIntersection: true }, 'softIntersection'],
@@ -274,4 +273,23 @@ test('disabled Gravity bypasses; gravity scales with the effect transform and mo
   const two = compileParticlePreview((() => { const d = withForces({ gravity: { acceleration: [0, -3, 0] } }); d.rootTransform.scale = 2; return d; })());
   if (!two.ok) assert.fail(JSON.stringify(two.errors));
   assert.deepEqual(two.value.systems[0].descriptor.operators[0], { kind: 'gravity', acceleration: [0, -6, 0] });
+});
+
+test('cone emitter with speed range and aim anchor compiles to a shaped, aimed descriptor', () => {
+  const p = plan(f01(d => {
+    set('node-emitter', { shape: 'cone', coneAngle: 0.2, radius: 0.1, speedMin: 2, speedMax: 3, burst: 50 })(d);
+    root(d).edges.push(edge('e-aim', 'node-target', 'out', 'node-emitter', 'aim'));
+  }));
+  const em = p.systems[0].descriptor.emission!;
+  assert.equal(p.systems[0].descriptor.shape, 'cone');
+  assert.deepEqual(em.axis.map(v => Math.round(v * 1e9) / 1e9), [0, 0, 1]);
+  assert.deepEqual([em.radius, em.coneAngle, em.speed], [0.1, 0.2, { min: 2, max: 3 }]);
+  const r = sampleParticlesAtTick(p.systems[0].descriptor, 0);
+  if (!r.ok) assert.fail(JSON.stringify(r.errors));
+  for (const q of r.value.particles) assert.ok(q.velocity[2] > 1.9, 'aimed toward target (+Z)');
+});
+
+test('aim pointing at the emitter position itself is an addressed error', () => {
+  const errs = errorsOf(compileParticlePreview(f01(d => { root(d).edges.push(edge('e-aim', 'node-source', 'out', 'node-emitter', 'aim')); })));
+  assert.ok(errs.some(e => e.nodeId === 'node-emitter' && /coincides/.test(e.message)));
 });

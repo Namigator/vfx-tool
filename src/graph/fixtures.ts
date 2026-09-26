@@ -304,3 +304,35 @@ export function createL01Document(): EffectDocumentV2 {
     },
   };
 }
+
+// Capability-floor demo (27-GAP-AUDIT I1/I2): a continuous cone jet aimed from Source at Target with a
+// speed range, falling under Gravity and slowed by Drag. Open with ?workspace=v2&demo=forces.
+export function createForcesDemoDocument(): EffectDocumentV2 {
+  const d = createF01Document();
+  d.id = 'doc-forces-demo';
+  d.name = 'Forces demo: aimed cone + gravity + drag';
+  d.tags = ['fixture', 'capability-floor'];
+  d.anchors = [{ id: 'source', name: 'Source', position: [-2, 1, 0] }, { id: 'target', name: 'Target', position: [2, 1.5, 0] }];
+  const g = d.graphs[0];
+  const set = (id: string, params: Record<string, unknown>) => Object.assign(g.nodes.find(n => n.id === id)!.params, params);
+  set('node-schedule', { startTicks: 0, durationTicks: 90, mode: 'window' });
+  set('node-emitter', { shape: 'cone', coneAngle: 0.15, radius: 0.03, rate: 240, burst: 0, speedMin: 5, speedMax: 7, lifetimeMin: 0.6, lifetimeMax: 0.9 });
+  set('node-initial', { sizeMin: 0.04, sizeMax: 0.07 });
+  set('node-material', { tint: { srgb: '#FFB070', alpha: 1 }, blend: 'additive' });
+  g.nodes.push(
+    { id: 'node-gravity', type: 'Gravity', definitionVersion: 1, label: 'Gravity', enabled: true, randomStreamId: 'rs-gravity', params: { acceleration: [0, -6, 0] } },
+    { id: 'node-drag', type: 'Drag', definitionVersion: 1, label: 'Drag', enabled: true, randomStreamId: 'rs-drag', params: { coefficient: 0.6 } },
+  );
+  const trig = g.edges.find(e => e.id === 'edge-trigger')!;
+  trig.source.port = 'window'; trig.target.port = 'window';
+  g.edges = g.edges.filter(e => e.id !== 'edge-initial');
+  g.edges.push(
+    edge('edge-aim', 'node-target', 'out', 'node-emitter', 'aim'),
+    edge('edge-g', 'node-initial', 'particles', 'node-gravity', 'particles'),
+    edge('edge-d', 'node-gravity', 'particles', 'node-drag', 'particles'),
+    edge('edge-initial', 'node-drag', 'particles', 'node-billboard', 'particles'),
+  );
+  const pos = d.editor.graphs['graph-root'].nodes;
+  Object.assign(pos, { 'node-gravity': { x: 780, y: 0 }, 'node-drag': { x: 1040, y: 0 }, 'node-billboard': { x: 1300, y: 0 }, 'node-output': { x: 1560, y: 0 } });
+  return d;
+}

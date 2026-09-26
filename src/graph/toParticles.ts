@@ -3,7 +3,7 @@
 // No DOM, React or Three. The input is never mutated (analysis works on a clone).
 //
 // Scope is deliberately narrow: only reachable BillboardRenderer sinks at the root EffectOutput.visual,
-// fed by an Emitter (shape point, space world, one anchor) through InitialProperties chains, with
+// fed by an Emitter (shape point/cone/sphere/disc/box, space world, one anchor, optional aim anchor) through InitialProperties chains, with
 // Schedule triggers/windows. Anything else that is reachable returns an addressed error instead of being
 // ignored or approximated.
 //
@@ -63,7 +63,7 @@ export type ParticlePreviewPlan = {
 
 export const DEFAULT_PREVIEW_SIZE = { min: 0.08, max: 0.16 } as const;
 
-const EMITTER_PORTS = ['anchor', 'paths', 'trigger', 'window'];
+const EMITTER_PORTS = ['anchor', 'paths', 'trigger', 'window', 'aim'];
 const BILLBOARD_PORTS = ['particles', 'material'];
 const IP_PORTS = ['particles'];
 const FORCE_TYPES = ['Gravity', 'Drag'];
@@ -192,11 +192,11 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     const em = chain.emitter;
     const id = em.node.id;
     noDrivenParams(em, EMITTER_PORTS);
-    if (param(em, 'shape') !== 'point') report('INVALID_VALUE', `Emitter shape "${String(param(em, 'shape'))}" is not supported by the point preview; use "point".`, id, 'shape');
+    const shape = param(em, 'shape') as string;
+    if (shape === 'path') report('INVALID_VALUE', 'Emitter shape "path" is not supported yet; use point, cone, sphere, disc or box.', id, 'shape');
     if (param(em, 'space') !== 'world') report('INVALID_VALUE', 'Emitter local space is not supported by the point preview; use "world".', id, 'space');
     if (into(id, 'paths').length) report('INVALID_VALUE', 'Emitter paths input is not supported by the point preview; connect an anchor.', id);
     const speedMin = num(em, 'speedMin'), speedMax = num(em, 'speedMax');
-    if (speedMin !== speedMax) report('INVALID_VALUE', `Emitter speed range ${speedMin}..${speedMax} is not supported yet; set speedMin equal to speedMax.`, id, 'speedMax');
 
     for (const ip of chain.enabledInitials) {
       noDrivenParams(ip, IP_PORTS);
@@ -262,8 +262,27 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     });
     const dir = param(em, 'direction') as Vec3;
     const k = (speedMin * scale) / Math.hypot(dir[0], dir[1], dir[2]);
-    const velocity = rotate(transform.rotation, [dir[0] * k, dir[1] * k, dir[2] * k]);
+    let velocity = rotate(transform.rotation, [dir[0] * k, dir[1] * k, dir[2] * k]);
     const r = rotate(transform.rotation, [local[0] * scale, local[1] * scale, local[2] * scale]);
+    const worldOf = (p: Vec3): Vec3 => { const q = rotate(transform.rotation, [p[0] * scale, p[1] * scale, p[2] * scale]); return [q[0] + transform.position[0], q[1] + transform.position[1], q[2] + transform.position[2]]; };
+    const source = worldOf(local);
+    const dl = Math.hypot(dir[0], dir[1], dir[2]);
+    let axis: Vec3 = rotate(transform.rotation, [dir[0] / dl, dir[1] / dl, dir[2] / dl]);
+    const aims = into(id, 'aim');
+    if (aims.length === 1) {
+      const an = sourceNode(aims[0].source, id, 'aim');
+      const aid = an.node.type === 'Anchor' && an.effectiveEnabled ? param(an, 'anchorId') as string : undefined;
+      const ap = aid === undefined ? undefined : anchorPos.get(aid);
+      if (!ap) report('MISSING_REFERENCE', 'Emitter aim needs an enabled Anchor referencing an existing document anchor.', id);
+      else {
+        const t = worldOf(ap), v: Vec3 = [t[0] - source[0], t[1] - source[1], t[2] - source[2]], l = Math.hypot(v[0], v[1], v[2]);
+        if (l < 1e-9) report('INVALID_VALUE', 'Emitter aim anchor coincides with the emitter position; direction is undefined.', id);
+        else { axis = [v[0] / l, v[1] / l, v[2] / l]; velocity = [axis[0] * speedMin * scale, axis[1] * speedMin * scale, axis[2] * speedMin * scale]; }
+      }
+    }
+    const nl = Math.hypot(axis[0], axis[1], axis[2]);
+    axis = [axis[0] / nl, axis[1] / nl, axis[2] / nl];
+    const shaped = shape !== 'point' || speedMin !== speedMax;
     const size = chain.initial ? { min: num(chain.initial, 'sizeMin'), max: num(chain.initial, 'sizeMax') } : DEFAULT_PREVIEW_SIZE;
     const ticks = (s: number) => Math.max(1, Math.floor(s * TICKS_PER_SECOND + 0.5));
     const d: ParticleEmitterDescriptor = {
@@ -271,7 +290,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       durationTicks: duration,
       emitterId: id,
       randomStreamId: em.node.randomStreamId,
-      shape: 'point',
+      shape: (shape === 'path' ? 'point' : shape) as ParticleEmitterDescriptor['shape'],
       sourcePosition: [r[0] + transform.position[0], r[1] + transform.position[1], r[2] + transform.position[2]],
       initialVelocity: { kind: 'vector', value: velocity },
       bursts,
@@ -280,6 +299,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       operators,
     };
     if (rate) d.rate = rate;
+    if (shaped && shape !== 'path') d.emission = { shape: d.shape, axis, radius: num(em, 'radius') * scale, coneAngle: num(em, 'coneAngle'), speed: { min: speedMin * scale, max: speedMax * scale } };
     return d;
   };
 

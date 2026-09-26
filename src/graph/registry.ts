@@ -74,6 +74,7 @@ function emitter(): NodeSpec {
       port({ id: 'paths', label: 'Paths', type: 'paths' }),
       port({ id: 'trigger', label: 'Trigger', type: 'event', cardinality: 'many' }),
       port({ id: 'window', label: 'Window', type: 'timeWindow' }),
+      port({ id: 'aim', label: 'Aim', type: 'anchor' }),
     ],
     outputs: [port({ id: 'particles', label: 'Particles', type: 'particles' })],
     parameters: [
@@ -86,7 +87,7 @@ function emitter(): NodeSpec {
       param({ id: 'coneAngle', label: 'Cone angle', type: 'number', unit: 'radian', default: Math.PI / 9, min: 0, max: Math.PI }),
       param({ id: 'speedMin', label: 'Speed min', type: 'number', unit: 'metersPerSecond', default: 1, min: 0, max: 100 }),
       param({ id: 'speedMax', label: 'Speed max', type: 'number', unit: 'metersPerSecond', default: 3, min: 0, max: 100 }),
-      param({ id: 'direction', label: 'Direction', type: 'vec3', unit: 'none', default: [1, 0, 0], min: -1, max: 1, description: 'Spread direction; normalized at compile time.' }),
+      param({ id: 'direction', label: 'Direction', type: 'vec3', unit: 'none', default: [1, 0, 0], min: -1, max: 1, description: 'Spread direction (local +X axis); normalized at compile time. Ignored when the Aim input is connected.' }),
       param({ id: 'space', label: 'Space', type: 'enum', unit: 'none', default: 'world', choices: ['world', 'local'] }),
       param({ id: 'useEventPosition', label: 'Use event position', type: 'boolean', unit: 'none', default: true }),
     ],

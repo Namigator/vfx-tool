@@ -72,7 +72,7 @@ test('structured ports follow plan 25', () => {
   const ports = (t: string, side: 'inputs' | 'outputs') => reg.get(`${t}@1`)![side].map(p => `${p.id}:${p.type}`);
   assert.deepEqual(ports('Anchor', 'outputs'), ['out:anchor']);
   assert.deepEqual(ports('Schedule', 'outputs'), ['start:event', 'end:event', 'window:timeWindow']);
-  assert.deepEqual(ports('Emitter', 'inputs'), ['anchor:anchor', 'paths:paths', 'trigger:event', 'window:timeWindow']);
+  assert.deepEqual(ports('Emitter', 'inputs'), ['anchor:anchor', 'paths:paths', 'trigger:event', 'window:timeWindow', 'aim:anchor']);
   assert.ok(reg.get('Emitter@1')!.inputs.every(p => !p.required));
   assert.deepEqual(ports('Emitter', 'outputs'), ['particles:particles']);
   assert.deepEqual(ports('InitialProperties', 'inputs'), ['particles:particles']);
@@ -148,7 +148,7 @@ test('defaults are independent across factory calls', () => {
   a.get('Material@1')!.parameters[0].choices!.push('Other');
   assert.deepEqual(b.get('InitialProperties@1')!.parameters.find(p => p.id === 'color')!.default, { srgb: '#FFFFFF', alpha: 1 });
   assert.deepEqual(b.get('Emitter@1')!.parameters.find(p => p.id === 'direction')!.default, [1, 0, 0]);
-  assert.equal(b.get('Emitter@1')!.inputs.length, 4);
+  assert.equal(b.get('Emitter@1')!.inputs.length, 5);
   assert.deepEqual(b.get('Material@1')!.parameters[0].choices, ['SpriteUnlit']);
   assert.deepEqual(createRegistry(), b);
 });

@@ -8,7 +8,7 @@ import { validateDocument } from './model/document.ts';
 import { createRegistry } from './graph/registry.ts';
 import { compileParticlePreview } from './graph/toParticles.ts';
 import { compilePathPreview } from './graph/toPaths.ts';
-import { createF01Document } from './graph/fixtures.ts';
+import { createF01Document, createForcesDemoDocument } from './graph/fixtures.ts';
 import { compileAudio } from './graph/toAudio.ts';
 import { choosePreviewMode, createLightningAudioDemoDocument, hasRootAudio, ribbonStyleDiagnostics, type PreviewModeChoice } from './render/previewMode.ts';
 import { AudioTransport, type AudioBufferLike, type AudioContextLike, type BufferSourceLike, type PlayResult } from './audio/transport.ts';
@@ -101,7 +101,7 @@ export default function PreviewV2() {
   const fileRef = useRef<HTMLInputElement>(null);
   const viewportRef = useRef<PreviewViewport | null>(null);
   const historyRef = useRef<DocumentHistory | null>(null);
-  if (historyRef.current === null) historyRef.current = new DocumentHistory(new URLSearchParams(window.location.search).get('demo') === 'lightning' ? createLightningAudioDemoDocument() : createF01Document());
+  if (historyRef.current === null) historyRef.current = new DocumentHistory(((demo) => demo === 'lightning' ? createLightningAudioDemoDocument() : demo === 'forces' ? createForcesDemoDocument() : createF01Document())(new URLSearchParams(window.location.search).get('demo')));
   const [doc, setDoc] = useState<EffectDocumentV2>(() => historyRef.current!.snapshot());
   const [text, setText] = useState(() => toText(doc));
   const [textDirty, setTextDirty] = useState(false);

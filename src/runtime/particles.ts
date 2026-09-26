@@ -1,6 +1,6 @@
 // Fixed-step point particle core (plan07 update order, plan22 F01-F04, plan24 random identity).
-// Minimal runtime: point emission only, one emitter, gravity/drag operators only. Cone/path shapes,
-// other forces, trails, collisions, local space and child-event graphs are NOT implemented and are
+// Minimal runtime: point/cone/sphere/disc/box emission (24-ALGORITHMS "Particle shapes"), one emitter,
+// gravity/drag operators only. Path emission, other forces, trails, collisions, local space and child-event graphs are NOT implemented and are
 // rejected by validation rather than ignored. Pure data: no DOM, wall clock or global RNG.
 import { MAX_DURATION_TICKS, TICKS_PER_SECOND, ID_PATTERN } from '../model/types.ts';
 import type { Diagnostic, ValidationResult, Vec3 } from '../model/types.ts';
@@ -27,7 +27,18 @@ export function burstParticleId(emitterId: string, eventRandomKey: string, entit
 }
 
 /** Registry-owned random property keys. */
-export const PARTICLE_PROPERTY_KEYS = { lifetime: 'lifetime', size: 'size' } as const;
+export const PARTICLE_PROPERTY_KEYS = { lifetime: 'lifetime', size: 'size', speed: 'speed', dirU: 'dirU', dirV: 'dirV', posU: 'posU', posV: 'posV', posW: 'posW' } as const;
+
+export type EmitterShape = 'point' | 'cone' | 'sphere' | 'disc' | 'box';
+/**
+ * Shaped emission. Directions are relative to the unit world `axis` (the emitter's local +X after rotation
+ * or aim). point: along axis. cone: uniform in solid angle within coneAngle of axis, born on a disc of
+ * `radius` perpendicular to axis. sphere: uniform direction, position radius*cbrt(w) along it (volume).
+ * disc: radial direction in the plane perpendicular to axis, position radius*sqrt(u). box: position uniform
+ * in a cube of half-extent `radius`, direction along axis. Speed is sampled uniformly per particle.
+ */
+export type ParticleEmission = { shape: EmitterShape; axis: Vec3; radius: number; coneAngle: number; speed: { min: number; max: number } };
+const SHAPES: readonly EmitterShape[] = ['point', 'cone', 'sphere', 'disc', 'box'];
 
 export type ParticleVelocitySpec =
   | { kind: 'vector'; value: Vec3 }
@@ -57,9 +68,12 @@ export type ParticleEmitterDescriptor = {
   durationTicks: number;
   emitterId: string;
   randomStreamId: string;
-  shape: 'point';
+  shape: EmitterShape;
   sourcePosition: Vec3;
+  /** Used when `emission` is absent (point emission with one fixed velocity). */
   initialVelocity: ParticleVelocitySpec;
+  /** Required when shape is not 'point'; when present it defines birth position offset and velocity. */
+  emission?: ParticleEmission;
   bursts: ParticleBurst[];
   rate?: ParticleRate;
   lifetimeTicks: { min: number; max: number };
@@ -158,7 +172,7 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
   const e: Diagnostic[] = [];
   if (!isObj(input)) return { ok: false, errors: [err('INVALID_VALUE', 'Particle descriptor must be an object.', 'descriptor')] };
   const p = 'descriptor';
-  checkKeys(input, ['documentSeed', 'durationTicks', 'emitterId', 'randomStreamId', 'shape', 'sourcePosition', 'initialVelocity', 'bursts', 'rate', 'lifetimeTicks', 'size', 'operators'], p, e);
+  checkKeys(input, ['documentSeed', 'durationTicks', 'emitterId', 'randomStreamId', 'shape', 'sourcePosition', 'initialVelocity', 'emission', 'bursts', 'rate', 'lifetimeTicks', 'size', 'operators'], p, e);
   if (!isUint32(input.documentSeed)) e.push(err('INVALID_VALUE', 'documentSeed must be uint32.', `${p}.documentSeed`));
   const duration = input.durationTicks;
   const durationOk = isTickInt(duration, 1, MAX_DURATION_TICKS);
@@ -167,7 +181,25 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
   for (const k of ['emitterId', 'randomStreamId'] as const) {
     if (typeof input[k] !== 'string' || !ID_PATTERN.test(input[k] as string)) e.push(err('INVALID_VALUE', `${k} must be a stored identifier.`, `${p}.${k}`));
   }
-  if (input.shape !== 'point') e.push(err('INVALID_VALUE', 'Only shape "point" is implemented; cone/sphere/disc/box/path emission is not yet supported.', `${p}.shape`));
+  if (!SHAPES.includes(input.shape as EmitterShape)) e.push(err('INVALID_VALUE', 'shape must be point, cone, sphere, disc or box (path emission is not implemented).', `${p}.shape`));
+  let emission: ParticleEmission | undefined;
+  const em = input.emission;
+  if (em === undefined) {
+    if (input.shape !== 'point') e.push(err('INVALID_VALUE', `shape "${String(input.shape)}" requires an emission block (axis, radius, coneAngle, speed).`, `${p}.shape`));
+  } else if (!isObj(em)) e.push(err('INVALID_VALUE', 'emission must be an object.', `${p}.emission`));
+  else {
+    const ep = `${p}.emission`;
+    checkKeys(em, ['shape', 'axis', 'radius', 'coneAngle', 'speed'], ep, e);
+    let ok = true;
+    if (em.shape !== input.shape) { ok = false; e.push(err('INVALID_VALUE', 'emission.shape must equal descriptor.shape.', `${ep}.shape`)); }
+    if (!isVec3(em.axis) || Math.abs(Math.hypot(em.axis[0], em.axis[1], em.axis[2]) - 1) > 1e-6) { ok = false; e.push(err('INVALID_VALUE', 'emission.axis must be a finite unit vec3.', `${ep}.axis`)); }
+    if (!isFiniteNum(em.radius) || em.radius < 0 || em.radius > 20) { ok = false; e.push(err('INVALID_VALUE', 'emission.radius must be finite in 0..20.', `${ep}.radius`)); }
+    if (!isFiniteNum(em.coneAngle) || em.coneAngle < 0 || em.coneAngle > Math.PI) { ok = false; e.push(err('INVALID_VALUE', 'emission.coneAngle must be finite in 0..π.', `${ep}.coneAngle`)); }
+    const sp = em.speed;
+    if (!isObj(sp) || !isFiniteNum(sp.min) || !isFiniteNum(sp.max) || sp.min < 0 || sp.max < sp.min || sp.max > 100) { ok = false; e.push(err('INVALID_VALUE', 'emission.speed must be {min,max} with 0 <= min <= max <= 100.', `${ep}.speed`)); }
+    else checkKeys(sp, ['min', 'max'], `${ep}.speed`, e);
+    if (ok) emission = { shape: em.shape as EmitterShape, axis: cloneVec(em.axis as Vec3), radius: em.radius as number, coneAngle: em.coneAngle as number, speed: { min: (sp as Record<string, number>).min, max: (sp as Record<string, number>).max } };
+  }
   if (!isVec3(input.sourcePosition)) e.push(err('INVALID_VALUE', 'sourcePosition must be a finite vec3.', `${p}.sourcePosition`));
 
   const iv = input.initialVelocity;
@@ -270,7 +302,7 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
     durationTicks: duration as number,
     emitterId: input.emitterId as string,
     randomStreamId: input.randomStreamId as string,
-    shape: 'point',
+    shape: input.shape as EmitterShape,
     sourcePosition: cloneVec(input.sourcePosition as Vec3),
     initialVelocity: velocity,
     bursts,
@@ -279,6 +311,7 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
     operators,
   };
   if (rate) d.rate = rate;
+  if (emission) d.emission = emission;
   return { ok: true, value: deepFreeze(d), warnings: [] };
 }
 
@@ -288,6 +321,14 @@ function deepFreeze<T>(v: T): T {
     Object.freeze(v);
   }
   return v;
+}
+
+/** Two unit vectors perpendicular to unit `a` and to each other; deterministic. */
+export function basis(a: Vec3): [Vec3, Vec3] {
+  const h: Vec3 = Math.abs(a[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+  let x = h[1] * a[2] - h[2] * a[1], y = h[2] * a[0] - h[0] * a[2], z = h[0] * a[1] - h[1] * a[0];
+  const l = Math.hypot(x, y, z); x /= l; y /= l; z /= l;
+  return [[x, y, z], [a[1] * z - a[2] * y, a[2] * x - a[0] * z, a[0] * y - a[1] * x]];
 }
 
 function cloneParticle(p: ParticleState): ParticleState {
@@ -404,7 +445,39 @@ export class ParticleSimulation {
     return sampleUnit({ documentSeed: d.documentSeed, randomStreamId: d.randomStreamId, eventRandomKey, entityOrdinal, propertyKey, sampleOrdinal: 0 });
   }
 
-  #birth(n: number, emission: 'burst' | 'rate', burstIndex: number, eventRandomKey: string, entityOrdinal: number, position: Vec3, velocity: Vec3): boolean {
+  /** Shaped birth position/velocity from stable per-particle samples; burst payload velocity wins when given. */
+  #kinematics(eventRandomKey: string, entityOrdinal: number, base: Vec3, fixedVelocity: Vec3 | undefined, fallback: Vec3): [Vec3, Vec3] {
+    const em = this.descriptor.emission;
+    if (!em) return [base, fixedVelocity ?? fallback];
+    const s = (k: string) => this.#sample(eventRandomKey, entityOrdinal, k);
+    const K = PARTICLE_PROPERTY_KEYS;
+    const a = em.axis, [b1, b2] = basis(a);
+    const u = s(K.dirU), az = 2 * Math.PI * s(K.dirV);
+    const comb = (x: number, y: number, z: number): Vec3 => [a[0] * x + b1[0] * y + b2[0] * z, a[1] * x + b1[1] * y + b2[1] * z, a[2] * x + b1[2] * y + b2[2] * z];
+    let dir: Vec3 = a, off: Vec3 = [0, 0, 0];
+    if (em.shape === 'cone') {
+      const c = 1 + (Math.cos(em.coneAngle) - 1) * u, sn = Math.sqrt(Math.max(0, 1 - c * c));
+      dir = comb(c, sn * Math.cos(az), sn * Math.sin(az));
+      const r = em.radius * Math.sqrt(s(K.posU)), pa = 2 * Math.PI * s(K.posV);
+      off = comb(0, r * Math.cos(pa), r * Math.sin(pa));
+    } else if (em.shape === 'sphere') {
+      const z = 2 * u - 1, sn = Math.sqrt(Math.max(0, 1 - z * z));
+      dir = comb(z, sn * Math.cos(az), sn * Math.sin(az));
+      const r = em.radius * Math.cbrt(s(K.posW));
+      off = [dir[0] * r, dir[1] * r, dir[2] * r];
+    } else if (em.shape === 'disc') {
+      dir = comb(0, Math.cos(az), Math.sin(az));
+      const r = em.radius * Math.sqrt(s(K.posU));
+      off = [dir[0] * r, dir[1] * r, dir[2] * r];
+    } else if (em.shape === 'box') {
+      off = comb((2 * s(K.posU) - 1) * em.radius, (2 * s(K.posV) - 1) * em.radius, (2 * s(K.posW) - 1) * em.radius);
+    }
+    const speed = em.speed.min === em.speed.max ? em.speed.min : em.speed.min + s(K.speed) * (em.speed.max - em.speed.min);
+    const vel: Vec3 = fixedVelocity ?? [dir[0] * speed, dir[1] * speed, dir[2] * speed];
+    return [[base[0] + off[0], base[1] + off[1], base[2] + off[2]], vel];
+  }
+
+  #birth(n: number, emission: 'burst' | 'rate', burstIndex: number, eventRandomKey: string, entityOrdinal: number, basePosition: Vec3, fixedVelocity: Vec3 | undefined, fallbackVelocity: Vec3): boolean {
     const d = this.descriptor;
     if (this.#totalBirths >= this.limits.maxTotalBirths) {
       this.#failure = [{ ...err('BUDGET_EXCEEDED', `Emitter exceeded ${this.limits.maxTotalBirths} total births at tick ${n}; emitter stopped (no silent truncation).`), nodeId: d.emitterId }];
@@ -418,6 +491,7 @@ export class ParticleSimulation {
     const lifetime = lmin + Math.min(lmax - lmin, Math.floor(this.#sample(eventRandomKey, entityOrdinal, PARTICLE_PROPERTY_KEYS.lifetime) * (lmax - lmin + 1)));
     const size = d.size.min === d.size.max ? d.size.min
       : d.size.min + this.#sample(eventRandomKey, entityOrdinal, PARTICLE_PROPERTY_KEYS.size) * (d.size.max - d.size.min);
+    const [position, velocity] = this.#kinematics(eventRandomKey, entityOrdinal, basePosition, fixedVelocity, fallbackVelocity);
     const id = emission === 'burst' ? burstParticleId(d.emitterId, eventRandomKey, entityOrdinal) : `${d.emitterId}:rate:${entityOrdinal}`;
     this.#particles.push({
       id, emission, burstIndex, entityOrdinal, eventRandomKey,
@@ -438,9 +512,8 @@ export class ParticleSimulation {
       const bi = this.#burstCursor++;
       const b = d.bursts[bi];
       const pos = b.position ?? d.sourcePosition;
-      const vel = b.velocity ?? baseVelocity;
       for (let i = 0; i < b.count; i++) {
-        if (!this.#birth(n, 'burst', bi, b.eventRandomKey, i, pos, vel)) return;
+        if (!this.#birth(n, 'burst', bi, b.eventRandomKey, i, pos, b.velocity, baseVelocity)) return;
       }
     }
     const r = d.rate;
@@ -450,7 +523,7 @@ export class ParticleSimulation {
       const due = Math.floor((this.#rateEligibleTicks * r.perSecond) / TICKS_PER_SECOND);
       while (this.#rateEmitted < due) {
         const k = this.#rateEmitted;
-        if (!this.#birth(n, 'rate', -1, RATE_EVENT_RANDOM_KEY, k, d.sourcePosition, baseVelocity)) return;
+        if (!this.#birth(n, 'rate', -1, RATE_EVENT_RANDOM_KEY, k, d.sourcePosition, undefined, baseVelocity)) return;
         this.#rateEmitted++;
       }
     }

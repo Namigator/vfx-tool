@@ -290,3 +290,43 @@ test('sim.limits is frozen', () => {
   assert.throws(() => { (c.value.limits as { maxLiveParticles: number }).maxLiveParticles = 8000; });
   assert.equal(c.value.limits.maxLiveParticles, 5);
 });
+
+const shaped = (shape: 'cone' | 'sphere' | 'disc' | 'box', extra: Partial<NonNullable<ParticleEmitterDescriptor['emission']>> = {}) =>
+  base({ shape, emission: { shape, axis: [0, 1, 0], radius: 0.5, coneAngle: Math.PI / 6, speed: { min: 2, max: 4 }, ...extra }, bursts: [{ tick: 0, eventRandomKey: 'k', count: 400 }] });
+const born = (d: ParticleEmitterDescriptor) => { const r = sampleParticlesAtTick(d, 0); if (!r.ok) assert.fail(JSON.stringify(r.errors)); return r.value.particles; };
+const len = (v: number[]) => Math.hypot(v[0], v[1], v[2]);
+
+test('cone emission stays inside the cone, spreads in speed range and born on the base disc', () => {
+  const ps = born(shaped('cone'));
+  let minS = Infinity, maxS = 0, sideways = 0;
+  for (const p of ps) {
+    const s = len(p.velocity); minS = Math.min(minS, s); maxS = Math.max(maxS, s);
+    assert.ok(p.velocity[1] / s >= Math.cos(Math.PI / 6) - 1e-9, 'within cone');
+    assert.ok(Math.abs(p.position[1]) < 1e-12 && Math.hypot(p.position[0], p.position[2]) <= 0.5 + 1e-12, 'on base disc');
+    sideways += p.velocity[0];
+  }
+  assert.ok(minS >= 2 - 1e-9 && maxS <= 4 + 1e-9 && maxS - minS > 1.5, `speed spread ${minS}..${maxS}`);
+  assert.ok(Math.abs(sideways / ps.length) < 0.2, 'no lateral bias');
+});
+
+test('sphere, disc and box emission follow their geometry and are deterministic', () => {
+  for (const p of born(shaped('sphere'))) { assert.ok(len(p.position) <= 0.5 + 1e-12); if (len(p.position) > 1e-6) { const c = (p.position[0] * p.velocity[0] + p.position[1] * p.velocity[1] + p.position[2] * p.velocity[2]) / (len(p.position) * len(p.velocity)); assert.ok(c > 1 - 1e-9, 'radial'); } }
+  const up = born(shaped('sphere')).filter(p => p.velocity[1] > 0).length;
+  assert.ok(up > 150 && up < 250, `sphere is isotropic (${up}/400 upward)`);
+  for (const p of born(shaped('disc'))) { assert.ok(Math.abs(p.velocity[1]) < 1e-9 && Math.abs(p.position[1]) < 1e-12); }
+  for (const p of born(shaped('box'))) { assert.ok(p.position.every(c => Math.abs(c) <= 0.5 + 1e-12)); assert.ok(Math.abs(p.velocity[0]) < 1e-9 && p.velocity[1] > 0); }
+  assert.deepEqual(born(shaped('cone')), born(shaped('cone')));
+});
+
+test('shaped descriptors are validated', () => {
+  const bad: [unknown, string][] = [
+    [{ ...shaped('cone'), emission: { ...shaped('cone').emission!, axis: [0, 2, 0] } }, 'descriptor.emission.axis'],
+    [{ ...shaped('cone'), emission: { ...shaped('cone').emission!, speed: { min: 3, max: 1 } } }, 'descriptor.emission.speed'],
+    [{ ...shaped('cone'), emission: { ...shaped('cone').emission!, shape: 'disc' } }, 'descriptor.emission.shape'],
+    [{ ...base(), shape: 'path' }, 'descriptor.shape'],
+  ];
+  for (const [d, path] of bad) {
+    const r = validateParticleDescriptor(d);
+    assert.ok(!r.ok && r.errors.some(e => e.fieldPath === path), path);
+  }
+});
