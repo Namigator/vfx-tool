@@ -15,6 +15,13 @@
 - Evidence recipes: mcp/examples/*.steps.json (run: node mcp/run-steps.mjs <file>; frames land in work/mcp/frames/). Components are generated from them: node tools/build-components.mjs.
 - Open for the user: L01 lightning now blooms into a wide haze (emission tuned pre-bloom); water realism backlog; flame look still slightly scaly vs standalone reference.
 
+## MCP (agent tooling)
+- .mcp.json registers server `vfx` → node --experimental-strip-types --no-warnings mcp/vfx-mcp.ts (loads in a NEW Claude Code session). Tools: vfx_list_node_types, vfx_describe_node_type, vfx_new_document (blank/f01/forces/lightning/lightning-audio), vfx_open/save/get/set_document, vfx_set_anchor, vfx_add/remove_node, vfx_set_params, vfx_connect/disconnect, vfx_compile, vfx_sample_particles, vfx_render_audio, vfx_preview_url, vfx_list_components, vfx_add_component, vfx_list_controls, vfx_set_control, vfx_render_frames (PNG via headless Chrome → /capture.html?doc=…&tick=…[&glow=0]; needs the vite dev server; frames in work/mcp/frames/).
+- Deps: @modelcontextprotocol/sdk 1.30.1, zod 4.6.5 (user-approved 2026-09-26). [RAN] tests/v2-mcp.test.ts.
+
+## Rendering
+- HDR composer + UnrealBloom (08 defaults .8/.45/1.0) + ACES/sRGB OutputPass; background via scene.background (renderer clear colour double-encoded through the composer). Glow toggle in the transport.
+
 ## Next — gap order from docs/v2-plan/27-GAP-AUDIT.md (capability floor, 19-WORK-PACKAGES)
 1. DONE I1 emitter shapes/speed/aim; DONE I4 appearance (colour over life, spin, velocity stretch, pivot). Recipes: `node mcp/run-steps.mjs mcp/examples/sparks.steps.json`.
 2. DONE GroundCollision, NoiseForce, textured flipbooks (library rebaked to 10-ASSETS). DONE camera framing over particle extents (5 timeline samples, 0.75 m min half-extent). DONE ParticleEvents child emission (rain-splash recipe). DONE ParticleTrail, SpriteRenderer, PointLight (ground is now MeshStandard + ambient π). DONE PathFollower (fireball recipe). Next: I8 value nodes (Curve, RandomRange, Constant, ScalarMath → driven parameters), DONE Add component menu (7 templates, also MCP) + Controls panel with published knobs. Next: I8 value nodes (per-instance unit typing: RandomRange/Curve/ScalarMath), MCP knob tool (vfx_set_control), then remaining render nodes (MeshRenderer) and worker. DONE persistence first slice (autosave draft, New/Open/Save .json); then I8/I9 Curve, RandomRange, PathFollower.
