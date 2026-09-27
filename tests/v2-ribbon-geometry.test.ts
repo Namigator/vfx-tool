@@ -337,3 +337,16 @@ test('input is preserved and dispose blocks further updates', () => {
   r.dispose();
   assert.throws(() => r.update(input, { cameraPosition: cam, width: 1 }));
 });
+
+test('fadeHead false fades only the tail: the last point (trail head) keeps full opacity', () => {
+  const r = new RibbonGeometry();
+  const pts: Vec3[] = [[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]];
+  const ends = (fadeHead?: boolean) => {
+    const { vertexCount } = r.update([path(pts)], { cameraPosition: cam, width: 1, endFade: 0.4, ...(fadeHead === undefined ? {} : { fadeHead }) });
+    const op = r.geometry.getAttribute('opacity').array as Float32Array;
+    return [op[0], op[vertexCount - 1]];
+  };
+  assert.deepEqual(ends(), [0, 0]);
+  assert.deepEqual(ends(false), [0, 1]);
+  r.dispose();
+});

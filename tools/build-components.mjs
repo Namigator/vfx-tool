@@ -49,6 +49,9 @@ const COMPONENTS = [
   ['light-pulse', 'Light: radiant pulse', 'Gathering motes, then a sharp pulse at Target: narrow core, distinct tapered rays, faint halo and ground ring, drifting motes and a short warm light (09-LIGHT).', 'light-pulse'],
   ['light-cone', 'Light: focused cone', 'Rays concentrated upward in a narrow cone (09-LIGHT variant).', 'light-cone'],
   ['light-blessing', 'Light: blessing', 'Fewer, softer rays with a wide halo and many lingering motes (09-LIGHT variant).', 'light-blessing'],
+  ['energy-bolt', 'Energy: charged bolt', 'Charge gathers at Source, a violet core flies a shallow arc with a trail and shed sparks; its arrival drives the flash, ring, burst and light at Target (10-ENERGY).', 'energy-bolt'],
+  ['energy-needle', 'Energy: fast needle', 'Fast narrow projectile with a long thin trail and a small sharp impact (10-ENERGY variant).', 'energy-needle'],
+  ['energy-orb', 'Energy: heavy orb', 'Slow heavy orb with a broad short trail and a larger ring and burst (10-ENERGY variant).', 'energy-orb'],
   ['fireball', 'Fireball', 'Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.', 'fireball'],
 ];
 
@@ -97,6 +100,9 @@ const KNOBS = {
   'light-pulse': [['rays', 'Ray count', [['rays', 'count']]], ['length', 'Ray length', [['rays', 'lengthMax'], ['rays', 'lengthMin', 0.25]]], ['pulse', 'Pulse size', [['core', 'size']]], ['halo', 'Halo softness', [['halo', 'size']]], ['motes', 'Mote amount', [['motes', 'burst']]], ['light', 'Brightness', [['lamp', 'intensity']]]],
   'light-cone': [['rays', 'Ray count', [['rays', 'count']]], ['length', 'Ray length', [['rays', 'lengthMax'], ['rays', 'lengthMin', 0.375]]], ['pulse', 'Pulse size', [['core', 'size']]], ['halo', 'Halo softness', [['halo', 'size']]], ['motes', 'Mote amount', [['motes', 'burst']]], ['light', 'Brightness', [['lamp', 'intensity']]]],
   'light-blessing': [['rays', 'Ray count', [['rays', 'count']]], ['length', 'Ray length', [['rays', 'lengthMax'], ['rays', 'lengthMin', 0.44]]], ['pulse', 'Pulse size', [['core', 'size']]], ['halo', 'Halo softness', [['halo', 'size']]], ['motes', 'Mote amount', [['motes', 'burst']]], ['light', 'Brightness', [['lamp', 'intensity']]]],
+  'energy-bolt': [['travel', 'Travel ticks', [['ball', 'durationTicks'], ['corewin', 'durationTicks', 1, 2]]], ['core', 'Core size', [['core', 'size'], ['halo', 'size', 2.7273]]], ['trail', 'Trail length', [['trail', 'history'], ['sheath', 'history', 0.8]]], ['width', 'Trail width', [['trail', 'width'], ['sheath', 'width', 2.6]]], ['impact', 'Impact amount', [['burst', 'burst']]], ['ring', 'Ring size', [['ring', 'radius']]]],
+  'energy-needle': [['travel', 'Travel ticks', [['ball', 'durationTicks'], ['corewin', 'durationTicks', 1, 2]]], ['core', 'Core size', [['core', 'size'], ['halo', 'size', 2.9167]]], ['trail', 'Trail length', [['trail', 'history'], ['sheath', 'history', 0.8]]], ['width', 'Trail width', [['trail', 'width'], ['sheath', 'width', 2.6]]], ['impact', 'Impact amount', [['burst', 'burst']]], ['ring', 'Ring size', [['ring', 'radius']]]],
+  'energy-orb': [['travel', 'Travel ticks', [['ball', 'durationTicks'], ['corewin', 'durationTicks', 1, 2]]], ['core', 'Core size', [['core', 'size'], ['halo', 'size', 2.6316]]], ['trail', 'Trail length', [['trail', 'history'], ['sheath', 'history', 0.8]]], ['width', 'Trail width', [['trail', 'width'], ['sheath', 'width', 2.6]]], ['impact', 'Impact amount', [['burst', 'burst']]], ['ring', 'Ring size', [['ring', 'radius']]]],
   'fireball': [['travel', 'Travel ticks', [['ball', 'durationTicks']]], ['trail', 'Trail density', [['trailem', 'rate']]], ['core', 'Core size', [['core', 'size']]], ['impact', 'Impact sparks', [['boom', 'burst']]], ['flash', 'Flash size', [['flash', 'size']]], ['light', 'Ball light', [['balllight', 'intensity']]]],
 };
 

@@ -34593,6 +34593,3261 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   ]
  },
  {
+  "id": "energy-bolt",
+  "label": "Energy: charged bolt",
+  "description": "Charge gathers at Source, a violet core flies a shallow arc with a trail and shed sparks; its arrival drives the flash, ring, burst and light at Target (10-ENERGY).",
+  "durationTicks": 180,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "charge",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 30,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "gather",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 1.2,
+     "burst": 24,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0.1,
+     "lifetimeMin": 0.5,
+     "lifetimeMax": 0.5
+    }
+   },
+   {
+    "id": "gatherip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.03,
+     "sizeMax": 0.06
+    }
+   },
+   {
+    "id": "gatherpull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 12,
+     "softRadius": 0.12,
+     "killRadius": 0.05
+    }
+   },
+   {
+    "id": "motemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#D9C6FF",
+      "alpha": 1
+     },
+     "emission": 0.8
+    }
+   },
+   {
+    "id": "gatherbb",
+    "type": "BillboardRenderer"
+   },
+   {
+    "id": "coremat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#F6EEFF",
+      "alpha": 1
+     },
+     "emission": 1.4
+    }
+   },
+   {
+    "id": "halomat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#9B6BFF",
+      "alpha": 1
+     },
+     "opacity": 0.35,
+     "emission": 0.4
+    }
+   },
+   {
+    "id": "chargecore",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.3,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.27
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.3
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "chargehalo",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.9,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.2
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 1,
+        "y": 0.8
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "arc",
+    "type": "BezierPath",
+    "params": {
+     "startHandle": [
+      2.6,
+      0.533,
+      0
+     ],
+     "endHandle": [
+      -2.6,
+      0.533,
+      0
+     ],
+     "samples": 64
+    }
+   },
+   {
+    "id": "flight",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 30,
+     "durationTicks": 150,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ball",
+    "type": "PathFollower",
+    "params": {
+     "durationTicks": 36,
+     "easing": "linear"
+    }
+   },
+   {
+    "id": "corewin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 30,
+     "durationTicks": 38,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "core",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.22
+    }
+   },
+   {
+    "id": "halo",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.6,
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.8
+       },
+       {
+        "x": 1,
+        "y": 0.8
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "balllight",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#B48CFF",
+      "alpha": 1
+     },
+     "intensity": 18,
+     "range": 4
+    }
+   },
+   {
+    "id": "trailmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#E6D8FF",
+      "alpha": 1
+     },
+     "emission": 0.5,
+     "opacity": 0.55
+    }
+   },
+   {
+    "id": "trail",
+    "type": "MotionTrail",
+    "params": {
+     "history": 0.3,
+     "maxPoints": 64,
+     "width": 0.08,
+     "endFade": 0.5
+    }
+   },
+   {
+    "id": "sheathmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#6A3BEF",
+      "alpha": 1
+     },
+     "emission": 0.4,
+     "opacity": 0.45
+    }
+   },
+   {
+    "id": "sheath",
+    "type": "MotionTrail",
+    "params": {
+     "history": 0.24,
+     "maxPoints": 64,
+     "width": 0.208,
+     "endFade": 0.5
+    }
+   },
+   {
+    "id": "accents",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.264,
+     "rate": 40,
+     "burst": 0,
+     "speedMin": 0.1,
+     "speedMax": 0.4,
+     "lifetimeMin": 0.08,
+     "lifetimeMax": 0.2
+    }
+   },
+   {
+    "id": "accentip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.025,
+     "sizeMax": 0.05
+    }
+   },
+   {
+    "id": "accentbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "shed",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.05,
+     "rate": 60,
+     "burst": 0,
+     "speedMin": 0.2,
+     "speedMax": 0.8,
+     "lifetimeMin": 0.3,
+     "lifetimeMax": 0.7
+    }
+   },
+   {
+    "id": "shedip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.02,
+     "sizeMax": 0.035
+    }
+   },
+   {
+    "id": "shednoise",
+    "type": "NoiseForce",
+    "params": {
+     "mode": "curl",
+     "amplitude": 0.8,
+     "frequency": 1.2,
+     "evolution": 1
+    }
+   },
+   {
+    "id": "sheddrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1
+    }
+   },
+   {
+    "id": "shedmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#C9A8FF",
+      "alpha": 1
+     },
+     "emission": 0.8
+    }
+   },
+   {
+    "id": "shedtrail",
+    "type": "ParticleTrail",
+    "params": {
+     "history": 0.15,
+     "maxPoints": 10,
+     "width": 0.015,
+     "endFade": 0.5
+    }
+   },
+   {
+    "id": "flashwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 18,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ringwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 36,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "lightwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 30,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "flash",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1.6,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.4
+       },
+       {
+        "x": 0.15,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1.2
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.3,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     },
+     "colorOverWindow": {
+      "stops": [
+       {
+        "position": 0,
+        "color": {
+         "srgb": "#FFFFFF",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 0.4,
+        "color": {
+         "srgb": "#B48CFF",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 1,
+        "color": {
+         "srgb": "#5A2DCC",
+         "alpha": 1
+        }
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "impactlight",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#B48CFF",
+      "alpha": 1
+     },
+     "intensity": 50,
+     "range": 6,
+     "intensityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "ringclock",
+    "type": "Time"
+   },
+   {
+    "id": "ringsize",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "max",
+     "b": 0.0714,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringdim",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.8,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringfade",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.8,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ring",
+    "type": "RingPath",
+    "params": {
+     "radius": 2.8,
+     "samples": 96
+    }
+   },
+   {
+    "id": "ringmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#C9A8FF",
+      "alpha": 1
+     },
+     "emission": 0.5
+    }
+   },
+   {
+    "id": "ringrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.03,
+     "endFade": 0
+    }
+   },
+   {
+    "id": "burst",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.08,
+     "burst": 90,
+     "rate": 0,
+     "speedMin": 2,
+     "speedMax": 6,
+     "lifetimeMin": 0.3,
+     "lifetimeMax": 0.8
+    }
+   },
+   {
+    "id": "burstip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.02,
+     "sizeMax": 0.04
+    }
+   },
+   {
+    "id": "burstdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 2
+    }
+   },
+   {
+    "id": "burstg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -3,
+      0
+     ]
+    }
+   },
+   {
+    "id": "burstmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "spark-streak",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#D8C4FF",
+      "alpha": 1
+     },
+     "emission": 0.8
+    }
+   },
+   {
+    "id": "burstbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 4,
+     "pivot": 0.8,
+     "colorOverLife": {
+      "stops": [
+       {
+        "position": 0,
+        "color": {
+         "srgb": "#FFFFFF",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 0.4,
+        "color": {
+         "srgb": "#C9A8FF",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 1,
+        "color": {
+         "srgb": "#5A2DCC",
+         "alpha": 0
+        }
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-source.out",
+    "gather.anchor"
+   ],
+   [
+    "charge.start",
+    "gather.trigger"
+   ],
+   [
+    "gather.particles",
+    "gatherip.particles"
+   ],
+   [
+    "gatherip.particles",
+    "gatherpull.particles"
+   ],
+   [
+    "node-source.out",
+    "gatherpull.anchor"
+   ],
+   [
+    "gatherpull.particles",
+    "gatherbb.particles"
+   ],
+   [
+    "motemat.material",
+    "gatherbb.material"
+   ],
+   [
+    "gatherbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "chargecore.anchor"
+   ],
+   [
+    "coremat.material",
+    "chargecore.material"
+   ],
+   [
+    "charge.window",
+    "chargecore.window"
+   ],
+   [
+    "chargecore.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "chargehalo.anchor"
+   ],
+   [
+    "halomat.material",
+    "chargehalo.material"
+   ],
+   [
+    "charge.window",
+    "chargehalo.window"
+   ],
+   [
+    "chargehalo.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "arc.start"
+   ],
+   [
+    "node-target.out",
+    "arc.end"
+   ],
+   [
+    "arc.paths",
+    "ball.paths"
+   ],
+   [
+    "flight.window",
+    "ball.window"
+   ],
+   [
+    "ball.anchor",
+    "core.anchor"
+   ],
+   [
+    "coremat.material",
+    "core.material"
+   ],
+   [
+    "corewin.window",
+    "core.window"
+   ],
+   [
+    "core.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.anchor",
+    "halo.anchor"
+   ],
+   [
+    "halomat.material",
+    "halo.material"
+   ],
+   [
+    "corewin.window",
+    "halo.window"
+   ],
+   [
+    "halo.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.anchor",
+    "balllight.anchor"
+   ],
+   [
+    "corewin.window",
+    "balllight.window"
+   ],
+   [
+    "balllight.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.anchor",
+    "trail.anchor"
+   ],
+   [
+    "trailmat.material",
+    "trail.material"
+   ],
+   [
+    "flight.window",
+    "trail.window"
+   ],
+   [
+    "trail.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.anchor",
+    "sheath.anchor"
+   ],
+   [
+    "sheathmat.material",
+    "sheath.material"
+   ],
+   [
+    "flight.window",
+    "sheath.window"
+   ],
+   [
+    "sheath.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.anchor",
+    "accents.anchor"
+   ],
+   [
+    "corewin.window",
+    "accents.window"
+   ],
+   [
+    "accents.particles",
+    "accentip.particles"
+   ],
+   [
+    "accentip.particles",
+    "accentbb.particles"
+   ],
+   [
+    "motemat.material",
+    "accentbb.material"
+   ],
+   [
+    "accentbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.anchor",
+    "shed.anchor"
+   ],
+   [
+    "corewin.window",
+    "shed.window"
+   ],
+   [
+    "shed.particles",
+    "shedip.particles"
+   ],
+   [
+    "shedip.particles",
+    "shednoise.particles"
+   ],
+   [
+    "shednoise.particles",
+    "sheddrag.particles"
+   ],
+   [
+    "sheddrag.particles",
+    "shedtrail.particles"
+   ],
+   [
+    "shedmat.material",
+    "shedtrail.material"
+   ],
+   [
+    "shedtrail.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.arrival",
+    "flashwin.trigger"
+   ],
+   [
+    "ball.arrival",
+    "ringwin.trigger"
+   ],
+   [
+    "ball.arrival",
+    "lightwin.trigger"
+   ],
+   [
+    "node-target.out",
+    "flash.anchor"
+   ],
+   [
+    "coremat.material",
+    "flash.material"
+   ],
+   [
+    "flashwin.window",
+    "flash.window"
+   ],
+   [
+    "flash.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "impactlight.anchor"
+   ],
+   [
+    "lightwin.window",
+    "impactlight.window"
+   ],
+   [
+    "impactlight.visual",
+    "node-output.visual"
+   ],
+   [
+    "ringwin.window",
+    "ringclock.window"
+   ],
+   [
+    "ringclock.progress",
+    "ringsize.a"
+   ],
+   [
+    "ringclock.progress",
+    "ringdim.a"
+   ],
+   [
+    "ringdim.value",
+    "ringfade.a"
+   ],
+   [
+    "node-target.out",
+    "ring.center"
+   ],
+   [
+    "ringsize.value",
+    "ring.radiusScale"
+   ],
+   [
+    "ringfade.value",
+    "ringmat.opacity"
+   ],
+   [
+    "ring.paths",
+    "ringrib.paths"
+   ],
+   [
+    "ringmat.material",
+    "ringrib.material"
+   ],
+   [
+    "ringwin.window",
+    "ringrib.window"
+   ],
+   [
+    "ringrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "burst.anchor"
+   ],
+   [
+    "ball.arrival",
+    "burst.trigger"
+   ],
+   [
+    "burst.particles",
+    "burstip.particles"
+   ],
+   [
+    "burstip.particles",
+    "burstdrag.particles"
+   ],
+   [
+    "burstdrag.particles",
+    "burstg.particles"
+   ],
+   [
+    "burstg.particles",
+    "burstbb.particles"
+   ],
+   [
+    "burstmat.material",
+    "burstbb.material"
+   ],
+   [
+    "burstbb.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "travel",
+    "label": "Travel ticks",
+    "value": 36,
+    "bindings": [
+     {
+      "node": "ball",
+      "parameter": "durationTicks"
+     },
+     {
+      "node": "corewin",
+      "parameter": "durationTicks",
+      "offset": 2
+     }
+    ]
+   },
+   {
+    "id": "core",
+    "label": "Core size",
+    "value": 0.22,
+    "bindings": [
+     {
+      "node": "core",
+      "parameter": "size"
+     },
+     {
+      "node": "halo",
+      "parameter": "size",
+      "scale": 2.7273
+     }
+    ]
+   },
+   {
+    "id": "trail",
+    "label": "Trail length",
+    "value": 0.3,
+    "bindings": [
+     {
+      "node": "trail",
+      "parameter": "history"
+     },
+     {
+      "node": "sheath",
+      "parameter": "history",
+      "scale": 0.8
+     }
+    ]
+   },
+   {
+    "id": "width",
+    "label": "Trail width",
+    "value": 0.08,
+    "bindings": [
+     {
+      "node": "trail",
+      "parameter": "width"
+     },
+     {
+      "node": "sheath",
+      "parameter": "width",
+      "scale": 2.6
+     }
+    ]
+   },
+   {
+    "id": "impact",
+    "label": "Impact amount",
+    "value": 90,
+    "bindings": [
+     {
+      "node": "burst",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "ring",
+    "label": "Ring size",
+    "value": 2.8,
+    "bindings": [
+     {
+      "node": "ring",
+      "parameter": "radius"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "energy-needle",
+  "label": "Energy: fast needle",
+  "description": "Fast narrow projectile with a long thin trail and a small sharp impact (10-ENERGY variant).",
+  "durationTicks": 180,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "charge",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 30,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "gather",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 1.2,
+     "burst": 24,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0.1,
+     "lifetimeMin": 0.5,
+     "lifetimeMax": 0.5
+    }
+   },
+   {
+    "id": "gatherip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.03,
+     "sizeMax": 0.06
+    }
+   },
+   {
+    "id": "gatherpull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 12,
+     "softRadius": 0.12,
+     "killRadius": 0.05
+    }
+   },
+   {
+    "id": "motemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#D9C6FF",
+      "alpha": 1
+     },
+     "emission": 0.8
+    }
+   },
+   {
+    "id": "gatherbb",
+    "type": "BillboardRenderer"
+   },
+   {
+    "id": "coremat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#F6EEFF",
+      "alpha": 1
+     },
+     "emission": 1.4
+    }
+   },
+   {
+    "id": "halomat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#9B6BFF",
+      "alpha": 1
+     },
+     "opacity": 0.35,
+     "emission": 0.4
+    }
+   },
+   {
+    "id": "chargecore",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.3,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.27
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.3
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "chargehalo",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.9,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.2
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 1,
+        "y": 0.8
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "arc",
+    "type": "BezierPath",
+    "params": {
+     "startHandle": [
+      2.6,
+      0.133,
+      0
+     ],
+     "endHandle": [
+      -2.6,
+      0.133,
+      0
+     ],
+     "samples": 64
+    }
+   },
+   {
+    "id": "flight",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 30,
+     "durationTicks": 150,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ball",
+    "type": "PathFollower",
+    "params": {
+     "durationTicks": 20,
+     "easing": "linear"
+    }
+   },
+   {
+    "id": "corewin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 30,
+     "durationTicks": 22,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "core",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.12
+    }
+   },
+   {
+    "id": "halo",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.35,
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.8
+       },
+       {
+        "x": 1,
+        "y": 0.8
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "balllight",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#B48CFF",
+      "alpha": 1
+     },
+     "intensity": 18,
+     "range": 4
+    }
+   },
+   {
+    "id": "trailmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#E6D8FF",
+      "alpha": 1
+     },
+     "emission": 0.5,
+     "opacity": 0.55
+    }
+   },
+   {
+    "id": "trail",
+    "type": "MotionTrail",
+    "params": {
+     "history": 0.45,
+     "maxPoints": 64,
+     "width": 0.035,
+     "endFade": 0.5
+    }
+   },
+   {
+    "id": "sheathmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#6A3BEF",
+      "alpha": 1
+     },
+     "emission": 0.4,
+     "opacity": 0.45
+    }
+   },
+   {
+    "id": "sheath",
+    "type": "MotionTrail",
+    "params": {
+     "history": 0.36,
+     "maxPoints": 64,
+     "width": 0.091,
+     "endFade": 0.5
+    }
+   },
+   {
+    "id": "accents",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.144,
+     "rate": 40,
+     "burst": 0,
+     "speedMin": 0.1,
+     "speedMax": 0.4,
+     "lifetimeMin": 0.08,
+     "lifetimeMax": 0.2
+    }
+   },
+   {
+    "id": "accentip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.025,
+     "sizeMax": 0.05
+    }
+   },
+   {
+    "id": "accentbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "shed",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.05,
+     "rate": 40,
+     "burst": 0,
+     "speedMin": 0.2,
+     "speedMax": 0.8,
+     "lifetimeMin": 0.3,
+     "lifetimeMax": 0.7
+    }
+   },
+   {
+    "id": "shedip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.02,
+     "sizeMax": 0.035
+    }
+   },
+   {
+    "id": "shednoise",
+    "type": "NoiseForce",
+    "params": {
+     "mode": "curl",
+     "amplitude": 0.8,
+     "frequency": 1.2,
+     "evolution": 1
+    }
+   },
+   {
+    "id": "sheddrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1
+    }
+   },
+   {
+    "id": "shedmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#C9A8FF",
+      "alpha": 1
+     },
+     "emission": 0.8
+    }
+   },
+   {
+    "id": "shedtrail",
+    "type": "ParticleTrail",
+    "params": {
+     "history": 0.15,
+     "maxPoints": 10,
+     "width": 0.015,
+     "endFade": 0.5
+    }
+   },
+   {
+    "id": "flashwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 18,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ringwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 36,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "lightwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 30,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "flash",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.4
+       },
+       {
+        "x": 0.15,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1.2
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.3,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     },
+     "colorOverWindow": {
+      "stops": [
+       {
+        "position": 0,
+        "color": {
+         "srgb": "#FFFFFF",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 0.4,
+        "color": {
+         "srgb": "#B48CFF",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 1,
+        "color": {
+         "srgb": "#5A2DCC",
+         "alpha": 1
+        }
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "impactlight",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#B48CFF",
+      "alpha": 1
+     },
+     "intensity": 50,
+     "range": 6,
+     "intensityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "ringclock",
+    "type": "Time"
+   },
+   {
+    "id": "ringsize",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "max",
+     "b": 0.125,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringdim",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.8,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringfade",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.8,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ring",
+    "type": "RingPath",
+    "params": {
+     "radius": 1.6,
+     "samples": 96
+    }
+   },
+   {
+    "id": "ringmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#C9A8FF",
+      "alpha": 1
+     },
+     "emission": 0.5
+    }
+   },
+   {
+    "id": "ringrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.03,
+     "endFade": 0
+    }
+   },
+   {
+    "id": "burst",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.08,
+     "burst": 50,
+     "rate": 0,
+     "speedMin": 2,
+     "speedMax": 6,
+     "lifetimeMin": 0.3,
+     "lifetimeMax": 0.8
+    }
+   },
+   {
+    "id": "burstip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.02,
+     "sizeMax": 0.04
+    }
+   },
+   {
+    "id": "burstdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 2
+    }
+   },
+   {
+    "id": "burstg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -3,
+      0
+     ]
+    }
+   },
+   {
+    "id": "burstmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "spark-streak",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#D8C4FF",
+      "alpha": 1
+     },
+     "emission": 0.8
+    }
+   },
+   {
+    "id": "burstbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 4,
+     "pivot": 0.8,
+     "colorOverLife": {
+      "stops": [
+       {
+        "position": 0,
+        "color": {
+         "srgb": "#FFFFFF",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 0.4,
+        "color": {
+         "srgb": "#C9A8FF",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 1,
+        "color": {
+         "srgb": "#5A2DCC",
+         "alpha": 0
+        }
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-source.out",
+    "gather.anchor"
+   ],
+   [
+    "charge.start",
+    "gather.trigger"
+   ],
+   [
+    "gather.particles",
+    "gatherip.particles"
+   ],
+   [
+    "gatherip.particles",
+    "gatherpull.particles"
+   ],
+   [
+    "node-source.out",
+    "gatherpull.anchor"
+   ],
+   [
+    "gatherpull.particles",
+    "gatherbb.particles"
+   ],
+   [
+    "motemat.material",
+    "gatherbb.material"
+   ],
+   [
+    "gatherbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "chargecore.anchor"
+   ],
+   [
+    "coremat.material",
+    "chargecore.material"
+   ],
+   [
+    "charge.window",
+    "chargecore.window"
+   ],
+   [
+    "chargecore.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "chargehalo.anchor"
+   ],
+   [
+    "halomat.material",
+    "chargehalo.material"
+   ],
+   [
+    "charge.window",
+    "chargehalo.window"
+   ],
+   [
+    "chargehalo.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "arc.start"
+   ],
+   [
+    "node-target.out",
+    "arc.end"
+   ],
+   [
+    "arc.paths",
+    "ball.paths"
+   ],
+   [
+    "flight.window",
+    "ball.window"
+   ],
+   [
+    "ball.anchor",
+    "core.anchor"
+   ],
+   [
+    "coremat.material",
+    "core.material"
+   ],
+   [
+    "corewin.window",
+    "core.window"
+   ],
+   [
+    "core.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.anchor",
+    "halo.anchor"
+   ],
+   [
+    "halomat.material",
+    "halo.material"
+   ],
+   [
+    "corewin.window",
+    "halo.window"
+   ],
+   [
+    "halo.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.anchor",
+    "balllight.anchor"
+   ],
+   [
+    "corewin.window",
+    "balllight.window"
+   ],
+   [
+    "balllight.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.anchor",
+    "trail.anchor"
+   ],
+   [
+    "trailmat.material",
+    "trail.material"
+   ],
+   [
+    "flight.window",
+    "trail.window"
+   ],
+   [
+    "trail.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.anchor",
+    "sheath.anchor"
+   ],
+   [
+    "sheathmat.material",
+    "sheath.material"
+   ],
+   [
+    "flight.window",
+    "sheath.window"
+   ],
+   [
+    "sheath.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.anchor",
+    "accents.anchor"
+   ],
+   [
+    "corewin.window",
+    "accents.window"
+   ],
+   [
+    "accents.particles",
+    "accentip.particles"
+   ],
+   [
+    "accentip.particles",
+    "accentbb.particles"
+   ],
+   [
+    "motemat.material",
+    "accentbb.material"
+   ],
+   [
+    "accentbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.anchor",
+    "shed.anchor"
+   ],
+   [
+    "corewin.window",
+    "shed.window"
+   ],
+   [
+    "shed.particles",
+    "shedip.particles"
+   ],
+   [
+    "shedip.particles",
+    "shednoise.particles"
+   ],
+   [
+    "shednoise.particles",
+    "sheddrag.particles"
+   ],
+   [
+    "sheddrag.particles",
+    "shedtrail.particles"
+   ],
+   [
+    "shedmat.material",
+    "shedtrail.material"
+   ],
+   [
+    "shedtrail.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.arrival",
+    "flashwin.trigger"
+   ],
+   [
+    "ball.arrival",
+    "ringwin.trigger"
+   ],
+   [
+    "ball.arrival",
+    "lightwin.trigger"
+   ],
+   [
+    "node-target.out",
+    "flash.anchor"
+   ],
+   [
+    "coremat.material",
+    "flash.material"
+   ],
+   [
+    "flashwin.window",
+    "flash.window"
+   ],
+   [
+    "flash.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "impactlight.anchor"
+   ],
+   [
+    "lightwin.window",
+    "impactlight.window"
+   ],
+   [
+    "impactlight.visual",
+    "node-output.visual"
+   ],
+   [
+    "ringwin.window",
+    "ringclock.window"
+   ],
+   [
+    "ringclock.progress",
+    "ringsize.a"
+   ],
+   [
+    "ringclock.progress",
+    "ringdim.a"
+   ],
+   [
+    "ringdim.value",
+    "ringfade.a"
+   ],
+   [
+    "node-target.out",
+    "ring.center"
+   ],
+   [
+    "ringsize.value",
+    "ring.radiusScale"
+   ],
+   [
+    "ringfade.value",
+    "ringmat.opacity"
+   ],
+   [
+    "ring.paths",
+    "ringrib.paths"
+   ],
+   [
+    "ringmat.material",
+    "ringrib.material"
+   ],
+   [
+    "ringwin.window",
+    "ringrib.window"
+   ],
+   [
+    "ringrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "burst.anchor"
+   ],
+   [
+    "ball.arrival",
+    "burst.trigger"
+   ],
+   [
+    "burst.particles",
+    "burstip.particles"
+   ],
+   [
+    "burstip.particles",
+    "burstdrag.particles"
+   ],
+   [
+    "burstdrag.particles",
+    "burstg.particles"
+   ],
+   [
+    "burstg.particles",
+    "burstbb.particles"
+   ],
+   [
+    "burstmat.material",
+    "burstbb.material"
+   ],
+   [
+    "burstbb.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "travel",
+    "label": "Travel ticks",
+    "value": 20,
+    "bindings": [
+     {
+      "node": "ball",
+      "parameter": "durationTicks"
+     },
+     {
+      "node": "corewin",
+      "parameter": "durationTicks",
+      "offset": 2
+     }
+    ]
+   },
+   {
+    "id": "core",
+    "label": "Core size",
+    "value": 0.12,
+    "bindings": [
+     {
+      "node": "core",
+      "parameter": "size"
+     },
+     {
+      "node": "halo",
+      "parameter": "size",
+      "scale": 2.9167
+     }
+    ]
+   },
+   {
+    "id": "trail",
+    "label": "Trail length",
+    "value": 0.45,
+    "bindings": [
+     {
+      "node": "trail",
+      "parameter": "history"
+     },
+     {
+      "node": "sheath",
+      "parameter": "history",
+      "scale": 0.8
+     }
+    ]
+   },
+   {
+    "id": "width",
+    "label": "Trail width",
+    "value": 0.035,
+    "bindings": [
+     {
+      "node": "trail",
+      "parameter": "width"
+     },
+     {
+      "node": "sheath",
+      "parameter": "width",
+      "scale": 2.6
+     }
+    ]
+   },
+   {
+    "id": "impact",
+    "label": "Impact amount",
+    "value": 50,
+    "bindings": [
+     {
+      "node": "burst",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "ring",
+    "label": "Ring size",
+    "value": 1.6,
+    "bindings": [
+     {
+      "node": "ring",
+      "parameter": "radius"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "energy-orb",
+  "label": "Energy: heavy orb",
+  "description": "Slow heavy orb with a broad short trail and a larger ring and burst (10-ENERGY variant).",
+  "durationTicks": 180,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "charge",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 30,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "gather",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 1.2,
+     "burst": 24,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0.1,
+     "lifetimeMin": 0.5,
+     "lifetimeMax": 0.5
+    }
+   },
+   {
+    "id": "gatherip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.03,
+     "sizeMax": 0.06
+    }
+   },
+   {
+    "id": "gatherpull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 12,
+     "softRadius": 0.12,
+     "killRadius": 0.05
+    }
+   },
+   {
+    "id": "motemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#D9C6FF",
+      "alpha": 1
+     },
+     "emission": 0.8
+    }
+   },
+   {
+    "id": "gatherbb",
+    "type": "BillboardRenderer"
+   },
+   {
+    "id": "coremat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#F6EEFF",
+      "alpha": 1
+     },
+     "emission": 1.4
+    }
+   },
+   {
+    "id": "halomat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#9B6BFF",
+      "alpha": 1
+     },
+     "opacity": 0.35,
+     "emission": 0.4
+    }
+   },
+   {
+    "id": "chargecore",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.3,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.27
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.3
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "chargehalo",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.9,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.2
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 1,
+        "y": 0.8
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "arc",
+    "type": "BezierPath",
+    "params": {
+     "startHandle": [
+      2.6,
+      0.933,
+      0
+     ],
+     "endHandle": [
+      -2.6,
+      0.933,
+      0
+     ],
+     "samples": 64
+    }
+   },
+   {
+    "id": "flight",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 30,
+     "durationTicks": 150,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ball",
+    "type": "PathFollower",
+    "params": {
+     "durationTicks": 56,
+     "easing": "linear"
+    }
+   },
+   {
+    "id": "corewin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 30,
+     "durationTicks": 58,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "core",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.38
+    }
+   },
+   {
+    "id": "halo",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1,
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.8
+       },
+       {
+        "x": 1,
+        "y": 0.8
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "balllight",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#B48CFF",
+      "alpha": 1
+     },
+     "intensity": 18,
+     "range": 4
+    }
+   },
+   {
+    "id": "trailmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#E6D8FF",
+      "alpha": 1
+     },
+     "emission": 0.5,
+     "opacity": 0.55
+    }
+   },
+   {
+    "id": "trail",
+    "type": "MotionTrail",
+    "params": {
+     "history": 0.18,
+     "maxPoints": 64,
+     "width": 0.2,
+     "endFade": 0.5
+    }
+   },
+   {
+    "id": "sheathmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#6A3BEF",
+      "alpha": 1
+     },
+     "emission": 0.4,
+     "opacity": 0.45
+    }
+   },
+   {
+    "id": "sheath",
+    "type": "MotionTrail",
+    "params": {
+     "history": 0.144,
+     "maxPoints": 64,
+     "width": 0.52,
+     "endFade": 0.5
+    }
+   },
+   {
+    "id": "accents",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.45599999999999996,
+     "rate": 40,
+     "burst": 0,
+     "speedMin": 0.1,
+     "speedMax": 0.4,
+     "lifetimeMin": 0.08,
+     "lifetimeMax": 0.2
+    }
+   },
+   {
+    "id": "accentip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.025,
+     "sizeMax": 0.05
+    }
+   },
+   {
+    "id": "accentbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "shed",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.05,
+     "rate": 80,
+     "burst": 0,
+     "speedMin": 0.2,
+     "speedMax": 0.8,
+     "lifetimeMin": 0.3,
+     "lifetimeMax": 0.7
+    }
+   },
+   {
+    "id": "shedip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.02,
+     "sizeMax": 0.035
+    }
+   },
+   {
+    "id": "shednoise",
+    "type": "NoiseForce",
+    "params": {
+     "mode": "curl",
+     "amplitude": 0.8,
+     "frequency": 1.2,
+     "evolution": 1
+    }
+   },
+   {
+    "id": "sheddrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1
+    }
+   },
+   {
+    "id": "shedmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#C9A8FF",
+      "alpha": 1
+     },
+     "emission": 0.8
+    }
+   },
+   {
+    "id": "shedtrail",
+    "type": "ParticleTrail",
+    "params": {
+     "history": 0.15,
+     "maxPoints": 10,
+     "width": 0.015,
+     "endFade": 0.5
+    }
+   },
+   {
+    "id": "flashwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 18,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ringwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 36,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "lightwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 30,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "flash",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 2.4,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.4
+       },
+       {
+        "x": 0.15,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1.2
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.3,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     },
+     "colorOverWindow": {
+      "stops": [
+       {
+        "position": 0,
+        "color": {
+         "srgb": "#FFFFFF",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 0.4,
+        "color": {
+         "srgb": "#B48CFF",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 1,
+        "color": {
+         "srgb": "#5A2DCC",
+         "alpha": 1
+        }
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "impactlight",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#B48CFF",
+      "alpha": 1
+     },
+     "intensity": 50,
+     "range": 6,
+     "intensityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "ringclock",
+    "type": "Time"
+   },
+   {
+    "id": "ringsize",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "max",
+     "b": 0.0556,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringdim",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.8,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringfade",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.8,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ring",
+    "type": "RingPath",
+    "params": {
+     "radius": 3.6,
+     "samples": 96
+    }
+   },
+   {
+    "id": "ringmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#C9A8FF",
+      "alpha": 1
+     },
+     "emission": 0.5
+    }
+   },
+   {
+    "id": "ringrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.03,
+     "endFade": 0
+    }
+   },
+   {
+    "id": "burst",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.08,
+     "burst": 150,
+     "rate": 0,
+     "speedMin": 2,
+     "speedMax": 6,
+     "lifetimeMin": 0.3,
+     "lifetimeMax": 0.8
+    }
+   },
+   {
+    "id": "burstip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.02,
+     "sizeMax": 0.04
+    }
+   },
+   {
+    "id": "burstdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 2
+    }
+   },
+   {
+    "id": "burstg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -3,
+      0
+     ]
+    }
+   },
+   {
+    "id": "burstmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "spark-streak",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#D8C4FF",
+      "alpha": 1
+     },
+     "emission": 0.8
+    }
+   },
+   {
+    "id": "burstbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 4,
+     "pivot": 0.8,
+     "colorOverLife": {
+      "stops": [
+       {
+        "position": 0,
+        "color": {
+         "srgb": "#FFFFFF",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 0.4,
+        "color": {
+         "srgb": "#C9A8FF",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 1,
+        "color": {
+         "srgb": "#5A2DCC",
+         "alpha": 0
+        }
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-source.out",
+    "gather.anchor"
+   ],
+   [
+    "charge.start",
+    "gather.trigger"
+   ],
+   [
+    "gather.particles",
+    "gatherip.particles"
+   ],
+   [
+    "gatherip.particles",
+    "gatherpull.particles"
+   ],
+   [
+    "node-source.out",
+    "gatherpull.anchor"
+   ],
+   [
+    "gatherpull.particles",
+    "gatherbb.particles"
+   ],
+   [
+    "motemat.material",
+    "gatherbb.material"
+   ],
+   [
+    "gatherbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "chargecore.anchor"
+   ],
+   [
+    "coremat.material",
+    "chargecore.material"
+   ],
+   [
+    "charge.window",
+    "chargecore.window"
+   ],
+   [
+    "chargecore.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "chargehalo.anchor"
+   ],
+   [
+    "halomat.material",
+    "chargehalo.material"
+   ],
+   [
+    "charge.window",
+    "chargehalo.window"
+   ],
+   [
+    "chargehalo.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "arc.start"
+   ],
+   [
+    "node-target.out",
+    "arc.end"
+   ],
+   [
+    "arc.paths",
+    "ball.paths"
+   ],
+   [
+    "flight.window",
+    "ball.window"
+   ],
+   [
+    "ball.anchor",
+    "core.anchor"
+   ],
+   [
+    "coremat.material",
+    "core.material"
+   ],
+   [
+    "corewin.window",
+    "core.window"
+   ],
+   [
+    "core.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.anchor",
+    "halo.anchor"
+   ],
+   [
+    "halomat.material",
+    "halo.material"
+   ],
+   [
+    "corewin.window",
+    "halo.window"
+   ],
+   [
+    "halo.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.anchor",
+    "balllight.anchor"
+   ],
+   [
+    "corewin.window",
+    "balllight.window"
+   ],
+   [
+    "balllight.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.anchor",
+    "trail.anchor"
+   ],
+   [
+    "trailmat.material",
+    "trail.material"
+   ],
+   [
+    "flight.window",
+    "trail.window"
+   ],
+   [
+    "trail.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.anchor",
+    "sheath.anchor"
+   ],
+   [
+    "sheathmat.material",
+    "sheath.material"
+   ],
+   [
+    "flight.window",
+    "sheath.window"
+   ],
+   [
+    "sheath.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.anchor",
+    "accents.anchor"
+   ],
+   [
+    "corewin.window",
+    "accents.window"
+   ],
+   [
+    "accents.particles",
+    "accentip.particles"
+   ],
+   [
+    "accentip.particles",
+    "accentbb.particles"
+   ],
+   [
+    "motemat.material",
+    "accentbb.material"
+   ],
+   [
+    "accentbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.anchor",
+    "shed.anchor"
+   ],
+   [
+    "corewin.window",
+    "shed.window"
+   ],
+   [
+    "shed.particles",
+    "shedip.particles"
+   ],
+   [
+    "shedip.particles",
+    "shednoise.particles"
+   ],
+   [
+    "shednoise.particles",
+    "sheddrag.particles"
+   ],
+   [
+    "sheddrag.particles",
+    "shedtrail.particles"
+   ],
+   [
+    "shedmat.material",
+    "shedtrail.material"
+   ],
+   [
+    "shedtrail.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.arrival",
+    "flashwin.trigger"
+   ],
+   [
+    "ball.arrival",
+    "ringwin.trigger"
+   ],
+   [
+    "ball.arrival",
+    "lightwin.trigger"
+   ],
+   [
+    "node-target.out",
+    "flash.anchor"
+   ],
+   [
+    "coremat.material",
+    "flash.material"
+   ],
+   [
+    "flashwin.window",
+    "flash.window"
+   ],
+   [
+    "flash.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "impactlight.anchor"
+   ],
+   [
+    "lightwin.window",
+    "impactlight.window"
+   ],
+   [
+    "impactlight.visual",
+    "node-output.visual"
+   ],
+   [
+    "ringwin.window",
+    "ringclock.window"
+   ],
+   [
+    "ringclock.progress",
+    "ringsize.a"
+   ],
+   [
+    "ringclock.progress",
+    "ringdim.a"
+   ],
+   [
+    "ringdim.value",
+    "ringfade.a"
+   ],
+   [
+    "node-target.out",
+    "ring.center"
+   ],
+   [
+    "ringsize.value",
+    "ring.radiusScale"
+   ],
+   [
+    "ringfade.value",
+    "ringmat.opacity"
+   ],
+   [
+    "ring.paths",
+    "ringrib.paths"
+   ],
+   [
+    "ringmat.material",
+    "ringrib.material"
+   ],
+   [
+    "ringwin.window",
+    "ringrib.window"
+   ],
+   [
+    "ringrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "burst.anchor"
+   ],
+   [
+    "ball.arrival",
+    "burst.trigger"
+   ],
+   [
+    "burst.particles",
+    "burstip.particles"
+   ],
+   [
+    "burstip.particles",
+    "burstdrag.particles"
+   ],
+   [
+    "burstdrag.particles",
+    "burstg.particles"
+   ],
+   [
+    "burstg.particles",
+    "burstbb.particles"
+   ],
+   [
+    "burstmat.material",
+    "burstbb.material"
+   ],
+   [
+    "burstbb.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "travel",
+    "label": "Travel ticks",
+    "value": 56,
+    "bindings": [
+     {
+      "node": "ball",
+      "parameter": "durationTicks"
+     },
+     {
+      "node": "corewin",
+      "parameter": "durationTicks",
+      "offset": 2
+     }
+    ]
+   },
+   {
+    "id": "core",
+    "label": "Core size",
+    "value": 0.38,
+    "bindings": [
+     {
+      "node": "core",
+      "parameter": "size"
+     },
+     {
+      "node": "halo",
+      "parameter": "size",
+      "scale": 2.6316
+     }
+    ]
+   },
+   {
+    "id": "trail",
+    "label": "Trail length",
+    "value": 0.18,
+    "bindings": [
+     {
+      "node": "trail",
+      "parameter": "history"
+     },
+     {
+      "node": "sheath",
+      "parameter": "history",
+      "scale": 0.8
+     }
+    ]
+   },
+   {
+    "id": "width",
+    "label": "Trail width",
+    "value": 0.2,
+    "bindings": [
+     {
+      "node": "trail",
+      "parameter": "width"
+     },
+     {
+      "node": "sheath",
+      "parameter": "width",
+      "scale": 2.6
+     }
+    ]
+   },
+   {
+    "id": "impact",
+    "label": "Impact amount",
+    "value": 150,
+    "bindings": [
+     {
+      "node": "burst",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "ring",
+    "label": "Ring size",
+    "value": 3.6,
+    "bindings": [
+     {
+      "node": "ring",
+      "parameter": "radius"
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": "fireball",
   "label": "Fireball",
   "description": "Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.",

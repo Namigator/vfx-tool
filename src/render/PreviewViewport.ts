@@ -953,7 +953,7 @@ export class PreviewViewport {
       const sim = this.#sims.get(t.layer.systemId), tick = sim ? sim.tick : 0;
       const heads = new Map<string, Vec3>();
       for (const p of this.#snapshots.get(t.layer.systemId) ?? []) heads.set(p.id, [p.position[0] + p.velocity[0] * step, p.position[1] + p.velocity[1] * step, p.position[2] + p.velocity[2] * step]);
-      t.ribbon.update(t.history.paths(tick, heads), { cameraPosition, width: t.layer.width, endFade: t.layer.endFade });
+      t.ribbon.update(t.history.paths(tick, heads), { cameraPosition, width: t.layer.width, endFade: t.layer.endFade, fadeHead: false });
     }
   }
 

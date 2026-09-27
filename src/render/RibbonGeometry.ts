@@ -15,6 +15,8 @@ export interface RibbonUpdateOptions {
    * Defaults to DEFAULT_RIBBON_END_FADE; 0 keeps full width and opacity to the ends.
    */
   endFade?: number;
+  /** When false only the start (tail) of each path fades; the last point (a trail's head) stays full. Default true. */
+  fadeHead?: boolean;
   /** Width multiplier (0..1) reached at the very ends of a tapered path. Defaults to DEFAULT_RIBBON_END_WIDTH. */
   endWidth?: number;
 }
@@ -138,6 +140,7 @@ export class RibbonGeometry {
     assertFiniteNonNegative(options.width, 'width');
     const endFade = options.endFade ?? DEFAULT_RIBBON_END_FADE;
     const endWidth = options.endWidth ?? DEFAULT_RIBBON_END_WIDTH;
+    const fadeHead = options.fadeHead ?? true;
     assertFiniteNonNegative(endFade, 'endFade');
     assertFiniteNonNegative(endWidth, 'endWidth');
     if (endFade > 0.5) throw new RangeError('endFade must be at most 0.5.');
@@ -192,7 +195,7 @@ export class RibbonGeometry {
       // and bolt ends dissolve instead of ending in a hard full-width edge.
       const fadeAt = (arc: number): number => {
         if (fadeLength <= EPSILON) return 1;
-        const e = Math.min(1, Math.min(arc, totalLength - arc) / fadeLength);
+        const e = Math.min(1, (fadeHead ? Math.min(arc, totalLength - arc) : arc) / fadeLength);
         return e * e * (3 - 2 * e);
       };
       const key = fnv1a32Utf8(String(path.id)) / 4294967296;
