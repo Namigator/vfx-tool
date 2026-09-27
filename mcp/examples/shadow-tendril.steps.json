@@ -1,0 +1,1439 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "tendril"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "tendril",
+   "durationTicks": 170,
+   "seed": 42
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "tendril",
+   "anchorId": "source",
+   "position": [
+    -3,
+    1.4,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "tendril",
+   "anchorId": "target",
+   "position": [
+    0,
+    0.75,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Schedule",
+   "id": "active",
+   "params": {
+    "startTicks": 0,
+    "durationTicks": 110,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Schedule",
+   "id": "collapse",
+   "params": {
+    "startTicks": 110,
+    "durationTicks": 24,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Emitter",
+   "id": "body",
+   "params": {
+    "shape": "sphere",
+    "radius": 0.55,
+    "rate": 14,
+    "burst": 10,
+    "speedMin": 0,
+    "speedMax": 0.15,
+    "lifetimeMin": 1,
+    "lifetimeMax": 1.4
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "InitialProperties",
+   "id": "bodyip",
+   "params": {
+    "sizeMin": 1,
+    "sizeMax": 1.4,
+    "randomFrameStart": true,
+    "rotationMin": 0,
+    "rotationMax": 6.283,
+    "angularVelocityMin": -0.5,
+    "angularVelocityMax": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Attract",
+   "id": "bodypull",
+   "params": {
+    "acceleration": 0.6,
+    "softRadius": 0.4,
+    "killRadius": 0
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Material",
+   "id": "bodymat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "blend": "normal",
+    "tint": {
+     "srgb": "#161823",
+     "alpha": 1
+    },
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "BillboardRenderer",
+   "id": "bodybb",
+   "params": {
+    "flipbookMode": "fps",
+    "flipbookFps": 6,
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.6
+      },
+      {
+       "x": 0.5,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0.8
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.2,
+       "y": 0.55
+      },
+      {
+       "x": 0.7,
+       "y": 0.45
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "node-target.out",
+   "to": "body.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "active.window",
+   "to": "body.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "active.start",
+   "to": "body.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "body.particles",
+   "to": "bodyip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "bodyip.particles",
+   "to": "bodypull.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "node-target.out",
+   "to": "bodypull.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "bodypull.particles",
+   "to": "bodybb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "bodymat.material",
+   "to": "bodybb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "bodybb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Emitter",
+   "id": "wisps",
+   "params": {
+    "shape": "sphere",
+    "radius": 0.7,
+    "rate": 20,
+    "burst": 0,
+    "speedMin": 0,
+    "speedMax": 0.2,
+    "lifetimeMin": 0.8,
+    "lifetimeMax": 1.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "InitialProperties",
+   "id": "wispip",
+   "params": {
+    "sizeMin": 0.3,
+    "sizeMax": 0.5,
+    "randomFrameStart": true
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Vortex",
+   "id": "swirl",
+   "params": {
+    "axis": [
+     0,
+     1,
+     0
+    ],
+    "tangential": 2.5,
+    "inward": 1.8,
+    "falloff": 2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Attract",
+   "id": "pull",
+   "params": {
+    "acceleration": 1.6,
+    "softRadius": 0.3,
+    "killRadius": 0.08
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Drag",
+   "id": "wispdrag",
+   "params": {
+    "coefficient": 0.4
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "node-target.out",
+   "to": "wisps.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "active.window",
+   "to": "wisps.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "active.start",
+   "to": "wisps.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "wisps.particles",
+   "to": "wispip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "wispip.particles",
+   "to": "wispdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "wispdrag.particles",
+   "to": "swirl.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "swirl.particles",
+   "to": "pull.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "node-target.out",
+   "to": "swirl.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "node-target.out",
+   "to": "pull.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Material",
+   "id": "wispmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "blend": "normal",
+    "tint": {
+     "srgb": "#1E1D29",
+     "alpha": 1
+    },
+    "opacity": 0.9,
+    "dissolve": 0.6,
+    "dissolveStart": 0.5,
+    "dissolveSoftness": 0.2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "BillboardRenderer",
+   "id": "wispbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 2.4,
+    "pivot": 0.4,
+    "flipbookMode": "overLife",
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.2,
+       "y": 1
+      },
+      {
+       "x": 0.8,
+       "y": 0.8
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "pull.particles",
+   "to": "wispbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "wispmat.material",
+   "to": "wispbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "wispbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Material",
+   "id": "accentmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#6A5C94",
+     "alpha": 1
+    },
+    "opacity": 0.18,
+    "emission": 0.2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "BillboardRenderer",
+   "id": "accentbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 2.4,
+    "pivot": 0.4,
+    "flipbookMode": "overLife",
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1.1
+      },
+      {
+       "x": 1,
+       "y": 0.9
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.3,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "pull.particles",
+   "to": "accentbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "accentmat.material",
+   "to": "accentbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "accentbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "HelixPath",
+   "id": "beampath",
+   "params": {
+    "radius": 0.14,
+    "turns": 2.5,
+    "spin": 2.5,
+    "taper": "both",
+    "samples": 96
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "node-source.out",
+   "to": "beampath.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "node-target.out",
+   "to": "beampath.end"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "RevealPath",
+   "id": "beamreveal"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Time",
+   "id": "beamclock"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "active.window",
+   "to": "beamclock.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "ScalarMath",
+   "id": "beamgrow",
+   "params": {
+    "operation": "multiply",
+    "b": 4,
+    "inputUnit": "normalized",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "beamclock.progress",
+   "to": "beamgrow.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "beamgrow.value",
+   "to": "beamreveal.fraction"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "beampath.paths",
+   "to": "beamreveal.paths"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Material",
+   "id": "beammat",
+   "params": {
+    "blend": "normal",
+    "tint": {
+     "srgb": "#14151E",
+     "alpha": 1
+    },
+    "opacity": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "RibbonRenderer",
+   "id": "beam",
+   "params": {
+    "width": 0.12,
+    "endFade": 0.2,
+    "widthOverPath": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.4
+      },
+      {
+       "x": 0.6,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0.6
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Material",
+   "id": "beamrimmat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#6E5E9C",
+     "alpha": 1
+    },
+    "opacity": 0.25,
+    "emission": 0.3
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "RibbonRenderer",
+   "id": "beamrim",
+   "params": {
+    "width": 0.03,
+    "endFade": 0.25
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "beamreveal.paths",
+   "to": "beam.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "active.window",
+   "to": "beam.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "beam.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "beamreveal.paths",
+   "to": "beamrim.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "active.window",
+   "to": "beamrim.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "beamrim.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "beammat.material",
+   "to": "beam.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "beamrimmat.material",
+   "to": "beamrim.material"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "PathFollower",
+   "id": "trail",
+   "params": {
+    "durationTicks": 40,
+    "easing": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Schedule",
+   "id": "trailwin",
+   "params": {
+    "startTicks": 0,
+    "durationTicks": 110,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "beampath.paths",
+   "to": "trail.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "trailwin.window",
+   "to": "trail.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Emitter",
+   "id": "trailwisps",
+   "params": {
+    "shape": "sphere",
+    "radius": 0.1,
+    "rate": 30,
+    "burst": 0,
+    "speedMin": 0,
+    "speedMax": 0.3,
+    "lifetimeMin": 0.5,
+    "lifetimeMax": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "InitialProperties",
+   "id": "trailip",
+   "params": {
+    "sizeMin": 0.15,
+    "sizeMax": 0.25,
+    "randomFrameStart": true
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "trail.anchor",
+   "to": "trailwisps.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "trailwin.window",
+   "to": "trailwisps.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "BillboardRenderer",
+   "id": "trailbb",
+   "params": {
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.2,
+       "y": 0.6
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "trailwisps.particles",
+   "to": "trailip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "trailip.particles",
+   "to": "trailbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "wispmat.material",
+   "to": "trailbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "trailbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Material",
+   "id": "coremat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "blend": "normal",
+    "tint": {
+     "srgb": "#0E0F16",
+     "alpha": 1
+    },
+    "opacity": 0.85
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "SpriteRenderer",
+   "id": "core",
+   "params": {
+    "size": 1.2,
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.9
+      },
+      {
+       "x": 0.8,
+       "y": 0.6
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "node-target.out",
+   "to": "core.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "coremat.material",
+   "to": "core.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "collapse.window",
+   "to": "core.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "core.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Material",
+   "id": "corerimmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#7A6AA8",
+     "alpha": 1
+    },
+    "opacity": 0.25,
+    "emission": 0.2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "SpriteRenderer",
+   "id": "corerim",
+   "params": {
+    "size": 1.5,
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "node-target.out",
+   "to": "corerim.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "corerimmat.material",
+   "to": "corerim.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "collapse.window",
+   "to": "corerim.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "corerim.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Emitter",
+   "id": "implode",
+   "params": {
+    "shape": "sphere",
+    "radius": 0.9,
+    "burst": 40,
+    "rate": 0,
+    "speedMin": 0,
+    "speedMax": 0.1,
+    "lifetimeMin": 0.3,
+    "lifetimeMax": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "InitialProperties",
+   "id": "implodeip",
+   "params": {
+    "sizeMin": 0.1,
+    "sizeMax": 0.2,
+    "randomFrameStart": true
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Attract",
+   "id": "implodepull",
+   "params": {
+    "acceleration": 18,
+    "softRadius": 0.1,
+    "killRadius": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "BillboardRenderer",
+   "id": "implodebb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 3,
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.8
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "node-target.out",
+   "to": "implode.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "collapse.start",
+   "to": "implode.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "implode.particles",
+   "to": "implodeip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "implodeip.particles",
+   "to": "implodepull.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "node-target.out",
+   "to": "implodepull.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "implodepull.particles",
+   "to": "implodebb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "wispmat.material",
+   "to": "implodebb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "implodebb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Schedule",
+   "id": "residuewin",
+   "params": {
+    "startTicks": 134,
+    "durationTicks": 1,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Emitter",
+   "id": "residue",
+   "params": {
+    "shape": "sphere",
+    "radius": 0.4,
+    "rate": 8,
+    "burst": 0,
+    "speedMin": 0.1,
+    "speedMax": 0.3,
+    "lifetimeMin": 0.4,
+    "lifetimeMax": 0.7
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "InitialProperties",
+   "id": "residueip",
+   "params": {
+    "sizeMin": 0.1,
+    "sizeMax": 0.2,
+    "randomFrameStart": true
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "Gravity",
+   "id": "residuelift",
+   "params": {
+    "acceleration": [
+     0,
+     0.4,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "BillboardRenderer",
+   "id": "residuebb",
+   "params": {
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.5
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "node-target.out",
+   "to": "residue.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "residuewin.window",
+   "to": "residue.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "residue.particles",
+   "to": "residueip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "residueip.particles",
+   "to": "residuelift.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "residuelift.particles",
+   "to": "residuebb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "wispmat.material",
+   "to": "residuebb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "residuebb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "tendril"
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "tendril",
+   "ticks": [
+    10,
+    65,
+    122,
+    144
+   ]
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "tendril",
+   "ticks": [
+    65
+   ],
+   "background": "light"
+  },
+  true
+ ]
+]

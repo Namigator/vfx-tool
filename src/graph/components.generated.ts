@@ -18610,6 +18610,2807 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   ]
  },
  {
+  "id": "shadow-collapse",
+  "label": "Shadow: vortex & collapse",
+  "description": "Dark swirling mass at Target: body, inward wisps, curling tendrils, violet edge accent, collapse and residue (04-SHADOW).",
+  "durationTicks": 210,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "active",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 138,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "collapse",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 138,
+     "durationTicks": 30,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "body",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.55,
+     "rate": 14,
+     "burst": 10,
+     "speedMin": 0,
+     "speedMax": 0.15,
+     "lifetimeMin": 1,
+     "lifetimeMax": 1.4
+    }
+   },
+   {
+    "id": "bodyip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 1,
+     "sizeMax": 1.4,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283,
+     "angularVelocityMin": -0.5,
+     "angularVelocityMax": 0.5
+    }
+   },
+   {
+    "id": "bodypull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 0.6,
+     "softRadius": 0.4,
+     "killRadius": 0
+    }
+   },
+   {
+    "id": "bodymat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#161823",
+      "alpha": 1
+     },
+     "opacity": 1
+    }
+   },
+   {
+    "id": "bodybb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "fps",
+     "flipbookFps": 6,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 0.5,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0.8
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.2,
+        "y": 0.55
+       },
+       {
+        "x": 0.7,
+        "y": 0.45
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "wisps",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 1.4,
+     "rate": 36,
+     "burst": 0,
+     "speedMin": 0,
+     "speedMax": 0.2,
+     "lifetimeMin": 0.8,
+     "lifetimeMax": 1.5
+    }
+   },
+   {
+    "id": "wispip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.3,
+     "sizeMax": 0.5,
+     "randomFrameStart": true
+    }
+   },
+   {
+    "id": "swirl",
+    "type": "Vortex",
+    "params": {
+     "axis": [
+      0,
+      1,
+      0
+     ],
+     "tangential": 2.5,
+     "inward": 1.8,
+     "falloff": 2
+    }
+   },
+   {
+    "id": "pull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 1.6,
+     "softRadius": 0.3,
+     "killRadius": 0.08
+    }
+   },
+   {
+    "id": "wispdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.4
+    }
+   },
+   {
+    "id": "wispmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#1E1D29",
+      "alpha": 1
+     },
+     "opacity": 0.9,
+     "dissolve": 0.6,
+     "dissolveStart": 0.5,
+     "dissolveSoftness": 0.2
+    }
+   },
+   {
+    "id": "wispbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 2.4,
+     "pivot": 0.4,
+     "flipbookMode": "overLife",
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.2,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 0.8
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "accentmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#6A5C94",
+      "alpha": 1
+     },
+     "opacity": 0.18,
+     "emission": 0.2
+    }
+   },
+   {
+    "id": "accentbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 2.4,
+     "pivot": 0.4,
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1.1
+       },
+       {
+        "x": 1,
+        "y": 0.9
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.3,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "tip0",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      1.197,
+      -0.35,
+      0.506
+     ]
+    }
+   },
+   {
+    "id": "tendril0",
+    "type": "HelixPath",
+    "params": {
+     "radius": 0.35,
+     "turns": 0.8,
+     "phase": 0.4,
+     "spin": 3,
+     "taper": "out",
+     "samples": 40
+    }
+   },
+   {
+    "id": "tip1",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      -0.111,
+      0,
+      1.295
+     ]
+    }
+   },
+   {
+    "id": "tendril1",
+    "type": "HelixPath",
+    "params": {
+     "radius": 0.35,
+     "turns": 0.8,
+     "phase": 1.657,
+     "spin": 3,
+     "taper": "out",
+     "samples": 40
+    }
+   },
+   {
+    "id": "tip2",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      -1.266,
+      0.35,
+      0.294
+     ]
+    }
+   },
+   {
+    "id": "tendril2",
+    "type": "HelixPath",
+    "params": {
+     "radius": 0.35,
+     "turns": 0.8,
+     "phase": 2.913,
+     "spin": 3,
+     "taper": "out",
+     "samples": 40
+    }
+   },
+   {
+    "id": "tip3",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      -0.671,
+      -0.35,
+      -1.113
+     ]
+    }
+   },
+   {
+    "id": "tendril3",
+    "type": "HelixPath",
+    "params": {
+     "radius": 0.35,
+     "turns": 0.8,
+     "phase": 4.17,
+     "spin": 3,
+     "taper": "out",
+     "samples": 40
+    }
+   },
+   {
+    "id": "tip4",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0.851,
+      0,
+      -0.982
+     ]
+    }
+   },
+   {
+    "id": "tendril4",
+    "type": "HelixPath",
+    "params": {
+     "radius": 0.35,
+     "turns": 0.8,
+     "phase": 5.427,
+     "spin": 3,
+     "taper": "out",
+     "samples": 40
+    }
+   },
+   {
+    "id": "tendrils",
+    "type": "MergePaths"
+   },
+   {
+    "id": "tendrilmat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#12131B",
+      "alpha": 1
+     },
+     "opacity": 0.6
+    }
+   },
+   {
+    "id": "tendrilrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.16,
+     "endFade": 0.35,
+     "widthOverPath": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.4
+       },
+       {
+        "x": 0.4,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0.2
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "tendrilrimmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#5E5288",
+      "alpha": 1
+     },
+     "opacity": 0.14,
+     "emission": 0.1
+    }
+   },
+   {
+    "id": "tendrilrim",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.2,
+     "endFade": 0.35,
+     "widthOverPath": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.4
+       },
+       {
+        "x": 0.4,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0.2
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "coremat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#0E0F16",
+      "alpha": 1
+     },
+     "opacity": 0.85
+    }
+   },
+   {
+    "id": "core",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1.2,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.9
+       },
+       {
+        "x": 0.8,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "corerimmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#7A6AA8",
+      "alpha": 1
+     },
+     "opacity": 0.25,
+     "emission": 0.2
+    }
+   },
+   {
+    "id": "corerim",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1.5,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "implode",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.9,
+     "burst": 40,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0.1,
+     "lifetimeMin": 0.3,
+     "lifetimeMax": 0.5
+    }
+   },
+   {
+    "id": "implodeip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.1,
+     "sizeMax": 0.2,
+     "randomFrameStart": true
+    }
+   },
+   {
+    "id": "implodepull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 18,
+     "softRadius": 0.1,
+     "killRadius": 0.06
+    }
+   },
+   {
+    "id": "implodebb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 3,
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.8
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "residuewin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 168,
+     "durationTicks": 1,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "residue",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.4,
+     "rate": 8,
+     "burst": 0,
+     "speedMin": 0.1,
+     "speedMax": 0.3,
+     "lifetimeMin": 0.4,
+     "lifetimeMax": 0.7
+    }
+   },
+   {
+    "id": "residueip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.1,
+     "sizeMax": 0.2,
+     "randomFrameStart": true
+    }
+   },
+   {
+    "id": "residuelift",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      0.4,
+      0
+     ]
+    }
+   },
+   {
+    "id": "residuebb",
+    "type": "BillboardRenderer",
+    "params": {
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "body.anchor"
+   ],
+   [
+    "active.window",
+    "body.window"
+   ],
+   [
+    "active.start",
+    "body.trigger"
+   ],
+   [
+    "body.particles",
+    "bodyip.particles"
+   ],
+   [
+    "bodyip.particles",
+    "bodypull.particles"
+   ],
+   [
+    "node-target.out",
+    "bodypull.anchor"
+   ],
+   [
+    "bodypull.particles",
+    "bodybb.particles"
+   ],
+   [
+    "bodymat.material",
+    "bodybb.material"
+   ],
+   [
+    "bodybb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "wisps.anchor"
+   ],
+   [
+    "active.window",
+    "wisps.window"
+   ],
+   [
+    "active.start",
+    "wisps.trigger"
+   ],
+   [
+    "wisps.particles",
+    "wispip.particles"
+   ],
+   [
+    "wispip.particles",
+    "wispdrag.particles"
+   ],
+   [
+    "wispdrag.particles",
+    "swirl.particles"
+   ],
+   [
+    "swirl.particles",
+    "pull.particles"
+   ],
+   [
+    "node-target.out",
+    "swirl.anchor"
+   ],
+   [
+    "node-target.out",
+    "pull.anchor"
+   ],
+   [
+    "pull.particles",
+    "wispbb.particles"
+   ],
+   [
+    "wispmat.material",
+    "wispbb.material"
+   ],
+   [
+    "wispbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "pull.particles",
+    "accentbb.particles"
+   ],
+   [
+    "accentmat.material",
+    "accentbb.material"
+   ],
+   [
+    "accentbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "tip0.anchor"
+   ],
+   [
+    "tip0.out",
+    "tendril0.start"
+   ],
+   [
+    "node-target.out",
+    "tendril0.end"
+   ],
+   [
+    "node-target.out",
+    "tip1.anchor"
+   ],
+   [
+    "tip1.out",
+    "tendril1.start"
+   ],
+   [
+    "node-target.out",
+    "tendril1.end"
+   ],
+   [
+    "node-target.out",
+    "tip2.anchor"
+   ],
+   [
+    "tip2.out",
+    "tendril2.start"
+   ],
+   [
+    "node-target.out",
+    "tendril2.end"
+   ],
+   [
+    "node-target.out",
+    "tip3.anchor"
+   ],
+   [
+    "tip3.out",
+    "tendril3.start"
+   ],
+   [
+    "node-target.out",
+    "tendril3.end"
+   ],
+   [
+    "node-target.out",
+    "tip4.anchor"
+   ],
+   [
+    "tip4.out",
+    "tendril4.start"
+   ],
+   [
+    "node-target.out",
+    "tendril4.end"
+   ],
+   [
+    "tendril0.paths",
+    "tendrils.paths"
+   ],
+   [
+    "tendril1.paths",
+    "tendrils.paths"
+   ],
+   [
+    "tendril2.paths",
+    "tendrils.paths"
+   ],
+   [
+    "tendril3.paths",
+    "tendrils.paths"
+   ],
+   [
+    "tendril4.paths",
+    "tendrils.paths"
+   ],
+   [
+    "tendrils.paths",
+    "tendrilrib.paths"
+   ],
+   [
+    "active.window",
+    "tendrilrib.window"
+   ],
+   [
+    "tendrilrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "tendrils.paths",
+    "tendrilrim.paths"
+   ],
+   [
+    "active.window",
+    "tendrilrim.window"
+   ],
+   [
+    "tendrilrim.visual",
+    "node-output.visual"
+   ],
+   [
+    "tendrilmat.material",
+    "tendrilrib.material"
+   ],
+   [
+    "tendrilrimmat.material",
+    "tendrilrim.material"
+   ],
+   [
+    "node-target.out",
+    "core.anchor"
+   ],
+   [
+    "coremat.material",
+    "core.material"
+   ],
+   [
+    "collapse.window",
+    "core.window"
+   ],
+   [
+    "core.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "corerim.anchor"
+   ],
+   [
+    "corerimmat.material",
+    "corerim.material"
+   ],
+   [
+    "collapse.window",
+    "corerim.window"
+   ],
+   [
+    "corerim.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "implode.anchor"
+   ],
+   [
+    "collapse.start",
+    "implode.trigger"
+   ],
+   [
+    "implode.particles",
+    "implodeip.particles"
+   ],
+   [
+    "implodeip.particles",
+    "implodepull.particles"
+   ],
+   [
+    "node-target.out",
+    "implodepull.anchor"
+   ],
+   [
+    "implodepull.particles",
+    "implodebb.particles"
+   ],
+   [
+    "wispmat.material",
+    "implodebb.material"
+   ],
+   [
+    "implodebb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "residue.anchor"
+   ],
+   [
+    "residuewin.window",
+    "residue.window"
+   ],
+   [
+    "residue.particles",
+    "residueip.particles"
+   ],
+   [
+    "residueip.particles",
+    "residuelift.particles"
+   ],
+   [
+    "residuelift.particles",
+    "residuebb.particles"
+   ],
+   [
+    "wispmat.material",
+    "residuebb.material"
+   ],
+   [
+    "residuebb.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "radius",
+    "label": "Vortex radius",
+    "value": 1.4,
+    "bindings": [
+     {
+      "node": "wisps",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "inward",
+    "label": "Inward speed",
+    "value": 1.8,
+    "bindings": [
+     {
+      "node": "swirl",
+      "parameter": "inward"
+     }
+    ]
+   },
+   {
+    "id": "swirl",
+    "label": "Swirl",
+    "value": 2.5,
+    "bindings": [
+     {
+      "node": "swirl",
+      "parameter": "tangential"
+     }
+    ]
+   },
+   {
+    "id": "density",
+    "label": "Body density",
+    "value": 14,
+    "bindings": [
+     {
+      "node": "body",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "edge",
+    "label": "Edge visibility",
+    "value": 0.18,
+    "bindings": [
+     {
+      "node": "accentmat",
+      "parameter": "opacity"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "shadow-puff",
+  "label": "Shadow: inward puff",
+  "description": "Brief outward burst of dark wisps rapidly absorbed inward (04-SHADOW variant).",
+  "durationTicks": 120,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "active",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 60,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "collapse",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 60,
+     "durationTicks": 18,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "body",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.55,
+     "rate": 14,
+     "burst": 10,
+     "speedMin": 0,
+     "speedMax": 0.15,
+     "lifetimeMin": 1,
+     "lifetimeMax": 1.4
+    }
+   },
+   {
+    "id": "bodyip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 1,
+     "sizeMax": 1.4,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283,
+     "angularVelocityMin": -0.5,
+     "angularVelocityMax": 0.5
+    }
+   },
+   {
+    "id": "bodypull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 0.6,
+     "softRadius": 0.4,
+     "killRadius": 0
+    }
+   },
+   {
+    "id": "bodymat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#161823",
+      "alpha": 1
+     },
+     "opacity": 1
+    }
+   },
+   {
+    "id": "bodybb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "fps",
+     "flipbookFps": 6,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 0.5,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0.8
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.2,
+        "y": 0.55
+       },
+       {
+        "x": 0.7,
+        "y": 0.45
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "wisps",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 1.1,
+     "rate": 60,
+     "burst": 40,
+     "speedMin": 1.5,
+     "speedMax": 2.5,
+     "lifetimeMin": 0.8,
+     "lifetimeMax": 1.5
+    }
+   },
+   {
+    "id": "wispip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.3,
+     "sizeMax": 0.5,
+     "randomFrameStart": true
+    }
+   },
+   {
+    "id": "swirl",
+    "type": "Vortex",
+    "params": {
+     "axis": [
+      0,
+      1,
+      0
+     ],
+     "tangential": 2.5,
+     "inward": 1.8,
+     "falloff": 2
+    }
+   },
+   {
+    "id": "pull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 5,
+     "softRadius": 0.3,
+     "killRadius": 0.08
+    }
+   },
+   {
+    "id": "wispdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1.2
+    }
+   },
+   {
+    "id": "wispmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#1E1D29",
+      "alpha": 1
+     },
+     "opacity": 0.9,
+     "dissolve": 0.6,
+     "dissolveStart": 0.5,
+     "dissolveSoftness": 0.2
+    }
+   },
+   {
+    "id": "wispbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 2.4,
+     "pivot": 0.4,
+     "flipbookMode": "overLife",
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.2,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 0.8
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "accentmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#6A5C94",
+      "alpha": 1
+     },
+     "opacity": 0.18,
+     "emission": 0.2
+    }
+   },
+   {
+    "id": "accentbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 2.4,
+     "pivot": 0.4,
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1.1
+       },
+       {
+        "x": 1,
+        "y": 0.9
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.3,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "coremat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#0E0F16",
+      "alpha": 1
+     },
+     "opacity": 0.85
+    }
+   },
+   {
+    "id": "core",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1.2,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.9
+       },
+       {
+        "x": 0.8,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "corerimmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#7A6AA8",
+      "alpha": 1
+     },
+     "opacity": 0.25,
+     "emission": 0.2
+    }
+   },
+   {
+    "id": "corerim",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1.5,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "implode",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.9,
+     "burst": 40,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0.1,
+     "lifetimeMin": 0.3,
+     "lifetimeMax": 0.5
+    }
+   },
+   {
+    "id": "implodeip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.1,
+     "sizeMax": 0.2,
+     "randomFrameStart": true
+    }
+   },
+   {
+    "id": "implodepull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 18,
+     "softRadius": 0.1,
+     "killRadius": 0.06
+    }
+   },
+   {
+    "id": "implodebb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 3,
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.8
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "residuewin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 78,
+     "durationTicks": 1,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "residue",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.4,
+     "rate": 8,
+     "burst": 0,
+     "speedMin": 0.1,
+     "speedMax": 0.3,
+     "lifetimeMin": 0.4,
+     "lifetimeMax": 0.7
+    }
+   },
+   {
+    "id": "residueip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.1,
+     "sizeMax": 0.2,
+     "randomFrameStart": true
+    }
+   },
+   {
+    "id": "residuelift",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      0.4,
+      0
+     ]
+    }
+   },
+   {
+    "id": "residuebb",
+    "type": "BillboardRenderer",
+    "params": {
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "body.anchor"
+   ],
+   [
+    "active.window",
+    "body.window"
+   ],
+   [
+    "active.start",
+    "body.trigger"
+   ],
+   [
+    "body.particles",
+    "bodyip.particles"
+   ],
+   [
+    "bodyip.particles",
+    "bodypull.particles"
+   ],
+   [
+    "node-target.out",
+    "bodypull.anchor"
+   ],
+   [
+    "bodypull.particles",
+    "bodybb.particles"
+   ],
+   [
+    "bodymat.material",
+    "bodybb.material"
+   ],
+   [
+    "bodybb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "wisps.anchor"
+   ],
+   [
+    "active.window",
+    "wisps.window"
+   ],
+   [
+    "active.start",
+    "wisps.trigger"
+   ],
+   [
+    "wisps.particles",
+    "wispip.particles"
+   ],
+   [
+    "wispip.particles",
+    "wispdrag.particles"
+   ],
+   [
+    "wispdrag.particles",
+    "swirl.particles"
+   ],
+   [
+    "swirl.particles",
+    "pull.particles"
+   ],
+   [
+    "node-target.out",
+    "swirl.anchor"
+   ],
+   [
+    "node-target.out",
+    "pull.anchor"
+   ],
+   [
+    "pull.particles",
+    "wispbb.particles"
+   ],
+   [
+    "wispmat.material",
+    "wispbb.material"
+   ],
+   [
+    "wispbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "pull.particles",
+    "accentbb.particles"
+   ],
+   [
+    "accentmat.material",
+    "accentbb.material"
+   ],
+   [
+    "accentbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "core.anchor"
+   ],
+   [
+    "coremat.material",
+    "core.material"
+   ],
+   [
+    "collapse.window",
+    "core.window"
+   ],
+   [
+    "core.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "corerim.anchor"
+   ],
+   [
+    "corerimmat.material",
+    "corerim.material"
+   ],
+   [
+    "collapse.window",
+    "corerim.window"
+   ],
+   [
+    "corerim.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "implode.anchor"
+   ],
+   [
+    "collapse.start",
+    "implode.trigger"
+   ],
+   [
+    "implode.particles",
+    "implodeip.particles"
+   ],
+   [
+    "implodeip.particles",
+    "implodepull.particles"
+   ],
+   [
+    "node-target.out",
+    "implodepull.anchor"
+   ],
+   [
+    "implodepull.particles",
+    "implodebb.particles"
+   ],
+   [
+    "wispmat.material",
+    "implodebb.material"
+   ],
+   [
+    "implodebb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "residue.anchor"
+   ],
+   [
+    "residuewin.window",
+    "residue.window"
+   ],
+   [
+    "residue.particles",
+    "residueip.particles"
+   ],
+   [
+    "residueip.particles",
+    "residuelift.particles"
+   ],
+   [
+    "residuelift.particles",
+    "residuebb.particles"
+   ],
+   [
+    "wispmat.material",
+    "residuebb.material"
+   ],
+   [
+    "residuebb.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "radius",
+    "label": "Vortex radius",
+    "value": 1.1,
+    "bindings": [
+     {
+      "node": "wisps",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "inward",
+    "label": "Inward speed",
+    "value": 1.8,
+    "bindings": [
+     {
+      "node": "swirl",
+      "parameter": "inward"
+     }
+    ]
+   },
+   {
+    "id": "swirl",
+    "label": "Swirl",
+    "value": 2.5,
+    "bindings": [
+     {
+      "node": "swirl",
+      "parameter": "tangential"
+     }
+    ]
+   },
+   {
+    "id": "density",
+    "label": "Body density",
+    "value": 14,
+    "bindings": [
+     {
+      "node": "body",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "edge",
+    "label": "Edge visibility",
+    "value": 0.18,
+    "bindings": [
+     {
+      "node": "accentmat",
+      "parameter": "opacity"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "shadow-tendril",
+  "label": "Shadow: narrow tendril",
+  "description": "Dark curling tendril Source→Target feeding a small receiving vortex (04-SHADOW variant).",
+  "durationTicks": 170,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "active",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 110,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "collapse",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 110,
+     "durationTicks": 24,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "body",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.55,
+     "rate": 14,
+     "burst": 10,
+     "speedMin": 0,
+     "speedMax": 0.15,
+     "lifetimeMin": 1,
+     "lifetimeMax": 1.4
+    }
+   },
+   {
+    "id": "bodyip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 1,
+     "sizeMax": 1.4,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283,
+     "angularVelocityMin": -0.5,
+     "angularVelocityMax": 0.5
+    }
+   },
+   {
+    "id": "bodypull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 0.6,
+     "softRadius": 0.4,
+     "killRadius": 0
+    }
+   },
+   {
+    "id": "bodymat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#161823",
+      "alpha": 1
+     },
+     "opacity": 1
+    }
+   },
+   {
+    "id": "bodybb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "fps",
+     "flipbookFps": 6,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 0.5,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0.8
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.2,
+        "y": 0.55
+       },
+       {
+        "x": 0.7,
+        "y": 0.45
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "wisps",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.7,
+     "rate": 20,
+     "burst": 0,
+     "speedMin": 0,
+     "speedMax": 0.2,
+     "lifetimeMin": 0.8,
+     "lifetimeMax": 1.5
+    }
+   },
+   {
+    "id": "wispip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.3,
+     "sizeMax": 0.5,
+     "randomFrameStart": true
+    }
+   },
+   {
+    "id": "swirl",
+    "type": "Vortex",
+    "params": {
+     "axis": [
+      0,
+      1,
+      0
+     ],
+     "tangential": 2.5,
+     "inward": 1.8,
+     "falloff": 2
+    }
+   },
+   {
+    "id": "pull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 1.6,
+     "softRadius": 0.3,
+     "killRadius": 0.08
+    }
+   },
+   {
+    "id": "wispdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.4
+    }
+   },
+   {
+    "id": "wispmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#1E1D29",
+      "alpha": 1
+     },
+     "opacity": 0.9,
+     "dissolve": 0.6,
+     "dissolveStart": 0.5,
+     "dissolveSoftness": 0.2
+    }
+   },
+   {
+    "id": "wispbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 2.4,
+     "pivot": 0.4,
+     "flipbookMode": "overLife",
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.2,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 0.8
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "accentmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#6A5C94",
+      "alpha": 1
+     },
+     "opacity": 0.18,
+     "emission": 0.2
+    }
+   },
+   {
+    "id": "accentbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 2.4,
+     "pivot": 0.4,
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1.1
+       },
+       {
+        "x": 1,
+        "y": 0.9
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.3,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "beampath",
+    "type": "HelixPath",
+    "params": {
+     "radius": 0.14,
+     "turns": 2.5,
+     "spin": 2.5,
+     "taper": "both",
+     "samples": 96
+    }
+   },
+   {
+    "id": "beamreveal",
+    "type": "RevealPath"
+   },
+   {
+    "id": "beamclock",
+    "type": "Time"
+   },
+   {
+    "id": "beamgrow",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 4,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "beammat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#14151E",
+      "alpha": 1
+     },
+     "opacity": 0.6
+    }
+   },
+   {
+    "id": "beam",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.12,
+     "endFade": 0.2,
+     "widthOverPath": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.4
+       },
+       {
+        "x": 0.6,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0.6
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "beamrimmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#6E5E9C",
+      "alpha": 1
+     },
+     "opacity": 0.25,
+     "emission": 0.3
+    }
+   },
+   {
+    "id": "beamrim",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.03,
+     "endFade": 0.25
+    }
+   },
+   {
+    "id": "trail",
+    "type": "PathFollower",
+    "params": {
+     "durationTicks": 40,
+     "easing": "linear"
+    }
+   },
+   {
+    "id": "trailwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 110,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "trailwisps",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.1,
+     "rate": 30,
+     "burst": 0,
+     "speedMin": 0,
+     "speedMax": 0.3,
+     "lifetimeMin": 0.5,
+     "lifetimeMax": 0.9
+    }
+   },
+   {
+    "id": "trailip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.15,
+     "sizeMax": 0.25,
+     "randomFrameStart": true
+    }
+   },
+   {
+    "id": "trailbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.2,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "coremat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#0E0F16",
+      "alpha": 1
+     },
+     "opacity": 0.85
+    }
+   },
+   {
+    "id": "core",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1.2,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.9
+       },
+       {
+        "x": 0.8,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "corerimmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#7A6AA8",
+      "alpha": 1
+     },
+     "opacity": 0.25,
+     "emission": 0.2
+    }
+   },
+   {
+    "id": "corerim",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1.5,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "implode",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.9,
+     "burst": 40,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0.1,
+     "lifetimeMin": 0.3,
+     "lifetimeMax": 0.5
+    }
+   },
+   {
+    "id": "implodeip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.1,
+     "sizeMax": 0.2,
+     "randomFrameStart": true
+    }
+   },
+   {
+    "id": "implodepull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 18,
+     "softRadius": 0.1,
+     "killRadius": 0.06
+    }
+   },
+   {
+    "id": "implodebb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 3,
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.8
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "residuewin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 134,
+     "durationTicks": 1,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "residue",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.4,
+     "rate": 8,
+     "burst": 0,
+     "speedMin": 0.1,
+     "speedMax": 0.3,
+     "lifetimeMin": 0.4,
+     "lifetimeMax": 0.7
+    }
+   },
+   {
+    "id": "residueip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.1,
+     "sizeMax": 0.2,
+     "randomFrameStart": true
+    }
+   },
+   {
+    "id": "residuelift",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      0.4,
+      0
+     ]
+    }
+   },
+   {
+    "id": "residuebb",
+    "type": "BillboardRenderer",
+    "params": {
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "body.anchor"
+   ],
+   [
+    "active.window",
+    "body.window"
+   ],
+   [
+    "active.start",
+    "body.trigger"
+   ],
+   [
+    "body.particles",
+    "bodyip.particles"
+   ],
+   [
+    "bodyip.particles",
+    "bodypull.particles"
+   ],
+   [
+    "node-target.out",
+    "bodypull.anchor"
+   ],
+   [
+    "bodypull.particles",
+    "bodybb.particles"
+   ],
+   [
+    "bodymat.material",
+    "bodybb.material"
+   ],
+   [
+    "bodybb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "wisps.anchor"
+   ],
+   [
+    "active.window",
+    "wisps.window"
+   ],
+   [
+    "active.start",
+    "wisps.trigger"
+   ],
+   [
+    "wisps.particles",
+    "wispip.particles"
+   ],
+   [
+    "wispip.particles",
+    "wispdrag.particles"
+   ],
+   [
+    "wispdrag.particles",
+    "swirl.particles"
+   ],
+   [
+    "swirl.particles",
+    "pull.particles"
+   ],
+   [
+    "node-target.out",
+    "swirl.anchor"
+   ],
+   [
+    "node-target.out",
+    "pull.anchor"
+   ],
+   [
+    "pull.particles",
+    "wispbb.particles"
+   ],
+   [
+    "wispmat.material",
+    "wispbb.material"
+   ],
+   [
+    "wispbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "pull.particles",
+    "accentbb.particles"
+   ],
+   [
+    "accentmat.material",
+    "accentbb.material"
+   ],
+   [
+    "accentbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "beampath.start"
+   ],
+   [
+    "node-target.out",
+    "beampath.end"
+   ],
+   [
+    "active.window",
+    "beamclock.window"
+   ],
+   [
+    "beamclock.progress",
+    "beamgrow.a"
+   ],
+   [
+    "beamgrow.value",
+    "beamreveal.fraction"
+   ],
+   [
+    "beampath.paths",
+    "beamreveal.paths"
+   ],
+   [
+    "beamreveal.paths",
+    "beam.paths"
+   ],
+   [
+    "active.window",
+    "beam.window"
+   ],
+   [
+    "beam.visual",
+    "node-output.visual"
+   ],
+   [
+    "beamreveal.paths",
+    "beamrim.paths"
+   ],
+   [
+    "active.window",
+    "beamrim.window"
+   ],
+   [
+    "beamrim.visual",
+    "node-output.visual"
+   ],
+   [
+    "beammat.material",
+    "beam.material"
+   ],
+   [
+    "beamrimmat.material",
+    "beamrim.material"
+   ],
+   [
+    "beampath.paths",
+    "trail.paths"
+   ],
+   [
+    "trailwin.window",
+    "trail.window"
+   ],
+   [
+    "trail.anchor",
+    "trailwisps.anchor"
+   ],
+   [
+    "trailwin.window",
+    "trailwisps.window"
+   ],
+   [
+    "trailwisps.particles",
+    "trailip.particles"
+   ],
+   [
+    "trailip.particles",
+    "trailbb.particles"
+   ],
+   [
+    "wispmat.material",
+    "trailbb.material"
+   ],
+   [
+    "trailbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "core.anchor"
+   ],
+   [
+    "coremat.material",
+    "core.material"
+   ],
+   [
+    "collapse.window",
+    "core.window"
+   ],
+   [
+    "core.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "corerim.anchor"
+   ],
+   [
+    "corerimmat.material",
+    "corerim.material"
+   ],
+   [
+    "collapse.window",
+    "corerim.window"
+   ],
+   [
+    "corerim.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "implode.anchor"
+   ],
+   [
+    "collapse.start",
+    "implode.trigger"
+   ],
+   [
+    "implode.particles",
+    "implodeip.particles"
+   ],
+   [
+    "implodeip.particles",
+    "implodepull.particles"
+   ],
+   [
+    "node-target.out",
+    "implodepull.anchor"
+   ],
+   [
+    "implodepull.particles",
+    "implodebb.particles"
+   ],
+   [
+    "wispmat.material",
+    "implodebb.material"
+   ],
+   [
+    "implodebb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "residue.anchor"
+   ],
+   [
+    "residuewin.window",
+    "residue.window"
+   ],
+   [
+    "residue.particles",
+    "residueip.particles"
+   ],
+   [
+    "residueip.particles",
+    "residuelift.particles"
+   ],
+   [
+    "residuelift.particles",
+    "residuebb.particles"
+   ],
+   [
+    "wispmat.material",
+    "residuebb.material"
+   ],
+   [
+    "residuebb.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "radius",
+    "label": "Vortex radius",
+    "value": 0.7,
+    "bindings": [
+     {
+      "node": "wisps",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "inward",
+    "label": "Inward speed",
+    "value": 1.8,
+    "bindings": [
+     {
+      "node": "swirl",
+      "parameter": "inward"
+     }
+    ]
+   },
+   {
+    "id": "swirl",
+    "label": "Swirl",
+    "value": 2.5,
+    "bindings": [
+     {
+      "node": "swirl",
+      "parameter": "tangential"
+     }
+    ]
+   },
+   {
+    "id": "density",
+    "label": "Body density",
+    "value": 14,
+    "bindings": [
+     {
+      "node": "body",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "edge",
+    "label": "Edge visibility",
+    "value": 0.18,
+    "bindings": [
+     {
+      "node": "accentmat",
+      "parameter": "opacity"
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": "fireball",
   "label": "Fireball",
   "description": "Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.",

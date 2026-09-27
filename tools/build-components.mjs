@@ -31,6 +31,9 @@ const COMPONENTS = [
   ['water-stream', 'Water: arcing stream', 'Arched stream Source→Target that lands in a splash with droplets, foam and three ripples (03-WATER).', 'water-stream'],
   ['water-narrow', 'Water: narrow stream', 'Thin fast stream, small splash, few droplets, almost no foam (03-WATER variant).', 'water-narrow'],
   ['water-broad', 'Water: broad splash', 'Low wide body with a big splash, large droplets and wide ripples (03-WATER variant).', 'water-broad'],
+  ['shadow-collapse', 'Shadow: vortex & collapse', 'Dark swirling mass at Target: body, inward wisps, curling tendrils, violet edge accent, collapse and residue (04-SHADOW).', 'shadow-vortex-full'],
+  ['shadow-puff', 'Shadow: inward puff', 'Brief outward burst of dark wisps rapidly absorbed inward (04-SHADOW variant).', 'shadow-puff'],
+  ['shadow-tendril', 'Shadow: narrow tendril', 'Dark curling tendril Source→Target feeding a small receiving vortex (04-SHADOW variant).', 'shadow-tendril'],
   ['fireball', 'Fireball', 'Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.', 'fireball'],
 ];
 
@@ -61,6 +64,9 @@ const KNOBS = {
   'water-stream': [['width', 'Body width', [['body', 'width'], ['core', 'width', 0.45]]], ['travel', 'Travel time', [['head', 'durationTicks'], ['headwin', 'durationTicks']]], ['droplets', 'Droplet amount', [['drops', 'burst']]], ['foam', 'Foam amount', [['foam', 'burst']]], ['splash', 'Splash size', [['splash', 'size']]], ['ripple', 'Ripple size', [['ring0', 'radius'], ['ring1', 'radius'], ['ring2', 'radius']]]],
   'water-narrow': [['width', 'Body width', [['body', 'width'], ['core', 'width', 0.45]]], ['travel', 'Travel time', [['head', 'durationTicks'], ['headwin', 'durationTicks']]], ['droplets', 'Droplet amount', [['drops', 'burst']]], ['foam', 'Foam amount', [['foam', 'burst']]], ['splash', 'Splash size', [['splash', 'size']]], ['ripple', 'Ripple size', [['ring0', 'radius'], ['ring1', 'radius'], ['ring2', 'radius']]]],
   'water-broad': [['width', 'Body width', [['body', 'width'], ['core', 'width', 0.45]]], ['travel', 'Travel time', [['head', 'durationTicks'], ['headwin', 'durationTicks']]], ['droplets', 'Droplet amount', [['drops', 'burst']]], ['foam', 'Foam amount', [['foam', 'burst']]], ['splash', 'Splash size', [['splash', 'size']]], ['ripple', 'Ripple size', [['ring0', 'radius'], ['ring1', 'radius'], ['ring2', 'radius']]]],
+  'shadow-collapse': [['radius', 'Vortex radius', [['wisps', 'radius']]], ['inward', 'Inward speed', [['swirl', 'inward']]], ['swirl', 'Swirl', [['swirl', 'tangential']]], ['density', 'Body density', [['body', 'rate']]], ['edge', 'Edge visibility', [['accentmat', 'opacity']]]],
+  'shadow-puff': [['radius', 'Vortex radius', [['wisps', 'radius']]], ['inward', 'Inward speed', [['swirl', 'inward']]], ['swirl', 'Swirl', [['swirl', 'tangential']]], ['density', 'Body density', [['body', 'rate']]], ['edge', 'Edge visibility', [['accentmat', 'opacity']]]],
+  'shadow-tendril': [['radius', 'Vortex radius', [['wisps', 'radius']]], ['inward', 'Inward speed', [['swirl', 'inward']]], ['swirl', 'Swirl', [['swirl', 'tangential']]], ['density', 'Body density', [['body', 'rate']]], ['edge', 'Edge visibility', [['accentmat', 'opacity']]]],
   'fireball': [['travel', 'Travel ticks', [['ball', 'durationTicks']]], ['trail', 'Trail density', [['trailem', 'rate']]], ['core', 'Core size', [['core', 'size']]], ['impact', 'Impact sparks', [['boom', 'burst']]], ['flash', 'Flash size', [['flash', 'size']]], ['light', 'Ball light', [['balllight', 'intensity']]]],
 };
 
