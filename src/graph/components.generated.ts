@@ -6687,6 +6687,28 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "audioout",
     "type": "AudioOutput",
     "params": {}
+   },
+   {
+    "id": "streakmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FF9A40",
+      "alpha": 1
+     },
+     "emission": 1,
+     "opacity": 0.9
+    }
+   },
+   {
+    "id": "streak",
+    "type": "MotionTrail",
+    "params": {
+     "history": 0.3,
+     "width": 0.35,
+     "endFade": 0.45
+    }
    }
   ],
   "edges": [
@@ -6893,6 +6915,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    [
     "audioout.audio",
     "node-output.audio"
+   ],
+   [
+    "ball.anchor",
+    "streak.anchor"
+   ],
+   [
+    "streakmat.material",
+    "streak.material"
+   ],
+   [
+    "flight.window",
+    "streak.window"
+   ],
+   [
+    "streak.visual",
+    "node-output.visual"
    ]
   ],
   "knobs": [

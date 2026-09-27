@@ -495,6 +495,43 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       const b = sourceNode(c.source, outputId, 'visual');
       if (options.ribbonsHandled === true && b.node.type === 'RibbonRenderer') continue; // Ribbon layers: compilePathPreview.
       if (done.has(b.node.id) || !b.effectiveEnabled) continue; // Disabled sink contributes nothing.
+      if (b.node.type === 'MotionTrail') {
+        // A ribbon behind a (moving) anchor: one particle attached to the anchor/follower track over the window.
+        done.add(b.node.id);
+        const tid = b.node.id;
+        noDrivenParams(b, ['anchor', 'material', 'window']);
+        const mats = into(tid, 'material');
+        const mat = mats.length === 1 ? sourceNode(mats[0].source, tid, 'material') : undefined;
+        if (!mat || mat.node.type !== 'Material' || !mat.effectiveEnabled) { fail('MISSING_REFERENCE', `Required input "material" of "${tid}" needs an enabled Material.`, tid); }
+        const m = mat as ExpandedNode;
+        const an = into(tid, 'anchor'), anchorNode = an.length === 1 ? sourceNode(an[0].source, tid, 'anchor') : undefined;
+        const track = anchorNode?.node.type === 'PathFollower' ? followerTrack(anchorNode) : undefined;
+        const ap = anchorNode && anchorNode.node.type === 'Anchor' && anchorNode.effectiveEnabled ? anchorPos.get(param(anchorNode, 'anchorId') as string) : undefined;
+        if (!ap && !track) { fail('MISSING_REFERENCE', `MotionTrail "${tid}" needs an enabled Anchor or PathFollower.`, tid); }
+        const ws = into(tid, 'window');
+        if (ws.length !== 1) { fail('MISSING_REFERENCE', `MotionTrail "${tid}" needs a Schedule window.`, tid); }
+        const s = scheduleOf(ws[0], tid, 'window');
+        if (!s) continue;
+        const start = num(s, 'startTicks'), len = Math.max(1, Math.min(num(s, 'durationTicks'), doc.durationTicks - start));
+        if (start >= doc.durationTicks) continue;
+        const scale = transform.scale, a = (ap ?? [0, 0, 0]) as Vec3, q = rotate(transform.rotation, [a[0] * scale, a[1] * scale, a[2] * scale]);
+        const d: ParticleEmitterDescriptor = {
+          documentSeed: doc.seed, durationTicks: doc.durationTicks, emitterId: tid, randomStreamId: b.node.randomStreamId, shape: 'point',
+          sourcePosition: track ? [...track.positions[0]] as Vec3 : [q[0] + transform.position[0], q[1] + transform.position[1], q[2] + transform.position[2]],
+          initialVelocity: { kind: 'vector', value: [0, 0, 0] }, bursts: [{ tick: start, eventRandomKey: scheduleEventRandomKey(s.node.randomStreamId, start, 0), count: 1 }],
+          lifetimeTicks: { min: len, max: len }, size: { min: 0, max: 0 }, operators: [],
+          ...(track ? { sourceTrack: { startTick: track.startTick, positions: track.positions.map(p => [...p] as Vec3) }, attachToSource: true } : {}),
+        };
+        const v = validateParticleDescriptor(d);
+        if (!v.ok) { errors.push(...v.errors.map(e => ({ ...e, nodeId: tid }))); continue; }
+        systems.push({ id: tid, descriptor: v.value });
+        trails.push({
+          nodeId: tid, systemId: tid, historyTicks: Math.max(1, Math.round(num(b, 'history') * TICKS_PER_SECOND)), maxPoints: num(b, 'maxPoints'),
+          width: num(b, 'width') * scale, endFade: num(b, 'endFade'), color: param(m, 'tint') as ColorValue, opacity: num(m, 'opacity'), emission: num(m, 'emission'),
+          blend: param(m, 'blend') as ParticleTrailLayer['blend'], alphaCutoff: num(m, 'alphaCutoff'), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
+        });
+        continue;
+      }
       if (b.node.type === 'MeshRenderer') {
         done.add(b.node.id);
         const mid = b.node.id;

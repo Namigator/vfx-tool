@@ -496,3 +496,19 @@ test('RandomRange drives a parameter with one seeded sample per cast; its unit m
   const errs = errorsOf(compileParticlePreview(withRandom('meter')));
   assert.ok(errs.some(e => e.code === 'TYPE_MISMATCH'), JSON.stringify(errs.map(e => e.code)));
 });
+
+test('MotionTrail compiles to a trail layer over a one-particle system attached to the follower track', () => {
+  const p = plan(followerDoc(d => {
+    const g = root(d);
+    g.nodes.push(node('node-mt', 'MotionTrail', { history: 0.2, width: 0.3 }));
+    g.edges.push(edge('e-ma', 'node-follow', 'anchor', 'node-mt', 'anchor'), edge('e-mm', 'node-material', 'material', 'node-mt', 'material'),
+      edge('e-mw', 'node-fw', 'window', 'node-mt', 'window'), edge('e-mv', 'node-mt', 'visual', 'node-output', 'visual', 1));
+  }));
+  const sys = p.systems.find(s => s.id === 'node-mt')!.descriptor;
+  assert.equal(sys.attachToSource, true);
+  assert.equal(sys.sourceTrack!.startTick, 10);
+  assert.deepEqual([p.trails[0].nodeId, p.trails[0].historyTicks, p.trails[0].width], ['node-mt', 12, 0.3]);
+  const r = sampleParticlesAtTick(sys, 20);
+  if (!r.ok) assert.fail(JSON.stringify(r.errors));
+  assert.ok(Math.abs(r.value.particles[0].position[2] - 2.5) < 1e-9, 'the particle rides the follower');
+});

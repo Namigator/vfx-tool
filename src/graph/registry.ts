@@ -338,6 +338,25 @@ function pathTransformNode(): NodeSpec {
   });
 }
 
+function motionTrail(): NodeSpec {
+  return node('MotionTrail', {
+    inputs: [
+      port({ id: 'anchor', label: 'Anchor', type: 'anchor', required: true }),
+      port({ id: 'material', label: 'Material', type: 'material', required: true }),
+      port({ id: 'window', label: 'Window', type: 'timeWindow', required: true }),
+    ],
+    outputs: [port({ id: 'visual', label: 'Visual', type: 'visual' })],
+    parameters: [
+      param({ id: 'history', label: 'History', type: 'number', unit: 'second', default: 0.25, min: ONE_TICK_SECONDS, max: 2 }),
+      param({ id: 'maxPoints', label: 'Max points', type: 'integer', unit: 'none', default: 48, min: 2, max: 128, step: 1 }),
+      param({ id: 'width', label: 'Width', type: 'number', unit: 'meter', default: 0.12, min: 0.001, max: 5, editPolicy: 'live' }),
+      param({ id: 'endFade', label: 'End fade', type: 'number', unit: 'normalized', default: 0.35, min: 0, max: 0.5, editPolicy: 'live' }),
+      param({ id: 'renderOrderOffset', label: 'Render order offset', type: 'integer', unit: 'none', default: 0, min: -32, max: 32, step: 1, editPolicy: 'live' }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
 function particleTrail(): NodeSpec {
   return node('ParticleTrail', {
     inputs: [
@@ -726,7 +745,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 /** Fresh, independent registry each call. */
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
-    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), particleEvents(), material(), billboardRenderer(), particleTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(),
+    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(),
     linePath(), bezierPath(), helixPathNode(), pathTransformNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(),
     audioSource(), audioEnvelope(), audioFilter(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),

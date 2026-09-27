@@ -1103,6 +1103,68 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "fireball",
+   "type": "Material",
+   "id": "streakmat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FF9A40",
+     "alpha": 1
+    },
+    "emission": 1,
+    "opacity": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fireball",
+   "type": "MotionTrail",
+   "id": "streak",
+   "params": {
+    "history": 0.3,
+    "width": 0.35,
+    "endFade": 0.45
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "ball.anchor",
+   "to": "streak.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "streakmat.material",
+   "to": "streak.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "flight.window",
+   "to": "streak.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "streak.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
   "vfx_compile",
   {
    "docId": "fireball"
@@ -1114,8 +1176,7 @@
   {
    "docId": "fireball",
    "ticks": [
-    26,
-    44
+    30
    ]
   },
   true
