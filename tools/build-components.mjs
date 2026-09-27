@@ -46,6 +46,9 @@ const COMPONENTS = [
   ['poison-caustic', 'Poison: caustic cloud', 'Slow yellow-green cloud at Target with rising rim bubbles that pop into droplets, dark drips and a ground stain (08-POISON).', 'poison-caustic'],
   ['poison-pool', 'Poison: creeping pool', 'Low creeping cloud with few bubbles (08-POISON variant).', 'poison-pool'],
   ['poison-plume', 'Poison: bubbling plume', 'Taller plume from a narrow base with many bubbles and drips (08-POISON variant).', 'poison-plume'],
+  ['light-pulse', 'Light: radiant pulse', 'Gathering motes, then a sharp pulse at Target: narrow core, distinct tapered rays, faint halo and ground ring, drifting motes and a short warm light (09-LIGHT).', 'light-pulse'],
+  ['light-cone', 'Light: focused cone', 'Rays concentrated upward in a narrow cone (09-LIGHT variant).', 'light-cone'],
+  ['light-blessing', 'Light: blessing', 'Fewer, softer rays with a wide halo and many lingering motes (09-LIGHT variant).', 'light-blessing'],
   ['fireball', 'Fireball', 'Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.', 'fireball'],
 ];
 
@@ -91,6 +94,9 @@ const KNOBS = {
   'poison-caustic': [['radius', 'Cloud radius', [['cloud', 'radius']]], ['density', 'Cloud density', [['cloud', 'rate']]], ['rise', 'Rise speed', [['cloud', 'speedMax'], ['cloud', 'speedMin', 0.36]]], ['drift', 'Drift', [['clouddrift', 'amplitude']]], ['bubbles', 'Bubble rate', [['bubbles', 'rate']]], ['pops', 'Popping amount', [['popdrops', 'burst']]]],
   'poison-pool': [['radius', 'Cloud radius', [['cloud', 'radius']]], ['density', 'Cloud density', [['cloud', 'rate']]], ['rise', 'Rise speed', [['cloud', 'speedMax'], ['cloud', 'speedMin', 0.36]]], ['drift', 'Drift', [['clouddrift', 'amplitude']]], ['bubbles', 'Bubble rate', [['bubbles', 'rate']]], ['pops', 'Popping amount', [['popdrops', 'burst']]]],
   'poison-plume': [['radius', 'Cloud radius', [['cloud', 'radius']]], ['density', 'Cloud density', [['cloud', 'rate']]], ['rise', 'Rise speed', [['cloud', 'speedMax'], ['cloud', 'speedMin', 0.36]]], ['drift', 'Drift', [['clouddrift', 'amplitude']]], ['bubbles', 'Bubble rate', [['bubbles', 'rate']]], ['pops', 'Popping amount', [['popdrops', 'burst']]]],
+  'light-pulse': [['rays', 'Ray count', [['rays', 'count']]], ['length', 'Ray length', [['rays', 'lengthMax'], ['rays', 'lengthMin', 0.25]]], ['pulse', 'Pulse size', [['core', 'size']]], ['halo', 'Halo softness', [['halo', 'size']]], ['motes', 'Mote amount', [['motes', 'burst']]], ['light', 'Brightness', [['lamp', 'intensity']]]],
+  'light-cone': [['rays', 'Ray count', [['rays', 'count']]], ['length', 'Ray length', [['rays', 'lengthMax'], ['rays', 'lengthMin', 0.375]]], ['pulse', 'Pulse size', [['core', 'size']]], ['halo', 'Halo softness', [['halo', 'size']]], ['motes', 'Mote amount', [['motes', 'burst']]], ['light', 'Brightness', [['lamp', 'intensity']]]],
+  'light-blessing': [['rays', 'Ray count', [['rays', 'count']]], ['length', 'Ray length', [['rays', 'lengthMax'], ['rays', 'lengthMin', 0.44]]], ['pulse', 'Pulse size', [['core', 'size']]], ['halo', 'Halo softness', [['halo', 'size']]], ['motes', 'Mote amount', [['motes', 'burst']]], ['light', 'Brightness', [['lamp', 'intensity']]]],
   'fireball': [['travel', 'Travel ticks', [['ball', 'durationTicks']]], ['trail', 'Trail density', [['trailem', 'rate']]], ['core', 'Core size', [['core', 'size']]], ['impact', 'Impact sparks', [['boom', 'burst']]], ['flash', 'Flash size', [['flash', 'size']]], ['light', 'Ball light', [['balllight', 'intensity']]]],
 };
 

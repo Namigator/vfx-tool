@@ -1,0 +1,1239 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "lightcone"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "lightcone",
+   "durationTicks": 168,
+   "seed": 42
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "lightcone",
+   "anchorId": "source",
+   "position": [
+    -3,
+    1.3,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "lightcone",
+   "anchorId": "target",
+   "position": [
+    0,
+    1,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "Schedule",
+   "id": "charge",
+   "params": {
+    "startTicks": 0,
+    "durationTicks": 36,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "Schedule",
+   "id": "pulse",
+   "params": {
+    "startTicks": 36,
+    "durationTicks": 54,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "Emitter",
+   "id": "gather",
+   "params": {
+    "shape": "sphere",
+    "radius": 1.6,
+    "burst": 24,
+    "rate": 0,
+    "speedMin": 0,
+    "speedMax": 0.1,
+    "lifetimeMin": 0.6,
+    "lifetimeMax": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "InitialProperties",
+   "id": "gatherip",
+   "params": {
+    "sizeMin": 0.04,
+    "sizeMax": 0.07
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "Attract",
+   "id": "gatherpull",
+   "params": {
+    "acceleration": 9,
+    "softRadius": 0.15,
+    "killRadius": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "Material",
+   "id": "motemat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFF1D0",
+     "alpha": 1
+    },
+    "emission": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "BillboardRenderer",
+   "id": "gatherbb"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "node-target.out",
+   "to": "gather.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "charge.start",
+   "to": "gather.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "gather.particles",
+   "to": "gatherip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "gatherip.particles",
+   "to": "gatherpull.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "node-target.out",
+   "to": "gatherpull.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "gatherpull.particles",
+   "to": "gatherbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "motemat.material",
+   "to": "gatherbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "gatherbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "Material",
+   "id": "chargemat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFF4DC",
+     "alpha": 1
+    },
+    "emission": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "SpriteRenderer",
+   "id": "chargecore",
+   "params": {
+    "size": 0.3,
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.2
+      },
+      {
+       "x": 1,
+       "y": 1
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.2
+      },
+      {
+       "x": 1,
+       "y": 0.9
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "node-target.out",
+   "to": "chargecore.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "chargemat.material",
+   "to": "chargecore.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "charge.window",
+   "to": "chargecore.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "chargecore.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "Material",
+   "id": "coremat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFFFFF",
+     "alpha": 1
+    },
+    "emission": 1.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "SpriteRenderer",
+   "id": "core",
+   "params": {
+    "size": 0.4,
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.06,
+       "y": 0.8
+      },
+      {
+       "x": 0.3,
+       "y": 0.5
+      },
+      {
+       "x": 1,
+       "y": 0.3
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.06,
+       "y": 0.9
+      },
+      {
+       "x": 0.5,
+       "y": 0.4
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "Material",
+   "id": "halomat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFD890",
+     "alpha": 1
+    },
+    "opacity": 0.35
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "SpriteRenderer",
+   "id": "halo",
+   "params": {
+    "size": 1.2,
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.4
+      },
+      {
+       "x": 0.06,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 1.2
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.9
+      },
+      {
+       "x": 0.2,
+       "y": 0.5
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "node-target.out",
+   "to": "core.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "coremat.material",
+   "to": "core.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "pulse.window",
+   "to": "core.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "core.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "node-target.out",
+   "to": "halo.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "halomat.material",
+   "to": "halo.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "pulse.window",
+   "to": "halo.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "halo.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "RadialPath",
+   "id": "rays",
+   "params": {
+    "mode": "cone",
+    "count": 24,
+    "lengthMin": 1.2,
+    "lengthMax": 3.2,
+    "coneAngle": 0.3
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "Schedule",
+   "id": "raywin",
+   "params": {
+    "startTicks": 36,
+    "durationTicks": 32,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "Time",
+   "id": "rayclock"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "raywin.window",
+   "to": "rayclock.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "ScalarMath",
+   "id": "rayshoot",
+   "params": {
+    "operation": "multiply",
+    "b": 8,
+    "inputUnit": "normalized",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "RevealPath",
+   "id": "rayreveal"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "ScalarMath",
+   "id": "raydim",
+   "params": {
+    "operation": "multiply",
+    "b": -0.9,
+    "inputUnit": "normalized",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "ScalarMath",
+   "id": "rayfade",
+   "params": {
+    "operation": "add",
+    "b": 0.9,
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "node-target.out",
+   "to": "rays.center"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "rayclock.progress",
+   "to": "rayshoot.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "rays.paths",
+   "to": "rayreveal.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "rayshoot.value",
+   "to": "rayreveal.fraction"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "rayclock.progress",
+   "to": "raydim.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "raydim.value",
+   "to": "rayfade.a"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "Material",
+   "id": "raymat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFF0CC",
+     "alpha": 1
+    },
+    "emission": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "rayfade.value",
+   "to": "raymat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "RibbonRenderer",
+   "id": "raysrib",
+   "params": {
+    "width": 0.025,
+    "endFade": 0.25,
+    "widthOverPath": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0.25
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "rayreveal.paths",
+   "to": "raysrib.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "raymat.material",
+   "to": "raysrib.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "raywin.window",
+   "to": "raysrib.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "raysrib.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "Schedule",
+   "id": "ringwin",
+   "params": {
+    "startTicks": 36,
+    "durationTicks": 26,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "Time",
+   "id": "ringclock"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "ringwin.window",
+   "to": "ringclock.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "ScalarMath",
+   "id": "ringsize",
+   "params": {
+    "operation": "max",
+    "b": 0.1,
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "ScalarMath",
+   "id": "ringdim",
+   "params": {
+    "operation": "multiply",
+    "b": -0.6,
+    "inputUnit": "normalized",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "ScalarMath",
+   "id": "ringfade",
+   "params": {
+    "operation": "add",
+    "b": 0.6,
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "ringclock.progress",
+   "to": "ringsize.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "ringclock.progress",
+   "to": "ringdim.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "ringdim.value",
+   "to": "ringfade.a"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "Material",
+   "id": "ringmat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFE2A8",
+     "alpha": 1
+    },
+    "emission": 0.2
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "ringfade.value",
+   "to": "ringmat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "OffsetAnchor",
+   "id": "floor",
+   "params": {
+    "offset": [
+     0,
+     -0.97,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "node-target.out",
+   "to": "floor.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "RingPath",
+   "id": "haloring",
+   "params": {
+    "radius": 2,
+    "samples": 96,
+    "orientation": [
+     0.7071067811865476,
+     0,
+     0,
+     0.7071067811865476
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "RibbonRenderer",
+   "id": "haloringrib",
+   "params": {
+    "width": 0.02,
+    "endFade": 0
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "node-target.out",
+   "to": "haloring.center"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "ringsize.value",
+   "to": "haloring.radiusScale"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "haloring.paths",
+   "to": "haloringrib.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "ringmat.material",
+   "to": "haloringrib.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "ringwin.window",
+   "to": "haloringrib.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "haloringrib.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "RingPath",
+   "id": "groundring",
+   "params": {
+    "radius": 2,
+    "samples": 96,
+    "orientation": [
+     0,
+     0,
+     0,
+     1
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "RibbonRenderer",
+   "id": "groundringrib",
+   "params": {
+    "width": 0.02,
+    "endFade": 0
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "floor.out",
+   "to": "groundring.center"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "ringsize.value",
+   "to": "groundring.radiusScale"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "groundring.paths",
+   "to": "groundringrib.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "ringmat.material",
+   "to": "groundringrib.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "ringwin.window",
+   "to": "groundringrib.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "groundringrib.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "Emitter",
+   "id": "motes",
+   "params": {
+    "shape": "sphere",
+    "radius": 0.2,
+    "burst": 30,
+    "rate": 0,
+    "speedMin": 0.3,
+    "speedMax": 1,
+    "lifetimeMin": 0.5,
+    "lifetimeMax": 1.1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "InitialProperties",
+   "id": "moteip",
+   "params": {
+    "sizeMin": 0.03,
+    "sizeMax": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "Drag",
+   "id": "motedrag",
+   "params": {
+    "coefficient": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "BillboardRenderer",
+   "id": "motebb",
+   "params": {
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.7,
+       "y": 0.6
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "node-target.out",
+   "to": "motes.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "pulse.start",
+   "to": "motes.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "motes.particles",
+   "to": "moteip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "moteip.particles",
+   "to": "motedrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "motedrag.particles",
+   "to": "motebb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "motemat.material",
+   "to": "motebb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "motebb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "Schedule",
+   "id": "lightwin",
+   "params": {
+    "startTicks": 36,
+    "durationTicks": 40,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "PointLight",
+   "id": "lamp",
+   "params": {
+    "color": {
+     "srgb": "#FFD9A0",
+     "alpha": 1
+    },
+    "intensity": 30,
+    "range": 6,
+    "intensityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.15,
+       "y": 0.6
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "node-target.out",
+   "to": "lamp.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "lightwin.window",
+   "to": "lamp.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "lamp.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "lightcone"
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "lightcone",
+   "ticks": [
+    24,
+    38,
+    48,
+    60,
+    80,
+    150
+   ]
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "lightcone",
+   "ticks": [
+    49
+   ],
+   "glow": false
+  },
+  true
+ ]
+]

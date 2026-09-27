@@ -32034,6 +32034,2565 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   ]
  },
  {
+  "id": "light-pulse",
+  "label": "Light: radiant pulse",
+  "description": "Gathering motes, then a sharp pulse at Target: narrow core, distinct tapered rays, faint halo and ground ring, drifting motes and a short warm light (09-LIGHT).",
+  "durationTicks": 168,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "charge",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 36,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "pulse",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 36,
+     "durationTicks": 54,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "gather",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 1.6,
+     "burst": 24,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0.1,
+     "lifetimeMin": 0.6,
+     "lifetimeMax": 0.6
+    }
+   },
+   {
+    "id": "gatherip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.04,
+     "sizeMax": 0.07
+    }
+   },
+   {
+    "id": "gatherpull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 9,
+     "softRadius": 0.15,
+     "killRadius": 0.06
+    }
+   },
+   {
+    "id": "motemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFF1D0",
+      "alpha": 1
+     },
+     "emission": 0.8
+    }
+   },
+   {
+    "id": "gatherbb",
+    "type": "BillboardRenderer"
+   },
+   {
+    "id": "chargemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFF4DC",
+      "alpha": 1
+     },
+     "emission": 1
+    }
+   },
+   {
+    "id": "chargecore",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.3,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.2
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.2
+       },
+       {
+        "x": 1,
+        "y": 0.9
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "coremat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFFFFF",
+      "alpha": 1
+     },
+     "emission": 1.5
+    }
+   },
+   {
+    "id": "core",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.4,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.06,
+        "y": 0.8
+       },
+       {
+        "x": 0.3,
+        "y": 0.5
+       },
+       {
+        "x": 1,
+        "y": 0.3
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.06,
+        "y": 0.9
+       },
+       {
+        "x": 0.5,
+        "y": 0.4
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "halomat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFD890",
+      "alpha": 1
+     },
+     "opacity": 0.35
+    }
+   },
+   {
+    "id": "halo",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 2,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.4
+       },
+       {
+        "x": 0.06,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1.2
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.9
+       },
+       {
+        "x": 0.2,
+        "y": 0.5
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "rays",
+    "type": "RadialPath",
+    "params": {
+     "mode": "sphere",
+     "count": 32,
+     "lengthMin": 0.6,
+     "lengthMax": 2.4,
+     "coneAngle": 0.52
+    }
+   },
+   {
+    "id": "raywin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 36,
+     "durationTicks": 32,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "rayclock",
+    "type": "Time"
+   },
+   {
+    "id": "rayshoot",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 8,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "rayreveal",
+    "type": "RevealPath"
+   },
+   {
+    "id": "raydim",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.9,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "rayfade",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.9,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "raymat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFF0CC",
+      "alpha": 1
+     },
+     "emission": 0.6
+    }
+   },
+   {
+    "id": "raysrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.03,
+     "endFade": 0.25,
+     "widthOverPath": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0.25
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "ringwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 36,
+     "durationTicks": 26,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ringclock",
+    "type": "Time"
+   },
+   {
+    "id": "ringsize",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "max",
+     "b": 0.1,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringdim",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.6,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringfade",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.6,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFE2A8",
+      "alpha": 1
+     },
+     "emission": 0.2
+    }
+   },
+   {
+    "id": "floor",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      -0.97,
+      0
+     ]
+    }
+   },
+   {
+    "id": "haloring",
+    "type": "RingPath",
+    "params": {
+     "radius": 2,
+     "samples": 96,
+     "orientation": [
+      0.7071067811865476,
+      0,
+      0,
+      0.7071067811865476
+     ]
+    }
+   },
+   {
+    "id": "haloringrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.02,
+     "endFade": 0
+    }
+   },
+   {
+    "id": "groundring",
+    "type": "RingPath",
+    "params": {
+     "radius": 2,
+     "samples": 96,
+     "orientation": [
+      0,
+      0,
+      0,
+      1
+     ]
+    }
+   },
+   {
+    "id": "groundringrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.02,
+     "endFade": 0
+    }
+   },
+   {
+    "id": "motes",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.2,
+     "burst": 48,
+     "rate": 0,
+     "speedMin": 0.3,
+     "speedMax": 1,
+     "lifetimeMin": 0.6,
+     "lifetimeMax": 1.5
+    }
+   },
+   {
+    "id": "moteip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.03,
+     "sizeMax": 0.06
+    }
+   },
+   {
+    "id": "motedrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.5
+    }
+   },
+   {
+    "id": "motebb",
+    "type": "BillboardRenderer",
+    "params": {
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.7,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "lightwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 36,
+     "durationTicks": 40,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "lamp",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#FFD9A0",
+      "alpha": 1
+     },
+     "intensity": 30,
+     "range": 6,
+     "intensityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.15,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "gather.anchor"
+   ],
+   [
+    "charge.start",
+    "gather.trigger"
+   ],
+   [
+    "gather.particles",
+    "gatherip.particles"
+   ],
+   [
+    "gatherip.particles",
+    "gatherpull.particles"
+   ],
+   [
+    "node-target.out",
+    "gatherpull.anchor"
+   ],
+   [
+    "gatherpull.particles",
+    "gatherbb.particles"
+   ],
+   [
+    "motemat.material",
+    "gatherbb.material"
+   ],
+   [
+    "gatherbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "chargecore.anchor"
+   ],
+   [
+    "chargemat.material",
+    "chargecore.material"
+   ],
+   [
+    "charge.window",
+    "chargecore.window"
+   ],
+   [
+    "chargecore.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "core.anchor"
+   ],
+   [
+    "coremat.material",
+    "core.material"
+   ],
+   [
+    "pulse.window",
+    "core.window"
+   ],
+   [
+    "core.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "halo.anchor"
+   ],
+   [
+    "halomat.material",
+    "halo.material"
+   ],
+   [
+    "pulse.window",
+    "halo.window"
+   ],
+   [
+    "halo.visual",
+    "node-output.visual"
+   ],
+   [
+    "raywin.window",
+    "rayclock.window"
+   ],
+   [
+    "node-target.out",
+    "rays.center"
+   ],
+   [
+    "rayclock.progress",
+    "rayshoot.a"
+   ],
+   [
+    "rays.paths",
+    "rayreveal.paths"
+   ],
+   [
+    "rayshoot.value",
+    "rayreveal.fraction"
+   ],
+   [
+    "rayclock.progress",
+    "raydim.a"
+   ],
+   [
+    "raydim.value",
+    "rayfade.a"
+   ],
+   [
+    "rayfade.value",
+    "raymat.opacity"
+   ],
+   [
+    "rayreveal.paths",
+    "raysrib.paths"
+   ],
+   [
+    "raymat.material",
+    "raysrib.material"
+   ],
+   [
+    "raywin.window",
+    "raysrib.window"
+   ],
+   [
+    "raysrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "ringwin.window",
+    "ringclock.window"
+   ],
+   [
+    "ringclock.progress",
+    "ringsize.a"
+   ],
+   [
+    "ringclock.progress",
+    "ringdim.a"
+   ],
+   [
+    "ringdim.value",
+    "ringfade.a"
+   ],
+   [
+    "ringfade.value",
+    "ringmat.opacity"
+   ],
+   [
+    "node-target.out",
+    "floor.anchor"
+   ],
+   [
+    "node-target.out",
+    "haloring.center"
+   ],
+   [
+    "ringsize.value",
+    "haloring.radiusScale"
+   ],
+   [
+    "haloring.paths",
+    "haloringrib.paths"
+   ],
+   [
+    "ringmat.material",
+    "haloringrib.material"
+   ],
+   [
+    "ringwin.window",
+    "haloringrib.window"
+   ],
+   [
+    "haloringrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "floor.out",
+    "groundring.center"
+   ],
+   [
+    "ringsize.value",
+    "groundring.radiusScale"
+   ],
+   [
+    "groundring.paths",
+    "groundringrib.paths"
+   ],
+   [
+    "ringmat.material",
+    "groundringrib.material"
+   ],
+   [
+    "ringwin.window",
+    "groundringrib.window"
+   ],
+   [
+    "groundringrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "motes.anchor"
+   ],
+   [
+    "pulse.start",
+    "motes.trigger"
+   ],
+   [
+    "motes.particles",
+    "moteip.particles"
+   ],
+   [
+    "moteip.particles",
+    "motedrag.particles"
+   ],
+   [
+    "motedrag.particles",
+    "motebb.particles"
+   ],
+   [
+    "motemat.material",
+    "motebb.material"
+   ],
+   [
+    "motebb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "lamp.anchor"
+   ],
+   [
+    "lightwin.window",
+    "lamp.window"
+   ],
+   [
+    "lamp.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "rays",
+    "label": "Ray count",
+    "value": 32,
+    "bindings": [
+     {
+      "node": "rays",
+      "parameter": "count"
+     }
+    ]
+   },
+   {
+    "id": "length",
+    "label": "Ray length",
+    "value": 2.4,
+    "bindings": [
+     {
+      "node": "rays",
+      "parameter": "lengthMax"
+     },
+     {
+      "node": "rays",
+      "parameter": "lengthMin",
+      "scale": 0.25
+     }
+    ]
+   },
+   {
+    "id": "pulse",
+    "label": "Pulse size",
+    "value": 0.4,
+    "bindings": [
+     {
+      "node": "core",
+      "parameter": "size"
+     }
+    ]
+   },
+   {
+    "id": "halo",
+    "label": "Halo softness",
+    "value": 2,
+    "bindings": [
+     {
+      "node": "halo",
+      "parameter": "size"
+     }
+    ]
+   },
+   {
+    "id": "motes",
+    "label": "Mote amount",
+    "value": 48,
+    "bindings": [
+     {
+      "node": "motes",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "light",
+    "label": "Brightness",
+    "value": 30,
+    "bindings": [
+     {
+      "node": "lamp",
+      "parameter": "intensity"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "light-cone",
+  "label": "Light: focused cone",
+  "description": "Rays concentrated upward in a narrow cone (09-LIGHT variant).",
+  "durationTicks": 168,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "charge",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 36,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "pulse",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 36,
+     "durationTicks": 54,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "gather",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 1.6,
+     "burst": 24,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0.1,
+     "lifetimeMin": 0.6,
+     "lifetimeMax": 0.6
+    }
+   },
+   {
+    "id": "gatherip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.04,
+     "sizeMax": 0.07
+    }
+   },
+   {
+    "id": "gatherpull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 9,
+     "softRadius": 0.15,
+     "killRadius": 0.06
+    }
+   },
+   {
+    "id": "motemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFF1D0",
+      "alpha": 1
+     },
+     "emission": 0.8
+    }
+   },
+   {
+    "id": "gatherbb",
+    "type": "BillboardRenderer"
+   },
+   {
+    "id": "chargemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFF4DC",
+      "alpha": 1
+     },
+     "emission": 1
+    }
+   },
+   {
+    "id": "chargecore",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.3,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.2
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.2
+       },
+       {
+        "x": 1,
+        "y": 0.9
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "coremat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFFFFF",
+      "alpha": 1
+     },
+     "emission": 1.5
+    }
+   },
+   {
+    "id": "core",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.4,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.06,
+        "y": 0.8
+       },
+       {
+        "x": 0.3,
+        "y": 0.5
+       },
+       {
+        "x": 1,
+        "y": 0.3
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.06,
+        "y": 0.9
+       },
+       {
+        "x": 0.5,
+        "y": 0.4
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "halomat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFD890",
+      "alpha": 1
+     },
+     "opacity": 0.35
+    }
+   },
+   {
+    "id": "halo",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1.2,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.4
+       },
+       {
+        "x": 0.06,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1.2
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.9
+       },
+       {
+        "x": 0.2,
+        "y": 0.5
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "rays",
+    "type": "RadialPath",
+    "params": {
+     "mode": "cone",
+     "count": 24,
+     "lengthMin": 1.2,
+     "lengthMax": 3.2,
+     "coneAngle": 0.3
+    }
+   },
+   {
+    "id": "raywin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 36,
+     "durationTicks": 32,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "rayclock",
+    "type": "Time"
+   },
+   {
+    "id": "rayshoot",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 8,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "rayreveal",
+    "type": "RevealPath"
+   },
+   {
+    "id": "raydim",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.9,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "rayfade",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.9,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "raymat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFF0CC",
+      "alpha": 1
+     },
+     "emission": 0.6
+    }
+   },
+   {
+    "id": "raysrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.025,
+     "endFade": 0.25,
+     "widthOverPath": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0.25
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "ringwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 36,
+     "durationTicks": 26,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ringclock",
+    "type": "Time"
+   },
+   {
+    "id": "ringsize",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "max",
+     "b": 0.1,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringdim",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.6,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringfade",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.6,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFE2A8",
+      "alpha": 1
+     },
+     "emission": 0.2
+    }
+   },
+   {
+    "id": "floor",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      -0.97,
+      0
+     ]
+    }
+   },
+   {
+    "id": "haloring",
+    "type": "RingPath",
+    "params": {
+     "radius": 2,
+     "samples": 96,
+     "orientation": [
+      0.7071067811865476,
+      0,
+      0,
+      0.7071067811865476
+     ]
+    }
+   },
+   {
+    "id": "haloringrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.02,
+     "endFade": 0
+    }
+   },
+   {
+    "id": "groundring",
+    "type": "RingPath",
+    "params": {
+     "radius": 2,
+     "samples": 96,
+     "orientation": [
+      0,
+      0,
+      0,
+      1
+     ]
+    }
+   },
+   {
+    "id": "groundringrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.02,
+     "endFade": 0
+    }
+   },
+   {
+    "id": "motes",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.2,
+     "burst": 30,
+     "rate": 0,
+     "speedMin": 0.3,
+     "speedMax": 1,
+     "lifetimeMin": 0.5,
+     "lifetimeMax": 1.1
+    }
+   },
+   {
+    "id": "moteip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.03,
+     "sizeMax": 0.06
+    }
+   },
+   {
+    "id": "motedrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.5
+    }
+   },
+   {
+    "id": "motebb",
+    "type": "BillboardRenderer",
+    "params": {
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.7,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "lightwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 36,
+     "durationTicks": 40,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "lamp",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#FFD9A0",
+      "alpha": 1
+     },
+     "intensity": 30,
+     "range": 6,
+     "intensityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.15,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "gather.anchor"
+   ],
+   [
+    "charge.start",
+    "gather.trigger"
+   ],
+   [
+    "gather.particles",
+    "gatherip.particles"
+   ],
+   [
+    "gatherip.particles",
+    "gatherpull.particles"
+   ],
+   [
+    "node-target.out",
+    "gatherpull.anchor"
+   ],
+   [
+    "gatherpull.particles",
+    "gatherbb.particles"
+   ],
+   [
+    "motemat.material",
+    "gatherbb.material"
+   ],
+   [
+    "gatherbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "chargecore.anchor"
+   ],
+   [
+    "chargemat.material",
+    "chargecore.material"
+   ],
+   [
+    "charge.window",
+    "chargecore.window"
+   ],
+   [
+    "chargecore.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "core.anchor"
+   ],
+   [
+    "coremat.material",
+    "core.material"
+   ],
+   [
+    "pulse.window",
+    "core.window"
+   ],
+   [
+    "core.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "halo.anchor"
+   ],
+   [
+    "halomat.material",
+    "halo.material"
+   ],
+   [
+    "pulse.window",
+    "halo.window"
+   ],
+   [
+    "halo.visual",
+    "node-output.visual"
+   ],
+   [
+    "raywin.window",
+    "rayclock.window"
+   ],
+   [
+    "node-target.out",
+    "rays.center"
+   ],
+   [
+    "rayclock.progress",
+    "rayshoot.a"
+   ],
+   [
+    "rays.paths",
+    "rayreveal.paths"
+   ],
+   [
+    "rayshoot.value",
+    "rayreveal.fraction"
+   ],
+   [
+    "rayclock.progress",
+    "raydim.a"
+   ],
+   [
+    "raydim.value",
+    "rayfade.a"
+   ],
+   [
+    "rayfade.value",
+    "raymat.opacity"
+   ],
+   [
+    "rayreveal.paths",
+    "raysrib.paths"
+   ],
+   [
+    "raymat.material",
+    "raysrib.material"
+   ],
+   [
+    "raywin.window",
+    "raysrib.window"
+   ],
+   [
+    "raysrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "ringwin.window",
+    "ringclock.window"
+   ],
+   [
+    "ringclock.progress",
+    "ringsize.a"
+   ],
+   [
+    "ringclock.progress",
+    "ringdim.a"
+   ],
+   [
+    "ringdim.value",
+    "ringfade.a"
+   ],
+   [
+    "ringfade.value",
+    "ringmat.opacity"
+   ],
+   [
+    "node-target.out",
+    "floor.anchor"
+   ],
+   [
+    "node-target.out",
+    "haloring.center"
+   ],
+   [
+    "ringsize.value",
+    "haloring.radiusScale"
+   ],
+   [
+    "haloring.paths",
+    "haloringrib.paths"
+   ],
+   [
+    "ringmat.material",
+    "haloringrib.material"
+   ],
+   [
+    "ringwin.window",
+    "haloringrib.window"
+   ],
+   [
+    "haloringrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "floor.out",
+    "groundring.center"
+   ],
+   [
+    "ringsize.value",
+    "groundring.radiusScale"
+   ],
+   [
+    "groundring.paths",
+    "groundringrib.paths"
+   ],
+   [
+    "ringmat.material",
+    "groundringrib.material"
+   ],
+   [
+    "ringwin.window",
+    "groundringrib.window"
+   ],
+   [
+    "groundringrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "motes.anchor"
+   ],
+   [
+    "pulse.start",
+    "motes.trigger"
+   ],
+   [
+    "motes.particles",
+    "moteip.particles"
+   ],
+   [
+    "moteip.particles",
+    "motedrag.particles"
+   ],
+   [
+    "motedrag.particles",
+    "motebb.particles"
+   ],
+   [
+    "motemat.material",
+    "motebb.material"
+   ],
+   [
+    "motebb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "lamp.anchor"
+   ],
+   [
+    "lightwin.window",
+    "lamp.window"
+   ],
+   [
+    "lamp.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "rays",
+    "label": "Ray count",
+    "value": 24,
+    "bindings": [
+     {
+      "node": "rays",
+      "parameter": "count"
+     }
+    ]
+   },
+   {
+    "id": "length",
+    "label": "Ray length",
+    "value": 3.2,
+    "bindings": [
+     {
+      "node": "rays",
+      "parameter": "lengthMax"
+     },
+     {
+      "node": "rays",
+      "parameter": "lengthMin",
+      "scale": 0.375
+     }
+    ]
+   },
+   {
+    "id": "pulse",
+    "label": "Pulse size",
+    "value": 0.4,
+    "bindings": [
+     {
+      "node": "core",
+      "parameter": "size"
+     }
+    ]
+   },
+   {
+    "id": "halo",
+    "label": "Halo softness",
+    "value": 1.2,
+    "bindings": [
+     {
+      "node": "halo",
+      "parameter": "size"
+     }
+    ]
+   },
+   {
+    "id": "motes",
+    "label": "Mote amount",
+    "value": 30,
+    "bindings": [
+     {
+      "node": "motes",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "light",
+    "label": "Brightness",
+    "value": 30,
+    "bindings": [
+     {
+      "node": "lamp",
+      "parameter": "intensity"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "light-blessing",
+  "label": "Light: blessing",
+  "description": "Fewer, softer rays with a wide halo and many lingering motes (09-LIGHT variant).",
+  "durationTicks": 168,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "charge",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 36,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "pulse",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 36,
+     "durationTicks": 54,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "gather",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 1.6,
+     "burst": 24,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0.1,
+     "lifetimeMin": 0.6,
+     "lifetimeMax": 0.6
+    }
+   },
+   {
+    "id": "gatherip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.04,
+     "sizeMax": 0.07
+    }
+   },
+   {
+    "id": "gatherpull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 9,
+     "softRadius": 0.15,
+     "killRadius": 0.06
+    }
+   },
+   {
+    "id": "motemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFF1D0",
+      "alpha": 1
+     },
+     "emission": 0.8
+    }
+   },
+   {
+    "id": "gatherbb",
+    "type": "BillboardRenderer"
+   },
+   {
+    "id": "chargemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFF4DC",
+      "alpha": 1
+     },
+     "emission": 1
+    }
+   },
+   {
+    "id": "chargecore",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.3,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.2
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.2
+       },
+       {
+        "x": 1,
+        "y": 0.9
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "coremat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFFFFF",
+      "alpha": 1
+     },
+     "emission": 1.5
+    }
+   },
+   {
+    "id": "core",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.4,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.06,
+        "y": 0.8
+       },
+       {
+        "x": 0.3,
+        "y": 0.5
+       },
+       {
+        "x": 1,
+        "y": 0.3
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.06,
+        "y": 0.9
+       },
+       {
+        "x": 0.5,
+        "y": 0.4
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "halomat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFD890",
+      "alpha": 1
+     },
+     "opacity": 0.35
+    }
+   },
+   {
+    "id": "halo",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 3,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.4
+       },
+       {
+        "x": 0.06,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1.2
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.9
+       },
+       {
+        "x": 0.2,
+        "y": 0.5
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "rays",
+    "type": "RadialPath",
+    "params": {
+     "mode": "sphere",
+     "count": 14,
+     "lengthMin": 0.8,
+     "lengthMax": 1.8,
+     "coneAngle": 0.52
+    }
+   },
+   {
+    "id": "raywin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 36,
+     "durationTicks": 32,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "rayclock",
+    "type": "Time"
+   },
+   {
+    "id": "rayshoot",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 8,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "rayreveal",
+    "type": "RevealPath"
+   },
+   {
+    "id": "raydim",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.9,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "rayfade",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.9,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "raymat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFF0CC",
+      "alpha": 1
+     },
+     "emission": 0.6
+    }
+   },
+   {
+    "id": "raysrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.04,
+     "endFade": 0.25,
+     "widthOverPath": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0.25
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "ringwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 36,
+     "durationTicks": 26,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ringclock",
+    "type": "Time"
+   },
+   {
+    "id": "ringsize",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "max",
+     "b": 0.1,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringdim",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.6,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringfade",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.6,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFE2A8",
+      "alpha": 1
+     },
+     "emission": 0.2
+    }
+   },
+   {
+    "id": "floor",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      -0.97,
+      0
+     ]
+    }
+   },
+   {
+    "id": "haloring",
+    "type": "RingPath",
+    "params": {
+     "radius": 2,
+     "samples": 96,
+     "orientation": [
+      0.7071067811865476,
+      0,
+      0,
+      0.7071067811865476
+     ]
+    }
+   },
+   {
+    "id": "haloringrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.02,
+     "endFade": 0
+    }
+   },
+   {
+    "id": "groundring",
+    "type": "RingPath",
+    "params": {
+     "radius": 2,
+     "samples": 96,
+     "orientation": [
+      0,
+      0,
+      0,
+      1
+     ]
+    }
+   },
+   {
+    "id": "groundringrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.02,
+     "endFade": 0
+    }
+   },
+   {
+    "id": "motes",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.2,
+     "burst": 90,
+     "rate": 0,
+     "speedMin": 0.3,
+     "speedMax": 1,
+     "lifetimeMin": 1.4,
+     "lifetimeMax": 2.6
+    }
+   },
+   {
+    "id": "moteip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.03,
+     "sizeMax": 0.06
+    }
+   },
+   {
+    "id": "motedrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.5
+    }
+   },
+   {
+    "id": "motebb",
+    "type": "BillboardRenderer",
+    "params": {
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.7,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "lightwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 36,
+     "durationTicks": 40,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "lamp",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#FFD9A0",
+      "alpha": 1
+     },
+     "intensity": 30,
+     "range": 6,
+     "intensityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.15,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "gather.anchor"
+   ],
+   [
+    "charge.start",
+    "gather.trigger"
+   ],
+   [
+    "gather.particles",
+    "gatherip.particles"
+   ],
+   [
+    "gatherip.particles",
+    "gatherpull.particles"
+   ],
+   [
+    "node-target.out",
+    "gatherpull.anchor"
+   ],
+   [
+    "gatherpull.particles",
+    "gatherbb.particles"
+   ],
+   [
+    "motemat.material",
+    "gatherbb.material"
+   ],
+   [
+    "gatherbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "chargecore.anchor"
+   ],
+   [
+    "chargemat.material",
+    "chargecore.material"
+   ],
+   [
+    "charge.window",
+    "chargecore.window"
+   ],
+   [
+    "chargecore.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "core.anchor"
+   ],
+   [
+    "coremat.material",
+    "core.material"
+   ],
+   [
+    "pulse.window",
+    "core.window"
+   ],
+   [
+    "core.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "halo.anchor"
+   ],
+   [
+    "halomat.material",
+    "halo.material"
+   ],
+   [
+    "pulse.window",
+    "halo.window"
+   ],
+   [
+    "halo.visual",
+    "node-output.visual"
+   ],
+   [
+    "raywin.window",
+    "rayclock.window"
+   ],
+   [
+    "node-target.out",
+    "rays.center"
+   ],
+   [
+    "rayclock.progress",
+    "rayshoot.a"
+   ],
+   [
+    "rays.paths",
+    "rayreveal.paths"
+   ],
+   [
+    "rayshoot.value",
+    "rayreveal.fraction"
+   ],
+   [
+    "rayclock.progress",
+    "raydim.a"
+   ],
+   [
+    "raydim.value",
+    "rayfade.a"
+   ],
+   [
+    "rayfade.value",
+    "raymat.opacity"
+   ],
+   [
+    "rayreveal.paths",
+    "raysrib.paths"
+   ],
+   [
+    "raymat.material",
+    "raysrib.material"
+   ],
+   [
+    "raywin.window",
+    "raysrib.window"
+   ],
+   [
+    "raysrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "ringwin.window",
+    "ringclock.window"
+   ],
+   [
+    "ringclock.progress",
+    "ringsize.a"
+   ],
+   [
+    "ringclock.progress",
+    "ringdim.a"
+   ],
+   [
+    "ringdim.value",
+    "ringfade.a"
+   ],
+   [
+    "ringfade.value",
+    "ringmat.opacity"
+   ],
+   [
+    "node-target.out",
+    "floor.anchor"
+   ],
+   [
+    "node-target.out",
+    "haloring.center"
+   ],
+   [
+    "ringsize.value",
+    "haloring.radiusScale"
+   ],
+   [
+    "haloring.paths",
+    "haloringrib.paths"
+   ],
+   [
+    "ringmat.material",
+    "haloringrib.material"
+   ],
+   [
+    "ringwin.window",
+    "haloringrib.window"
+   ],
+   [
+    "haloringrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "floor.out",
+    "groundring.center"
+   ],
+   [
+    "ringsize.value",
+    "groundring.radiusScale"
+   ],
+   [
+    "groundring.paths",
+    "groundringrib.paths"
+   ],
+   [
+    "ringmat.material",
+    "groundringrib.material"
+   ],
+   [
+    "ringwin.window",
+    "groundringrib.window"
+   ],
+   [
+    "groundringrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "motes.anchor"
+   ],
+   [
+    "pulse.start",
+    "motes.trigger"
+   ],
+   [
+    "motes.particles",
+    "moteip.particles"
+   ],
+   [
+    "moteip.particles",
+    "motedrag.particles"
+   ],
+   [
+    "motedrag.particles",
+    "motebb.particles"
+   ],
+   [
+    "motemat.material",
+    "motebb.material"
+   ],
+   [
+    "motebb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "lamp.anchor"
+   ],
+   [
+    "lightwin.window",
+    "lamp.window"
+   ],
+   [
+    "lamp.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "rays",
+    "label": "Ray count",
+    "value": 14,
+    "bindings": [
+     {
+      "node": "rays",
+      "parameter": "count"
+     }
+    ]
+   },
+   {
+    "id": "length",
+    "label": "Ray length",
+    "value": 1.8,
+    "bindings": [
+     {
+      "node": "rays",
+      "parameter": "lengthMax"
+     },
+     {
+      "node": "rays",
+      "parameter": "lengthMin",
+      "scale": 0.44
+     }
+    ]
+   },
+   {
+    "id": "pulse",
+    "label": "Pulse size",
+    "value": 0.4,
+    "bindings": [
+     {
+      "node": "core",
+      "parameter": "size"
+     }
+    ]
+   },
+   {
+    "id": "halo",
+    "label": "Halo softness",
+    "value": 3,
+    "bindings": [
+     {
+      "node": "halo",
+      "parameter": "size"
+     }
+    ]
+   },
+   {
+    "id": "motes",
+    "label": "Mote amount",
+    "value": 90,
+    "bindings": [
+     {
+      "node": "motes",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "light",
+    "label": "Brightness",
+    "value": 30,
+    "bindings": [
+     {
+      "node": "lamp",
+      "parameter": "intensity"
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": "fireball",
   "label": "Fireball",
   "description": "Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.",
