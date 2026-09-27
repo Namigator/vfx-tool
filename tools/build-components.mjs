@@ -22,6 +22,7 @@ const COMPONENTS = [
   ['helix-beam', 'Helix beam', 'Two spinning helix strands braided around a bright core line Source→Target (HelixPath + ribbons).', 'helix-beam'],
   ['charge-tethers', 'Charge tethers', 'Motes pulled into Source with jagged electric tethers to a few of them (ParticlePaths + JaggedPath).', 'charge-tethers'],
   ['spark-aftershock', 'Spark aftershock', 'Spark burst at Target plus a delayed second burst (EventDelay + MergeEvents); sparks that land kick up dust.', 'event-chain'],
+  ['lightning-strike', 'Lightning strike', 'Charge at Source, then a branching bolt to Target with sparks at both ends, impact glow, ground light, ripple, flash and shake (01-LIGHTNING).', 'lightning-strike'],
   ['fireball', 'Fireball', 'Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.', 'fireball'],
 ];
 
@@ -43,6 +44,7 @@ const KNOBS = {
   'helix-beam': [['radius', 'Helix radius', [['strandA', 'radius'], ['strandB', 'radius']]], ['turns', 'Turns', [['strandA', 'turns'], ['strandB', 'turns']]], ['spin', 'Spin', [['strandA', 'spin'], ['strandB', 'spin']]], ['width', 'Strand width', [['ribA', 'width'], ['ribB', 'width']]]],
   'charge-tethers': [['motes', 'Mote count', [['motes', 'burst']]], ['radius', 'Gather radius', [['motes', 'radius']]], ['pull', 'Pull strength', [['pull', 'acceleration']]], ['tethers', 'Tethers', [['tethers', 'maxCount']]], ['jagged', 'Jaggedness', [['jag', 'amplitude']]]],
   'spark-aftershock': [['sparks', 'Sparks per burst', [['base', 'value']]], ['delay', 'Aftershock delay', [['later', 'delayTicks']]], ['speed', 'Spark speed', [['sparks', 'speedMax'], ['sparks', 'speedMin', 0.5]]], ['dust', 'Dust size', [['dip', 'sizeMax'], ['dip', 'sizeMin', 0.57]]]],
+  'lightning-strike': [['core', 'Core width', [['corerib', 'width'], ['innerrib', 'width', 2.692], ['outerrib', 'width', 7.115], ['halorib', 'width', 16.54]]], ['branches', 'Branches', [['branches', 'count']]], ['jagged', 'Jaggedness', [['trunk', 'amplitude']]], ['impact', 'Impact sparks', [['hitsparks', 'burst']]], ['source', 'Source sparks', [['srcsparks', 'burst']]], ['ripple', 'Ripple size', [['ripple', 'radius']]]],
   'fireball': [['travel', 'Travel ticks', [['ball', 'durationTicks']]], ['trail', 'Trail density', [['trailem', 'rate']]], ['core', 'Core size', [['core', 'size']]], ['impact', 'Impact sparks', [['boom', 'burst']]], ['flash', 'Flash size', [['flash', 'size']]], ['light', 'Ball light', [['balllight', 'intensity']]]],
 };
 

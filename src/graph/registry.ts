@@ -421,6 +421,16 @@ function helixPathNode(): NodeSpec {
   });
 }
 
+/** MergePaths: one path set from several (e.g. trunk + branches + forks) so shared ribbon layers draw them all; ids are prefixed per input. */
+function mergePathsNode(): NodeSpec {
+  return node('MergePaths', {
+    inputs: [port({ id: 'paths', label: 'Paths', type: 'paths', cardinality: 'many', required: true })],
+    outputs: [port({ id: 'paths', label: 'Paths', type: 'paths' })],
+    parameters: [],
+    disabledBehavior: 'empty',
+  });
+}
+
 function pathTransformNode(): NodeSpec {
   return node('PathTransform', {
     inputs: [port({ id: 'paths', label: 'Paths', type: 'paths', required: true })],
@@ -909,7 +919,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
     anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), constantNode(), scalarMath(), publicParameter(), offsetAnchor(), eventDelay(), mergeEvents(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
-    linePath(), bezierPath(), helixPathNode(), pathTransformNode(), particlePathsNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(), oscillator(), timeNode(),
+    linePath(), bezierPath(), helixPathNode(), pathTransformNode(), mergePathsNode(), particlePathsNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(), oscillator(), timeNode(),
     audioSource(), audioEnvelope(), audioFilter(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),
   ];

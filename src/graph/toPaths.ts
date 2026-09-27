@@ -339,6 +339,18 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
         out = new Map([['paths', [guard(id, () => helixPath('p0', start, end, opts))]]]);
         break;
       }
+      case 'MergePaths': {
+        if (!on) { out = new Map([['paths', []]]); break; }
+        // Inputs in edge order; each input's ids get its index so merged ids stay unique and stable.
+        const merged: PathData[] = [];
+        into(id, 'paths').forEach((c, i) => {
+          const src = sourceNode(c.source, id, 'paths'), set = evalNode(src).get(c.source.kind === 'node' ? c.source.port : '');
+          if (!set) fail('UNKNOWN_NODE', `Output of "${src.node.id}" feeding MergePaths "${id}" is not a path output.`, src.node.id);
+          for (const p of set as PathData[]) merged.push({ ...p, id: `m${i}-${p.id}` });
+        });
+        out = new Map([['paths', merged]]);
+        break;
+      }
       case 'PathTransform': {
         const input = pathsInto(id, 'paths');
         if (!on) { out = new Map([['paths', input]]); break; }
