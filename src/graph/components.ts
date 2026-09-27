@@ -130,6 +130,17 @@ export function insertComponent(doc: EffectDocumentV2, componentId: string, pref
     addEdge(child!, `${p}-e-${fn}-out-${port}`, source, { nodeId: `${p}-out-${port}`, port: 'in' });
     crossings.push({ port, target });
   }
+  // Start at (user feedback 2026-09-27: components must be sequenceable, e.g. impact after charge): one knob shifts
+  // every Schedule of the component together, keeping their authored spacing (binding offset = authored start).
+  const scheds = c.nodes.filter(n => n.type === 'Schedule');
+  if (scheds.length) {
+    const offs = scheds.map(n => Number(n.params?.startTicks ?? 0)), scope = graphOfTemplate(scheds[0].id);
+    d.controls.push({
+      id: `ctl-${p}-start-at`, scopeGraphId: scope.id, label: 'Start at', type: 'integer', unit: 'tick', value: 0, default: 0, min: 0, max: 600 - Math.max(...offs), step: 1,
+      section: p === c.id ? c.label : `${c.label} (${p})`, description: 'Delays the whole component (60 ticks = 1 second) so it can play after another one.', editPolicy: 'resample',
+      bindings: scheds.map((n, i) => ({ nodeId: nodeId(n.id), parameter: 'startTicks', ...(offs[i] ? { offset: offs[i] } : {}) })),
+    });
+  }
   // Knobs become document controls bound to the component's (prefixed) nodes; type/unit/bounds come from
   // the first binding's parameter spec, bounds widened so every scaled binding stays inside its own range.
   for (const k of c.knobs) {

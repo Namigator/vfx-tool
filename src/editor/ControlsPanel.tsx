@@ -9,7 +9,7 @@ const UNIT_LABEL: Record<string, string> = { meter: 'm', second: 's', tick: 'tic
 
 type Props = { document: EffectDocumentV2; onEdit: (label: string, patches: HistoryPatch[]) => void };
 
-function ControlRow({ c, index, onEdit }: { c: PublicControl; index: number; onEdit: Props['onEdit'] }) {
+function ControlRow({ c, index, onEdit, durationTicks }: { c: PublicControl; index: number; onEdit: Props['onEdit']; durationTicks: number }) {
   const [draft, setDraft] = useState<string | null>(null);
   const value = typeof c.value === 'number' ? c.value : 0;
   const min = c.min ?? 0, max = c.max ?? Math.max(1, value * 4);
@@ -20,7 +20,10 @@ function ControlRow({ c, index, onEdit }: { c: PublicControl; index: number; onE
     let v = Number(text);
     if (!Number.isFinite(v)) return;
     v = Math.min(max, Math.max(min, c.type === 'integer' ? Math.round(v) : v));
-    if (v !== value) onEdit(`Set ${c.label} = ${v}`, [{ op: 'set', path: ['controls', index, 'value'], value: v }]);
+    if (v === value) return;
+    // A component's Start at knob lengthens the effect by the same amount so the delayed part is not cut off (never shortens).
+    const grow = c.id.endsWith('-start-at') && v > value ? Math.min(600, durationTicks + (v - value)) : durationTicks;
+    onEdit(`Set ${c.label} = ${v}`, [{ op: 'set', path: ['controls', index, 'value'], value: v }, ...(grow > durationTicks ? [{ op: 'set' as const, path: ['durationTicks'], value: grow }] : [])]);
   };
   return (
     <div className="cp-row" title={c.description}>
@@ -45,7 +48,7 @@ export function ControlsPanel({ document: doc, onEdit }: Props) {
       {sections.map(s => (
         <fieldset key={s} className="cp-section">
           <legend>{s}</legend>
-          {numeric.filter(([c]) => c.section === s).map(([c, i]) => <ControlRow key={c.id} c={c} index={i} onEdit={onEdit} />)}
+          {numeric.filter(([c]) => c.section === s).map(([c, i]) => <ControlRow key={c.id} c={c} index={i} onEdit={onEdit} durationTicks={doc.durationTicks} />)}
         </fieldset>
       ))}
       <style>{`.cp-root{display:flex;flex-direction:column;gap:10px}.cp-section{border:1px solid #2a3140;border-radius:6px;padding:6px 8px 8px;margin:0}.cp-section legend{font-size:13px;font-weight:600;padding:0 4px}.cp-row{display:grid;grid-template-columns:minmax(90px,1fr) 2fr 72px auto;gap:6px;align-items:center;font-size:13px;margin-top:4px}.cp-num{width:72px}.cp-unit{font-size:11px;opacity:.7}`}</style>

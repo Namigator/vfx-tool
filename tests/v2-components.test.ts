@@ -104,3 +104,13 @@ test('grouped sound components: cues inside the group drive the root audio chain
     assert.deepEqual([...b.value.mix.left], [...a.value.mix.left], c.id);
   }
 });
+
+test('Start at knob delays every Schedule of a component together (keeps their spacing)', () => {
+  const { doc } = insertComponent(createBlankDocument(), 'fireball', undefined, { group: true });
+  const k = doc.controls.find(c => c.label === 'Start at')!;
+  assert.ok(k && k.value === 0 && k.bindings.length === 2);
+  const later = structuredClone(doc); later.controls.find(c => c.id === k.id)!.value = 30; later.durationTicks = 200;
+  const ticks = (d: typeof doc) => compiles(valid(d)).systems.map(s => s.descriptor.bursts[0]?.tick ?? s.descriptor.rate?.startTick).filter(t => t !== undefined).sort((a, b) => a! - b!);
+  assert.deepEqual(ticks(later), ticks({ ...doc, durationTicks: 200 }).map(t => t! + 30));
+  for (const c of COMPONENT_TEMPLATES) assert.ok(insertComponent(createBlankDocument(), c.id).doc.controls.some(x => x.label === 'Start at'), c.id);
+});
