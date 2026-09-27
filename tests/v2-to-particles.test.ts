@@ -508,6 +508,19 @@ test('Constant and ScalarMath drive a parameter; chains evaluate once per cast; 
   assert.ok(errorsOf(compileParticlePreview(withMath('add', 'none', 'meter'))).some(e => e.code === 'TYPE_MISMATCH'), 'meter constant into unitless a');
 });
 
+test('EventDelay shifts trigger ticks; MergeEvents unions streams; disabled delay passes through', () => {
+  const base = plan(f01()).systems[0].descriptor.bursts.map(b => b.tick);
+  const routed = (delayEnabled = true) => f01(d => {
+    const g = root(d);
+    g.edges = g.edges.filter(e => e.id !== 'edge-trigger');
+    g.nodes.push({ ...node('node-delay', 'EventDelay', { delayTicks: 7 }), enabled: delayEnabled }, node('node-merge', 'MergeEvents', {}));
+    g.edges.push(edge('e-d', 'node-schedule', 'start', 'node-delay', 'events'), edge('e-m1', 'node-delay', 'event', 'node-merge', 'events'),
+      edge('e-m2', 'node-schedule', 'start', 'node-merge', 'events', 1), edge('e-t', 'node-merge', 'event', 'node-emitter', 'trigger'));
+  });
+  assert.deepEqual(plan(routed()).systems[0].descriptor.bursts.map(b => b.tick).sort((a, b) => a - b), [...base, ...base.map(t => t + 7)].sort((a, b) => a - b));
+  assert.ok(errorsOf(compileParticlePreview(routed(false))).some(e => e.code === 'DUPLICATE_ID'), 'bypassed delay makes the merged streams identical');
+});
+
 test('MotionTrail compiles to a trail layer over a one-particle system attached to the follower track', () => {
   const p = plan(followerDoc(d => {
     const g = root(d);

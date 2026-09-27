@@ -268,6 +268,17 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
 
   const transform: Transform = doc.rootTransform;
   const anchorPos = new Map(doc.anchors.map(a => [a.id, a.position]));
+  /** 05 EventDelay / MergeEvents: follows a trigger connection back to its producers, summing delays. */
+  type RoutedEvent = { c: ExpandedConnection; delay: number; consumer: string };
+  const routeEvents = (c: ExpandedConnection, consumer: string, port: string, delay = 0, depth = 0): RoutedEvent[] => {
+    const src = sourceNode(c.source, consumer, port);
+    if (src.node.type !== 'EventDelay' && src.node.type !== 'MergeEvents') return [{ c, delay, consumer }];
+    if (depth > 16) return fail('GRAPH_CYCLE', `Event routing into "${consumer}" is nested deeper than 16 levels.`, src.node.id);
+    if (src.node.type === 'MergeEvents' && !src.effectiveEnabled) return [];
+    noDrivenParams(src, ['events']);
+    const d = src.node.type === 'EventDelay' && src.effectiveEnabled ? num(src, 'delayTicks') : 0;
+    return into(src.node.id, 'events').flatMap(u => routeEvents(u, src.node.id, 'events', delay + d, depth + 1));
+  };
   const scheduleOf = (c: ExpandedConnection, emitterId: string, port: string): ExpandedNode | undefined => {
     const s = sourceNode(c.source, emitterId, port);
     if (s.node.type !== 'Schedule') return fail('UNKNOWN_NODE', `Emitter "${emitterId}" ${port} source "${s.node.id}" (${s.node.type}) is not supported; use a Schedule.`, emitterId);
@@ -366,7 +377,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     let local: Vec3 = [0, 0, 0];
     const anchors = into(id, 'anchor');
     const anchorNode = anchors.length === 1 ? sourceNode(anchors[0].source, id, 'anchor') : undefined;
-    const triggerSources = into(id, 'trigger').map(c => sourceNode(c.source, id, 'trigger'));
+    const triggerSources = into(id, 'trigger').flatMap(c => routeEvents(c, id, 'trigger')).map(r => sourceNode(r.c.source, r.consumer, 'trigger'));
     const eventOnly = triggerSources.length > 0 && into(id, 'window').length === 0 && param(em, 'useEventPosition') === true
       && triggerSources.every(s => s.node.type === 'ParticleEvents' || s.node.type === 'GroundCollision' || s.node.type === 'PathFollower');
     const track = anchorNode?.node.type === 'PathFollower' ? followerTrack(anchorNode) : undefined;
@@ -383,27 +394,30 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     const bursts: ParticleBurst[] = [];
     const burst = num(em, 'burst');
     const seen = new Set<string>();
-    for (const c of into(id, 'trigger')) {
-      const src = sourceNode(c.source, id, 'trigger');
+    for (const { c, delay, consumer } of into(id, 'trigger').flatMap(c => routeEvents(c, id, 'trigger'))) {
+      const src = sourceNode(c.source, consumer, 'trigger');
       if (src.node.type === 'PathFollower') {
         const t = followerTrack(src);
-        if (!t || t.arrivalTick >= duration || burst <= 0) continue;
-        const key = JSON.stringify(['arrival', src.node.randomStreamId, t.arrivalTick]);
+        const at = t ? t.arrivalTick + delay : duration;
+        if (!t || at >= duration || burst <= 0) continue;
+        const key = JSON.stringify(['arrival', src.node.randomStreamId, at]);
         if (seen.has(key)) continue;
         seen.add(key);
-        bursts.push({ tick: t.arrivalTick, eventRandomKey: key, count: burst, ...(param(em, 'useEventPosition') === true ? { position: [...t.arrivalPos] as Vec3 } : {}) });
+        bursts.push({ tick: at, eventRandomKey: key, count: burst, ...(param(em, 'useEventPosition') === true ? { position: [...t.arrivalPos] as Vec3 } : {}) });
         continue;
       }
       if (src.node.type === 'ParticleEvents' || src.node.type === 'GroundCollision') {
         if (!src.effectiveEnabled) continue;
-        for (const b of particleEventBursts(src, c.source.kind === 'node' ? c.source.port : '', id, burst, param(em, 'useEventPosition') === true, depth, num(em, 'inheritVelocity'))) {
+        for (const b0 of particleEventBursts(src, c.source.kind === 'node' ? c.source.port : '', id, burst, param(em, 'useEventPosition') === true, depth, num(em, 'inheritVelocity'))) {
+          const b = delay ? { ...b0, tick: b0.tick + delay, eventRandomKey: `${b0.eventRandomKey}+${delay}` } : b0;
+          if (b.tick >= duration) continue;
           if (seen.has(b.eventRandomKey)) continue;
           seen.add(b.eventRandomKey);
           bursts.push(b);
         }
         continue;
       }
-      const s = scheduleOf(c, id, 'trigger');
+      const s = scheduleOf(c, consumer, 'trigger');
       if (!s) continue;
       const start = num(s, 'startTicks'), len = num(s, 'durationTicks');
       const repeat = param(s, 'mode') === 'repeat';
@@ -411,7 +425,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       const interval = repeat ? num(s, 'repeatIntervalTicks') : 0;
       const port = c.source.kind === 'node' ? c.source.port : '';
       for (let k = 0; k < count; k++) {
-        const tick = start + k * interval + (port === 'end' ? len : 0);
+        const tick = start + k * interval + (port === 'end' ? len : 0) + delay;
         if (tick >= duration) break; // Document end (inclusive) empties all outputs.
         const key = scheduleEventRandomKey(s.node.randomStreamId, tick, k);
         if (seen.has(key)) { report('DUPLICATE_ID', `Schedule "${s.node.id}" event at tick ${tick} reaches Emitter "${id}" more than once; distinct event IDs are not implemented yet.`, id); continue; }
@@ -776,13 +790,13 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       if (p.node.type !== 'ScreenFlash' && p.node.type !== 'CameraImpulse') fail('UNKNOWN_NODE', `Presentation source "${p.node.id}" (${p.node.type}) is not supported; use ScreenFlash or CameraImpulse.`, p.node.id);
       noDrivenParams(p, ['trigger']);
       const ticks: number[] = [];
-      for (const tc of into(p.node.id, 'trigger')) {
-        const s = sourceNode(tc.source, p.node.id, 'trigger'), port = tc.source.kind === 'node' ? tc.source.port : '';
+      for (const { c: tc, delay, consumer } of into(p.node.id, 'trigger').flatMap(c => routeEvents(c, p.node.id, 'trigger'))) {
+        const s = sourceNode(tc.source, consumer, 'trigger'), port = tc.source.kind === 'node' ? tc.source.port : '';
         if (!s.effectiveEnabled) continue;
         if (s.node.type === 'Schedule') {
           const repeat = param(s, 'mode') === 'repeat', n = repeat ? num(s, 'repeatCount') : 1;
-          for (let k = 0; k < n; k++) ticks.push(num(s, 'startTicks') + k * (repeat ? num(s, 'repeatIntervalTicks') : 0) + (port === 'end' ? num(s, 'durationTicks') : 0));
-        } else if (s.node.type === 'PathFollower') { const tr = followerTrack(s); if (tr) ticks.push(tr.arrivalTick); }
+          for (let k = 0; k < n; k++) ticks.push(num(s, 'startTicks') + k * (repeat ? num(s, 'repeatIntervalTicks') : 0) + (port === 'end' ? num(s, 'durationTicks') : 0) + delay);
+        } else if (s.node.type === 'PathFollower') { const tr = followerTrack(s); if (tr) ticks.push(tr.arrivalTick + delay); }
         else fail('UNKNOWN_NODE', `${p.node.type} "${p.node.id}" trigger from ${s.node.type} is not supported; use a Schedule or PathFollower arrival.`, p.node.id);
       }
       for (const tick of ticks) {

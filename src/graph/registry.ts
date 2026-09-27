@@ -243,6 +243,27 @@ function scalarMath(): NodeSpec {
   });
 }
 
+/** 05 EventDelay: re-emits every incoming event a fixed number of ticks later (disabled = no delay). */
+function eventDelay(): NodeSpec {
+  return node('EventDelay', {
+    inputs: [port({ id: 'events', label: 'Events', type: 'event', required: true })],
+    outputs: [port({ id: 'event', label: 'Event', type: 'event' })],
+    parameters: [param({ id: 'delayTicks', label: 'Delay', type: 'integer', unit: 'tick', default: 6, min: 0, max: 600, step: 1 })],
+    disabledBehavior: 'bypass',
+    bypass: { input: 'events', output: 'event' },
+  });
+}
+
+/** 05 MergeEvents: one event stream from several sources (Schedule, PathFollower arrival, particle events). */
+function mergeEvents(): NodeSpec {
+  return node('MergeEvents', {
+    inputs: [port({ id: 'events', label: 'Events', type: 'event', cardinality: 'many', required: true })],
+    outputs: [port({ id: 'event', label: 'Event', type: 'event' })],
+    parameters: [],
+    disabledBehavior: 'empty',
+  });
+}
+
 function groundCollision(): NodeSpec {
   return node('GroundCollision', {
     inputs: [port({ id: 'particles', label: 'Particles', type: 'particles', required: true })],
@@ -800,7 +821,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 /** Fresh, independent registry each call. */
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
-    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), constantNode(), scalarMath(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
+    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), constantNode(), scalarMath(), eventDelay(), mergeEvents(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
     linePath(), bezierPath(), helixPathNode(), pathTransformNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(),
     audioSource(), audioEnvelope(), audioFilter(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),
