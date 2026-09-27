@@ -262,8 +262,10 @@ test('invalid mix values, nested mixes and unsupported inputs return addressed e
     // A repeating Schedule through an AudioMix yields one voice per repeat (cue ticks start + k·interval).
     const r = compileAudio(mixDoc([{ id: 'a', params: OSC }], {}, d => { Object.assign(find(d, 'n-cue-a').params, { mode: 'repeat', repeatCount: 3, repeatIntervalTicks: 10 }); }));
     if (!r.ok) assert.fail(JSON.stringify(r.errors));
-    assert.equal(r.value.kind === 'mix' && r.value.voices.length, 3);
-    assert.deepEqual(r.value.kind === 'mix' && r.value.voices.map(v => v.cueTick - r.value.voices[0].cueTick), [0, 10, 20]);
+    const v = r.value;
+    if (v.kind !== 'mix') assert.fail('expected a mix plan');
+    assert.equal(v.voices.length, 3);
+    assert.deepEqual(v.voices.map(x => x.cueTick - v.voices[0].cueTick), [0, 10, 20]);
   }
   at(compileAudio(mixDoc([{ id: 'a', params: OSC }], {}, d => {
     root(d).edges.push(edge('e-win', 'n-cue-a', 'window', 'n-src-a', 'window'));

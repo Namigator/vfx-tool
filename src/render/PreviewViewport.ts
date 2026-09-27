@@ -63,6 +63,8 @@ export type PreviewViewportCallbacks = {
   onFrame?: (info: PreviewFrameInfo) => void;
   /** Runtime failure: output is cleared and playback paused. */
   onError?: (errors: Diagnostic[]) => void;
+  /** Loop mode wrapped playback back to tick 0 (same seed); e.g. restart synced sound. */
+  onLoop?: () => void;
 };
 
 /** Particle IDs are only unique per emitter; namespace them by system when crossing systems. */
@@ -905,6 +907,7 @@ export class PreviewViewport {
       // Paths are a pure function of the tick: compile only the landing tick, no interpolation.
       if (r.ticksAdvanced > 0 && !this.#failed) this.#pathTick(clock.tick);
       if (this.#plan && !this.#failed) this.#upload(clock.alpha);
+      if (r.reachedEnd && this.#looping && !this.#failed) { this.restart(); this.#callbacks.onLoop?.(); }
     }
     this.#emitFrame(false);
     if (this.#disposed) return; // onFrame may have disposed the viewport; never render after dispose.
@@ -923,6 +926,10 @@ export class PreviewViewport {
     this.#ground.material.color.set(light ? 0x8a9099 : 0x10131a);
     if (!this.#disposed) this.#emitFrame(true);
   }
+
+  #looping = false;
+  /** 12 transport Loop: at the end, restart from tick 0 with the same seed. */
+  setLoop(on: boolean): void { this.#looping = on; }
 
   /** Glow (bloom) on/off for inspection (08 "Provide glow-off inspection"); tone mapping stays identical. */
   setGlow(on: boolean): void {

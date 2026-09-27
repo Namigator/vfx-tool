@@ -129,6 +129,8 @@ export default function PreviewV2() {
   const [mode, setMode] = useState<PreviewModeChoice['mode']>('points');
   const [glow, setGlow] = useState(true);
   const [syncSound, setSyncSound] = useState(true);
+  const [looping, setLooping] = useState(false);
+  const onLoopRef = useRef<() => void>(() => {});
   const [lightBg, setLightBg] = useState(false);
   const [expanded, setExpanded] = useState(() => new URLSearchParams(window.location.search).get('expand') === '1');
   // Bumped by every document replacement; async file reads apply only if still the latest request.
@@ -279,6 +281,8 @@ export default function PreviewV2() {
     }, ms);
   }, []);
 
+  useEffect(() => { onLoopRef.current = () => { if (syncSound && audioRef.current) void playSound(0); }; }, [syncSound, playSound]);
+
   // Autosave: mirror every committed document to local storage (debounced); status is announced politely.
   const [saveStatus, setSaveStatus] = useState('');
   useEffect(() => {
@@ -406,7 +410,7 @@ export default function PreviewV2() {
     mountedRef.current = true;
     let vp: PreviewViewport | null = null;
     try {
-      vp = new PreviewViewport(host, { onFrame: setFrame, onError: setRuntimeErrors });
+      vp = new PreviewViewport(host, { onFrame: setFrame, onError: setRuntimeErrors, onLoop: () => onLoopRef.current() });
       viewportRef.current = vp;
     } catch (e) {
       setFatal(e instanceof Error ? e.message : String(e));
@@ -547,6 +551,7 @@ export default function PreviewV2() {
               {expanded ? 'Collapse preview' : 'Expand preview'}
             </button>
             <button type="button" aria-pressed={glow} title="Bloom glow on/off (inspect the effect without glow)" onClick={() => { const g = !glow; setGlow(g); vp?.setGlow(g); }}>{glow ? 'Glow on' : 'Glow off'}</button>
+            <button type="button" aria-pressed={looping} disabled={disabled} title="Replay from tick 0 when the effect ends" onClick={() => { const l = !looping; setLooping(l); vp?.setLoop(l); }}>{looping ? 'Loop on' : 'Loop off'}</button>
             <button type="button" aria-pressed={syncSound} disabled={!audio} title="Play the effect's sound in sync with Play/Restart" onClick={() => { const s = !syncSound; setSyncSound(s); if (!s) stopSound(''); }}>{syncSound ? 'Sound on' : 'Sound off'}</button>
             <button type="button" aria-pressed={lightBg} title="Inspect on a light arena" onClick={() => { const l = !lightBg; setLightBg(l); vp?.setBackground(l ? 'light' : 'dark'); }}>{lightBg ? 'Light arena' : 'Dark arena'}</button>
             <input
