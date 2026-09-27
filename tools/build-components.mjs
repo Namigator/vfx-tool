@@ -20,6 +20,8 @@ const COMPONENTS = [
   ['shadow-vortex', 'Shadow vortex', 'Dark wisps pulled and swirled into a violet void core with a flickering violet light.', 'shadow-vortex'],
   ['holy-light', 'Holy light', 'Radiating light rays, a white-gold core, a spinning ground halo and a warm light.', 'holy-light'],
   ['helix-beam', 'Helix beam', 'Two spinning helix strands braided around a bright core line Source→Target (HelixPath + ribbons).', 'helix-beam'],
+  ['charge-tethers', 'Charge tethers', 'Motes pulled into Source with jagged electric tethers to a few of them (ParticlePaths + JaggedPath).', 'charge-tethers'],
+  ['spark-aftershock', 'Spark aftershock', 'Spark burst at Target plus a delayed second burst (EventDelay + MergeEvents); sparks that land kick up dust.', 'event-chain'],
   ['fireball', 'Fireball', 'Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.', 'fireball'],
 ];
 
@@ -39,6 +41,8 @@ const KNOBS = {
   'shadow-vortex': [['wisps', 'Wisp rate', [['wisps', 'rate']]], ['radius', 'Gather radius', [['wisps', 'radius']]], ['pull', 'Pull', [['pull', 'acceleration']]], ['swirl', 'Swirl', [['swirl', 'tangential']]], ['core', 'Core size', [['core', 'size']]]],
   'holy-light': [['rays', 'Ray rate', [['rays', 'rate']]], ['length', 'Ray length', [['raybb', 'stretchRatio']]], ['core', 'Core size', [['core', 'size']]], ['halo', 'Halo size', [['halo', 'size']]], ['light', 'Light', [['lamp', 'intensity']]]],
   'helix-beam': [['radius', 'Helix radius', [['strandA', 'radius'], ['strandB', 'radius']]], ['turns', 'Turns', [['strandA', 'turns'], ['strandB', 'turns']]], ['spin', 'Spin', [['strandA', 'spin'], ['strandB', 'spin']]], ['width', 'Strand width', [['ribA', 'width'], ['ribB', 'width']]]],
+  'charge-tethers': [['motes', 'Mote count', [['motes', 'burst']]], ['radius', 'Gather radius', [['motes', 'radius']]], ['pull', 'Pull strength', [['pull', 'acceleration']]], ['tethers', 'Tethers', [['tethers', 'maxCount']]], ['jagged', 'Jaggedness', [['jag', 'amplitude']]]],
+  'spark-aftershock': [['sparks', 'Sparks per burst', [['base', 'value']]], ['delay', 'Aftershock delay', [['later', 'delayTicks']]], ['speed', 'Spark speed', [['sparks', 'speedMax'], ['sparks', 'speedMin', 0.5]]], ['dust', 'Dust size', [['dip', 'sizeMax'], ['dip', 'sizeMin', 0.57]]]],
   'fireball': [['travel', 'Travel ticks', [['ball', 'durationTicks']]], ['trail', 'Trail density', [['trailem', 'rate']]], ['core', 'Core size', [['core', 'size']]], ['impact', 'Impact sparks', [['boom', 'burst']]], ['flash', 'Flash size', [['flash', 'size']]], ['light', 'Ball light', [['balllight', 'intensity']]]],
 };
 

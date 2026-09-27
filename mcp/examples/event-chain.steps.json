@@ -1,8 +1,8 @@
 [
   ["vfx_new_document", { "template": "blank", "id": "chain" }],
   ["vfx_set_document", { "docId": "chain", "durationTicks": 90 }],
-  ["vfx_set_anchor", { "docId": "chain", "anchorId": "src", "position": [0, 1.2, 0] }],
-  ["vfx_add_node", { "docId": "chain", "type": "Anchor", "id": "a", "params": { "anchorId": "src" } }],
+  ["vfx_set_anchor", { "docId": "chain", "anchorId": "target", "position": [0, 1.2, 0] }],
+  ["vfx_add_node", { "docId": "chain", "type": "Anchor", "id": "a", "params": { "anchorId": "target" } }],
   ["vfx_add_node", { "docId": "chain", "type": "Schedule", "id": "hit", "params": { "startTicks": 8, "durationTicks": 1, "mode": "once" } }],
   ["vfx_add_node", { "docId": "chain", "type": "EventDelay", "id": "later", "params": { "delayTicks": 14 } }],
   ["vfx_add_node", { "docId": "chain", "type": "MergeEvents", "id": "both" }],

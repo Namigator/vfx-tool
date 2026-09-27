@@ -1,8 +1,8 @@
 [
   ["vfx_new_document", { "template": "blank", "id": "tether" }],
   ["vfx_set_document", { "docId": "tether", "durationTicks": 90 }],
-  ["vfx_set_anchor", { "docId": "tether", "anchorId": "core", "position": [0, 1.2, 0] }],
-  ["vfx_add_node", { "docId": "tether", "type": "Anchor", "id": "a", "params": { "anchorId": "core" } }],
+  ["vfx_set_anchor", { "docId": "tether", "anchorId": "source", "position": [0, 1.2, 0] }],
+  ["vfx_add_node", { "docId": "tether", "type": "Anchor", "id": "a", "params": { "anchorId": "source" } }],
   ["vfx_add_node", { "docId": "tether", "type": "Schedule", "id": "go", "params": { "startTicks": 0, "durationTicks": 90, "mode": "window" } }],
   ["vfx_add_node", { "docId": "tether", "type": "Emitter", "id": "motes", "params": { "shape": "sphere", "radius": 1.2, "burst": 27, "rate": 0, "speedMin": 0, "speedMax": 0.2, "lifetimeMin": 1.4, "lifetimeMax": 1.5 } }],
   ["vfx_add_node", { "docId": "tether", "type": "InitialProperties", "id": "ip", "params": { "sizeMin": 0.05, "sizeMax": 0.08 } }],

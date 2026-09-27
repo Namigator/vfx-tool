@@ -1,6 +1,6 @@
 // Simple view (01 "Simple surface", 12 "Open a preset in Simple view"): the document's published number
 // controls grouped by section, each a slider + number field. A drag previews locally and commits one
-// undoable edit on release; the field commits on Enter/blur. Every control lists what it drives.
+// undoable edit on release (only if it moved: focusing a slider never commits its step-snapped value); the field commits on Enter/blur. Every control lists what it drives.
 import { useState } from 'react';
 import type { EffectDocumentV2, PublicControl } from '../model/types.ts';
 import type { Patch as HistoryPatch } from './history.ts';
@@ -13,7 +13,7 @@ function ControlRow({ c, index, onEdit }: { c: PublicControl; index: number; onE
   const [draft, setDraft] = useState<string | null>(null);
   const value = typeof c.value === 'number' ? c.value : 0;
   const min = c.min ?? 0, max = c.max ?? Math.max(1, value * 4);
-  const step = c.step ?? (c.type === 'integer' ? 1 : (max - min) / 200);
+  const step = c.step ?? (c.type === 'integer' ? 1 : (max - min) / 1000);
   const shown = draft ?? String(value);
   const commit = (text: string) => {
     setDraft(null);
@@ -27,8 +27,8 @@ function ControlRow({ c, index, onEdit }: { c: PublicControl; index: number; onE
       <label className="cp-label" htmlFor={`cp-${c.id}`}>{c.label}</label>
       <input id={`cp-${c.id}`} type="range" min={min} max={max} step={step} value={Number(shown) || 0}
         onChange={e => setDraft(e.currentTarget.value)}
-        onPointerUp={e => commit(e.currentTarget.value)} onKeyUp={e => commit(e.currentTarget.value)} />
-      <input className="cp-num" type="number" min={min} max={max} step={step} value={shown} aria-label={`${c.label} value`}
+        onPointerUp={e => { if (draft !== null) commit(e.currentTarget.value); }} onKeyUp={e => { if (draft !== null) commit(e.currentTarget.value); }} />
+      <input className="cp-num" type="number" min={min} max={max} step={c.type === 'integer' ? 1 : 'any'} value={shown} aria-label={`${c.label} value`}
         onChange={e => setDraft(e.currentTarget.value)} onBlur={e => commit(e.currentTarget.value)}
         onKeyDown={e => { if (e.key === 'Enter') commit(e.currentTarget.value); if (e.key === 'Escape') setDraft(null); }} />
       <span className="cp-unit">{UNIT_LABEL[c.unit] ?? c.unit}</span>

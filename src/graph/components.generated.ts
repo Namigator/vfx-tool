@@ -2129,6 +2129,25 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "release": 0.4,
      "curve": "exponential"
     }
+   },
+   {
+    "id": "screenflash",
+    "type": "ScreenFlash",
+    "params": {
+     "color": {
+      "srgb": "#FFE2B0",
+      "alpha": 1
+     },
+     "alpha": 0.15,
+     "durationTicks": 4
+    }
+   },
+   {
+    "id": "shake",
+    "type": "CameraImpulse",
+    "params": {
+     "durationTicks": 8
+    }
    }
   ],
   "edges": [
@@ -2243,6 +2262,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    [
     "sfx-out.audio",
     "node-output.audio"
+   ],
+   [
+    "hit.start",
+    "screenflash.trigger"
+   ],
+   [
+    "hit.start",
+    "shake.trigger"
+   ],
+   [
+    "screenflash.presentation",
+    "node-output.presentation"
+   ],
+   [
+    "shake.presentation",
+    "node-output.presentation"
    ]
   ],
   "knobs": [
@@ -6159,6 +6194,537 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      {
       "node": "ribB",
       "parameter": "width"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "charge-tethers",
+  "label": "Charge tethers",
+  "description": "Motes pulled into Source with jagged electric tethers to a few of them (ParticlePaths + JaggedPath).",
+  "durationTicks": 90,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "a",
+    "type": "Anchor",
+    "params": {
+     "anchorId": "source"
+    }
+   },
+   {
+    "id": "go",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 90,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "motes",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 1.2,
+     "burst": 27,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0.2,
+     "lifetimeMin": 1.4,
+     "lifetimeMax": 1.5
+    }
+   },
+   {
+    "id": "ip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.05,
+     "sizeMax": 0.08
+    }
+   },
+   {
+    "id": "pull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 1.2,
+     "softRadius": 0.3,
+     "killRadius": 0.12
+    }
+   },
+   {
+    "id": "motemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#9FD8FF",
+      "alpha": 1
+     },
+     "emission": 1
+    }
+   },
+   {
+    "id": "bb",
+    "type": "BillboardRenderer"
+   },
+   {
+    "id": "tethers",
+    "type": "ParticlePaths",
+    "params": {
+     "maxCount": 4,
+     "samples": 16
+    }
+   },
+   {
+    "id": "jag",
+    "type": "JaggedPath",
+    "params": {
+     "amplitude": 0.08,
+     "regenerationHz": 24
+    }
+   },
+   {
+    "id": "arcmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#CFEBFF",
+      "alpha": 1
+     },
+     "emission": 0.8
+    }
+   },
+   {
+    "id": "rib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.025,
+     "endFade": 0.15
+    }
+   },
+   {
+    "id": "glow",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.5
+    }
+   }
+  ],
+  "edges": [
+   [
+    "a.out",
+    "motes.anchor"
+   ],
+   [
+    "go.start",
+    "motes.trigger"
+   ],
+   [
+    "motes.particles",
+    "ip.particles"
+   ],
+   [
+    "ip.particles",
+    "pull.particles"
+   ],
+   [
+    "a.out",
+    "pull.anchor"
+   ],
+   [
+    "pull.particles",
+    "bb.particles"
+   ],
+   [
+    "motemat.material",
+    "bb.material"
+   ],
+   [
+    "pull.particles",
+    "tethers.particles"
+   ],
+   [
+    "a.out",
+    "tethers.anchor"
+   ],
+   [
+    "tethers.paths",
+    "jag.paths"
+   ],
+   [
+    "jag.paths",
+    "rib.paths"
+   ],
+   [
+    "arcmat.material",
+    "rib.material"
+   ],
+   [
+    "go.window",
+    "rib.window"
+   ],
+   [
+    "a.out",
+    "glow.anchor"
+   ],
+   [
+    "motemat.material",
+    "glow.material"
+   ],
+   [
+    "go.window",
+    "glow.window"
+   ],
+   [
+    "bb.visual",
+    "node-output.visual"
+   ],
+   [
+    "glow.visual",
+    "node-output.visual"
+   ],
+   [
+    "rib.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "motes",
+    "label": "Mote count",
+    "value": 27,
+    "bindings": [
+     {
+      "node": "motes",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "radius",
+    "label": "Gather radius",
+    "value": 1.2,
+    "bindings": [
+     {
+      "node": "motes",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "pull",
+    "label": "Pull strength",
+    "value": 1.2,
+    "bindings": [
+     {
+      "node": "pull",
+      "parameter": "acceleration"
+     }
+    ]
+   },
+   {
+    "id": "tethers",
+    "label": "Tethers",
+    "value": 4,
+    "bindings": [
+     {
+      "node": "tethers",
+      "parameter": "maxCount"
+     }
+    ]
+   },
+   {
+    "id": "jagged",
+    "label": "Jaggedness",
+    "value": 0.08,
+    "bindings": [
+     {
+      "node": "jag",
+      "parameter": "amplitude"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "spark-aftershock",
+  "label": "Spark aftershock",
+  "description": "Spark burst at Target plus a delayed second burst (EventDelay + MergeEvents); sparks that land kick up dust.",
+  "durationTicks": 90,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "a",
+    "type": "Anchor",
+    "params": {
+     "anchorId": "target"
+    }
+   },
+   {
+    "id": "hit",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 8,
+     "durationTicks": 1,
+     "mode": "once"
+    }
+   },
+   {
+    "id": "later",
+    "type": "EventDelay",
+    "params": {
+     "delayTicks": 14
+    }
+   },
+   {
+    "id": "both",
+    "type": "MergeEvents"
+   },
+   {
+    "id": "base",
+    "type": "Constant",
+    "params": {
+     "value": 40
+    }
+   },
+   {
+    "id": "count",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 1.5
+    }
+   },
+   {
+    "id": "sparks",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.05,
+     "rate": 0,
+     "speedMin": 2,
+     "speedMax": 4,
+     "lifetimeMin": 1,
+     "lifetimeMax": 1.4
+    }
+   },
+   {
+    "id": "ip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.03,
+     "sizeMax": 0.05
+    }
+   },
+   {
+    "id": "grav",
+    "type": "Gravity"
+   },
+   {
+    "id": "floor",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "kill"
+    }
+   },
+   {
+    "id": "sparkmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "spark-streak",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFD080",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "bb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 4,
+     "pivot": 0.8
+    }
+   },
+   {
+    "id": "dust",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.02,
+     "burst": 2,
+     "rate": 0,
+     "speedMin": 0.2,
+     "speedMax": 0.5,
+     "lifetimeMin": 0.5,
+     "lifetimeMax": 0.8,
+     "useEventPosition": true,
+     "inheritVelocity": 0.4
+    }
+   },
+   {
+    "id": "dip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.2,
+     "sizeMax": 0.35
+    }
+   },
+   {
+    "id": "dustmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FF7A30",
+      "alpha": 1
+     },
+     "opacity": 1,
+     "emission": 0.8
+    }
+   },
+   {
+    "id": "dbb",
+    "type": "BillboardRenderer",
+    "params": {}
+   }
+  ],
+  "edges": [
+   [
+    "hit.start",
+    "later.events"
+   ],
+   [
+    "hit.start",
+    "both.events"
+   ],
+   [
+    "later.event",
+    "both.events"
+   ],
+   [
+    "both.event",
+    "sparks.trigger"
+   ],
+   [
+    "base.value",
+    "count.a"
+   ],
+   [
+    "count.value",
+    "sparks.burst"
+   ],
+   [
+    "a.out",
+    "sparks.anchor"
+   ],
+   [
+    "sparks.particles",
+    "ip.particles"
+   ],
+   [
+    "ip.particles",
+    "grav.particles"
+   ],
+   [
+    "grav.particles",
+    "floor.particles"
+   ],
+   [
+    "floor.particles",
+    "bb.particles"
+   ],
+   [
+    "sparkmat.material",
+    "bb.material"
+   ],
+   [
+    "floor.collision",
+    "dust.trigger"
+   ],
+   [
+    "dust.particles",
+    "dip.particles"
+   ],
+   [
+    "dip.particles",
+    "dbb.particles"
+   ],
+   [
+    "dustmat.material",
+    "dbb.material"
+   ],
+   [
+    "bb.visual",
+    "node-output.visual"
+   ],
+   [
+    "dbb.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "sparks",
+    "label": "Sparks per burst",
+    "value": 40,
+    "bindings": [
+     {
+      "node": "base",
+      "parameter": "value"
+     }
+    ]
+   },
+   {
+    "id": "delay",
+    "label": "Aftershock delay",
+    "value": 14,
+    "bindings": [
+     {
+      "node": "later",
+      "parameter": "delayTicks"
+     }
+    ]
+   },
+   {
+    "id": "speed",
+    "label": "Spark speed",
+    "value": 4,
+    "bindings": [
+     {
+      "node": "sparks",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "sparks",
+      "parameter": "speedMin",
+      "scale": 0.5
+     }
+    ]
+   },
+   {
+    "id": "dust",
+    "label": "Dust size",
+    "value": 0.35,
+    "bindings": [
+     {
+      "node": "dip",
+      "parameter": "sizeMax"
+     },
+     {
+      "node": "dip",
+      "parameter": "sizeMin",
+      "scale": 0.57
      }
     ]
    }
