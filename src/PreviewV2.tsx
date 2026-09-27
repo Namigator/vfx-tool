@@ -128,6 +128,7 @@ export default function PreviewV2() {
   const [compiled, setCompiled] = useState(false);
   const [mode, setMode] = useState<PreviewModeChoice['mode']>('points');
   const [glow, setGlow] = useState(true);
+  const [lightBg, setLightBg] = useState(false);
   const [expanded, setExpanded] = useState(() => new URLSearchParams(window.location.search).get('expand') === '1');
   // Bumped by every document replacement; async file reads apply only if still the latest request.
   const generationRef = useRef(0);
@@ -542,6 +543,7 @@ export default function PreviewV2() {
               {expanded ? 'Collapse preview' : 'Expand preview'}
             </button>
             <button type="button" aria-pressed={glow} title="Bloom glow on/off (inspect the effect without glow)" onClick={() => { const g = !glow; setGlow(g); vp?.setGlow(g); }}>{glow ? 'Glow on' : 'Glow off'}</button>
+            <button type="button" aria-pressed={lightBg} title="Inspect on a light arena" onClick={() => { const l = !lightBg; setLightBg(l); vp?.setBackground(l ? 'light' : 'dark'); }}>{lightBg ? 'Light arena' : 'Dark arena'}</button>
             <input
               type="range" min={0} max={frame.durationTicks} step={1} value={frame.tick} disabled={disabled}
               aria-label="Tick" onChange={e => vp?.seek(Number(e.target.value))}

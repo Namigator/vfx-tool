@@ -41,6 +41,7 @@ async function main(): Promise<void> {
     vp.setPlan(p.value);
   }
   vp.setGlow(q.get('glow') !== '0');
+  vp.setBackground(q.get('bg') === 'light' ? 'light' : 'dark');
   vp.seek(Math.min(tick, d.durationTicks - 1));
   if (q.get('label') === '1') msg.textContent = `${d.name} — tick ${tick}/${d.durationTicks}`;
   // Let sprite atlases finish loading and a few frames present before the screenshot is taken.

@@ -916,6 +916,14 @@ export class PreviewViewport {
     else this.#renderer.render(this.#scene, this.#camera);
   };
 
+  /** 12 "dark/light background" inspection: arena backdrop and floor colours only; effects are unchanged. */
+  setBackground(mode: 'dark' | 'light'): void {
+    const light = mode === 'light';
+    (this.#scene.background as THREE.Color).set(light ? 0xb9bec8 : 0x0b0d12);
+    this.#ground.material.color.set(light ? 0x8a9099 : 0x10131a);
+    if (!this.#disposed) this.#emitFrame(true);
+  }
+
   /** Glow (bloom) on/off for inspection (08 "Provide glow-off inspection"); tone mapping stays identical. */
   setGlow(on: boolean): void {
     if (this.#bloom) this.#bloom.enabled = on;
