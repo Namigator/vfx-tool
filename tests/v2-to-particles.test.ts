@@ -482,3 +482,17 @@ test('MeshRenderer compiles to a mesh layer on the chain system', () => {
   assert.deepEqual([p.meshes[0].systemId, p.meshes[0].mesh, p.meshes[0].scale, p.meshes[0].orientation, p.meshes[0].lit], ['node-initial', 'shard', 2, 'velocity', true]);
   assert.deepEqual(plan(f01()).meshes, []);
 });
+
+test('RandomRange drives a parameter with one seeded sample per cast; its unit must match', () => {
+  const withRandom = (unit: string, seed = 42) => f01(d => {
+    d.seed = seed;
+    root(d).nodes.push(node('node-rand', 'RandomRange', { min: 5, max: 9, unit }));
+    root(d).edges.push(edge('e-r', 'node-rand', 'value', 'node-emitter', 'burst'));
+  });
+  const counts = [1, 2, 3, 4, 5, 6].map(s => plan(withRandom('none', s)).systems[0].descriptor.bursts[0].count);
+  assert.ok(counts.every(c => Number.isInteger(c) && c >= 5 && c <= 9), JSON.stringify(counts));
+  assert.ok(new Set(counts).size > 1, 'different seeds give different casts');
+  assert.equal(plan(withRandom('none', 3)).systems[0].descriptor.bursts[0].count, counts[2], 'deterministic');
+  const errs = errorsOf(compileParticlePreview(withRandom('meter')));
+  assert.ok(errs.some(e => e.code === 'TYPE_MISMATCH'), JSON.stringify(errs.map(e => e.code)));
+});

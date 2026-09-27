@@ -155,6 +155,8 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
   const into = (nodeId: string, port: string): ExpandedConnection[] =>
     x.connections.filter(c => c.target.nodeId === nodeId && c.target.port === port && c.source.kind !== 'empty');
   const param = (n: ExpandedNode, id: string): ParameterValue => {
+    const dv = drivenValue(n, id);
+    if (dv !== undefined) return dv;
     const v = params.get(`${n.node.id}\u0000${id}`);
     if (v !== undefined) return v;
     const spec = registry.get(registryKey(n.node.type, n.node.definitionVersion))?.parameters.find(p => p.id === id);
@@ -162,10 +164,23 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     return spec.default;
   };
   const num = (n: ExpandedNode, id: string) => param(n, id) as number;
+  /** Value nodes feeding a parameter port (RandomRange): sampled once per cast. Undefined when not driven by one. */
+  const drivenValue = (n: ExpandedNode, id: string): number | undefined => {
+    const c = x.connections.find(e => e.target.nodeId === n.node.id && e.target.port === id && e.source.kind === 'node');
+    if (!c || c.source.kind !== 'node') return undefined;
+    const src = nodes.get(c.source.nodeId);
+    if (!src || src.node.type !== 'RandomRange' || !src.effectiveEnabled) return undefined;
+    const lo = param(src, 'min') as number, hi = param(src, 'max') as number;
+    const u = sampleUnit({ documentSeed: doc.seed, randomStreamId: src.node.randomStreamId, eventRandomKey: 'value', entityOrdinal: 0, propertyKey: 'value', sampleOrdinal: 0 });
+    const v = Math.min(lo, hi) + u * Math.abs(hi - lo);
+    const spec = registry.get(registryKey(n.node.type, n.node.definitionVersion))?.parameters.find(p => p.id === id);
+    return spec?.type === 'integer' ? Math.round(v) : v;
+  };
   /** Rejects any non-empty connection into a port that is not one of the node's structural inputs. */
   const noDrivenParams = (n: ExpandedNode, structural: string[]) => {
     for (const c of x.connections) {
       if (c.target.nodeId !== n.node.id || structural.includes(c.target.port) || c.source.kind === 'empty') continue;
+      if (c.source.kind === 'node' && nodes.get(c.source.nodeId)?.node.type === 'RandomRange') continue; // Resolved by drivenValue.
       report('DOMAIN_MISMATCH', `Input "${c.target.port}" of "${n.node.id}" is driven by a connection; connected/animated parameters are not supported by the point preview yet. Disconnect it and set a literal.`, n.node.id, c.target.port);
     }
   };

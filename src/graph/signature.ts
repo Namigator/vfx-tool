@@ -197,6 +197,12 @@ export function resolveSignature(node: NodeDefinition, spec: NodeSpec, context: 
     }
   }
 
+  // RandomRange: the output unit is chosen per instance (params.unit), so it can drive any scalar parameter.
+  if (node.type === 'RandomRange') {
+    const o = outputs.find(p => p.id === 'value'), u = node.params.unit;
+    if (o && typeof u === 'string') o.unit = u as Unit;
+  }
+
   // Every concrete signal port must declare nonempty domains, connected or not.
   for (const [list, kind] of [[inputs, 'input'], [outputs, 'output']] as const) {
     for (const p of list) {

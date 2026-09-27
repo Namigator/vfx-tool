@@ -200,6 +200,20 @@ function vortex(): NodeSpec {
   });
 }
 
+/** 05 RandomRange: one deterministic sample per cast (document seed + node stream), unit chosen per instance. */
+function randomRange(): NodeSpec {
+  return node('RandomRange', {
+    inputs: [],
+    outputs: [port({ id: 'value', label: 'Value', type: 'scalarSignal', unit: 'none', domains: ['constant'] })],
+    parameters: [
+      param({ id: 'min', label: 'Min', type: 'number', unit: 'none', default: 0, min: -10000, max: 10000 }),
+      param({ id: 'max', label: 'Max', type: 'number', unit: 'none', default: 1, min: -10000, max: 10000 }),
+      param({ id: 'unit', label: 'Unit', type: 'enum', unit: 'none', default: 'none', choices: ['none', 'meter', 'second', 'tick', 'radian', 'metersPerSecond', 'metersPerSecondSquared', 'hertz', 'perSecond', 'linearGain', 'normalized'], description: 'Output unit; must match the parameter it drives.' }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
 function groundCollision(): NodeSpec {
   return node('GroundCollision', {
     inputs: [port({ id: 'particles', label: 'Particles', type: 'particles', required: true })],
@@ -652,7 +666,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 /** Fresh, independent registry each call. */
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
-    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), particleEvents(), material(), billboardRenderer(), particleTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(),
+    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), particleEvents(), material(), billboardRenderer(), particleTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(),
     linePath(), bezierPath(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(),
     audioSource(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),
