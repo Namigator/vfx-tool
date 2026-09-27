@@ -199,6 +199,10 @@ uniform sampler2D uTex;
 uniform vec2 uGrid;
 uniform float uVariant;
 uniform float uTile;
+uniform vec2 uScroll;
+uniform float uDistort;
+uniform float uTime;
+uniform sampler2D uNoise;
 varying float vOpacity;
 varying float vSide;
 varying vec3 vStrip;
@@ -212,11 +216,19 @@ void main() {
   if (uUseTex > 0.5) {
     if (vStrip.z < -0.001) discard; // Round-join fans would smear the texture into spikes.
     // u along the strip (stretched over the path, or tiled every uTile metres), v across it.
-    float u = uTile > 0.0 ? fract(vStrip.x / uTile) : clamp(vStrip.x / max(vStrip.y, 1e-6), 0.0, 1.0);
+    float u = uTile > 0.0 ? vStrip.x / uTile : clamp(vStrip.x / max(vStrip.y, 1e-6), 0.0, 1.0);
+    float vAcross = vSide * 0.5 + 0.5;
+    if (uDistort > 0.0) {
+      // 09 UV distortion: a scrolling noise lookup nudges both texture coordinates.
+      float n = texture2D(uNoise, vec2(vStrip.x * 0.35 - uTime * 0.6, vAcross * 0.5 + uTime * 0.2)).r - 0.5;
+      u += n * uDistort; vAcross += n * uDistort * 2.0;
+    }
+    u += uScroll.x * uTime; vAcross += uScroll.y * uTime;
+    if (uTile > 0.0 || uScroll.x != 0.0) u = fract(u);
     float cells = uGrid.x * uGrid.y;
     float cell = uVariant >= 0.0 ? min(uVariant, cells - 1.0) : floor(vStrip.z * cells);
     float col = mod(cell, uGrid.x), row = floor(cell / uGrid.x);
-    vec2 cu = clamp(vec2(u, vSide * 0.5 + 0.5), 0.002, 0.998);
+    vec2 cu = clamp(vec2(u, uScroll.y != 0.0 ? fract(vAcross) : vAcross), 0.002, 0.998);
     vec4 t = texture2D(uTex, vec2((col + cu.x) / uGrid.x, (uGrid.y - 1.0 - row + cu.y) / uGrid.y));
     rgb *= t.rgb;
     a = uAlpha * vOpacity * t.a; // The texture supplies the cross-section; no procedural edge falloff.
@@ -473,7 +485,7 @@ export class PreviewViewport {
       const material = materialFor(RIBBON_VERTEX, RIBBON_FRAGMENT, layer);
       material.side = THREE.DoubleSide;
       material.uniforms.uSoftness = { value: ribbonSoftness(layer.blend) };
-      Object.assign(material.uniforms, { uUseTex: { value: 0 }, uTex: { value: null }, uGrid: { value: new THREE.Vector2(1, 1) }, uVariant: { value: -1 }, uTile: { value: 0 } });
+      Object.assign(material.uniforms, { uUseTex: { value: 0 }, uTex: { value: null }, uGrid: { value: new THREE.Vector2(1, 1) }, uVariant: { value: -1 }, uTile: { value: 0 }, uScroll: { value: new THREE.Vector2(0, 0) }, uDistort: { value: 0 }, uTime: this.#effectTime, uNoise: { value: null } });
       const mesh = new THREE.Mesh(ribbon.geometry, material);
       mesh.frustumCulled = false;
       mesh.renderOrder = layerRenderOrder(layer.renderOrderOffset, layer.visualOrder);
@@ -560,6 +572,8 @@ export class PreviewViewport {
     return placeholder;
   }
 
+  /** Effect time in seconds (clock tick + interpolation), shared by materials that animate UVs; set each rendered frame. */
+  readonly #effectTime = { value: 0 };
   #noiseTex: THREE.Texture | null = null;
   /** Included dissolve-noise mask, sampled as data (no colour-space conversion) and wrapped for per-particle offsets. */
   #noiseTexture(): THREE.Texture {
@@ -773,6 +787,10 @@ export class PreviewViewport {
         material.uniforms.uGrid = { value: new THREE.Vector2(sheet?.columns ?? 1, sheet?.rows ?? 1) };
         material.uniforms.uVariant = { value: layer.sprite?.variant ?? -1 };
         material.uniforms.uTile = { value: layer.uvMode === 'tile' ? layer.uvTileLength : 0 };
+        material.uniforms.uScroll = { value: new THREE.Vector2(layer.uvAnim?.scroll[0] ?? 0, layer.uvAnim?.scroll[1] ?? 0) };
+        material.uniforms.uDistort = { value: layer.uvAnim?.distort ?? 0 };
+        material.uniforms.uTime = this.#effectTime;
+        material.uniforms.uNoise = { value: layer.uvAnim?.distort ? this.#noiseTexture() : null };
         const mesh = new THREE.Mesh(ribbon.geometry, material);
         mesh.renderOrder = layerRenderOrder(layer.renderOrderOffset, layer.visualOrder);
         this.#scene.add(mesh);
@@ -1042,6 +1060,7 @@ export class PreviewViewport {
     if (this.#disposed) return;
     // Presentation (flash overlay, camera impulse) applies to this rendered frame only; orbit state is untouched.
     const pres = this.#reducedMotion ? null : this.#presentation, t = (this.#clock ? this.#clock.tick + this.#clock.alpha : 0);
+    this.#effectTime.value = t * PARTICLE_DT;
     let shaken = false;
     const cam = this.#camera, savedPos = cam.position.clone(), savedQuat = cam.quaternion.clone();
     if (pres) {

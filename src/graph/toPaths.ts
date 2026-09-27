@@ -86,6 +86,8 @@ export type PathPreviewLayer = {
   uvMode: 'stretch' | 'tile';
   /** SpriteTextured material: library sheet mapped along the ribbon (u = arc, v = across); cell per path. */
   sprite?: { sheet: SpriteSheet; variant: number };
+  /** 09 UV animation for textured ribbons: scroll (UV/s) and noise distortion amplitude. */
+  uvAnim?: { scroll: [number, number]; distort: number };
   uvTileLength: number;
   orientation: 'camera' | 'parallelTransport';
   renderOrderOffset: number;
@@ -521,6 +523,10 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
         blend: param(mat, 'blend') as PathPreviewLayer['blend'],
         alphaCutoff: num(mat, 'alphaCutoff'),
         ...(sprite ? { sprite } : {}),
+        ...((): Pick<PathPreviewLayer, 'uvAnim'> => {
+          const sc = param(mat, 'uvScroll') as [number, number], dist = num(mat, 'uvDistort');
+          return sprite && (sc[0] !== 0 || sc[1] !== 0 || dist > 0) ? { uvAnim: { scroll: [sc[0], sc[1]], distort: dist } } : {};
+        })(),
       });
     } catch (e) {
       if (!(e instanceof Fail)) throw e;

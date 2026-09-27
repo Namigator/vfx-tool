@@ -511,6 +511,8 @@ function material(): NodeSpec {
       param({ id: 'tint', label: 'Tint', type: 'color', unit: 'none', default: white(), domains: [...signal], editPolicy: 'live' }),
       param({ id: 'opacity', label: 'Opacity', type: 'number', unit: 'normalized', default: 1, min: 0, max: 1, domains: [...signal], editPolicy: 'live' }),
       param({ id: 'emission', label: 'Emission', type: 'number', unit: 'linearGain', default: 0, min: 0, max: 20, domains: [...signal], editPolicy: 'live' }),
+      param({ id: 'uvScroll', label: 'UV scroll', type: 'vec2', unit: 'none', default: [0, 0], min: -10, max: 10, editPolicy: 'live', description: 'Texture flow in UV units per second of effect time (x along a ribbon, y across). Textured ribbons.' }),
+      param({ id: 'uvDistort', label: 'UV distortion', type: 'number', unit: 'normalized', default: 0, min: 0, max: 0.15, editPolicy: 'live', description: 'Noise wobble of the texture lookup (09: 0–.15 normalized UV). Textured ribbons.' }),
       param({ id: 'dissolve', label: 'Dissolve', type: 'number', unit: 'normalized', default: 0, min: 0, max: 1, editPolicy: 'live', description: 'How far each particle burns away through a noise pattern by the end of its life (09 dissolve; 1 = fully gone). 0 = off. Billboards only.' }),
       param({ id: 'dissolveStart', label: 'Dissolve start', type: 'number', unit: 'normalized', default: 0.3, min: 0, max: 0.95, editPolicy: 'live', description: 'Fraction of the particle life before dissolving begins.' }),
       param({ id: 'dissolveSoftness', label: 'Dissolve softness', type: 'number', unit: 'normalized', default: 0.08, min: 0.001, max: 0.5, editPolicy: 'live' }),
