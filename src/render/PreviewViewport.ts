@@ -72,6 +72,9 @@ export function namespacedParticleId(systemId: string, particleId: string): stri
   return `${systemId}/${particleId}`;
 }
 
+/** Seek checkpoint spacing (12): at most durationTicks / 30 + 1 clones per system. */
+const CHECKPOINT_TICKS = 30;
+
 export class WebGLUnavailableError extends Error {}
 
 const rgbaScratch = new Float32Array(4);
@@ -710,6 +713,18 @@ export class PreviewViewport {
   }
 
   /** Rebuilds point simulations from tick 0 and/or recompiles the path tick; lands paused. */
+  /** 12 seek checkpoints: pristine simulation clones every CHECKPOINT_TICKS, per system, for the current plan only. */
+  #checkpoints = new Map<string, ParticleSimulation[]>();
+  #checkpointPlan: ParticlePreviewPlan | null = null;
+  #checkpoint(id: string, sim: ParticleSimulation): void {
+    if (sim.tick % CHECKPOINT_TICKS !== 0) return;
+    const list = this.#checkpoints.get(id) ?? [];
+    if (list.some(c => c.tick === sim.tick)) return;
+    list.push(sim.clone());
+    list.sort((a, b) => a.tick - b.tick);
+    this.#checkpoints.set(id, list);
+  }
+
   #replayTo(tick: number): void {
     const plan = this.#plan, clock = this.#clock;
     if (!clock || (!plan && !this.#pathCompile)) return;
@@ -717,21 +732,30 @@ export class PreviewViewport {
     clock.pause(); // Replays always land paused; restart() resumes explicitly.
     clock.seek(tick);
     if (plan) {
+      if (this.#checkpointPlan !== plan) { this.#checkpoints.clear(); this.#checkpointPlan = plan; }
       this.#sims.clear();
-      for (const s of plan.systems) {
-        const created = ParticleSimulation.create(s.descriptor);
-        if (!created.ok) return this.#fail(created.errors.map(e => ({ ...e, nodeId: e.nodeId ?? s.id })));
-        this.#sims.set(s.id, created.value);
-      }
       for (const t of this.#trails) t.history.clear();
       const reach = Math.max(0, ...this.#trails.map(t => t.layer.historyTicks));
-      for (const [id, sim] of this.#sims) {
+      for (const s of plan.systems) {
+        // Resume from the latest checkpoint that still lets trails collect their full history before `end`.
+        const end = Math.min(tick, s.descriptor.durationTicks), from = Math.max(0, end - reach);
+        const cp = [...(this.#checkpoints.get(s.id) ?? [])].reverse().find(c => c.tick <= from);
+        let sim: ParticleSimulation;
+        if (cp) sim = cp.clone();
+        else {
+          const created = ParticleSimulation.create(s.descriptor);
+          if (!created.ok) return this.#fail(created.errors.map(e => ({ ...e, nodeId: e.nodeId ?? s.id })));
+          sim = created.value;
+          this.#checkpoint(s.id, sim);
+        }
+        this.#sims.set(s.id, sim);
+        const id = s.id;
         // Mixed clocks may outlast a system; stop at its own duration as #advanceSims does.
-        const end = Math.min(tick, sim.descriptor.durationTicks);
         if (end - sim.tick <= reach) this.#feedTrails(id, sim);
         while (sim.tick < end) {
           const r = sim.advance();
           if (!r.ok) return this.#fail(r.errors.map(e => ({ ...e, nodeId: e.nodeId ?? id })));
+          this.#checkpoint(id, sim);
           if (end - sim.tick <= reach) this.#feedTrails(id, sim);
         }
       }
@@ -748,6 +772,7 @@ export class PreviewViewport {
         if (sim.tick >= sim.descriptor.durationTicks) continue;
         const r = sim.advance();
         if (!r.ok) return this.#fail(r.errors.map(e => ({ ...e, nodeId: e.nodeId ?? id })));
+        this.#checkpoint(id, sim);
         this.#feedTrails(id, sim);
       }
     }

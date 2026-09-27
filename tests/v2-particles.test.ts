@@ -426,3 +426,17 @@ test('burst addVelocity (inherited parent velocity) is added to every sampled bi
   }
   assert.equal(validateParticleDescriptor({ ...d, bursts: [{ ...d.bursts[0], addVelocity: [NaN, 0, 0] }] }).ok, false);
 });
+
+test('clone() is an exact checkpoint: advancing the copy matches the original and leaves it untouched', () => {
+  const d = base({ durationTicks: 60, bursts: [{ tick: 0, eventRandomKey: 'e', count: 4 }, { tick: 20, eventRandomKey: 'f', count: 3 }], initialVelocity: { kind: 'vector', value: [1, 2, 0] }, operators: [{ kind: 'gravity', acceleration: [0, -10, 0] }] });
+  const c = ParticleSimulation.create(d);
+  if (!c.ok) assert.fail('create');
+  const a = c.value;
+  for (let i = 0; i < 10; i++) a.advance();
+  const b = a.clone();
+  for (let i = 0; i < 30; i++) { a.advance(); b.advance(); }
+  assert.deepEqual(b.snapshot(), a.snapshot());
+  const frozen = a.clone(), before = frozen.snapshot();
+  a.advance();
+  assert.deepEqual(frozen.snapshot(), before);
+});

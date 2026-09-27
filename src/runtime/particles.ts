@@ -485,6 +485,26 @@ export class ParticleSimulation {
   }
 
   get tick(): number { return this.#tick; }
+
+  /** Exact deep copy of the current state (12 seek checkpoints): advancing the copy matches advancing the original. */
+  clone(): ParticleSimulation {
+    const c = new ParticleSimulation(this.descriptor, this.limits);
+    c.#tick = this.#tick;
+    c.#particles = this.#particles.map(cloneParticle);
+    c.#births = [...this.#births];
+    c.#deaths = [...this.#deaths];
+    c.#totalBirths = this.#totalBirths;
+    c.#totalDeaths = this.#totalDeaths;
+    c.#rateEligibleTicks = this.#rateEligibleTicks;
+    c.#rateEmitted = this.#rateEmitted;
+    c.#rateIntegral = this.#rateIntegral;
+    c.#burstCursor = this.#burstCursor;
+    c.#failure = this.#failure ? this.#failure.map(d => ({ ...d })) : null;
+    for (const [k, v] of this.#parentKeys) c.#parentKeys.set(k, v);
+    c.#record = this.#record;
+    for (const e of this.#events) c.#events.push({ ...e, position: cloneVec(e.position), velocity: cloneVec(e.velocity) });
+    return c;
+  }
   /** Events recorded so far (recordEvents only), in occurrence order. */
   get events(): readonly ParticleEvent[] { return this.#events; }
   #event(kind: ParticleEventKind, tick: number, p: ParticleState, ordinal: number): void {
