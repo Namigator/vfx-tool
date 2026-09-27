@@ -10,7 +10,7 @@
 - Quality bars: `docs/v2-plan/references/original-lightning/lightning-arc.html` (lightning) and `docs/v2-plan/references/standalone-flamethrower/flamethrower.html` (fire; open via `http://127.0.0.1:5174/docs/v2-plan/references/standalone-flamethrower/flamethrower.html`, `?t=<sec>` freezes a frame). Flamethrower is a standalone canvas2D demo — 4 layers (core, tongues, embers, smoke) + light + synthesized audio, 8 procedural flame shapes × 12 frames; tuned above 02-FIRE spec (tongues 420/s, cone 6°). [SAW] still frames in the in-app browser only; audio not listened to.
 
 ## Now (2026-09-27 overnight session)
-- Working through docs/v2-plan/27-GAP-AUDIT.md; every item: runtime/compiler + tests + an MCP recipe rendered with vfx_render_frames and looked at. 484 tests + tsc pass — now 502 (gate: tsc && tests before every commit).
+- Working through docs/v2-plan/27-GAP-AUDIT.md; every item: runtime/compiler + tests + an MCP recipe rendered with vfx_render_frames and looked at. 484 tests + tsc pass — now 504 (gate: tsc && tests before every commit).
 - Landed since the audit: emitter shapes/speed/aim; Gravity, Drag, NoiseForce, Attract, Vortex, GroundCollision; colour/size/opacity over life, spin, velocity stretch + pivot, worldAxis alignment; textured flipbooks (library to 10-ASSETS); ParticleEvents child emission; ParticleTrail, MotionTrail, SpriteRenderer, PointLight, MeshRenderer (procedural rocks/shards); PathFollower (projectiles), HelixPath, PathTransform; rateOverWindow; value nodes RandomRange/Constant/ScalarMath (per-instance unit, chainable, once per cast); EventDelay + MergeEvents (emitter, presentation and audio triggers); Emitter.inheritVelocity; ScreenFlash + CameraImpulse (reduced-motion aware); textured ribbons; bloom + ACES; light/dark arena; AudioEnvelope + AudioFilter, repeat-schedule audio, AV-synced Play/Loop; persistence slice; 18 components with knobs and layered SFX (Add component + Controls panel); MCP with 24 tools incl. headless frames, texture import and .vfxpack export/open.
 - Evidence recipes: mcp/examples/*.steps.json (run: node mcp/run-steps.mjs <file>; frames land in work/mcp/frames/). Components are generated from them: node tools/build-components.mjs.
 - AV sync: editor Play/Restart start the mix at the current tick (800 samples/tick), Pause/scrub stop it; Sound on/off toggle. [RAN] status in browser; not listened to.
@@ -26,7 +26,7 @@
 ## Next — gap order from docs/v2-plan/27-GAP-AUDIT.md (capability floor, 19-WORK-PACKAGES)
 1. DONE force Strength (literal / value node / EffectTimeCurve / Oscillator → per-tick gain) + Oscillator driver; recipes gravity-ramp, oscillator-pulse [SAW]. Remaining I8b: Gradient, per-particle curves, PublicParameter (OffsetAnchor done).
 2. Worker simulation (I12; seek checkpoints done); revision history + recovery (I11; shelf, IndexedDB assets, .vfxpack done).
-3. Group-wrapped components with expand-to-internals (ParticlePaths done); PublicParameter, OffsetAnchor.
+3. Wrap a selection as a group; non-number knobs (component groups + ParticlePaths done); PublicParameter, OffsetAnchor.
 4. A-05 model-build acceptance test — needs the user's go-ahead. Evidence recipe for this stretch: mcp/examples/event-chain.steps.json ([SAW] delayed second burst t26, landing dust t40).
 Sprite library: `node tools/bake-sprites.mjs` → assets/sprites/ (flame-tongue-a/b, smoke-puff, foam flipbooks 4×4/256; soft-glow, spark-streak, electric-arc, droplet, ripple-ring 2×2; dissolve-noise) + src/assets/builtinSprites.generated.ts; preview /assets/sprites/preview.html.
 

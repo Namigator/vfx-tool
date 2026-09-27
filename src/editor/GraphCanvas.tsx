@@ -11,7 +11,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import './graph-canvas.css';
 import type { Patch as HistoryPatch } from './history.ts';
-import type { Diagnostic, EdgeDefinition, EffectDocumentV2, NodeDefinition, NodeSpec, PortSpec } from '../model/types.ts';
+import type { Diagnostic, EdgeDefinition, EffectDocumentV2, GraphDefinition, NodeDefinition, NodeSpec, PortSpec } from '../model/types.ts';
 import { registryKey } from '../model/controls.ts';
 import { createRegistry } from '../graph/registry.ts';
 import { GROUP_NODE_TYPE, resolveSignature, type ResolvedSignature } from '../graph/signature.ts';
@@ -46,8 +46,8 @@ const BLOCKING_CODES = new Set<Diagnostic['code']>(['TYPE_MISMATCH', 'DOMAIN_MIS
 const DEFAULT_VIEWPORT = { x: 0, y: 0, zoom: 1 };
 
 const specOf = (n: NodeDefinition): NodeSpec | undefined => registry.get(registryKey(n.type, n.definitionVersion));
-/** Protected nodes (EffectOutput, group bridges) and Groups are not deletable from this canvas. */
-const isLocked = (n: NodeDefinition) => n.type === GROUP_NODE_TYPE || specOf(n)?.disabledBehavior === 'protected';
+/** Protected nodes (EffectOutput, group bridges) are not deletable; a Group is deleted together with its own graph. */
+const isLocked = (n: NodeDefinition) => specOf(n)?.disabledBehavior === 'protected';
 const diagKey = (d: Diagnostic) => `${d.code}\u0000${d.fieldPath ?? ''}\u0000${d.message}`;
 
 function freshId(base: string, taken: ReadonlySet<string>): string {
@@ -290,7 +290,36 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
     if (!graph) return;
     const node = selectedNodeId ? graph.nodes.find(n => n.id === selectedNodeId) : undefined;
     if (node && isLocked(node)) {
-      setNotice({ kind: 'error', lines: [node.type === GROUP_NODE_TYPE ? 'Deleting groups is not supported yet.' : `${node.type} is protected and cannot be deleted.`] });
+      setNotice({ kind: 'error', lines: [`${node.type} is protected and cannot be deleted.`] });
+      return;
+    }
+    if (node && node.type === GROUP_NODE_TYPE) {
+      // A component Group owns its graph: remove the Group, its wires, its graph (if no other Group uses it),
+      // that graph's layout and the controls scoped to it, as one undoable edit.
+      const childId = node.params.graphId as string;
+      const shared = doc.graphs.some(g => g.nodes.some(n => n !== node && n.type === GROUP_NODE_TYPE && n.params.graphId === childId));
+      // The component's sound chain lives beside the Group (prefixed ids); it goes too, except a mix/output
+      // that other nodes still feed.
+      const gone = new Set([node.id]);
+      for (const n of graph.nodes) if (n.id.startsWith(`${node.id}-`) && n.type.startsWith('Audio')) gone.add(n.id);
+      for (let changed = true; changed;) {
+        changed = false;
+        for (const id of [...gone]) {
+          const n = graph.nodes.find(x => x.id === id)!;
+          if ((n.type === 'AudioMix' || n.type === 'AudioOutput') && graph.edges.some(e => e.target.nodeId === id && !gone.has(e.source.nodeId))) { gone.delete(id); changed = true; }
+        }
+      }
+      const graphs = doc.graphs.filter(g => shared || g.id !== childId).map(g => g.id !== graph.id ? g : { ...g, nodes: g.nodes.filter(n => !gone.has(n.id)), edges: g.edges.filter(e => !gone.has(e.source.nodeId) && !gone.has(e.target.nodeId)) });
+      const editorGraphs = { ...doc.editor.graphs };
+      if (!shared) delete editorGraphs[childId];
+      if (editorGraphs[graphId]) { const nodes = { ...editorGraphs[graphId].nodes }; for (const id of gone) delete nodes[id]; editorGraphs[graphId] = { ...editorGraphs[graphId], nodes }; }
+      setNotice(null);
+      onEdit(`Delete group ${node.label}`, [
+        { op: 'set', path: ['graphs'], value: graphs },
+        { op: 'set', path: ['controls'], value: doc.controls.filter(c => (shared || c.scopeGraphId !== childId) && !c.bindings.some(b => gone.has(b.nodeId))) },
+        { op: 'set', path: ['editor', 'graphs'], value: editorGraphs },
+      ]);
+      onSelectNode(null);
       return;
     }
     if (node) {
@@ -350,18 +379,28 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
   const addComponent = () => {
     if (!componentId) return;
     let next;
-    try { next = insertComponent(doc, componentId).doc; } catch (e) { window.alert(e instanceof Error ? e.message : String(e)); return; }
-    const ri = doc.graphs.findIndex(g => g.id === doc.rootGraphId);
+    // Components insert as one Group node (double-click or Open internals to see the nodes inside).
+    try { next = insertComponent(doc, componentId, undefined, { group: true }).doc; } catch (e) { window.alert(e instanceof Error ? e.message : String(e)); return; }
     onEdit(`Add component ${getComponent(componentId).label}`, [
-      { op: 'set', path: ['graphs', ri], value: next.graphs[ri] },
+      { op: 'set', path: ['graphs'], value: next.graphs },
       { op: 'set', path: ['anchors'], value: next.anchors },
       { op: 'set', path: ['controls'], value: next.controls },
       { op: 'set', path: ['durationTicks'], value: next.durationTicks },
-      { op: 'set', path: ['editor', 'graphs', doc.rootGraphId, 'nodes'], value: next.editor.graphs[doc.rootGraphId].nodes },
+      { op: 'set', path: ['editor', 'graphs'], value: next.editor.graphs },
     ]);
     setComponentId('');
   };
   const canDelete = (selectedNode !== undefined && !isLocked(selectedNode)) || selectedEdges.size > 0;
+  /** Opens a Group's internals in this canvas (06: double-click or Open internals; breadcrumb returns). */
+  const openGraph = (id: string, label: string) => { onSelectNode(null); onEdit(label, [{ op: 'set', path: ['editor', 'openedGraphId'], value: id }]); };
+  const parentOf = (id: string) => doc.graphs.find(g => g.nodes.some(n => n.type === GROUP_NODE_TYPE && n.params.graphId === id));
+  const trail: { id: string; label: string }[] = [];
+  for (let id: string | undefined = graphId, guard = 0; id && guard < 16; guard++) {
+    const parent: GraphDefinition | undefined = id === doc.rootGraphId ? undefined : parentOf(id);
+    const owner = parent?.nodes.find((n: NodeDefinition) => n.type === GROUP_NODE_TYPE && n.params.graphId === id);
+    trail.unshift({ id, label: id === doc.rootGraphId ? 'Effect' : owner?.label ?? id });
+    id = parent?.id;
+  }
 
   return (
     <div className="gc-root">
@@ -387,12 +426,21 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
             </select>
           </label>
           <button type="button" onClick={addComponent} disabled={!componentId}>Insert</button>
+          {selectedNode?.type === GROUP_NODE_TYPE && <button type="button" onClick={() => openGraph(selectedNode.params.graphId as string, `Open ${selectedNode.label}`)} title="Show the nodes inside this group">Open internals</button>}
         </div>
+        {trail.length > 1 && (
+          <nav className="gc-trail" aria-label="Graph path">
+            {trail.map((t, i) => i < trail.length - 1
+              ? <span key={t.id}><button type="button" className="gc-crumb" onClick={() => openGraph(t.id, `Back to ${t.label}`)}>{t.label}</button> › </span>
+              : <strong key={t.id}>{t.label}</strong>)}
+          </nav>
+        )}
       <div className="gc-flow" ref={wrapper}>
       <ReactFlow<CardNode, Edge>
         nodes={nodes} edges={edges} nodeTypes={nodeTypes}
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
         onNodeDragStop={onNodeDragStop} onConnect={onConnect}
+        onNodeDoubleClick={(_, n) => { const def = graph.nodes.find(x => x.id === n.id); if (def?.type === GROUP_NODE_TYPE) openGraph(def.params.graphId as string, `Open ${def.label}`); }}
         onPaneClick={() => { onSelectNode(null); setSelectedEdges(new Set()); }}
         deleteKeyCode={null} multiSelectionKeyCode={null} selectionKeyCode={null}
         viewport={camera.viewport} onViewportChange={onViewportChange} minZoom={0.1}

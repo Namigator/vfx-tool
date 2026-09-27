@@ -141,7 +141,8 @@ export function compileAudio(input: unknown): ValidationResult<AudioCompilePlan>
       return fail('UNKNOWN_NODE', `Input "${port}" of "${consumer}" is fed by ${n.node.type}.${s.kind === 'node' ? s.port : ''} ("${n.node.id}"); only ${type}.${out} is supported by the audio compiler.`, n.node.id);
     }
     if (!n.effectiveEnabled) return fail('INVALID_VALUE', `${type} "${n.node.id}" is disabled; disabled nodes in the audio chain are not supported yet. Enable it or disconnect it.`, n.node.id);
-    if (n.groupPath.length) return fail('INVALID_VALUE', `${type} "${n.node.id}" is inside a group; grouped audio chains are not supported by the audio compiler yet.`, n.node.id);
+    // A Schedule cue may live inside a Group (grouped components); the audio chain itself must stay ungrouped.
+    if (n.groupPath.length && type !== 'Schedule') return fail('INVALID_VALUE', `${type} "${n.node.id}" is inside a group; grouped audio chains are not supported by the audio compiler yet.`, n.node.id);
     return n;
   };
   /** Runs a pure audio core and turns its argument errors into an addressed diagnostic. */

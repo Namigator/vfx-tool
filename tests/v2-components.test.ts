@@ -71,3 +71,36 @@ test('sound-carrying components share one audio mix/output, so several can be co
   if (!a.ok) assert.fail(JSON.stringify(a.errors.slice(0, 3)));
   assert.equal(a.value.kind === 'mix' && a.value.voices.length, 8, 'both fireballs contribute their four voices');
 });
+
+test('grouped insertion: one Group node in root, internals in a child graph, same compiled systems, knobs still drive it', () => {
+  for (const c of COMPONENT_TEMPLATES) {
+    const flat = insertComponent(createBlankDocument(), c.id).doc, g = insertComponent(createBlankDocument(), c.id, undefined, { group: true });
+    const doc = valid(g.doc);
+    assert.equal(g.groupNodeId, c.id);
+    assert.deepEqual(doc.graphs[0].nodes.map(n => n.type).filter(t => !t.startsWith('Audio')).sort(), ['Anchor', 'Anchor', 'EffectOutput', 'Group'], c.id);
+    const child = doc.graphs.find(x => x.id === `graph-${c.id}`)!;
+    assert.ok(child.nodes.some(n => n.type === 'GroupOutput'), c.id);
+    const a = compiles(flat), b = compiles(doc);
+    assert.equal(b.systems.length, a.systems.length, `${c.id} systems`);
+    assert.deepEqual(b.systems.map(s => s.descriptor.bursts.length + (s.descriptor.rate?.perSecond ?? 0)), a.systems.map(s => s.descriptor.bursts.length + (s.descriptor.rate?.perSecond ?? 0)), c.id);
+    const pf = compilePathPreview(flat, 30, { audioHandled: true }), pg = compilePathPreview(doc, 30, { audioHandled: true });
+    assert.ok(pf.ok && pg.ok && pf.value.layers.length === pg.value.layers.length, `${c.id} ribbons`);
+  }
+  const { doc } = insertComponent(createBlankDocument(), 'spark-burst', undefined, { group: true });
+  const knob = doc.controls.find(k => k.label === 'Sparks per burst')!;
+  assert.equal(knob.scopeGraphId, 'graph-spark-burst');
+  const count = (d: typeof doc) => compiles(valid(d)).systems[0].descriptor.bursts[0].count;
+  const more = structuredClone(doc); more.controls.find(k => k.id === knob.id)!.value = 77;
+  assert.notEqual(count(doc), 77);
+  assert.equal(count(more), 77);
+
+});
+
+test('grouped sound components: cues inside the group drive the root audio chain; the mix equals the flat insert', async () => {
+  const { compileAudio } = await import('../src/graph/toAudio.ts');
+  for (const c of COMPONENT_TEMPLATES.filter(t => t.nodes.some(n => n.type.startsWith('Audio')))) {
+    const a = compileAudio(insertComponent(createBlankDocument(), c.id).doc), b = compileAudio(insertComponent(createBlankDocument(), c.id, undefined, { group: true }).doc);
+    if (!a.ok || !b.ok) assert.fail(`${c.id}: ${JSON.stringify((!a.ok ? a : b as { errors: unknown[] }).errors?.slice(0, 2))}`);
+    assert.deepEqual([...b.value.mix.left], [...a.value.mix.left], c.id);
+  }
+});

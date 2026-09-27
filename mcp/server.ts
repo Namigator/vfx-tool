@@ -125,9 +125,9 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
   // ---------- components ----------
   tool('vfx_list_components', 'Ready-made, pre-wired components (the same list as the editor Add component menu).', {}, () =>
     ok(COMPONENT_TEMPLATES.map(c => `${c.id}: ${c.label} — ${c.description} (${c.nodes.length} nodes)`).join('\n')));
-  tool('vfx_add_component', 'Insert a component into the document root graph, auto-wired to its Source/Target anchors and Output. Node ids are prefixed; returns the prefix.', {
-    docId: z.string(), component: z.string(), prefix: z.string().regex(ID).optional(),
-  }, a => { let used = ''; const r = mutate(a.docId, d => { const x = insertComponent(d, a.component, a.prefix); used = x.prefix; Object.assign(d, x.doc); return ''; }); return r.isError ? r : ok(`Inserted ${a.component} with prefix "${used}" (node ids "${used}-<node>").`); });
+  tool('vfx_add_component', 'Insert a component, auto-wired to its Source/Target anchors and Output. Node ids are prefixed; returns the prefix. group=true wraps its visual nodes in one Group node (own graph "graph-<prefix>", knobs exposed on the Group; sound nodes stay in the root), like the editor.', {
+    docId: z.string(), component: z.string(), prefix: z.string().regex(ID).optional(), group: z.boolean().optional(),
+  }, a => { let used = '', gid: string | undefined; const r = mutate(a.docId, d => { const x = insertComponent(d, a.component, a.prefix, { group: a.group === true }); used = x.prefix; gid = x.groupNodeId; Object.assign(d, x.doc); return ''; }); return r.isError ? r : ok(`Inserted ${a.component} with prefix "${used}" (node ids "${used}-<node>")${gid ? `; Group node "${gid}" wraps graph "graph-${used}"` : ''}.`); });
 
   tool('vfx_list_controls', 'Published knobs (document controls) with value, bounds and what they drive.', { docId: z.string() }, ({ docId }) =>
     ok(getDoc(docId).controls.map(c => `${c.id} [${c.section}] ${c.label} = ${JSON.stringify(c.value)} (${c.min ?? '-'}..${c.max ?? '-'} ${c.unit}) -> ${c.bindings.map(b => `${b.nodeId}.${b.parameter}${b.scale ? ' x' + b.scale : ''}`).join(', ')}`).join('\n') || 'No controls.'));

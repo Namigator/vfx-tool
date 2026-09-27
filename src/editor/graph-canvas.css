@@ -39,3 +39,5 @@
 
 .react-flow__edge.selected .react-flow__edge-path { stroke: #6aa8ff; stroke-width: 2.5; }
 
+.gc-trail { flex: none; padding: 4px 8px; font-size: 12px; background: #1a1e25; border-bottom: 1px solid #343a46; }
+.gc-crumb { font: inherit; color: #7fb4ff; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
