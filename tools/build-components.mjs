@@ -43,6 +43,9 @@ const COMPONENTS = [
   ['wind-gust', 'Wind: spiral gust', 'Broken teal air ribbons spiralling Source→Target with fast streaks and faint wisps, attack/hold/fall envelope (07-WIND).', 'wind-gust'],
   ['wind-cut', 'Wind: cutting gust', 'Straight low-twist gust with long thin streaks (07-WIND variant).', 'wind-cut'],
   ['wind-whirl', 'Wind: compact whirl', 'Wide whirling burst around a short axis at Source (07-WIND variant).', 'wind-whirl'],
+  ['poison-caustic', 'Poison: caustic cloud', 'Slow yellow-green cloud at Target with rising rim bubbles that pop into droplets, dark drips and a ground stain (08-POISON).', 'poison-caustic'],
+  ['poison-pool', 'Poison: creeping pool', 'Low creeping cloud with few bubbles (08-POISON variant).', 'poison-pool'],
+  ['poison-plume', 'Poison: bubbling plume', 'Taller plume from a narrow base with many bubbles and drips (08-POISON variant).', 'poison-plume'],
   ['fireball', 'Fireball', 'Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.', 'fireball'],
 ];
 
@@ -85,6 +88,9 @@ const KNOBS = {
   'wind-gust': [['width', 'Gust width', [['helix0', 'radius'], ['helix1', 'radius'], ['helix2', 'radius'], ['helix3', 'radius']]], ['twist', 'Twist', [['helix0', 'turns'], ['helix1', 'turns'], ['helix2', 'turns'], ['helix3', 'turns']]], ['streaks', 'Streak density', [['streaks', 'rate']]], ['wisps', 'Wisp amount', [['wisps', 'rate']]], ['speed', 'Travel speed', [['streaks', 'speedMax'], ['streaks', 'speedMin', 0.67]]]],
   'wind-cut': [['width', 'Gust width', [['helix0', 'radius'], ['helix1', 'radius'], ['helix2', 'radius']]], ['twist', 'Twist', [['helix0', 'turns'], ['helix1', 'turns'], ['helix2', 'turns']]], ['streaks', 'Streak density', [['streaks', 'rate']]], ['wisps', 'Wisp amount', [['wisps', 'rate']]], ['speed', 'Travel speed', [['streaks', 'speedMax'], ['streaks', 'speedMin', 0.67]]]],
   'wind-whirl': [['width', 'Gust width', [['helix0', 'radius'], ['helix1', 'radius'], ['helix2', 'radius'], ['helix3', 'radius'], ['helix4', 'radius']]], ['twist', 'Twist', [['helix0', 'turns'], ['helix1', 'turns'], ['helix2', 'turns'], ['helix3', 'turns'], ['helix4', 'turns']]], ['streaks', 'Streak density', [['streaks', 'rate']]], ['wisps', 'Wisp amount', [['wisps', 'rate']]], ['speed', 'Travel speed', [['streaks', 'speedMax'], ['streaks', 'speedMin', 0.67]]]],
+  'poison-caustic': [['radius', 'Cloud radius', [['cloud', 'radius']]], ['density', 'Cloud density', [['cloud', 'rate']]], ['rise', 'Rise speed', [['cloud', 'speedMax'], ['cloud', 'speedMin', 0.36]]], ['drift', 'Drift', [['clouddrift', 'amplitude']]], ['bubbles', 'Bubble rate', [['bubbles', 'rate']]], ['pops', 'Popping amount', [['popdrops', 'burst']]]],
+  'poison-pool': [['radius', 'Cloud radius', [['cloud', 'radius']]], ['density', 'Cloud density', [['cloud', 'rate']]], ['rise', 'Rise speed', [['cloud', 'speedMax'], ['cloud', 'speedMin', 0.36]]], ['drift', 'Drift', [['clouddrift', 'amplitude']]], ['bubbles', 'Bubble rate', [['bubbles', 'rate']]], ['pops', 'Popping amount', [['popdrops', 'burst']]]],
+  'poison-plume': [['radius', 'Cloud radius', [['cloud', 'radius']]], ['density', 'Cloud density', [['cloud', 'rate']]], ['rise', 'Rise speed', [['cloud', 'speedMax'], ['cloud', 'speedMin', 0.36]]], ['drift', 'Drift', [['clouddrift', 'amplitude']]], ['bubbles', 'Bubble rate', [['bubbles', 'rate']]], ['pops', 'Popping amount', [['popdrops', 'burst']]]],
   'fireball': [['travel', 'Travel ticks', [['ball', 'durationTicks']]], ['trail', 'Trail density', [['trailem', 'rate']]], ['core', 'Core size', [['core', 'size']]], ['impact', 'Impact sparks', [['boom', 'burst']]], ['flash', 'Flash size', [['flash', 'size']]], ['light', 'Ball light', [['balllight', 'intensity']]]],
 };
 

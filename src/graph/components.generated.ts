@@ -29760,6 +29760,2280 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   ]
  },
  {
+  "id": "poison-caustic",
+  "label": "Poison: caustic cloud",
+  "description": "Slow yellow-green cloud at Target with rising rim bubbles that pop into droplets, dark drips and a ground stain (08-POISON).",
+  "durationTicks": 240,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "active",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 138,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "cloud",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.65,
+     "rate": 24,
+     "burst": 8,
+     "speedMin": 0.25,
+     "speedMax": 0.7,
+     "lifetimeMin": 1.2,
+     "lifetimeMax": 2.3,
+     "rateOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.3
+       },
+       {
+        "x": 0.13043478260869565,
+        "y": 1
+       },
+       {
+        "x": 0.85,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0.2
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "cloudip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.25,
+     "sizeMax": 0.35,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283,
+     "angularVelocityMin": -0.4,
+     "angularVelocityMax": 0.4
+    }
+   },
+   {
+    "id": "clouddrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.6
+    }
+   },
+   {
+    "id": "clouddrift",
+    "type": "NoiseForce",
+    "params": {
+     "mode": "curl",
+     "amplitude": 0.25,
+     "frequency": 0.5,
+     "evolution": 0.35
+    }
+   },
+   {
+    "id": "cloudlift",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      0.12,
+      0
+     ]
+    }
+   },
+   {
+    "id": "cloudmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "opacity": 1,
+     "emission": 0.08,
+     "groundFade": 0.2
+    }
+   },
+   {
+    "id": "cloudbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 3.3
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.15,
+        "y": 0.6
+       },
+       {
+        "x": 0.7,
+        "y": 0.42
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     },
+     "colorOverLife": {
+      "stops": [
+       {
+        "position": 0,
+        "color": {
+         "srgb": "#A6C832",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 0.35,
+        "color": {
+         "srgb": "#6F9A22",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 1,
+        "color": {
+         "srgb": "#2E4712",
+         "alpha": 1
+        }
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "bubblewin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 18,
+     "durationTicks": 120,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "bubbles",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.52,
+     "rate": 10,
+     "burst": 0,
+     "speedMin": 0.4,
+     "speedMax": 1,
+     "lifetimeMin": 0.6,
+     "lifetimeMax": 1.3
+    }
+   },
+   {
+    "id": "bubbleip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.08,
+     "sizeMax": 0.28
+    }
+   },
+   {
+    "id": "bubblewobble",
+    "type": "NoiseForce",
+    "params": {
+     "mode": "vector",
+     "amplitude": 0.4,
+     "frequency": 1.5,
+     "evolution": 1
+    }
+   },
+   {
+    "id": "bubblemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "ripple-ring",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#B4DA4A",
+      "alpha": 1
+     },
+     "opacity": 0.9,
+     "emission": 0.12
+    }
+   },
+   {
+    "id": "bubblebb",
+    "type": "BillboardRenderer",
+    "params": {
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 0.9,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1.2
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.1,
+        "y": 1
+       },
+       {
+        "x": 0.95,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "pops",
+    "type": "ParticleEvents",
+    "params": {
+     "probability": 1,
+     "maxEvents": 256
+    }
+   },
+   {
+    "id": "popdrops",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.02,
+     "burst": 4,
+     "rate": 0,
+     "speedMin": 0.3,
+     "speedMax": 1.2,
+     "lifetimeMin": 0.15,
+     "lifetimeMax": 0.35,
+     "useEventPosition": true
+    }
+   },
+   {
+    "id": "popip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.015,
+     "sizeMax": 0.03
+    }
+   },
+   {
+    "id": "popg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -4,
+      0
+     ]
+    }
+   },
+   {
+    "id": "popmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "droplet",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#B8DA50",
+      "alpha": 1
+     },
+     "opacity": 0.9
+    }
+   },
+   {
+    "id": "popbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 1.6,
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "cloudbelly",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      0.9,
+      0
+     ]
+    }
+   },
+   {
+    "id": "drips",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.45499999999999996,
+     "rate": 3,
+     "burst": 0,
+     "speedMin": 0,
+     "speedMax": 0.1,
+     "lifetimeMin": 0.6,
+     "lifetimeMax": 1
+    }
+   },
+   {
+    "id": "dripip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.03,
+     "sizeMax": 0.05
+    }
+   },
+   {
+    "id": "dripg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "dripfloor",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "kill"
+    }
+   },
+   {
+    "id": "dripmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "droplet",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#4A6A1C",
+      "alpha": 1
+     },
+     "opacity": 0.95
+    }
+   },
+   {
+    "id": "dripbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 2
+    }
+   },
+   {
+    "id": "residuewin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 6,
+     "durationTicks": 232,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "floor",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      -0.08,
+      0
+     ]
+    }
+   },
+   {
+    "id": "residuemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "variant": 5,
+     "blend": "normal",
+     "tint": {
+      "srgb": "#4E6E1E",
+      "alpha": 1
+     },
+     "opacity": 1
+    }
+   },
+   {
+    "id": "residue",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1.4,
+     "alignment": "worldAxis",
+     "worldAxis": [
+      0,
+      1,
+      0
+     ],
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.45
+       },
+       {
+        "x": 0.2,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1.1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.1,
+        "y": 0.25
+       },
+       {
+        "x": 0.6,
+        "y": 0.2
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "cloud.anchor"
+   ],
+   [
+    "active.window",
+    "cloud.window"
+   ],
+   [
+    "active.start",
+    "cloud.trigger"
+   ],
+   [
+    "cloud.particles",
+    "cloudip.particles"
+   ],
+   [
+    "cloudip.particles",
+    "clouddrag.particles"
+   ],
+   [
+    "clouddrag.particles",
+    "clouddrift.particles"
+   ],
+   [
+    "clouddrift.particles",
+    "cloudlift.particles"
+   ],
+   [
+    "cloudlift.particles",
+    "cloudbb.particles"
+   ],
+   [
+    "cloudmat.material",
+    "cloudbb.material"
+   ],
+   [
+    "cloudbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "bubbles.anchor"
+   ],
+   [
+    "bubblewin.window",
+    "bubbles.window"
+   ],
+   [
+    "bubbles.particles",
+    "bubbleip.particles"
+   ],
+   [
+    "bubbleip.particles",
+    "bubblewobble.particles"
+   ],
+   [
+    "bubblewobble.particles",
+    "bubblebb.particles"
+   ],
+   [
+    "bubblemat.material",
+    "bubblebb.material"
+   ],
+   [
+    "bubblebb.visual",
+    "node-output.visual"
+   ],
+   [
+    "bubblewobble.particles",
+    "pops.particles"
+   ],
+   [
+    "pops.death",
+    "popdrops.trigger"
+   ],
+   [
+    "popdrops.particles",
+    "popip.particles"
+   ],
+   [
+    "popip.particles",
+    "popg.particles"
+   ],
+   [
+    "popg.particles",
+    "popbb.particles"
+   ],
+   [
+    "popmat.material",
+    "popbb.material"
+   ],
+   [
+    "popbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "cloudbelly.anchor"
+   ],
+   [
+    "cloudbelly.out",
+    "drips.anchor"
+   ],
+   [
+    "bubblewin.window",
+    "drips.window"
+   ],
+   [
+    "drips.particles",
+    "dripip.particles"
+   ],
+   [
+    "dripip.particles",
+    "dripg.particles"
+   ],
+   [
+    "dripg.particles",
+    "dripfloor.particles"
+   ],
+   [
+    "dripfloor.particles",
+    "dripbb.particles"
+   ],
+   [
+    "dripmat.material",
+    "dripbb.material"
+   ],
+   [
+    "dripbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "floor.anchor"
+   ],
+   [
+    "floor.out",
+    "residue.anchor"
+   ],
+   [
+    "residuemat.material",
+    "residue.material"
+   ],
+   [
+    "residuewin.window",
+    "residue.window"
+   ],
+   [
+    "residue.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "radius",
+    "label": "Cloud radius",
+    "value": 0.65,
+    "bindings": [
+     {
+      "node": "cloud",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "density",
+    "label": "Cloud density",
+    "value": 24,
+    "bindings": [
+     {
+      "node": "cloud",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "rise",
+    "label": "Rise speed",
+    "value": 0.7,
+    "bindings": [
+     {
+      "node": "cloud",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "cloud",
+      "parameter": "speedMin",
+      "scale": 0.36
+     }
+    ]
+   },
+   {
+    "id": "drift",
+    "label": "Drift",
+    "value": 0.25,
+    "bindings": [
+     {
+      "node": "clouddrift",
+      "parameter": "amplitude"
+     }
+    ]
+   },
+   {
+    "id": "bubbles",
+    "label": "Bubble rate",
+    "value": 10,
+    "bindings": [
+     {
+      "node": "bubbles",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "pops",
+    "label": "Popping amount",
+    "value": 4,
+    "bindings": [
+     {
+      "node": "popdrops",
+      "parameter": "burst"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "poison-pool",
+  "label": "Poison: creeping pool",
+  "description": "Low creeping cloud with few bubbles (08-POISON variant).",
+  "durationTicks": 240,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "active",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 138,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "cloud",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 1.2,
+     "rate": 22,
+     "burst": 8,
+     "speedMin": 0.05,
+     "speedMax": 0.2,
+     "lifetimeMin": 1.2,
+     "lifetimeMax": 2.3,
+     "rateOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.3
+       },
+       {
+        "x": 0.13043478260869565,
+        "y": 1
+       },
+       {
+        "x": 0.85,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0.2
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "cloudip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.3,
+     "sizeMax": 0.45,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283,
+     "angularVelocityMin": -0.4,
+     "angularVelocityMax": 0.4
+    }
+   },
+   {
+    "id": "clouddrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.6
+    }
+   },
+   {
+    "id": "clouddrift",
+    "type": "NoiseForce",
+    "params": {
+     "mode": "curl",
+     "amplitude": 0.25,
+     "frequency": 0.5,
+     "evolution": 0.35
+    }
+   },
+   {
+    "id": "cloudlift",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      0.12,
+      0
+     ]
+    }
+   },
+   {
+    "id": "cloudmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "opacity": 1,
+     "emission": 0.08,
+     "groundFade": 0.2
+    }
+   },
+   {
+    "id": "cloudbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 3.3
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.15,
+        "y": 0.6
+       },
+       {
+        "x": 0.7,
+        "y": 0.42
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     },
+     "colorOverLife": {
+      "stops": [
+       {
+        "position": 0,
+        "color": {
+         "srgb": "#A6C832",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 0.35,
+        "color": {
+         "srgb": "#6F9A22",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 1,
+        "color": {
+         "srgb": "#2E4712",
+         "alpha": 1
+        }
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "bubblewin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 18,
+     "durationTicks": 120,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "bubbles",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.96,
+     "rate": 3,
+     "burst": 0,
+     "speedMin": 0.2,
+     "speedMax": 0.5,
+     "lifetimeMin": 0.6,
+     "lifetimeMax": 1.3
+    }
+   },
+   {
+    "id": "bubbleip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.08,
+     "sizeMax": 0.28
+    }
+   },
+   {
+    "id": "bubblewobble",
+    "type": "NoiseForce",
+    "params": {
+     "mode": "vector",
+     "amplitude": 0.4,
+     "frequency": 1.5,
+     "evolution": 1
+    }
+   },
+   {
+    "id": "bubblemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "ripple-ring",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#B4DA4A",
+      "alpha": 1
+     },
+     "opacity": 0.9,
+     "emission": 0.12
+    }
+   },
+   {
+    "id": "bubblebb",
+    "type": "BillboardRenderer",
+    "params": {
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 0.9,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1.2
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.1,
+        "y": 1
+       },
+       {
+        "x": 0.95,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "pops",
+    "type": "ParticleEvents",
+    "params": {
+     "probability": 1,
+     "maxEvents": 256
+    }
+   },
+   {
+    "id": "popdrops",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.02,
+     "burst": 4,
+     "rate": 0,
+     "speedMin": 0.3,
+     "speedMax": 1.2,
+     "lifetimeMin": 0.15,
+     "lifetimeMax": 0.35,
+     "useEventPosition": true
+    }
+   },
+   {
+    "id": "popip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.015,
+     "sizeMax": 0.03
+    }
+   },
+   {
+    "id": "popg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -4,
+      0
+     ]
+    }
+   },
+   {
+    "id": "popmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "droplet",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#B8DA50",
+      "alpha": 1
+     },
+     "opacity": 0.9
+    }
+   },
+   {
+    "id": "popbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 1.6,
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "cloudbelly",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      0.9,
+      0
+     ]
+    }
+   },
+   {
+    "id": "drips",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.84,
+     "rate": 0.5,
+     "burst": 0,
+     "speedMin": 0,
+     "speedMax": 0.1,
+     "lifetimeMin": 0.6,
+     "lifetimeMax": 1
+    }
+   },
+   {
+    "id": "dripip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.03,
+     "sizeMax": 0.05
+    }
+   },
+   {
+    "id": "dripg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "dripfloor",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "kill"
+    }
+   },
+   {
+    "id": "dripmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "droplet",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#4A6A1C",
+      "alpha": 1
+     },
+     "opacity": 0.95
+    }
+   },
+   {
+    "id": "dripbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 2
+    }
+   },
+   {
+    "id": "residuewin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 6,
+     "durationTicks": 232,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "floor",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      -0.08,
+      0
+     ]
+    }
+   },
+   {
+    "id": "residuemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "variant": 5,
+     "blend": "normal",
+     "tint": {
+      "srgb": "#4E6E1E",
+      "alpha": 1
+     },
+     "opacity": 1
+    }
+   },
+   {
+    "id": "residue",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 2.4,
+     "alignment": "worldAxis",
+     "worldAxis": [
+      0,
+      1,
+      0
+     ],
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.45
+       },
+       {
+        "x": 0.2,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1.1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.1,
+        "y": 0.25
+       },
+       {
+        "x": 0.6,
+        "y": 0.2
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "cloud.anchor"
+   ],
+   [
+    "active.window",
+    "cloud.window"
+   ],
+   [
+    "active.start",
+    "cloud.trigger"
+   ],
+   [
+    "cloud.particles",
+    "cloudip.particles"
+   ],
+   [
+    "cloudip.particles",
+    "clouddrag.particles"
+   ],
+   [
+    "clouddrag.particles",
+    "clouddrift.particles"
+   ],
+   [
+    "clouddrift.particles",
+    "cloudlift.particles"
+   ],
+   [
+    "cloudlift.particles",
+    "cloudbb.particles"
+   ],
+   [
+    "cloudmat.material",
+    "cloudbb.material"
+   ],
+   [
+    "cloudbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "bubbles.anchor"
+   ],
+   [
+    "bubblewin.window",
+    "bubbles.window"
+   ],
+   [
+    "bubbles.particles",
+    "bubbleip.particles"
+   ],
+   [
+    "bubbleip.particles",
+    "bubblewobble.particles"
+   ],
+   [
+    "bubblewobble.particles",
+    "bubblebb.particles"
+   ],
+   [
+    "bubblemat.material",
+    "bubblebb.material"
+   ],
+   [
+    "bubblebb.visual",
+    "node-output.visual"
+   ],
+   [
+    "bubblewobble.particles",
+    "pops.particles"
+   ],
+   [
+    "pops.death",
+    "popdrops.trigger"
+   ],
+   [
+    "popdrops.particles",
+    "popip.particles"
+   ],
+   [
+    "popip.particles",
+    "popg.particles"
+   ],
+   [
+    "popg.particles",
+    "popbb.particles"
+   ],
+   [
+    "popmat.material",
+    "popbb.material"
+   ],
+   [
+    "popbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "cloudbelly.anchor"
+   ],
+   [
+    "cloudbelly.out",
+    "drips.anchor"
+   ],
+   [
+    "bubblewin.window",
+    "drips.window"
+   ],
+   [
+    "drips.particles",
+    "dripip.particles"
+   ],
+   [
+    "dripip.particles",
+    "dripg.particles"
+   ],
+   [
+    "dripg.particles",
+    "dripfloor.particles"
+   ],
+   [
+    "dripfloor.particles",
+    "dripbb.particles"
+   ],
+   [
+    "dripmat.material",
+    "dripbb.material"
+   ],
+   [
+    "dripbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "floor.anchor"
+   ],
+   [
+    "floor.out",
+    "residue.anchor"
+   ],
+   [
+    "residuemat.material",
+    "residue.material"
+   ],
+   [
+    "residuewin.window",
+    "residue.window"
+   ],
+   [
+    "residue.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "radius",
+    "label": "Cloud radius",
+    "value": 1.2,
+    "bindings": [
+     {
+      "node": "cloud",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "density",
+    "label": "Cloud density",
+    "value": 22,
+    "bindings": [
+     {
+      "node": "cloud",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "rise",
+    "label": "Rise speed",
+    "value": 0.2,
+    "bindings": [
+     {
+      "node": "cloud",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "cloud",
+      "parameter": "speedMin",
+      "scale": 0.36
+     }
+    ]
+   },
+   {
+    "id": "drift",
+    "label": "Drift",
+    "value": 0.25,
+    "bindings": [
+     {
+      "node": "clouddrift",
+      "parameter": "amplitude"
+     }
+    ]
+   },
+   {
+    "id": "bubbles",
+    "label": "Bubble rate",
+    "value": 3,
+    "bindings": [
+     {
+      "node": "bubbles",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "pops",
+    "label": "Popping amount",
+    "value": 4,
+    "bindings": [
+     {
+      "node": "popdrops",
+      "parameter": "burst"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "poison-plume",
+  "label": "Poison: bubbling plume",
+  "description": "Taller plume from a narrow base with many bubbles and drips (08-POISON variant).",
+  "durationTicks": 240,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "active",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 138,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "cloud",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.3,
+     "rate": 26,
+     "burst": 8,
+     "speedMin": 0.8,
+     "speedMax": 1.5,
+     "lifetimeMin": 1.2,
+     "lifetimeMax": 2.3,
+     "rateOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.3
+       },
+       {
+        "x": 0.13043478260869565,
+        "y": 1
+       },
+       {
+        "x": 0.85,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0.2
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "cloudip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.2,
+     "sizeMax": 0.3,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283,
+     "angularVelocityMin": -0.4,
+     "angularVelocityMax": 0.4
+    }
+   },
+   {
+    "id": "clouddrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.15
+    }
+   },
+   {
+    "id": "clouddrift",
+    "type": "NoiseForce",
+    "params": {
+     "mode": "curl",
+     "amplitude": 0.25,
+     "frequency": 0.5,
+     "evolution": 0.35
+    }
+   },
+   {
+    "id": "cloudlift",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      0.6,
+      0
+     ]
+    }
+   },
+   {
+    "id": "cloudmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "opacity": 1,
+     "emission": 0.08,
+     "groundFade": 0.2
+    }
+   },
+   {
+    "id": "cloudbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 3.3
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.15,
+        "y": 0.6
+       },
+       {
+        "x": 0.7,
+        "y": 0.42
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     },
+     "colorOverLife": {
+      "stops": [
+       {
+        "position": 0,
+        "color": {
+         "srgb": "#A6C832",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 0.35,
+        "color": {
+         "srgb": "#6F9A22",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 1,
+        "color": {
+         "srgb": "#2E4712",
+         "alpha": 1
+        }
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "bubblewin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 18,
+     "durationTicks": 120,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "bubbles",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.24,
+     "rate": 20,
+     "burst": 0,
+     "speedMin": 0.8,
+     "speedMax": 1.6,
+     "lifetimeMin": 0.6,
+     "lifetimeMax": 1.3
+    }
+   },
+   {
+    "id": "bubbleip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.08,
+     "sizeMax": 0.28
+    }
+   },
+   {
+    "id": "bubblewobble",
+    "type": "NoiseForce",
+    "params": {
+     "mode": "vector",
+     "amplitude": 0.4,
+     "frequency": 1.5,
+     "evolution": 1
+    }
+   },
+   {
+    "id": "bubblemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "ripple-ring",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#B4DA4A",
+      "alpha": 1
+     },
+     "opacity": 0.9,
+     "emission": 0.12
+    }
+   },
+   {
+    "id": "bubblebb",
+    "type": "BillboardRenderer",
+    "params": {
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 0.9,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1.2
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.1,
+        "y": 1
+       },
+       {
+        "x": 0.95,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "pops",
+    "type": "ParticleEvents",
+    "params": {
+     "probability": 1,
+     "maxEvents": 256
+    }
+   },
+   {
+    "id": "popdrops",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.02,
+     "burst": 4,
+     "rate": 0,
+     "speedMin": 0.3,
+     "speedMax": 1.2,
+     "lifetimeMin": 0.15,
+     "lifetimeMax": 0.35,
+     "useEventPosition": true
+    }
+   },
+   {
+    "id": "popip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.015,
+     "sizeMax": 0.03
+    }
+   },
+   {
+    "id": "popg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -4,
+      0
+     ]
+    }
+   },
+   {
+    "id": "popmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "droplet",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#B8DA50",
+      "alpha": 1
+     },
+     "opacity": 0.9
+    }
+   },
+   {
+    "id": "popbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 1.6,
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "cloudbelly",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      0.9,
+      0
+     ]
+    }
+   },
+   {
+    "id": "drips",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.21,
+     "rate": 7,
+     "burst": 0,
+     "speedMin": 0,
+     "speedMax": 0.1,
+     "lifetimeMin": 0.6,
+     "lifetimeMax": 1
+    }
+   },
+   {
+    "id": "dripip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.03,
+     "sizeMax": 0.05
+    }
+   },
+   {
+    "id": "dripg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "dripfloor",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "kill"
+    }
+   },
+   {
+    "id": "dripmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "droplet",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#4A6A1C",
+      "alpha": 1
+     },
+     "opacity": 0.95
+    }
+   },
+   {
+    "id": "dripbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 2
+    }
+   },
+   {
+    "id": "residuewin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 6,
+     "durationTicks": 232,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "floor",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      -0.08,
+      0
+     ]
+    }
+   },
+   {
+    "id": "residuemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "variant": 5,
+     "blend": "normal",
+     "tint": {
+      "srgb": "#4E6E1E",
+      "alpha": 1
+     },
+     "opacity": 1
+    }
+   },
+   {
+    "id": "residue",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.9,
+     "alignment": "worldAxis",
+     "worldAxis": [
+      0,
+      1,
+      0
+     ],
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.45
+       },
+       {
+        "x": 0.2,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1.1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.1,
+        "y": 0.25
+       },
+       {
+        "x": 0.6,
+        "y": 0.2
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "cloud.anchor"
+   ],
+   [
+    "active.window",
+    "cloud.window"
+   ],
+   [
+    "active.start",
+    "cloud.trigger"
+   ],
+   [
+    "cloud.particles",
+    "cloudip.particles"
+   ],
+   [
+    "cloudip.particles",
+    "clouddrag.particles"
+   ],
+   [
+    "clouddrag.particles",
+    "clouddrift.particles"
+   ],
+   [
+    "clouddrift.particles",
+    "cloudlift.particles"
+   ],
+   [
+    "cloudlift.particles",
+    "cloudbb.particles"
+   ],
+   [
+    "cloudmat.material",
+    "cloudbb.material"
+   ],
+   [
+    "cloudbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "bubbles.anchor"
+   ],
+   [
+    "bubblewin.window",
+    "bubbles.window"
+   ],
+   [
+    "bubbles.particles",
+    "bubbleip.particles"
+   ],
+   [
+    "bubbleip.particles",
+    "bubblewobble.particles"
+   ],
+   [
+    "bubblewobble.particles",
+    "bubblebb.particles"
+   ],
+   [
+    "bubblemat.material",
+    "bubblebb.material"
+   ],
+   [
+    "bubblebb.visual",
+    "node-output.visual"
+   ],
+   [
+    "bubblewobble.particles",
+    "pops.particles"
+   ],
+   [
+    "pops.death",
+    "popdrops.trigger"
+   ],
+   [
+    "popdrops.particles",
+    "popip.particles"
+   ],
+   [
+    "popip.particles",
+    "popg.particles"
+   ],
+   [
+    "popg.particles",
+    "popbb.particles"
+   ],
+   [
+    "popmat.material",
+    "popbb.material"
+   ],
+   [
+    "popbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "cloudbelly.anchor"
+   ],
+   [
+    "cloudbelly.out",
+    "drips.anchor"
+   ],
+   [
+    "bubblewin.window",
+    "drips.window"
+   ],
+   [
+    "drips.particles",
+    "dripip.particles"
+   ],
+   [
+    "dripip.particles",
+    "dripg.particles"
+   ],
+   [
+    "dripg.particles",
+    "dripfloor.particles"
+   ],
+   [
+    "dripfloor.particles",
+    "dripbb.particles"
+   ],
+   [
+    "dripmat.material",
+    "dripbb.material"
+   ],
+   [
+    "dripbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "floor.anchor"
+   ],
+   [
+    "floor.out",
+    "residue.anchor"
+   ],
+   [
+    "residuemat.material",
+    "residue.material"
+   ],
+   [
+    "residuewin.window",
+    "residue.window"
+   ],
+   [
+    "residue.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "radius",
+    "label": "Cloud radius",
+    "value": 0.3,
+    "bindings": [
+     {
+      "node": "cloud",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "density",
+    "label": "Cloud density",
+    "value": 26,
+    "bindings": [
+     {
+      "node": "cloud",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "rise",
+    "label": "Rise speed",
+    "value": 1.5,
+    "bindings": [
+     {
+      "node": "cloud",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "cloud",
+      "parameter": "speedMin",
+      "scale": 0.36
+     }
+    ]
+   },
+   {
+    "id": "drift",
+    "label": "Drift",
+    "value": 0.25,
+    "bindings": [
+     {
+      "node": "clouddrift",
+      "parameter": "amplitude"
+     }
+    ]
+   },
+   {
+    "id": "bubbles",
+    "label": "Bubble rate",
+    "value": 20,
+    "bindings": [
+     {
+      "node": "bubbles",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "pops",
+    "label": "Popping amount",
+    "value": 4,
+    "bindings": [
+     {
+      "node": "popdrops",
+      "parameter": "burst"
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": "fireball",
   "label": "Fireball",
   "description": "Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.",
