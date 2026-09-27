@@ -1,41 +1,730 @@
 [
-  ["vfx_new_document", { "template": "blank", "id": "light" }],
-  ["vfx_set_document", { "docId": "light", "durationTicks": 120 }],
-  ["vfx_set_anchor", { "docId": "light", "anchorId": "target", "position": [0, 1.2, 0] }],
-  ["vfx_set_anchor", { "docId": "light", "anchorId": "groundpoint", "position": [0, 0.02, 0] }],
-  ["vfx_add_node", { "docId": "light", "type": "Anchor", "id": "ground", "params": { "anchorId": "groundpoint" } }],
-  ["vfx_add_node", { "docId": "light", "type": "Schedule", "id": "pulse", "params": { "startTicks": 10, "durationTicks": 70, "mode": "window" } }],
-  ["vfx_add_node", { "docId": "light", "type": "Emitter", "id": "rays", "params": { "shape": "sphere", "radius": 0.15, "rate": 90, "burst": 0, "speedMin": 5, "speedMax": 7, "lifetimeMin": 0.35, "lifetimeMax": 0.5 } }],
-  ["vfx_add_node", { "docId": "light", "type": "InitialProperties", "id": "rayip", "params": { "sizeMin": 0.08, "sizeMax": 0.14, "rotationMin": 0, "rotationMax": 0, "angularVelocityMin": 0, "angularVelocityMax": 0 } }],
-  ["vfx_add_node", { "docId": "light", "type": "Material", "id": "raymat", "params": { "template": "SpriteTextured", "sprite": "spark-streak", "blend": "additive", "tint": { "srgb": "#FFE9A8", "alpha": 1 }, "emission": 1 } }],
-  ["vfx_add_node", { "docId": "light", "type": "BillboardRenderer", "id": "raybb", "params": { "alignment": "velocity", "stretchRatio": 14, "pivot": 0.95,
-    "opacityOverLife": { "domain": "normalized", "interpolation": "linear", "keys": [{ "x": 0, "y": 0 }, { "x": 0.2, "y": 1 }, { "x": 1, "y": 0 }] } } }],
-  ["vfx_add_node", { "docId": "light", "type": "Material", "id": "coremat", "params": { "template": "SpriteTextured", "sprite": "soft-glow", "variant": 0, "blend": "additive", "tint": { "srgb": "#FFF6D8", "alpha": 1 }, "emission": 2 } }],
-  ["vfx_add_node", { "docId": "light", "type": "SpriteRenderer", "id": "core", "params": { "size": 1.4,
-    "sizeOverWindow": { "domain": "normalized", "interpolation": "linear", "keys": [{ "x": 0, "y": 0.2 }, { "x": 0.2, "y": 1 }, { "x": 0.8, "y": 1.1 }, { "x": 1, "y": 0 }] } } }],
-  ["vfx_add_node", { "docId": "light", "type": "Material", "id": "ringmat", "params": { "template": "SpriteTextured", "sprite": "ripple-ring", "variant": 2, "blend": "additive", "tint": { "srgb": "#FFD98A", "alpha": 1 }, "emission": 0.8 } }],
-  ["vfx_add_node", { "docId": "light", "type": "SpriteRenderer", "id": "halo", "params": { "size": 3, "alignment": "worldAxis", "spin": 0.6,
-    "sizeOverWindow": { "domain": "normalized", "interpolation": "linear", "keys": [{ "x": 0, "y": 0.4 }, { "x": 1, "y": 1.3 }] },
-    "opacityOverWindow": { "domain": "normalized", "interpolation": "linear", "keys": [{ "x": 0, "y": 0 }, { "x": 0.2, "y": 1 }, { "x": 1, "y": 0 }] } } }],
-  ["vfx_add_node", { "docId": "light", "type": "PointLight", "id": "lamp", "params": { "color": { "srgb": "#FFE2A0", "alpha": 1 }, "intensity": 50, "range": 6,
-    "intensityOverWindow": { "domain": "normalized", "interpolation": "linear", "keys": [{ "x": 0, "y": 0 }, { "x": 0.2, "y": 1 }, { "x": 0.8, "y": 1 }, { "x": 1, "y": 0 }] } } }],
-  ["vfx_connect", { "docId": "light", "from": "node-target.out", "to": "rays.anchor" }],
-  ["vfx_connect", { "docId": "light", "from": "pulse.window", "to": "rays.window" }],
-  ["vfx_connect", { "docId": "light", "from": "rays.particles", "to": "rayip.particles" }],
-  ["vfx_connect", { "docId": "light", "from": "rayip.particles", "to": "raybb.particles" }],
-  ["vfx_connect", { "docId": "light", "from": "raymat.material", "to": "raybb.material" }],
-  ["vfx_connect", { "docId": "light", "from": "node-target.out", "to": "core.anchor" }],
-  ["vfx_connect", { "docId": "light", "from": "coremat.material", "to": "core.material" }],
-  ["vfx_connect", { "docId": "light", "from": "pulse.window", "to": "core.window" }],
-  ["vfx_connect", { "docId": "light", "from": "ground.out", "to": "halo.anchor" }],
-  ["vfx_connect", { "docId": "light", "from": "ringmat.material", "to": "halo.material" }],
-  ["vfx_connect", { "docId": "light", "from": "pulse.window", "to": "halo.window" }],
-  ["vfx_connect", { "docId": "light", "from": "node-target.out", "to": "lamp.anchor" }],
-  ["vfx_connect", { "docId": "light", "from": "pulse.window", "to": "lamp.window" }],
-  ["vfx_connect", { "docId": "light", "from": "halo.visual", "to": "node-output.visual" }],
-  ["vfx_connect", { "docId": "light", "from": "raybb.visual", "to": "node-output.visual" }],
-  ["vfx_connect", { "docId": "light", "from": "core.visual", "to": "node-output.visual" }],
-  ["vfx_connect", { "docId": "light", "from": "lamp.visual", "to": "node-output.visual" }],
-  ["vfx_compile", { "docId": "light" }, true],
-  ["vfx_render_frames", { "docId": "light", "ticks": [40] }, true]
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "light"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "light",
+   "durationTicks": 120
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "light",
+   "anchorId": "target",
+   "position": [
+    0,
+    1.2,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "light",
+   "anchorId": "groundpoint",
+   "position": [
+    0,
+    0.02,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "Anchor",
+   "id": "ground",
+   "params": {
+    "anchorId": "groundpoint"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "Schedule",
+   "id": "pulse",
+   "params": {
+    "startTicks": 10,
+    "durationTicks": 70,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "Emitter",
+   "id": "rays",
+   "params": {
+    "shape": "sphere",
+    "radius": 0.15,
+    "rate": 90,
+    "burst": 0,
+    "speedMin": 5,
+    "speedMax": 7,
+    "lifetimeMin": 0.35,
+    "lifetimeMax": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "InitialProperties",
+   "id": "rayip",
+   "params": {
+    "sizeMin": 0.08,
+    "sizeMax": 0.14,
+    "rotationMin": 0,
+    "rotationMax": 0,
+    "angularVelocityMin": 0,
+    "angularVelocityMax": 0
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "Material",
+   "id": "raymat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "spark-streak",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFE9A8",
+     "alpha": 1
+    },
+    "emission": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "BillboardRenderer",
+   "id": "raybb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 14,
+    "pivot": 0.95,
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.2,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "Material",
+   "id": "coremat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "variant": 0,
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFF6D8",
+     "alpha": 1
+    },
+    "emission": 2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "SpriteRenderer",
+   "id": "core",
+   "params": {
+    "size": 1.4,
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.2
+      },
+      {
+       "x": 0.2,
+       "y": 1
+      },
+      {
+       "x": 0.8,
+       "y": 1.1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "Material",
+   "id": "ringmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "ripple-ring",
+    "variant": 2,
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFD98A",
+     "alpha": 1
+    },
+    "emission": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "SpriteRenderer",
+   "id": "halo",
+   "params": {
+    "size": 3,
+    "alignment": "worldAxis",
+    "spin": 0.6,
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.4
+      },
+      {
+       "x": 1,
+       "y": 1.3
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.2,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "PointLight",
+   "id": "lamp",
+   "params": {
+    "color": {
+     "srgb": "#FFE2A0",
+     "alpha": 1
+    },
+    "intensity": 50,
+    "range": 6,
+    "intensityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.2,
+       "y": 1
+      },
+      {
+       "x": 0.8,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "node-target.out",
+   "to": "rays.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "pulse.window",
+   "to": "rays.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "rays.particles",
+   "to": "rayip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "rayip.particles",
+   "to": "raybb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "raymat.material",
+   "to": "raybb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "node-target.out",
+   "to": "core.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "coremat.material",
+   "to": "core.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "pulse.window",
+   "to": "core.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "ground.out",
+   "to": "halo.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "ringmat.material",
+   "to": "halo.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "pulse.window",
+   "to": "halo.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "node-target.out",
+   "to": "lamp.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "pulse.window",
+   "to": "lamp.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "halo.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "raybb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "core.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "lamp.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "AudioMix",
+   "id": "sfx-mix",
+   "params": {
+    "masterGain": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "AudioOutput",
+   "id": "sfx-out",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "AudioSource",
+   "id": "sfx-c5",
+   "params": {
+    "source": "oscillator",
+    "waveform": "sine",
+    "frequencyHz": 523.25,
+    "durationTicks": 80,
+    "gain": 0.32
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "pulse.start",
+   "to": "sfx-c5.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "AudioEnvelope",
+   "id": "sfx-c5-e",
+   "params": {
+    "attack": 0.25,
+    "hold": 0.7,
+    "release": 0.4,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "sfx-c5.audio",
+   "to": "sfx-c5-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "sfx-c5-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "AudioSource",
+   "id": "sfx-e5",
+   "params": {
+    "source": "oscillator",
+    "waveform": "sine",
+    "frequencyHz": 659.25,
+    "durationTicks": 80,
+    "gain": 0.26
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "pulse.start",
+   "to": "sfx-e5.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "AudioEnvelope",
+   "id": "sfx-e5-e",
+   "params": {
+    "attack": 0.3,
+    "hold": 0.65,
+    "release": 0.4,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "sfx-e5.audio",
+   "to": "sfx-e5-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "sfx-e5-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "AudioSource",
+   "id": "sfx-g5",
+   "params": {
+    "source": "oscillator",
+    "waveform": "sine",
+    "frequencyHz": 783.99,
+    "durationTicks": 80,
+    "gain": 0.22
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "pulse.start",
+   "to": "sfx-g5.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "AudioEnvelope",
+   "id": "sfx-g5-e",
+   "params": {
+    "attack": 0.35,
+    "hold": 0.6,
+    "release": 0.4,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "sfx-g5.audio",
+   "to": "sfx-g5-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "sfx-g5-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "AudioSource",
+   "id": "sfx-shimmer",
+   "params": {
+    "source": "noise",
+    "noiseColor": "white",
+    "durationTicks": 80,
+    "gain": 0.18
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "pulse.start",
+   "to": "sfx-shimmer.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "AudioFilter",
+   "id": "sfx-shimmer-f",
+   "params": {
+    "mode": "highpass",
+    "cutoffHz": 6000,
+    "cutoffEndHz": 8000,
+    "q": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "sfx-shimmer.audio",
+   "to": "sfx-shimmer-f.audio"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "AudioEnvelope",
+   "id": "sfx-shimmer-e",
+   "params": {
+    "attack": 0.3,
+    "hold": 0.6,
+    "release": 0.4,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "sfx-shimmer-f.audio",
+   "to": "sfx-shimmer-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "sfx-shimmer-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "sfx-mix.audio",
+   "to": "sfx-out.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "sfx-out.audio",
+   "to": "node-output.audio"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "light"
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "light",
+   "ticks": [
+    40
+   ]
+  },
+  true
+ ],
+ [
+  "vfx_render_audio",
+  {
+   "docId": "light"
+  },
+  true
+ ]
 ]

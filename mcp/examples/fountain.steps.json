@@ -1,26 +1,449 @@
 [
-  ["vfx_new_document", { "template": "blank", "id": "fountain" }],
-  ["vfx_set_document", { "docId": "fountain", "durationTicks": 240 }],
-  ["vfx_set_anchor", { "docId": "fountain", "anchorId": "source", "position": [0, 0.2, 0] }],
-  ["vfx_add_node", { "docId": "fountain", "type": "Schedule", "id": "sched", "params": { "startTicks": 0, "durationTicks": 180, "mode": "window" } }],
-  ["vfx_add_node", { "docId": "fountain", "type": "Emitter", "id": "em", "params": { "shape": "cone", "direction": [0, 1, 0], "coneAngle": 0.22, "radius": 0.04, "rate": 260, "burst": 0, "speedMin": 5, "speedMax": 6.5, "lifetimeMin": 1.6, "lifetimeMax": 2.2 } }],
-  ["vfx_add_node", { "docId": "fountain", "type": "InitialProperties", "id": "ip", "params": { "sizeMin": 0.03, "sizeMax": 0.055, "rotationMin": 0, "rotationMax": 0, "angularVelocityMin": 0, "angularVelocityMax": 0 } }],
-  ["vfx_add_node", { "docId": "fountain", "type": "Gravity", "id": "grav" }],
-  ["vfx_add_node", { "docId": "fountain", "type": "Drag", "id": "drag", "params": { "coefficient": 0.25 } }],
-  ["vfx_add_node", { "docId": "fountain", "type": "GroundCollision", "id": "ground", "params": { "mode": "bounce", "restitution": 0.35, "friction": 0.4, "maxBounces": 2 } }],
-  ["vfx_add_node", { "docId": "fountain", "type": "Material", "id": "mat", "params": { "blend": "additive" } }],
-  ["vfx_add_node", { "docId": "fountain", "type": "BillboardRenderer", "id": "bb", "params": { "alignment": "velocity", "stretchRatio": 2.5, "pivot": 0.6,
-    "colorOverLife": { "stops": [ { "position": 0, "color": { "srgb": "#E8FAFF", "alpha": 1 } }, { "position": 0.6, "color": { "srgb": "#7CC8EA", "alpha": 0.8 } }, { "position": 1, "color": { "srgb": "#2A6A90", "alpha": 0 } } ] } } }],
-  ["vfx_connect", { "docId": "fountain", "from": "node-source.out", "to": "em.anchor" }],
-  ["vfx_connect", { "docId": "fountain", "from": "sched.window", "to": "em.window" }],
-  ["vfx_connect", { "docId": "fountain", "from": "em.particles", "to": "ip.particles" }],
-  ["vfx_connect", { "docId": "fountain", "from": "ip.particles", "to": "grav.particles" }],
-  ["vfx_connect", { "docId": "fountain", "from": "grav.particles", "to": "drag.particles" }],
-  ["vfx_connect", { "docId": "fountain", "from": "drag.particles", "to": "ground.particles" }],
-  ["vfx_connect", { "docId": "fountain", "from": "ground.particles", "to": "bb.particles" }],
-  ["vfx_connect", { "docId": "fountain", "from": "mat.material", "to": "bb.material" }],
-  ["vfx_connect", { "docId": "fountain", "from": "bb.visual", "to": "node-output.visual" }],
-  ["vfx_compile", { "docId": "fountain" }, true],
-  ["vfx_sample_particles", { "docId": "fountain", "tick": 150, "show": 0 }, true],
-  ["vfx_preview_url", { "docId": "fountain" }, true]
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "fountain"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "fountain",
+   "durationTicks": 240
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "fountain",
+   "anchorId": "source",
+   "position": [
+    0,
+    0.2,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fountain",
+   "type": "Schedule",
+   "id": "sched",
+   "params": {
+    "startTicks": 0,
+    "durationTicks": 180,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fountain",
+   "type": "Emitter",
+   "id": "em",
+   "params": {
+    "shape": "cone",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "coneAngle": 0.22,
+    "radius": 0.04,
+    "rate": 260,
+    "burst": 0,
+    "speedMin": 5,
+    "speedMax": 6.5,
+    "lifetimeMin": 1.6,
+    "lifetimeMax": 2.2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fountain",
+   "type": "InitialProperties",
+   "id": "ip",
+   "params": {
+    "sizeMin": 0.03,
+    "sizeMax": 0.055,
+    "rotationMin": 0,
+    "rotationMax": 0,
+    "angularVelocityMin": 0,
+    "angularVelocityMax": 0
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fountain",
+   "type": "Gravity",
+   "id": "grav"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fountain",
+   "type": "Drag",
+   "id": "drag",
+   "params": {
+    "coefficient": 0.25
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fountain",
+   "type": "GroundCollision",
+   "id": "ground",
+   "params": {
+    "mode": "bounce",
+    "restitution": 0.35,
+    "friction": 0.4,
+    "maxBounces": 2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fountain",
+   "type": "Material",
+   "id": "mat",
+   "params": {
+    "blend": "additive"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fountain",
+   "type": "BillboardRenderer",
+   "id": "bb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 2.5,
+    "pivot": 0.6,
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#E8FAFF",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.6,
+       "color": {
+        "srgb": "#7CC8EA",
+        "alpha": 0.8
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#2A6A90",
+        "alpha": 0
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fountain",
+   "from": "node-source.out",
+   "to": "em.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fountain",
+   "from": "sched.window",
+   "to": "em.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fountain",
+   "from": "em.particles",
+   "to": "ip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fountain",
+   "from": "ip.particles",
+   "to": "grav.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fountain",
+   "from": "grav.particles",
+   "to": "drag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fountain",
+   "from": "drag.particles",
+   "to": "ground.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fountain",
+   "from": "ground.particles",
+   "to": "bb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fountain",
+   "from": "mat.material",
+   "to": "bb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fountain",
+   "from": "bb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_sample_particles",
+  {
+   "docId": "fountain",
+   "tick": 150,
+   "show": 0
+  },
+  true
+ ],
+ [
+  "vfx_preview_url",
+  {
+   "docId": "fountain"
+  },
+  true
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fountain",
+   "type": "AudioMix",
+   "id": "sfx-mix",
+   "params": {
+    "masterGain": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fountain",
+   "type": "AudioOutput",
+   "id": "sfx-out",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fountain",
+   "type": "AudioSource",
+   "id": "sfx-water",
+   "params": {
+    "source": "noise",
+    "noiseColor": "white",
+    "durationTicks": 180,
+    "gain": 0.7
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fountain",
+   "from": "sched.start",
+   "to": "sfx-water.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fountain",
+   "type": "AudioFilter",
+   "id": "sfx-water-f",
+   "params": {
+    "mode": "bandpass",
+    "cutoffHz": 2200,
+    "cutoffEndHz": 2000,
+    "q": 0.7
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fountain",
+   "from": "sfx-water.audio",
+   "to": "sfx-water-f.audio"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fountain",
+   "type": "AudioEnvelope",
+   "id": "sfx-water-e",
+   "params": {
+    "attack": 0.15,
+    "hold": 2.5,
+    "release": 0.4,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fountain",
+   "from": "sfx-water-f.audio",
+   "to": "sfx-water-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fountain",
+   "from": "sfx-water-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fountain",
+   "type": "AudioSource",
+   "id": "sfx-gurgle",
+   "params": {
+    "source": "noise",
+    "noiseColor": "brown",
+    "durationTicks": 180,
+    "gain": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fountain",
+   "from": "sched.start",
+   "to": "sfx-gurgle.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fountain",
+   "type": "AudioFilter",
+   "id": "sfx-gurgle-f",
+   "params": {
+    "mode": "lowpass",
+    "cutoffHz": 600,
+    "cutoffEndHz": 500,
+    "q": 2
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fountain",
+   "from": "sfx-gurgle.audio",
+   "to": "sfx-gurgle-f.audio"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fountain",
+   "type": "AudioEnvelope",
+   "id": "sfx-gurgle-e",
+   "params": {
+    "attack": 0.2,
+    "hold": 2.4,
+    "release": 0.4,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fountain",
+   "from": "sfx-gurgle-f.audio",
+   "to": "sfx-gurgle-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fountain",
+   "from": "sfx-gurgle-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fountain",
+   "from": "sfx-mix.audio",
+   "to": "sfx-out.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fountain",
+   "from": "sfx-out.audio",
+   "to": "node-output.audio"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "fountain"
+  },
+  true
+ ],
+ [
+  "vfx_render_audio",
+  {
+   "docId": "fountain"
+  },
+  true
+ ]
 ]

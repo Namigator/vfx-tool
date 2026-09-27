@@ -349,13 +349,6 @@
   }
  ],
  [
-  "vfx_compile",
-  {
-   "docId": "rain"
-  },
-  true
- ],
- [
   "vfx_sample_particles",
   {
    "docId": "rain",
@@ -366,6 +359,130 @@
  ],
  [
   "vfx_preview_url",
+  {
+   "docId": "rain"
+  },
+  true
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rain",
+   "type": "AudioMix",
+   "id": "sfx-mix",
+   "params": {
+    "masterGain": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rain",
+   "type": "AudioOutput",
+   "id": "sfx-out",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rain",
+   "type": "AudioSource",
+   "id": "sfx-rain",
+   "params": {
+    "source": "noise",
+    "noiseColor": "pink",
+    "durationTicks": 200,
+    "gain": 2
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "sched.start",
+   "to": "sfx-rain.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rain",
+   "type": "AudioFilter",
+   "id": "sfx-rain-f",
+   "params": {
+    "mode": "highpass",
+    "cutoffHz": 2500,
+    "cutoffEndHz": 2200,
+    "q": 0.7
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "sfx-rain.audio",
+   "to": "sfx-rain-f.audio"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rain",
+   "type": "AudioEnvelope",
+   "id": "sfx-rain-e",
+   "params": {
+    "attack": 0.4,
+    "hold": 2.3,
+    "release": 0.6,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "sfx-rain-f.audio",
+   "to": "sfx-rain-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "sfx-rain-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "sfx-mix.audio",
+   "to": "sfx-out.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "sfx-out.audio",
+   "to": "node-output.audio"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "rain"
+  },
+  true
+ ],
+ [
+  "vfx_render_audio",
   {
    "docId": "rain"
   },

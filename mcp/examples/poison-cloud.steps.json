@@ -1,45 +1,719 @@
 [
-  ["vfx_new_document", { "template": "blank", "id": "poison" }],
-  ["vfx_set_document", { "docId": "poison", "durationTicks": 240 }],
-  ["vfx_set_anchor", { "docId": "poison", "anchorId": "target", "position": [0, 0.3, 0] }],
-  ["vfx_add_node", { "docId": "poison", "type": "Schedule", "id": "seep", "params": { "startTicks": 0, "durationTicks": 200, "mode": "window" } }],
-  ["vfx_add_node", { "docId": "poison", "type": "Emitter", "id": "cloud", "params": { "shape": "disc", "direction": [0, 1, 0], "radius": 0.8, "rate": 45, "burst": 0, "speedMin": 0.2, "speedMax": 0.6, "lifetimeMin": 2.5, "lifetimeMax": 3.5,
-    "rateOverWindow": { "domain": "normalized", "interpolation": "linear", "keys": [{ "x": 0, "y": 0 }, { "x": 0.1, "y": 1 }, { "x": 0.85, "y": 1 }, { "x": 1, "y": 0 }] } } }],
-  ["vfx_add_node", { "docId": "poison", "type": "InitialProperties", "id": "cloudip", "params": { "sizeMin": 0.6, "sizeMax": 1.1, "rotationMin": 0, "rotationMax": 6.28, "angularVelocityMin": -0.4, "angularVelocityMax": 0.4, "color": { "srgb": "#7CD13A", "alpha": 1 } } }],
-  ["vfx_add_node", { "docId": "poison", "type": "Gravity", "id": "cloudlift", "params": { "acceleration": [0, 0.25, 0] } }],
-  ["vfx_add_node", { "docId": "poison", "type": "NoiseForce", "id": "cloudnoise", "params": { "amplitude": 0.8, "frequency": 0.6, "evolution": 0.3 } }],
-  ["vfx_add_node", { "docId": "poison", "type": "Drag", "id": "clouddrag", "params": { "coefficient": 1.4 } }],
-  ["vfx_add_node", { "docId": "poison", "type": "Material", "id": "cloudmat", "params": { "template": "SpriteTextured", "sprite": "smoke-puff", "blend": "normal", "opacity": 0.5 } }],
-  ["vfx_add_node", { "docId": "poison", "type": "BillboardRenderer", "id": "cloudbb", "params": { "flipbookMode": "overLife",
-    "sizeOverLife": { "domain": "normalized", "interpolation": "linear", "keys": [{ "x": 0, "y": 0.5 }, { "x": 1, "y": 2 }] },
-    "opacityOverLife": { "domain": "normalized", "interpolation": "linear", "keys": [{ "x": 0, "y": 0 }, { "x": 0.2, "y": 1 }, { "x": 1, "y": 0 }] },
-    "colorOverLife": { "stops": [{ "position": 0, "color": { "srgb": "#C8FF6A", "alpha": 1 } }, { "position": 1, "color": { "srgb": "#3A5A20", "alpha": 1 } }] } } }],
-  ["vfx_add_node", { "docId": "poison", "type": "Emitter", "id": "bubbles", "params": { "shape": "disc", "direction": [0, 1, 0], "radius": 0.7, "rate": 30, "burst": 0, "speedMin": 0.3, "speedMax": 0.9, "lifetimeMin": 0.8, "lifetimeMax": 1.6 } }],
-  ["vfx_add_node", { "docId": "poison", "type": "InitialProperties", "id": "bubbleip", "params": { "sizeMin": 0.06, "sizeMax": 0.14, "rotationMin": 0, "rotationMax": 0, "angularVelocityMin": 0, "angularVelocityMax": 0, "color": { "srgb": "#B6FF5C", "alpha": 1 } } }],
-  ["vfx_add_node", { "docId": "poison", "type": "Material", "id": "bubblemat", "params": { "template": "SpriteTextured", "sprite": "droplet", "blend": "normal", "tint": { "srgb": "#B6FF5C", "alpha": 1 }, "emission": 0.4 } }],
-  ["vfx_add_node", { "docId": "poison", "type": "BillboardRenderer", "id": "bubblebb", "params": {
-    "sizeOverLife": { "domain": "normalized", "interpolation": "linear", "keys": [{ "x": 0, "y": 0.4 }, { "x": 0.9, "y": 1.2 }, { "x": 1, "y": 1.6 }] },
-    "opacityOverLife": { "domain": "normalized", "interpolation": "linear", "keys": [{ "x": 0, "y": 1 }, { "x": 0.92, "y": 1 }, { "x": 1, "y": 0 }] } } }],
-  ["vfx_add_node", { "docId": "poison", "type": "PointLight", "id": "glow", "params": { "color": { "srgb": "#8CFF40", "alpha": 1 }, "intensity": 18, "range": 4, "flicker": 0.2, "flickerRate": 3,
-    "intensityOverWindow": { "domain": "normalized", "interpolation": "linear", "keys": [{ "x": 0, "y": 0 }, { "x": 0.1, "y": 1 }, { "x": 0.85, "y": 1 }, { "x": 1, "y": 0 }] } } }],
-  ["vfx_connect", { "docId": "poison", "from": "node-target.out", "to": "cloud.anchor" }],
-  ["vfx_connect", { "docId": "poison", "from": "seep.window", "to": "cloud.window" }],
-  ["vfx_connect", { "docId": "poison", "from": "cloud.particles", "to": "cloudip.particles" }],
-  ["vfx_connect", { "docId": "poison", "from": "cloudip.particles", "to": "cloudlift.particles" }],
-  ["vfx_connect", { "docId": "poison", "from": "cloudlift.particles", "to": "cloudnoise.particles" }],
-  ["vfx_connect", { "docId": "poison", "from": "cloudnoise.particles", "to": "clouddrag.particles" }],
-  ["vfx_connect", { "docId": "poison", "from": "clouddrag.particles", "to": "cloudbb.particles" }],
-  ["vfx_connect", { "docId": "poison", "from": "cloudmat.material", "to": "cloudbb.material" }],
-  ["vfx_connect", { "docId": "poison", "from": "node-target.out", "to": "bubbles.anchor" }],
-  ["vfx_connect", { "docId": "poison", "from": "seep.window", "to": "bubbles.window" }],
-  ["vfx_connect", { "docId": "poison", "from": "bubbles.particles", "to": "bubbleip.particles" }],
-  ["vfx_connect", { "docId": "poison", "from": "bubbleip.particles", "to": "bubblebb.particles" }],
-  ["vfx_connect", { "docId": "poison", "from": "bubblemat.material", "to": "bubblebb.material" }],
-  ["vfx_connect", { "docId": "poison", "from": "node-target.out", "to": "glow.anchor" }],
-  ["vfx_connect", { "docId": "poison", "from": "seep.window", "to": "glow.window" }],
-  ["vfx_connect", { "docId": "poison", "from": "cloudbb.visual", "to": "node-output.visual" }],
-  ["vfx_connect", { "docId": "poison", "from": "bubblebb.visual", "to": "node-output.visual" }],
-  ["vfx_connect", { "docId": "poison", "from": "glow.visual", "to": "node-output.visual" }],
-  ["vfx_compile", { "docId": "poison" }, true],
-  ["vfx_render_frames", { "docId": "poison", "ticks": [140] }, true]
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "poison"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "poison",
+   "durationTicks": 240
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "poison",
+   "anchorId": "target",
+   "position": [
+    0,
+    0.3,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "Schedule",
+   "id": "seep",
+   "params": {
+    "startTicks": 0,
+    "durationTicks": 200,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "Emitter",
+   "id": "cloud",
+   "params": {
+    "shape": "disc",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "radius": 0.8,
+    "rate": 45,
+    "burst": 0,
+    "speedMin": 0.2,
+    "speedMax": 0.6,
+    "lifetimeMin": 2.5,
+    "lifetimeMax": 3.5,
+    "rateOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.1,
+       "y": 1
+      },
+      {
+       "x": 0.85,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "InitialProperties",
+   "id": "cloudip",
+   "params": {
+    "sizeMin": 0.6,
+    "sizeMax": 1.1,
+    "rotationMin": 0,
+    "rotationMax": 6.28,
+    "angularVelocityMin": -0.4,
+    "angularVelocityMax": 0.4,
+    "color": {
+     "srgb": "#7CD13A",
+     "alpha": 1
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "Gravity",
+   "id": "cloudlift",
+   "params": {
+    "acceleration": [
+     0,
+     0.25,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "NoiseForce",
+   "id": "cloudnoise",
+   "params": {
+    "amplitude": 0.8,
+    "frequency": 0.6,
+    "evolution": 0.3
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "Drag",
+   "id": "clouddrag",
+   "params": {
+    "coefficient": 1.4
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "Material",
+   "id": "cloudmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "blend": "normal",
+    "opacity": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "BillboardRenderer",
+   "id": "cloudbb",
+   "params": {
+    "flipbookMode": "overLife",
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.5
+      },
+      {
+       "x": 1,
+       "y": 2
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.2,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    },
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#C8FF6A",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#3A5A20",
+        "alpha": 1
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "Emitter",
+   "id": "bubbles",
+   "params": {
+    "shape": "disc",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "radius": 0.7,
+    "rate": 30,
+    "burst": 0,
+    "speedMin": 0.3,
+    "speedMax": 0.9,
+    "lifetimeMin": 0.8,
+    "lifetimeMax": 1.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "InitialProperties",
+   "id": "bubbleip",
+   "params": {
+    "sizeMin": 0.06,
+    "sizeMax": 0.14,
+    "rotationMin": 0,
+    "rotationMax": 0,
+    "angularVelocityMin": 0,
+    "angularVelocityMax": 0,
+    "color": {
+     "srgb": "#B6FF5C",
+     "alpha": 1
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "Material",
+   "id": "bubblemat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "droplet",
+    "blend": "normal",
+    "tint": {
+     "srgb": "#B6FF5C",
+     "alpha": 1
+    },
+    "emission": 0.4
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "BillboardRenderer",
+   "id": "bubblebb",
+   "params": {
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.4
+      },
+      {
+       "x": 0.9,
+       "y": 1.2
+      },
+      {
+       "x": 1,
+       "y": 1.6
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.92,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "PointLight",
+   "id": "glow",
+   "params": {
+    "color": {
+     "srgb": "#8CFF40",
+     "alpha": 1
+    },
+    "intensity": 18,
+    "range": 4,
+    "flicker": 0.2,
+    "flickerRate": 3,
+    "intensityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.1,
+       "y": 1
+      },
+      {
+       "x": 0.85,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "node-target.out",
+   "to": "cloud.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "seep.window",
+   "to": "cloud.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "cloud.particles",
+   "to": "cloudip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "cloudip.particles",
+   "to": "cloudlift.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "cloudlift.particles",
+   "to": "cloudnoise.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "cloudnoise.particles",
+   "to": "clouddrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "clouddrag.particles",
+   "to": "cloudbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "cloudmat.material",
+   "to": "cloudbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "node-target.out",
+   "to": "bubbles.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "seep.window",
+   "to": "bubbles.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "bubbles.particles",
+   "to": "bubbleip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "bubbleip.particles",
+   "to": "bubblebb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "bubblemat.material",
+   "to": "bubblebb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "node-target.out",
+   "to": "glow.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "seep.window",
+   "to": "glow.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "cloudbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "bubblebb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "glow.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "AudioMix",
+   "id": "sfx-mix",
+   "params": {
+    "masterGain": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "AudioOutput",
+   "id": "sfx-out",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "AudioSource",
+   "id": "sfx-seep",
+   "params": {
+    "source": "noise",
+    "noiseColor": "brown",
+    "durationTicks": 200,
+    "gain": 2
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "seep.start",
+   "to": "sfx-seep.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "AudioFilter",
+   "id": "sfx-seep-f",
+   "params": {
+    "mode": "lowpass",
+    "cutoffHz": 500,
+    "cutoffEndHz": 350,
+    "q": 1
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "sfx-seep.audio",
+   "to": "sfx-seep-f.audio"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "AudioEnvelope",
+   "id": "sfx-seep-e",
+   "params": {
+    "attack": 0.5,
+    "hold": 2.2,
+    "release": 0.6,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "sfx-seep-f.audio",
+   "to": "sfx-seep-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "sfx-seep-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "AudioSource",
+   "id": "sfx-fizz",
+   "params": {
+    "source": "noise",
+    "noiseColor": "white",
+    "durationTicks": 200,
+    "gain": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "seep.start",
+   "to": "sfx-fizz.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "AudioFilter",
+   "id": "sfx-fizz-f",
+   "params": {
+    "mode": "bandpass",
+    "cutoffHz": 3500,
+    "cutoffEndHz": 2500,
+    "q": 4
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "sfx-fizz.audio",
+   "to": "sfx-fizz-f.audio"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "poison",
+   "type": "AudioEnvelope",
+   "id": "sfx-fizz-e",
+   "params": {
+    "attack": 0.5,
+    "hold": 2.2,
+    "release": 0.6,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "sfx-fizz-f.audio",
+   "to": "sfx-fizz-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "sfx-fizz-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "sfx-mix.audio",
+   "to": "sfx-out.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "poison",
+   "from": "sfx-out.audio",
+   "to": "node-output.audio"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "poison"
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "poison",
+   "ticks": [
+    140
+   ]
+  },
+  true
+ ],
+ [
+  "vfx_render_audio",
+  {
+   "docId": "poison"
+  },
+  true
+ ]
 ]

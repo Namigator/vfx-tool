@@ -444,6 +444,170 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "shadow",
+   "type": "AudioMix",
+   "id": "sfx-mix",
+   "params": {
+    "masterGain": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "shadow",
+   "type": "AudioOutput",
+   "id": "sfx-out",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "shadow",
+   "type": "AudioSource",
+   "id": "sfx-drone",
+   "params": {
+    "source": "noise",
+    "noiseColor": "brown",
+    "durationTicks": 150,
+    "gain": 1.6
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "shadow",
+   "from": "gather.start",
+   "to": "sfx-drone.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "shadow",
+   "type": "AudioFilter",
+   "id": "sfx-drone-f",
+   "params": {
+    "mode": "lowpass",
+    "cutoffHz": 260,
+    "cutoffEndHz": 140,
+    "q": 1.4
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "shadow",
+   "from": "sfx-drone.audio",
+   "to": "sfx-drone-f.audio"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "shadow",
+   "type": "AudioEnvelope",
+   "id": "sfx-drone-e",
+   "params": {
+    "attack": 0.6,
+    "hold": 1.4,
+    "release": 0.5,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "shadow",
+   "from": "sfx-drone-f.audio",
+   "to": "sfx-drone-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "shadow",
+   "from": "sfx-drone-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "shadow",
+   "type": "AudioSource",
+   "id": "sfx-suck",
+   "params": {
+    "source": "chirp",
+    "chirpStartHz": 900,
+    "chirpEndHz": 70,
+    "chirpSweep": "exponential",
+    "durationTicks": 150,
+    "gain": 0.35
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "shadow",
+   "from": "gather.start",
+   "to": "sfx-suck.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "shadow",
+   "type": "AudioEnvelope",
+   "id": "sfx-suck-e",
+   "params": {
+    "attack": 0.3,
+    "hold": 1.8,
+    "release": 0.4,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "shadow",
+   "from": "sfx-suck.audio",
+   "to": "sfx-suck-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "shadow",
+   "from": "sfx-suck-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "shadow",
+   "from": "sfx-mix.audio",
+   "to": "sfx-out.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "shadow",
+   "from": "sfx-out.audio",
+   "to": "node-output.audio"
+  }
+ ],
+ [
   "vfx_compile",
   {
    "docId": "shadow"
@@ -457,6 +621,13 @@
    "ticks": [
     100
    ]
+  },
+  true
+ ],
+ [
+  "vfx_render_audio",
+  {
+   "docId": "shadow"
   },
   true
  ]

@@ -506,6 +506,244 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "AudioMix",
+   "id": "sfx-mix",
+   "params": {
+    "masterGain": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "AudioOutput",
+   "id": "sfx-out",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "AudioSource",
+   "id": "sfx-roar",
+   "params": {
+    "source": "noise",
+    "noiseColor": "brown",
+    "durationTicks": 124,
+    "gain": 1.6
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "sched.start",
+   "to": "sfx-roar.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "AudioFilter",
+   "id": "sfx-roar-f",
+   "params": {
+    "mode": "lowpass",
+    "cutoffHz": 1200,
+    "cutoffEndHz": 700,
+    "q": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "sfx-roar.audio",
+   "to": "sfx-roar-f.audio"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "AudioEnvelope",
+   "id": "sfx-roar-e",
+   "params": {
+    "attack": 0.08,
+    "hold": 1.7,
+    "release": 0.35,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "sfx-roar-f.audio",
+   "to": "sfx-roar-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "sfx-roar-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "AudioSource",
+   "id": "sfx-hiss",
+   "params": {
+    "source": "noise",
+    "noiseColor": "pink",
+    "durationTicks": 124,
+    "gain": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "sched.start",
+   "to": "sfx-hiss.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "AudioFilter",
+   "id": "sfx-hiss-f",
+   "params": {
+    "mode": "bandpass",
+    "cutoffHz": 2500,
+    "cutoffEndHz": 1800,
+    "q": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "sfx-hiss.audio",
+   "to": "sfx-hiss-f.audio"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "AudioEnvelope",
+   "id": "sfx-hiss-e",
+   "params": {
+    "attack": 0.1,
+    "hold": 1.6,
+    "release": 0.4,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "sfx-hiss-f.audio",
+   "to": "sfx-hiss-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "sfx-hiss-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "AudioSource",
+   "id": "sfx-whoomp",
+   "params": {
+    "source": "chirp",
+    "chirpStartHz": 160,
+    "chirpEndHz": 45,
+    "chirpSweep": "exponential",
+    "durationTicks": 30,
+    "gain": 1.1
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "sched.start",
+   "to": "sfx-whoomp.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "AudioEnvelope",
+   "id": "sfx-whoomp-e",
+   "params": {
+    "attack": 0.003,
+    "hold": 0.03,
+    "release": 0.4,
+    "curve": "exponential"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "sfx-whoomp.audio",
+   "to": "sfx-whoomp-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "sfx-whoomp-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "sfx-mix.audio",
+   "to": "sfx-out.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "sfx-out.audio",
+   "to": "node-output.audio"
+  }
+ ],
+ [
   "vfx_compile",
   {
    "docId": "flame-jet"
@@ -520,6 +758,13 @@
     16,
     122
    ]
+  },
+  true
+ ],
+ [
+  "vfx_render_audio",
+  {
+   "docId": "flame-jet"
   },
   true
  ]

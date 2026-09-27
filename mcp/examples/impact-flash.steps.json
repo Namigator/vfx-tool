@@ -397,6 +397,244 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "AudioMix",
+   "id": "sfx-mix",
+   "params": {
+    "masterGain": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "AudioOutput",
+   "id": "sfx-out",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "AudioSource",
+   "id": "sfx-boom",
+   "params": {
+    "source": "noise",
+    "noiseColor": "brown",
+    "durationTicks": 60,
+    "gain": 1.5
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "hit.start",
+   "to": "sfx-boom.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "AudioFilter",
+   "id": "sfx-boom-f",
+   "params": {
+    "mode": "lowpass",
+    "cutoffHz": 1500,
+    "cutoffEndHz": 150,
+    "q": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "sfx-boom.audio",
+   "to": "sfx-boom-f.audio"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "AudioEnvelope",
+   "id": "sfx-boom-e",
+   "params": {
+    "attack": 0.003,
+    "hold": 0.04,
+    "release": 0.8,
+    "curve": "exponential"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "sfx-boom-f.audio",
+   "to": "sfx-boom-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "sfx-boom-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "AudioSource",
+   "id": "sfx-snap",
+   "params": {
+    "source": "noise",
+    "noiseColor": "white",
+    "durationTicks": 20,
+    "gain": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "hit.start",
+   "to": "sfx-snap.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "AudioFilter",
+   "id": "sfx-snap-f",
+   "params": {
+    "mode": "highpass",
+    "cutoffHz": 2000,
+    "cutoffEndHz": 4000,
+    "q": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "sfx-snap.audio",
+   "to": "sfx-snap-f.audio"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "AudioEnvelope",
+   "id": "sfx-snap-e",
+   "params": {
+    "attack": 0.001,
+    "hold": 0.02,
+    "release": 0.2,
+    "curve": "exponential"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "sfx-snap-f.audio",
+   "to": "sfx-snap-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "sfx-snap-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "AudioSource",
+   "id": "sfx-thump",
+   "params": {
+    "source": "chirp",
+    "chirpStartHz": 110,
+    "chirpEndHz": 40,
+    "chirpSweep": "exponential",
+    "durationTicks": 30,
+    "gain": 1
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "hit.start",
+   "to": "sfx-thump.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "AudioEnvelope",
+   "id": "sfx-thump-e",
+   "params": {
+    "attack": 0.002,
+    "hold": 0.02,
+    "release": 0.4,
+    "curve": "exponential"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "sfx-thump.audio",
+   "to": "sfx-thump-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "sfx-thump-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "sfx-mix.audio",
+   "to": "sfx-out.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "sfx-out.audio",
+   "to": "node-output.audio"
+  }
+ ],
+ [
   "vfx_compile",
   {
    "docId": "impact"
@@ -411,6 +649,13 @@
     18,
     30
    ]
+  },
+  true
+ ],
+ [
+  "vfx_render_audio",
+  {
+   "docId": "impact"
   },
   true
  ]

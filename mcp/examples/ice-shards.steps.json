@@ -1,48 +1,817 @@
 [
-  ["vfx_new_document", { "template": "blank", "id": "ice" }],
-  ["vfx_set_document", { "docId": "ice", "durationTicks": 150 }],
-  ["vfx_set_anchor", { "docId": "ice", "anchorId": "target", "position": [0, 0.05, 0] }],
-  ["vfx_add_node", { "docId": "ice", "type": "Schedule", "id": "burst", "params": { "startTicks": 5, "durationTicks": 1, "mode": "once" } }],
-  ["vfx_add_node", { "docId": "ice", "type": "Emitter", "id": "shards", "params": { "shape": "cone", "direction": [0, 1, 0], "coneAngle": 0.55, "radius": 0.25, "burst": 28, "rate": 0, "speedMin": 4, "speedMax": 7.5, "lifetimeMin": 1.6, "lifetimeMax": 2.2 } }],
-  ["vfx_add_node", { "docId": "ice", "type": "InitialProperties", "id": "shardip", "params": { "sizeMin": 0.18, "sizeMax": 0.4, "rotationMin": 0, "rotationMax": 0, "angularVelocityMin": 0, "angularVelocityMax": 0, "color": { "srgb": "#A8E6FF", "alpha": 1 } } }],
-  ["vfx_add_node", { "docId": "ice", "type": "Gravity", "id": "grav" }],
-  ["vfx_add_node", { "docId": "ice", "type": "GroundCollision", "id": "ground", "params": { "mode": "slide", "friction": 0.9 } }],
-  ["vfx_add_node", { "docId": "ice", "type": "Material", "id": "icemat", "params": { "blend": "normal", "emission": 0.35 } }],
-  ["vfx_add_node", { "docId": "ice", "type": "MeshRenderer", "id": "shardmesh", "params": { "mesh": "shard", "orientation": "velocity",
-    "colorOverLife": { "stops": [{ "position": 0, "color": { "srgb": "#FFFFFF", "alpha": 1 } }, { "position": 1, "color": { "srgb": "#9ED8FF", "alpha": 1 } }] } } }],
-  ["vfx_add_node", { "docId": "ice", "type": "Emitter", "id": "frost", "params": { "shape": "disc", "direction": [0, 1, 0], "radius": 0.6, "burst": 50, "rate": 0, "speedMin": 0.4, "speedMax": 1.6, "lifetimeMin": 1, "lifetimeMax": 1.8 } }],
-  ["vfx_add_node", { "docId": "ice", "type": "InitialProperties", "id": "frostip", "params": { "sizeMin": 0.35, "sizeMax": 0.7, "rotationMin": 0, "rotationMax": 6.28, "angularVelocityMin": -0.6, "angularVelocityMax": 0.6, "color": { "srgb": "#CFEFFF", "alpha": 1 } } }],
-  ["vfx_add_node", { "docId": "ice", "type": "Drag", "id": "frostdrag", "params": { "coefficient": 2.2 } }],
-  ["vfx_add_node", { "docId": "ice", "type": "Material", "id": "frostmat", "params": { "template": "SpriteTextured", "sprite": "smoke-puff", "blend": "additive", "opacity": 0.35 } }],
-  ["vfx_add_node", { "docId": "ice", "type": "BillboardRenderer", "id": "frostbb", "params": {
-    "sizeOverLife": { "domain": "normalized", "interpolation": "linear", "keys": [{ "x": 0, "y": 0.5 }, { "x": 1, "y": 2 }] },
-    "opacityOverLife": { "domain": "normalized", "interpolation": "linear", "keys": [{ "x": 0, "y": 0 }, { "x": 0.1, "y": 1 }, { "x": 1, "y": 0 }] } } }],
-  ["vfx_add_node", { "docId": "ice", "type": "Emitter", "id": "glints", "params": { "shape": "sphere", "radius": 0.4, "burst": 60, "rate": 0, "speedMin": 1, "speedMax": 4, "lifetimeMin": 0.5, "lifetimeMax": 1.2 } }],
-  ["vfx_add_node", { "docId": "ice", "type": "InitialProperties", "id": "glintip", "params": { "sizeMin": 0.05, "sizeMax": 0.1, "rotationMin": 0, "rotationMax": 6.28, "angularVelocityMin": -6, "angularVelocityMax": 6 } }],
-  ["vfx_add_node", { "docId": "ice", "type": "Material", "id": "glintmat", "params": { "template": "SpriteTextured", "sprite": "soft-glow", "variant": 3, "blend": "additive", "tint": { "srgb": "#DFF6FF", "alpha": 1 }, "emission": 1.5 } }],
-  ["vfx_add_node", { "docId": "ice", "type": "BillboardRenderer", "id": "glintbb", "params": {
-    "opacityOverLife": { "domain": "normalized", "interpolation": "linear", "keys": [{ "x": 0, "y": 1 }, { "x": 1, "y": 0 }] } } }],
-  ["vfx_connect", { "docId": "ice", "from": "node-target.out", "to": "shards.anchor" }],
-  ["vfx_connect", { "docId": "ice", "from": "burst.start", "to": "shards.trigger" }],
-  ["vfx_connect", { "docId": "ice", "from": "shards.particles", "to": "shardip.particles" }],
-  ["vfx_connect", { "docId": "ice", "from": "shardip.particles", "to": "grav.particles" }],
-  ["vfx_connect", { "docId": "ice", "from": "grav.particles", "to": "ground.particles" }],
-  ["vfx_connect", { "docId": "ice", "from": "ground.particles", "to": "shardmesh.particles" }],
-  ["vfx_connect", { "docId": "ice", "from": "icemat.material", "to": "shardmesh.material" }],
-  ["vfx_connect", { "docId": "ice", "from": "node-target.out", "to": "frost.anchor" }],
-  ["vfx_connect", { "docId": "ice", "from": "burst.start", "to": "frost.trigger" }],
-  ["vfx_connect", { "docId": "ice", "from": "frost.particles", "to": "frostip.particles" }],
-  ["vfx_connect", { "docId": "ice", "from": "frostip.particles", "to": "frostdrag.particles" }],
-  ["vfx_connect", { "docId": "ice", "from": "frostdrag.particles", "to": "frostbb.particles" }],
-  ["vfx_connect", { "docId": "ice", "from": "frostmat.material", "to": "frostbb.material" }],
-  ["vfx_connect", { "docId": "ice", "from": "node-target.out", "to": "glints.anchor" }],
-  ["vfx_connect", { "docId": "ice", "from": "burst.start", "to": "glints.trigger" }],
-  ["vfx_connect", { "docId": "ice", "from": "glints.particles", "to": "glintip.particles" }],
-  ["vfx_connect", { "docId": "ice", "from": "glintip.particles", "to": "glintbb.particles" }],
-  ["vfx_connect", { "docId": "ice", "from": "glintmat.material", "to": "glintbb.material" }],
-  ["vfx_connect", { "docId": "ice", "from": "frostbb.visual", "to": "node-output.visual" }],
-  ["vfx_connect", { "docId": "ice", "from": "shardmesh.visual", "to": "node-output.visual" }],
-  ["vfx_connect", { "docId": "ice", "from": "glintbb.visual", "to": "node-output.visual" }],
-  ["vfx_compile", { "docId": "ice" }, true],
-  ["vfx_render_frames", { "docId": "ice", "ticks": [16, 60] }, true]
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "ice"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "ice",
+   "durationTicks": 150
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "ice",
+   "anchorId": "target",
+   "position": [
+    0,
+    0.05,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "Schedule",
+   "id": "burst",
+   "params": {
+    "startTicks": 5,
+    "durationTicks": 1,
+    "mode": "once"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "Emitter",
+   "id": "shards",
+   "params": {
+    "shape": "cone",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "coneAngle": 0.55,
+    "radius": 0.25,
+    "burst": 28,
+    "rate": 0,
+    "speedMin": 4,
+    "speedMax": 7.5,
+    "lifetimeMin": 1.6,
+    "lifetimeMax": 2.2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "InitialProperties",
+   "id": "shardip",
+   "params": {
+    "sizeMin": 0.18,
+    "sizeMax": 0.4,
+    "rotationMin": 0,
+    "rotationMax": 0,
+    "angularVelocityMin": 0,
+    "angularVelocityMax": 0,
+    "color": {
+     "srgb": "#A8E6FF",
+     "alpha": 1
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "Gravity",
+   "id": "grav"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "GroundCollision",
+   "id": "ground",
+   "params": {
+    "mode": "slide",
+    "friction": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "Material",
+   "id": "icemat",
+   "params": {
+    "blend": "normal",
+    "emission": 0.35
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "MeshRenderer",
+   "id": "shardmesh",
+   "params": {
+    "mesh": "shard",
+    "orientation": "velocity",
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFFFFF",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#9ED8FF",
+        "alpha": 1
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "Emitter",
+   "id": "frost",
+   "params": {
+    "shape": "disc",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "radius": 0.6,
+    "burst": 50,
+    "rate": 0,
+    "speedMin": 0.4,
+    "speedMax": 1.6,
+    "lifetimeMin": 1,
+    "lifetimeMax": 1.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "InitialProperties",
+   "id": "frostip",
+   "params": {
+    "sizeMin": 0.35,
+    "sizeMax": 0.7,
+    "rotationMin": 0,
+    "rotationMax": 6.28,
+    "angularVelocityMin": -0.6,
+    "angularVelocityMax": 0.6,
+    "color": {
+     "srgb": "#CFEFFF",
+     "alpha": 1
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "Drag",
+   "id": "frostdrag",
+   "params": {
+    "coefficient": 2.2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "Material",
+   "id": "frostmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "blend": "additive",
+    "opacity": 0.35
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "BillboardRenderer",
+   "id": "frostbb",
+   "params": {
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.5
+      },
+      {
+       "x": 1,
+       "y": 2
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.1,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "Emitter",
+   "id": "glints",
+   "params": {
+    "shape": "sphere",
+    "radius": 0.4,
+    "burst": 60,
+    "rate": 0,
+    "speedMin": 1,
+    "speedMax": 4,
+    "lifetimeMin": 0.5,
+    "lifetimeMax": 1.2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "InitialProperties",
+   "id": "glintip",
+   "params": {
+    "sizeMin": 0.05,
+    "sizeMax": 0.1,
+    "rotationMin": 0,
+    "rotationMax": 6.28,
+    "angularVelocityMin": -6,
+    "angularVelocityMax": 6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "Material",
+   "id": "glintmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "variant": 3,
+    "blend": "additive",
+    "tint": {
+     "srgb": "#DFF6FF",
+     "alpha": 1
+    },
+    "emission": 1.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "BillboardRenderer",
+   "id": "glintbb",
+   "params": {
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "node-target.out",
+   "to": "shards.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "burst.start",
+   "to": "shards.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "shards.particles",
+   "to": "shardip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "shardip.particles",
+   "to": "grav.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "grav.particles",
+   "to": "ground.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "ground.particles",
+   "to": "shardmesh.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "icemat.material",
+   "to": "shardmesh.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "node-target.out",
+   "to": "frost.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "burst.start",
+   "to": "frost.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "frost.particles",
+   "to": "frostip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "frostip.particles",
+   "to": "frostdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "frostdrag.particles",
+   "to": "frostbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "frostmat.material",
+   "to": "frostbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "node-target.out",
+   "to": "glints.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "burst.start",
+   "to": "glints.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "glints.particles",
+   "to": "glintip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "glintip.particles",
+   "to": "glintbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "glintmat.material",
+   "to": "glintbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "frostbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "shardmesh.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "glintbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "AudioMix",
+   "id": "sfx-mix",
+   "params": {
+    "masterGain": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "AudioOutput",
+   "id": "sfx-out",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "AudioSource",
+   "id": "sfx-shatter",
+   "params": {
+    "source": "noise",
+    "noiseColor": "white",
+    "durationTicks": 40,
+    "gain": 1
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "burst.start",
+   "to": "sfx-shatter.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "AudioFilter",
+   "id": "sfx-shatter-f",
+   "params": {
+    "mode": "highpass",
+    "cutoffHz": 3500,
+    "cutoffEndHz": 7000,
+    "q": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "sfx-shatter.audio",
+   "to": "sfx-shatter-f.audio"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "AudioEnvelope",
+   "id": "sfx-shatter-e",
+   "params": {
+    "attack": 0.001,
+    "hold": 0.03,
+    "release": 0.55,
+    "curve": "exponential"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "sfx-shatter-f.audio",
+   "to": "sfx-shatter-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "sfx-shatter-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "AudioSource",
+   "id": "sfx-chime",
+   "params": {
+    "source": "oscillator",
+    "waveform": "triangle",
+    "frequencyHz": 1760,
+    "durationTicks": 90,
+    "gain": 0.35
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "burst.start",
+   "to": "sfx-chime.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "AudioEnvelope",
+   "id": "sfx-chime-e",
+   "params": {
+    "attack": 0.002,
+    "hold": 0.05,
+    "release": 1.3,
+    "curve": "exponential"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "sfx-chime.audio",
+   "to": "sfx-chime-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "sfx-chime-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "AudioSource",
+   "id": "sfx-chime2",
+   "params": {
+    "source": "oscillator",
+    "waveform": "sine",
+    "frequencyHz": 2637,
+    "durationTicks": 80,
+    "gain": 0.25
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "burst.start",
+   "to": "sfx-chime2.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "AudioEnvelope",
+   "id": "sfx-chime2-e",
+   "params": {
+    "attack": 0.004,
+    "hold": 0.04,
+    "release": 1.1,
+    "curve": "exponential"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "sfx-chime2.audio",
+   "to": "sfx-chime2-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "sfx-chime2-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "AudioSource",
+   "id": "sfx-crunch",
+   "params": {
+    "source": "noise",
+    "noiseColor": "pink",
+    "durationTicks": 30,
+    "gain": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "burst.start",
+   "to": "sfx-crunch.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "AudioFilter",
+   "id": "sfx-crunch-f",
+   "params": {
+    "mode": "lowpass",
+    "cutoffHz": 2500,
+    "cutoffEndHz": 400,
+    "q": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "sfx-crunch.audio",
+   "to": "sfx-crunch-f.audio"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "AudioEnvelope",
+   "id": "sfx-crunch-e",
+   "params": {
+    "attack": 0.002,
+    "hold": 0.03,
+    "release": 0.35,
+    "curve": "exponential"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "sfx-crunch-f.audio",
+   "to": "sfx-crunch-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "sfx-crunch-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "sfx-mix.audio",
+   "to": "sfx-out.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "sfx-out.audio",
+   "to": "node-output.audio"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "ice"
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "ice",
+   "ticks": [
+    16,
+    60
+   ]
+  },
+  true
+ ],
+ [
+  "vfx_render_audio",
+  {
+   "docId": "ice"
+  },
+  true
+ ]
 ]

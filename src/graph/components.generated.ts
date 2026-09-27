@@ -539,6 +539,100 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "anchorId": "flamecenter"
     }
+   },
+   {
+    "id": "sfx-mix",
+    "type": "AudioMix",
+    "params": {
+     "masterGain": 0.9
+    }
+   },
+   {
+    "id": "sfx-out",
+    "type": "AudioOutput",
+    "params": {}
+   },
+   {
+    "id": "sfx-roar",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "brown",
+     "durationTicks": 124,
+     "gain": 1.6
+    }
+   },
+   {
+    "id": "sfx-roar-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "lowpass",
+     "cutoffHz": 1200,
+     "cutoffEndHz": 700,
+     "q": 0.8
+    }
+   },
+   {
+    "id": "sfx-roar-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.08,
+     "hold": 1.7,
+     "release": 0.35,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-hiss",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "pink",
+     "durationTicks": 124,
+     "gain": 0.5
+    }
+   },
+   {
+    "id": "sfx-hiss-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "bandpass",
+     "cutoffHz": 2500,
+     "cutoffEndHz": 1800,
+     "q": 0.9
+    }
+   },
+   {
+    "id": "sfx-hiss-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.1,
+     "hold": 1.6,
+     "release": 0.4,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-whoomp",
+    "type": "AudioSource",
+    "params": {
+     "source": "chirp",
+     "chirpStartHz": 160,
+     "chirpEndHz": 45,
+     "chirpSweep": "exponential",
+     "durationTicks": 30,
+     "gain": 1.1
+    }
+   },
+   {
+    "id": "sfx-whoomp-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.003,
+     "hold": 0.03,
+     "release": 0.4,
+     "curve": "exponential"
+    }
    }
   ],
   "edges": [
@@ -605,6 +699,58 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    [
     "glow.visual",
     "node-output.visual"
+   ],
+   [
+    "sched.start",
+    "sfx-roar.trigger"
+   ],
+   [
+    "sfx-roar.audio",
+    "sfx-roar-f.audio"
+   ],
+   [
+    "sfx-roar-f.audio",
+    "sfx-roar-e.audio"
+   ],
+   [
+    "sfx-roar-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "sched.start",
+    "sfx-hiss.trigger"
+   ],
+   [
+    "sfx-hiss.audio",
+    "sfx-hiss-f.audio"
+   ],
+   [
+    "sfx-hiss-f.audio",
+    "sfx-hiss-e.audio"
+   ],
+   [
+    "sfx-hiss-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "sched.start",
+    "sfx-whoomp.trigger"
+   ],
+   [
+    "sfx-whoomp.audio",
+    "sfx-whoomp-e.audio"
+   ],
+   [
+    "sfx-whoomp-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "sfx-mix.audio",
+    "sfx-out.audio"
+   ],
+   [
+    "sfx-out.audio",
+    "node-output.audio"
    ]
   ],
   "knobs": [
@@ -1036,6 +1182,78 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       ]
      }
     }
+   },
+   {
+    "id": "sfx-mix",
+    "type": "AudioMix",
+    "params": {
+     "masterGain": 0.9
+    }
+   },
+   {
+    "id": "sfx-out",
+    "type": "AudioOutput",
+    "params": {}
+   },
+   {
+    "id": "sfx-water",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "white",
+     "durationTicks": 180,
+     "gain": 0.7
+    }
+   },
+   {
+    "id": "sfx-water-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "bandpass",
+     "cutoffHz": 2200,
+     "cutoffEndHz": 2000,
+     "q": 0.7
+    }
+   },
+   {
+    "id": "sfx-water-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.15,
+     "hold": 2.5,
+     "release": 0.4,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-gurgle",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "brown",
+     "durationTicks": 180,
+     "gain": 0.6
+    }
+   },
+   {
+    "id": "sfx-gurgle-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "lowpass",
+     "cutoffHz": 600,
+     "cutoffEndHz": 500,
+     "q": 2
+    }
+   },
+   {
+    "id": "sfx-gurgle-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.2,
+     "hold": 2.4,
+     "release": 0.4,
+     "curve": "linear"
+    }
    }
   ],
   "edges": [
@@ -1074,6 +1292,46 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    [
     "bb.visual",
     "node-output.visual"
+   ],
+   [
+    "sched.start",
+    "sfx-water.trigger"
+   ],
+   [
+    "sfx-water.audio",
+    "sfx-water-f.audio"
+   ],
+   [
+    "sfx-water-f.audio",
+    "sfx-water-e.audio"
+   ],
+   [
+    "sfx-water-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "sched.start",
+    "sfx-gurgle.trigger"
+   ],
+   [
+    "sfx-gurgle.audio",
+    "sfx-gurgle-f.audio"
+   ],
+   [
+    "sfx-gurgle-f.audio",
+    "sfx-gurgle-e.audio"
+   ],
+   [
+    "sfx-gurgle-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "sfx-mix.audio",
+    "sfx-out.audio"
+   ],
+   [
+    "sfx-out.audio",
+    "node-output.audio"
    ]
   ],
   "knobs": [
@@ -1285,6 +1543,48 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       ]
      }
     }
+   },
+   {
+    "id": "sfx-mix",
+    "type": "AudioMix",
+    "params": {
+     "masterGain": 0.9
+    }
+   },
+   {
+    "id": "sfx-out",
+    "type": "AudioOutput",
+    "params": {}
+   },
+   {
+    "id": "sfx-rain",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "pink",
+     "durationTicks": 200,
+     "gain": 2
+    }
+   },
+   {
+    "id": "sfx-rain-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "highpass",
+     "cutoffHz": 2500,
+     "cutoffEndHz": 2200,
+     "q": 0.7
+    }
+   },
+   {
+    "id": "sfx-rain-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.4,
+     "hold": 2.3,
+     "release": 0.6,
+     "curve": "linear"
+    }
    }
   ],
   "edges": [
@@ -1347,6 +1647,30 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    [
     "splashes.visual",
     "node-output.visual"
+   ],
+   [
+    "sched.start",
+    "sfx-rain.trigger"
+   ],
+   [
+    "sfx-rain.audio",
+    "sfx-rain-f.audio"
+   ],
+   [
+    "sfx-rain-f.audio",
+    "sfx-rain-e.audio"
+   ],
+   [
+    "sfx-rain-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "sfx-mix.audio",
+    "sfx-out.audio"
+   ],
+   [
+    "sfx-out.audio",
+    "node-output.audio"
    ]
   ],
   "knobs": [
@@ -1611,6 +1935,100 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       ]
      }
     }
+   },
+   {
+    "id": "sfx-mix",
+    "type": "AudioMix",
+    "params": {
+     "masterGain": 0.9
+    }
+   },
+   {
+    "id": "sfx-out",
+    "type": "AudioOutput",
+    "params": {}
+   },
+   {
+    "id": "sfx-boom",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "brown",
+     "durationTicks": 60,
+     "gain": 1.5
+    }
+   },
+   {
+    "id": "sfx-boom-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "lowpass",
+     "cutoffHz": 1500,
+     "cutoffEndHz": 150,
+     "q": 0.8
+    }
+   },
+   {
+    "id": "sfx-boom-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.003,
+     "hold": 0.04,
+     "release": 0.8,
+     "curve": "exponential"
+    }
+   },
+   {
+    "id": "sfx-snap",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "white",
+     "durationTicks": 20,
+     "gain": 0.8
+    }
+   },
+   {
+    "id": "sfx-snap-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "highpass",
+     "cutoffHz": 2000,
+     "cutoffEndHz": 4000,
+     "q": 0.8
+    }
+   },
+   {
+    "id": "sfx-snap-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.001,
+     "hold": 0.02,
+     "release": 0.2,
+     "curve": "exponential"
+    }
+   },
+   {
+    "id": "sfx-thump",
+    "type": "AudioSource",
+    "params": {
+     "source": "chirp",
+     "chirpStartHz": 110,
+     "chirpEndHz": 40,
+     "chirpSweep": "exponential",
+     "durationTicks": 30,
+     "gain": 1
+    }
+   },
+   {
+    "id": "sfx-thump-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.002,
+     "hold": 0.02,
+     "release": 0.4,
+     "curve": "exponential"
+    }
    }
   ],
   "edges": [
@@ -1673,6 +2091,58 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    [
     "shockwave.visual",
     "node-output.visual"
+   ],
+   [
+    "hit.start",
+    "sfx-boom.trigger"
+   ],
+   [
+    "sfx-boom.audio",
+    "sfx-boom-f.audio"
+   ],
+   [
+    "sfx-boom-f.audio",
+    "sfx-boom-e.audio"
+   ],
+   [
+    "sfx-boom-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "hit.start",
+    "sfx-snap.trigger"
+   ],
+   [
+    "sfx-snap.audio",
+    "sfx-snap-f.audio"
+   ],
+   [
+    "sfx-snap-f.audio",
+    "sfx-snap-e.audio"
+   ],
+   [
+    "sfx-snap-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "hit.start",
+    "sfx-thump.trigger"
+   ],
+   [
+    "sfx-thump.audio",
+    "sfx-thump-e.audio"
+   ],
+   [
+    "sfx-thump-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "sfx-mix.audio",
+    "sfx-out.audio"
+   ],
+   [
+    "sfx-out.audio",
+    "node-output.audio"
    ]
   ],
   "knobs": [
@@ -1789,6 +2259,101 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "width": 0.35,
      "endFade": 0.1
     }
+   },
+   {
+    "id": "sfx-mix",
+    "type": "AudioMix",
+    "params": {
+     "masterGain": 0.9
+    }
+   },
+   {
+    "id": "sfx-out",
+    "type": "AudioOutput",
+    "params": {}
+   },
+   {
+    "id": "sfx-buzz",
+    "type": "AudioSource",
+    "params": {
+     "source": "oscillator",
+     "waveform": "saw",
+     "frequencyHz": 110,
+     "durationTicks": 70,
+     "gain": 0.4
+    }
+   },
+   {
+    "id": "sfx-buzz-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "bandpass",
+     "cutoffHz": 900,
+     "cutoffEndHz": 1300,
+     "q": 2
+    }
+   },
+   {
+    "id": "sfx-buzz-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.02,
+     "hold": 1,
+     "release": 0.12,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-crackle",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "white",
+     "durationTicks": 70,
+     "gain": 0.45
+    }
+   },
+   {
+    "id": "sfx-crackle-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "highpass",
+     "cutoffHz": 3000,
+     "cutoffEndHz": 3500,
+     "q": 0.8
+    }
+   },
+   {
+    "id": "sfx-crackle-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.01,
+     "hold": 1,
+     "release": 0.12,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-zap",
+    "type": "AudioSource",
+    "params": {
+     "source": "chirp",
+     "chirpStartHz": 3000,
+     "chirpEndHz": 300,
+     "chirpSweep": "exponential",
+     "durationTicks": 12,
+     "gain": 0.6
+    }
+   },
+   {
+    "id": "sfx-zap-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.001,
+     "hold": 0.02,
+     "release": 0.15,
+     "curve": "exponential"
+    }
    }
   ],
   "edges": [
@@ -1835,6 +2400,58 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    [
     "core.visual",
     "node-output.visual"
+   ],
+   [
+    "on.start",
+    "sfx-buzz.trigger"
+   ],
+   [
+    "sfx-buzz.audio",
+    "sfx-buzz-f.audio"
+   ],
+   [
+    "sfx-buzz-f.audio",
+    "sfx-buzz-e.audio"
+   ],
+   [
+    "sfx-buzz-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "on.start",
+    "sfx-crackle.trigger"
+   ],
+   [
+    "sfx-crackle.audio",
+    "sfx-crackle-f.audio"
+   ],
+   [
+    "sfx-crackle-f.audio",
+    "sfx-crackle-e.audio"
+   ],
+   [
+    "sfx-crackle-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "on.start",
+    "sfx-zap.trigger"
+   ],
+   [
+    "sfx-zap.audio",
+    "sfx-zap-e.audio"
+   ],
+   [
+    "sfx-zap-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "sfx-mix.audio",
+    "sfx-out.audio"
+   ],
+   [
+    "sfx-out.audio",
+    "node-output.audio"
    ]
   ],
   "knobs": [
@@ -2072,6 +2689,100 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       ]
      }
     }
+   },
+   {
+    "id": "sfx-mix",
+    "type": "AudioMix",
+    "params": {
+     "masterGain": 0.9
+    }
+   },
+   {
+    "id": "sfx-out",
+    "type": "AudioOutput",
+    "params": {}
+   },
+   {
+    "id": "sfx-rumble",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "brown",
+     "durationTicks": 90,
+     "gain": 1.8
+    }
+   },
+   {
+    "id": "sfx-rumble-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "lowpass",
+     "cutoffHz": 700,
+     "cutoffEndHz": 110,
+     "q": 0.8
+    }
+   },
+   {
+    "id": "sfx-rumble-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.1,
+     "release": 1.2,
+     "curve": "exponential"
+    }
+   },
+   {
+    "id": "sfx-thump",
+    "type": "AudioSource",
+    "params": {
+     "source": "chirp",
+     "chirpStartHz": 90,
+     "chirpEndHz": 32,
+     "chirpSweep": "exponential",
+     "durationTicks": 36,
+     "gain": 1.2
+    }
+   },
+   {
+    "id": "sfx-thump-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.002,
+     "hold": 0.03,
+     "release": 0.5,
+     "curve": "exponential"
+    }
+   },
+   {
+    "id": "sfx-clatter",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "white",
+     "durationTicks": 70,
+     "gain": 0.35
+    }
+   },
+   {
+    "id": "sfx-clatter-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "bandpass",
+     "cutoffHz": 1800,
+     "cutoffEndHz": 900,
+     "q": 1.5
+    }
+   },
+   {
+    "id": "sfx-clatter-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.02,
+     "hold": 0.3,
+     "release": 0.8,
+     "curve": "exponential"
+    }
    }
   ],
   "edges": [
@@ -2142,6 +2853,58 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    [
     "rockmesh.visual",
     "node-output.visual"
+   ],
+   [
+    "hit.start",
+    "sfx-rumble.trigger"
+   ],
+   [
+    "sfx-rumble.audio",
+    "sfx-rumble-f.audio"
+   ],
+   [
+    "sfx-rumble-f.audio",
+    "sfx-rumble-e.audio"
+   ],
+   [
+    "sfx-rumble-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "hit.start",
+    "sfx-thump.trigger"
+   ],
+   [
+    "sfx-thump.audio",
+    "sfx-thump-e.audio"
+   ],
+   [
+    "sfx-thump-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "hit.start",
+    "sfx-clatter.trigger"
+   ],
+   [
+    "sfx-clatter.audio",
+    "sfx-clatter-f.audio"
+   ],
+   [
+    "sfx-clatter-f.audio",
+    "sfx-clatter-e.audio"
+   ],
+   [
+    "sfx-clatter-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "sfx-mix.audio",
+    "sfx-out.audio"
+   ],
+   [
+    "sfx-out.audio",
+    "node-output.audio"
    ]
   ],
   "knobs": [
@@ -2373,6 +3136,70 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       ]
      }
     }
+   },
+   {
+    "id": "sfx-mix",
+    "type": "AudioMix",
+    "params": {
+     "masterGain": 0.9
+    }
+   },
+   {
+    "id": "sfx-out",
+    "type": "AudioOutput",
+    "params": {}
+   },
+   {
+    "id": "sfx-rise",
+    "type": "AudioSource",
+    "params": {
+     "source": "chirp",
+     "chirpStartHz": 180,
+     "chirpEndHz": 1400,
+     "chirpSweep": "exponential",
+     "durationTicks": 70,
+     "gain": 0.5
+    }
+   },
+   {
+    "id": "sfx-rise-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.4,
+     "hold": 0.6,
+     "release": 0.15,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-whine",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "pink",
+     "durationTicks": 70,
+     "gain": 0.6
+    }
+   },
+   {
+    "id": "sfx-whine-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "bandpass",
+     "cutoffHz": 400,
+     "cutoffEndHz": 3000,
+     "q": 3
+    }
+   },
+   {
+    "id": "sfx-whine-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.3,
+     "hold": 0.7,
+     "release": 0.2,
+     "curve": "linear"
+    }
    }
   ],
   "edges": [
@@ -2447,6 +3274,42 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    [
     "light.visual",
     "node-output.visual"
+   ],
+   [
+    "gather.start",
+    "sfx-rise.trigger"
+   ],
+   [
+    "sfx-rise.audio",
+    "sfx-rise-e.audio"
+   ],
+   [
+    "sfx-rise-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "gather.start",
+    "sfx-whine.trigger"
+   ],
+   [
+    "sfx-whine.audio",
+    "sfx-whine-f.audio"
+   ],
+   [
+    "sfx-whine-f.audio",
+    "sfx-whine-e.audio"
+   ],
+   [
+    "sfx-whine-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "sfx-mix.audio",
+    "sfx-out.audio"
+   ],
+   [
+    "sfx-out.audio",
+    "node-output.audio"
    ]
   ],
   "knobs": [
@@ -2632,6 +3495,78 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       ]
      }
     }
+   },
+   {
+    "id": "sfx-mix",
+    "type": "AudioMix",
+    "params": {
+     "masterGain": 0.9
+    }
+   },
+   {
+    "id": "sfx-out",
+    "type": "AudioOutput",
+    "params": {}
+   },
+   {
+    "id": "sfx-wind",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "pink",
+     "durationTicks": 220,
+     "gain": 2
+    }
+   },
+   {
+    "id": "sfx-wind-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "bandpass",
+     "cutoffHz": 350,
+     "cutoffEndHz": 900,
+     "q": 1.1
+    }
+   },
+   {
+    "id": "sfx-wind-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.8,
+     "hold": 2.2,
+     "release": 0.7,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-roar",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "brown",
+     "durationTicks": 220,
+     "gain": 1.8
+    }
+   },
+   {
+    "id": "sfx-roar-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "lowpass",
+     "cutoffHz": 400,
+     "cutoffEndHz": 600,
+     "q": 0.8
+    }
+   },
+   {
+    "id": "sfx-roar-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.8,
+     "hold": 2.2,
+     "release": 0.7,
+     "curve": "linear"
+    }
    }
   ],
   "edges": [
@@ -2674,6 +3609,46 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    [
     "dust.visual",
     "node-output.visual"
+   ],
+   [
+    "spin.start",
+    "sfx-wind.trigger"
+   ],
+   [
+    "sfx-wind.audio",
+    "sfx-wind-f.audio"
+   ],
+   [
+    "sfx-wind-f.audio",
+    "sfx-wind-e.audio"
+   ],
+   [
+    "sfx-wind-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "spin.start",
+    "sfx-roar.trigger"
+   ],
+   [
+    "sfx-roar.audio",
+    "sfx-roar-f.audio"
+   ],
+   [
+    "sfx-roar-f.audio",
+    "sfx-roar-e.audio"
+   ],
+   [
+    "sfx-roar-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "sfx-mix.audio",
+    "sfx-out.audio"
+   ],
+   [
+    "sfx-out.audio",
+    "node-output.audio"
    ]
   ],
   "knobs": [
@@ -2971,6 +3946,120 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       ]
      }
     }
+   },
+   {
+    "id": "sfx-mix",
+    "type": "AudioMix",
+    "params": {
+     "masterGain": 0.9
+    }
+   },
+   {
+    "id": "sfx-out",
+    "type": "AudioOutput",
+    "params": {}
+   },
+   {
+    "id": "sfx-shatter",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "white",
+     "durationTicks": 40,
+     "gain": 1
+    }
+   },
+   {
+    "id": "sfx-shatter-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "highpass",
+     "cutoffHz": 3500,
+     "cutoffEndHz": 7000,
+     "q": 0.8
+    }
+   },
+   {
+    "id": "sfx-shatter-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.001,
+     "hold": 0.03,
+     "release": 0.55,
+     "curve": "exponential"
+    }
+   },
+   {
+    "id": "sfx-chime",
+    "type": "AudioSource",
+    "params": {
+     "source": "oscillator",
+     "waveform": "triangle",
+     "frequencyHz": 1760,
+     "durationTicks": 90,
+     "gain": 0.35
+    }
+   },
+   {
+    "id": "sfx-chime-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.002,
+     "hold": 0.05,
+     "release": 1.3,
+     "curve": "exponential"
+    }
+   },
+   {
+    "id": "sfx-chime2",
+    "type": "AudioSource",
+    "params": {
+     "source": "oscillator",
+     "waveform": "sine",
+     "frequencyHz": 2637,
+     "durationTicks": 80,
+     "gain": 0.25
+    }
+   },
+   {
+    "id": "sfx-chime2-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.004,
+     "hold": 0.04,
+     "release": 1.1,
+     "curve": "exponential"
+    }
+   },
+   {
+    "id": "sfx-crunch",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "pink",
+     "durationTicks": 30,
+     "gain": 0.8
+    }
+   },
+   {
+    "id": "sfx-crunch-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "lowpass",
+     "cutoffHz": 2500,
+     "cutoffEndHz": 400,
+     "q": 0.8
+    }
+   },
+   {
+    "id": "sfx-crunch-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.002,
+     "hold": 0.03,
+     "release": 0.35,
+     "curve": "exponential"
+    }
    }
   ],
   "edges": [
@@ -3057,6 +4146,70 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    [
     "glintbb.visual",
     "node-output.visual"
+   ],
+   [
+    "burst.start",
+    "sfx-shatter.trigger"
+   ],
+   [
+    "sfx-shatter.audio",
+    "sfx-shatter-f.audio"
+   ],
+   [
+    "sfx-shatter-f.audio",
+    "sfx-shatter-e.audio"
+   ],
+   [
+    "sfx-shatter-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "burst.start",
+    "sfx-chime.trigger"
+   ],
+   [
+    "sfx-chime.audio",
+    "sfx-chime-e.audio"
+   ],
+   [
+    "sfx-chime-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "burst.start",
+    "sfx-chime2.trigger"
+   ],
+   [
+    "sfx-chime2.audio",
+    "sfx-chime2-e.audio"
+   ],
+   [
+    "sfx-chime2-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "burst.start",
+    "sfx-crunch.trigger"
+   ],
+   [
+    "sfx-crunch.audio",
+    "sfx-crunch-f.audio"
+   ],
+   [
+    "sfx-crunch-f.audio",
+    "sfx-crunch-e.audio"
+   ],
+   [
+    "sfx-crunch-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "sfx-mix.audio",
+    "sfx-out.audio"
+   ],
+   [
+    "sfx-out.audio",
+    "node-output.audio"
    ]
   ],
   "knobs": [
@@ -3409,6 +4562,78 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       ]
      }
     }
+   },
+   {
+    "id": "sfx-mix",
+    "type": "AudioMix",
+    "params": {
+     "masterGain": 0.9
+    }
+   },
+   {
+    "id": "sfx-out",
+    "type": "AudioOutput",
+    "params": {}
+   },
+   {
+    "id": "sfx-seep",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "brown",
+     "durationTicks": 200,
+     "gain": 2
+    }
+   },
+   {
+    "id": "sfx-seep-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "lowpass",
+     "cutoffHz": 500,
+     "cutoffEndHz": 350,
+     "q": 1
+    }
+   },
+   {
+    "id": "sfx-seep-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.5,
+     "hold": 2.2,
+     "release": 0.6,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-fizz",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "white",
+     "durationTicks": 200,
+     "gain": 0.6
+    }
+   },
+   {
+    "id": "sfx-fizz-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "bandpass",
+     "cutoffHz": 3500,
+     "cutoffEndHz": 2500,
+     "q": 4
+    }
+   },
+   {
+    "id": "sfx-fizz-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.5,
+     "hold": 2.2,
+     "release": 0.6,
+     "curve": "linear"
+    }
    }
   ],
   "edges": [
@@ -3483,6 +4708,46 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    [
     "glow.visual",
     "node-output.visual"
+   ],
+   [
+    "seep.start",
+    "sfx-seep.trigger"
+   ],
+   [
+    "sfx-seep.audio",
+    "sfx-seep-f.audio"
+   ],
+   [
+    "sfx-seep-f.audio",
+    "sfx-seep-e.audio"
+   ],
+   [
+    "sfx-seep-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "seep.start",
+    "sfx-fizz.trigger"
+   ],
+   [
+    "sfx-fizz.audio",
+    "sfx-fizz-f.audio"
+   ],
+   [
+    "sfx-fizz-f.audio",
+    "sfx-fizz-e.audio"
+   ],
+   [
+    "sfx-fizz-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "sfx-mix.audio",
+    "sfx-out.audio"
+   ],
+   [
+    "sfx-out.audio",
+    "node-output.audio"
    ]
   ],
   "knobs": [
@@ -3768,6 +5033,70 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       ]
      }
     }
+   },
+   {
+    "id": "sfx-mix",
+    "type": "AudioMix",
+    "params": {
+     "masterGain": 0.9
+    }
+   },
+   {
+    "id": "sfx-out",
+    "type": "AudioOutput",
+    "params": {}
+   },
+   {
+    "id": "sfx-drone",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "brown",
+     "durationTicks": 150,
+     "gain": 1.6
+    }
+   },
+   {
+    "id": "sfx-drone-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "lowpass",
+     "cutoffHz": 260,
+     "cutoffEndHz": 140,
+     "q": 1.4
+    }
+   },
+   {
+    "id": "sfx-drone-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.6,
+     "hold": 1.4,
+     "release": 0.5,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-suck",
+    "type": "AudioSource",
+    "params": {
+     "source": "chirp",
+     "chirpStartHz": 900,
+     "chirpEndHz": 70,
+     "chirpSweep": "exponential",
+     "durationTicks": 150,
+     "gain": 0.35
+    }
+   },
+   {
+    "id": "sfx-suck-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.3,
+     "hold": 1.8,
+     "release": 0.4,
+     "curve": "linear"
+    }
    }
   ],
   "edges": [
@@ -3842,6 +5171,42 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    [
     "lamp.visual",
     "node-output.visual"
+   ],
+   [
+    "gather.start",
+    "sfx-drone.trigger"
+   ],
+   [
+    "sfx-drone.audio",
+    "sfx-drone-f.audio"
+   ],
+   [
+    "sfx-drone-f.audio",
+    "sfx-drone-e.audio"
+   ],
+   [
+    "sfx-drone-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "gather.start",
+    "sfx-suck.trigger"
+   ],
+   [
+    "sfx-suck.audio",
+    "sfx-suck-e.audio"
+   ],
+   [
+    "sfx-suck-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "sfx-mix.audio",
+    "sfx-out.audio"
+   ],
+   [
+    "sfx-out.audio",
+    "node-output.audio"
    ]
   ],
   "knobs": [
@@ -4134,6 +5499,111 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       ]
      }
     }
+   },
+   {
+    "id": "sfx-mix",
+    "type": "AudioMix",
+    "params": {
+     "masterGain": 0.9
+    }
+   },
+   {
+    "id": "sfx-out",
+    "type": "AudioOutput",
+    "params": {}
+   },
+   {
+    "id": "sfx-c5",
+    "type": "AudioSource",
+    "params": {
+     "source": "oscillator",
+     "waveform": "sine",
+     "frequencyHz": 523.25,
+     "durationTicks": 80,
+     "gain": 0.32
+    }
+   },
+   {
+    "id": "sfx-c5-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.25,
+     "hold": 0.7,
+     "release": 0.4,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-e5",
+    "type": "AudioSource",
+    "params": {
+     "source": "oscillator",
+     "waveform": "sine",
+     "frequencyHz": 659.25,
+     "durationTicks": 80,
+     "gain": 0.26
+    }
+   },
+   {
+    "id": "sfx-e5-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.3,
+     "hold": 0.65,
+     "release": 0.4,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-g5",
+    "type": "AudioSource",
+    "params": {
+     "source": "oscillator",
+     "waveform": "sine",
+     "frequencyHz": 783.99,
+     "durationTicks": 80,
+     "gain": 0.22
+    }
+   },
+   {
+    "id": "sfx-g5-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.35,
+     "hold": 0.6,
+     "release": 0.4,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-shimmer",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "white",
+     "durationTicks": 80,
+     "gain": 0.18
+    }
+   },
+   {
+    "id": "sfx-shimmer-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "highpass",
+     "cutoffHz": 6000,
+     "cutoffEndHz": 8000,
+     "q": 0.8
+    }
+   },
+   {
+    "id": "sfx-shimmer-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.3,
+     "hold": 0.6,
+     "release": 0.4,
+     "curve": "linear"
+    }
    }
   ],
   "edges": [
@@ -4204,6 +5674,66 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    [
     "lamp.visual",
     "node-output.visual"
+   ],
+   [
+    "pulse.start",
+    "sfx-c5.trigger"
+   ],
+   [
+    "sfx-c5.audio",
+    "sfx-c5-e.audio"
+   ],
+   [
+    "sfx-c5-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "pulse.start",
+    "sfx-e5.trigger"
+   ],
+   [
+    "sfx-e5.audio",
+    "sfx-e5-e.audio"
+   ],
+   [
+    "sfx-e5-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "pulse.start",
+    "sfx-g5.trigger"
+   ],
+   [
+    "sfx-g5.audio",
+    "sfx-g5-e.audio"
+   ],
+   [
+    "sfx-g5-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "pulse.start",
+    "sfx-shimmer.trigger"
+   ],
+   [
+    "sfx-shimmer.audio",
+    "sfx-shimmer-f.audio"
+   ],
+   [
+    "sfx-shimmer-f.audio",
+    "sfx-shimmer-e.audio"
+   ],
+   [
+    "sfx-shimmer-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "sfx-mix.audio",
+    "sfx-out.audio"
+   ],
+   [
+    "sfx-out.audio",
+    "node-output.audio"
    ]
   ],
   "knobs": [
