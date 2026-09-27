@@ -368,7 +368,7 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
   for (const [visualOrder, c] of visual.entries()) {
     try {
       const r = sourceNode(c.source, outputId, 'visual');
-      if (r.node.type === 'BillboardRenderer' || r.node.type === 'ParticleTrail' || r.node.type === 'SpriteRenderer' || r.node.type === 'PointLight') continue; // Particle layers: compileParticlePreview.
+      if (r.node.type === 'BillboardRenderer' || r.node.type === 'ParticleTrail' || r.node.type === 'SpriteRenderer' || r.node.type === 'PointLight' || r.node.type === 'MeshRenderer') continue; // Particle layers: compileParticlePreview.
       if (done.has(r.node.id) || !r.effectiveEnabled) continue; // Disabled sink (of any type) contributes nothing.
       if (r.node.type !== 'RibbonRenderer') fail('UNKNOWN_NODE', `Visual source "${r.node.id}" (${r.node.type}) is not supported by the path preview.`, r.node.id);
       done.add(r.node.id);

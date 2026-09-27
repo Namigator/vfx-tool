@@ -244,6 +244,27 @@ function pathFollower(): NodeSpec {
   });
 }
 
+function meshRenderer(): NodeSpec {
+  const flat = () => ({ domain: 'normalized' as const, interpolation: 'linear' as const, keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] });
+  return node('MeshRenderer', {
+    inputs: [
+      port({ id: 'particles', label: 'Particles', type: 'particles', required: true }),
+      port({ id: 'material', label: 'Material', type: 'material', required: true }),
+    ],
+    outputs: [port({ id: 'visual', label: 'Visual', type: 'visual' })],
+    parameters: [
+      param({ id: 'mesh', label: 'Mesh', type: 'enum', unit: 'none', default: 'rock-a', choices: ['shard', 'rock-a', 'rock-b', 'rock-c', 'orb', 'cone'], description: 'Included procedural mesh (≈1 m across, scaled by particle size × Scale).' }),
+      param({ id: 'scale', label: 'Scale', type: 'number', unit: 'none', default: 1, min: 0.01, max: 20, editPolicy: 'live' }),
+      param({ id: 'orientation', label: 'Orientation', type: 'enum', unit: 'none', default: 'tumble', choices: ['tumble', 'velocity'], editPolicy: 'live', description: 'tumble: random axis per particle, spun by InitialProperties rotation/angular velocity; velocity: +Y follows the velocity.' }),
+      param({ id: 'lit', label: 'Lit', type: 'boolean', unit: 'none', default: true, editPolicy: 'live', description: 'Shaded by the preview lights (normal blend); additive meshes are always unlit.' }),
+      param({ id: 'sizeOverLife', label: 'Size over life', type: 'curve', unit: 'none', curveDomain: 'normalized', default: flat(), min: 0, max: 20, editPolicy: 'live' }),
+      param({ id: 'colorOverLife', label: 'Colour over life', type: 'gradient', unit: 'none', default: { stops: [{ position: 0, color: white() }, { position: 1, color: white() }] }, editPolicy: 'live' }),
+      param({ id: 'renderOrderOffset', label: 'Render order offset', type: 'integer', unit: 'none', default: 0, min: -32, max: 32, step: 1, editPolicy: 'live' }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
 function particleTrail(): NodeSpec {
   return node('ParticleTrail', {
     inputs: [
@@ -602,7 +623,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 /** Fresh, independent registry each call. */
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
-    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), groundCollision(), particleEvents(), material(), billboardRenderer(), particleTrail(), spriteRenderer(), pointLight(), pathFollower(),
+    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), groundCollision(), particleEvents(), material(), billboardRenderer(), particleTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(),
     linePath(), bezierPath(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(),
     audioSource(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),

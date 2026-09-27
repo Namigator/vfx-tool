@@ -81,6 +81,12 @@ export type PointLightLayer = {
   track?: { startTick: number; positions: Vec3[] };
   startTick: number; endTick: number; intensityOverWindow: CurveValue; flicker: number; flickerRate: number; seed: number;
 };
+/** 05 MeshRenderer: instanced built-in mesh per particle. */
+export type MeshLayer = {
+  nodeId: string; systemId: string; mesh: 'shard' | 'rock-a' | 'rock-b' | 'rock-c' | 'orb' | 'cone'; scale: number;
+  orientation: 'tumble' | 'velocity'; lit: boolean; color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout';
+  sizeOverLife: CurveValue; colorOverLife: GradientValue; renderOrderOffset: number; visualOrder: number;
+};
 export type ParticlePreviewPlan = {
   durationTicks: number;
   /** One per distinct particle chain, in first-use order of layers. */
@@ -90,6 +96,7 @@ export type ParticlePreviewPlan = {
   /** ParticleTrail sinks, in root EffectOutput.visual connection order. */
   trails: ParticleTrailLayer[];
   lights: PointLightLayer[];
+  meshes: MeshLayer[];
 };
 
 export const DEFAULT_PREVIEW_SIZE = { min: 0.08, max: 0.16 } as const;
@@ -454,6 +461,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
   const layers: ParticlePreviewLayer[] = [];
   const trails: ParticleTrailLayer[] = [];
   const lights: PointLightLayer[] = [];
+  const meshes: MeshLayer[] = [];
   const done = new Set<string>();
   const visual = into(outputId, 'visual');
   for (const [visualOrder, c] of visual.entries()) {
@@ -461,6 +469,35 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       const b = sourceNode(c.source, outputId, 'visual');
       if (options.ribbonsHandled === true && b.node.type === 'RibbonRenderer') continue; // Ribbon layers: compilePathPreview.
       if (done.has(b.node.id) || !b.effectiveEnabled) continue; // Disabled sink contributes nothing.
+      if (b.node.type === 'MeshRenderer') {
+        done.add(b.node.id);
+        const mid = b.node.id;
+        noDrivenParams(b, BILLBOARD_PORTS);
+        const mats = into(mid, 'material');
+        const mat = mats.length === 1 ? sourceNode(mats[0].source, mid, 'material') : undefined;
+        if (!mat || mat.node.type !== 'Material' || !mat.effectiveEnabled) { fail('MISSING_REFERENCE', `Required input "material" of "${mid}" needs an enabled Material.`, mid); }
+        const m = mat as ExpandedNode;
+        const chain = traceChain(mid);
+        if (!chain) continue;
+        if (!systems.some(s => s.id === chain.terminalId)) {
+          const before = errors.length;
+          const d = buildDescriptor(chain);
+          if (errors.length === before) {
+            const v = validateParticleDescriptor(d);
+            if (!v.ok) errors.push(...v.errors.map(e => ({ ...e, nodeId: chain.emitter.node.id })));
+            else systems.push({ id: chain.terminalId, descriptor: v.value });
+          }
+        }
+        const sc = param(b, 'sizeOverLife') as CurveValue, serr = lifeCurveError(sc, SIZE_OVER_LIFE_BOUNDS);
+        if (serr !== undefined) report('INVALID_VALUE', `MeshRenderer "${mid}" sizeOverLife: ${serr}`, mid, 'sizeOverLife');
+        const base = chain.initial ? param(chain.initial, 'color') as ColorValue : { srgb: '#FFFFFF', alpha: 1 };
+        meshes.push({
+          nodeId: mid, systemId: chain.terminalId, mesh: param(b, 'mesh') as MeshLayer['mesh'], scale: num(b, 'scale'), orientation: param(b, 'orientation') as MeshLayer['orientation'],
+          lit: param(b, 'lit') === true, color: multiplyColors(base, param(m, 'tint') as ColorValue), opacity: num(m, 'opacity'), emission: num(m, 'emission'), blend: param(m, 'blend') as MeshLayer['blend'],
+          sizeOverLife: structuredClone(sc), colorOverLife: structuredClone(param(b, 'colorOverLife') as GradientValue), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
+        });
+        continue;
+      }
       if (b.node.type === 'PointLight') {
         done.add(b.node.id);
         const lid = b.node.id;
@@ -642,7 +679,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     if (budget) errors.push(budget);
   }
   if (errors.length) return { ok: false, errors };
-  return { ok: true, value: { durationTicks: doc.durationTicks, systems, layers, trails, lights }, warnings };
+  return { ok: true, value: { durationTicks: doc.durationTicks, systems, layers, trails, lights, meshes }, warnings };
 }
 
 /** Aggregate worst case over all systems: total births and live particles at any tick (plan15 caps). */

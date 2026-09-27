@@ -12,6 +12,7 @@ const COMPONENTS = [
   ['rain-splash', 'Rain with splashes', 'Falling droplets that die on the ground and spawn splash bursts.', 'rain-splash'],
   ['impact-flash', 'Impact flash', 'Timed glow sprite with a spark burst at Target.', 'impact-flash'],
   ['arc-beam', 'Arc beam', 'Textured electric arc Source→Target on a jagged, re-rolling path with a soft glow ribbon.', 'arc-beam'],
+  ['rock-burst', 'Rock burst', 'Lit tumbling rock chunks that bounce and settle, with a rolling dust cloud (earth impact).', 'rock-burst'],
   ['fireball', 'Fireball', 'Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.', 'fireball'],
 ];
 
@@ -23,6 +24,7 @@ const KNOBS = {
   'rain-splash': [['rain', 'Rain rate', [['clouds', 'rate']]], ['area', 'Rain area', [['clouds', 'radius']]], ['splash', 'Splash drops', [['splash', 'burst']]], ['splash-speed', 'Splash speed', [['splash', 'speedMax'], ['splash', 'speedMin', 0.42]]]],
   'impact-flash': [['flash', 'Flash size', [['flash', 'size']]], ['sparks', 'Sparks', [['sparks', 'burst']]], ['speed', 'Spark speed', [['sparks', 'speedMax'], ['sparks', 'speedMin', 0.33]]]],
   'arc-beam': [['width', 'Beam width', [['core', 'width']]], ['jagged', 'Jaggedness', [['jag', 'amplitude']]], ['flicker', 'Re-roll rate', [['jag', 'regenerationHz']]], ['glow', 'Glow width', [['halo', 'width']]]],
+  'rock-burst': [['count', 'Rock count', [['debris', 'burst']]], ['force', 'Blast speed', [['debris', 'speedMax'], ['debris', 'speedMin', 0.43]]], ['size', 'Rock size', [['rockip', 'sizeMax'], ['rockip', 'sizeMin', 0.36]]], ['dust', 'Dust amount', [['dust', 'burst']]]],
   'fireball': [['travel', 'Travel ticks', [['ball', 'durationTicks']]], ['trail', 'Trail density', [['trailem', 'rate']]], ['core', 'Core size', [['core', 'size']]], ['impact', 'Impact sparks', [['boom', 'burst']]], ['flash', 'Flash size', [['flash', 'size']]], ['light', 'Ball light', [['balllight', 'intensity']]]],
 };
 

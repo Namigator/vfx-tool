@@ -472,3 +472,13 @@ test('Emitter rateOverWindow compiles to a rate curve (flat curves stay plain)',
   assert.deepEqual(p.systems[0].descriptor.rate!.curve, [{ x: 0, y: 0 }, { x: 1, y: 2 }]);
   assert.equal(plan(f01(win)).systems[0].descriptor.rate!.curve, undefined);
 });
+
+test('MeshRenderer compiles to a mesh layer on the chain system', () => {
+  const p = plan(f01(d => {
+    const g = root(d);
+    g.nodes.push(node('node-rocks', 'MeshRenderer', { mesh: 'shard', scale: 2, orientation: 'velocity' }));
+    g.edges.push(edge('e-mp', 'node-initial', 'particles', 'node-rocks', 'particles'), edge('e-mm', 'node-material', 'material', 'node-rocks', 'material'), edge('e-mv', 'node-rocks', 'visual', 'node-output', 'visual', 1));
+  }));
+  assert.deepEqual([p.meshes[0].systemId, p.meshes[0].mesh, p.meshes[0].scale, p.meshes[0].orientation, p.meshes[0].lit], ['node-initial', 'shard', 2, 'velocity', true]);
+  assert.deepEqual(plan(f01()).meshes, []);
+});

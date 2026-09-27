@@ -1885,6 +1885,323 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   ]
  },
  {
+  "id": "rock-burst",
+  "label": "Rock burst",
+  "description": "Lit tumbling rock chunks that bounce and settle, with a rolling dust cloud (earth impact).",
+  "durationTicks": 150,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "hit",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 5,
+     "durationTicks": 1,
+     "mode": "once"
+    }
+   },
+   {
+    "id": "debris",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "coneAngle": 0.7,
+     "radius": 0.3,
+     "burst": 36,
+     "rate": 0,
+     "speedMin": 3,
+     "speedMax": 7,
+     "lifetimeMin": 2,
+     "lifetimeMax": 2.4
+    }
+   },
+   {
+    "id": "rockip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.08,
+     "sizeMax": 0.22,
+     "rotationMin": 0,
+     "rotationMax": 6.28,
+     "angularVelocityMin": -9,
+     "angularVelocityMax": 9,
+     "color": {
+      "srgb": "#8A6E55",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "grav",
+    "type": "Gravity"
+   },
+   {
+    "id": "drag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.15
+    }
+   },
+   {
+    "id": "ground",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.25,
+     "friction": 0.7,
+     "maxBounces": 2
+    }
+   },
+   {
+    "id": "rockmat",
+    "type": "Material",
+    "params": {
+     "blend": "normal"
+    }
+   },
+   {
+    "id": "rockmesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "rock-a",
+     "orientation": "tumble"
+    }
+   },
+   {
+    "id": "dust",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.5,
+     "burst": 40,
+     "rate": 0,
+     "speedMin": 0.5,
+     "speedMax": 2,
+     "lifetimeMin": 1.2,
+     "lifetimeMax": 2
+    }
+   },
+   {
+    "id": "dustip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.5,
+     "sizeMax": 0.9,
+     "rotationMin": 0,
+     "rotationMax": 6.28,
+     "angularVelocityMin": -0.5,
+     "angularVelocityMax": 0.5,
+     "color": {
+      "srgb": "#8C7A66",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "dustlift",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      0.4,
+      0
+     ]
+    }
+   },
+   {
+    "id": "dustdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 2
+    }
+   },
+   {
+    "id": "dustmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "opacity": 0.55
+    }
+   },
+   {
+    "id": "dustbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 2.2
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.1,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "debris.anchor"
+   ],
+   [
+    "hit.start",
+    "debris.trigger"
+   ],
+   [
+    "debris.particles",
+    "rockip.particles"
+   ],
+   [
+    "rockip.particles",
+    "grav.particles"
+   ],
+   [
+    "grav.particles",
+    "drag.particles"
+   ],
+   [
+    "drag.particles",
+    "ground.particles"
+   ],
+   [
+    "ground.particles",
+    "rockmesh.particles"
+   ],
+   [
+    "rockmat.material",
+    "rockmesh.material"
+   ],
+   [
+    "node-target.out",
+    "dust.anchor"
+   ],
+   [
+    "hit.start",
+    "dust.trigger"
+   ],
+   [
+    "dust.particles",
+    "dustip.particles"
+   ],
+   [
+    "dustip.particles",
+    "dustlift.particles"
+   ],
+   [
+    "dustlift.particles",
+    "dustdrag.particles"
+   ],
+   [
+    "dustdrag.particles",
+    "dustbb.particles"
+   ],
+   [
+    "dustmat.material",
+    "dustbb.material"
+   ],
+   [
+    "dustbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "rockmesh.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "count",
+    "label": "Rock count",
+    "value": 36,
+    "bindings": [
+     {
+      "node": "debris",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "force",
+    "label": "Blast speed",
+    "value": 7,
+    "bindings": [
+     {
+      "node": "debris",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "debris",
+      "parameter": "speedMin",
+      "scale": 0.43
+     }
+    ]
+   },
+   {
+    "id": "size",
+    "label": "Rock size",
+    "value": 0.22,
+    "bindings": [
+     {
+      "node": "rockip",
+      "parameter": "sizeMax"
+     },
+     {
+      "node": "rockip",
+      "parameter": "sizeMin",
+      "scale": 0.36
+     }
+    ]
+   },
+   {
+    "id": "dust",
+    "label": "Dust amount",
+    "value": 40,
+    "bindings": [
+     {
+      "node": "dust",
+      "parameter": "burst"
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": "fireball",
   "label": "Fireball",
   "description": "Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.",

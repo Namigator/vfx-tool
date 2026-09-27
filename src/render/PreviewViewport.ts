@@ -19,7 +19,8 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 // Mixed mode (setMixedSource): point simulations and a path source share one clock; render order of
 // both layer kinds comes from layerRenderOrder(renderOrderOffset, visualOrder).
 import type { Diagnostic, ValidationResult, Vec3 } from '../model/types.ts';
-import type { ParticlePreviewLayer, ParticlePreviewPlan, ParticleTrailLayer, PointLightLayer } from '../graph/toParticles.ts';
+import type { MeshLayer, ParticlePreviewLayer, ParticlePreviewPlan, ParticleTrailLayer, PointLightLayer } from '../graph/toParticles.ts';
+import { createBuiltinMesh, type BuiltinMesh } from './builtinMeshes.ts';
 import { valueNoise4 } from '../runtime/noise.ts';
 import { spriteCell } from '../assets/spriteLibrary.ts';
 import { TrailHistory } from './particleTrails.ts';
@@ -249,6 +250,8 @@ export class PreviewViewport {
   #ribbons: RibbonMesh[] = [];
   #trails: TrailMesh[] = [];
   #lights: { layer: PointLightLayer; light: THREE.PointLight; curve: LifeCurveSampler }[] = [];
+  #meshes: { layer: MeshLayer; mesh: THREE.InstancedMesh; material: THREE.Material; size: LifeCurveSampler; color: LifeGradientSampler }[] = [];
+  readonly #meshGeometries = new Map<string, THREE.BufferGeometry>();
   #ribbonKey = '';
   #ribbonCamera = new THREE.Vector3(Number.NaN, 0, 0);
   #drawnPaths = 0;
@@ -309,6 +312,10 @@ export class PreviewViewport {
       // Lit (PointLight nodes illuminate it); ambient π reproduces the former unlit base colour.
       ground = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ color: 0x10131a, roughness: 0.85, metalness: 0, depthWrite: true }));
       this.#scene.add(new THREE.AmbientLight(0xffffff, Math.PI));
+      // Soft key light so lit meshes (rocks, shards) read as 3D; the ground's base colour changes only slightly.
+      const key = new THREE.DirectionalLight(0xffffff, 1.2);
+      key.position.set(3, 6, 4);
+      this.#scene.add(key);
       ground.rotation.x = -Math.PI / 2;
       ground.position.y = -0.001;
       this.#scene.add(ground);
@@ -398,6 +405,22 @@ export class PreviewViewport {
 
   #addPointLayers(plan: ParticlePreviewPlan): void {
     this.#plan = plan;
+    for (const layer of plan.meshes ?? []) {
+      let geometry = this.#meshGeometries.get(layer.mesh);
+      if (!geometry) { geometry = createBuiltinMesh(layer.mesh as BuiltinMesh); this.#meshGeometries.set(layer.mesh, geometry); }
+      const color = new THREE.Color().setStyle(layer.color.srgb), additive = layer.blend === 'additive';
+      const material: THREE.Material = !additive && layer.lit
+        ? new THREE.MeshStandardMaterial({ color, roughness: 0.75, metalness: 0.05, flatShading: true, emissive: color.clone().multiplyScalar(layer.emission), transparent: layer.opacity < 1, opacity: layer.opacity })
+        : new THREE.MeshBasicMaterial({ color: color.clone().multiplyScalar(1 + layer.emission), transparent: additive || layer.opacity < 1, opacity: layer.opacity, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending, depthWrite: !additive });
+      const mesh = new THREE.InstancedMesh(geometry, material, PREVIEW_POOL_SIZE);
+      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(PREVIEW_POOL_SIZE * 3).fill(1), 3);
+      mesh.count = 0;
+      mesh.frustumCulled = false;
+      mesh.renderOrder = layerRenderOrder(layer.renderOrderOffset, layer.visualOrder);
+      this.#scene.add(mesh);
+      this.#meshes.push({ layer, mesh, material, size: compileLifeCurve(layer.sizeOverLife), color: compileLifeGradient(layer.colorOverLife) });
+    }
     for (const layer of plan.lights ?? []) {
       const light = new THREE.PointLight(new THREE.Color().setStyle(layer.color.srgb), 0, layer.range, 2);
       light.position.set(layer.position[0], layer.position[1], layer.position[2]);
@@ -570,6 +593,7 @@ export class PreviewViewport {
     this.#clearLayers();
     this.#quad.dispose();
     for (const t of this.#textures.values()) t.dispose();
+    for (const g of this.#meshGeometries.values()) g.dispose();
     this.#textures.clear();
     this.#grid.geometry.dispose();
     (this.#grid.material as THREE.Material).dispose();
@@ -594,6 +618,8 @@ export class PreviewViewport {
     this.#trails = [];
     for (const l of this.#lights) { this.#scene.remove(l.light); l.light.dispose(); }
     this.#lights = [];
+    for (const m of this.#meshes) { this.#scene.remove(m.mesh); m.mesh.dispose(); m.material.dispose(); }
+    this.#meshes = [];
     this.#sims.clear();
     this.#snapshots.clear();
     this.#clearRibbons();
@@ -726,6 +752,32 @@ export class PreviewViewport {
     for (const t of this.#trails) if (t.layer.systemId === systemId) t.history.push(sim.tick, snap ??= sim.snapshot().particles);
   }
 
+  /** Instanced mesh transforms: size × scale × size-over-life, tumble (random axis, spin) or velocity (+Y forward). */
+  #updateMeshes(alpha: number): void {
+    const step = alpha * PARTICLE_DT, q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), mtx = new THREE.Matrix4(), axis = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), col = new THREE.Color();
+    for (const m of this.#meshes) {
+      const ps = this.#snapshots.get(m.layer.systemId) ?? [], n = Math.min(ps.length, PREVIEW_POOL_SIZE);
+      for (let i = 0; i < n; i++) {
+        const pt = ps[i], u = lifeFraction(pt.ageTicks, pt.lifetimeTicks, alpha), h = fnv1a32Utf8(pt.parentRandomKey);
+        p.set(pt.position[0] + pt.velocity[0] * step, pt.position[1] + pt.velocity[1] * step, pt.position[2] + pt.velocity[2] * step);
+        if (m.layer.orientation === 'velocity' && Math.hypot(pt.velocity[0], pt.velocity[1], pt.velocity[2]) > 1e-6) q.setFromUnitVectors(up, axis.set(pt.velocity[0], pt.velocity[1], pt.velocity[2]).normalize());
+        else {
+          const a = (h & 1023) / 1023 * Math.PI * 2, b = ((h >>> 10) & 1023) / 1023 * 2 - 1, r = Math.sqrt(1 - b * b);
+          const angle = (pt.rotation ?? (h >>> 20) / 4096 * Math.PI * 2) + (pt.angularVelocity ?? 0) * (pt.ageTicks + alpha) * PARTICLE_DT;
+          q.setFromAxisAngle(axis.set(r * Math.cos(a), b, r * Math.sin(a)), angle);
+        }
+        const k = pt.size * m.layer.scale * sampleLifeCurve(m.size, u);
+        s.set(k, k, k);
+        m.mesh.setMatrixAt(i, mtx.compose(p, q, s));
+        sampleLifeGradient(m.color, u, rgbaScratch);
+        m.mesh.setColorAt(i, col.setRGB(rgbaScratch[0], rgbaScratch[1], rgbaScratch[2]));
+      }
+      m.mesh.count = n;
+      m.mesh.instanceMatrix.needsUpdate = true;
+      if (m.mesh.instanceColor) m.mesh.instanceColor.needsUpdate = true;
+    }
+  }
+
   /** Light intensity = peak × window curve × (1 − flicker·noise), zero outside the window. */
   #updateLights(alpha: number): void {
     const tick = (this.#clock ? this.#clock.tick : 0) + alpha;
@@ -815,6 +867,7 @@ export class PreviewViewport {
     }
     this.#updateTrails(alpha);
     this.#updateLights(alpha);
+    this.#updateMeshes(alpha);
   }
 
   #emitFrame(force: boolean): void {
