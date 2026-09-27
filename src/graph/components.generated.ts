@@ -2202,6 +2202,528 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   ]
  },
  {
+  "id": "charge-up",
+  "label": "Charge-up",
+  "description": "Motes pulled and swirled into a growing glowing orb at Source with a rising light (Attract + Vortex).",
+  "durationTicks": 90,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "gather",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 70,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "motes",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 1.8,
+     "rate": 260,
+     "burst": 0,
+     "speedMin": 0,
+     "speedMax": 0.4,
+     "lifetimeMin": 1.2,
+     "lifetimeMax": 1.6
+    }
+   },
+   {
+    "id": "moteip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.02,
+     "sizeMax": 0.035,
+     "rotationMin": 0,
+     "rotationMax": 0,
+     "angularVelocityMin": 0,
+     "angularVelocityMax": 0
+    }
+   },
+   {
+    "id": "pull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 14,
+     "softRadius": 0.15,
+     "killRadius": 0.12
+    }
+   },
+   {
+    "id": "swirl",
+    "type": "Vortex",
+    "params": {
+     "tangential": 4,
+     "inward": 0,
+     "falloff": 2
+    }
+   },
+   {
+    "id": "drag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1.2
+    }
+   },
+   {
+    "id": "motemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "spark-streak",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#9FD8FF",
+      "alpha": 1
+     },
+     "emission": 1
+    }
+   },
+   {
+    "id": "motebb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 6,
+     "pivot": 0.85,
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.2,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "coremat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "variant": 0,
+     "blend": "additive",
+     "tint": {
+      "srgb": "#B8E4FF",
+      "alpha": 1
+     },
+     "emission": 2
+    }
+   },
+   {
+    "id": "core",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1.2,
+     "spin": 3,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.1
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "light",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#7FC4FF",
+      "alpha": 1
+     },
+     "intensity": 40,
+     "range": 6,
+     "flicker": 0.25,
+     "flickerRate": 20,
+     "intensityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-source.out",
+    "motes.anchor"
+   ],
+   [
+    "gather.window",
+    "motes.window"
+   ],
+   [
+    "motes.particles",
+    "moteip.particles"
+   ],
+   [
+    "moteip.particles",
+    "pull.particles"
+   ],
+   [
+    "node-source.out",
+    "pull.anchor"
+   ],
+   [
+    "pull.particles",
+    "swirl.particles"
+   ],
+   [
+    "node-source.out",
+    "swirl.anchor"
+   ],
+   [
+    "swirl.particles",
+    "drag.particles"
+   ],
+   [
+    "drag.particles",
+    "motebb.particles"
+   ],
+   [
+    "motemat.material",
+    "motebb.material"
+   ],
+   [
+    "node-source.out",
+    "core.anchor"
+   ],
+   [
+    "coremat.material",
+    "core.material"
+   ],
+   [
+    "gather.window",
+    "core.window"
+   ],
+   [
+    "node-source.out",
+    "light.anchor"
+   ],
+   [
+    "gather.window",
+    "light.window"
+   ],
+   [
+    "motebb.visual",
+    "node-output.visual"
+   ],
+   [
+    "core.visual",
+    "node-output.visual"
+   ],
+   [
+    "light.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "motes",
+    "label": "Mote rate",
+    "value": 260,
+    "bindings": [
+     {
+      "node": "motes",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "radius",
+    "label": "Gather radius",
+    "value": 1.8,
+    "bindings": [
+     {
+      "node": "motes",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "pull",
+    "label": "Pull strength",
+    "value": 14,
+    "bindings": [
+     {
+      "node": "pull",
+      "parameter": "acceleration"
+     }
+    ]
+   },
+   {
+    "id": "swirl",
+    "label": "Swirl",
+    "value": 4,
+    "bindings": [
+     {
+      "node": "swirl",
+      "parameter": "tangential"
+     }
+    ]
+   },
+   {
+    "id": "core",
+    "label": "Orb size",
+    "value": 1.2,
+    "bindings": [
+     {
+      "node": "core",
+      "parameter": "size"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "tornado",
+  "label": "Tornado",
+  "description": "Dust funnel: rising particles swirled and pulled toward a vertical axis at Source (Vortex + lift).",
+  "durationTicks": 240,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "spin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 220,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "base",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.5,
+     "rate": 260,
+     "burst": 0,
+     "speedMin": 0.5,
+     "speedMax": 1.2,
+     "lifetimeMin": 1.6,
+     "lifetimeMax": 2.4
+    }
+   },
+   {
+    "id": "ip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.18,
+     "sizeMax": 0.32,
+     "rotationMin": 0,
+     "rotationMax": 6.28,
+     "angularVelocityMin": -2,
+     "angularVelocityMax": 2,
+     "color": {
+      "srgb": "#B7AE9E",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "lift",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      3.2,
+      0
+     ]
+    }
+   },
+   {
+    "id": "vortex",
+    "type": "Vortex",
+    "params": {
+     "tangential": 9,
+     "inward": 12,
+     "falloff": 3
+    }
+   },
+   {
+    "id": "drag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1.1
+    }
+   },
+   {
+    "id": "dustmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "opacity": 0.6
+    }
+   },
+   {
+    "id": "dust",
+    "type": "BillboardRenderer",
+    "params": {
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 1.8
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.15,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-source.out",
+    "base.anchor"
+   ],
+   [
+    "spin.window",
+    "base.window"
+   ],
+   [
+    "base.particles",
+    "ip.particles"
+   ],
+   [
+    "ip.particles",
+    "lift.particles"
+   ],
+   [
+    "lift.particles",
+    "vortex.particles"
+   ],
+   [
+    "node-source.out",
+    "vortex.anchor"
+   ],
+   [
+    "vortex.particles",
+    "drag.particles"
+   ],
+   [
+    "drag.particles",
+    "dust.particles"
+   ],
+   [
+    "dustmat.material",
+    "dust.material"
+   ],
+   [
+    "dust.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "amount",
+    "label": "Dust rate",
+    "value": 260,
+    "bindings": [
+     {
+      "node": "base",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "spin",
+    "label": "Spin",
+    "value": 9,
+    "bindings": [
+     {
+      "node": "vortex",
+      "parameter": "tangential"
+     }
+    ]
+   },
+   {
+    "id": "pull",
+    "label": "Funnel pull",
+    "value": 12,
+    "bindings": [
+     {
+      "node": "vortex",
+      "parameter": "inward"
+     }
+    ]
+   },
+   {
+    "id": "base",
+    "label": "Base radius",
+    "value": 0.5,
+    "bindings": [
+     {
+      "node": "base",
+      "parameter": "radius"
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": "fireball",
   "label": "Fireball",
   "description": "Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.",

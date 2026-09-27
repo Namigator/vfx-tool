@@ -13,6 +13,8 @@ const COMPONENTS = [
   ['impact-flash', 'Impact flash', 'Timed glow sprite with a spark burst at Target.', 'impact-flash'],
   ['arc-beam', 'Arc beam', 'Textured electric arc Source→Target on a jagged, re-rolling path with a soft glow ribbon.', 'arc-beam'],
   ['rock-burst', 'Rock burst', 'Lit tumbling rock chunks that bounce and settle, with a rolling dust cloud (earth impact).', 'rock-burst'],
+  ['charge-up', 'Charge-up', 'Motes pulled and swirled into a growing glowing orb at Source with a rising light (Attract + Vortex).', 'charge-up'],
+  ['tornado', 'Tornado', 'Dust funnel: rising particles swirled and pulled toward a vertical axis at Source (Vortex + lift).', 'tornado'],
   ['fireball', 'Fireball', 'Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.', 'fireball'],
 ];
 
@@ -25,6 +27,8 @@ const KNOBS = {
   'impact-flash': [['flash', 'Flash size', [['flash', 'size']]], ['sparks', 'Sparks', [['sparks', 'burst']]], ['speed', 'Spark speed', [['sparks', 'speedMax'], ['sparks', 'speedMin', 0.33]]]],
   'arc-beam': [['width', 'Beam width', [['core', 'width']]], ['jagged', 'Jaggedness', [['jag', 'amplitude']]], ['flicker', 'Re-roll rate', [['jag', 'regenerationHz']]], ['glow', 'Glow width', [['halo', 'width']]]],
   'rock-burst': [['count', 'Rock count', [['debris', 'burst']]], ['force', 'Blast speed', [['debris', 'speedMax'], ['debris', 'speedMin', 0.43]]], ['size', 'Rock size', [['rockip', 'sizeMax'], ['rockip', 'sizeMin', 0.36]]], ['dust', 'Dust amount', [['dust', 'burst']]]],
+  'charge-up': [['motes', 'Mote rate', [['motes', 'rate']]], ['radius', 'Gather radius', [['motes', 'radius']]], ['pull', 'Pull strength', [['pull', 'acceleration']]], ['swirl', 'Swirl', [['swirl', 'tangential']]], ['core', 'Orb size', [['core', 'size']]]],
+  'tornado': [['amount', 'Dust rate', [['base', 'rate']]], ['spin', 'Spin', [['vortex', 'tangential']]], ['pull', 'Funnel pull', [['vortex', 'inward']]], ['base', 'Base radius', [['base', 'radius']]]],
   'fireball': [['travel', 'Travel ticks', [['ball', 'durationTicks']]], ['trail', 'Trail density', [['trailem', 'rate']]], ['core', 'Core size', [['core', 'size']]], ['impact', 'Impact sparks', [['boom', 'burst']]], ['flash', 'Flash size', [['flash', 'size']]], ['light', 'Ball light', [['balllight', 'intensity']]]],
 };
 

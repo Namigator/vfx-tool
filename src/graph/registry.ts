@@ -171,6 +171,35 @@ function particleEvents(): NodeSpec {
   });
 }
 
+function attract(): NodeSpec {
+  return node('Attract', {
+    inputs: [port({ id: 'particles', label: 'Particles', type: 'particles', required: true }), port({ id: 'anchor', label: 'Anchor', type: 'anchor', required: true })],
+    outputs: [port({ id: 'particles', label: 'Particles', type: 'particles' })],
+    parameters: [
+      param({ id: 'acceleration', label: 'Acceleration', type: 'number', unit: 'metersPerSecondSquared', default: 2, min: 0, max: 100 }),
+      param({ id: 'softRadius', label: 'Soft radius', type: 'number', unit: 'meter', default: 0.1, min: 0.01, max: 10, description: 'Pull fades smoothly inside this radius (no singularity at the centre).' }),
+      param({ id: 'killRadius', label: 'Kill radius', type: 'number', unit: 'meter', default: 0, min: 0, max: 10, description: 'Particles reaching this distance die (0 = never): absorption / charge-up.' }),
+    ],
+    disabledBehavior: 'bypass',
+    bypass: { input: 'particles', output: 'particles' },
+  });
+}
+
+function vortex(): NodeSpec {
+  return node('Vortex', {
+    inputs: [port({ id: 'particles', label: 'Particles', type: 'particles', required: true }), port({ id: 'anchor', label: 'Anchor', type: 'anchor', required: true })],
+    outputs: [port({ id: 'particles', label: 'Particles', type: 'particles' })],
+    parameters: [
+      param({ id: 'axis', label: 'Axis', type: 'vec3', unit: 'none', default: [0, 1, 0], min: -1, max: 1 }),
+      param({ id: 'tangential', label: 'Tangential', type: 'number', unit: 'metersPerSecondSquared', default: 3, min: -100, max: 100, description: 'Swirl strength (sign sets the direction).' }),
+      param({ id: 'inward', label: 'Inward', type: 'number', unit: 'metersPerSecondSquared', default: 1, min: -100, max: 100, description: 'Pull toward the axis (negative pushes out).' }),
+      param({ id: 'falloff', label: 'Radius falloff', type: 'number', unit: 'meter', default: 1, min: 0.01, max: 20 }),
+    ],
+    disabledBehavior: 'bypass',
+    bypass: { input: 'particles', output: 'particles' },
+  });
+}
+
 function groundCollision(): NodeSpec {
   return node('GroundCollision', {
     inputs: [port({ id: 'particles', label: 'Particles', type: 'particles', required: true })],
@@ -623,7 +652,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 /** Fresh, independent registry each call. */
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
-    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), groundCollision(), particleEvents(), material(), billboardRenderer(), particleTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(),
+    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), particleEvents(), material(), billboardRenderer(), particleTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(),
     linePath(), bezierPath(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(),
     audioSource(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),

@@ -1,0 +1,276 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "tornado"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "tornado",
+   "durationTicks": 240
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "tornado",
+   "anchorId": "source",
+   "position": [
+    0,
+    0.05,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "Schedule",
+   "id": "spin",
+   "params": {
+    "startTicks": 0,
+    "durationTicks": 220,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "Emitter",
+   "id": "base",
+   "params": {
+    "shape": "disc",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "radius": 0.5,
+    "rate": 260,
+    "burst": 0,
+    "speedMin": 0.5,
+    "speedMax": 1.2,
+    "lifetimeMin": 1.6,
+    "lifetimeMax": 2.4
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "InitialProperties",
+   "id": "ip",
+   "params": {
+    "sizeMin": 0.18,
+    "sizeMax": 0.32,
+    "rotationMin": 0,
+    "rotationMax": 6.28,
+    "angularVelocityMin": -2,
+    "angularVelocityMax": 2,
+    "color": {
+     "srgb": "#B7AE9E",
+     "alpha": 1
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "Gravity",
+   "id": "lift",
+   "params": {
+    "acceleration": [
+     0,
+     3.2,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "Vortex",
+   "id": "vortex",
+   "params": {
+    "tangential": 9,
+    "inward": 12,
+    "falloff": 3
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "Drag",
+   "id": "drag",
+   "params": {
+    "coefficient": 1.1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "Material",
+   "id": "dustmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "blend": "normal",
+    "opacity": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "BillboardRenderer",
+   "id": "dust",
+   "params": {
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.6
+      },
+      {
+       "x": 1,
+       "y": 1.8
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.15,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "node-source.out",
+   "to": "base.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "spin.window",
+   "to": "base.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "base.particles",
+   "to": "ip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "ip.particles",
+   "to": "lift.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "lift.particles",
+   "to": "vortex.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "node-source.out",
+   "to": "vortex.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "vortex.particles",
+   "to": "drag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "drag.particles",
+   "to": "dust.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "dustmat.material",
+   "to": "dust.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "dust.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "tornado"
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "tornado",
+   "ticks": [
+    150
+   ]
+  },
+  true
+ ]
+]

@@ -104,7 +104,7 @@ export const DEFAULT_PREVIEW_SIZE = { min: 0.08, max: 0.16 } as const;
 const EMITTER_PORTS = ['anchor', 'paths', 'trigger', 'window', 'aim'];
 const BILLBOARD_PORTS = ['particles', 'material'];
 const IP_PORTS = ['particles'];
-const FORCE_TYPES = ['Gravity', 'Drag', 'NoiseForce', 'GroundCollision'];
+const FORCE_TYPES = ['Gravity', 'Drag', 'NoiseForce', 'Attract', 'Vortex', 'GroundCollision'];
 
 class Fail extends Error {}
 
@@ -397,8 +397,19 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
 
     const scale = transform.scale;
     const operators: ParticleOperator[] = chain.forces.map((f): ParticleOperator => {
-      noDrivenParams(f, IP_PORTS);
+      noDrivenParams(f, [...IP_PORTS, 'anchor']);
       if (f.node.type === 'Drag') return { kind: 'drag', coefficient: num(f, 'coefficient') };
+      if (f.node.type === 'Attract' || f.node.type === 'Vortex') {
+        const an = into(f.node.id, 'anchor'), anode = an.length === 1 ? sourceNode(an[0].source, f.node.id, 'anchor') : undefined;
+        const ap = anode && anode.node.type === 'Anchor' && anode.effectiveEnabled ? anchorPos.get(param(anode, 'anchorId') as string) : undefined;
+        if (!ap) { report('MISSING_REFERENCE', `${f.node.type} "${f.node.id}" needs an enabled Anchor referencing an existing document anchor.`, f.node.id); return { kind: 'drag', coefficient: 0 }; }
+        const q = rotate(transform.rotation, [ap[0] * scale, ap[1] * scale, ap[2] * scale]);
+        const center: Vec3 = [q[0] + transform.position[0], q[1] + transform.position[1], q[2] + transform.position[2]];
+        if (f.node.type === 'Attract') return { kind: 'attract', center, acceleration: num(f, 'acceleration') * scale, softRadius: num(f, 'softRadius') * scale, killRadius: num(f, 'killRadius') * scale };
+        const ax = param(f, 'axis') as Vec3, al = Math.hypot(ax[0], ax[1], ax[2]);
+        if (!(al > 1e-9)) { report('INVALID_VALUE', 'Vortex axis must be nonzero.', f.node.id, 'axis'); return { kind: 'drag', coefficient: 0 }; }
+        return { kind: 'vortex', center, axis: rotate(transform.rotation, [ax[0] / al, ax[1] / al, ax[2] / al]), tangential: num(f, 'tangential') * scale, inward: num(f, 'inward') * scale, falloff: num(f, 'falloff') * scale };
+      }
       if (f.node.type === 'NoiseForce') return { kind: 'noise', mode: param(f, 'mode') as 'vector' | 'curl', amplitude: num(f, 'amplitude') * scale, frequency: num(f, 'frequency') / scale, evolution: num(f, 'evolution'), randomStreamId: f.node.randomStreamId };
       if (f.node.type === 'GroundCollision') {
         return { kind: 'ground', mode: param(f, 'mode') as 'kill' | 'slide' | 'bounce', restitution: num(f, 'restitution'), friction: num(f, 'friction'), maxBounces: num(f, 'maxBounces') };

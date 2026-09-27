@@ -176,7 +176,7 @@ test('invalid descriptors are rejected with field paths', () => {
   const bad: [unknown, string][] = [
     [{ ...base(), shape: 'cone' }, 'descriptor.shape'],
     [{ ...base(), localSpace: true }, 'descriptor.localSpace'],
-    [base({ operators: [{ kind: 'vortex' } as never] }), 'descriptor.operators[0].kind'],
+    [base({ operators: [{ kind: 'magnet' } as never] }), 'descriptor.operators[0].kind'],
     [base({ lifetimeTicks: { min: 0, max: 5 } }), 'descriptor.lifetimeTicks.min'],
     [base({ lifetimeTicks: { min: 9, max: 5 } }), 'descriptor.lifetimeTicks.max'],
     [base({ rate: { perSecond: 10, startTick: 20, endTick: 10 } }), 'descriptor.rate.endTick'],
@@ -384,4 +384,21 @@ test('rate curve ramps emission over the window and integrates to the expected t
   assert.ok(Math.abs(total - 120) <= 2, `integrates to ~average 0.5 × 240 = 120 (got ${total})`);
   assert.equal(births(d(), 120), 240, 'flat rate unchanged');
   assert.equal(births(d([{ x: 0, y: 1 }, { x: 0.5, y: 1 }, { x: 0.51, y: 0 }]), 120), births(d([{ x: 0, y: 1 }, { x: 0.5, y: 1 }, { x: 0.51, y: 0 }]), 62), 'cut off after the curve drops to 0');
+});
+
+test('attract pulls particles in and kills them at the kill radius; vortex swirls around its axis', () => {
+  const ring = (ops: ParticleEmitterDescriptor['operators']) => base({ shape: 'disc', durationTicks: 200, lifetimeTicks: { min: 199, max: 199 }, sourcePosition: [0, 1, 0],
+    emission: { shape: 'disc', axis: [0, 1, 0], radius: 2, coneAngle: 0, speed: { min: 0, max: 0 } }, bursts: [{ tick: 0, eventRandomKey: 'k', count: 50 }], operators: ops });
+  const at = (d: ParticleEmitterDescriptor, t: number) => { const r = sampleParticlesAtTick(d, t); if (!r.ok) assert.fail(JSON.stringify(r.errors)); return r.value; };
+  const pull = ring([{ kind: 'attract', center: [0, 1, 0], acceleration: 8, softRadius: 0.1, killRadius: 0.15 }, { kind: 'drag', coefficient: 1 }]);
+  const r0 = at(pull, 0).particles.map(p => Math.hypot(p.position[0], p.position[2]));
+  const r1 = at(pull, 30).particles.map(p => Math.hypot(p.position[0], p.position[2]));
+  assert.ok(Math.max(...r1) < Math.max(...r0), 'pulled inward');
+  assert.ok(at(pull, 199).particles.length < 50, 'some absorbed at the kill radius');
+  const swirl = ring([{ kind: 'vortex', center: [0, 1, 0], axis: [0, 1, 0], tangential: 4, inward: 0, falloff: 5 }]);
+  const s = at(swirl, 20).particles;
+  const tangential = s.every(p => { const rx = p.position[0], rz = p.position[2], vx = p.velocity[0], vz = p.velocity[2]; return Math.abs(rx * vx + rz * vz) < 0.35 * Math.hypot(rx, rz) * Math.hypot(vx, vz) + 1e-6 && Math.hypot(vx, vz) > 0.1; });
+  assert.ok(tangential, 'velocity mostly perpendicular to the radius (swirl)');
+  const cross = s.map(p => p.position[0] * p.velocity[2] - p.position[2] * p.velocity[0]);
+  assert.ok(cross.every(c => c < 0) || cross.every(c => c > 0), 'all swirl the same way');
 });
