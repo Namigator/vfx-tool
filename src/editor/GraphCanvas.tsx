@@ -355,6 +355,7 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
     onEdit(`Add component ${getComponent(componentId).label}`, [
       { op: 'set', path: ['graphs', ri], value: next.graphs[ri] },
       { op: 'set', path: ['anchors'], value: next.anchors },
+      { op: 'set', path: ['controls'], value: next.controls },
       { op: 'set', path: ['durationTicks'], value: next.durationTicks },
       { op: 'set', path: ['editor', 'graphs', doc.rootGraphId, 'nodes'], value: next.editor.graphs[doc.rootGraphId].nodes },
     ]);

@@ -40,3 +40,19 @@ test('components bind to the existing Source/Target anchor nodes and never mutat
   assert.ok(doc.anchors.some(a => a.id.endsWith('flamecenter')), 'component-owned anchor added with prefix');
   assert.throws(() => insertComponent(blank, 'nope'), /Unknown component/);
 });
+
+test('components publish bound knobs; changing a knob changes the compiled system', () => {
+  const { doc } = insertComponent(createBlankDocument(), 'fireball');
+  const knob = doc.controls.find(c => c.label === 'Impact sparks')!;
+  assert.ok(knob && knob.bindings[0].nodeId === 'fireball-boom' && knob.value === 120);
+  const burst = (d: typeof doc) => compiles(valid(d)).systems.find(s => s.descriptor.emitterId === 'fireball-boom')!.descriptor.bursts[0].count;
+  assert.equal(burst(doc), 120);
+  const more = structuredClone(doc); more.controls.find(c => c.id === knob.id)!.value = 400;
+  assert.equal(burst(more), 400);
+  const sizes = insertComponent(createBlankDocument(), 'flame-jet').doc;
+  const size = sizes.controls.find(c => c.label === 'Flame size')!;
+  size.value = 0.4;
+  const s = compiles(valid(sizes)).systems[0].descriptor.size;
+  assert.ok(Math.abs(s.max - 0.4) < 1e-9 && Math.abs(s.min - 0.25) < 1e-9, 'scaled binding drives sizeMin');
+  for (const c of COMPONENT_TEMPLATES) assert.ok(c.knobs.length >= 3, `${c.id} has knobs`);
+});

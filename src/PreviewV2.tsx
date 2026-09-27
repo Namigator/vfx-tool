@@ -10,6 +10,7 @@ import { compileParticlePreview } from './graph/toParticles.ts';
 import { compilePathPreview } from './graph/toPaths.ts';
 import { createBlankDocument, createF01Document, createForcesDemoDocument } from './graph/fixtures.ts';
 import { documentFileName, loadDraftText, saveDraft } from './model/persistence.ts';
+import { ControlsPanel } from './editor/ControlsPanel.tsx';
 import { compileAudio } from './graph/toAudio.ts';
 import { choosePreviewMode, createLightningAudioDemoDocument, hasRootAudio, ribbonStyleDiagnostics, type PreviewModeChoice } from './render/previewMode.ts';
 import { AudioTransport, type AudioBufferLike, type AudioContextLike, type BufferSourceLike, type PlayResult } from './audio/transport.ts';
@@ -566,6 +567,10 @@ export default function PreviewV2() {
           </div>
         </section>
         <aside className="pv2-side">
+          <section className="pv2-panel" aria-label="Controls">
+            <h2 className="pv2-heading">Controls</h2>
+            <ControlsPanel document={doc} onEdit={onEdit} />
+          </section>
           <section className="pv2-panel" aria-label="Selected node">
             <h2 className="pv2-heading">Selected node</h2>
             {selectedNode ? (

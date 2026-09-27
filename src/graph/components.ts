@@ -15,6 +15,8 @@ export type ComponentTemplate = {
   nodes: { id: string; type: string; params?: Record<string, unknown> }[];
   /** [from "node.port", to "node.port"]. */
   edges: [string, string][];
+  /** Published big knobs (01 "4–8 primary controls"): document controls bound to component node params. */
+  knobs: { id: string; label: string; value: number; bindings: { node: string; parameter: string; scale?: number }[] }[];
 };
 
 export { COMPONENT_TEMPLATES };
@@ -74,6 +76,26 @@ export function insertComponent(doc: EffectDocumentV2, componentId: string, pref
     let id = `${p}-e-${fn}-${tn}`.replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 60);
     for (let i = 2; g.edges.some(e => e.id === id); i++) id = `${id.replace(/-\d+$/, '')}-${i}`;
     g.edges.push({ id, source, target, order });
+  }
+  // Knobs become document controls bound to the component's (prefixed) nodes; type/unit/bounds come from
+  // the first binding's parameter spec, bounds widened so every scaled binding stays inside its own range.
+  for (const k of c.knobs) {
+    const first = k.bindings[0], node = g.nodes.find(n => n.id === nodeId(first.node))!;
+    const ps = spec(node.type).parameters.find(x => x.id === first.parameter);
+    if (!ps || (ps.type !== 'number' && ps.type !== 'integer')) throw new Error(`Knob "${k.id}" must bind a number parameter.`);
+    const s0 = first.scale ?? 1;
+    let min = (ps.min ?? 0) / s0, max = (ps.max ?? Math.max(1, k.value * 4)) / s0;
+    for (const b of k.bindings) {
+      const bs = spec(g.nodes.find(n => n.id === nodeId(b.node))!.type).parameters.find(x => x.id === b.parameter);
+      if (bs?.min !== undefined) min = Math.max(min, bs.min / (b.scale ?? 1));
+      if (bs?.max !== undefined) max = Math.min(max, bs.max / (b.scale ?? 1));
+    }
+    const value = ps.type === 'integer' ? Math.round(k.value) : k.value;
+    d.controls.push({
+      id: `ctl-${p}-${k.id}`, scopeGraphId: g.id, label: k.label, type: ps.type, unit: ps.unit, value, default: value, min, max,
+      ...(ps.type === 'integer' ? { step: 1 } : {}), section: p === c.id ? c.label : `${c.label} (${p})`, description: `${c.label}: ${k.bindings.map(b => `${b.node}.${b.parameter}${b.scale ? ` ×${b.scale}` : ''}`).join(', ')}`,
+      editPolicy: ps.editPolicy, bindings: k.bindings.map(b => ({ nodeId: nodeId(b.node), parameter: b.parameter, ...(b.scale ? { scale: b.scale } : {}) })),
+    });
   }
   if (c.durationTicks > d.durationTicks) d.durationTicks = c.durationTicks;
   return { doc: d, prefix: p };

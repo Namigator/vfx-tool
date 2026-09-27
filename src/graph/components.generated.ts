@@ -179,6 +179,73 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "trail.visual",
     "node-output.visual"
    ]
+  ],
+  "knobs": [
+   {
+    "id": "count",
+    "label": "Sparks per burst",
+    "value": 90,
+    "bindings": [
+     {
+      "node": "em",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "speed",
+    "label": "Speed",
+    "value": 8,
+    "bindings": [
+     {
+      "node": "em",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "em",
+      "parameter": "speedMin",
+      "scale": 0.375
+     }
+    ]
+   },
+   {
+    "id": "size",
+    "label": "Spark size",
+    "value": 0.045,
+    "bindings": [
+     {
+      "node": "ip",
+      "parameter": "sizeMax"
+     },
+     {
+      "node": "ip",
+      "parameter": "sizeMin",
+      "scale": 0.55
+     }
+    ]
+   },
+   {
+    "id": "trail",
+    "label": "Trail length",
+    "value": 0.25,
+    "bindings": [
+     {
+      "node": "trail",
+      "parameter": "history"
+     }
+    ]
+   },
+   {
+    "id": "gravity-drag",
+    "label": "Air drag",
+    "value": 0.9,
+    "bindings": [
+     {
+      "node": "drag",
+      "parameter": "coefficient"
+     }
+    ]
+   }
   ]
  },
  {
@@ -517,6 +584,84 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "glow.visual",
     "node-output.visual"
    ]
+  ],
+  "knobs": [
+   {
+    "id": "density",
+    "label": "Density",
+    "value": 600,
+    "bindings": [
+     {
+      "node": "em",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "reach",
+    "label": "Reach (speed)",
+    "value": 9,
+    "bindings": [
+     {
+      "node": "em",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "em",
+      "parameter": "speedMin",
+      "scale": 0.78
+     }
+    ]
+   },
+   {
+    "id": "spread",
+    "label": "Spread",
+    "value": 0.1,
+    "bindings": [
+     {
+      "node": "em",
+      "parameter": "coneAngle"
+     }
+    ]
+   },
+   {
+    "id": "turbulence",
+    "label": "Turbulence",
+    "value": 5,
+    "bindings": [
+     {
+      "node": "turb",
+      "parameter": "amplitude"
+     }
+    ]
+   },
+   {
+    "id": "size",
+    "label": "Flame size",
+    "value": 0.16,
+    "bindings": [
+     {
+      "node": "ip",
+      "parameter": "sizeMax"
+     },
+     {
+      "node": "ip",
+      "parameter": "sizeMin",
+      "scale": 0.625
+     }
+    ]
+   },
+   {
+    "id": "light",
+    "label": "Floor light",
+    "value": 40,
+    "bindings": [
+     {
+      "node": "glow",
+      "parameter": "intensity"
+     }
+    ]
+   }
   ]
  },
  {
@@ -696,6 +841,68 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "bb.visual",
     "node-output.visual"
    ]
+  ],
+  "knobs": [
+   {
+    "id": "amount",
+    "label": "Amount",
+    "value": 70,
+    "bindings": [
+     {
+      "node": "em",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "swirl",
+    "label": "Swirl",
+    "value": 2.2,
+    "bindings": [
+     {
+      "node": "swirl",
+      "parameter": "amplitude"
+     }
+    ]
+   },
+   {
+    "id": "size",
+    "label": "Puff size",
+    "value": 0.4,
+    "bindings": [
+     {
+      "node": "ip",
+      "parameter": "sizeMax"
+     },
+     {
+      "node": "ip",
+      "parameter": "sizeMin",
+      "scale": 0.625
+     }
+    ]
+   },
+   {
+    "id": "opacity",
+    "label": "Opacity",
+    "value": 0.35,
+    "bindings": [
+     {
+      "node": "mat",
+      "parameter": "opacity"
+     }
+    ]
+   },
+   {
+    "id": "drag",
+    "label": "Air drag",
+    "value": 1.2,
+    "bindings": [
+     {
+      "node": "drag",
+      "parameter": "coefficient"
+     }
+    ]
+   }
   ]
  },
  {
@@ -846,6 +1053,57 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "bb.visual",
     "node-output.visual"
    ]
+  ],
+  "knobs": [
+   {
+    "id": "flow",
+    "label": "Flow",
+    "value": 260,
+    "bindings": [
+     {
+      "node": "em",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "height",
+    "label": "Jet speed",
+    "value": 6.5,
+    "bindings": [
+     {
+      "node": "em",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "em",
+      "parameter": "speedMin",
+      "scale": 0.77
+     }
+    ]
+   },
+   {
+    "id": "spread",
+    "label": "Spread",
+    "value": 0.22,
+    "bindings": [
+     {
+      "node": "em",
+      "parameter": "coneAngle"
+     }
+    ]
+   },
+   {
+    "id": "bounce",
+    "label": "Bounce",
+    "value": 0.35,
+    "bindings": [
+     {
+      "node": "ground",
+      "parameter": "restitution"
+     }
+    ]
+   }
   ]
  },
  {
@@ -1068,6 +1326,57 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "splashes.visual",
     "node-output.visual"
    ]
+  ],
+  "knobs": [
+   {
+    "id": "rain",
+    "label": "Rain rate",
+    "value": 90,
+    "bindings": [
+     {
+      "node": "clouds",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "area",
+    "label": "Rain area",
+    "value": 1.6,
+    "bindings": [
+     {
+      "node": "clouds",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "splash",
+    "label": "Splash drops",
+    "value": 7,
+    "bindings": [
+     {
+      "node": "splash",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "splash-speed",
+    "label": "Splash speed",
+    "value": 2.4,
+    "bindings": [
+     {
+      "node": "splash",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "splash",
+      "parameter": "speedMin",
+      "scale": 0.42
+     }
+    ]
+   }
   ]
  },
  {
@@ -1260,6 +1569,46 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "bb.visual",
     "node-output.visual"
    ]
+  ],
+  "knobs": [
+   {
+    "id": "flash",
+    "label": "Flash size",
+    "value": 2.2,
+    "bindings": [
+     {
+      "node": "flash",
+      "parameter": "size"
+     }
+    ]
+   },
+   {
+    "id": "sparks",
+    "label": "Sparks",
+    "value": 80,
+    "bindings": [
+     {
+      "node": "sparks",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "speed",
+    "label": "Spark speed",
+    "value": 6,
+    "bindings": [
+     {
+      "node": "sparks",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "sparks",
+      "parameter": "speedMin",
+      "scale": 0.33
+     }
+    ]
+   }
   ]
  },
  {
@@ -1800,6 +2149,74 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "impactlight.visual",
     "node-output.visual"
    ]
+  ],
+  "knobs": [
+   {
+    "id": "travel",
+    "label": "Travel ticks",
+    "value": 40,
+    "bindings": [
+     {
+      "node": "ball",
+      "parameter": "durationTicks"
+     }
+    ]
+   },
+   {
+    "id": "trail",
+    "label": "Trail density",
+    "value": 900,
+    "bindings": [
+     {
+      "node": "trailem",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "core",
+    "label": "Core size",
+    "value": 1.4,
+    "bindings": [
+     {
+      "node": "core",
+      "parameter": "size"
+     }
+    ]
+   },
+   {
+    "id": "impact",
+    "label": "Impact sparks",
+    "value": 120,
+    "bindings": [
+     {
+      "node": "boom",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "flash",
+    "label": "Flash size",
+    "value": 3,
+    "bindings": [
+     {
+      "node": "flash",
+      "parameter": "size"
+     }
+    ]
+   },
+   {
+    "id": "light",
+    "label": "Ball light",
+    "value": 30,
+    "bindings": [
+     {
+      "node": "balllight",
+      "parameter": "intensity"
+     }
+    ]
+   }
   ]
  }
 ];
