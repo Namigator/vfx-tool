@@ -29,3 +29,31 @@ export function loadDraftText(storage: DraftStorage | undefined): string | null 
 export function documentFileName(doc: EffectDocumentV2): string {
   return `${(doc.name || 'effect').replace(/[^\w.-]+/g, '_').replace(/^_+|_+$/g, '') || 'effect'}.vfx.json`;
 }
+
+// Project shelf (13-PERSISTENCE, second slice): up to MAX_SHELF named documents kept in browser storage,
+// so several effects survive side by side. Same-name saves replace; entries are newest first.
+export const SHELF_KEY = 'vfx-studio.v2.projects';
+export const MAX_SHELF = 50;
+export type ShelfEntry = { name: string; savedAt: string; text: string };
+
+export function readShelf(storage: DraftStorage | undefined): ShelfEntry[] {
+  try {
+    const raw = storage ? JSON.parse(storage.getItem(SHELF_KEY) ?? '[]') : [];
+    return Array.isArray(raw) ? raw.filter((e): e is ShelfEntry => !!e && typeof e.name === 'string' && typeof e.savedAt === 'string' && typeof e.text === 'string').slice(0, MAX_SHELF) : [];
+  } catch { return []; }
+}
+
+export function saveToShelf(storage: DraftStorage, doc: EffectDocumentV2, now = new Date()): { ok: true; entries: ShelfEntry[] } | { ok: false; message: string } {
+  const name = (doc.name || 'effect').trim() || 'effect';
+  const rest = readShelf(storage).filter(e => e.name !== name);
+  if (rest.length >= MAX_SHELF) return { ok: false, message: `The project shelf is full (${MAX_SHELF}). Remove a project or download JSON instead.` };
+  const entries = [{ name, savedAt: now.toISOString(), text: JSON.stringify(doc) }, ...rest];
+  try { storage.setItem(SHELF_KEY, JSON.stringify(entries)); } catch (e) { return { ok: false, message: e instanceof Error ? e.message : String(e) }; }
+  return { ok: true, entries };
+}
+
+export function removeFromShelf(storage: DraftStorage, name: string): ShelfEntry[] {
+  const entries = readShelf(storage).filter(e => e.name !== name);
+  try { storage.setItem(SHELF_KEY, JSON.stringify(entries)); } catch { /* storage unavailable: the in-memory list still updates */ }
+  return entries;
+}

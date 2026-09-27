@@ -18,7 +18,8 @@
 .pv2 button:disabled { opacity: .45; cursor: default; }
 .pv2 button:focus-visible, .pv2 summary:focus-visible { outline: 2px solid #7fb4ff; outline-offset: 2px; }
 .pv2-file-input { display: none; }
-.pv2-history { display: flex; gap: 6px; }
+.pv2-history { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pv2-history select { max-width: 12rem; min-width: 0; text-overflow: ellipsis; }
 /* Default keeps a usable preview (>=40vh); expanded makes the map ~75vh and lets the stage scroll to the graph. */
 .pv2-stage > .pv2-host { flex: 0 0 auto; height: max(40vh, 240px); }
 .pv2-stage.pv2-expanded { overflow-y: auto; }

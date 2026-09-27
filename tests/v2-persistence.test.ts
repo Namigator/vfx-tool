@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DRAFT_KEY, documentFileName, loadDraftText, saveDraft } from '../src/model/persistence.ts';
+import { DRAFT_KEY, MAX_SHELF, documentFileName, loadDraftText, readShelf, removeFromShelf, saveDraft, saveToShelf } from '../src/model/persistence.ts';
 import { createBlankDocument, createF01Document } from '../src/graph/fixtures.ts';
 import { validateDocument } from '../src/model/document.ts';
 import { createRegistry } from '../src/graph/registry.ts';
@@ -32,4 +32,21 @@ test('blank document validates and file names are safe', () => {
   assert.deepEqual(b.graphs[0].nodes.map(n => n.type).sort(), ['Anchor', 'Anchor', 'EffectOutput']);
   assert.equal(documentFileName({ ...b, name: 'My Fire: v2 / final' }), 'My_Fire_v2_final.vfx.json');
   assert.equal(documentFileName({ ...b, name: '' }), 'effect.vfx.json');
+});
+
+test('project shelf keeps named documents newest first, replaces same names, caps at MAX_SHELF, removes by name', () => {
+  const s = memory(), a = { ...createF01Document(), name: 'Alpha' }, b = { ...createBlankDocument(), name: 'Beta' };
+  assert.ok(saveToShelf(s, a, new Date(1)).ok);
+  assert.ok(saveToShelf(s, b, new Date(2)).ok);
+  assert.ok(saveToShelf(s, { ...a, durationTicks: 90 }, new Date(3)).ok);
+  const shelf = readShelf(s);
+  assert.deepEqual(shelf.map(e => e.name), ['Alpha', 'Beta']);
+  assert.equal(JSON.parse(shelf[0].text).durationTicks, 90);
+  assert.deepEqual(removeFromShelf(s, 'Alpha').map(e => e.name), ['Beta']);
+  for (let i = 0; i < MAX_SHELF - 1; i++) assert.ok(saveToShelf(s, { ...b, name: `p${i}` }).ok);
+  const full = saveToShelf(s, { ...b, name: 'one-too-many' });
+  assert.ok(!full.ok && /full/.test(full.message));
+  assert.ok(saveToShelf(s, { ...b, name: 'p3' }).ok, 'replacing an existing name is allowed when full');
+  s.m.set('vfx-studio.v2.projects', '{broken');
+  assert.deepEqual(readShelf(s), []);
 });

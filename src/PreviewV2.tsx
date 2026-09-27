@@ -9,7 +9,7 @@ import { createRegistry } from './graph/registry.ts';
 import { compileParticlePreview } from './graph/toParticles.ts';
 import { compilePathPreview } from './graph/toPaths.ts';
 import { createBlankDocument, createF01Document, createForcesDemoDocument } from './graph/fixtures.ts';
-import { documentFileName, loadDraftText, saveDraft } from './model/persistence.ts';
+import { documentFileName, loadDraftText, readShelf, removeFromShelf, saveDraft, saveToShelf, type ShelfEntry } from './model/persistence.ts';
 import { ControlsPanel } from './editor/ControlsPanel.tsx';
 import { compileAudio } from './graph/toAudio.ts';
 import { choosePreviewMode, createLightningAudioDemoDocument, hasRootAudio, ribbonStyleDiagnostics, type PreviewModeChoice } from './render/previewMode.ts';
@@ -303,6 +303,15 @@ export default function PreviewV2() {
   }, []);
   const openInputRef = useRef<HTMLInputElement>(null);
 
+  // Project shelf: several named effects kept in browser storage (Keep / choose / Remove).
+  const [shelf, setShelf] = useState<ShelfEntry[]>(() => readShelf(typeof localStorage === 'undefined' ? undefined : localStorage));
+  const [shelfPick, setShelfPick] = useState('');
+  const keepProject = useCallback(() => {
+    const r = saveToShelf(localStorage, historyRef.current!.snapshot());
+    if (r.ok) { setShelf(r.entries); setShelfPick(r.entries[0].name); setSaveStatus(`Kept "${r.entries[0].name}" in projects`); }
+    else setSaveStatus(r.message);
+  }, []);
+
   /** Downloads the exact mix held for the current audio revision; never re-renders. */
   const downloadWav = useCallback(() => {
     const held = audioRef.current;
@@ -519,10 +528,16 @@ export default function PreviewV2() {
               : 'Preview of graph data: particles with textured sprites, trails and lights. No bloom; sound is auditioned separately.'}
         </span>
         <div className="pv2-history" role="group" aria-label="File">
-          <button type="button" onClick={() => replace(toText(createBlankDocument()), 'New blank effect')} title="Start a new blank effect (Undo returns to the previous one)">New</button>
+          <button type="button" onClick={() => { setShelfPick(''); replace(toText(createBlankDocument()), 'New blank effect'); }} title="Start a new blank effect (clears undo history — Keep or Save first)">New</button>
           <button type="button" onClick={() => openInputRef.current?.click()} title="Open a .vfx.json document">Open…</button>
           <input ref={openInputRef} type="file" accept=".json,application/json" hidden onChange={e => { const f = e.currentTarget.files?.[0]; e.currentTarget.value = ''; if (f) void f.text().then(t => replace(t, `Open ${f.name}`)); }} />
           <button type="button" onClick={downloadDocument} title="Download this effect as a .vfx.json file">Save .json</button>
+          <button type="button" onClick={keepProject} title="Keep a copy of this effect in the local project shelf (same name replaces)">Keep</button>
+          <select aria-label="Projects" value={shelfPick} onChange={e => { const name = e.currentTarget.value; setShelfPick(name); const entry = shelf.find(s => s.name === name); if (entry) replace(entry.text, `Open project ${name}`); }}>
+            <option value="">Projects ({shelf.length})…</option>
+            {shelf.map(s => <option key={s.name} value={s.name}>{s.name} — {new Date(s.savedAt).toLocaleString()}</option>)}
+          </select>
+          <button type="button" disabled={!shelfPick} onClick={() => { setShelf(removeFromShelf(localStorage, shelfPick)); setSaveStatus(`Removed "${shelfPick}" from projects`); setShelfPick(''); }} title="Remove the chosen project from the shelf (the open effect is untouched)">Remove</button>
           <span className="pv2-note" role="status" aria-live="polite">{saveStatus}</span>
         </div>
         <div className="pv2-history" role="group" aria-label="History">
