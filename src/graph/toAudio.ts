@@ -159,16 +159,54 @@ export function compileAudio(input: unknown): ValidationResult<AudioCompilePlan>
   }
   // Abort before any chain walk, renderVoice or mixStereo allocation.
   if (errors.length) return { ok: false, errors };
-  /** Validates one AudioSource and its Schedule.start cue; returns the voice spec without rendering. */
-  /** Repeat `k` of a repeating Schedule cue (k = 0 for once/window). */
-  const prepare = (src: ExpandedNode, k = 0): PreparedVoice => {
+  /** One cue: repeat `k` of a Schedule.start (k = 0 for once/window), shifted by any EventDelay on the way. */
+  type Cue = { sched: ExpandedNode; k: number; cueTick: number };
+  /**
+   * The cues reaching consumer.port: one Schedule.start, or several through 05 EventDelay / MergeEvents
+   * (delays add up; a disabled EventDelay passes through, a disabled MergeEvents is empty).
+   */
+  const cuesOf = (consumer: string, port: string, delay = 0, depth = 0): Cue[] => {
+    const cs = into(consumer, port);
+    const route = cs.length === 1 && cs[0].source.kind === 'node' ? nodes.get(cs[0].source.nodeId) : undefined;
+    if (depth > 0 || (route && (route.node.type === 'EventDelay' || route.node.type === 'MergeEvents'))) {
+      if (depth > 16) fail('GRAPH_CYCLE', `Event routing into "${consumer}" is nested deeper than 16 levels.`, consumer);
+      const out: Cue[] = [];
+      for (const c of cs) {
+        const n = sourceNode(c.source, consumer, port);
+        if (n.node.type === 'EventDelay' || n.node.type === 'MergeEvents') {
+          if (n.node.type === 'MergeEvents' && !n.effectiveEnabled) continue;
+          noDrivenParams(n, ['events']);
+          const d = n.node.type === 'EventDelay' && n.effectiveEnabled ? num(n, 'delayTicks') : 0;
+          out.push(...cuesOf(n.node.id, 'events', delay + d, depth + 1));
+          continue;
+        }
+        if (n.node.type !== 'Schedule' || c.source.kind !== 'node' || c.source.port !== 'start') fail('UNKNOWN_NODE', `Event input of "${consumer}" is fed by ${n.node.type} ("${n.node.id}"); only Schedule.start is supported by the audio compiler.`, n.node.id);
+        if (!n.effectiveEnabled) continue;
+        out.push(...scheduleCues(n, delay, true));
+      }
+      return out;
+    }
+    return scheduleCues(single(consumer, port, 'Schedule', 'start'), 0, false);
+  };
+  /** Cues of one Schedule.start; a routed cue at/after the document end is dropped, a direct one is an error. */
+  const scheduleCues = (sched: ExpandedNode, delay: number, routed: boolean): Cue[] => {
+    noDrivenParams(sched, []);
+    const repeat = param(sched, 'mode') === 'repeat', firstCue = num(sched, 'startTicks'), interval = num(sched, 'repeatIntervalTicks');
+    const count = Math.max(1, Math.min(repeat ? num(sched, 'repeatCount') : 1, repeat ? Math.ceil((doc.durationTicks - firstCue) / Math.max(1, interval)) : 1));
+    const out: Cue[] = [];
+    for (let k = 0; k < count; k++) {
+      const cueTick = firstCue + (repeat ? k * interval : 0) + delay;
+      if (cueTick >= doc.durationTicks && routed) break;
+      out.push({ sched, k, cueTick });
+    }
+    return out;
+  };
+  /** Validates one AudioSource for one cue; returns the voice spec without rendering. */
+  const prepare = (src: ExpandedNode, cue: Cue): PreparedVoice => {
     const sid = src.node.id;
     noDrivenParams(src, SOURCE_PORTS);
     if (into(sid, 'window').length) fail('INVALID_VALUE', `AudioSource "${sid}" window input is connected; audio windows are not supported yet. Disconnect it.`, sid);
-    const sched = single(sid, 'trigger', 'Schedule', 'start');
-    noDrivenParams(sched, []);
-    const repeat = param(sched, 'mode') === 'repeat';
-    const cueTick = num(sched, 'startTicks') + (repeat ? k * num(sched, 'repeatIntervalTicks') : 0);
+    const { sched, k, cueTick } = cue;
     if (cueTick >= doc.durationTicks) fail('INVALID_VALUE', `Schedule cue at tick ${cueTick} is at/after the document end (${doc.durationTicks}); it would never fire.`, sched.node.id, 'startTicks');
     // Policy: the cue must fire before the document end, but the source offset and tail may extend past the
     // visual duration, bounded only by the offset and mix caps. Schedule.durationTicks does not affect `start`.
@@ -217,15 +255,13 @@ export function compileAudio(input: unknown): ValidationResult<AudioCompilePlan>
     if (!cur.effectiveEnabled) fail('INVALID_VALUE', `AudioSource "${cur.node.id}" is disabled; disabled nodes in the audio chain are not supported yet. Enable it or disconnect it.`, cur.node.id);
     if (cur.groupPath.length) fail('INVALID_VALUE', `AudioSource "${cur.node.id}" is inside a group; grouped audio chains are not supported by the audio compiler yet.`, cur.node.id);
     chainIds.add(cur.node.id);
-    // A repeating Schedule yields one voice per repeat that fires before the document end.
-    const sch = single(cur.node.id, 'trigger', 'Schedule', 'start'), repeats = param(sch, 'mode') === 'repeat' ? num(sch, 'repeatCount') : 1;
-    const firstCue = num(sch, 'startTicks'), interval = num(sch, 'repeatIntervalTicks');
-    const count = Math.max(1, Math.min(repeats, param(sch, 'mode') === 'repeat' ? Math.ceil((doc.durationTicks - firstCue) / Math.max(1, interval)) : 1));
+    // A repeating Schedule yields one voice per repeat that fires before the document end; routed events add voices.
+    const cues = cuesOf(cur.node.id, 'trigger');
     const filters = mods.filter(m => m.node.type === 'AudioFilter').map(m => ({ mode: param(m, 'mode') as 'lowpass' | 'highpass' | 'bandpass', cutoffHz: num(m, 'cutoffHz'), cutoffEndHz: num(m, 'cutoffEndHz'), q: num(m, 'q') }));
     const envelopes = mods.filter(m => m.node.type === 'AudioEnvelope').map(m => ({ attack: num(m, 'attack'), hold: num(m, 'hold'), release: num(m, 'release'), curve: param(m, 'curve') as 'linear' | 'exponential' }));
     const out: PreparedVoice[] = [];
-    for (let k = 0; k < count; k++) {
-      const p = prepare(cur, k);
+    for (const cue of cues) {
+      const p = prepare(cur, cue);
       if (filters.length) p.voice.filters = filters;
       if (envelopes.length) p.voice.envelopes = envelopes;
       out.push(p);
@@ -295,7 +331,8 @@ export function compileAudio(input: unknown): ValidationResult<AudioCompilePlan>
       const f0 = into(out.node.id, 'audio');
       if (f0.length !== 1 || f0[0].source.kind !== 'node') fail('MISSING_REFERENCE', `Input "audio" of "${out.node.id}" needs exactly one audio connection.`, out.node.id);
       const ps = walkVoices(sourceNode(f0[0].source, out.node.id, 'audio'), out.node.id, chain);
-      if (ps.length !== 1) fail('INVALID_VALUE', `Repeating Schedule "${ps[0].scheduleNodeId}" produces ${ps.length} voices; put an AudioMix between the source chain and AudioOutput "${out.node.id}".`, ps[0].scheduleNodeId, 'mode');
+      if (ps.length === 0) fail('INVALID_VALUE', `Audio chain into "${out.node.id}" has no cue before the document end (routed events were dropped or disabled).`, out.node.id);
+      if (ps.length !== 1) fail('INVALID_VALUE', `Schedule "${ps[0].scheduleNodeId}" (repeat or routed events) produces ${ps.length} voices; put an AudioMix between the source chain and AudioOutput "${out.node.id}".`, ps[0].scheduleNodeId, 'mode');
       const p = ps[0];
       guard(p.sourceNodeId, () => assertVoiceBudget([p.voice]));
       const rendered = render(p);

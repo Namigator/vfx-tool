@@ -355,3 +355,20 @@ test('orphan AudioMix drafts warn and do not change the direct chain', () => {
   assert.deepEqual(r.value.mix.left, base.mix.left);
   assert.ok(r.warnings.some(w => w.nodeId === 'n-omix' && w.severity === 'warning'));
 });
+
+test('EventDelay shifts the audio cue; MergeEvents with two cues needs an AudioMix; cues past the end are dropped', () => {
+  const routed = (delay: number, merge: boolean) => audioDoc({ source: 'oscillator', durationTicks: 5 }, d => {
+    const g = root(d);
+    g.edges = g.edges.filter(e => e.id !== 'e-trig');
+    g.nodes.push(node('n-delay', 'EventDelay', { delayTicks: delay }));
+    g.edges.push(edge('e-d', 'n-cue', 'start', 'n-delay', 'events'));
+    if (merge) {
+      g.nodes.push(node('n-merge', 'MergeEvents'));
+      g.edges.push(edge('e-m1', 'n-cue', 'start', 'n-merge', 'events'), edge('e-m2', 'n-delay', 'event', 'n-merge', 'events', 1), edge('e-mt', 'n-merge', 'event', 'n-src', 'trigger'));
+    } else g.edges.push(edge('e-dt', 'n-delay', 'event', 'n-src', 'trigger'));
+  });
+  const p = plan(routed(7, false));
+  assert.deepEqual([p.cueTick, p.startSample, p.eventRandomKey], [17, 17 * 800, scheduleEventRandomKey('rs-n-cue', 17, 0)]);
+  assert.ok(errorsOf(compileAudio(routed(7, true))).some(e => /2 voices; put an AudioMix/.test(e.message)));
+  assert.ok(errorsOf(compileAudio(routed(500, false))).some(e => /no cue before the document end/.test(e.message)));
+});
