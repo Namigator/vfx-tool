@@ -8,13 +8,13 @@ import { compileParticlePreview } from '../src/graph/toParticles.ts';
 import { compilePathPreview } from '../src/graph/toPaths.ts';
 
 const valid = (d: unknown) => { const v = validateDocument(d, { registry: createRegistry() }); if (!v.ok) assert.fail(JSON.stringify(v.errors.slice(0, 3))); return v.value; };
-const compiles = (d: unknown) => { const r = compileParticlePreview(d, { ribbonsHandled: true }); if (!r.ok) assert.fail(JSON.stringify(r.errors.slice(0, 3))); return r.value; };
+const compiles = (d: unknown) => { const r = compileParticlePreview(d, { ribbonsHandled: true, audioHandled: true }); if (!r.ok) assert.fail(JSON.stringify(r.errors.slice(0, 3))); return r.value; };
 
 test('every component inserts into a blank document, validates and compiles', () => {
   assert.ok(COMPONENT_TEMPLATES.length >= 7);
   for (const c of COMPONENT_TEMPLATES) {
     const { doc } = insertComponent(createBlankDocument(), c.id);
-    const p = compiles(valid(doc)), r = compilePathPreview(doc, 30);
+    const p = compiles(valid(doc)), r = compilePathPreview(doc, 30, { audioHandled: true });
     if (!r.ok) assert.fail(JSON.stringify(r.errors.slice(0, 3)));
     assert.ok(p.layers.length + p.trails.length + r.value.layers.length > 0, `${c.id} draws something`);
   }
@@ -57,4 +57,17 @@ test('components publish bound knobs; changing a knob changes the compiled syste
   const s = compiles(valid(sizes)).systems[0].descriptor.size;
   assert.ok(Math.abs(s.max - 0.4) < 1e-9 && Math.abs(s.min - 0.25) < 1e-9, 'scaled binding drives sizeMin');
   for (const c of COMPONENT_TEMPLATES) assert.ok(c.knobs.length >= 3, `${c.id} has knobs`);
+});
+
+test('sound-carrying components share one audio mix/output, so several can be combined', async () => {
+  const { compileAudio } = await import('../src/graph/toAudio.ts');
+  let d = createBlankDocument();
+  d = insertComponent(d, 'fireball').doc;
+  d = insertComponent(d, 'fireball').doc;
+  const g = d.graphs[0];
+  assert.equal(g.nodes.filter(n => n.type === 'AudioMix').length, 1);
+  assert.equal(g.nodes.filter(n => n.type === 'AudioOutput').length, 1);
+  const a = compileAudio(valid(d));
+  if (!a.ok) assert.fail(JSON.stringify(a.errors.slice(0, 3)));
+  assert.equal(a.value.kind === 'mix' && a.value.voices.length, 8, 'both fireballs contribute their four voices');
 });

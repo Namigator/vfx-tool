@@ -4663,6 +4663,130 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       ]
      }
     }
+   },
+   {
+    "id": "whoosh",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "pink",
+     "durationTicks": 44,
+     "gain": 1.6
+    }
+   },
+   {
+    "id": "whooshband",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "bandpass",
+     "cutoffHz": 350,
+     "cutoffEndHz": 1800,
+     "q": 1.3
+    }
+   },
+   {
+    "id": "whooshenv",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.12,
+     "hold": 0.45,
+     "release": 0.18,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "boomsound",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "brown",
+     "durationTicks": 70,
+     "gain": 1.6
+    }
+   },
+   {
+    "id": "boomlow",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "lowpass",
+     "cutoffHz": 1400,
+     "cutoffEndHz": 140,
+     "q": 0.8
+    }
+   },
+   {
+    "id": "boomenv",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.003,
+     "hold": 0.05,
+     "release": 1,
+     "curve": "exponential"
+    }
+   },
+   {
+    "id": "thump",
+    "type": "AudioSource",
+    "params": {
+     "source": "chirp",
+     "chirpStartHz": 120,
+     "chirpEndHz": 40,
+     "chirpSweep": "exponential",
+     "durationTicks": 30,
+     "gain": 1
+    }
+   },
+   {
+    "id": "thumpenv",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.002,
+     "hold": 0.02,
+     "release": 0.45,
+     "curve": "exponential"
+    }
+   },
+   {
+    "id": "crackle",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "white",
+     "durationTicks": 24,
+     "gain": 0.5
+    }
+   },
+   {
+    "id": "cracklehp",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "highpass",
+     "cutoffHz": 2500,
+     "cutoffEndHz": 5000,
+     "q": 0.9
+    }
+   },
+   {
+    "id": "crackleenv",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.001,
+     "hold": 0.03,
+     "release": 0.3,
+     "curve": "exponential"
+    }
+   },
+   {
+    "id": "mix",
+    "type": "AudioMix",
+    "params": {
+     "masterGain": 0.9
+    }
+   },
+   {
+    "id": "audioout",
+    "type": "AudioOutput",
+    "params": {}
    }
   ],
   "edges": [
@@ -4801,6 +4925,74 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    [
     "impactlight.visual",
     "node-output.visual"
+   ],
+   [
+    "flight.start",
+    "whoosh.trigger"
+   ],
+   [
+    "whoosh.audio",
+    "whooshband.audio"
+   ],
+   [
+    "whooshband.audio",
+    "whooshenv.audio"
+   ],
+   [
+    "whooshenv.audio",
+    "mix.inputs"
+   ],
+   [
+    "impactwin.start",
+    "boomsound.trigger"
+   ],
+   [
+    "boomsound.audio",
+    "boomlow.audio"
+   ],
+   [
+    "boomlow.audio",
+    "boomenv.audio"
+   ],
+   [
+    "boomenv.audio",
+    "mix.inputs"
+   ],
+   [
+    "impactwin.start",
+    "thump.trigger"
+   ],
+   [
+    "thump.audio",
+    "thumpenv.audio"
+   ],
+   [
+    "thumpenv.audio",
+    "mix.inputs"
+   ],
+   [
+    "impactwin.start",
+    "crackle.trigger"
+   ],
+   [
+    "crackle.audio",
+    "cracklehp.audio"
+   ],
+   [
+    "cracklehp.audio",
+    "crackleenv.audio"
+   ],
+   [
+    "crackleenv.audio",
+    "mix.inputs"
+   ],
+   [
+    "mix.audio",
+    "audioout.audio"
+   ],
+   [
+    "audioout.audio",
+    "node-output.audio"
    ]
   ],
   "knobs": [

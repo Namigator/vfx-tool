@@ -55,12 +55,18 @@ export function insertComponent(doc: EffectDocumentV2, componentId: string, pref
     endpoint.set(key, nid);
     if (want.anchorId && !d.anchors.some(a => a.id === want.anchorId)) d.anchors.push({ id: want.anchorId, name: want.anchorId, position: want.anchorId === 'source' ? [-2, 1, 0] : [2, 1, 0] });
   }
+  // One audio chain per document: template AudioMix / AudioOutput nodes reuse the document's existing ones.
+  for (const type of ['AudioMix', 'AudioOutput']) {
+    const existing = g.nodes.find(n => n.type === type), mine = c.nodes.find(n => n.type === type);
+    if (existing && mine) endpoint.set(mine.id, existing.id);
+  }
   const anchorIds = new Map(c.anchors.map(a => [a.id, `${p}-${a.id}`]));
   for (const a of c.anchors) d.anchors.push({ id: anchorIds.get(a.id)!, name: `${c.label} ${a.id}`, position: [...a.position] as Vec3 });
   const nodeId = (id: string) => endpoint.get(id) ?? `${p}-${id}`;
   const layout = d.editor.graphs[g.id]?.nodes;
   const baseY = layout ? Math.max(0, ...Object.values(layout).map(v => v.y)) + 220 : 0;
   c.nodes.forEach((n, i) => {
+    if (endpoint.has(n.id)) return; // Reused audio mix/output.
     const s = spec(n.type), id = nodeId(n.id);
     const params = structuredClone(n.params ?? {}) as Record<string, ParameterValue>;
     if (n.type === 'Anchor' && typeof params.anchorId === 'string' && anchorIds.has(params.anchorId)) params.anchorId = anchorIds.get(params.anchorId)!;
@@ -72,6 +78,7 @@ export function insertComponent(doc: EffectDocumentV2, componentId: string, pref
     const [fn, fp] = [from.slice(0, from.lastIndexOf('.')), from.slice(from.lastIndexOf('.') + 1)];
     const [tn, tp] = [to.slice(0, to.lastIndexOf('.')), to.slice(to.lastIndexOf('.') + 1)];
     const source = { nodeId: nodeId(fn), port: fp }, target = { nodeId: nodeId(tn), port: tp };
+    if (g.edges.some(e => e.source.nodeId === source.nodeId && e.source.port === source.port && e.target.nodeId === target.nodeId && e.target.port === target.port)) continue; // Shared chain already wired.
     const order = g.edges.filter(e => e.target.nodeId === target.nodeId && e.target.port === target.port).length;
     let id = `${p}-e-${fn}-${tn}`.replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 60);
     for (let i = 2; g.edges.some(e => e.id === id); i++) id = `${id.replace(/-\d+$/, '')}-${i}`;

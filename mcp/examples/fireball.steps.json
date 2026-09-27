@@ -791,6 +791,318 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "fireball",
+   "type": "AudioSource",
+   "id": "whoosh",
+   "params": {
+    "source": "noise",
+    "noiseColor": "pink",
+    "durationTicks": 44,
+    "gain": 1.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fireball",
+   "type": "AudioFilter",
+   "id": "whooshband",
+   "params": {
+    "mode": "bandpass",
+    "cutoffHz": 350,
+    "cutoffEndHz": 1800,
+    "q": 1.3
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fireball",
+   "type": "AudioEnvelope",
+   "id": "whooshenv",
+   "params": {
+    "attack": 0.12,
+    "hold": 0.45,
+    "release": 0.18,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fireball",
+   "type": "AudioSource",
+   "id": "boomsound",
+   "params": {
+    "source": "noise",
+    "noiseColor": "brown",
+    "durationTicks": 70,
+    "gain": 1.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fireball",
+   "type": "AudioFilter",
+   "id": "boomlow",
+   "params": {
+    "mode": "lowpass",
+    "cutoffHz": 1400,
+    "cutoffEndHz": 140,
+    "q": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fireball",
+   "type": "AudioEnvelope",
+   "id": "boomenv",
+   "params": {
+    "attack": 0.003,
+    "hold": 0.05,
+    "release": 1,
+    "curve": "exponential"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fireball",
+   "type": "AudioSource",
+   "id": "thump",
+   "params": {
+    "source": "chirp",
+    "chirpStartHz": 120,
+    "chirpEndHz": 40,
+    "chirpSweep": "exponential",
+    "durationTicks": 30,
+    "gain": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fireball",
+   "type": "AudioEnvelope",
+   "id": "thumpenv",
+   "params": {
+    "attack": 0.002,
+    "hold": 0.02,
+    "release": 0.45,
+    "curve": "exponential"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fireball",
+   "type": "AudioSource",
+   "id": "crackle",
+   "params": {
+    "source": "noise",
+    "noiseColor": "white",
+    "durationTicks": 24,
+    "gain": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fireball",
+   "type": "AudioFilter",
+   "id": "cracklehp",
+   "params": {
+    "mode": "highpass",
+    "cutoffHz": 2500,
+    "cutoffEndHz": 5000,
+    "q": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fireball",
+   "type": "AudioEnvelope",
+   "id": "crackleenv",
+   "params": {
+    "attack": 0.001,
+    "hold": 0.03,
+    "release": 0.3,
+    "curve": "exponential"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fireball",
+   "type": "AudioMix",
+   "id": "mix",
+   "params": {
+    "masterGain": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fireball",
+   "type": "AudioOutput",
+   "id": "audioout",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "flight.start",
+   "to": "whoosh.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "whoosh.audio",
+   "to": "whooshband.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "whooshband.audio",
+   "to": "whooshenv.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "whooshenv.audio",
+   "to": "mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "impactwin.start",
+   "to": "boomsound.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "boomsound.audio",
+   "to": "boomlow.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "boomlow.audio",
+   "to": "boomenv.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "boomenv.audio",
+   "to": "mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "impactwin.start",
+   "to": "thump.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "thump.audio",
+   "to": "thumpenv.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "thumpenv.audio",
+   "to": "mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "impactwin.start",
+   "to": "crackle.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "crackle.audio",
+   "to": "cracklehp.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "cracklehp.audio",
+   "to": "crackleenv.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "crackleenv.audio",
+   "to": "mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "mix.audio",
+   "to": "audioout.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "audioout.audio",
+   "to": "node-output.audio"
+  }
+ ],
+ [
   "vfx_compile",
   {
    "docId": "fireball"
@@ -805,6 +1117,13 @@
     26,
     44
    ]
+  },
+  true
+ ],
+ [
+  "vfx_render_audio",
+  {
+   "docId": "fireball"
   },
   true
  ]
