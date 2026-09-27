@@ -233,16 +233,17 @@ function constantNode(): NodeSpec {
   });
 }
 
-/** 05 ScalarMath: a (op) b, evaluated once per cast. a/b are literals or driven by other value nodes. */
+/** 05 ScalarMath: a (op) b. Evaluated once per cast from constants; over effect time when an operand is a time signal (Time, Oscillator, curve). */
 function scalarMath(): NodeSpec {
   return node('ScalarMath', {
     inputs: [],
     outputs: [port({ id: 'value', label: 'Value', type: 'scalarSignal', unit: 'none', domains: ['constant'] })],
     parameters: [
-      param({ id: 'operation', label: 'Operation', type: 'enum', unit: 'none', default: 'add', choices: ['add', 'subtract', 'multiply', 'divide', 'min', 'max'] }),
-      param({ id: 'a', label: 'A', type: 'number', unit: 'none', default: 0, min: -10000, max: 10000 }),
-      param({ id: 'b', label: 'B', type: 'number', unit: 'none', default: 1, min: -10000, max: 10000, description: 'Unitless for multiply/divide; otherwise the same unit as A.' }),
-      param({ id: 'unit', label: 'Unit', type: 'enum', unit: 'none', default: 'none', choices: ['none', 'meter', 'second', 'tick', 'radian', 'metersPerSecond', 'metersPerSecondSquared', 'hertz', 'perSecond', 'linearGain', 'normalized'], description: 'Unit of A and of the output.' }),
+      param({ id: 'operation', label: 'Operation', type: 'enum', unit: 'none', default: 'add', choices: ['add', 'subtract', 'multiply', 'divide', 'min', 'max', 'exp', 'power'], description: 'exp uses A only (clamped to ±20); power is A^B (negative A with fractional B gives 0).' }),
+      param({ id: 'a', label: 'A', type: 'number', unit: 'none', default: 0, min: -10000, max: 10000, domains: ['constant', 'effectTime'] }),
+      param({ id: 'b', label: 'B', type: 'number', unit: 'none', default: 1, min: -10000, max: 10000, domains: ['constant', 'effectTime'], description: 'Unitless for multiply/divide/exp/power; otherwise the same unit as A.' }),
+      param({ id: 'unit', label: 'Unit', type: 'enum', unit: 'none', default: 'none', choices: ['none', 'meter', 'second', 'tick', 'radian', 'metersPerSecond', 'metersPerSecondSquared', 'hertz', 'perSecond', 'linearGain', 'normalized'], description: 'Unit of the output (and of A unless Input unit says otherwise).' }),
+      param({ id: 'inputUnit', label: 'Input unit', type: 'enum', unit: 'none', default: 'same', choices: ['same', ...(['none', 'meter', 'second', 'tick', 'radian', 'metersPerSecond', 'metersPerSecondSquared', 'hertz', 'perSecond', 'linearGain', 'normalized'])], description: 'Unit of A when it differs from the output (e.g. seconds in, unitless out).' }),
     ],
     disabledBehavior: 'empty',
   });
@@ -291,6 +292,20 @@ function publicParameter(): NodeSpec {
     inputs: [],
     outputs: [port({ id: 'value', label: 'Value', type: 'scalarSignal', unit: 'none', domains: ['constant'] })],
     parameters: [param({ id: 'controlId', label: 'Control', type: 'string', unit: 'none', default: '', description: 'ID of a number/integer control whose scope is this graph (document controls panel / published knobs).' })],
+    disabledBehavior: 'empty',
+  });
+}
+
+/** 24 Time: effect seconds, seconds since its window started, and 0..1 progress through the window (clamped). */
+function timeNode(): NodeSpec {
+  return node('Time', {
+    inputs: [port({ id: 'window', label: 'Window', type: 'timeWindow' })],
+    outputs: [
+      port({ id: 'effectSeconds', label: 'Effect seconds', type: 'scalarSignal', unit: 'second', domains: ['effectTime'] }),
+      port({ id: 'localSeconds', label: 'Local seconds', type: 'scalarSignal', unit: 'second', domains: ['effectTime'] }),
+      port({ id: 'progress', label: 'Progress', type: 'scalarSignal', unit: 'normalized', domains: ['effectTime'] }),
+    ],
+    parameters: [],
     disabledBehavior: 'empty',
   });
 }
@@ -683,10 +698,11 @@ function oscillator(): NodeSpec {
     outputs: [port({ id: 'value', label: 'Value', type: 'scalarSignal', unit: 'normalized', domains: ['effectTime'] })],
     parameters: [
       param({ id: 'waveform', label: 'Waveform', type: 'enum', unit: 'none', default: 'sine', choices: ['sine', 'triangle', 'square', 'saw'] }),
-      param({ id: 'frequency', label: 'Frequency', type: 'number', unit: 'hertz', default: 2, min: 0.01, max: 30, description: 'Cycles per second of effect time.' }),
+      param({ id: 'frequency', label: 'Frequency', type: 'number', unit: 'hertz', default: 2, min: 0.01, max: 60, description: 'Cycles per second of effect time (05: 0–60 Hz).' }),
       param({ id: 'min', label: 'Min', type: 'number', unit: 'normalized', default: 0, min: 0, max: 1 }),
       param({ id: 'max', label: 'Max', type: 'number', unit: 'normalized', default: 1, min: 0, max: 1 }),
       param({ id: 'phase', label: 'Phase', type: 'number', unit: 'normalized', default: 0, min: 0, max: 1, description: 'Cycle offset (0..1).' }),
+      param({ id: 'unit', label: 'Unit', type: 'enum', unit: 'none', default: 'normalized', choices: ['normalized', 'none', 'linearGain'], description: 'Output unit (normalized for opacity/strength; none to feed ScalarMath B).' }),
     ],
     disabledBehavior: 'fallback',
   });
@@ -893,7 +909,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
     anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), constantNode(), scalarMath(), publicParameter(), offsetAnchor(), eventDelay(), mergeEvents(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
-    linePath(), bezierPath(), helixPathNode(), pathTransformNode(), particlePathsNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(), oscillator(),
+    linePath(), bezierPath(), helixPathNode(), pathTransformNode(), particlePathsNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(), oscillator(), timeNode(),
     audioSource(), audioEnvelope(), audioFilter(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),
   ];

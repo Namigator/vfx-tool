@@ -128,3 +128,33 @@ test('wrong source port into RevealPath.fraction is rejected', () => {
   e.source.port = 'curve';
   assert.equal(compilePathPreview(d, 25).ok, false);
 });
+
+test('discharge envelope from nodes: exp(-3t)·(.72+.28·sin²(96t)) drives Material.opacity; time-varying math is rejected by constant ports', () => {
+  const d = createF01Document();
+  const g = d.graphs[0];
+  g.nodes.push(
+    node('n-line', 'LinePath', { samples: 5 }), node('n-rib', 'RibbonRenderer'),
+    node('n-time', 'Time'),
+    node('n-neg', 'ScalarMath', { operation: 'multiply', b: -3, inputUnit: 'second', unit: 'none' }),
+    node('n-exp', 'ScalarMath', { operation: 'exp', unit: 'none' }),
+    node('n-osc', 'Oscillator', { waveform: 'sine', frequency: 96 / Math.PI, min: 0.72, max: 1, unit: 'none' }),
+    node('n-env', 'ScalarMath', { operation: 'multiply', inputUnit: 'none', unit: 'normalized' }),
+  );
+  g.edges.push(
+    edge('e-ls', 'node-source', 'out', 'n-line', 'start'), edge('e-le', 'node-target', 'out', 'n-line', 'end'),
+    edge('e-lp', 'n-line', 'paths', 'n-rib', 'paths'), edge('e-rm', 'node-material', 'material', 'n-rib', 'material'), edge('e-ro', 'n-rib', 'visual', 'node-output', 'visual', 1),
+    edge('e-t', 'n-time', 'effectSeconds', 'n-neg', 'a'), edge('e-n', 'n-neg', 'value', 'n-exp', 'a'),
+    edge('e-x', 'n-exp', 'value', 'n-env', 'a'), edge('e-o', 'n-osc', 'value', 'n-env', 'b'),
+    edge('e-op', 'n-env', 'value', 'node-material', 'opacity'),
+  );
+  for (const tick of [0, 3, 10, 25, 39]) {
+    const r = compilePathPreview(d, tick);
+    if (!r.ok) assert.fail(JSON.stringify(r.errors.slice(0, 2)));
+    const t = tick / 60, want = Math.exp(-3 * t) * (0.72 + 0.28 * Math.sin(96 * t) ** 2);
+    assert.ok(Math.abs(r.value.layers[0].opacity - want) < 1e-9, `tick ${tick}: ${r.value.layers[0].opacity} vs ${want}`);
+  }
+  const bad = structuredClone(d);
+  bad.graphs[0].edges.push(edge('e-bad', 'n-env', 'value', 'node-emitter', 'burst'));
+  const v = compilePathPreview(bad, 0);
+  assert.ok(!v.ok && v.errors.some(e => e.code === 'DOMAIN_MISMATCH' || e.code === 'TYPE_MISMATCH'), 'time-varying math cannot feed a once-per-cast port');
+});

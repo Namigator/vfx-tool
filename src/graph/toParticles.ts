@@ -39,7 +39,8 @@ import { compilePathPreview } from './toPaths.ts';
 import { ease, pointAtArcFraction, type Easing } from '../runtime/paths.ts';
 import type { FlipbookMode, SpriteSheet } from '../assets/spriteLibrary.ts';
 
-import { EFFECT_TIME_NODES, effectTimeValue } from './effectTime.ts';
+import { EFFECT_TIME_NODES } from './effectTime.ts';
+import { evalSignal, isTimeVarying, scalarMath, SignalError, type SignalContext } from './signals.ts';
 
 /** Value nodes evaluated once per cast when they drive a parameter port. */
 const VALUE_NODES = new Set(['RandomRange', 'Constant', 'ScalarMath', 'PublicParameter']);
@@ -205,14 +206,9 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       return Math.min(lo, hi) + u * Math.abs(hi - lo);
     }
     const operand = (id: string) => { const s = valueSource(src.node.id, id); return s ? valueOf(s, depth + 1) : param(src, id) as number; };
-    const a = operand('a'), b = operand('b');
-    switch (param(src, 'operation')) {
-      case 'subtract': return a - b;
-      case 'multiply': return a * b;
-      case 'divide': return b === 0 ? fail('INVALID_VALUE', `ScalarMath "${src.node.id}" divides by zero.`, src.node.id, 'b') : a / b;
-      case 'min': return Math.min(a, b);
-      case 'max': return Math.max(a, b);
-      default: return a + b;
+    try { return scalarMath(param(src, 'operation') as string, operand('a'), operand('b'), src.node.id); } catch (e) {
+      if (e instanceof SignalError) return fail('INVALID_VALUE', e.message, e.nodeId, e.parameter);
+      throw e;
     }
   };
   const drivenValue = (n: ExpandedNode, id: string): number | undefined => {
@@ -234,6 +230,14 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
   const dissolveOf = (m: ExpandedNode): Pick<ParticlePreviewLayer, 'dissolve'> => num(m, 'dissolve') > 0
     ? { dissolve: { amount: num(m, 'dissolve'), start: num(m, 'dissolveStart'), softness: num(m, 'dissolveSoftness'), edge: num(m, 'dissolveEdge'), edgeColor: param(m, 'dissolveEdgeColor') as ColorValue } }
     : {};
+  /** Effect-time signal view of the expanded graph (shared evaluator in signals.ts). */
+  const signals: SignalContext = {
+    node: id => { const x = nodes.get(id); return x ? { id, type: x.node.type, enabled: x.effectiveEnabled } : undefined; },
+    param: (id, p) => param(nodes.get(id)!, p),
+    source: (nodeId, port) => { const c = into(nodeId, port)[0]; return c && c.source.kind === 'node' ? { nodeId: c.source.nodeId, port: c.source.port } : undefined; },
+    window: nodeId => { const c = into(nodeId, 'window')[0], s = c && c.source.kind === 'node' ? nodes.get(c.source.nodeId) : undefined; return s && s.node.type === 'Schedule' ? { startTicks: num(s, 'startTicks'), durationTicks: num(s, 'durationTicks') } : undefined; },
+    constant: nodeId => valueOf(nodes.get(nodeId)!, 0),
+  };
   const sourceNode = (s: ExpandedSource, consumer: string, port: string): ExpandedNode => {
     if (s.kind !== 'node') return fail('INVALID_VALUE', `Input "${port}" of "${consumer}" receives a literal group default; only node connections are supported here.`, consumer);
     const n = nodes.get(s.nodeId);
@@ -491,15 +495,14 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     const strengthOf = (f: ExpandedNode): { k: number; gain?: number[] } => {
       const cs = into(f.node.id, 'strength');
       const src = cs.length === 1 && cs[0].source.kind === 'node' ? nodes.get(cs[0].source.nodeId) : undefined;
-      if (!src || !EFFECT_TIME_NODES.has(src.node.type)) return { k: num(f, 'strength') };
+      if (!src || (!EFFECT_TIME_NODES.has(src.node.type) && !isTimeVarying(signals, src.node.id))) return { k: num(f, 'strength') };
       if (!src.effectiveEnabled) return { k: num(f, 'strength') };
-      noDrivenParams(src, []);
-      const curve = src.node.type === 'EffectTimeCurve' ? param(src, 'curve') as CurveValue : { domain: 'effectSeconds' };
-      if (curve?.domain !== 'effectSeconds') { report('DOMAIN_MISMATCH', `EffectTimeCurve "${src.node.id}" curve must use domain "effectSeconds".`, src.node.id, 'curve'); return { k: 1 }; }
+      if (src.node.type === 'EffectTimeCurve' && (param(src, 'curve') as CurveValue)?.domain !== 'effectSeconds') { report('DOMAIN_MISMATCH', `EffectTimeCurve "${src.node.id}" curve must use domain "effectSeconds".`, src.node.id, 'curve'); return { k: 1 }; }
       try {
-        return { k: 1, gain: Array.from({ length: doc.durationTicks + 1 }, (_, t) => effectTimeValue(src.node.type, k => param(src, k), t / TICKS_PER_SECOND)) };
+        const port = cs[0].source.kind === 'node' ? cs[0].source.port : 'value';
+        return { k: 1, gain: Array.from({ length: doc.durationTicks + 1 }, (_, t) => Math.min(1, Math.max(0, evalSignal(signals, src.node.id, port, t / TICKS_PER_SECOND)))) };
       } catch (e) {
-        if (e instanceof RangeError || e instanceof TypeError) { report('INVALID_VALUE', `${src.node.type} "${src.node.id}": ${e.message}`, src.node.id, 'curve'); return { k: 1 }; }
+        if (e instanceof SignalError) { report('INVALID_VALUE', e.message, e.nodeId, e.parameter); return { k: 1 }; }
         throw e;
       }
     };

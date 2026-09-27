@@ -33,7 +33,8 @@ import { branchPaths, type BranchCountMode } from '../runtime/branches.ts';
 import { radialPaths, type RadialMode } from '../runtime/radial.ts';
 import { ringPath } from '../runtime/ring.ts';
 import { evaluateCurve } from '../runtime/curves.ts';
-import { EFFECT_TIME_NODES, effectTimeValue } from './effectTime.ts';
+import { EFFECT_TIME_NODES } from './effectTime.ts';
+import { evalSignal, isTimeVarying, SignalError, type SignalContext } from './signals.ts';
 import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { createRegistry } from './registry.ts';
@@ -260,21 +261,29 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
     if (cs.length > 1) return fail('MULTIPLE_DRIVERS', `Input "${id}" of "${n.node.id}" has ${cs.length} drivers; connect one.`, n.node.id, id);
     const s = cs[0].source;
     const d = sourceNode(s, n.node.id, id);
-    if (!EFFECT_TIME_NODES.has(d.node.type) || s.kind !== 'node' || s.port !== 'value') {
-      return fail('DOMAIN_MISMATCH', `Input "${id}" of "${n.node.id}" is driven by "${d.node.id}" (${d.node.type}); only EffectTimeCurve.value or Oscillator.value is supported by the path preview.`, n.node.id, id);
+    if (s.kind !== 'node' || (!EFFECT_TIME_NODES.has(d.node.type) && !isTimeVarying(signals, d.node.id))) {
+      return fail('DOMAIN_MISMATCH', `Input "${id}" of "${n.node.id}" is driven by "${d.node.id}" (${d.node.type}); the path preview accepts time signals (EffectTimeCurve, Oscillator, Time, ScalarMath on them).`, n.node.id, id);
     }
     if (!d.effectiveEnabled) return num(n, id);
-    noDrivenParams(d, []);
-    const curve = d.node.type === 'EffectTimeCurve' ? param(d, 'curve') as CurveValue : { domain: 'effectSeconds' };
-    if (curve?.domain !== 'effectSeconds') return fail('DOMAIN_MISMATCH', `EffectTimeCurve "${d.node.id}" curve must use domain "effectSeconds".`, d.node.id, 'curve');
+    if (d.node.type === 'EffectTimeCurve' && (param(d, 'curve') as CurveValue)?.domain !== 'effectSeconds') return fail('DOMAIN_MISMATCH', `EffectTimeCurve "${d.node.id}" curve must use domain "effectSeconds".`, d.node.id, 'curve');
     try {
-      return effectTimeValue(d.node.type, k => param(d, k), seconds);
+      const spec = registry.get(registryKey(n.node.type, n.node.definitionVersion))?.parameters.find(p => p.id === id);
+      const v = evalSignal(signals, d.node.id, s.port, seconds);
+      if (d.node.type === 'EffectTimeCurve' && (v < 0 || v > 1)) return fail('INVALID_VALUE', `EffectTimeCurve "${d.node.id}" value ${v} is outside 0..1.`, d.node.id, 'curve');
+      return Math.min(spec?.max ?? Infinity, Math.max(spec?.min ?? -Infinity, v)); // Math chains clamp into the driven range.
     } catch (e) {
-      if (e instanceof RangeError || e instanceof TypeError) return fail('INVALID_VALUE', `${d.node.type} "${d.node.id}": ${e.message}`, d.node.id, 'curve');
+      if (e instanceof SignalError) return fail('INVALID_VALUE', e.message, e.nodeId, e.parameter);
       throw e;
     }
   };
 
+  const signals: SignalContext = {
+    node: id => { const x = nodes.get(id); return x ? { id, type: x.node.type, enabled: x.effectiveEnabled } : undefined; },
+    param: (id, p) => param(nodes.get(id)!, p),
+    source: (nodeId, port) => { const c = into(nodeId, port)[0]; return c && c.source.kind === 'node' ? { nodeId: c.source.nodeId, port: c.source.port } : undefined; },
+    window: nodeId => { const c = into(nodeId, 'window')[0], s = c && c.source.kind === 'node' ? nodes.get(c.source.nodeId) : undefined; return s && s.node.type === 'Schedule' ? { startTicks: num(s, 'startTicks'), durationTicks: num(s, 'durationTicks') } : undefined; },
+    constant: nodeId => { const x = nodes.get(nodeId); if (x?.node.type === 'Constant') return num(x, 'value'); throw new SignalError(`${x?.node.type ?? 'Node'} "${nodeId}" cannot feed a time signal in the path preview; use Constant or a literal.`, nodeId); },
+  };
   const memo = new Map<string, NodeOutputs>();
   /** Nodes whose evaluation already reported; a second consumer fails silently (one diagnostic per node). */
   const failed = new Set<string>();

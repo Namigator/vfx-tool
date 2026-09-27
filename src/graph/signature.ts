@@ -10,13 +10,13 @@
 //   Group.params stores only graphId; exposed control values stay in the controls list.
 // - GroupInput/GroupOutput: stable ports `out`/`in` typed from the interface port named by portId.
 //
-// Not implemented in this slice: Constant and PublicParameter specialization. They are absent from the
-// production registry; their output type depends on a per-instance literal/control schema that needs a
-// separate document/resolver design, so they are rejected here instead of receiving placeholder ports.
+// Per-instance specialization: value nodes take their unit from params (Constant, RandomRange, ScalarMath)
+// or from the control they read (PublicParameter); ScalarMath is time-varying when an operand is.
 import type {
   Diagnostic, EffectDocumentV2, EvaluationDomain, GraphDefinition, InterfacePort, NodeDefinition,
   NodeSpec, ParameterSpec, PortSpec, PortType, Unit, ValidationResult, ValueType,
 } from '../model/types.ts';
+import { isTimeVarying } from './signals.ts';
 
 export type ResolvedSignature = {
   nodeId: string;
@@ -39,6 +39,14 @@ export const GROUP_INPUT_PORT = 'out';
 export const GROUP_OUTPUT_PORT = 'in';
 /** Dynamic literal nodes whose specialization is deliberately not implemented yet. */
 const UNSPECIALIZED_TYPES: string[] = [];
+
+/** Graph-local view for time-varying detection (edges within one graph; group bridges count as constant). */
+function signalView(g: GraphDefinition) {
+  return {
+    node: (id: string) => { const n = g.nodes.find(x => x.id === id); return n ? { id: n.id, type: n.type, enabled: n.enabled } : undefined; },
+    source: (nodeId: string, port: string) => { const e = g.edges.find(x => x.target.nodeId === nodeId && x.target.port === port); return e ? { nodeId: e.source.nodeId, port: e.source.port } : undefined; },
+  };
+}
 
 const VALUE_PORT: Partial<Record<ValueType, PortType>> = {
   number: 'scalarSignal', integer: 'scalarSignal', boolean: 'booleanSignal', color: 'colorSignal',
@@ -207,12 +215,19 @@ export function resolveSignature(node: NodeDefinition, spec: NodeSpec, context: 
     else if (c.type !== 'number' && c.type !== 'integer') err('TYPE_MISMATCH', `${np}.params.controlId`, `Control "${c.id}" is ${c.type}; PublicParameter reads number/integer controls.`);
     else if (o) o.unit = c.unit;
   }
+  if (node.type === 'Oscillator') {
+    const o = outputs.find(p => p.id === 'value'), u = node.params.unit;
+    if (o && typeof u === 'string') o.unit = u as Unit;
+  }
   if (node.type === 'RandomRange' || node.type === 'Constant' || node.type === 'ScalarMath') {
     const o = outputs.find(p => p.id === 'value'), u = node.params.unit;
     if (o && typeof u === 'string') o.unit = u as Unit;
     if (node.type === 'ScalarMath' && typeof u === 'string') {
-      const scaling = node.params.operation === 'multiply' || node.params.operation === 'divide';
-      for (const p of inputs) if (p.id === 'a' || (p.id === 'b' && !scaling)) p.unit = u as Unit;
+      const op = node.params.operation, scaling = op === 'multiply' || op === 'divide' || op === 'exp' || op === 'power';
+      const iu = typeof node.params.inputUnit === 'string' && node.params.inputUnit !== 'same' ? node.params.inputUnit : u;
+      for (const p of inputs) if (p.id === 'a' || (p.id === 'b' && !scaling)) p.unit = iu as Unit;
+      // Time-varying when an operand is fed by a time signal (Time, Oscillator, curve, or another time-varying ScalarMath).
+      if (o) o.domains = [isTimeVarying(signalView(graph), node.id) ? 'effectTime' : 'constant'];
     }
   }
 
