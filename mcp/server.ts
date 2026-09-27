@@ -127,6 +127,16 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
     docId: z.string(), component: z.string(), prefix: z.string().regex(ID).optional(),
   }, a => { let used = ''; const r = mutate(a.docId, d => { const x = insertComponent(d, a.component, a.prefix); used = x.prefix; Object.assign(d, x.doc); return ''; }); return r.isError ? r : ok(`Inserted ${a.component} with prefix "${used}" (node ids "${used}-<node>").`); });
 
+  tool('vfx_list_controls', 'Published knobs (document controls) with value, bounds and what they drive.', { docId: z.string() }, ({ docId }) =>
+    ok(getDoc(docId).controls.map(c => `${c.id} [${c.section}] ${c.label} = ${JSON.stringify(c.value)} (${c.min ?? '-'}..${c.max ?? '-'} ${c.unit}) -> ${c.bindings.map(b => `${b.nodeId}.${b.parameter}${b.scale ? ' x' + b.scale : ''}`).join(', ')}`).join('\n') || 'No controls.'));
+  tool('vfx_set_control', 'Set a published knob by id or label (document validation enforces its bounds).', { docId: z.string(), control: z.string(), value: z.union([z.number(), z.boolean(), z.string()]) }, a =>
+    mutate(a.docId, d => {
+      const c = d.controls.find(x => x.id === a.control) ?? d.controls.filter(x => x.label === a.control).at(-1);
+      if (!c) throw new Error(`No control "${a.control}". Use vfx_list_controls.`);
+      c.value = a.value as never;
+      return `${c.label} = ${JSON.stringify(a.value)}`;
+    }));
+
   // ---------- graph editing ----------
   tool('vfx_add_node', 'Add a node. Unspecified params use registry defaults. Returns the node id.', {
     docId: z.string(), type: z.string(), id: z.string().regex(ID).optional(), label: z.string().optional(),

@@ -70,3 +70,15 @@ test('invalid edits are rejected and leave the document unchanged; audio renders
   assert.equal(w.error, false, w.text);
   assert.equal(readFileSync(join(root, 'work', 'mcp', 'snd.wav')).subarray(0, 4).toString(), 'RIFF');
 });
+
+test('components and knobs through MCP: insert, list, set, recompile', async () => {
+  const { call } = await connect();
+  await call('vfx_new_document', { template: 'blank', id: 'k' });
+  assert.match((await call('vfx_list_components', {})).text, /fireball: Fireball/);
+  assert.equal((await call('vfx_add_component', { docId: 'k', component: 'impact-flash' })).error, false);
+  assert.match((await call('vfx_list_controls', { docId: 'k' })).text, /Sparks = 80/);
+  assert.equal((await call('vfx_set_control', { docId: 'k', control: 'Sparks', value: 150 })).error, false);
+  assert.match((await call('vfx_list_controls', { docId: 'k' })).text, /Sparks = 150/);
+  assert.equal((await call('vfx_set_control', { docId: 'k', control: 'Sparks', value: -3 })).error, true, 'out of bounds is rejected');
+  assert.match((await call('vfx_compile', { docId: 'k' })).text, /particles OK: 2 system/);
+});
