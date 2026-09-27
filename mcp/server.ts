@@ -12,6 +12,7 @@ import type { Diagnostic, EffectDocumentV2, NodeDefinition, ParameterValue, Vec3
 import { validateDocument } from '../src/model/document.ts';
 import { createRegistry } from '../src/graph/registry.ts';
 import { createBlankDocument, createF01Document, createForcesDemoDocument, createL01Document } from '../src/graph/fixtures.ts';
+import { COMPONENT_TEMPLATES, insertComponent } from '../src/graph/components.ts';
 import { createL01AudioDocument } from '../src/graph/audioFixtures.ts';
 import { compileParticlePreview } from '../src/graph/toParticles.ts';
 import { compilePathPreview } from '../src/graph/toPaths.ts';
@@ -118,6 +119,13 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
       if (ex) { ex.position = a.position as Vec3; if (a.name) ex.name = a.name; return `Moved anchor ${a.anchorId}.`; }
       d.anchors.push({ id: a.anchorId, name: a.name ?? a.anchorId, position: a.position as Vec3 }); return `Added anchor ${a.anchorId}.`;
     }));
+
+  // ---------- components ----------
+  tool('vfx_list_components', 'Ready-made, pre-wired components (the same list as the editor Add component menu).', {}, () =>
+    ok(COMPONENT_TEMPLATES.map(c => `${c.id}: ${c.label} — ${c.description} (${c.nodes.length} nodes)`).join('\n')));
+  tool('vfx_add_component', 'Insert a component into the document root graph, auto-wired to its Source/Target anchors and Output. Node ids are prefixed; returns the prefix.', {
+    docId: z.string(), component: z.string(), prefix: z.string().regex(ID).optional(),
+  }, a => { let used = ''; const r = mutate(a.docId, d => { const x = insertComponent(d, a.component, a.prefix); used = x.prefix; Object.assign(d, x.doc); return ''; }); return r.isError ? r : ok(`Inserted ${a.component} with prefix "${used}" (node ids "${used}-<node>").`); });
 
   // ---------- graph editing ----------
   tool('vfx_add_node', 'Add a node. Unspecified params use registry defaults. Returns the node id.', {

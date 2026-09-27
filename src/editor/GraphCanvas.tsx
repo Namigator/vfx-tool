@@ -2,6 +2,7 @@
 // authoritative: every authored change leaves through onEdit as history patches, and React Flow change
 // events never mutate it. Only the in-progress drag preview and edge selection are local state.
 // Deferred here: Group authoring, multi-node selection, viewport persistence, parameter editing.
+import { COMPONENT_TEMPLATES, getComponent, insertComponent } from '../graph/components.ts';
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import {
   Handle, Panel, Position, ReactFlow, ReactFlowProvider, useNodesInitialized, useReactFlow,
@@ -116,6 +117,7 @@ function NodeCard({ data, selected }: NodeProps<CardNode>) {
 const nodeTypes = { card: NodeCard };
 
 function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }: GraphCanvasProps) {
+  const [componentId, setComponentId] = useState('');
   const flow = useReactFlow();
   const wrapper = useRef<HTMLDivElement>(null);
   const [dragPreview, setDragPreview] = useState<Record<string, { x: number; y: number }>>({});
@@ -344,6 +346,20 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
   if (!graph) return <div className="gc-root gc-missing" role="alert">Graph “{graphId}” does not exist in this document.</div>;
 
   const selectedNode = selectedNodeId ? graph.nodes.find(n => n.id === selectedNodeId) : undefined;
+  /** Inserts a ready-made component as one undoable edit (graph, anchors, duration and layout). */
+  const addComponent = () => {
+    if (!componentId) return;
+    let next;
+    try { next = insertComponent(doc, componentId).doc; } catch (e) { window.alert(e instanceof Error ? e.message : String(e)); return; }
+    const ri = doc.graphs.findIndex(g => g.id === doc.rootGraphId);
+    onEdit(`Add component ${getComponent(componentId).label}`, [
+      { op: 'set', path: ['graphs', ri], value: next.graphs[ri] },
+      { op: 'set', path: ['anchors'], value: next.anchors },
+      { op: 'set', path: ['durationTicks'], value: next.durationTicks },
+      { op: 'set', path: ['editor', 'graphs', doc.rootGraphId, 'nodes'], value: next.editor.graphs[doc.rootGraphId].nodes },
+    ]);
+    setComponentId('');
+  };
   const canDelete = (selectedNode !== undefined && !isLocked(selectedNode)) || selectedEdges.size > 0;
 
   return (
@@ -362,7 +378,14 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
             </select>
           </label>
           <button type="button" onClick={addNode} disabled={!addType}>Add</button>
-          <span className="gc-hint">Group authoring is deferred.</span>
+          <label className="gc-add">
+            <span>Add component</span>
+            <select value={componentId} onChange={e => setComponentId(e.target.value)} disabled={graphId !== doc.rootGraphId}>
+              <option value="">Choose…</option>
+              {COMPONENT_TEMPLATES.map(c => <option key={c.id} value={c.id} title={c.description}>{c.label}</option>)}
+            </select>
+          </label>
+          <button type="button" onClick={addComponent} disabled={!componentId}>Insert</button>
         </div>
       <div className="gc-flow" ref={wrapper}>
       <ReactFlow<CardNode, Edge>
