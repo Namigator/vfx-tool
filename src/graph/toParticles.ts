@@ -62,7 +62,7 @@ export type ParticlePreviewLayer = {
   /** Particle position along the stretch axis: 0 trailing end, 1 leading tip. */
   pivot: number;
   /** Present for SpriteTextured materials: the library sheet and how cells are chosen. */
-  sprite?: { sheet: SpriteSheet; mode: FlipbookMode; fps: number; randomStart: boolean };
+  sprite?: { sheet: SpriteSheet; mode: FlipbookMode; fps: number; randomStart: boolean; variant: number };
 };
 /** 05 ParticleTrail sink: ribbon trails behind one particle system's particles. */
 export type ParticleTrailLayer = {
@@ -390,6 +390,56 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       const b = sourceNode(c.source, outputId, 'visual');
       if (options.ribbonsHandled === true && b.node.type === 'RibbonRenderer') continue; // Ribbon layers: compilePathPreview.
       if (done.has(b.node.id) || !b.effectiveEnabled) continue; // Disabled sink contributes nothing.
+      if (b.node.type === 'SpriteRenderer') {
+        // A sprite is a one-particle system: born at the window start, living for the window length.
+        done.add(b.node.id);
+        const sid = b.node.id;
+        noDrivenParams(b, ['anchor', 'material', 'window']);
+        const mats = into(sid, 'material');
+        const mat = mats.length === 1 ? sourceNode(mats[0].source, sid, 'material') : undefined;
+        if (!mat || mat.node.type !== 'Material' || !mat.effectiveEnabled) { fail('MISSING_REFERENCE', `Required input "material" of "${sid}" needs an enabled Material.`, sid); }
+        const m = mat as ExpandedNode;
+        const an = into(sid, 'anchor'), anchorNode = an.length === 1 ? sourceNode(an[0].source, sid, 'anchor') : undefined;
+        const ap = anchorNode && anchorNode.node.type === 'Anchor' && anchorNode.effectiveEnabled ? anchorPos.get(param(anchorNode, 'anchorId') as string) : undefined;
+        if (!ap) { fail('MISSING_REFERENCE', `SpriteRenderer "${sid}" needs an enabled Anchor referencing an existing document anchor.`, sid); }
+        const ws = into(sid, 'window');
+        if (ws.length !== 1) { fail('MISSING_REFERENCE', `SpriteRenderer "${sid}" needs a Schedule window.`, sid); }
+        const s = scheduleOf(ws[0], sid, 'window');
+        if (!s) continue; // Disabled Schedule: nothing shown.
+        if (param(s, 'mode') === 'repeat') report('INVALID_VALUE', 'A repeating Schedule window is not supported for SpriteRenderer yet; use mode "window" or "once".', s.node.id, 'mode');
+        const start = num(s, 'startTicks'), len = Math.max(1, Math.min(num(s, 'durationTicks'), doc.durationTicks - start));
+        if (start >= doc.durationTicks) continue;
+        const scale = transform.scale, a = ap as Vec3, q = rotate(transform.rotation, [a[0] * scale, a[1] * scale, a[2] * scale]);
+        const rot = num(b, 'rotation'), spin = num(b, 'spin');
+        const d: ParticleEmitterDescriptor = {
+          documentSeed: doc.seed, durationTicks: doc.durationTicks, emitterId: sid, randomStreamId: b.node.randomStreamId, shape: 'point',
+          sourcePosition: [q[0] + transform.position[0], q[1] + transform.position[1], q[2] + transform.position[2]], initialVelocity: { kind: 'vector', value: [0, 0, 0] },
+          bursts: [{ tick: start, eventRandomKey: scheduleEventRandomKey(s.node.randomStreamId, start, 0), count: 1 }],
+          lifetimeTicks: { min: len, max: len }, size: { min: num(b, 'size') * scale, max: num(b, 'size') * scale }, operators: [],
+          ...(rot !== 0 || spin !== 0 ? { spin: { rotation: { min: rot, max: rot }, angularVelocity: { min: spin, max: spin } } } : {}),
+        };
+        const v = validateParticleDescriptor(d);
+        if (!v.ok) { errors.push(...v.errors.map(e => ({ ...e, nodeId: sid }))); continue; }
+        systems.push({ id: sid, descriptor: v.value });
+        const curve = (id: string, bounds: { min: number; max: number }): CurveValue => {
+          const c = param(b, id) as CurveValue, err = lifeCurveError(c, bounds);
+          if (err !== undefined) report('INVALID_VALUE', `SpriteRenderer "${sid}" ${id}: ${err}`, sid, id);
+          return structuredClone(c);
+        };
+        let sprite: ParticlePreviewLayer['sprite'];
+        if (param(m, 'template') === 'SpriteTextured') {
+          const sheet = BUILTIN_SPRITES.find(x => x.id === param(m, 'sprite'));
+          if (!sheet) report('MISSING_REFERENCE', `Material sprite "${String(param(m, 'sprite'))}" is not in the included library.`, m.node.id, 'sprite');
+          else sprite = { sheet: structuredClone(sheet) as SpriteSheet, mode: 'overLife', fps: 24, randomStart: false, variant: num(m, 'variant') };
+        }
+        layers.push({
+          nodeId: sid, systemId: sid, color: param(m, 'tint') as ColorValue, opacity: num(m, 'opacity'), emission: num(m, 'emission'),
+          blend: param(m, 'blend') as ParticlePreviewLayer['blend'], alphaCutoff: num(m, 'alphaCutoff'), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
+          sizeOverLife: curve('sizeOverWindow', SIZE_OVER_LIFE_BOUNDS), opacityOverLife: curve('opacityOverWindow', OPACITY_OVER_LIFE_BOUNDS),
+          colorOverLife: structuredClone(param(b, 'colorOverWindow') as GradientValue), alignment: 'camera', stretchRatio: 1, pivot: 0.5, ...(sprite ? { sprite } : {}),
+        });
+        continue;
+      }
       if (b.node.type === 'ParticleTrail') {
         done.add(b.node.id);
         const tid = b.node.id;
@@ -445,7 +495,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       if (template === 'SpriteTextured') {
         const sheet = BUILTIN_SPRITES.find(s => s.id === param(mat, 'sprite'));
         if (!sheet) report('MISSING_REFERENCE', `Material sprite "${String(param(mat, 'sprite'))}" is not in the included library.`, mat.node.id, 'sprite');
-        else sprite = { sheet: structuredClone(sheet) as SpriteSheet, mode: param(b, 'flipbookMode') as FlipbookMode, fps: num(b, 'flipbookFps'), randomStart: false };
+        else sprite = { sheet: structuredClone(sheet) as SpriteSheet, mode: param(b, 'flipbookMode') as FlipbookMode, fps: num(b, 'flipbookFps'), randomStart: false, variant: num(mat, 'variant') };
       } else if (template !== 'SpriteUnlit') report('INVALID_VALUE', `Material template "${String(template)}" is not supported.`, mat.node.id, 'template');
 
       const chain = traceChain(bid);

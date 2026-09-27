@@ -73,10 +73,10 @@ export type FlipbookMode = 'overLife' | 'fps' | 'first';
  * age 1), fps loops at a fixed rate from frame 0 or a per-particle random start, first holds frame 0.
  * variants/texture sheets: a per-particle random cell, fixed for its whole life. randomUnit in [0,1).
  */
-export function spriteCell(sheet: SpriteSheet, mode: FlipbookMode, fps: number, lifeFraction: number, ageSeconds: number, randomUnit: number, randomStart: boolean): number {
+export function spriteCell(sheet: SpriteSheet, mode: FlipbookMode, fps: number, lifeFraction: number, ageSeconds: number, randomUnit: number, randomStart: boolean, fixedVariant = -1): number {
   const n = sheet.columns * sheet.rows;
   const pick = Math.min(n - 1, Math.floor(randomUnit * n));
-  if (sheet.kind !== 'flipbook') return pick;
+  if (sheet.kind !== 'flipbook') return fixedVariant >= 0 ? Math.min(n - 1, fixedVariant) : pick;
   if (mode === 'first') return 0;
   if (mode === 'overLife') return frameOverLife(sheet, lifeFraction);
   return ((randomStart ? pick : 0) + Math.floor(Math.max(0, ageSeconds) * fps)) % n;

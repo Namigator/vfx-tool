@@ -76,4 +76,5 @@ test('spriteCell: overLife plays once, fps loops from a random start, variants p
   assert.equal(spriteCell(flame, 'fps', 10, 0, 1.75, 0, false), 1, 'loops past 16 frames');
   assert.equal(spriteCell(flame, 'fps', 10, 0, 0, 0.5, true), 8, 'random start');
   assert.equal(spriteCell(glow, 'overLife', 24, 0.9, 1, 0.8, false), 3, 'variants ignore life and use the random pick');
+  assert.equal(spriteCell(glow, 'overLife', 24, 0.9, 1, 0.8, false, 1), 1, 'fixed variant');
 });

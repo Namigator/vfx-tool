@@ -1,0 +1,303 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "impact"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "impact",
+   "durationTicks": 90
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "impact",
+   "anchorId": "target",
+   "position": [
+    0,
+    0.6,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "Schedule",
+   "id": "hit",
+   "params": {
+    "startTicks": 10,
+    "durationTicks": 30,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "Material",
+   "id": "glowmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "blend": "additive",
+    "emission": 1,
+    "variant": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "SpriteRenderer",
+   "id": "flash",
+   "params": {
+    "size": 2.2,
+    "spin": 1.5,
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.2
+      },
+      {
+       "x": 0.15,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 1.4
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    },
+    "colorOverWindow": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFFFFF",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.4,
+       "color": {
+        "srgb": "#FFB060",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#FF3010",
+        "alpha": 1
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "Emitter",
+   "id": "sparks",
+   "params": {
+    "shape": "sphere",
+    "radius": 0.05,
+    "burst": 80,
+    "rate": 0,
+    "speedMin": 2,
+    "speedMax": 6,
+    "lifetimeMin": 0.4,
+    "lifetimeMax": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "InitialProperties",
+   "id": "ip",
+   "params": {
+    "sizeMin": 0.02,
+    "sizeMax": 0.04,
+    "rotationMin": 0,
+    "rotationMax": 0,
+    "angularVelocityMin": 0,
+    "angularVelocityMax": 0
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "Gravity",
+   "id": "grav"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "Material",
+   "id": "sparkmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "spark-streak",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFD080",
+     "alpha": 1
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "BillboardRenderer",
+   "id": "bb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 5,
+    "pivot": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "node-target.out",
+   "to": "flash.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "glowmat.material",
+   "to": "flash.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "hit.window",
+   "to": "flash.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "node-target.out",
+   "to": "sparks.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "hit.start",
+   "to": "sparks.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "sparks.particles",
+   "to": "ip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "ip.particles",
+   "to": "grav.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "grav.particles",
+   "to": "bb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "sparkmat.material",
+   "to": "bb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "flash.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "bb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "impact"
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "impact",
+   "ticks": [
+    13,
+    24
+   ]
+  },
+  true
+ ]
+]

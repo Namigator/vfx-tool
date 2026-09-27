@@ -185,6 +185,28 @@ function groundCollision(): NodeSpec {
   });
 }
 
+function spriteRenderer(): NodeSpec {
+  const flat = () => ({ domain: 'normalized' as const, interpolation: 'linear' as const, keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] });
+  return node('SpriteRenderer', {
+    inputs: [
+      port({ id: 'anchor', label: 'Anchor', type: 'anchor', required: true }),
+      port({ id: 'material', label: 'Material', type: 'material', required: true }),
+      port({ id: 'window', label: 'Window', type: 'timeWindow', required: true }),
+    ],
+    outputs: [port({ id: 'visual', label: 'Visual', type: 'visual' })],
+    parameters: [
+      param({ id: 'size', label: 'Size', type: 'number', unit: 'meter', default: 0.5, min: 0.001, max: 20, editPolicy: 'live' }),
+      param({ id: 'sizeOverWindow', label: 'Size over window', type: 'curve', unit: 'none', curveDomain: 'normalized', default: flat(), min: 0, max: 20, editPolicy: 'live', description: 'Size multiplier across the window (0 = window start, 1 = end).' }),
+      param({ id: 'opacityOverWindow', label: 'Opacity over window', type: 'curve', unit: 'normalized', curveDomain: 'normalized', default: flat(), min: 0, max: 1, editPolicy: 'live' }),
+      param({ id: 'colorOverWindow', label: 'Colour over window', type: 'gradient', unit: 'none', default: { stops: [{ position: 0, color: white() }, { position: 1, color: white() }] }, editPolicy: 'live' }),
+      param({ id: 'rotation', label: 'Rotation', type: 'number', unit: 'radian', default: 0, min: -2 * Math.PI, max: 2 * Math.PI }),
+      param({ id: 'spin', label: 'Spin', type: 'number', unit: 'perSecond', default: 0, min: -20, max: 20, description: 'Radians per second.' }),
+      param({ id: 'renderOrderOffset', label: 'Render order offset', type: 'integer', unit: 'none', default: 0, min: -32, max: 32, step: 1, editPolicy: 'live' }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
 function particleTrail(): NodeSpec {
   return node('ParticleTrail', {
     inputs: [
@@ -211,6 +233,7 @@ function material(): NodeSpec {
     parameters: [
       param({ id: 'template', label: 'Template', type: 'enum', unit: 'none', default: 'SpriteUnlit', choices: [...MATERIAL_TEMPLATES], description: 'SpriteUnlit: soft procedural disc. SpriteTextured: a sprite/flipbook from the included library.' }),
       param({ id: 'sprite', label: 'Sprite', type: 'enum', unit: 'none', default: 'soft-glow', choices: BUILTIN_SPRITES.map(s => s.id), description: 'Included library sheet (SpriteTextured only). Flipbooks animate; variant sets pick one cell per particle.' }),
+      param({ id: 'variant', label: 'Variant', type: 'integer', unit: 'none', default: -1, min: -1, max: 255, step: 1, description: 'Variant/mask sheets: -1 picks a random cell per particle; otherwise this fixed cell (row-major).' }),
       param({ id: 'blend', label: 'Blend', type: 'enum', unit: 'none', default: 'additive', choices: ['normal', 'additive', 'cutout'] }),
       param({ id: 'tint', label: 'Tint', type: 'color', unit: 'none', default: white(), domains: [...signal], editPolicy: 'live' }),
       param({ id: 'opacity', label: 'Opacity', type: 'number', unit: 'normalized', default: 1, min: 0, max: 1, domains: [...signal], editPolicy: 'live' }),
@@ -541,7 +564,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 /** Fresh, independent registry each call. */
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
-    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), groundCollision(), particleEvents(), material(), billboardRenderer(), particleTrail(),
+    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), groundCollision(), particleEvents(), material(), billboardRenderer(), particleTrail(), spriteRenderer(),
     linePath(), bezierPath(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(),
     audioSource(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),

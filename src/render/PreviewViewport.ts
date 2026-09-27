@@ -709,7 +709,7 @@ export class PreviewViewport {
       }
       for (let i = 0; i < n; i++) {
         const p = order[i];
-        if (sprite) cells[i] = spriteCell(sprite.sheet, sprite.mode, sprite.fps, lifeFraction(p.ageTicks, p.lifetimeTicks, alpha), (p.ageTicks + alpha) * PARTICLE_DT, fnv1a32Utf8(p.parentRandomKey) / 4294967296, sprite.randomStart);
+        if (sprite) cells[i] = spriteCell(sprite.sheet, sprite.mode, sprite.fps, lifeFraction(p.ageTicks, p.lifetimeTicks, alpha), (p.ageTicks + alpha) * PARTICLE_DT, fnv1a32Utf8(p.parentRandomKey) / 4294967296, sprite.randomStart, sprite.variant);
         const u = lifeFraction(p.ageTicks, p.lifetimeTicks, alpha);
         const o = i * 16, s = p.size * sampleLifeCurve(l.sizeSampler, u);
         sampleLifeGradient(l.colorSampler, u, rgbaScratch);

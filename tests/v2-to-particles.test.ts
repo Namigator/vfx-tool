@@ -393,3 +393,20 @@ test('ParticleTrail compiles to a trail layer on the chain system (and can be th
   assert.equal(p.systems.length, 1, 'shares the billboard system');
   assert.deepEqual(plan(f01()).trails, []);
 });
+
+test('SpriteRenderer compiles to a one-particle system living for its window, with window curves', () => {
+  const p = plan(f01(d => {
+    const g = root(d);
+    g.nodes.push(node('node-flash-win', 'Schedule', { startTicks: 30, durationTicks: 20, mode: 'window' }),
+      node('node-flash', 'SpriteRenderer', { size: 1.5, spin: 2, sizeOverWindow: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 0 }, { x: 1, y: 2 }] } }));
+    g.edges.push(edge('e-fa', 'node-target', 'out', 'node-flash', 'anchor'), edge('e-fm', 'node-material', 'material', 'node-flash', 'material'),
+      edge('e-fw', 'node-flash-win', 'window', 'node-flash', 'window'), edge('e-fv', 'node-flash', 'visual', 'node-output', 'visual', 1));
+  }));
+  const sys = p.systems.find(s => s.id === 'node-flash')!.descriptor;
+  assert.deepEqual([sys.sourcePosition, sys.bursts[0].tick, sys.bursts[0].count, sys.lifetimeTicks.min, sys.size.min], [[0, 1, 5], 30, 1, 20, 1.5]);
+  assert.deepEqual(sys.spin, { rotation: { min: 0, max: 0 }, angularVelocity: { min: 2, max: 2 } });
+  const layer = p.layers.find(l => l.nodeId === 'node-flash')!;
+  assert.equal(layer.sizeOverLife.keys[1].y, 2);
+  const at = (t: number) => { const r = sampleParticlesAtTick(sys, t); if (!r.ok) assert.fail('sample'); return r.value.particles.length; };
+  assert.deepEqual([at(29), at(30), at(49), at(50)], [0, 1, 1, 0]);
+});
