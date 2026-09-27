@@ -3,13 +3,13 @@
   "vfx_new_document",
   {
    "template": "blank",
-   "id": "bolt"
+   "id": "heavy"
   }
  ],
  [
   "vfx_set_document",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "durationTicks": 144,
    "seed": 2
   }
@@ -17,7 +17,7 @@
  [
   "vfx_set_anchor",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "anchorId": "source",
    "position": [
     -5.1,
@@ -29,7 +29,7 @@
  [
   "vfx_set_anchor",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "anchorId": "target",
    "position": [
     4.5,
@@ -41,7 +41,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "OffsetAnchor",
    "id": "floor",
    "params": {
@@ -56,7 +56,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "node-target.out",
    "to": "floor.anchor"
   }
@@ -64,12 +64,12 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Schedule",
    "id": "charge",
    "params": {
     "startTicks": 0,
-    "durationTicks": 24,
+    "durationTicks": 33,
     "mode": "window"
    }
   }
@@ -77,7 +77,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Material",
    "id": "chargecoremat",
    "params": {
@@ -95,7 +95,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Material",
    "id": "chargehalomat",
    "params": {
@@ -114,7 +114,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "SpriteRenderer",
    "id": "chargecore",
    "params": {
@@ -153,7 +153,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "SpriteRenderer",
    "id": "chargehalo",
    "params": {
@@ -192,7 +192,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "node-source.out",
    "to": "chargecore.anchor"
   }
@@ -200,7 +200,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "chargecoremat.material",
    "to": "chargecore.material"
   }
@@ -208,7 +208,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "charge.window",
    "to": "chargecore.window"
   }
@@ -216,7 +216,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "chargecore.visual",
    "to": "node-output.visual"
   }
@@ -224,7 +224,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "node-source.out",
    "to": "chargehalo.anchor"
   }
@@ -232,7 +232,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "chargehalomat.material",
    "to": "chargehalo.material"
   }
@@ -240,7 +240,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "charge.window",
    "to": "chargehalo.window"
   }
@@ -248,7 +248,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "chargehalo.visual",
    "to": "node-output.visual"
   }
@@ -256,7 +256,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Emitter",
    "id": "motes",
    "params": {
@@ -266,15 +266,15 @@
     "rate": 0,
     "speedMin": 0,
     "speedMax": 0.2,
-    "lifetimeMin": 0.4,
-    "lifetimeMax": 0.4
+    "lifetimeMin": 0.55,
+    "lifetimeMax": 0.55
    }
   }
  ],
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "InitialProperties",
    "id": "moteip",
    "params": {
@@ -286,11 +286,11 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Attract",
    "id": "pull",
    "params": {
-    "acceleration": 18.75,
+    "acceleration": 9.92,
     "softRadius": 0.2,
     "killRadius": 0.08
    }
@@ -299,7 +299,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Material",
    "id": "motemat",
    "params": {
@@ -317,7 +317,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "BillboardRenderer",
    "id": "motebb"
   }
@@ -325,7 +325,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "node-source.out",
    "to": "motes.anchor"
   }
@@ -333,7 +333,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "charge.start",
    "to": "motes.trigger"
   }
@@ -341,7 +341,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "motes.particles",
    "to": "moteip.particles"
   }
@@ -349,7 +349,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "moteip.particles",
    "to": "pull.particles"
   }
@@ -357,7 +357,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "node-source.out",
    "to": "pull.anchor"
   }
@@ -365,7 +365,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "pull.particles",
    "to": "motebb.particles"
   }
@@ -373,7 +373,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "motemat.material",
    "to": "motebb.material"
   }
@@ -381,7 +381,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "motebb.visual",
    "to": "node-output.visual"
   }
@@ -389,7 +389,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "ParticlePaths",
    "id": "tethers",
    "params": {
@@ -401,7 +401,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "JaggedPath",
    "id": "tetherjag",
    "params": {
@@ -414,7 +414,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Material",
    "id": "tethermat",
    "params": {
@@ -431,7 +431,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "RibbonRenderer",
    "id": "tetherrib",
    "params": {
@@ -443,7 +443,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "pull.particles",
    "to": "tethers.particles"
   }
@@ -451,7 +451,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "node-source.out",
    "to": "tethers.anchor"
   }
@@ -459,7 +459,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "tethers.paths",
    "to": "tetherjag.paths"
   }
@@ -467,7 +467,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "tetherjag.paths",
    "to": "tetherrib.paths"
   }
@@ -475,7 +475,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "tethermat.material",
    "to": "tetherrib.material"
   }
@@ -483,7 +483,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "charge.window",
    "to": "tetherrib.window"
   }
@@ -491,7 +491,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "tetherrib.visual",
    "to": "node-output.visual"
   }
@@ -499,12 +499,12 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Schedule",
    "id": "strike",
    "params": {
-    "startTicks": 24,
-    "durationTicks": 39,
+    "startTicks": 33,
+    "durationTicks": 45,
     "mode": "window"
    }
   }
@@ -512,7 +512,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "BezierPath",
    "id": "base",
    "params": {
@@ -533,7 +533,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "node-source.out",
    "to": "base.start"
   }
@@ -541,7 +541,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "node-target.out",
    "to": "base.end"
   }
@@ -549,7 +549,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "JaggedPath",
    "id": "trunk",
    "params": {
@@ -562,30 +562,30 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "BranchPath",
    "id": "branches",
    "params": {
-    "count": 14,
+    "count": 8,
     "attachmentMin": 0.12,
     "attachmentMax": 0.88,
-    "lengthMin": 0.4,
-    "lengthMax": 1.8,
-    "opacityMin": 0.2,
-    "opacityMax": 0.48,
-    "widthMin": 0.2,
-    "widthMax": 0.4
+    "lengthMin": 0.8,
+    "lengthMax": 2.4,
+    "opacityMin": 0.4,
+    "opacityMax": 0.7,
+    "widthMin": 0.35,
+    "widthMax": 0.6
    }
   }
  ],
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "BranchPath",
    "id": "forks",
    "params": {
-    "count": 7,
+    "count": 5,
     "lengthMin": 0.3,
     "lengthMax": 1,
     "opacityMin": 0.15,
@@ -598,7 +598,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "JaggedPath",
    "id": "branchjag",
    "params": {
@@ -611,7 +611,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "JaggedPath",
    "id": "forkjag",
    "params": {
@@ -624,7 +624,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "MergePaths",
    "id": "boltpaths"
   }
@@ -632,7 +632,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "RevealPath",
    "id": "reveal"
   }
@@ -640,7 +640,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "EffectTimeCurve",
    "id": "revealcurve",
    "params": {
@@ -649,11 +649,11 @@
      "interpolation": "linear",
      "keys": [
       {
-       "x": 0.4,
+       "x": 0.55,
        "y": 0
       },
       {
-       "x": 0.43343333333333334,
+       "x": 0.5834333333333334,
        "y": 1
       }
      ]
@@ -664,7 +664,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "base.paths",
    "to": "trunk.paths"
   }
@@ -672,7 +672,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "trunk.paths",
    "to": "branches.paths"
   }
@@ -680,7 +680,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "branches.branches",
    "to": "branchjag.paths"
   }
@@ -688,7 +688,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "branchjag.paths",
    "to": "forks.paths"
   }
@@ -696,7 +696,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "forks.branches",
    "to": "forkjag.paths"
   }
@@ -704,7 +704,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "trunk.paths",
    "to": "boltpaths.paths"
   }
@@ -712,7 +712,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "branchjag.paths",
    "to": "boltpaths.paths"
   }
@@ -720,7 +720,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "forkjag.paths",
    "to": "boltpaths.paths"
   }
@@ -728,7 +728,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "boltpaths.paths",
    "to": "reveal.paths"
   }
@@ -736,7 +736,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "revealcurve.value",
    "to": "reveal.fraction"
   }
@@ -744,7 +744,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "JaggedPath",
    "id": "filA",
    "params": {
@@ -757,7 +757,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "JaggedPath",
    "id": "filB",
    "params": {
@@ -770,7 +770,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "MergePaths",
    "id": "filaments"
   }
@@ -778,7 +778,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "RevealPath",
    "id": "filreveal"
   }
@@ -786,7 +786,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "base.paths",
    "to": "filA.paths"
   }
@@ -794,7 +794,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "base.paths",
    "to": "filB.paths"
   }
@@ -802,7 +802,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "filA.paths",
    "to": "filaments.paths"
   }
@@ -810,7 +810,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "filB.paths",
    "to": "filaments.paths"
   }
@@ -818,7 +818,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "filaments.paths",
    "to": "filreveal.paths"
   }
@@ -826,7 +826,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "revealcurve.value",
    "to": "filreveal.fraction"
   }
@@ -834,7 +834,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Time",
    "id": "clock"
   }
@@ -842,7 +842,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "strike.window",
    "to": "clock.window"
   }
@@ -850,12 +850,12 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "ScalarMath",
    "id": "decay",
    "params": {
     "operation": "multiply",
-    "b": -3,
+    "b": -2.5,
     "inputUnit": "second",
     "unit": "none"
    }
@@ -864,7 +864,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "ScalarMath",
    "id": "expo",
    "params": {
@@ -876,13 +876,13 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Oscillator",
    "id": "flicker",
    "params": {
     "waveform": "sine",
     "frequency": 30.557749073643905,
-    "phase": 0.7769003705424353,
+    "phase": 0.19323800949585035,
     "min": 0.72,
     "max": 1,
     "unit": "none"
@@ -892,7 +892,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "ScalarMath",
    "id": "envelope",
    "params": {
@@ -905,7 +905,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "clock.localSeconds",
    "to": "decay.a"
   }
@@ -913,7 +913,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "decay.value",
    "to": "expo.a"
   }
@@ -921,7 +921,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "expo.value",
    "to": "envelope.a"
   }
@@ -929,7 +929,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "flicker.value",
    "to": "envelope.b"
   }
@@ -937,7 +937,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Material",
    "id": "coremat",
    "params": {
@@ -953,7 +953,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "ScalarMath",
    "id": "corelevel",
    "params": {
@@ -967,7 +967,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "envelope.value",
    "to": "corelevel.a"
   }
@@ -975,7 +975,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "corelevel.value",
    "to": "coremat.opacity"
   }
@@ -983,11 +983,11 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "RibbonRenderer",
    "id": "corerib",
    "params": {
-    "width": 0.026,
+    "width": 0.0416,
     "endFade": 0.04
    }
   }
@@ -995,7 +995,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "reveal.paths",
    "to": "corerib.paths"
   }
@@ -1003,7 +1003,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "coremat.material",
    "to": "corerib.material"
   }
@@ -1011,7 +1011,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "strike.window",
    "to": "corerib.window"
   }
@@ -1019,7 +1019,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "corerib.visual",
    "to": "node-output.visual"
   }
@@ -1027,7 +1027,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Material",
    "id": "innermat",
    "params": {
@@ -1043,7 +1043,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "ScalarMath",
    "id": "innerlevel",
    "params": {
@@ -1057,7 +1057,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "envelope.value",
    "to": "innerlevel.a"
   }
@@ -1065,7 +1065,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "innerlevel.value",
    "to": "innermat.opacity"
   }
@@ -1073,11 +1073,11 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "RibbonRenderer",
    "id": "innerrib",
    "params": {
-    "width": 0.07,
+    "width": 0.112,
     "endFade": 0.04
    }
   }
@@ -1085,7 +1085,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "reveal.paths",
    "to": "innerrib.paths"
   }
@@ -1093,7 +1093,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "innermat.material",
    "to": "innerrib.material"
   }
@@ -1101,7 +1101,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "strike.window",
    "to": "innerrib.window"
   }
@@ -1109,7 +1109,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "innerrib.visual",
    "to": "node-output.visual"
   }
@@ -1117,7 +1117,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Material",
    "id": "outermat",
    "params": {
@@ -1133,7 +1133,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "ScalarMath",
    "id": "outerlevel",
    "params": {
@@ -1147,7 +1147,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "envelope.value",
    "to": "outerlevel.a"
   }
@@ -1155,7 +1155,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "outerlevel.value",
    "to": "outermat.opacity"
   }
@@ -1163,11 +1163,11 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "RibbonRenderer",
    "id": "outerrib",
    "params": {
-    "width": 0.185,
+    "width": 0.296,
     "endFade": 0.04
    }
   }
@@ -1175,7 +1175,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "reveal.paths",
    "to": "outerrib.paths"
   }
@@ -1183,7 +1183,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "outermat.material",
    "to": "outerrib.material"
   }
@@ -1191,7 +1191,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "strike.window",
    "to": "outerrib.window"
   }
@@ -1199,7 +1199,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "outerrib.visual",
    "to": "node-output.visual"
   }
@@ -1207,7 +1207,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Material",
    "id": "halomat",
    "params": {
@@ -1223,7 +1223,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "ScalarMath",
    "id": "halolevel",
    "params": {
@@ -1237,7 +1237,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "envelope.value",
    "to": "halolevel.a"
   }
@@ -1245,7 +1245,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "halolevel.value",
    "to": "halomat.opacity"
   }
@@ -1253,11 +1253,11 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "RibbonRenderer",
    "id": "halorib",
    "params": {
-    "width": 0.43,
+    "width": 0.688,
     "endFade": 0.04
    }
   }
@@ -1265,7 +1265,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "reveal.paths",
    "to": "halorib.paths"
   }
@@ -1273,7 +1273,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "halomat.material",
    "to": "halorib.material"
   }
@@ -1281,7 +1281,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "strike.window",
    "to": "halorib.window"
   }
@@ -1289,7 +1289,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "halorib.visual",
    "to": "node-output.visual"
   }
@@ -1297,7 +1297,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Material",
    "id": "filcoremat",
    "params": {
@@ -1313,7 +1313,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "ScalarMath",
    "id": "filcorelevel",
    "params": {
@@ -1327,7 +1327,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "envelope.value",
    "to": "filcorelevel.a"
   }
@@ -1335,7 +1335,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "filcorelevel.value",
    "to": "filcoremat.opacity"
   }
@@ -1343,11 +1343,11 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "RibbonRenderer",
    "id": "filcorerib",
    "params": {
-    "width": 0.02,
+    "width": 0.032,
     "endFade": 0.04
    }
   }
@@ -1355,7 +1355,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "filreveal.paths",
    "to": "filcorerib.paths"
   }
@@ -1363,7 +1363,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "filcoremat.material",
    "to": "filcorerib.material"
   }
@@ -1371,7 +1371,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "strike.window",
    "to": "filcorerib.window"
   }
@@ -1379,7 +1379,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "filcorerib.visual",
    "to": "node-output.visual"
   }
@@ -1387,7 +1387,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Material",
    "id": "filoutermat",
    "params": {
@@ -1403,7 +1403,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "ScalarMath",
    "id": "filouterlevel",
    "params": {
@@ -1417,7 +1417,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "envelope.value",
    "to": "filouterlevel.a"
   }
@@ -1425,7 +1425,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "filouterlevel.value",
    "to": "filoutermat.opacity"
   }
@@ -1433,11 +1433,11 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "RibbonRenderer",
    "id": "filouterrib",
    "params": {
-    "width": 0.12,
+    "width": 0.192,
     "endFade": 0.04
    }
   }
@@ -1445,7 +1445,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "filreveal.paths",
    "to": "filouterrib.paths"
   }
@@ -1453,7 +1453,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "filoutermat.material",
    "to": "filouterrib.material"
   }
@@ -1461,7 +1461,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "strike.window",
    "to": "filouterrib.window"
   }
@@ -1469,7 +1469,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "filouterrib.visual",
    "to": "node-output.visual"
   }
@@ -1477,11 +1477,11 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Schedule",
    "id": "impact",
    "params": {
-    "startTicks": 26,
+    "startTicks": 35,
     "durationTicks": 36,
     "mode": "window"
    }
@@ -1490,7 +1490,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Material",
    "id": "sparkmat",
    "params": {
@@ -1508,7 +1508,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Material",
    "id": "sparktrailmat",
    "params": {
@@ -1524,11 +1524,11 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Emitter",
    "id": "srcsparks",
    "params": {
-    "burst": 45,
+    "burst": 60,
     "rate": 0,
     "lifetimeMin": 0.18333333333333332,
     "lifetimeMax": 1.1833333333333333,
@@ -1542,7 +1542,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "InitialProperties",
    "id": "srcsparksip",
    "params": {
@@ -1554,7 +1554,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Gravity",
    "id": "srcsparksg",
    "params": {
@@ -1569,7 +1569,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "GroundCollision",
    "id": "srcsparksfloor",
    "params": {
@@ -1581,7 +1581,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "ParticleTrail",
    "id": "srcsparkstrail",
    "params": {
@@ -1594,7 +1594,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "BillboardRenderer",
    "id": "srcsparksbb",
    "params": {
@@ -1606,7 +1606,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "node-source.out",
    "to": "srcsparks.anchor"
   }
@@ -1614,7 +1614,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "strike.start",
    "to": "srcsparks.trigger"
   }
@@ -1622,7 +1622,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "srcsparks.particles",
    "to": "srcsparksip.particles"
   }
@@ -1630,7 +1630,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "srcsparksip.particles",
    "to": "srcsparksg.particles"
   }
@@ -1638,7 +1638,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "srcsparksg.particles",
    "to": "srcsparksfloor.particles"
   }
@@ -1646,7 +1646,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "srcsparksfloor.particles",
    "to": "srcsparkstrail.particles"
   }
@@ -1654,7 +1654,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "sparktrailmat.material",
    "to": "srcsparkstrail.material"
   }
@@ -1662,7 +1662,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "srcsparkstrail.visual",
    "to": "node-output.visual"
   }
@@ -1670,7 +1670,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "srcsparksfloor.particles",
    "to": "srcsparksbb.particles"
   }
@@ -1678,7 +1678,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "sparkmat.material",
    "to": "srcsparksbb.material"
   }
@@ -1686,7 +1686,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "srcsparksbb.visual",
    "to": "node-output.visual"
   }
@@ -1694,11 +1694,11 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Emitter",
    "id": "hitsparks",
    "params": {
-    "burst": 70,
+    "burst": 100,
     "rate": 0,
     "lifetimeMin": 0.18333333333333332,
     "lifetimeMax": 1.1833333333333333,
@@ -1718,7 +1718,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "InitialProperties",
    "id": "hitsparksip",
    "params": {
@@ -1730,7 +1730,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Gravity",
    "id": "hitsparksg",
    "params": {
@@ -1745,7 +1745,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "GroundCollision",
    "id": "hitsparksfloor",
    "params": {
@@ -1757,7 +1757,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "ParticleTrail",
    "id": "hitsparkstrail",
    "params": {
@@ -1770,7 +1770,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "BillboardRenderer",
    "id": "hitsparksbb",
    "params": {
@@ -1782,7 +1782,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "node-target.out",
    "to": "hitsparks.anchor"
   }
@@ -1790,7 +1790,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "impact.start",
    "to": "hitsparks.trigger"
   }
@@ -1798,7 +1798,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "hitsparks.particles",
    "to": "hitsparksip.particles"
   }
@@ -1806,7 +1806,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "hitsparksip.particles",
    "to": "hitsparksg.particles"
   }
@@ -1814,7 +1814,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "hitsparksg.particles",
    "to": "hitsparksfloor.particles"
   }
@@ -1822,7 +1822,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "hitsparksfloor.particles",
    "to": "hitsparkstrail.particles"
   }
@@ -1830,7 +1830,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "sparktrailmat.material",
    "to": "hitsparkstrail.material"
   }
@@ -1838,7 +1838,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "hitsparkstrail.visual",
    "to": "node-output.visual"
   }
@@ -1846,7 +1846,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "hitsparksfloor.particles",
    "to": "hitsparksbb.particles"
   }
@@ -1854,7 +1854,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "sparkmat.material",
    "to": "hitsparksbb.material"
   }
@@ -1862,7 +1862,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "hitsparksbb.visual",
    "to": "node-output.visual"
   }
@@ -1870,7 +1870,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Material",
    "id": "impcoremat",
    "params": {
@@ -1888,7 +1888,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Material",
    "id": "imphalomat",
    "params": {
@@ -1906,7 +1906,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "SpriteRenderer",
    "id": "impcore",
    "params": {
@@ -1943,11 +1943,11 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "SpriteRenderer",
    "id": "imphalo",
    "params": {
-    "size": 2,
+    "size": 3,
     "opacityOverWindow": {
      "domain": "normalized",
      "interpolation": "linear",
@@ -1976,7 +1976,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "node-target.out",
    "to": "impcore.anchor"
   }
@@ -1984,7 +1984,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "impcoremat.material",
    "to": "impcore.material"
   }
@@ -1992,7 +1992,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "impact.window",
    "to": "impcore.window"
   }
@@ -2000,7 +2000,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "impcore.visual",
    "to": "node-output.visual"
   }
@@ -2008,7 +2008,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "node-target.out",
    "to": "imphalo.anchor"
   }
@@ -2016,7 +2016,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "imphalomat.material",
    "to": "imphalo.material"
   }
@@ -2024,7 +2024,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "impact.window",
    "to": "imphalo.window"
   }
@@ -2032,7 +2032,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "imphalo.visual",
    "to": "node-output.visual"
   }
@@ -2040,7 +2040,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "PointLight",
    "id": "light",
    "params": {
@@ -2078,7 +2078,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "floor.out",
    "to": "light.anchor"
   }
@@ -2086,7 +2086,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "impact.window",
    "to": "light.window"
   }
@@ -2094,7 +2094,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "light.visual",
    "to": "node-output.visual"
   }
@@ -2102,11 +2102,11 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Schedule",
    "id": "ripplewin",
    "params": {
-    "startTicks": 26,
+    "startTicks": 35,
     "durationTicks": 96,
     "mode": "window"
    }
@@ -2115,11 +2115,11 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "RingPath",
    "id": "ripple",
    "params": {
-    "radius": 5.6,
+    "radius": 7.5,
     "samples": 96
    }
   }
@@ -2127,7 +2127,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "EffectTimeCurve",
    "id": "ripplesize",
    "params": {
@@ -2136,15 +2136,15 @@
      "interpolation": "linear",
      "keys": [
       {
-       "x": 0.43333333333333335,
-       "y": 0.026785714285714288
+       "x": 0.5833333333333334,
+       "y": 0.02
       },
       {
-       "x": 0.9333333333333333,
+       "x": 1.0833333333333335,
        "y": 0.55
       },
       {
-       "x": 2.033333333333333,
+       "x": 2.1833333333333336,
        "y": 1
       }
      ]
@@ -2155,7 +2155,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "EffectTimeCurve",
    "id": "ripplefade",
    "params": {
@@ -2164,19 +2164,19 @@
      "interpolation": "linear",
      "keys": [
       {
-       "x": 0.43333333333333335,
+       "x": 0.5833333333333334,
        "y": 0.6
       },
       {
-       "x": 0.8333333333333334,
+       "x": 0.9833333333333334,
        "y": 0.22
       },
       {
-       "x": 1.3333333333333335,
+       "x": 1.4833333333333334,
        "y": 0.06
       },
       {
-       "x": 2.033333333333333,
+       "x": 2.1833333333333336,
        "y": 0
       }
      ]
@@ -2187,7 +2187,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "Material",
    "id": "ripplemat",
    "params": {
@@ -2203,7 +2203,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "RibbonRenderer",
    "id": "ripplerib",
    "params": {
@@ -2215,7 +2215,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "floor.out",
    "to": "ripple.center"
   }
@@ -2223,7 +2223,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "ripplesize.value",
    "to": "ripple.radiusScale"
   }
@@ -2231,7 +2231,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "ripplefade.value",
    "to": "ripplemat.opacity"
   }
@@ -2239,7 +2239,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "ripple.paths",
    "to": "ripplerib.paths"
   }
@@ -2247,7 +2247,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "ripplemat.material",
    "to": "ripplerib.material"
   }
@@ -2255,7 +2255,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "ripplewin.window",
    "to": "ripplerib.window"
   }
@@ -2263,7 +2263,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "ripplerib.visual",
    "to": "node-output.visual"
   }
@@ -2271,7 +2271,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "ScreenFlash",
    "id": "flash",
    "params": {
@@ -2287,7 +2287,7 @@
  [
   "vfx_add_node",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "type": "CameraImpulse",
    "id": "shake",
    "params": {
@@ -2300,7 +2300,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "strike.start",
    "to": "flash.trigger"
   }
@@ -2308,7 +2308,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "strike.start",
    "to": "shake.trigger"
   }
@@ -2316,7 +2316,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "flash.presentation",
    "to": "node-output.presentation"
   }
@@ -2324,7 +2324,7 @@
  [
   "vfx_connect",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "from": "shake.presentation",
    "to": "node-output.presentation"
   }
@@ -2332,20 +2332,20 @@
  [
   "vfx_compile",
   {
-   "docId": "bolt"
+   "docId": "heavy"
   },
   true
  ],
  [
   "vfx_render_frames",
   {
-   "docId": "bolt",
+   "docId": "heavy",
    "ticks": [
-    22,
-    25,
-    27,
-    40,
-    80
+    31,
+    34,
+    36,
+    49,
+    89
    ]
   },
   true

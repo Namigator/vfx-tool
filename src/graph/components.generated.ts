@@ -6884,7 +6884,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "pull",
     "type": "Attract",
     "params": {
-     "acceleration": 18,
+     "acceleration": 18.75,
      "softRadius": 0.2,
      "killRadius": 0.08
     }
@@ -6990,7 +6990,9 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "lengthMin": 0.4,
      "lengthMax": 1.8,
      "opacityMin": 0.2,
-     "opacityMax": 0.48
+     "opacityMax": 0.48,
+     "widthMin": 0.2,
+     "widthMax": 0.4
     }
    },
    {
@@ -7004,6 +7006,24 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "opacityMax": 0.15,
      "widthMin": 0.15,
      "widthMax": 0.25
+    }
+   },
+   {
+    "id": "branchjag",
+    "type": "JaggedPath",
+    "params": {
+     "amplitude": 0.14,
+     "regenerationHz": 24,
+     "samples": 14
+    }
+   },
+   {
+    "id": "forkjag",
+    "type": "JaggedPath",
+    "params": {
+     "amplitude": 0.08,
+     "regenerationHz": 24,
+     "samples": 10
     }
    },
    {
@@ -7027,7 +7047,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
         "y": 0
        },
        {
-        "x": 0.4334,
+        "x": 0.43343333333333334,
         "y": 1
        }
       ]
@@ -7590,15 +7610,15 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       "interpolation": "linear",
       "keys": [
        {
-        "x": 0.4333,
-        "y": 0.027
+        "x": 0.43333333333333335,
+        "y": 0.026785714285714288
        },
        {
-        "x": 0.93,
+        "x": 0.9333333333333333,
         "y": 0.55
        },
        {
-        "x": 2.03,
+        "x": 2.033333333333333,
         "y": 1
        }
       ]
@@ -7614,19 +7634,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       "interpolation": "linear",
       "keys": [
        {
-        "x": 0.4333,
+        "x": 0.43333333333333335,
         "y": 0.6
        },
        {
-        "x": 0.83,
+        "x": 0.8333333333333334,
         "y": 0.22
        },
        {
-        "x": 1.33,
+        "x": 1.3333333333333335,
         "y": 0.06
        },
        {
-        "x": 2.03,
+        "x": 2.033333333333333,
         "y": 0
        }
       ]
@@ -7790,18 +7810,26 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "branches.branches",
+    "branchjag.paths"
+   ],
+   [
+    "branchjag.paths",
     "forks.paths"
+   ],
+   [
+    "forks.branches",
+    "forkjag.paths"
    ],
    [
     "trunk.paths",
     "boltpaths.paths"
    ],
    [
-    "branches.branches",
+    "branchjag.paths",
     "boltpaths.paths"
    ],
    [
-    "forks.branches",
+    "forkjag.paths",
     "boltpaths.paths"
    ],
    [
@@ -8252,6 +8280,3120 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "ripple",
     "label": "Ripple size",
     "value": 5.6,
+    "bindings": [
+     {
+      "node": "ripple",
+      "parameter": "radius"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "lightning-thin-fork",
+  "label": "Lightning: thin fork",
+  "description": "Lightning variant: half-width core, many fine branches, fewer sparks, short tail.",
+  "durationTicks": 144,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "floor",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      -0.08,
+      0
+     ]
+    }
+   },
+   {
+    "id": "charge",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 24,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "chargecoremat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#DDF2FF",
+      "alpha": 1
+     },
+     "emission": 2.5
+    }
+   },
+   {
+    "id": "chargehalomat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#3F7BFF",
+      "alpha": 1
+     },
+     "opacity": 0.9,
+     "emission": 0.6
+    }
+   },
+   {
+    "id": "chargecore",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.34,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.14
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.2
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "chargehalo",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1.4,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.14
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 1,
+        "y": 0.8
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "motes",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 1.5,
+     "burst": 27,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0.2,
+     "lifetimeMin": 0.4,
+     "lifetimeMax": 0.4
+    }
+   },
+   {
+    "id": "moteip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.03,
+     "sizeMax": 0.05
+    }
+   },
+   {
+    "id": "pull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 18.75,
+     "softRadius": 0.2,
+     "killRadius": 0.08
+    }
+   },
+   {
+    "id": "motemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#9FD8FF",
+      "alpha": 1
+     },
+     "emission": 1
+    }
+   },
+   {
+    "id": "motebb",
+    "type": "BillboardRenderer"
+   },
+   {
+    "id": "tethers",
+    "type": "ParticlePaths",
+    "params": {
+     "maxCount": 4,
+     "samples": 10
+    }
+   },
+   {
+    "id": "tetherjag",
+    "type": "JaggedPath",
+    "params": {
+     "amplitude": 0.06,
+     "regenerationHz": 24,
+     "samples": 10
+    }
+   },
+   {
+    "id": "tethermat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#CFEBFF",
+      "alpha": 1
+     },
+     "emission": 0.6,
+     "opacity": 0.8
+    }
+   },
+   {
+    "id": "tetherrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.012,
+     "endFade": 0.15
+    }
+   },
+   {
+    "id": "strike",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 24,
+     "durationTicks": 26,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "base",
+    "type": "BezierPath",
+    "params": {
+     "startHandle": [
+      2.4,
+      0.56,
+      0
+     ],
+     "endHandle": [
+      -2.4,
+      0.56,
+      0
+     ],
+     "samples": 48
+    }
+   },
+   {
+    "id": "trunk",
+    "type": "JaggedPath",
+    "params": {
+     "amplitude": 0.55,
+     "regenerationHz": 24,
+     "samples": 42
+    }
+   },
+   {
+    "id": "branches",
+    "type": "BranchPath",
+    "params": {
+     "count": 22,
+     "attachmentMin": 0.12,
+     "attachmentMax": 0.88,
+     "lengthMin": 0.3,
+     "lengthMax": 1.4,
+     "opacityMin": 0.12,
+     "opacityMax": 0.3,
+     "widthMin": 0.1,
+     "widthMax": 0.2
+    }
+   },
+   {
+    "id": "forks",
+    "type": "BranchPath",
+    "params": {
+     "count": 9,
+     "lengthMin": 0.3,
+     "lengthMax": 1,
+     "opacityMin": 0.15,
+     "opacityMax": 0.15,
+     "widthMin": 0.15,
+     "widthMax": 0.25
+    }
+   },
+   {
+    "id": "branchjag",
+    "type": "JaggedPath",
+    "params": {
+     "amplitude": 0.14,
+     "regenerationHz": 24,
+     "samples": 14
+    }
+   },
+   {
+    "id": "forkjag",
+    "type": "JaggedPath",
+    "params": {
+     "amplitude": 0.08,
+     "regenerationHz": 24,
+     "samples": 10
+    }
+   },
+   {
+    "id": "boltpaths",
+    "type": "MergePaths"
+   },
+   {
+    "id": "reveal",
+    "type": "RevealPath"
+   },
+   {
+    "id": "revealcurve",
+    "type": "EffectTimeCurve",
+    "params": {
+     "curve": {
+      "domain": "effectSeconds",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0.4,
+        "y": 0
+       },
+       {
+        "x": 0.43343333333333334,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "filA",
+    "type": "JaggedPath",
+    "params": {
+     "amplitude": 0.36,
+     "regenerationHz": 24,
+     "samples": 48
+    }
+   },
+   {
+    "id": "filB",
+    "type": "JaggedPath",
+    "params": {
+     "amplitude": 0.56,
+     "regenerationHz": 24,
+     "samples": 48
+    }
+   },
+   {
+    "id": "filaments",
+    "type": "MergePaths"
+   },
+   {
+    "id": "filreveal",
+    "type": "RevealPath"
+   },
+   {
+    "id": "clock",
+    "type": "Time"
+   },
+   {
+    "id": "decay",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -5,
+     "inputUnit": "second",
+     "unit": "none"
+    }
+   },
+   {
+    "id": "expo",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "exp",
+     "unit": "none"
+    }
+   },
+   {
+    "id": "flicker",
+    "type": "Oscillator",
+    "params": {
+     "waveform": "sine",
+     "frequency": 30.557749073643905,
+     "phase": 0.7769003705424353,
+     "min": 0.72,
+     "max": 1,
+     "unit": "none"
+    }
+   },
+   {
+    "id": "envelope",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "inputUnit": "none",
+     "unit": "none"
+    }
+   },
+   {
+    "id": "coremat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFFFFF",
+      "alpha": 1
+     },
+     "emission": 0.5
+    }
+   },
+   {
+    "id": "corelevel",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 1,
+     "inputUnit": "none",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "corerib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.013,
+     "endFade": 0.04
+    }
+   },
+   {
+    "id": "innermat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#7FD6FF",
+      "alpha": 1
+     },
+     "emission": 0.15
+    }
+   },
+   {
+    "id": "innerlevel",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.65,
+     "inputUnit": "none",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "innerrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.035,
+     "endFade": 0.04
+    }
+   },
+   {
+    "id": "outermat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#2F7BFF",
+      "alpha": 1
+     },
+     "emission": 0
+    }
+   },
+   {
+    "id": "outerlevel",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.17,
+     "inputUnit": "none",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "outerrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.0925,
+     "endFade": 0.04
+    }
+   },
+   {
+    "id": "halomat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#1A3A9A",
+      "alpha": 1
+     },
+     "emission": 0
+    }
+   },
+   {
+    "id": "halolevel",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.07,
+     "inputUnit": "none",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "halorib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.215,
+     "endFade": 0.04
+    }
+   },
+   {
+    "id": "filcoremat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#DDF2FF",
+      "alpha": 1
+     },
+     "emission": 0.6
+    }
+   },
+   {
+    "id": "filcorelevel",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.32,
+     "inputUnit": "none",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "filcorerib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.01,
+     "endFade": 0.04
+    }
+   },
+   {
+    "id": "filoutermat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#3F8CFF",
+      "alpha": 1
+     },
+     "emission": 0
+    }
+   },
+   {
+    "id": "filouterlevel",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.054400000000000004,
+     "inputUnit": "none",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "filouterrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.06,
+     "endFade": 0.04
+    }
+   },
+   {
+    "id": "impact",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 26,
+     "durationTicks": 36,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "sparkmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#CFEFFF",
+      "alpha": 1
+     },
+     "emission": 1.2
+    }
+   },
+   {
+    "id": "sparktrailmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#9FD8FF",
+      "alpha": 1
+     },
+     "emission": 0.8
+    }
+   },
+   {
+    "id": "srcsparks",
+    "type": "Emitter",
+    "params": {
+     "burst": 25,
+     "rate": 0,
+     "lifetimeMin": 0.18333333333333332,
+     "lifetimeMax": 1.1833333333333333,
+     "shape": "sphere",
+     "radius": 0.05,
+     "speedMin": 1.5,
+     "speedMax": 6.5
+    }
+   },
+   {
+    "id": "srcsparksip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.02,
+     "sizeMax": 0.035
+    }
+   },
+   {
+    "id": "srcsparksg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -10,
+      0
+     ]
+    }
+   },
+   {
+    "id": "srcsparksfloor",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.3
+    }
+   },
+   {
+    "id": "srcsparkstrail",
+    "type": "ParticleTrail",
+    "params": {
+     "history": 0.06666666666666667,
+     "width": 0.012,
+     "endFade": 0.3
+    }
+   },
+   {
+    "id": "srcsparksbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 2
+    }
+   },
+   {
+    "id": "hitsparks",
+    "type": "Emitter",
+    "params": {
+     "burst": 35,
+     "rate": 0,
+     "lifetimeMin": 0.18333333333333332,
+     "lifetimeMax": 1.1833333333333333,
+     "shape": "cone",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "coneAngle": 1.4,
+     "radius": 0.05,
+     "speedMin": 1,
+     "speedMax": 6
+    }
+   },
+   {
+    "id": "hitsparksip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.02,
+     "sizeMax": 0.035
+    }
+   },
+   {
+    "id": "hitsparksg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -10,
+      0
+     ]
+    }
+   },
+   {
+    "id": "hitsparksfloor",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.3
+    }
+   },
+   {
+    "id": "hitsparkstrail",
+    "type": "ParticleTrail",
+    "params": {
+     "history": 0.06666666666666667,
+     "width": 0.012,
+     "endFade": 0.3
+    }
+   },
+   {
+    "id": "hitsparksbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 2
+    }
+   },
+   {
+    "id": "impcoremat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFFFFF",
+      "alpha": 1
+     },
+     "emission": 1.5
+    }
+   },
+   {
+    "id": "imphalomat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#2F6BFF",
+      "alpha": 1
+     },
+     "opacity": 0.7
+    }
+   },
+   {
+    "id": "impcore",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.35,
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.08,
+        "y": 0.55
+       },
+       {
+        "x": 0.25,
+        "y": 0.18
+       },
+       {
+        "x": 0.6,
+        "y": 0.03
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "imphalo",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1.4,
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.8
+       },
+       {
+        "x": 0.12,
+        "y": 0.35
+       },
+       {
+        "x": 0.4,
+        "y": 0.08
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "light",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#8FC8FF",
+      "alpha": 1
+     },
+     "intensity": 25,
+     "range": 6,
+     "intensityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.15,
+        "y": 0.35
+       },
+       {
+        "x": 0.5,
+        "y": 0.08
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "ripplewin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 26,
+     "durationTicks": 96,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ripple",
+    "type": "RingPath",
+    "params": {
+     "radius": 4,
+     "samples": 96
+    }
+   },
+   {
+    "id": "ripplesize",
+    "type": "EffectTimeCurve",
+    "params": {
+     "curve": {
+      "domain": "effectSeconds",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0.43333333333333335,
+        "y": 0.0375
+       },
+       {
+        "x": 0.9333333333333333,
+        "y": 0.55
+       },
+       {
+        "x": 2.033333333333333,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "ripplefade",
+    "type": "EffectTimeCurve",
+    "params": {
+     "curve": {
+      "domain": "effectSeconds",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0.43333333333333335,
+        "y": 0.6
+       },
+       {
+        "x": 0.8333333333333334,
+        "y": 0.22
+       },
+       {
+        "x": 1.3333333333333335,
+        "y": 0.06
+       },
+       {
+        "x": 2.033333333333333,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "ripplemat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#5FA8FF",
+      "alpha": 1
+     },
+     "emission": 0.3
+    }
+   },
+   {
+    "id": "ripplerib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.05,
+     "endFade": 0
+    }
+   },
+   {
+    "id": "flash",
+    "type": "ScreenFlash",
+    "params": {
+     "color": {
+      "srgb": "#CFE6FF",
+      "alpha": 1
+     },
+     "alpha": 0.13,
+     "durationTicks": 4
+    }
+   },
+   {
+    "id": "shake",
+    "type": "CameraImpulse",
+    "params": {
+     "durationTicks": 6,
+     "translation": 0.03,
+     "rotation": 0.006
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "floor.anchor"
+   ],
+   [
+    "node-source.out",
+    "chargecore.anchor"
+   ],
+   [
+    "chargecoremat.material",
+    "chargecore.material"
+   ],
+   [
+    "charge.window",
+    "chargecore.window"
+   ],
+   [
+    "chargecore.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "chargehalo.anchor"
+   ],
+   [
+    "chargehalomat.material",
+    "chargehalo.material"
+   ],
+   [
+    "charge.window",
+    "chargehalo.window"
+   ],
+   [
+    "chargehalo.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "motes.anchor"
+   ],
+   [
+    "charge.start",
+    "motes.trigger"
+   ],
+   [
+    "motes.particles",
+    "moteip.particles"
+   ],
+   [
+    "moteip.particles",
+    "pull.particles"
+   ],
+   [
+    "node-source.out",
+    "pull.anchor"
+   ],
+   [
+    "pull.particles",
+    "motebb.particles"
+   ],
+   [
+    "motemat.material",
+    "motebb.material"
+   ],
+   [
+    "motebb.visual",
+    "node-output.visual"
+   ],
+   [
+    "pull.particles",
+    "tethers.particles"
+   ],
+   [
+    "node-source.out",
+    "tethers.anchor"
+   ],
+   [
+    "tethers.paths",
+    "tetherjag.paths"
+   ],
+   [
+    "tetherjag.paths",
+    "tetherrib.paths"
+   ],
+   [
+    "tethermat.material",
+    "tetherrib.material"
+   ],
+   [
+    "charge.window",
+    "tetherrib.window"
+   ],
+   [
+    "tetherrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "base.start"
+   ],
+   [
+    "node-target.out",
+    "base.end"
+   ],
+   [
+    "base.paths",
+    "trunk.paths"
+   ],
+   [
+    "trunk.paths",
+    "branches.paths"
+   ],
+   [
+    "branches.branches",
+    "branchjag.paths"
+   ],
+   [
+    "branchjag.paths",
+    "forks.paths"
+   ],
+   [
+    "forks.branches",
+    "forkjag.paths"
+   ],
+   [
+    "trunk.paths",
+    "boltpaths.paths"
+   ],
+   [
+    "branchjag.paths",
+    "boltpaths.paths"
+   ],
+   [
+    "forkjag.paths",
+    "boltpaths.paths"
+   ],
+   [
+    "boltpaths.paths",
+    "reveal.paths"
+   ],
+   [
+    "revealcurve.value",
+    "reveal.fraction"
+   ],
+   [
+    "base.paths",
+    "filA.paths"
+   ],
+   [
+    "base.paths",
+    "filB.paths"
+   ],
+   [
+    "filA.paths",
+    "filaments.paths"
+   ],
+   [
+    "filB.paths",
+    "filaments.paths"
+   ],
+   [
+    "filaments.paths",
+    "filreveal.paths"
+   ],
+   [
+    "revealcurve.value",
+    "filreveal.fraction"
+   ],
+   [
+    "strike.window",
+    "clock.window"
+   ],
+   [
+    "clock.localSeconds",
+    "decay.a"
+   ],
+   [
+    "decay.value",
+    "expo.a"
+   ],
+   [
+    "expo.value",
+    "envelope.a"
+   ],
+   [
+    "flicker.value",
+    "envelope.b"
+   ],
+   [
+    "envelope.value",
+    "corelevel.a"
+   ],
+   [
+    "corelevel.value",
+    "coremat.opacity"
+   ],
+   [
+    "reveal.paths",
+    "corerib.paths"
+   ],
+   [
+    "coremat.material",
+    "corerib.material"
+   ],
+   [
+    "strike.window",
+    "corerib.window"
+   ],
+   [
+    "corerib.visual",
+    "node-output.visual"
+   ],
+   [
+    "envelope.value",
+    "innerlevel.a"
+   ],
+   [
+    "innerlevel.value",
+    "innermat.opacity"
+   ],
+   [
+    "reveal.paths",
+    "innerrib.paths"
+   ],
+   [
+    "innermat.material",
+    "innerrib.material"
+   ],
+   [
+    "strike.window",
+    "innerrib.window"
+   ],
+   [
+    "innerrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "envelope.value",
+    "outerlevel.a"
+   ],
+   [
+    "outerlevel.value",
+    "outermat.opacity"
+   ],
+   [
+    "reveal.paths",
+    "outerrib.paths"
+   ],
+   [
+    "outermat.material",
+    "outerrib.material"
+   ],
+   [
+    "strike.window",
+    "outerrib.window"
+   ],
+   [
+    "outerrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "envelope.value",
+    "halolevel.a"
+   ],
+   [
+    "halolevel.value",
+    "halomat.opacity"
+   ],
+   [
+    "reveal.paths",
+    "halorib.paths"
+   ],
+   [
+    "halomat.material",
+    "halorib.material"
+   ],
+   [
+    "strike.window",
+    "halorib.window"
+   ],
+   [
+    "halorib.visual",
+    "node-output.visual"
+   ],
+   [
+    "envelope.value",
+    "filcorelevel.a"
+   ],
+   [
+    "filcorelevel.value",
+    "filcoremat.opacity"
+   ],
+   [
+    "filreveal.paths",
+    "filcorerib.paths"
+   ],
+   [
+    "filcoremat.material",
+    "filcorerib.material"
+   ],
+   [
+    "strike.window",
+    "filcorerib.window"
+   ],
+   [
+    "filcorerib.visual",
+    "node-output.visual"
+   ],
+   [
+    "envelope.value",
+    "filouterlevel.a"
+   ],
+   [
+    "filouterlevel.value",
+    "filoutermat.opacity"
+   ],
+   [
+    "filreveal.paths",
+    "filouterrib.paths"
+   ],
+   [
+    "filoutermat.material",
+    "filouterrib.material"
+   ],
+   [
+    "strike.window",
+    "filouterrib.window"
+   ],
+   [
+    "filouterrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "srcsparks.anchor"
+   ],
+   [
+    "strike.start",
+    "srcsparks.trigger"
+   ],
+   [
+    "srcsparks.particles",
+    "srcsparksip.particles"
+   ],
+   [
+    "srcsparksip.particles",
+    "srcsparksg.particles"
+   ],
+   [
+    "srcsparksg.particles",
+    "srcsparksfloor.particles"
+   ],
+   [
+    "srcsparksfloor.particles",
+    "srcsparkstrail.particles"
+   ],
+   [
+    "sparktrailmat.material",
+    "srcsparkstrail.material"
+   ],
+   [
+    "srcsparkstrail.visual",
+    "node-output.visual"
+   ],
+   [
+    "srcsparksfloor.particles",
+    "srcsparksbb.particles"
+   ],
+   [
+    "sparkmat.material",
+    "srcsparksbb.material"
+   ],
+   [
+    "srcsparksbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "hitsparks.anchor"
+   ],
+   [
+    "impact.start",
+    "hitsparks.trigger"
+   ],
+   [
+    "hitsparks.particles",
+    "hitsparksip.particles"
+   ],
+   [
+    "hitsparksip.particles",
+    "hitsparksg.particles"
+   ],
+   [
+    "hitsparksg.particles",
+    "hitsparksfloor.particles"
+   ],
+   [
+    "hitsparksfloor.particles",
+    "hitsparkstrail.particles"
+   ],
+   [
+    "sparktrailmat.material",
+    "hitsparkstrail.material"
+   ],
+   [
+    "hitsparkstrail.visual",
+    "node-output.visual"
+   ],
+   [
+    "hitsparksfloor.particles",
+    "hitsparksbb.particles"
+   ],
+   [
+    "sparkmat.material",
+    "hitsparksbb.material"
+   ],
+   [
+    "hitsparksbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "impcore.anchor"
+   ],
+   [
+    "impcoremat.material",
+    "impcore.material"
+   ],
+   [
+    "impact.window",
+    "impcore.window"
+   ],
+   [
+    "impcore.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "imphalo.anchor"
+   ],
+   [
+    "imphalomat.material",
+    "imphalo.material"
+   ],
+   [
+    "impact.window",
+    "imphalo.window"
+   ],
+   [
+    "imphalo.visual",
+    "node-output.visual"
+   ],
+   [
+    "floor.out",
+    "light.anchor"
+   ],
+   [
+    "impact.window",
+    "light.window"
+   ],
+   [
+    "light.visual",
+    "node-output.visual"
+   ],
+   [
+    "floor.out",
+    "ripple.center"
+   ],
+   [
+    "ripplesize.value",
+    "ripple.radiusScale"
+   ],
+   [
+    "ripplefade.value",
+    "ripplemat.opacity"
+   ],
+   [
+    "ripple.paths",
+    "ripplerib.paths"
+   ],
+   [
+    "ripplemat.material",
+    "ripplerib.material"
+   ],
+   [
+    "ripplewin.window",
+    "ripplerib.window"
+   ],
+   [
+    "ripplerib.visual",
+    "node-output.visual"
+   ],
+   [
+    "strike.start",
+    "flash.trigger"
+   ],
+   [
+    "strike.start",
+    "shake.trigger"
+   ],
+   [
+    "flash.presentation",
+    "node-output.presentation"
+   ],
+   [
+    "shake.presentation",
+    "node-output.presentation"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "core",
+    "label": "Core width",
+    "value": 0.013,
+    "bindings": [
+     {
+      "node": "corerib",
+      "parameter": "width"
+     },
+     {
+      "node": "innerrib",
+      "parameter": "width",
+      "scale": 2.692
+     },
+     {
+      "node": "outerrib",
+      "parameter": "width",
+      "scale": 7.115
+     },
+     {
+      "node": "halorib",
+      "parameter": "width",
+      "scale": 16.54
+     }
+    ]
+   },
+   {
+    "id": "branches",
+    "label": "Branches",
+    "value": 22,
+    "bindings": [
+     {
+      "node": "branches",
+      "parameter": "count"
+     }
+    ]
+   },
+   {
+    "id": "jagged",
+    "label": "Jaggedness",
+    "value": 0.55,
+    "bindings": [
+     {
+      "node": "trunk",
+      "parameter": "amplitude"
+     }
+    ]
+   },
+   {
+    "id": "impact",
+    "label": "Impact sparks",
+    "value": 35,
+    "bindings": [
+     {
+      "node": "hitsparks",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "source",
+    "label": "Source sparks",
+    "value": 25,
+    "bindings": [
+     {
+      "node": "srcsparks",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "ripple",
+    "label": "Ripple size",
+    "value": 4,
+    "bindings": [
+     {
+      "node": "ripple",
+      "parameter": "radius"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "lightning-heavy-strike",
+  "label": "Lightning: heavy strike",
+  "description": "Lightning variant: thick core, few strong branches, wider impact and ring, slower charge.",
+  "durationTicks": 144,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "floor",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      -0.08,
+      0
+     ]
+    }
+   },
+   {
+    "id": "charge",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 33,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "chargecoremat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#DDF2FF",
+      "alpha": 1
+     },
+     "emission": 2.5
+    }
+   },
+   {
+    "id": "chargehalomat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#3F7BFF",
+      "alpha": 1
+     },
+     "opacity": 0.9,
+     "emission": 0.6
+    }
+   },
+   {
+    "id": "chargecore",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.34,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.14
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.2
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "chargehalo",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1.4,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.14
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 1,
+        "y": 0.8
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "motes",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 1.5,
+     "burst": 27,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0.2,
+     "lifetimeMin": 0.55,
+     "lifetimeMax": 0.55
+    }
+   },
+   {
+    "id": "moteip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.03,
+     "sizeMax": 0.05
+    }
+   },
+   {
+    "id": "pull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 9.92,
+     "softRadius": 0.2,
+     "killRadius": 0.08
+    }
+   },
+   {
+    "id": "motemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#9FD8FF",
+      "alpha": 1
+     },
+     "emission": 1
+    }
+   },
+   {
+    "id": "motebb",
+    "type": "BillboardRenderer"
+   },
+   {
+    "id": "tethers",
+    "type": "ParticlePaths",
+    "params": {
+     "maxCount": 4,
+     "samples": 10
+    }
+   },
+   {
+    "id": "tetherjag",
+    "type": "JaggedPath",
+    "params": {
+     "amplitude": 0.06,
+     "regenerationHz": 24,
+     "samples": 10
+    }
+   },
+   {
+    "id": "tethermat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#CFEBFF",
+      "alpha": 1
+     },
+     "emission": 0.6,
+     "opacity": 0.8
+    }
+   },
+   {
+    "id": "tetherrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.012,
+     "endFade": 0.15
+    }
+   },
+   {
+    "id": "strike",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 33,
+     "durationTicks": 45,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "base",
+    "type": "BezierPath",
+    "params": {
+     "startHandle": [
+      2.4,
+      0.56,
+      0
+     ],
+     "endHandle": [
+      -2.4,
+      0.56,
+      0
+     ],
+     "samples": 48
+    }
+   },
+   {
+    "id": "trunk",
+    "type": "JaggedPath",
+    "params": {
+     "amplitude": 0.55,
+     "regenerationHz": 24,
+     "samples": 42
+    }
+   },
+   {
+    "id": "branches",
+    "type": "BranchPath",
+    "params": {
+     "count": 8,
+     "attachmentMin": 0.12,
+     "attachmentMax": 0.88,
+     "lengthMin": 0.8,
+     "lengthMax": 2.4,
+     "opacityMin": 0.4,
+     "opacityMax": 0.7,
+     "widthMin": 0.35,
+     "widthMax": 0.6
+    }
+   },
+   {
+    "id": "forks",
+    "type": "BranchPath",
+    "params": {
+     "count": 5,
+     "lengthMin": 0.3,
+     "lengthMax": 1,
+     "opacityMin": 0.15,
+     "opacityMax": 0.15,
+     "widthMin": 0.15,
+     "widthMax": 0.25
+    }
+   },
+   {
+    "id": "branchjag",
+    "type": "JaggedPath",
+    "params": {
+     "amplitude": 0.14,
+     "regenerationHz": 24,
+     "samples": 14
+    }
+   },
+   {
+    "id": "forkjag",
+    "type": "JaggedPath",
+    "params": {
+     "amplitude": 0.08,
+     "regenerationHz": 24,
+     "samples": 10
+    }
+   },
+   {
+    "id": "boltpaths",
+    "type": "MergePaths"
+   },
+   {
+    "id": "reveal",
+    "type": "RevealPath"
+   },
+   {
+    "id": "revealcurve",
+    "type": "EffectTimeCurve",
+    "params": {
+     "curve": {
+      "domain": "effectSeconds",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0.55,
+        "y": 0
+       },
+       {
+        "x": 0.5834333333333334,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "filA",
+    "type": "JaggedPath",
+    "params": {
+     "amplitude": 0.36,
+     "regenerationHz": 24,
+     "samples": 48
+    }
+   },
+   {
+    "id": "filB",
+    "type": "JaggedPath",
+    "params": {
+     "amplitude": 0.56,
+     "regenerationHz": 24,
+     "samples": 48
+    }
+   },
+   {
+    "id": "filaments",
+    "type": "MergePaths"
+   },
+   {
+    "id": "filreveal",
+    "type": "RevealPath"
+   },
+   {
+    "id": "clock",
+    "type": "Time"
+   },
+   {
+    "id": "decay",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -2.5,
+     "inputUnit": "second",
+     "unit": "none"
+    }
+   },
+   {
+    "id": "expo",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "exp",
+     "unit": "none"
+    }
+   },
+   {
+    "id": "flicker",
+    "type": "Oscillator",
+    "params": {
+     "waveform": "sine",
+     "frequency": 30.557749073643905,
+     "phase": 0.19323800949585035,
+     "min": 0.72,
+     "max": 1,
+     "unit": "none"
+    }
+   },
+   {
+    "id": "envelope",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "inputUnit": "none",
+     "unit": "none"
+    }
+   },
+   {
+    "id": "coremat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFFFFF",
+      "alpha": 1
+     },
+     "emission": 0.5
+    }
+   },
+   {
+    "id": "corelevel",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 1,
+     "inputUnit": "none",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "corerib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.0416,
+     "endFade": 0.04
+    }
+   },
+   {
+    "id": "innermat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#7FD6FF",
+      "alpha": 1
+     },
+     "emission": 0.15
+    }
+   },
+   {
+    "id": "innerlevel",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.65,
+     "inputUnit": "none",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "innerrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.112,
+     "endFade": 0.04
+    }
+   },
+   {
+    "id": "outermat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#2F7BFF",
+      "alpha": 1
+     },
+     "emission": 0
+    }
+   },
+   {
+    "id": "outerlevel",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.17,
+     "inputUnit": "none",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "outerrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.296,
+     "endFade": 0.04
+    }
+   },
+   {
+    "id": "halomat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#1A3A9A",
+      "alpha": 1
+     },
+     "emission": 0
+    }
+   },
+   {
+    "id": "halolevel",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.07,
+     "inputUnit": "none",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "halorib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.688,
+     "endFade": 0.04
+    }
+   },
+   {
+    "id": "filcoremat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#DDF2FF",
+      "alpha": 1
+     },
+     "emission": 0.6
+    }
+   },
+   {
+    "id": "filcorelevel",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.32,
+     "inputUnit": "none",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "filcorerib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.032,
+     "endFade": 0.04
+    }
+   },
+   {
+    "id": "filoutermat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#3F8CFF",
+      "alpha": 1
+     },
+     "emission": 0
+    }
+   },
+   {
+    "id": "filouterlevel",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.054400000000000004,
+     "inputUnit": "none",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "filouterrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.192,
+     "endFade": 0.04
+    }
+   },
+   {
+    "id": "impact",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 35,
+     "durationTicks": 36,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "sparkmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#CFEFFF",
+      "alpha": 1
+     },
+     "emission": 1.2
+    }
+   },
+   {
+    "id": "sparktrailmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#9FD8FF",
+      "alpha": 1
+     },
+     "emission": 0.8
+    }
+   },
+   {
+    "id": "srcsparks",
+    "type": "Emitter",
+    "params": {
+     "burst": 60,
+     "rate": 0,
+     "lifetimeMin": 0.18333333333333332,
+     "lifetimeMax": 1.1833333333333333,
+     "shape": "sphere",
+     "radius": 0.05,
+     "speedMin": 1.5,
+     "speedMax": 6.5
+    }
+   },
+   {
+    "id": "srcsparksip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.02,
+     "sizeMax": 0.035
+    }
+   },
+   {
+    "id": "srcsparksg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -10,
+      0
+     ]
+    }
+   },
+   {
+    "id": "srcsparksfloor",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.3
+    }
+   },
+   {
+    "id": "srcsparkstrail",
+    "type": "ParticleTrail",
+    "params": {
+     "history": 0.06666666666666667,
+     "width": 0.012,
+     "endFade": 0.3
+    }
+   },
+   {
+    "id": "srcsparksbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 2
+    }
+   },
+   {
+    "id": "hitsparks",
+    "type": "Emitter",
+    "params": {
+     "burst": 100,
+     "rate": 0,
+     "lifetimeMin": 0.18333333333333332,
+     "lifetimeMax": 1.1833333333333333,
+     "shape": "cone",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "coneAngle": 1.4,
+     "radius": 0.05,
+     "speedMin": 1,
+     "speedMax": 6
+    }
+   },
+   {
+    "id": "hitsparksip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.02,
+     "sizeMax": 0.035
+    }
+   },
+   {
+    "id": "hitsparksg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -10,
+      0
+     ]
+    }
+   },
+   {
+    "id": "hitsparksfloor",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.3
+    }
+   },
+   {
+    "id": "hitsparkstrail",
+    "type": "ParticleTrail",
+    "params": {
+     "history": 0.06666666666666667,
+     "width": 0.012,
+     "endFade": 0.3
+    }
+   },
+   {
+    "id": "hitsparksbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 2
+    }
+   },
+   {
+    "id": "impcoremat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFFFFF",
+      "alpha": 1
+     },
+     "emission": 1.5
+    }
+   },
+   {
+    "id": "imphalomat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#2F6BFF",
+      "alpha": 1
+     },
+     "opacity": 0.7
+    }
+   },
+   {
+    "id": "impcore",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.35,
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.08,
+        "y": 0.55
+       },
+       {
+        "x": 0.25,
+        "y": 0.18
+       },
+       {
+        "x": 0.6,
+        "y": 0.03
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "imphalo",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 3,
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.8
+       },
+       {
+        "x": 0.12,
+        "y": 0.35
+       },
+       {
+        "x": 0.4,
+        "y": 0.08
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "light",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#8FC8FF",
+      "alpha": 1
+     },
+     "intensity": 25,
+     "range": 6,
+     "intensityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.15,
+        "y": 0.35
+       },
+       {
+        "x": 0.5,
+        "y": 0.08
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "ripplewin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 35,
+     "durationTicks": 96,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ripple",
+    "type": "RingPath",
+    "params": {
+     "radius": 7.5,
+     "samples": 96
+    }
+   },
+   {
+    "id": "ripplesize",
+    "type": "EffectTimeCurve",
+    "params": {
+     "curve": {
+      "domain": "effectSeconds",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0.5833333333333334,
+        "y": 0.02
+       },
+       {
+        "x": 1.0833333333333335,
+        "y": 0.55
+       },
+       {
+        "x": 2.1833333333333336,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "ripplefade",
+    "type": "EffectTimeCurve",
+    "params": {
+     "curve": {
+      "domain": "effectSeconds",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0.5833333333333334,
+        "y": 0.6
+       },
+       {
+        "x": 0.9833333333333334,
+        "y": 0.22
+       },
+       {
+        "x": 1.4833333333333334,
+        "y": 0.06
+       },
+       {
+        "x": 2.1833333333333336,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "ripplemat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#5FA8FF",
+      "alpha": 1
+     },
+     "emission": 0.3
+    }
+   },
+   {
+    "id": "ripplerib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.05,
+     "endFade": 0
+    }
+   },
+   {
+    "id": "flash",
+    "type": "ScreenFlash",
+    "params": {
+     "color": {
+      "srgb": "#CFE6FF",
+      "alpha": 1
+     },
+     "alpha": 0.13,
+     "durationTicks": 4
+    }
+   },
+   {
+    "id": "shake",
+    "type": "CameraImpulse",
+    "params": {
+     "durationTicks": 6,
+     "translation": 0.03,
+     "rotation": 0.006
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "floor.anchor"
+   ],
+   [
+    "node-source.out",
+    "chargecore.anchor"
+   ],
+   [
+    "chargecoremat.material",
+    "chargecore.material"
+   ],
+   [
+    "charge.window",
+    "chargecore.window"
+   ],
+   [
+    "chargecore.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "chargehalo.anchor"
+   ],
+   [
+    "chargehalomat.material",
+    "chargehalo.material"
+   ],
+   [
+    "charge.window",
+    "chargehalo.window"
+   ],
+   [
+    "chargehalo.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "motes.anchor"
+   ],
+   [
+    "charge.start",
+    "motes.trigger"
+   ],
+   [
+    "motes.particles",
+    "moteip.particles"
+   ],
+   [
+    "moteip.particles",
+    "pull.particles"
+   ],
+   [
+    "node-source.out",
+    "pull.anchor"
+   ],
+   [
+    "pull.particles",
+    "motebb.particles"
+   ],
+   [
+    "motemat.material",
+    "motebb.material"
+   ],
+   [
+    "motebb.visual",
+    "node-output.visual"
+   ],
+   [
+    "pull.particles",
+    "tethers.particles"
+   ],
+   [
+    "node-source.out",
+    "tethers.anchor"
+   ],
+   [
+    "tethers.paths",
+    "tetherjag.paths"
+   ],
+   [
+    "tetherjag.paths",
+    "tetherrib.paths"
+   ],
+   [
+    "tethermat.material",
+    "tetherrib.material"
+   ],
+   [
+    "charge.window",
+    "tetherrib.window"
+   ],
+   [
+    "tetherrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "base.start"
+   ],
+   [
+    "node-target.out",
+    "base.end"
+   ],
+   [
+    "base.paths",
+    "trunk.paths"
+   ],
+   [
+    "trunk.paths",
+    "branches.paths"
+   ],
+   [
+    "branches.branches",
+    "branchjag.paths"
+   ],
+   [
+    "branchjag.paths",
+    "forks.paths"
+   ],
+   [
+    "forks.branches",
+    "forkjag.paths"
+   ],
+   [
+    "trunk.paths",
+    "boltpaths.paths"
+   ],
+   [
+    "branchjag.paths",
+    "boltpaths.paths"
+   ],
+   [
+    "forkjag.paths",
+    "boltpaths.paths"
+   ],
+   [
+    "boltpaths.paths",
+    "reveal.paths"
+   ],
+   [
+    "revealcurve.value",
+    "reveal.fraction"
+   ],
+   [
+    "base.paths",
+    "filA.paths"
+   ],
+   [
+    "base.paths",
+    "filB.paths"
+   ],
+   [
+    "filA.paths",
+    "filaments.paths"
+   ],
+   [
+    "filB.paths",
+    "filaments.paths"
+   ],
+   [
+    "filaments.paths",
+    "filreveal.paths"
+   ],
+   [
+    "revealcurve.value",
+    "filreveal.fraction"
+   ],
+   [
+    "strike.window",
+    "clock.window"
+   ],
+   [
+    "clock.localSeconds",
+    "decay.a"
+   ],
+   [
+    "decay.value",
+    "expo.a"
+   ],
+   [
+    "expo.value",
+    "envelope.a"
+   ],
+   [
+    "flicker.value",
+    "envelope.b"
+   ],
+   [
+    "envelope.value",
+    "corelevel.a"
+   ],
+   [
+    "corelevel.value",
+    "coremat.opacity"
+   ],
+   [
+    "reveal.paths",
+    "corerib.paths"
+   ],
+   [
+    "coremat.material",
+    "corerib.material"
+   ],
+   [
+    "strike.window",
+    "corerib.window"
+   ],
+   [
+    "corerib.visual",
+    "node-output.visual"
+   ],
+   [
+    "envelope.value",
+    "innerlevel.a"
+   ],
+   [
+    "innerlevel.value",
+    "innermat.opacity"
+   ],
+   [
+    "reveal.paths",
+    "innerrib.paths"
+   ],
+   [
+    "innermat.material",
+    "innerrib.material"
+   ],
+   [
+    "strike.window",
+    "innerrib.window"
+   ],
+   [
+    "innerrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "envelope.value",
+    "outerlevel.a"
+   ],
+   [
+    "outerlevel.value",
+    "outermat.opacity"
+   ],
+   [
+    "reveal.paths",
+    "outerrib.paths"
+   ],
+   [
+    "outermat.material",
+    "outerrib.material"
+   ],
+   [
+    "strike.window",
+    "outerrib.window"
+   ],
+   [
+    "outerrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "envelope.value",
+    "halolevel.a"
+   ],
+   [
+    "halolevel.value",
+    "halomat.opacity"
+   ],
+   [
+    "reveal.paths",
+    "halorib.paths"
+   ],
+   [
+    "halomat.material",
+    "halorib.material"
+   ],
+   [
+    "strike.window",
+    "halorib.window"
+   ],
+   [
+    "halorib.visual",
+    "node-output.visual"
+   ],
+   [
+    "envelope.value",
+    "filcorelevel.a"
+   ],
+   [
+    "filcorelevel.value",
+    "filcoremat.opacity"
+   ],
+   [
+    "filreveal.paths",
+    "filcorerib.paths"
+   ],
+   [
+    "filcoremat.material",
+    "filcorerib.material"
+   ],
+   [
+    "strike.window",
+    "filcorerib.window"
+   ],
+   [
+    "filcorerib.visual",
+    "node-output.visual"
+   ],
+   [
+    "envelope.value",
+    "filouterlevel.a"
+   ],
+   [
+    "filouterlevel.value",
+    "filoutermat.opacity"
+   ],
+   [
+    "filreveal.paths",
+    "filouterrib.paths"
+   ],
+   [
+    "filoutermat.material",
+    "filouterrib.material"
+   ],
+   [
+    "strike.window",
+    "filouterrib.window"
+   ],
+   [
+    "filouterrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "srcsparks.anchor"
+   ],
+   [
+    "strike.start",
+    "srcsparks.trigger"
+   ],
+   [
+    "srcsparks.particles",
+    "srcsparksip.particles"
+   ],
+   [
+    "srcsparksip.particles",
+    "srcsparksg.particles"
+   ],
+   [
+    "srcsparksg.particles",
+    "srcsparksfloor.particles"
+   ],
+   [
+    "srcsparksfloor.particles",
+    "srcsparkstrail.particles"
+   ],
+   [
+    "sparktrailmat.material",
+    "srcsparkstrail.material"
+   ],
+   [
+    "srcsparkstrail.visual",
+    "node-output.visual"
+   ],
+   [
+    "srcsparksfloor.particles",
+    "srcsparksbb.particles"
+   ],
+   [
+    "sparkmat.material",
+    "srcsparksbb.material"
+   ],
+   [
+    "srcsparksbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "hitsparks.anchor"
+   ],
+   [
+    "impact.start",
+    "hitsparks.trigger"
+   ],
+   [
+    "hitsparks.particles",
+    "hitsparksip.particles"
+   ],
+   [
+    "hitsparksip.particles",
+    "hitsparksg.particles"
+   ],
+   [
+    "hitsparksg.particles",
+    "hitsparksfloor.particles"
+   ],
+   [
+    "hitsparksfloor.particles",
+    "hitsparkstrail.particles"
+   ],
+   [
+    "sparktrailmat.material",
+    "hitsparkstrail.material"
+   ],
+   [
+    "hitsparkstrail.visual",
+    "node-output.visual"
+   ],
+   [
+    "hitsparksfloor.particles",
+    "hitsparksbb.particles"
+   ],
+   [
+    "sparkmat.material",
+    "hitsparksbb.material"
+   ],
+   [
+    "hitsparksbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "impcore.anchor"
+   ],
+   [
+    "impcoremat.material",
+    "impcore.material"
+   ],
+   [
+    "impact.window",
+    "impcore.window"
+   ],
+   [
+    "impcore.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "imphalo.anchor"
+   ],
+   [
+    "imphalomat.material",
+    "imphalo.material"
+   ],
+   [
+    "impact.window",
+    "imphalo.window"
+   ],
+   [
+    "imphalo.visual",
+    "node-output.visual"
+   ],
+   [
+    "floor.out",
+    "light.anchor"
+   ],
+   [
+    "impact.window",
+    "light.window"
+   ],
+   [
+    "light.visual",
+    "node-output.visual"
+   ],
+   [
+    "floor.out",
+    "ripple.center"
+   ],
+   [
+    "ripplesize.value",
+    "ripple.radiusScale"
+   ],
+   [
+    "ripplefade.value",
+    "ripplemat.opacity"
+   ],
+   [
+    "ripple.paths",
+    "ripplerib.paths"
+   ],
+   [
+    "ripplemat.material",
+    "ripplerib.material"
+   ],
+   [
+    "ripplewin.window",
+    "ripplerib.window"
+   ],
+   [
+    "ripplerib.visual",
+    "node-output.visual"
+   ],
+   [
+    "strike.start",
+    "flash.trigger"
+   ],
+   [
+    "strike.start",
+    "shake.trigger"
+   ],
+   [
+    "flash.presentation",
+    "node-output.presentation"
+   ],
+   [
+    "shake.presentation",
+    "node-output.presentation"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "core",
+    "label": "Core width",
+    "value": 0.0416,
+    "bindings": [
+     {
+      "node": "corerib",
+      "parameter": "width"
+     },
+     {
+      "node": "innerrib",
+      "parameter": "width",
+      "scale": 2.692
+     },
+     {
+      "node": "outerrib",
+      "parameter": "width",
+      "scale": 7.115
+     },
+     {
+      "node": "halorib",
+      "parameter": "width",
+      "scale": 16.54
+     }
+    ]
+   },
+   {
+    "id": "branches",
+    "label": "Branches",
+    "value": 8,
+    "bindings": [
+     {
+      "node": "branches",
+      "parameter": "count"
+     }
+    ]
+   },
+   {
+    "id": "jagged",
+    "label": "Jaggedness",
+    "value": 0.55,
+    "bindings": [
+     {
+      "node": "trunk",
+      "parameter": "amplitude"
+     }
+    ]
+   },
+   {
+    "id": "impact",
+    "label": "Impact sparks",
+    "value": 100,
+    "bindings": [
+     {
+      "node": "hitsparks",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "source",
+    "label": "Source sparks",
+    "value": 60,
+    "bindings": [
+     {
+      "node": "srcsparks",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "ripple",
+    "label": "Ripple size",
+    "value": 7.5,
     "bindings": [
      {
       "node": "ripple",
