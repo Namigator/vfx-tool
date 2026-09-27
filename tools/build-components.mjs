@@ -28,6 +28,9 @@ const COMPONENTS = [
   ['fire-jet', 'Fire: jet', 'Directed flame jet Source→Target: hot core, two tongue layers breaking up at the tips, embers and rising smoke (02-FIRE).', 'fire-jet'],
   ['fire-torch', 'Fire: compact torch', 'Short, narrow flame with slow upward flicker (02-FIRE variant).', 'fire-torch'],
   ['fire-burst', 'Fire: wide burst', 'Short wide 35° burst with strong launch and extra embers (02-FIRE variant).', 'fire-burst'],
+  ['water-stream', 'Water: arcing stream', 'Arched stream Source→Target that lands in a splash with droplets, foam and three ripples (03-WATER).', 'water-stream'],
+  ['water-narrow', 'Water: narrow stream', 'Thin fast stream, small splash, few droplets, almost no foam (03-WATER variant).', 'water-narrow'],
+  ['water-broad', 'Water: broad splash', 'Low wide body with a big splash, large droplets and wide ripples (03-WATER variant).', 'water-broad'],
   ['fireball', 'Fireball', 'Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.', 'fireball'],
 ];
 
@@ -55,6 +58,9 @@ const KNOBS = {
   'fire-jet': [['reach', 'Reach', [['tonguea', 'speedMax'], ['tonguea', 'speedMin', 0.7], ['tongueb', 'speedMax'], ['tongueb', 'speedMin', 0.7]]], ['cone', 'Cone width', [['tonguea', 'coneAngle'], ['tongueb', 'coneAngle']]], ['size', 'Flame size', [['tongueaip', 'sizeMax'], ['tongueaip', 'sizeMin', 0.62], ['tonguebip', 'sizeMax'], ['tonguebip', 'sizeMin', 0.62]]], ['turbulence', 'Turbulence', [['tongueanoise', 'amplitude'], ['tonguebnoise', 'amplitude']]], ['smoke', 'Smoke amount', [['smoke', 'rate']]], ['embers', 'Ember amount', [['embers', 'rate']]]],
   'fire-torch': [['reach', 'Reach', [['tonguea', 'speedMax'], ['tonguea', 'speedMin', 0.7], ['tongueb', 'speedMax'], ['tongueb', 'speedMin', 0.7]]], ['cone', 'Cone width', [['tonguea', 'coneAngle'], ['tongueb', 'coneAngle']]], ['size', 'Flame size', [['tongueaip', 'sizeMax'], ['tongueaip', 'sizeMin', 0.62], ['tonguebip', 'sizeMax'], ['tonguebip', 'sizeMin', 0.62]]], ['turbulence', 'Turbulence', [['tongueanoise', 'amplitude'], ['tonguebnoise', 'amplitude']]], ['smoke', 'Smoke amount', [['smoke', 'rate']]], ['embers', 'Ember amount', [['embers', 'rate']]]],
   'fire-burst': [['reach', 'Reach', [['tonguea', 'speedMax'], ['tonguea', 'speedMin', 0.7], ['tongueb', 'speedMax'], ['tongueb', 'speedMin', 0.7]]], ['cone', 'Cone width', [['tonguea', 'coneAngle'], ['tongueb', 'coneAngle']]], ['size', 'Flame size', [['tongueaip', 'sizeMax'], ['tongueaip', 'sizeMin', 0.62], ['tonguebip', 'sizeMax'], ['tonguebip', 'sizeMin', 0.62]]], ['turbulence', 'Turbulence', [['tongueanoise', 'amplitude'], ['tonguebnoise', 'amplitude']]], ['smoke', 'Smoke amount', [['smoke', 'rate']]], ['embers', 'Ember amount', [['embers', 'rate']]]],
+  'water-stream': [['width', 'Body width', [['body', 'width'], ['core', 'width', 0.45]]], ['travel', 'Travel time', [['head', 'durationTicks'], ['headwin', 'durationTicks']]], ['droplets', 'Droplet amount', [['drops', 'burst']]], ['foam', 'Foam amount', [['foam', 'burst']]], ['splash', 'Splash size', [['splash', 'size']]], ['ripple', 'Ripple size', [['ring0', 'radius'], ['ring1', 'radius'], ['ring2', 'radius']]]],
+  'water-narrow': [['width', 'Body width', [['body', 'width'], ['core', 'width', 0.45]]], ['travel', 'Travel time', [['head', 'durationTicks'], ['headwin', 'durationTicks']]], ['droplets', 'Droplet amount', [['drops', 'burst']]], ['foam', 'Foam amount', [['foam', 'burst']]], ['splash', 'Splash size', [['splash', 'size']]], ['ripple', 'Ripple size', [['ring0', 'radius'], ['ring1', 'radius'], ['ring2', 'radius']]]],
+  'water-broad': [['width', 'Body width', [['body', 'width'], ['core', 'width', 0.45]]], ['travel', 'Travel time', [['head', 'durationTicks'], ['headwin', 'durationTicks']]], ['droplets', 'Droplet amount', [['drops', 'burst']]], ['foam', 'Foam amount', [['foam', 'burst']]], ['splash', 'Splash size', [['splash', 'size']]], ['ripple', 'Ripple size', [['ring0', 'radius'], ['ring1', 'radius'], ['ring2', 'radius']]]],
   'fireball': [['travel', 'Travel ticks', [['ball', 'durationTicks']]], ['trail', 'Trail density', [['trailem', 'rate']]], ['core', 'Core size', [['core', 'size']]], ['impact', 'Impact sparks', [['boom', 'burst']]], ['flash', 'Flash size', [['flash', 'size']]], ['light', 'Ball light', [['balllight', 'intensity']]]],
 };
 
@@ -74,7 +80,9 @@ for (const [id, label, description, file] of COMPONENTS) {
     if (!node) throw new Error(`${id}: knob ${kid} binds missing node ${n0}`);
     const v = node.params?.[p0];
     if (typeof v !== 'number') throw new Error(`${id}: knob ${kid} needs a literal number at ${n0}.${p0} in the recipe`);
-    return { id: kid, label: klabel, value: v / s0, bindings: binds.map(([n, p, s]) => ({ node: n, parameter: p, ...(s ? { scale: s } : {}) })) };
+    // Bindings: [node, parameter, scale = 1, offset = 0]; param = knob × scale + offset.
+    const o0 = binds[0][3] ?? 0;
+    return { id: kid, label: klabel, value: (v - o0) / s0, bindings: binds.map(([n, p, s, o]) => ({ node: n, parameter: p, ...(s && s !== 1 ? { scale: s } : {}), ...(o ? { offset: o } : {}) })) };
   });
   out.push({ id, label, description, durationTicks, anchors, nodes, edges, knobs });
 }

@@ -37,6 +37,7 @@ import { assertMixBudget, MAX_MIX_FRAMES, MAX_MIX_INPUTS, mixStereo, type MixRes
 import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { createRegistry } from './registry.ts';
+import { scheduleStart, TimingError, type TimingContext } from './eventTiming.ts';
 
 type PreparedVoice = {
   sourceNodeId: string; scheduleNodeId: string; cueTick: number; startTick: number; startSample: number;
@@ -108,7 +109,22 @@ export function compileAudio(input: unknown): ValidationResult<AudioCompilePlan>
   const params = new Map<string, ParameterValue>(x.parameters.map(p => [`${p.nodeId}\u0000${p.parameter}`, p.value]));
   const into = (nodeId: string, port: string): ExpandedConnection[] =>
     x.connections.filter(c => c.target.nodeId === nodeId && c.target.port === port && c.source.kind !== 'empty');
+  /** Event-relative Schedules (eventTiming.ts): startTicks includes the trigger event's tick. */
   const param = (n: ExpandedNode, id: string): ParameterValue => {
+    if (n.node.type === 'Schedule' && id === 'startTicks' && into(n.node.id, 'trigger').length) {
+      try { return scheduleStart(timing, n.node.id); } catch (e) {
+        if (e instanceof TimingError) return fail('INVALID_VALUE', e.message, e.nodeId);
+        throw e;
+      }
+    }
+    return rawParam(n, id);
+  };
+  const timing: TimingContext = {
+    type: id => nodes.get(id)?.node.type,
+    raw: (id, p) => { const x = nodes.get(id); return x ? rawParam(x, p) as number : fail('MISSING_REFERENCE', `Node "${id}" is not in the expanded graph.`, id); },
+    source: (nodeId, port) => { const c = into(nodeId, port)[0]; return c && c.source.kind === 'node' ? { nodeId: c.source.nodeId, port: c.source.port } : undefined; },
+  };
+  const rawParam = (n: ExpandedNode, id: string): ParameterValue => {
     const v = params.get(`${n.node.id}\u0000${id}`);
     if (v !== undefined) return v;
     const spec = registry.get(registryKey(n.node.type, n.node.definitionVersion))?.parameters.find(p => p.id === id);
@@ -120,6 +136,7 @@ export function compileAudio(input: unknown): ValidationResult<AudioCompilePlan>
     const before = errors.length;
     for (const c of x.connections) {
       if (c.target.nodeId !== n.node.id || structural.includes(c.target.port) || c.source.kind === 'empty') continue;
+      if (n.node.type === 'Schedule' && c.target.port === 'trigger') continue; // Resolved by scheduleStart.
       report('DOMAIN_MISMATCH', `Input "${c.target.port}" of "${n.node.id}" is driven by a connection; connected/animated parameters are not supported by the audio compiler yet. Disconnect it and set a literal.`, n.node.id, c.target.port);
     }
     if (errors.length !== before) throw new Fail('driven parameter');

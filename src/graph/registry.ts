@@ -51,7 +51,8 @@ function anchor(): NodeSpec {
 
 function schedule(): NodeSpec {
   return node('Schedule', {
-    inputs: [],
+    // Optional trigger: the window starts at that event's tick + Start (e.g. a splash at a stream's arrival).
+    inputs: [port({ id: 'trigger', label: 'Trigger', type: 'event' })],
     outputs: [
       port({ id: 'start', label: 'Start', type: 'event' }),
       port({ id: 'end', label: 'End', type: 'event' }),

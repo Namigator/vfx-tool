@@ -114,3 +114,14 @@ test('Start at knob delays every Schedule of a component together (keeps their s
   assert.deepEqual(ticks(later), ticks({ ...doc, durationTicks: 200 }).map(t => t! + 30));
   for (const c of COMPONENT_TEMPLATES) assert.ok(insertComponent(createBlankDocument(), c.id).doc.controls.some(x => x.label === 'Start at'), c.id);
 });
+
+test('event-triggered Schedules: water splash/ripples follow the arrival, so the Travel time knob moves them all together', () => {
+  const { doc } = insertComponent(createBlankDocument(), 'water-stream', undefined, { group: true });
+  const travel = doc.controls.find(c => c.label === 'Travel time')!;
+  const ticks = (d: typeof doc) => { const p = compiles(valid(d)); return Object.fromEntries(p.systems.filter(s => /dropfloor|splash/.test(s.id)).map(s => [s.id.replace('water-stream-', ''), s.descriptor.bursts[0].tick])); };
+  assert.deepEqual(ticks(doc), { dropfloor: 48, splash: 48 });
+  const slow = structuredClone(doc); slow.controls.find(c => c.id === travel.id)!.value = 45; slow.durationTicks = 200;
+  assert.deepEqual(ticks(slow), { dropfloor: 63, splash: 63 });
+  const later = structuredClone(doc); later.controls.find(c => c.label === 'Start at')!.value = 20; later.durationTicks = 200;
+  assert.deepEqual(ticks(later), { dropfloor: 68, splash: 68 }, 'Start at shifts the arrival once, not twice');
+});

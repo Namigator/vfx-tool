@@ -16,7 +16,7 @@ export type ComponentTemplate = {
   /** [from "node.port", to "node.port"]. */
   edges: [string, string][];
   /** Published big knobs (01 "4–8 primary controls"): document controls bound to component node params. */
-  knobs: { id: string; label: string; value: number; bindings: { node: string; parameter: string; scale?: number }[] }[];
+  knobs: { id: string; label: string; value: number; bindings: { node: string; parameter: string; scale?: number; offset?: number }[] }[];
 };
 
 export { COMPONENT_TEMPLATES };
@@ -132,7 +132,8 @@ export function insertComponent(doc: EffectDocumentV2, componentId: string, pref
   }
   // Start at (user feedback 2026-09-27: components must be sequenceable, e.g. impact after charge): one knob shifts
   // every Schedule of the component together, keeping their authored spacing (binding offset = authored start).
-  const scheds = c.nodes.filter(n => n.type === 'Schedule');
+  // Event-triggered Schedules already follow their trigger, so shifting them too would double the delay.
+  const scheds = c.nodes.filter(n => n.type === 'Schedule' && !c.edges.some(([, to]) => to === `${n.id}.trigger`));
   if (scheds.length) {
     const offs = scheds.map(n => Number(n.params?.startTicks ?? 0)), scope = graphOfTemplate(scheds[0].id);
     d.controls.push({
@@ -148,18 +149,18 @@ export function insertComponent(doc: EffectDocumentV2, componentId: string, pref
     if (k.bindings.some(b => graphOfTemplate(b.node) !== scope)) throw new Error(`Knob "${k.id}" binds nodes on both sides of the group.`);
     const ps = spec(node.type).parameters.find(x => x.id === first.parameter);
     if (!ps || (ps.type !== 'number' && ps.type !== 'integer')) throw new Error(`Knob "${k.id}" must bind a number parameter.`);
-    const s0 = first.scale ?? 1;
-    let min = (ps.min ?? 0) / s0, max = (ps.max ?? Math.max(1, k.value * 4)) / s0;
+    const s0 = first.scale ?? 1, o0 = first.offset ?? 0;
+    let min = ((ps.min ?? 0) - o0) / s0, max = ((ps.max ?? Math.max(1, k.value * 4)) - o0) / s0;
     for (const b of k.bindings) {
       const bs = spec(scope.nodes.find(n => n.id === nodeId(b.node))!.type).parameters.find(x => x.id === b.parameter);
-      if (bs?.min !== undefined) min = Math.max(min, bs.min / (b.scale ?? 1));
-      if (bs?.max !== undefined) max = Math.min(max, bs.max / (b.scale ?? 1));
+      if (bs?.min !== undefined) min = Math.max(min, (bs.min - (b.offset ?? 0)) / (b.scale ?? 1));
+      if (bs?.max !== undefined) max = Math.min(max, (bs.max - (b.offset ?? 0)) / (b.scale ?? 1));
     }
     const value = ps.type === 'integer' ? Math.round(k.value) : k.value;
     d.controls.push({
       id: `ctl-${p}-${k.id}`, scopeGraphId: scope.id, label: k.label, type: ps.type, unit: ps.unit, value, default: value, min, max,
       ...(ps.type === 'integer' ? { step: 1 } : {}), section: p === c.id ? c.label : `${c.label} (${p})`, description: `${c.label}: ${k.bindings.map(b => `${b.node}.${b.parameter}${b.scale ? ` ×${b.scale}` : ''}`).join(', ')}`,
-      editPolicy: ps.editPolicy, bindings: k.bindings.map(b => ({ nodeId: nodeId(b.node), parameter: b.parameter, ...(b.scale ? { scale: b.scale } : {}) })),
+      editPolicy: ps.editPolicy, bindings: k.bindings.map(b => ({ nodeId: nodeId(b.node), parameter: b.parameter, ...(b.scale ? { scale: b.scale } : {}), ...(b.offset ? { offset: b.offset } : {}) })),
     });
   }
   if (c.durationTicks > d.durationTicks) d.durationTicks = c.durationTicks;

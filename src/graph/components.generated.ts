@@ -15148,6 +15148,3468 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   ]
  },
  {
+  "id": "water-stream",
+  "label": "Water: arcing stream",
+  "description": "Arched stream Source→Target that lands in a splash with droplets, foam and three ripples (03-WATER).",
+  "durationTicks": 180,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "pool",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      -0.03,
+      0
+     ]
+    }
+   },
+   {
+    "id": "arc",
+    "type": "BezierPath",
+    "params": {
+     "startHandle": [
+      1.2,
+      2.4,
+      0
+     ],
+     "endHandle": [
+      -0.6,
+      2.16,
+      0
+     ],
+     "samples": 64
+    }
+   },
+   {
+    "id": "reveal",
+    "type": "RevealPath"
+   },
+   {
+    "id": "headwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 18,
+     "durationTicks": 30,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "travelclock",
+    "type": "Time"
+   },
+   {
+    "id": "flow",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 18,
+     "durationTicks": 90,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "bodyfade",
+    "type": "EffectTimeCurve",
+    "params": {
+     "curve": {
+      "domain": "effectSeconds",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0.3,
+        "y": 0.42
+       },
+       {
+        "x": 1.4,
+        "y": 0.42
+       },
+       {
+        "x": 1.8,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "bodymat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#4F9CC8",
+      "alpha": 1
+     },
+     "emission": 0
+    }
+   },
+   {
+    "id": "body",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.28,
+     "endFade": 0.08,
+     "widthOverPath": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.55
+       },
+       {
+        "x": 0.5,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0.8
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "lift",
+    "type": "PathTransform",
+    "params": {
+     "offset": [
+      0,
+      0.07840000000000001,
+      0
+     ]
+    }
+   },
+   {
+    "id": "hlfade",
+    "type": "EffectTimeCurve",
+    "params": {
+     "curve": {
+      "domain": "effectSeconds",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0.3,
+        "y": 0.55
+       },
+       {
+        "x": 1.4,
+        "y": 0.55
+       },
+       {
+        "x": 1.8,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "hlmat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#E8F6FF",
+      "alpha": 1
+     },
+     "emission": 0.1
+    }
+   },
+   {
+    "id": "highlight",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.035,
+     "endFade": 0.15
+    }
+   },
+   {
+    "id": "coremat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#9CD4F0",
+      "alpha": 1
+     },
+     "emission": 0
+    }
+   },
+   {
+    "id": "corefade",
+    "type": "EffectTimeCurve",
+    "params": {
+     "curve": {
+      "domain": "effectSeconds",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0.3,
+        "y": 0.22
+       },
+       {
+        "x": 1.4,
+        "y": 0.22
+       },
+       {
+        "x": 1.8,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "core",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.12600000000000003,
+     "endFade": 0.1
+    }
+   },
+   {
+    "id": "travelwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 18,
+     "durationTicks": 162,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "head",
+    "type": "PathFollower",
+    "params": {
+     "durationTicks": 30,
+     "easing": "linear"
+    }
+   },
+   {
+    "id": "headmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "droplet",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#BFE6FF",
+      "alpha": 1
+     },
+     "opacity": 0.8
+    }
+   },
+   {
+    "id": "headsprite",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.18
+    }
+   },
+   {
+    "id": "splashwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 48,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "splashmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "foam",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#DDF1FF",
+      "alpha": 1
+     },
+     "opacity": 0.65
+    }
+   },
+   {
+    "id": "splash",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1.2,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.3
+       },
+       {
+        "x": 0.375,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1.1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.9
+       },
+       {
+        "x": 0.375,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "drops",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "coneAngle": 1.3,
+     "radius": 0.08,
+     "burst": 140,
+     "rate": 0,
+     "speedMin": 1.5,
+     "speedMax": 4.5,
+     "lifetimeMin": 0.4,
+     "lifetimeMax": 1.2,
+     "useEventPosition": false
+    }
+   },
+   {
+    "id": "dropip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.05,
+     "sizeMax": 0.14
+    }
+   },
+   {
+    "id": "dropg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "dropfloor",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.25,
+     "maxBounces": 1
+    }
+   },
+   {
+    "id": "dropmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "droplet",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#CFEBFF",
+      "alpha": 1
+     },
+     "opacity": 0.85,
+     "groundFade": 0.12
+    }
+   },
+   {
+    "id": "dropbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 1.6,
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 0.8
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "foam",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.6,
+     "burst": 24,
+     "rate": 0,
+     "speedMin": 0.1,
+     "speedMax": 0.5,
+     "lifetimeMin": 0.5,
+     "lifetimeMax": 1.1
+    }
+   },
+   {
+    "id": "foamip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.25,
+     "sizeMax": 0.5,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283
+    }
+   },
+   {
+    "id": "foamdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 2.5
+    }
+   },
+   {
+    "id": "foammat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "foam",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#EAF6FF",
+      "alpha": 1
+     },
+     "opacity": 0.35
+    }
+   },
+   {
+    "id": "foambb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "worldAxis",
+     "worldAxis": [
+      0,
+      1,
+      0
+     ],
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 1.4
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.2,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "ripplemat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#CFEAFF",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "ripwin0",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 60,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ring0",
+    "type": "RingPath",
+    "params": {
+     "radius": 2.2,
+     "samples": 96
+    }
+   },
+   {
+    "id": "ringclock0",
+    "type": "Time"
+   },
+   {
+    "id": "ringsize0",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "max",
+     "b": 0.0909,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringdim0",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.3,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringfade0",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.3,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringmat0",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#D6EEFF",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "ripple0",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.018,
+     "endFade": 0,
+     "orientation": "camera"
+    }
+   },
+   {
+    "id": "ripwin1",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 7,
+     "durationTicks": 60,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ring1",
+    "type": "RingPath",
+    "params": {
+     "radius": 2.2,
+     "samples": 96
+    }
+   },
+   {
+    "id": "ringclock1",
+    "type": "Time"
+   },
+   {
+    "id": "ringsize1",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "max",
+     "b": 0.0909,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringdim1",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.22999999999999998,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringfade1",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.23,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringmat1",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#D6EEFF",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "ripple1",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.018,
+     "endFade": 0,
+     "orientation": "camera"
+    }
+   },
+   {
+    "id": "ripwin2",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 15,
+     "durationTicks": 60,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ring2",
+    "type": "RingPath",
+    "params": {
+     "radius": 2.2,
+     "samples": 96
+    }
+   },
+   {
+    "id": "ringclock2",
+    "type": "Time"
+   },
+   {
+    "id": "ringsize2",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "max",
+     "b": 0.0909,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringdim2",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.15999999999999998,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringfade2",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.16,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringmat2",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#D6EEFF",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "ripple2",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.018,
+     "endFade": 0,
+     "orientation": "camera"
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "pool.anchor"
+   ],
+   [
+    "node-source.out",
+    "arc.start"
+   ],
+   [
+    "node-target.out",
+    "arc.end"
+   ],
+   [
+    "headwin.window",
+    "travelclock.window"
+   ],
+   [
+    "arc.paths",
+    "reveal.paths"
+   ],
+   [
+    "travelclock.progress",
+    "reveal.fraction"
+   ],
+   [
+    "bodyfade.value",
+    "bodymat.opacity"
+   ],
+   [
+    "reveal.paths",
+    "body.paths"
+   ],
+   [
+    "bodymat.material",
+    "body.material"
+   ],
+   [
+    "flow.window",
+    "body.window"
+   ],
+   [
+    "body.visual",
+    "node-output.visual"
+   ],
+   [
+    "reveal.paths",
+    "lift.paths"
+   ],
+   [
+    "hlfade.value",
+    "hlmat.opacity"
+   ],
+   [
+    "lift.paths",
+    "highlight.paths"
+   ],
+   [
+    "hlmat.material",
+    "highlight.material"
+   ],
+   [
+    "flow.window",
+    "highlight.window"
+   ],
+   [
+    "highlight.visual",
+    "node-output.visual"
+   ],
+   [
+    "corefade.value",
+    "coremat.opacity"
+   ],
+   [
+    "reveal.paths",
+    "core.paths"
+   ],
+   [
+    "coremat.material",
+    "core.material"
+   ],
+   [
+    "flow.window",
+    "core.window"
+   ],
+   [
+    "core.visual",
+    "node-output.visual"
+   ],
+   [
+    "arc.paths",
+    "head.paths"
+   ],
+   [
+    "travelwin.window",
+    "head.window"
+   ],
+   [
+    "head.anchor",
+    "headsprite.anchor"
+   ],
+   [
+    "headmat.material",
+    "headsprite.material"
+   ],
+   [
+    "headwin.window",
+    "headsprite.window"
+   ],
+   [
+    "headsprite.visual",
+    "node-output.visual"
+   ],
+   [
+    "head.arrival",
+    "splashwin.trigger"
+   ],
+   [
+    "node-target.out",
+    "splash.anchor"
+   ],
+   [
+    "splashmat.material",
+    "splash.material"
+   ],
+   [
+    "splashwin.window",
+    "splash.window"
+   ],
+   [
+    "splash.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "drops.anchor"
+   ],
+   [
+    "head.arrival",
+    "drops.trigger"
+   ],
+   [
+    "drops.particles",
+    "dropip.particles"
+   ],
+   [
+    "dropip.particles",
+    "dropg.particles"
+   ],
+   [
+    "dropg.particles",
+    "dropfloor.particles"
+   ],
+   [
+    "dropfloor.particles",
+    "dropbb.particles"
+   ],
+   [
+    "dropmat.material",
+    "dropbb.material"
+   ],
+   [
+    "dropbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "pool.out",
+    "foam.anchor"
+   ],
+   [
+    "head.arrival",
+    "foam.trigger"
+   ],
+   [
+    "foam.particles",
+    "foamip.particles"
+   ],
+   [
+    "foamip.particles",
+    "foamdrag.particles"
+   ],
+   [
+    "foamdrag.particles",
+    "foambb.particles"
+   ],
+   [
+    "foammat.material",
+    "foambb.material"
+   ],
+   [
+    "foambb.visual",
+    "node-output.visual"
+   ],
+   [
+    "head.arrival",
+    "ripwin0.trigger"
+   ],
+   [
+    "ripwin0.window",
+    "ringclock0.window"
+   ],
+   [
+    "ringclock0.progress",
+    "ringsize0.a"
+   ],
+   [
+    "ringclock0.progress",
+    "ringdim0.a"
+   ],
+   [
+    "ringdim0.value",
+    "ringfade0.a"
+   ],
+   [
+    "pool.out",
+    "ring0.center"
+   ],
+   [
+    "ringsize0.value",
+    "ring0.radiusScale"
+   ],
+   [
+    "ringfade0.value",
+    "ringmat0.opacity"
+   ],
+   [
+    "ring0.paths",
+    "ripple0.paths"
+   ],
+   [
+    "ringmat0.material",
+    "ripple0.material"
+   ],
+   [
+    "ripwin0.window",
+    "ripple0.window"
+   ],
+   [
+    "ripple0.visual",
+    "node-output.visual"
+   ],
+   [
+    "head.arrival",
+    "ripwin1.trigger"
+   ],
+   [
+    "ripwin1.window",
+    "ringclock1.window"
+   ],
+   [
+    "ringclock1.progress",
+    "ringsize1.a"
+   ],
+   [
+    "ringclock1.progress",
+    "ringdim1.a"
+   ],
+   [
+    "ringdim1.value",
+    "ringfade1.a"
+   ],
+   [
+    "pool.out",
+    "ring1.center"
+   ],
+   [
+    "ringsize1.value",
+    "ring1.radiusScale"
+   ],
+   [
+    "ringfade1.value",
+    "ringmat1.opacity"
+   ],
+   [
+    "ring1.paths",
+    "ripple1.paths"
+   ],
+   [
+    "ringmat1.material",
+    "ripple1.material"
+   ],
+   [
+    "ripwin1.window",
+    "ripple1.window"
+   ],
+   [
+    "ripple1.visual",
+    "node-output.visual"
+   ],
+   [
+    "head.arrival",
+    "ripwin2.trigger"
+   ],
+   [
+    "ripwin2.window",
+    "ringclock2.window"
+   ],
+   [
+    "ringclock2.progress",
+    "ringsize2.a"
+   ],
+   [
+    "ringclock2.progress",
+    "ringdim2.a"
+   ],
+   [
+    "ringdim2.value",
+    "ringfade2.a"
+   ],
+   [
+    "pool.out",
+    "ring2.center"
+   ],
+   [
+    "ringsize2.value",
+    "ring2.radiusScale"
+   ],
+   [
+    "ringfade2.value",
+    "ringmat2.opacity"
+   ],
+   [
+    "ring2.paths",
+    "ripple2.paths"
+   ],
+   [
+    "ringmat2.material",
+    "ripple2.material"
+   ],
+   [
+    "ripwin2.window",
+    "ripple2.window"
+   ],
+   [
+    "ripple2.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "width",
+    "label": "Body width",
+    "value": 0.28,
+    "bindings": [
+     {
+      "node": "body",
+      "parameter": "width"
+     },
+     {
+      "node": "core",
+      "parameter": "width",
+      "scale": 0.45
+     }
+    ]
+   },
+   {
+    "id": "travel",
+    "label": "Travel time",
+    "value": 30,
+    "bindings": [
+     {
+      "node": "head",
+      "parameter": "durationTicks"
+     },
+     {
+      "node": "headwin",
+      "parameter": "durationTicks"
+     }
+    ]
+   },
+   {
+    "id": "droplets",
+    "label": "Droplet amount",
+    "value": 140,
+    "bindings": [
+     {
+      "node": "drops",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "foam",
+    "label": "Foam amount",
+    "value": 24,
+    "bindings": [
+     {
+      "node": "foam",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "splash",
+    "label": "Splash size",
+    "value": 1.2,
+    "bindings": [
+     {
+      "node": "splash",
+      "parameter": "size"
+     }
+    ]
+   },
+   {
+    "id": "ripple",
+    "label": "Ripple size",
+    "value": 2.2,
+    "bindings": [
+     {
+      "node": "ring0",
+      "parameter": "radius"
+     },
+     {
+      "node": "ring1",
+      "parameter": "radius"
+     },
+     {
+      "node": "ring2",
+      "parameter": "radius"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "water-narrow",
+  "label": "Water: narrow stream",
+  "description": "Thin fast stream, small splash, few droplets, almost no foam (03-WATER variant).",
+  "durationTicks": 180,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "pool",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      -0.03,
+      0
+     ]
+    }
+   },
+   {
+    "id": "arc",
+    "type": "BezierPath",
+    "params": {
+     "startHandle": [
+      1.2,
+      2.2,
+      0
+     ],
+     "endHandle": [
+      -0.6,
+      1.9800000000000002,
+      0
+     ],
+     "samples": 64
+    }
+   },
+   {
+    "id": "reveal",
+    "type": "RevealPath"
+   },
+   {
+    "id": "headwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 18,
+     "durationTicks": 20,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "travelclock",
+    "type": "Time"
+   },
+   {
+    "id": "flow",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 18,
+     "durationTicks": 90,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "bodyfade",
+    "type": "EffectTimeCurve",
+    "params": {
+     "curve": {
+      "domain": "effectSeconds",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0.3,
+        "y": 0.42
+       },
+       {
+        "x": 1.4,
+        "y": 0.42
+       },
+       {
+        "x": 1.8,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "bodymat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#4F9CC8",
+      "alpha": 1
+     },
+     "emission": 0
+    }
+   },
+   {
+    "id": "body",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.14,
+     "endFade": 0.08,
+     "widthOverPath": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.55
+       },
+       {
+        "x": 0.5,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0.8
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "lift",
+    "type": "PathTransform",
+    "params": {
+     "offset": [
+      0,
+      0.039200000000000006,
+      0
+     ]
+    }
+   },
+   {
+    "id": "hlfade",
+    "type": "EffectTimeCurve",
+    "params": {
+     "curve": {
+      "domain": "effectSeconds",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0.3,
+        "y": 0.55
+       },
+       {
+        "x": 1.4,
+        "y": 0.55
+       },
+       {
+        "x": 1.8,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "hlmat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#E8F6FF",
+      "alpha": 1
+     },
+     "emission": 0.1
+    }
+   },
+   {
+    "id": "highlight",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.035,
+     "endFade": 0.15
+    }
+   },
+   {
+    "id": "coremat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#9CD4F0",
+      "alpha": 1
+     },
+     "emission": 0
+    }
+   },
+   {
+    "id": "corefade",
+    "type": "EffectTimeCurve",
+    "params": {
+     "curve": {
+      "domain": "effectSeconds",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0.3,
+        "y": 0.22
+       },
+       {
+        "x": 1.4,
+        "y": 0.22
+       },
+       {
+        "x": 1.8,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "core",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.06300000000000001,
+     "endFade": 0.1
+    }
+   },
+   {
+    "id": "travelwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 18,
+     "durationTicks": 162,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "head",
+    "type": "PathFollower",
+    "params": {
+     "durationTicks": 20,
+     "easing": "linear"
+    }
+   },
+   {
+    "id": "headmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "droplet",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#BFE6FF",
+      "alpha": 1
+     },
+     "opacity": 0.8
+    }
+   },
+   {
+    "id": "headsprite",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.18
+    }
+   },
+   {
+    "id": "splashwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 48,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "splashmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "foam",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#DDF1FF",
+      "alpha": 1
+     },
+     "opacity": 0.65
+    }
+   },
+   {
+    "id": "splash",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.7,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.3
+       },
+       {
+        "x": 0.375,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1.1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.9
+       },
+       {
+        "x": 0.375,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "drops",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "coneAngle": 1.3,
+     "radius": 0.08,
+     "burst": 60,
+     "rate": 0,
+     "speedMin": 1.2,
+     "speedMax": 3.5,
+     "lifetimeMin": 0.4,
+     "lifetimeMax": 1.2,
+     "useEventPosition": false
+    }
+   },
+   {
+    "id": "dropip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.036,
+     "sizeMax": 0.09
+    }
+   },
+   {
+    "id": "dropg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "dropfloor",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.25,
+     "maxBounces": 1
+    }
+   },
+   {
+    "id": "dropmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "droplet",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#CFEBFF",
+      "alpha": 1
+     },
+     "opacity": 0.85,
+     "groundFade": 0.12
+    }
+   },
+   {
+    "id": "dropbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 1.6,
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 0.8
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "foam",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.6,
+     "burst": 3,
+     "rate": 0,
+     "speedMin": 0.1,
+     "speedMax": 0.5,
+     "lifetimeMin": 0.5,
+     "lifetimeMax": 1.1
+    }
+   },
+   {
+    "id": "foamip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.25,
+     "sizeMax": 0.5,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283
+    }
+   },
+   {
+    "id": "foamdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 2.5
+    }
+   },
+   {
+    "id": "foammat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "foam",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#EAF6FF",
+      "alpha": 1
+     },
+     "opacity": 0.35
+    }
+   },
+   {
+    "id": "foambb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "worldAxis",
+     "worldAxis": [
+      0,
+      1,
+      0
+     ],
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 1.4
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.2,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "ripplemat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#CFEAFF",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "ripwin0",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 60,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ring0",
+    "type": "RingPath",
+    "params": {
+     "radius": 1.4,
+     "samples": 96
+    }
+   },
+   {
+    "id": "ringclock0",
+    "type": "Time"
+   },
+   {
+    "id": "ringsize0",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "max",
+     "b": 0.1429,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringdim0",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.3,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringfade0",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.3,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringmat0",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#D6EEFF",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "ripple0",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.018,
+     "endFade": 0,
+     "orientation": "camera"
+    }
+   },
+   {
+    "id": "ripwin1",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 7,
+     "durationTicks": 60,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ring1",
+    "type": "RingPath",
+    "params": {
+     "radius": 1.4,
+     "samples": 96
+    }
+   },
+   {
+    "id": "ringclock1",
+    "type": "Time"
+   },
+   {
+    "id": "ringsize1",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "max",
+     "b": 0.1429,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringdim1",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.22999999999999998,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringfade1",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.23,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringmat1",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#D6EEFF",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "ripple1",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.018,
+     "endFade": 0,
+     "orientation": "camera"
+    }
+   },
+   {
+    "id": "ripwin2",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 15,
+     "durationTicks": 60,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ring2",
+    "type": "RingPath",
+    "params": {
+     "radius": 1.4,
+     "samples": 96
+    }
+   },
+   {
+    "id": "ringclock2",
+    "type": "Time"
+   },
+   {
+    "id": "ringsize2",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "max",
+     "b": 0.1429,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringdim2",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.15999999999999998,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringfade2",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.16,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringmat2",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#D6EEFF",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "ripple2",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.018,
+     "endFade": 0,
+     "orientation": "camera"
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "pool.anchor"
+   ],
+   [
+    "node-source.out",
+    "arc.start"
+   ],
+   [
+    "node-target.out",
+    "arc.end"
+   ],
+   [
+    "headwin.window",
+    "travelclock.window"
+   ],
+   [
+    "arc.paths",
+    "reveal.paths"
+   ],
+   [
+    "travelclock.progress",
+    "reveal.fraction"
+   ],
+   [
+    "bodyfade.value",
+    "bodymat.opacity"
+   ],
+   [
+    "reveal.paths",
+    "body.paths"
+   ],
+   [
+    "bodymat.material",
+    "body.material"
+   ],
+   [
+    "flow.window",
+    "body.window"
+   ],
+   [
+    "body.visual",
+    "node-output.visual"
+   ],
+   [
+    "reveal.paths",
+    "lift.paths"
+   ],
+   [
+    "hlfade.value",
+    "hlmat.opacity"
+   ],
+   [
+    "lift.paths",
+    "highlight.paths"
+   ],
+   [
+    "hlmat.material",
+    "highlight.material"
+   ],
+   [
+    "flow.window",
+    "highlight.window"
+   ],
+   [
+    "highlight.visual",
+    "node-output.visual"
+   ],
+   [
+    "corefade.value",
+    "coremat.opacity"
+   ],
+   [
+    "reveal.paths",
+    "core.paths"
+   ],
+   [
+    "coremat.material",
+    "core.material"
+   ],
+   [
+    "flow.window",
+    "core.window"
+   ],
+   [
+    "core.visual",
+    "node-output.visual"
+   ],
+   [
+    "arc.paths",
+    "head.paths"
+   ],
+   [
+    "travelwin.window",
+    "head.window"
+   ],
+   [
+    "head.anchor",
+    "headsprite.anchor"
+   ],
+   [
+    "headmat.material",
+    "headsprite.material"
+   ],
+   [
+    "headwin.window",
+    "headsprite.window"
+   ],
+   [
+    "headsprite.visual",
+    "node-output.visual"
+   ],
+   [
+    "head.arrival",
+    "splashwin.trigger"
+   ],
+   [
+    "node-target.out",
+    "splash.anchor"
+   ],
+   [
+    "splashmat.material",
+    "splash.material"
+   ],
+   [
+    "splashwin.window",
+    "splash.window"
+   ],
+   [
+    "splash.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "drops.anchor"
+   ],
+   [
+    "head.arrival",
+    "drops.trigger"
+   ],
+   [
+    "drops.particles",
+    "dropip.particles"
+   ],
+   [
+    "dropip.particles",
+    "dropg.particles"
+   ],
+   [
+    "dropg.particles",
+    "dropfloor.particles"
+   ],
+   [
+    "dropfloor.particles",
+    "dropbb.particles"
+   ],
+   [
+    "dropmat.material",
+    "dropbb.material"
+   ],
+   [
+    "dropbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "pool.out",
+    "foam.anchor"
+   ],
+   [
+    "head.arrival",
+    "foam.trigger"
+   ],
+   [
+    "foam.particles",
+    "foamip.particles"
+   ],
+   [
+    "foamip.particles",
+    "foamdrag.particles"
+   ],
+   [
+    "foamdrag.particles",
+    "foambb.particles"
+   ],
+   [
+    "foammat.material",
+    "foambb.material"
+   ],
+   [
+    "foambb.visual",
+    "node-output.visual"
+   ],
+   [
+    "head.arrival",
+    "ripwin0.trigger"
+   ],
+   [
+    "ripwin0.window",
+    "ringclock0.window"
+   ],
+   [
+    "ringclock0.progress",
+    "ringsize0.a"
+   ],
+   [
+    "ringclock0.progress",
+    "ringdim0.a"
+   ],
+   [
+    "ringdim0.value",
+    "ringfade0.a"
+   ],
+   [
+    "pool.out",
+    "ring0.center"
+   ],
+   [
+    "ringsize0.value",
+    "ring0.radiusScale"
+   ],
+   [
+    "ringfade0.value",
+    "ringmat0.opacity"
+   ],
+   [
+    "ring0.paths",
+    "ripple0.paths"
+   ],
+   [
+    "ringmat0.material",
+    "ripple0.material"
+   ],
+   [
+    "ripwin0.window",
+    "ripple0.window"
+   ],
+   [
+    "ripple0.visual",
+    "node-output.visual"
+   ],
+   [
+    "head.arrival",
+    "ripwin1.trigger"
+   ],
+   [
+    "ripwin1.window",
+    "ringclock1.window"
+   ],
+   [
+    "ringclock1.progress",
+    "ringsize1.a"
+   ],
+   [
+    "ringclock1.progress",
+    "ringdim1.a"
+   ],
+   [
+    "ringdim1.value",
+    "ringfade1.a"
+   ],
+   [
+    "pool.out",
+    "ring1.center"
+   ],
+   [
+    "ringsize1.value",
+    "ring1.radiusScale"
+   ],
+   [
+    "ringfade1.value",
+    "ringmat1.opacity"
+   ],
+   [
+    "ring1.paths",
+    "ripple1.paths"
+   ],
+   [
+    "ringmat1.material",
+    "ripple1.material"
+   ],
+   [
+    "ripwin1.window",
+    "ripple1.window"
+   ],
+   [
+    "ripple1.visual",
+    "node-output.visual"
+   ],
+   [
+    "head.arrival",
+    "ripwin2.trigger"
+   ],
+   [
+    "ripwin2.window",
+    "ringclock2.window"
+   ],
+   [
+    "ringclock2.progress",
+    "ringsize2.a"
+   ],
+   [
+    "ringclock2.progress",
+    "ringdim2.a"
+   ],
+   [
+    "ringdim2.value",
+    "ringfade2.a"
+   ],
+   [
+    "pool.out",
+    "ring2.center"
+   ],
+   [
+    "ringsize2.value",
+    "ring2.radiusScale"
+   ],
+   [
+    "ringfade2.value",
+    "ringmat2.opacity"
+   ],
+   [
+    "ring2.paths",
+    "ripple2.paths"
+   ],
+   [
+    "ringmat2.material",
+    "ripple2.material"
+   ],
+   [
+    "ripwin2.window",
+    "ripple2.window"
+   ],
+   [
+    "ripple2.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "width",
+    "label": "Body width",
+    "value": 0.14,
+    "bindings": [
+     {
+      "node": "body",
+      "parameter": "width"
+     },
+     {
+      "node": "core",
+      "parameter": "width",
+      "scale": 0.45
+     }
+    ]
+   },
+   {
+    "id": "travel",
+    "label": "Travel time",
+    "value": 20,
+    "bindings": [
+     {
+      "node": "head",
+      "parameter": "durationTicks"
+     },
+     {
+      "node": "headwin",
+      "parameter": "durationTicks"
+     }
+    ]
+   },
+   {
+    "id": "droplets",
+    "label": "Droplet amount",
+    "value": 60,
+    "bindings": [
+     {
+      "node": "drops",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "foam",
+    "label": "Foam amount",
+    "value": 3,
+    "bindings": [
+     {
+      "node": "foam",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "splash",
+    "label": "Splash size",
+    "value": 0.7,
+    "bindings": [
+     {
+      "node": "splash",
+      "parameter": "size"
+     }
+    ]
+   },
+   {
+    "id": "ripple",
+    "label": "Ripple size",
+    "value": 1.4,
+    "bindings": [
+     {
+      "node": "ring0",
+      "parameter": "radius"
+     },
+     {
+      "node": "ring1",
+      "parameter": "radius"
+     },
+     {
+      "node": "ring2",
+      "parameter": "radius"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "water-broad",
+  "label": "Water: broad splash",
+  "description": "Low wide body with a big splash, large droplets and wide ripples (03-WATER variant).",
+  "durationTicks": 180,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "pool",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      -0.03,
+      0
+     ]
+    }
+   },
+   {
+    "id": "arc",
+    "type": "BezierPath",
+    "params": {
+     "startHandle": [
+      1.2,
+      1.1,
+      0
+     ],
+     "endHandle": [
+      -0.6,
+      0.9900000000000001,
+      0
+     ],
+     "samples": 64
+    }
+   },
+   {
+    "id": "reveal",
+    "type": "RevealPath"
+   },
+   {
+    "id": "headwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 18,
+     "durationTicks": 24,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "travelclock",
+    "type": "Time"
+   },
+   {
+    "id": "flow",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 18,
+     "durationTicks": 90,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "bodyfade",
+    "type": "EffectTimeCurve",
+    "params": {
+     "curve": {
+      "domain": "effectSeconds",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0.3,
+        "y": 0.42
+       },
+       {
+        "x": 1.4,
+        "y": 0.42
+       },
+       {
+        "x": 1.8,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "bodymat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#4F9CC8",
+      "alpha": 1
+     },
+     "emission": 0
+    }
+   },
+   {
+    "id": "body",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.32,
+     "endFade": 0.08,
+     "widthOverPath": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.55
+       },
+       {
+        "x": 0.5,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0.8
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "lift",
+    "type": "PathTransform",
+    "params": {
+     "offset": [
+      0,
+      0.08960000000000001,
+      0
+     ]
+    }
+   },
+   {
+    "id": "hlfade",
+    "type": "EffectTimeCurve",
+    "params": {
+     "curve": {
+      "domain": "effectSeconds",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0.3,
+        "y": 0.55
+       },
+       {
+        "x": 1.4,
+        "y": 0.55
+       },
+       {
+        "x": 1.8,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "hlmat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#E8F6FF",
+      "alpha": 1
+     },
+     "emission": 0.1
+    }
+   },
+   {
+    "id": "highlight",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.035,
+     "endFade": 0.15
+    }
+   },
+   {
+    "id": "coremat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#9CD4F0",
+      "alpha": 1
+     },
+     "emission": 0
+    }
+   },
+   {
+    "id": "corefade",
+    "type": "EffectTimeCurve",
+    "params": {
+     "curve": {
+      "domain": "effectSeconds",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0.3,
+        "y": 0.22
+       },
+       {
+        "x": 1.4,
+        "y": 0.22
+       },
+       {
+        "x": 1.8,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "core",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.14400000000000002,
+     "endFade": 0.1
+    }
+   },
+   {
+    "id": "travelwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 18,
+     "durationTicks": 162,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "head",
+    "type": "PathFollower",
+    "params": {
+     "durationTicks": 24,
+     "easing": "linear"
+    }
+   },
+   {
+    "id": "headmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "droplet",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#BFE6FF",
+      "alpha": 1
+     },
+     "opacity": 0.8
+    }
+   },
+   {
+    "id": "headsprite",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 0.18
+    }
+   },
+   {
+    "id": "splashwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 48,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "splashmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "foam",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#DDF1FF",
+      "alpha": 1
+     },
+     "opacity": 0.65
+    }
+   },
+   {
+    "id": "splash",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1.9,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.3
+       },
+       {
+        "x": 0.375,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1.1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.9
+       },
+       {
+        "x": 0.375,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "drops",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "coneAngle": 1.3,
+     "radius": 0.08,
+     "burst": 190,
+     "rate": 0,
+     "speedMin": 2,
+     "speedMax": 5.5,
+     "lifetimeMin": 0.4,
+     "lifetimeMax": 1.2,
+     "useEventPosition": false
+    }
+   },
+   {
+    "id": "dropip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.07,
+     "sizeMax": 0.18
+    }
+   },
+   {
+    "id": "dropg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "dropfloor",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.25,
+     "maxBounces": 1
+    }
+   },
+   {
+    "id": "dropmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "droplet",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#CFEBFF",
+      "alpha": 1
+     },
+     "opacity": 0.85,
+     "groundFade": 0.12
+    }
+   },
+   {
+    "id": "dropbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 1.6,
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 0.8
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "foam",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.6,
+     "burst": 36,
+     "rate": 0,
+     "speedMin": 0.1,
+     "speedMax": 0.5,
+     "lifetimeMin": 0.5,
+     "lifetimeMax": 1.1
+    }
+   },
+   {
+    "id": "foamip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.25,
+     "sizeMax": 0.5,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283
+    }
+   },
+   {
+    "id": "foamdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 2.5
+    }
+   },
+   {
+    "id": "foammat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "foam",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#EAF6FF",
+      "alpha": 1
+     },
+     "opacity": 0.35
+    }
+   },
+   {
+    "id": "foambb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "worldAxis",
+     "worldAxis": [
+      0,
+      1,
+      0
+     ],
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 1.4
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.2,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "ripplemat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#CFEAFF",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "ripwin0",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 60,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ring0",
+    "type": "RingPath",
+    "params": {
+     "radius": 3.2,
+     "samples": 96
+    }
+   },
+   {
+    "id": "ringclock0",
+    "type": "Time"
+   },
+   {
+    "id": "ringsize0",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "max",
+     "b": 0.0625,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringdim0",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.3,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringfade0",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.3,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringmat0",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#D6EEFF",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "ripple0",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.018,
+     "endFade": 0,
+     "orientation": "camera"
+    }
+   },
+   {
+    "id": "ripwin1",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 7,
+     "durationTicks": 60,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ring1",
+    "type": "RingPath",
+    "params": {
+     "radius": 3.2,
+     "samples": 96
+    }
+   },
+   {
+    "id": "ringclock1",
+    "type": "Time"
+   },
+   {
+    "id": "ringsize1",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "max",
+     "b": 0.0625,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringdim1",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.22999999999999998,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringfade1",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.23,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringmat1",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#D6EEFF",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "ripple1",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.018,
+     "endFade": 0,
+     "orientation": "camera"
+    }
+   },
+   {
+    "id": "ripwin2",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 15,
+     "durationTicks": 60,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ring2",
+    "type": "RingPath",
+    "params": {
+     "radius": 3.2,
+     "samples": 96
+    }
+   },
+   {
+    "id": "ringclock2",
+    "type": "Time"
+   },
+   {
+    "id": "ringsize2",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "max",
+     "b": 0.0625,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringdim2",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.15999999999999998,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringfade2",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.16,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringmat2",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#D6EEFF",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "ripple2",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.018,
+     "endFade": 0,
+     "orientation": "camera"
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "pool.anchor"
+   ],
+   [
+    "node-source.out",
+    "arc.start"
+   ],
+   [
+    "node-target.out",
+    "arc.end"
+   ],
+   [
+    "headwin.window",
+    "travelclock.window"
+   ],
+   [
+    "arc.paths",
+    "reveal.paths"
+   ],
+   [
+    "travelclock.progress",
+    "reveal.fraction"
+   ],
+   [
+    "bodyfade.value",
+    "bodymat.opacity"
+   ],
+   [
+    "reveal.paths",
+    "body.paths"
+   ],
+   [
+    "bodymat.material",
+    "body.material"
+   ],
+   [
+    "flow.window",
+    "body.window"
+   ],
+   [
+    "body.visual",
+    "node-output.visual"
+   ],
+   [
+    "reveal.paths",
+    "lift.paths"
+   ],
+   [
+    "hlfade.value",
+    "hlmat.opacity"
+   ],
+   [
+    "lift.paths",
+    "highlight.paths"
+   ],
+   [
+    "hlmat.material",
+    "highlight.material"
+   ],
+   [
+    "flow.window",
+    "highlight.window"
+   ],
+   [
+    "highlight.visual",
+    "node-output.visual"
+   ],
+   [
+    "corefade.value",
+    "coremat.opacity"
+   ],
+   [
+    "reveal.paths",
+    "core.paths"
+   ],
+   [
+    "coremat.material",
+    "core.material"
+   ],
+   [
+    "flow.window",
+    "core.window"
+   ],
+   [
+    "core.visual",
+    "node-output.visual"
+   ],
+   [
+    "arc.paths",
+    "head.paths"
+   ],
+   [
+    "travelwin.window",
+    "head.window"
+   ],
+   [
+    "head.anchor",
+    "headsprite.anchor"
+   ],
+   [
+    "headmat.material",
+    "headsprite.material"
+   ],
+   [
+    "headwin.window",
+    "headsprite.window"
+   ],
+   [
+    "headsprite.visual",
+    "node-output.visual"
+   ],
+   [
+    "head.arrival",
+    "splashwin.trigger"
+   ],
+   [
+    "node-target.out",
+    "splash.anchor"
+   ],
+   [
+    "splashmat.material",
+    "splash.material"
+   ],
+   [
+    "splashwin.window",
+    "splash.window"
+   ],
+   [
+    "splash.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "drops.anchor"
+   ],
+   [
+    "head.arrival",
+    "drops.trigger"
+   ],
+   [
+    "drops.particles",
+    "dropip.particles"
+   ],
+   [
+    "dropip.particles",
+    "dropg.particles"
+   ],
+   [
+    "dropg.particles",
+    "dropfloor.particles"
+   ],
+   [
+    "dropfloor.particles",
+    "dropbb.particles"
+   ],
+   [
+    "dropmat.material",
+    "dropbb.material"
+   ],
+   [
+    "dropbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "pool.out",
+    "foam.anchor"
+   ],
+   [
+    "head.arrival",
+    "foam.trigger"
+   ],
+   [
+    "foam.particles",
+    "foamip.particles"
+   ],
+   [
+    "foamip.particles",
+    "foamdrag.particles"
+   ],
+   [
+    "foamdrag.particles",
+    "foambb.particles"
+   ],
+   [
+    "foammat.material",
+    "foambb.material"
+   ],
+   [
+    "foambb.visual",
+    "node-output.visual"
+   ],
+   [
+    "head.arrival",
+    "ripwin0.trigger"
+   ],
+   [
+    "ripwin0.window",
+    "ringclock0.window"
+   ],
+   [
+    "ringclock0.progress",
+    "ringsize0.a"
+   ],
+   [
+    "ringclock0.progress",
+    "ringdim0.a"
+   ],
+   [
+    "ringdim0.value",
+    "ringfade0.a"
+   ],
+   [
+    "pool.out",
+    "ring0.center"
+   ],
+   [
+    "ringsize0.value",
+    "ring0.radiusScale"
+   ],
+   [
+    "ringfade0.value",
+    "ringmat0.opacity"
+   ],
+   [
+    "ring0.paths",
+    "ripple0.paths"
+   ],
+   [
+    "ringmat0.material",
+    "ripple0.material"
+   ],
+   [
+    "ripwin0.window",
+    "ripple0.window"
+   ],
+   [
+    "ripple0.visual",
+    "node-output.visual"
+   ],
+   [
+    "head.arrival",
+    "ripwin1.trigger"
+   ],
+   [
+    "ripwin1.window",
+    "ringclock1.window"
+   ],
+   [
+    "ringclock1.progress",
+    "ringsize1.a"
+   ],
+   [
+    "ringclock1.progress",
+    "ringdim1.a"
+   ],
+   [
+    "ringdim1.value",
+    "ringfade1.a"
+   ],
+   [
+    "pool.out",
+    "ring1.center"
+   ],
+   [
+    "ringsize1.value",
+    "ring1.radiusScale"
+   ],
+   [
+    "ringfade1.value",
+    "ringmat1.opacity"
+   ],
+   [
+    "ring1.paths",
+    "ripple1.paths"
+   ],
+   [
+    "ringmat1.material",
+    "ripple1.material"
+   ],
+   [
+    "ripwin1.window",
+    "ripple1.window"
+   ],
+   [
+    "ripple1.visual",
+    "node-output.visual"
+   ],
+   [
+    "head.arrival",
+    "ripwin2.trigger"
+   ],
+   [
+    "ripwin2.window",
+    "ringclock2.window"
+   ],
+   [
+    "ringclock2.progress",
+    "ringsize2.a"
+   ],
+   [
+    "ringclock2.progress",
+    "ringdim2.a"
+   ],
+   [
+    "ringdim2.value",
+    "ringfade2.a"
+   ],
+   [
+    "pool.out",
+    "ring2.center"
+   ],
+   [
+    "ringsize2.value",
+    "ring2.radiusScale"
+   ],
+   [
+    "ringfade2.value",
+    "ringmat2.opacity"
+   ],
+   [
+    "ring2.paths",
+    "ripple2.paths"
+   ],
+   [
+    "ringmat2.material",
+    "ripple2.material"
+   ],
+   [
+    "ripwin2.window",
+    "ripple2.window"
+   ],
+   [
+    "ripple2.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "width",
+    "label": "Body width",
+    "value": 0.32,
+    "bindings": [
+     {
+      "node": "body",
+      "parameter": "width"
+     },
+     {
+      "node": "core",
+      "parameter": "width",
+      "scale": 0.45
+     }
+    ]
+   },
+   {
+    "id": "travel",
+    "label": "Travel time",
+    "value": 24,
+    "bindings": [
+     {
+      "node": "head",
+      "parameter": "durationTicks"
+     },
+     {
+      "node": "headwin",
+      "parameter": "durationTicks"
+     }
+    ]
+   },
+   {
+    "id": "droplets",
+    "label": "Droplet amount",
+    "value": 190,
+    "bindings": [
+     {
+      "node": "drops",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "foam",
+    "label": "Foam amount",
+    "value": 36,
+    "bindings": [
+     {
+      "node": "foam",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "splash",
+    "label": "Splash size",
+    "value": 1.9,
+    "bindings": [
+     {
+      "node": "splash",
+      "parameter": "size"
+     }
+    ]
+   },
+   {
+    "id": "ripple",
+    "label": "Ripple size",
+    "value": 3.2,
+    "bindings": [
+     {
+      "node": "ring0",
+      "parameter": "radius"
+     },
+     {
+      "node": "ring1",
+      "parameter": "radius"
+     },
+     {
+      "node": "ring2",
+      "parameter": "radius"
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": "fireball",
   "label": "Fireball",
   "description": "Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.",
