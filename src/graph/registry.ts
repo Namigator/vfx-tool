@@ -308,6 +308,36 @@ function meshRenderer(): NodeSpec {
   });
 }
 
+function helixPathNode(): NodeSpec {
+  return node('HelixPath', {
+    inputs: [port({ id: 'start', label: 'Start', type: 'anchor', required: true }), port({ id: 'end', label: 'End', type: 'anchor', required: true })],
+    outputs: [port({ id: 'paths', label: 'Paths', type: 'paths' })],
+    parameters: [
+      param({ id: 'radius', label: 'Radius', type: 'number', unit: 'meter', default: 0.5, min: 0, max: 20 }),
+      param({ id: 'turns', label: 'Turns', type: 'number', unit: 'none', default: 2, min: -16, max: 16 }),
+      param({ id: 'phase', label: 'Phase', type: 'number', unit: 'radian', default: 0, min: -2 * Math.PI, max: 2 * Math.PI }),
+      param({ id: 'spin', label: 'Spin', type: 'number', unit: 'perSecond', default: 0, min: -20, max: 20, description: 'Radians per second the helix rotates over effect time.' }),
+      param({ id: 'taper', label: 'Taper', type: 'enum', unit: 'none', default: 'none', choices: ['none', 'in', 'out', 'both'], description: 'Radius grows from 0 (in), shrinks to 0 (out) or swells in the middle (both).' }),
+      param({ id: 'samples', label: 'Samples', type: 'integer', unit: 'none', default: 64, min: 4, max: 128, step: 1 }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
+function pathTransformNode(): NodeSpec {
+  return node('PathTransform', {
+    inputs: [port({ id: 'paths', label: 'Paths', type: 'paths', required: true })],
+    outputs: [port({ id: 'paths', label: 'Paths', type: 'paths' })],
+    parameters: [
+      param({ id: 'offset', label: 'Offset', type: 'vec3', unit: 'meter', default: [0, 0, 0], min: -100, max: 100 }),
+      param({ id: 'rotation', label: 'Rotation', type: 'quaternion', unit: 'none', default: [0, 0, 0, 1], min: -1, max: 1, description: 'About each path\'s first point (xyzw).' }),
+      param({ id: 'scale', label: 'Scale', type: 'number', unit: 'none', default: 1, min: 0.01, max: 20 }),
+    ],
+    disabledBehavior: 'bypass',
+    bypass: { input: 'paths', output: 'paths' },
+  });
+}
+
 function particleTrail(): NodeSpec {
   return node('ParticleTrail', {
     inputs: [
@@ -697,7 +727,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
     anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), particleEvents(), material(), billboardRenderer(), particleTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(),
-    linePath(), bezierPath(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(),
+    linePath(), bezierPath(), helixPathNode(), pathTransformNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(),
     audioSource(), audioEnvelope(), audioFilter(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),
   ];

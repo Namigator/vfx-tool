@@ -5895,6 +5895,276 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   ]
  },
  {
+  "id": "helix-beam",
+  "label": "Helix beam",
+  "description": "Two spinning helix strands braided around a bright core line Source→Target (HelixPath + ribbons).",
+  "durationTicks": 120,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "on",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 5,
+     "durationTicks": 100,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "strandA",
+    "type": "HelixPath",
+    "params": {
+     "radius": 0.35,
+     "turns": 4,
+     "phase": 0,
+     "spin": 6,
+     "taper": "both",
+     "samples": 96
+    }
+   },
+   {
+    "id": "strandB",
+    "type": "HelixPath",
+    "params": {
+     "radius": 0.35,
+     "turns": 4,
+     "phase": 3.14159,
+     "spin": 6,
+     "taper": "both",
+     "samples": 96
+    }
+   },
+   {
+    "id": "axis",
+    "type": "LinePath",
+    "params": {
+     "samples": 2
+    }
+   },
+   {
+    "id": "strandmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#7FE0FF",
+      "alpha": 1
+     },
+     "emission": 0.5
+    }
+   },
+   {
+    "id": "ribA",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.07,
+     "endFade": 0.1
+    }
+   },
+   {
+    "id": "ribB",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.07,
+     "endFade": 0.1
+    }
+   },
+   {
+    "id": "coremat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFFFFF",
+      "alpha": 1
+     },
+     "emission": 0.8,
+     "opacity": 0.6
+    }
+   },
+   {
+    "id": "core",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.12,
+     "endFade": 0.12
+    }
+   },
+   {
+    "id": "hazemat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#2E7BFF",
+      "alpha": 1
+     },
+     "opacity": 0.1
+    }
+   },
+   {
+    "id": "haze",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.9,
+     "endFade": 0.2
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-source.out",
+    "strandA.start"
+   ],
+   [
+    "node-target.out",
+    "strandA.end"
+   ],
+   [
+    "node-source.out",
+    "strandB.start"
+   ],
+   [
+    "node-target.out",
+    "strandB.end"
+   ],
+   [
+    "node-source.out",
+    "axis.start"
+   ],
+   [
+    "node-target.out",
+    "axis.end"
+   ],
+   [
+    "strandA.paths",
+    "ribA.paths"
+   ],
+   [
+    "strandB.paths",
+    "ribB.paths"
+   ],
+   [
+    "axis.paths",
+    "core.paths"
+   ],
+   [
+    "axis.paths",
+    "haze.paths"
+   ],
+   [
+    "strandmat.material",
+    "ribA.material"
+   ],
+   [
+    "strandmat.material",
+    "ribB.material"
+   ],
+   [
+    "coremat.material",
+    "core.material"
+   ],
+   [
+    "hazemat.material",
+    "haze.material"
+   ],
+   [
+    "on.window",
+    "ribA.window"
+   ],
+   [
+    "on.window",
+    "ribB.window"
+   ],
+   [
+    "on.window",
+    "core.window"
+   ],
+   [
+    "on.window",
+    "haze.window"
+   ],
+   [
+    "haze.visual",
+    "node-output.visual"
+   ],
+   [
+    "core.visual",
+    "node-output.visual"
+   ],
+   [
+    "ribA.visual",
+    "node-output.visual"
+   ],
+   [
+    "ribB.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "radius",
+    "label": "Helix radius",
+    "value": 0.35,
+    "bindings": [
+     {
+      "node": "strandA",
+      "parameter": "radius"
+     },
+     {
+      "node": "strandB",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "turns",
+    "label": "Turns",
+    "value": 4,
+    "bindings": [
+     {
+      "node": "strandA",
+      "parameter": "turns"
+     },
+     {
+      "node": "strandB",
+      "parameter": "turns"
+     }
+    ]
+   },
+   {
+    "id": "spin",
+    "label": "Spin",
+    "value": 6,
+    "bindings": [
+     {
+      "node": "strandA",
+      "parameter": "spin"
+     },
+     {
+      "node": "strandB",
+      "parameter": "spin"
+     }
+    ]
+   },
+   {
+    "id": "width",
+    "label": "Strand width",
+    "value": 0.07,
+    "bindings": [
+     {
+      "node": "ribA",
+      "parameter": "width"
+     },
+     {
+      "node": "ribB",
+      "parameter": "width"
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": "fireball",
   "label": "Fireball",
   "description": "Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.",

@@ -254,3 +254,31 @@ export function ease(kind: Easing, u: number): number {
   const x = Math.min(1, Math.max(0, u));
   return kind === 'easeIn' ? x * x : kind === 'easeOut' ? 1 - (1 - x) * (1 - x) : kind === 'easeInOut' ? x * x * (3 - 2 * x) : x;
 }
+
+export type HelixTaper = 'none' | 'in' | 'out' | 'both';
+export interface HelixOptions { radius: number; turns: number; phase: number; taper: HelixTaper; samples: number }
+/** 05 HelixPath: spiral around the start→end axis (stable perpendicular frame), radius shaped by taper. */
+export function helixPath(id: string, start: Vec3, end: Vec3, o: HelixOptions): PathData {
+  const f = stableFrame(start, end), pts: Vec3[] = [], n = Math.max(4, Math.floor(o.samples));
+  for (let i = 0; i < n; i++) {
+    const u = i / (n - 1), a = o.phase + 2 * Math.PI * o.turns * u;
+    const k = o.taper === 'in' ? u : o.taper === 'out' ? 1 - u : o.taper === 'both' ? Math.sin(Math.PI * u) : 1;
+    const r = o.radius * k, c = Math.cos(a) * r, s = Math.sin(a) * r;
+    pts.push([
+      start[0] + (end[0] - start[0]) * u + f.n1[0] * c + f.n2[0] * s,
+      start[1] + (end[1] - start[1]) * u + f.n1[1] * c + f.n2[1] * s,
+      start[2] + (end[2] - start[2]) * u + f.n1[2] * c + f.n2[2] * s,
+    ]);
+  }
+  return { id, points: pts, widthScale: 1, opacityScale: 1 };
+}
+
+/** 05 PathTransform: each path rotated (quaternion xyzw) and scaled about its first point, then offset. */
+export function transformPath(p: PathData, offset: Vec3, q: [number, number, number, number], scale: number): PathData {
+  const o = p.points[0] ?? [0, 0, 0], [qx, qy, qz, qw] = q;
+  const rot = (v: Vec3): Vec3 => {
+    const tx = 2 * (qy * v[2] - qz * v[1]), ty = 2 * (qz * v[0] - qx * v[2]), tz = 2 * (qx * v[1] - qy * v[0]);
+    return [v[0] + qw * tx + (qy * tz - qz * ty), v[1] + qw * ty + (qz * tx - qx * tz), v[2] + qw * tz + (qx * ty - qy * tx)];
+  };
+  return { ...p, points: p.points.map(v => { const r = rot([(v[0] - o[0]) * scale, (v[1] - o[1]) * scale, (v[2] - o[2]) * scale]); return [o[0] + r[0] + offset[0], o[1] + r[1] + offset[1], o[2] + r[2] + offset[2]]; }) };
+}

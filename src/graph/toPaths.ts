@@ -28,7 +28,7 @@ import type { SpriteSheet } from '../assets/spriteLibrary.ts';
 import type { ColorValue, CurveValue, Diagnostic, ErrorCode, ParameterValue, Quaternion, Transform, ValidationResult, Vec3 } from '../model/types.ts';
 import { TICKS_PER_SECOND } from '../model/types.ts';
 import { registryKey } from '../model/controls.ts';
-import { bezierPath, jaggedPath, linePath, revealPath, type PathData } from '../runtime/paths.ts';
+import { bezierPath, jaggedPath, linePath, revealPath, type PathData, helixPath, transformPath, type HelixTaper } from '../runtime/paths.ts';
 import { branchPaths, type BranchCountMode } from '../runtime/branches.ts';
 import { radialPaths, type RadialMode } from '../runtime/radial.ts';
 import { ringPath } from '../runtime/ring.ts';
@@ -270,6 +270,23 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
             return bezierPath('p0', start, c0, c1, end, samples);
           });
         out = new Map([['paths', [path]]]);
+        break;
+      }
+      case 'HelixPath': {
+        if (!on) { out = new Map([['paths', []]]); break; }
+        noDrivenParams(n, ENDPOINT_PORTS);
+        const start = anchorOf(n, 'start'), end = anchorOf(n, 'end');
+        const opts = { radius: num(n, 'radius'), turns: num(n, 'turns'), phase: num(n, 'phase') + num(n, 'spin') * seconds, taper: param(n, 'taper') as HelixTaper, samples: num(n, 'samples') };
+        out = new Map([['paths', [guard(id, () => helixPath('p0', start, end, opts))]]]);
+        break;
+      }
+      case 'PathTransform': {
+        const input = pathsInto(id, 'paths');
+        if (!on) { out = new Map([['paths', input]]); break; }
+        noDrivenParams(n, MODIFIER_PORTS);
+        const q = param(n, 'rotation') as [number, number, number, number], ql = Math.hypot(q[0], q[1], q[2], q[3]) || 1;
+        const qn: [number, number, number, number] = [q[0] / ql, q[1] / ql, q[2] / ql, q[3] / ql];
+        out = new Map([['paths', guard(id, () => input.map(p => transformPath(p, param(n, 'offset') as Vec3, qn, num(n, 'scale'))))]]);
         break;
       }
       case 'JaggedPath': {

@@ -135,3 +135,18 @@ test('compiler: wrong, multiple and invalid drivers and other driven params are 
   noCenter.graphs[0].edges = noCenter.graphs[0].edges.filter(e => e.id !== 'e-rc');
   assert.ok(errs(noCenter).length > 0);
 });
+
+test('helix points orbit the axis at the radius (tapered as requested); transform rotates/scales about the first point', async () => {
+  const { helixPath, transformPath } = await import('../src/runtime/paths.ts');
+  const h = helixPath('h', [0, 0, 0], [4, 0, 0], { radius: 0.5, turns: 3, phase: 0, taper: 'none', samples: 64 });
+  assert.equal(h.points.length, 64);
+  for (const p of h.points) assert.ok(Math.abs(Math.hypot(p[1], p[2]) - 0.5) < 1e-9, 'radius from the x axis');
+  assert.ok(Math.abs(h.points[63][0] - 4) < 1e-9);
+  const t = helixPath('t', [0, 0, 0], [4, 0, 0], { radius: 0.5, turns: 3, phase: 0, taper: 'in', samples: 64 });
+  assert.ok(Math.hypot(t.points[0][1], t.points[0][2]) < 1e-9 && Math.abs(Math.hypot(t.points[63][1], t.points[63][2]) - 0.5) < 1e-9, 'taper in grows from zero');
+  const s = Math.SQRT1_2, line = { id: 'l', points: [[1, 0, 0], [2, 0, 0]] as [number, number, number][], widthScale: 1, opacityScale: 1 };
+  const r = transformPath(line, [0, 1, 0], [0, 0, s, s], 2);
+  const round = (v: number[]) => v.map(x => Math.round(x * 1e9) / 1e9);
+  assert.deepEqual(round(r.points[0]), [1, 1, 0], 'first point only offset');
+  assert.deepEqual(round(r.points[1]), [1, 3, 0], '+X rotated 90° about Z to +Y, scaled ×2, offset');
+});

@@ -8,7 +8,7 @@ import { resolveParameters } from '../src/model/controls.ts';
 import { createRegistry, MATERIAL_TEMPLATES } from '../src/graph/registry.ts';
 import { createF01Document } from '../src/graph/fixtures.ts';
 
-const EXPECTED_TYPES = ['Anchor', 'Schedule', 'Emitter', 'InitialProperties', 'Gravity', 'Drag', 'NoiseForce', 'Attract', 'Vortex', 'GroundCollision', 'RandomRange', 'ParticleEvents', 'Material', 'BillboardRenderer', 'ParticleTrail', 'MeshRenderer', 'SpriteRenderer', 'PointLight', 'PathFollower', 'EffectOutput', 'Group', 'GroupInput', 'GroupOutput', 'LinePath', 'BezierPath', 'JaggedPath', 'BranchPath', 'RevealPath', 'RadialPath', 'RingPath', 'RibbonRenderer', 'EffectTimeCurve', 'AudioSource', 'AudioEnvelope', 'AudioFilter', 'AudioMix', 'AudioOutput'];
+const EXPECTED_TYPES = ['Anchor', 'Schedule', 'Emitter', 'InitialProperties', 'Gravity', 'Drag', 'NoiseForce', 'Attract', 'Vortex', 'GroundCollision', 'RandomRange', 'ParticleEvents', 'Material', 'BillboardRenderer', 'ParticleTrail', 'MeshRenderer', 'SpriteRenderer', 'PointLight', 'PathFollower', 'EffectOutput', 'Group', 'GroupInput', 'GroupOutput', 'LinePath', 'BezierPath', 'HelixPath', 'PathTransform', 'JaggedPath', 'BranchPath', 'RevealPath', 'RadialPath', 'RingPath', 'RibbonRenderer', 'EffectTimeCurve', 'AudioSource', 'AudioEnvelope', 'AudioFilter', 'AudioMix', 'AudioOutput'];
 const LOWER_CAMEL = /^[a-z][A-Za-z0-9]*$/;
 
 test('registry contains the current graph catalog at version 1, keyed type@version', () => {
