@@ -64,12 +64,20 @@ export type ParticlePreviewLayer = {
   /** Present for SpriteTextured materials: the library sheet and how cells are chosen. */
   sprite?: { sheet: SpriteSheet; mode: FlipbookMode; fps: number; randomStart: boolean };
 };
+/** 05 ParticleTrail sink: ribbon trails behind one particle system's particles. */
+export type ParticleTrailLayer = {
+  nodeId: string; systemId: string; historyTicks: number; maxPoints: number; width: number; endFade: number;
+  color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout'; alphaCutoff: number;
+  renderOrderOffset: number; visualOrder: number;
+};
 export type ParticlePreviewPlan = {
   durationTicks: number;
   /** One per distinct particle chain, in first-use order of layers. */
   systems: ParticlePreviewSystem[];
   /** In root EffectOutput.visual connection order. */
   layers: ParticlePreviewLayer[];
+  /** ParticleTrail sinks, in root EffectOutput.visual connection order. */
+  trails: ParticleTrailLayer[];
 };
 
 export const DEFAULT_PREVIEW_SIZE = { min: 0.08, max: 0.16 } as const;
@@ -374,6 +382,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
   // ---------- layers ----------
   const systems: ParticlePreviewSystem[] = [];
   const layers: ParticlePreviewLayer[] = [];
+  const trails: ParticleTrailLayer[] = [];
   const done = new Set<string>();
   const visual = into(outputId, 'visual');
   for (const [visualOrder, c] of visual.entries()) {
@@ -381,6 +390,34 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       const b = sourceNode(c.source, outputId, 'visual');
       if (options.ribbonsHandled === true && b.node.type === 'RibbonRenderer') continue; // Ribbon layers: compilePathPreview.
       if (done.has(b.node.id) || !b.effectiveEnabled) continue; // Disabled sink contributes nothing.
+      if (b.node.type === 'ParticleTrail') {
+        done.add(b.node.id);
+        const tid = b.node.id;
+        noDrivenParams(b, BILLBOARD_PORTS);
+        const mats = into(tid, 'material');
+        const mat = mats.length === 1 ? sourceNode(mats[0].source, tid, 'material') : undefined;
+        if (!mat || mat.node.type !== 'Material' || !mat.effectiveEnabled) { fail('MISSING_REFERENCE', `Required input "material" of "${tid}" needs an enabled Material.`, tid); }
+        const m = mat as ExpandedNode;
+        if (param(m, 'template') === 'SpriteTextured') report('INVALID_VALUE', 'ParticleTrail draws untextured ribbons in the preview; use a SpriteUnlit material.', m.node.id, 'template');
+        const chain = traceChain(tid);
+        if (!chain) continue;
+        if (!systems.some(s => s.id === chain.terminalId)) {
+          const before = errors.length;
+          const d = buildDescriptor(chain);
+          if (errors.length === before) {
+            const v = validateParticleDescriptor(d);
+            if (!v.ok) errors.push(...v.errors.map(e => ({ ...e, nodeId: chain.emitter.node.id })));
+            else systems.push({ id: chain.terminalId, descriptor: v.value });
+          }
+        }
+        const base = chain.initial ? param(chain.initial, 'color') as ColorValue : { srgb: '#FFFFFF', alpha: 1 };
+        trails.push({
+          nodeId: tid, systemId: chain.terminalId, historyTicks: Math.max(1, Math.round(num(b, 'history') * TICKS_PER_SECOND)), maxPoints: num(b, 'maxPoints'),
+          width: num(b, 'width') * transform.scale, endFade: num(b, 'endFade'), color: multiplyColors(base, param(m, 'tint') as ColorValue), opacity: num(m, 'opacity'),
+          emission: num(m, 'emission'), blend: param(m, 'blend') as ParticleTrailLayer['blend'], alphaCutoff: num(m, 'alphaCutoff'), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
+        });
+        continue;
+      }
       if (b.node.type !== 'BillboardRenderer') fail('UNKNOWN_NODE', `Visual source "${b.node.id}" (${b.node.type}) is not supported by the point preview.`, b.node.id);
       done.add(b.node.id);
       const bid = b.node.id;
@@ -452,7 +489,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     if (budget) errors.push(budget);
   }
   if (errors.length) return { ok: false, errors };
-  return { ok: true, value: { durationTicks: doc.durationTicks, systems, layers }, warnings };
+  return { ok: true, value: { durationTicks: doc.durationTicks, systems, layers, trails }, warnings };
 }
 
 /** Aggregate worst case over all systems: total births and live particles at any tick (plan15 caps). */

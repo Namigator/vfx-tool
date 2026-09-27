@@ -185,6 +185,24 @@ function groundCollision(): NodeSpec {
   });
 }
 
+function particleTrail(): NodeSpec {
+  return node('ParticleTrail', {
+    inputs: [
+      port({ id: 'particles', label: 'Particles', type: 'particles', required: true }),
+      port({ id: 'material', label: 'Material', type: 'material', required: true }),
+    ],
+    outputs: [port({ id: 'visual', label: 'Visual', type: 'visual' })],
+    parameters: [
+      param({ id: 'history', label: 'History', type: 'number', unit: 'second', default: 0.15, min: ONE_TICK_SECONDS, max: 2, description: 'How far back each trail reaches; trails keep fading this long after their particle dies.' }),
+      param({ id: 'maxPoints', label: 'Max points', type: 'integer', unit: 'none', default: 32, min: 2, max: 128, step: 1 }),
+      param({ id: 'width', label: 'Width', type: 'number', unit: 'meter', default: 0.015, min: 0.001, max: 2, editPolicy: 'live' }),
+      param({ id: 'endFade', label: 'End fade', type: 'number', unit: 'normalized', default: 0.3, min: 0, max: 0.5, editPolicy: 'live', description: 'Fraction of the trail over which both ends taper.' }),
+      param({ id: 'renderOrderOffset', label: 'Render order offset', type: 'integer', unit: 'none', default: 0, min: -32, max: 32, step: 1, editPolicy: 'live' }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
 function material(): NodeSpec {
   const signal: EvaluationDomain[] = ['constant', 'effectTime', 'normalizedAge'];
   return node('Material', {
@@ -523,7 +541,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 /** Fresh, independent registry each call. */
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
-    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), groundCollision(), particleEvents(), material(), billboardRenderer(),
+    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), groundCollision(), particleEvents(), material(), billboardRenderer(), particleTrail(),
     linePath(), bezierPath(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(),
     audioSource(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),

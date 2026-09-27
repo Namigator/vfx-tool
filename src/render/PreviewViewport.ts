@@ -15,8 +15,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 // Mixed mode (setMixedSource): point simulations and a path source share one clock; render order of
 // both layer kinds comes from layerRenderOrder(renderOrderOffset, visualOrder).
 import type { Diagnostic, ValidationResult, Vec3 } from '../model/types.ts';
-import type { ParticlePreviewLayer, ParticlePreviewPlan } from '../graph/toParticles.ts';
+import type { ParticlePreviewLayer, ParticlePreviewPlan, ParticleTrailLayer } from '../graph/toParticles.ts';
 import { spriteCell } from '../assets/spriteLibrary.ts';
+import { TrailHistory } from './particleTrails.ts';
 import { fnv1a32Utf8 } from '../runtime/random.ts';
 import { compileLifeCurve, compileLifeGradient, lifeFraction, sampleLifeCurve, sampleLifeGradient, type LifeCurveSampler, type LifeGradientSampler } from './billboardLife.ts';
 import { MAX_PREVIEW_POINTS, type PathPreviewLayer, type PathPreviewPlan } from '../graph/toPaths.ts';
@@ -162,6 +163,7 @@ void main() {
 
 type LayerMesh = { layer: ParticlePreviewLayer; mesh: THREE.InstancedMesh; material: THREE.ShaderMaterial; sizeSampler: LifeCurveSampler; opacitySampler: LifeCurveSampler; colorSampler: LifeGradientSampler };
 type RibbonMesh = { nodeId: string; ribbon: RibbonGeometry; mesh: THREE.Mesh; material: THREE.ShaderMaterial };
+type TrailMesh = RibbonMesh & { layer: ParticleTrailLayer; history: TrailHistory };
 
 /** Per-tick path compile supplied by the caller (e.g. `t => compilePathPreview(doc, t)`). */
 export type PathCompile = (tick: number) => ValidationResult<PathPreviewPlan>;
@@ -211,6 +213,7 @@ export class PreviewViewport {
   #pathCompile: PathCompile | null = null;
   #pathPlan: PathPreviewPlan | null = null;
   #ribbons: RibbonMesh[] = [];
+  #trails: TrailMesh[] = [];
   #ribbonKey = '';
   #ribbonCamera = new THREE.Vector3(Number.NaN, 0, 0);
   #drawnPaths = 0;
@@ -349,6 +352,17 @@ export class PreviewViewport {
 
   #addPointLayers(plan: ParticlePreviewPlan): void {
     this.#plan = plan;
+    for (const layer of plan.trails ?? []) {
+      const ribbon = new RibbonGeometry({ maxPoints: MAX_PREVIEW_POINTS });
+      const material = materialFor(RIBBON_VERTEX, RIBBON_FRAGMENT, layer);
+      material.side = THREE.DoubleSide;
+      material.uniforms.uSoftness = { value: ribbonSoftness(layer.blend) };
+      const mesh = new THREE.Mesh(ribbon.geometry, material);
+      mesh.frustumCulled = false;
+      mesh.renderOrder = layerRenderOrder(layer.renderOrderOffset, layer.visualOrder);
+      this.#scene.add(mesh);
+      this.#trails.push({ nodeId: layer.nodeId, ribbon, mesh, material, layer, history: new TrailHistory(layer.historyTicks, layer.maxPoints) });
+    }
     for (const layer of plan.layers) {
       const material = materialFor(VERTEX, FRAGMENT, layer);
       // Per-layer geometry: the per-instance opacity attribute cannot live on the shared quad.
@@ -513,6 +527,8 @@ export class PreviewViewport {
       l.material.dispose();
     }
     this.#layers = [];
+    for (const t of this.#trails) { this.#scene.remove(t.mesh); t.ribbon.dispose(); t.material.dispose(); }
+    this.#trails = [];
     this.#sims.clear();
     this.#snapshots.clear();
     this.#clearRibbons();
@@ -602,12 +618,16 @@ export class PreviewViewport {
         if (!created.ok) return this.#fail(created.errors.map(e => ({ ...e, nodeId: e.nodeId ?? s.id })));
         this.#sims.set(s.id, created.value);
       }
+      for (const t of this.#trails) t.history.clear();
+      const reach = Math.max(0, ...this.#trails.map(t => t.layer.historyTicks));
       for (const [id, sim] of this.#sims) {
         // Mixed clocks may outlast a system; stop at its own duration as #advanceSims does.
         const end = Math.min(tick, sim.descriptor.durationTicks);
+        if (end - sim.tick <= reach) this.#feedTrails(id, sim);
         while (sim.tick < end) {
           const r = sim.advance();
           if (!r.ok) return this.#fail(r.errors.map(e => ({ ...e, nodeId: e.nodeId ?? id })));
+          if (end - sim.tick <= reach) this.#feedTrails(id, sim);
         }
       }
       this.#takeSnapshots();
@@ -623,9 +643,28 @@ export class PreviewViewport {
         if (sim.tick >= sim.descriptor.durationTicks) continue;
         const r = sim.advance();
         if (!r.ok) return this.#fail(r.errors.map(e => ({ ...e, nodeId: e.nodeId ?? id })));
+        this.#feedTrails(id, sim);
       }
     }
     this.#takeSnapshots();
+  }
+
+  /** Records one simulated tick into every trail drawn from that system. */
+  #feedTrails(systemId: string, sim: ParticleSimulation): void {
+    let snap: ParticleState[] | undefined;
+    for (const t of this.#trails) if (t.layer.systemId === systemId) t.history.push(sim.tick, snap ??= sim.snapshot().particles);
+  }
+
+  /** Rebuilds trail ribbons for the current tick, interpolated heads and camera. */
+  #updateTrails(alpha: number): void {
+    if (!this.#trails.length || !this.#clock) return;
+    const c = this.#camera.position, cameraPosition: Vec3 = [c.x, c.y, c.z], step = alpha * PARTICLE_DT;
+    for (const t of this.#trails) {
+      const sim = this.#sims.get(t.layer.systemId), tick = sim ? sim.tick : 0;
+      const heads = new Map<string, Vec3>();
+      for (const p of this.#snapshots.get(t.layer.systemId) ?? []) heads.set(p.id, [p.position[0] + p.velocity[0] * step, p.position[1] + p.velocity[1] * step, p.position[2] + p.velocity[2] * step]);
+      t.ribbon.update(t.history.paths(tick, heads), { cameraPosition, width: t.layer.width, endFade: t.layer.endFade });
+    }
   }
 
   /** Allocates new particle state arrays per call (per advanced tick); render buffers are reused. */
@@ -691,6 +730,7 @@ export class PreviewViewport {
       opAttr.needsUpdate = true;
       colAttr.needsUpdate = true; spinAttr.needsUpdate = true; velAttr.needsUpdate = true; cellAttr.needsUpdate = true;
     }
+    this.#updateTrails(alpha);
   }
 
   #emitFrame(force: boolean): void {

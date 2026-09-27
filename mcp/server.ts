@@ -185,7 +185,7 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
   tool('vfx_compile', 'Compile particles, paths (at tick 0) and audio; report diagnostics and a summary. Always run after editing.', { docId: z.string() }, ({ docId }) => {
     const d = getDoc(docId), out: string[] = [];
     const p = compileParticlePreview(d, { audioHandled: true, ribbonsHandled: true });
-    out.push(p.ok ? `particles OK: ${p.value.systems.length} system(s), ${p.value.layers.length} billboard layer(s)` + p.value.systems.map(s => `\n  ${s.id}: shape ${s.descriptor.shape}, ${s.descriptor.bursts.length} burst(s)${s.descriptor.rate ? `, rate ${s.descriptor.rate.perSecond}/s ticks ${s.descriptor.rate.startTick}-${s.descriptor.rate.endTick}` : ''}, ops [${s.descriptor.operators.map(o => o.kind).join(', ')}]`).join('') : `particles FAILED:\n${fmtErrors(p.errors)}`);
+    out.push(p.ok ? `particles OK: ${p.value.systems.length} system(s), ${p.value.layers.length} billboard layer(s), ${p.value.trails.length} trail layer(s)` + p.value.systems.map(s => `\n  ${s.id}: shape ${s.descriptor.shape}, ${s.descriptor.bursts.length} burst(s)${s.descriptor.rate ? `, rate ${s.descriptor.rate.perSecond}/s ticks ${s.descriptor.rate.startTick}-${s.descriptor.rate.endTick}` : ''}, ops [${s.descriptor.operators.map(o => o.kind).join(', ')}]`).join('') : `particles FAILED:\n${fmtErrors(p.errors)}`);
     const r = compilePathPreview(d, 0, { audioHandled: true });
     out.push(r.ok ? `paths OK at tick 0: ${r.value.layers.length} ribbon layer(s)` : `paths FAILED:\n${fmtErrors(r.errors)}`);
     const hasAudio = d.graphs.some(g => g.edges.some(e => e.target.nodeId === 'node-output' && e.target.port === 'audio'));

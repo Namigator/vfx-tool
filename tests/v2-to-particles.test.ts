@@ -381,3 +381,15 @@ test('ParticleEvents death events honour probability and maxEvents deterministic
   const capped = plan(splashDoc({ via: 'death', maxEvents: 7 })).systems.find(s => s.descriptor.emitterId === 'node-splash')!;
   assert.equal(capped.descriptor.bursts.length, 7);
 });
+
+test('ParticleTrail compiles to a trail layer on the chain system (and can be the only sink)', () => {
+  const p = plan(f01(d => {
+    const g = root(d);
+    g.nodes.push(node('node-trail', 'ParticleTrail', { history: 0.25, width: 0.02 }));
+    g.edges.push(edge('e-tp', 'node-initial', 'particles', 'node-trail', 'particles'), edge('e-tm', 'node-material', 'material', 'node-trail', 'material'), edge('e-tv', 'node-trail', 'visual', 'node-output', 'visual', 1));
+  }));
+  assert.equal(p.trails.length, 1);
+  assert.deepEqual([p.trails[0].systemId, p.trails[0].historyTicks, p.trails[0].width, p.trails[0].visualOrder], ['node-initial', 15, 0.02, 1]);
+  assert.equal(p.systems.length, 1, 'shares the billboard system');
+  assert.deepEqual(plan(f01()).trails, []);
+});

@@ -59,10 +59,10 @@ export const MAX_FRAMED_PARTICLES_PER_SAMPLE = 512;
 export function particleFrameSets(plan: ParticlePreviewPlan): FramePointSet[] {
   const out: FramePointSet[] = [];
   for (const sys of plan.systems) {
-    const layers = plan.layers.filter(l => l.systemId === sys.id);
-    if (!layers.length) continue;
-    const grow = Math.max(...layers.map(l => Math.max(...l.sizeOverLife.keys.map(k => k.y)) * Math.max(1, l.stretchRatio)));
-    const pad = (sys.descriptor.size.max * grow) / 2;
+    const layers = plan.layers.filter(l => l.systemId === sys.id), trails = (plan.trails ?? []).filter(t => t.systemId === sys.id);
+    if (!layers.length && !trails.length) continue;
+    const grow = Math.max(1, ...layers.map(l => Math.max(...l.sizeOverLife.keys.map(k => k.y)) * Math.max(1, l.stretchRatio)));
+    const pad = Math.max(sys.descriptor.size.max * grow, ...trails.map(t => t.width)) / 2;
     for (const tick of framingSampleTicks(sys.descriptor.durationTicks)) {
       let snap;
       try { snap = sampleParticlesAtTick(sys.descriptor, tick); } catch { continue; }
