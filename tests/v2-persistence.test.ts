@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DRAFT_KEY, MAX_SHELF, documentFileName, loadDraftText, readShelf, removeFromShelf, saveDraft, saveToShelf } from '../src/model/persistence.ts';
+import { CORRUPT_KEY, DRAFT_KEY, MAX_SHELF, readRevisions, recoverDraft, documentFileName, loadDraftText, readShelf, removeFromShelf, saveDraft, saveToShelf } from '../src/model/persistence.ts';
 import { createBlankDocument, createF01Document } from '../src/graph/fixtures.ts';
 import { validateDocument } from '../src/model/document.ts';
 import { createRegistry } from '../src/graph/registry.ts';
@@ -49,4 +49,22 @@ test('project shelf keeps named documents newest first, replaces same names, cap
   assert.ok(saveToShelf(s, { ...b, name: 'p3' }).ok, 'replacing an existing name is allowed when full');
   s.m.set('vfx-studio.v2.projects', '{broken');
   assert.deepEqual(readShelf(s), []);
+});
+
+test('draft revisions: replaced drafts become revisions (throttled, max 5); a corrupt latest draft recovers the newest valid revision', () => {
+  const s = memory(), d = createF01Document();
+  const t0 = Date.parse('2026-09-27T10:00:00Z');
+  for (let i = 0; i < 8; i++) saveDraft(s, { ...d, durationTicks: 100 + i }, new Date(t0 + i * 30_000));
+  saveDraft(s, { ...d, durationTicks: 599 }, new Date(t0 + 8 * 30_000 + 1000));
+  saveDraft(s, { ...d, durationTicks: 598 }, new Date(t0 + 8 * 30_000 + 2000));
+  const revs = readRevisions(s);
+  assert.equal(revs.length, 5);
+  assert.deepEqual(revs.map(r => JSON.parse(r.text).durationTicks), [107, 106, 105, 104, 103], 'the quick second save added no revision');
+  const parse = (t: string) => { try { const v = validateDocument(JSON.parse(t), { registry: createRegistry() }); return v.ok ? v.value : null; } catch { return null; } };
+  assert.equal(recoverDraft(s, parse)!.value.durationTicks, 598);
+  s.m.set(DRAFT_KEY, '{"format": broken');
+  const r = recoverDraft(s, parse)!;
+  assert.equal(r.value.durationTicks, 107);
+  assert.ok(r.recoveredFrom);
+  assert.equal(s.m.get(CORRUPT_KEY), '{"format": broken', 'unreadable draft preserved');
 });

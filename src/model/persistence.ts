@@ -10,10 +10,30 @@ export type DraftStorage = { getItem(key: string): string | null; setItem(key: s
 
 export type DraftSaveResult = { ok: true; bytes: number } | { ok: false; message: string };
 
-export function saveDraft(storage: DraftStorage, doc: EffectDocumentV2): DraftSaveResult {
+export const REVISIONS_KEY = 'vfx-studio.v2.draft-revisions';
+export const CORRUPT_KEY = 'vfx-studio.v2.draft-corrupt';
+/** 13: five prior revisions are kept besides the latest draft; at most one new revision per interval so slider drags do not flood it. */
+export const MAX_REVISIONS = 5, REVISION_INTERVAL_MS = 20_000;
+export type DraftRevision = { savedAt: string; text: string };
+
+export function readRevisions(storage: DraftStorage | undefined): DraftRevision[] {
+  try {
+    const raw = storage ? JSON.parse(storage.getItem(REVISIONS_KEY) ?? '[]') : [];
+    return Array.isArray(raw) ? raw.filter((r): r is DraftRevision => !!r && typeof r.savedAt === 'string' && typeof r.text === 'string').slice(0, MAX_REVISIONS) : [];
+  } catch { return []; }
+}
+
+export function saveDraft(storage: DraftStorage, doc: EffectDocumentV2, now = new Date()): DraftSaveResult {
   try {
     const text = JSON.stringify(doc);
+    let previous: string | null = null;
+    try { previous = storage.getItem(DRAFT_KEY); } catch { /* unreadable storage: no revision */ }
     storage.setItem(DRAFT_KEY, text);
+    // The draft being replaced becomes a revision (newest first) unless the last revision is recent.
+    const revs = readRevisions(storage);
+    if (previous && previous !== text && (!revs.length || now.getTime() - Date.parse(revs[0].savedAt) >= REVISION_INTERVAL_MS)) {
+      try { storage.setItem(REVISIONS_KEY, JSON.stringify([{ savedAt: now.toISOString(), text: previous }, ...revs].slice(0, MAX_REVISIONS))); } catch { /* quota: the latest draft is already saved */ }
+    }
     return { ok: true, bytes: text.length };
   } catch (e) {
     return { ok: false, message: e instanceof Error ? e.message : String(e) };
@@ -56,4 +76,21 @@ export function removeFromShelf(storage: DraftStorage, name: string): ShelfEntry
   const entries = readShelf(storage).filter(e => e.name !== name);
   try { storage.setItem(SHELF_KEY, JSON.stringify(entries)); } catch { /* storage unavailable: the in-memory list still updates */ }
   return entries;
+}
+
+/**
+ * Recovery (13): the latest draft if it validates, otherwise the newest revision that does. The unreadable
+ * latest draft is copied to CORRUPT_KEY (never overwritten with an empty graph) so it can be inspected.
+ */
+export function recoverDraft<T>(storage: DraftStorage | undefined, parse: (text: string) => T | null): { value: T; recoveredFrom?: string } | null {
+  const latest = loadDraftText(storage);
+  if (latest) { const v = parse(latest); if (v) return { value: v }; }
+  for (const r of readRevisions(storage)) {
+    const v = parse(r.text);
+    if (v) {
+      if (latest && storage) { try { storage.setItem(CORRUPT_KEY, latest); } catch { /* best effort */ } }
+      return { value: v, recoveredFrom: r.savedAt };
+    }
+  }
+  return null;
 }

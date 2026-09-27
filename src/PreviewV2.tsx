@@ -13,7 +13,7 @@ import { TexturePanel } from './editor/TexturePanel.tsx';
 import { getAssetBytes, putAssetBytes } from './model/assetStore.ts';
 import { buildPack, readPack, type PackAsset } from './model/vfxpack.ts';
 import { hasAssetUrl, registerAssetUrl } from './assets/assetUrls.ts';
-import { documentFileName, loadDraftText, readShelf, removeFromShelf, saveDraft, saveToShelf, type ShelfEntry } from './model/persistence.ts';
+import { documentFileName, loadDraftText, recoverDraft, readShelf, removeFromShelf, saveDraft, saveToShelf, type ShelfEntry } from './model/persistence.ts';
 import { ControlsPanel } from './editor/ControlsPanel.tsx';
 import { compileAudio } from './graph/toAudio.ts';
 import { choosePreviewMode, createLightningAudioDemoDocument, hasRootAudio, ribbonStyleDiagnostics, type PreviewModeChoice } from './render/previewMode.ts';
@@ -107,14 +107,17 @@ export default function PreviewV2() {
   const fileRef = useRef<HTMLInputElement>(null);
   const viewportRef = useRef<PreviewViewport | null>(null);
   const historyRef = useRef<DocumentHistory | null>(null);
+  /** Set when the latest draft was unreadable and an older revision was restored (13 recovery). */
+  const recoveredFromRef = useRef<string | null>(null);
   if (historyRef.current === null) {
     const q = new URLSearchParams(window.location.search), demo = q.get('demo');
     // Demo/doc URLs win; otherwise the last local draft (if it still validates), else the F01 fixture.
     const draft = () => {
       if (q.get('doc')) return null;
-      const text = loadDraftText(typeof localStorage === 'undefined' ? undefined : localStorage);
-      if (!text) return null;
-      try { const v = validateDocument(JSON.parse(text), { registry: createRegistry() }); return v.ok ? v.value : null; } catch { return null; }
+      const parse = (text: string) => { try { const v = validateDocument(JSON.parse(text), { registry: createRegistry() }); return v.ok ? v.value : null; } catch { return null; } };
+      const r = recoverDraft(typeof localStorage === 'undefined' ? undefined : localStorage, parse);
+      if (r?.recoveredFrom) recoveredFromRef.current = r.recoveredFrom;
+      return r?.value ?? null;
     };
     historyRef.current = new DocumentHistory(demo === 'lightning' ? createLightningAudioDemoDocument() : demo === 'forces' ? createForcesDemoDocument() : draft() ?? createF01Document());
   }
@@ -290,7 +293,7 @@ export default function PreviewV2() {
   // Autosave: mirror every committed document to local storage (debounced); status is announced politely.
   const [saveStatus, setSaveStatus] = useState('');
   /** File actions (Keep, Export pack, Open pack, Remove) report here; autosave never overwrites it. */
-  const [fileNote, setFileNote] = useState('');
+  const [fileNote, setFileNote] = useState(() => recoveredFromRef.current ? `The latest autosave could not be read; restored the version saved ${new Date(recoveredFromRef.current).toLocaleString()}.` : '');
   useEffect(() => {
     const t = setTimeout(() => {
       const r = saveDraft(localStorage, doc);
