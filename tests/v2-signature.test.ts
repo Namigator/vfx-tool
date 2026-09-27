@@ -200,9 +200,9 @@ test('bypass mapping is validated against registered ports', () => {
   assert.deepEqual(run(spec('Mod', { ...base, disabledBehavior: 'empty', bypass: { input: 'particles', output: 'particles' } })), ['INVALID_VALUE']);
 });
 
-test('node/spec mismatch and unspecialized PublicParameter are rejected; Constant specializes', () => {
+test('node/spec mismatch and PublicParameter needs a control; Constant specializes', () => {
   assert.deepEqual(codes(resolveIn(createF01Document(), nodeDef('n-c', 'Constant', { value: 1, unit: 'meter' }), spec('Constant', { outputs: [port({ id: 'value', type: 'scalarSignal', domains: ['constant'] })] }))), [], 'Constant specializes its unit per instance');
-  assert.deepEqual(codes(resolveIn(createF01Document(), nodeDef('n-p', 'PublicParameter'), spec('PublicParameter'))).map(c => c.split('@')[0]), ['UNKNOWN_NODE']);
+  assert.deepEqual(codes(resolveIn(createF01Document(), nodeDef('n-p', 'PublicParameter', { controlId: 'nope' }), spec('PublicParameter', { outputs: [port({ id: 'value', type: 'scalarSignal', domains: ['constant'] })] }))).map(c => c.split('@')[0]), ['MISSING_REFERENCE'], 'PublicParameter needs an existing control');
   assert.deepEqual(codes(resolveIn(createF01Document(), nodeDef('n-x', 'Other'), spec('Material'))).map(c => c.split('@')[0]), ['UNKNOWN_NODE']);
   const v2 = { ...nodeDef('n-v', 'Material'), definitionVersion: 2 };
   assert.deepEqual(codes(resolveIn(createF01Document(), v2, regSpec('Material'))).map(c => c.split('@')[0]), ['UNSUPPORTED_VERSION']);

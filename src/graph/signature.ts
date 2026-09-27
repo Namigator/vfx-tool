@@ -38,7 +38,7 @@ export const BRIDGE_PORT_PARAM = 'portId';
 export const GROUP_INPUT_PORT = 'out';
 export const GROUP_OUTPUT_PORT = 'in';
 /** Dynamic literal nodes whose specialization is deliberately not implemented yet. */
-const UNSPECIALIZED_TYPES = ['PublicParameter'];
+const UNSPECIALIZED_TYPES: string[] = [];
 
 const VALUE_PORT: Partial<Record<ValueType, PortType>> = {
   number: 'scalarSignal', integer: 'scalarSignal', boolean: 'booleanSignal', color: 'colorSignal',
@@ -198,6 +198,15 @@ export function resolveSignature(node: NodeDefinition, spec: NodeSpec, context: 
   }
 
   // RandomRange: the output unit is chosen per instance (params.unit), so it can drive any scalar parameter.
+  // PublicParameter: the output takes the unit of the numeric control it reads, which must be scoped to this graph.
+  if (node.type === 'PublicParameter') {
+    const o = outputs.find(p => p.id === 'value'), id = node.params.controlId;
+    const c = typeof id === 'string' ? context.doc.controls.find(x => x.id === id) : undefined;
+    if (!c) err('MISSING_REFERENCE', `${np}.params.controlId`, `PublicParameter "${node.id}" names control "${String(id ?? '')}", which does not exist.`);
+    else if (c.scopeGraphId !== graph.id) err('INVALID_VALUE', `${np}.params.controlId`, `Control "${c.id}" belongs to graph "${c.scopeGraphId}"; a PublicParameter can read only controls of its own graph.`);
+    else if (c.type !== 'number' && c.type !== 'integer') err('TYPE_MISMATCH', `${np}.params.controlId`, `Control "${c.id}" is ${c.type}; PublicParameter reads number/integer controls.`);
+    else if (o) o.unit = c.unit;
+  }
   if (node.type === 'RandomRange' || node.type === 'Constant' || node.type === 'ScalarMath') {
     const o = outputs.find(p => p.id === 'value'), u = node.params.unit;
     if (o && typeof u === 'string') o.unit = u as Unit;

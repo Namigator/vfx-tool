@@ -596,3 +596,14 @@ test('ParticlePaths: anchor-to-particle lines to a stable selection of live part
   }
   assert.deepEqual(probe(10).map(p => p.id), paths.map(p => p.id), 'stable selection');
 });
+
+test('PublicParameter reads a root numeric control as a value; unit and scope are checked', () => {
+  const withPP = (controlId: string, unit = 'none', scope?: string) => f01(d => {
+    d.controls.push({ id: 'ctl-count', scopeGraphId: scope ?? d.rootGraphId, label: 'Count', type: 'integer', unit: unit as 'none', value: 33, default: 33, min: 0, max: 500, step: 1, section: 'Main', description: '', editPolicy: 'resample', bindings: [] });
+    root(d).nodes.push(node('node-pp', 'PublicParameter', { controlId }));
+    root(d).edges.push(edge('e-pp', 'node-pp', 'value', 'node-emitter', 'burst'));
+  });
+  assert.equal(plan(withPP('ctl-count')).systems[0].descriptor.bursts[0].count, 33);
+  assert.ok(errorsOf(compileParticlePreview(withPP('missing'))).some(e => e.code === 'MISSING_REFERENCE'));
+  assert.ok(errorsOf(compileParticlePreview(withPP('ctl-count', 'meter'))).some(e => e.code === 'TYPE_MISMATCH'), 'meter control into unitless burst');
+});

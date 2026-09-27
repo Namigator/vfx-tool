@@ -285,6 +285,16 @@ function offsetAnchor(): NodeSpec {
   });
 }
 
+/** 05 PublicParameter: reads one numeric control declared in its own graph (25) as a value; unit = the control's. */
+function publicParameter(): NodeSpec {
+  return node('PublicParameter', {
+    inputs: [],
+    outputs: [port({ id: 'value', label: 'Value', type: 'scalarSignal', unit: 'none', domains: ['constant'] })],
+    parameters: [param({ id: 'controlId', label: 'Control', type: 'string', unit: 'none', default: '', description: 'ID of a number/integer control whose scope is this graph (document controls panel / published knobs).' })],
+    disabledBehavior: 'empty',
+  });
+}
+
 function groundCollision(): NodeSpec {
   return node('GroundCollision', {
     inputs: [port({ id: 'particles', label: 'Particles', type: 'particles', required: true })],
@@ -873,7 +883,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 /** Fresh, independent registry each call. */
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
-    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), constantNode(), scalarMath(), offsetAnchor(), eventDelay(), mergeEvents(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
+    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), constantNode(), scalarMath(), publicParameter(), offsetAnchor(), eventDelay(), mergeEvents(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
     linePath(), bezierPath(), helixPathNode(), pathTransformNode(), particlePathsNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(), oscillator(),
     audioSource(), audioEnvelope(), audioFilter(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),

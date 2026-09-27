@@ -42,7 +42,7 @@ import type { FlipbookMode, SpriteSheet } from '../assets/spriteLibrary.ts';
 import { EFFECT_TIME_NODES, effectTimeValue } from './effectTime.ts';
 
 /** Value nodes evaluated once per cast when they drive a parameter port. */
-const VALUE_NODES = new Set(['RandomRange', 'Constant', 'ScalarMath']);
+const VALUE_NODES = new Set(['RandomRange', 'Constant', 'ScalarMath', 'PublicParameter']);
 
 export type ParticlePreviewSystem = { id: string; descriptor: ParticleEmitterDescriptor };
 export type ParticlePreviewLayer = {
@@ -188,6 +188,11 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
   const valueOf = (src: ExpandedNode, depth: number): number => {
     if (depth > 32) return fail('INVALID_VALUE', `Value chain through "${src.node.id}" is too deep.`, src.node.id);
     if (src.node.type === 'Constant') return param(src, 'value') as number;
+    if (src.node.type === 'PublicParameter') {
+      // The control's authored value (a parent Group's exposed override is not applied here yet).
+      const c = doc.controls.find(x => x.id === param(src, 'controlId'));
+      return typeof c?.value === 'number' ? c.value : fail('MISSING_REFERENCE', `PublicParameter "${src.node.id}" reads no numeric control.`, src.node.id, 'controlId');
+    }
     if (src.node.type === 'RandomRange') {
       const lo = param(src, 'min') as number, hi = param(src, 'max') as number;
       const u = sampleUnit({ documentSeed: doc.seed, randomStreamId: src.node.randomStreamId, eventRandomKey: 'value', entityOrdinal: 0, propertyKey: 'value', sampleOrdinal: 0 });
