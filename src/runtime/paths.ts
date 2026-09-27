@@ -247,3 +247,10 @@ export function revealPath(path: PathData, fraction: number): PathData {
   points.push(pointAtDistance(src, cum, target));
   return withPoints(path, points);
 }
+
+export type Easing = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut';
+/** 0..1 → 0..1 progress shaping for PathFollower. */
+export function ease(kind: Easing, u: number): number {
+  const x = Math.min(1, Math.max(0, u));
+  return kind === 'easeIn' ? x * x : kind === 'easeOut' ? 1 - (1 - x) * (1 - x) : kind === 'easeInOut' ? x * x * (3 - 2 * x) : x;
+}

@@ -675,6 +675,7 @@ export class PreviewViewport {
       const u = (tick - l.startTick) / Math.max(1, l.endTick - l.startTick);
       const f = l.flicker > 0 ? 1 - l.flicker * (0.5 + 0.5 * valueNoise4(l.seed, (tick * PARTICLE_DT) * l.flickerRate, 0.5, 0.5, 0)) : 1;
       light.intensity = inside ? l.intensity * sampleLifeCurve(curve, u) * f : 0;
+      if (l.track) { const p = l.track.positions[Math.max(0, Math.min(l.track.positions.length - 1, Math.floor(tick) - l.track.startTick))]; light.position.set(p[0], p[1], p[2]); }
     }
   }
 

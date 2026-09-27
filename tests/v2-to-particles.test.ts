@@ -422,3 +422,46 @@ test('PointLight compiles to a light layer at its anchor over its window', () =>
   assert.ok(Number.isInteger(l.seed));
   assert.deepEqual(plan(f01()).lights, []);
 });
+
+// Line from Source (0,1,0) to Target (0,1,5) followed over 20 ticks from tick 10; arrival triggers a burst.
+function followerDoc(extra?: (d: EffectDocumentV2) => void) {
+  return f01(d => {
+    const g = root(d);
+    g.nodes.push(node('node-line', 'LinePath', { samples: 8 }), node('node-fw', 'Schedule', { startTicks: 10, durationTicks: 40, mode: 'window' }), node('node-follow', 'PathFollower', { durationTicks: 20 }));
+    g.edges.push(edge('e-ls', 'node-source', 'out', 'node-line', 'start'), edge('e-le', 'node-target', 'out', 'node-line', 'end'),
+      edge('e-fp', 'node-line', 'paths', 'node-follow', 'paths'), edge('e-fw', 'node-fw', 'window', 'node-follow', 'window'));
+    extra?.(d);
+  });
+}
+
+test('PathFollower moves an emitter along its path and fires arrival at start + travel', () => {
+  const p = plan(followerDoc(d => {
+    const g = root(d);
+    g.edges = g.edges.filter(e => e.id !== 'edge-anchor');
+    g.edges.push(edge('e-fa', 'node-follow', 'anchor', 'node-emitter', 'anchor'));
+    set('node-emitter', { burst: 0, rate: 60 })(d);
+    set('node-schedule', { mode: 'window', durationTicks: 60 })(d);
+    const trig = g.edges.find(e => e.id === 'edge-trigger')!; trig.source.port = 'window'; trig.target.port = 'window';
+  }));
+  const t = p.systems[0].descriptor.sourceTrack!;
+  assert.equal(t.startTick, 10);
+  assert.deepEqual(t.positions[0], [0, 1, 0]);
+  assert.ok(Math.abs(t.positions[10][2] - 2.5) < 1e-9, 'halfway at tick 20');
+  assert.deepEqual(t.positions[30], [0, 1, 5], 'held at the end after arrival');
+  const r = sampleParticlesAtTick(p.systems[0].descriptor, 25);
+  if (!r.ok) assert.fail(JSON.stringify(r.errors));
+  const newest = r.value.particles.at(-1)!;
+  assert.ok(Math.abs(newest.position[2] - 3.75) < 1e-9, `newest particle born on the moving source (${newest.position[2]})`);
+});
+
+test('PathFollower arrival triggers a burst at the path end', () => {
+  const p = plan(followerDoc(d => {
+    const g = root(d);
+    g.edges = g.edges.filter(e => e.id !== 'edge-anchor' && e.id !== 'edge-trigger');
+    g.edges.push(edge('e-arr', 'node-follow', 'arrival', 'node-emitter', 'trigger'));
+    set('node-emitter', { burst: 12, useEventPosition: true })(d);
+  }));
+  const b = p.systems[0].descriptor.bursts;
+  assert.equal(b.length, 1);
+  assert.deepEqual([b[0].tick, b[0].count, b[0].position], [30, 12, [0, 1, 5]]);
+});

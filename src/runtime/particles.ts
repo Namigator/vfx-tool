@@ -90,6 +90,10 @@ export type ParticleEmitterDescriptor = {
   emission?: ParticleEmission;
   /** When present every particle carries rotation/angularVelocity; the renderer uses rotation + w·age. */
   spin?: ParticleSpin;
+  /** Moving source (PathFollower): world position at tick startTick+i; clamps outside the range. Replaces sourcePosition. */
+  sourceTrack?: { startTick: number; positions: Vec3[] };
+  /** Particles stay attached to the track position (e.g. a projectile core sprite) instead of integrating motion. */
+  attachToSource?: boolean;
   bursts: ParticleBurst[];
   rate?: ParticleRate;
   lifetimeTicks: { min: number; max: number };
@@ -205,7 +209,7 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
   const e: Diagnostic[] = [];
   if (!isObj(input)) return { ok: false, errors: [err('INVALID_VALUE', 'Particle descriptor must be an object.', 'descriptor')] };
   const p = 'descriptor';
-  checkKeys(input, ['documentSeed', 'durationTicks', 'emitterId', 'randomStreamId', 'shape', 'sourcePosition', 'initialVelocity', 'emission', 'spin', 'bursts', 'rate', 'lifetimeTicks', 'size', 'operators'], p, e);
+  checkKeys(input, ['documentSeed', 'durationTicks', 'emitterId', 'randomStreamId', 'shape', 'sourcePosition', 'initialVelocity', 'emission', 'spin', 'sourceTrack', 'attachToSource', 'bursts', 'rate', 'lifetimeTicks', 'size', 'operators'], p, e);
   if (!isUint32(input.documentSeed)) e.push(err('INVALID_VALUE', 'documentSeed must be uint32.', `${p}.documentSeed`));
   const duration = input.durationTicks;
   const durationOk = isTickInt(duration, 1, MAX_DURATION_TICKS);
@@ -324,6 +328,14 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
     }
   }
 
+  let sourceTrack: ParticleEmitterDescriptor['sourceTrack'];
+  if (input.sourceTrack !== undefined) {
+    const st = input.sourceTrack, sp = `${p}.sourceTrack`;
+    if (!isObj(st) || !isTickInt(st.startTick, 0, MAX_DURATION_TICKS) || !Array.isArray(st.positions) || st.positions.length < 1 || st.positions.length > MAX_DURATION_TICKS + 1 || !st.positions.every(isVec3)) e.push(err('INVALID_VALUE', 'sourceTrack must be {startTick, positions: 1..601 finite vec3}.', sp));
+    else sourceTrack = { startTick: st.startTick as number, positions: (st.positions as Vec3[]).map(cloneVec) };
+  }
+  if (input.attachToSource !== undefined && typeof input.attachToSource !== 'boolean') e.push(err('INVALID_VALUE', 'attachToSource must be boolean.', `${p}.attachToSource`));
+
   const operators: ParticleOperator[] = [];
   if (!Array.isArray(input.operators)) e.push(err('INVALID_VALUE', 'operators must be an array.', `${p}.operators`));
   else for (let i = 0, ops: unknown[] = input.operators; i < ops.length; i++) {
@@ -378,6 +390,8 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
   if (rate) d.rate = rate;
   if (emission) d.emission = emission;
   if (spin) d.spin = spin;
+  if (sourceTrack) d.sourceTrack = sourceTrack;
+  if (input.attachToSource === true) d.attachToSource = true;
   return { ok: true, value: deepFreeze(d), warnings: [] };
 }
 
@@ -509,6 +523,11 @@ export class ParticleSimulation {
       v[1] = (v[1] + py * dt) * dragFactor;
       v[2] = (v[2] + pz * dt) * dragFactor;
       x[0] += v[0] * dt; x[1] += v[1] * dt; x[2] += v[2] * dt;
+      if (d.attachToSource && d.sourceTrack) {
+        const a = this.#source(n), b = this.#source(n - 1);
+        x[0] = a[0]; x[1] = a[1]; x[2] = a[2];
+        v[0] = (a[0] - b[0]) / dt; v[1] = (a[1] - b[1]) / dt; v[2] = (a[2] - b[2]) / dt;
+      }
       if (ground && x[1] <= 0 && (v[1] <= 0 || x[1] < 0)) {
         if (ground.mode === 'kill') { x[1] = 0; killed.add(p); this.#event('collision', n, p, 0); this.#event('death', n, p, 0); }
         else {
@@ -541,6 +560,13 @@ export class ParticleSimulation {
     this.#spawn(n);
     if (this.#failure) return { ok: false, errors: (this.#failure as Diagnostic[]).map((q) => ({ ...q })) };
     return { ok: true, value: this.snapshot(), warnings: [] };
+  }
+
+  /** Source position at tick n: the track (clamped) or the fixed sourcePosition. */
+  #source(n: number): Vec3 {
+    const t = this.descriptor.sourceTrack;
+    if (!t) return this.descriptor.sourcePosition;
+    return t.positions[Math.max(0, Math.min(t.positions.length - 1, n - t.startTick))];
   }
 
   #noiseSeeds(streamId: string): NoiseFieldSeeds {
@@ -632,7 +658,7 @@ export class ParticleSimulation {
     while (this.#burstCursor < d.bursts.length && d.bursts[this.#burstCursor].tick === n) {
       const bi = this.#burstCursor++;
       const b = d.bursts[bi];
-      const pos = b.position ?? d.sourcePosition;
+      const pos = b.position ?? this.#source(n);
       for (let i = 0; i < b.count; i++) {
         if (!this.#birth(n, 'burst', bi, b.eventRandomKey, i, pos, b.velocity, baseVelocity)) return;
       }
@@ -644,7 +670,7 @@ export class ParticleSimulation {
       const due = Math.floor((this.#rateEligibleTicks * r.perSecond) / TICKS_PER_SECOND);
       while (this.#rateEmitted < due) {
         const k = this.#rateEmitted;
-        if (!this.#birth(n, 'rate', -1, RATE_EVENT_RANDOM_KEY, k, d.sourcePosition, undefined, baseVelocity)) return;
+        if (!this.#birth(n, 'rate', -1, RATE_EVENT_RANDOM_KEY, k, this.#source(n), undefined, baseVelocity)) return;
         this.#rateEmitted++;
       }
     }

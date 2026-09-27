@@ -226,6 +226,21 @@ function pointLight(): NodeSpec {
   });
 }
 
+function pathFollower(): NodeSpec {
+  return node('PathFollower', {
+    inputs: [
+      port({ id: 'paths', label: 'Paths', type: 'paths', required: true }),
+      port({ id: 'window', label: 'Window', type: 'timeWindow', required: true }),
+    ],
+    outputs: [port({ id: 'anchor', label: 'Anchor', type: 'anchor' }), port({ id: 'arrival', label: 'Arrival', type: 'event' })],
+    parameters: [
+      param({ id: 'durationTicks', label: 'Travel ticks', type: 'integer', unit: 'tick', default: 30, min: 1, max: 600, step: 1, description: 'Ticks to travel the first path of the set from start to end; arrival fires then. Holds at the end until the window closes.' }),
+      param({ id: 'easing', label: 'Easing', type: 'enum', unit: 'none', default: 'linear', choices: ['linear', 'easeIn', 'easeOut', 'easeInOut'] }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
 function particleTrail(): NodeSpec {
   return node('ParticleTrail', {
     inputs: [
@@ -583,7 +598,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 /** Fresh, independent registry each call. */
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
-    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), groundCollision(), particleEvents(), material(), billboardRenderer(), particleTrail(), spriteRenderer(), pointLight(),
+    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), groundCollision(), particleEvents(), material(), billboardRenderer(), particleTrail(), spriteRenderer(), pointLight(), pathFollower(),
     linePath(), bezierPath(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(),
     audioSource(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),

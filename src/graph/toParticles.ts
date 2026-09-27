@@ -34,6 +34,8 @@ import { expandGroups, type ExpandedConnection, type ExpandedGraph, type Expande
 import { createRegistry } from './registry.ts';
 import { lifeCurveError, OPACITY_OVER_LIFE_BOUNDS, SIZE_OVER_LIFE_BOUNDS } from '../render/billboardLife.ts';
 import { BUILTIN_SPRITES } from '../assets/builtinSprites.generated.ts';
+import { compilePathPreview } from './toPaths.ts';
+import { ease, pointAtArcFraction, type Easing } from '../runtime/paths.ts';
 import type { FlipbookMode, SpriteSheet } from '../assets/spriteLibrary.ts';
 
 export type ParticlePreviewSystem = { id: string; descriptor: ParticleEmitterDescriptor };
@@ -73,6 +75,8 @@ export type ParticleTrailLayer = {
 /** 05 PointLight: lights the preview ground over its window. */
 export type PointLightLayer = {
   nodeId: string; position: Vec3; color: ColorValue; intensity: number; range: number;
+  /** Moving light (PathFollower anchor): world position per tick from startTick, clamped. */
+  track?: { startTick: number; positions: Vec3[] };
   startTick: number; endTick: number; intensityOverWindow: CurveValue; flicker: number; flickerRate: number; seed: number;
 };
 export type ParticlePreviewPlan = {
@@ -218,6 +222,45 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
   };
 
   /**
+   * 05 PathFollower: position along the first path of its input set, sampled per tick from the window start
+   * (probe compiles of the path graph), eased over durationTicks, held at the end until the window closes.
+   */
+  type Track = { startTick: number; positions: Vec3[]; arrivalTick: number; arrivalPos: Vec3 };
+  const tracks = new Map<string, Track | null>();
+  const followerTrack = (f: ExpandedNode): Track | undefined => {
+    const fid = f.node.id;
+    if (tracks.has(fid)) return tracks.get(fid) ?? undefined;
+    tracks.set(fid, null);
+    if (!f.effectiveEnabled) return undefined;
+    noDrivenParams(f, ['paths', 'window']);
+    const ws = into(fid, 'window');
+    if (ws.length !== 1) return fail('MISSING_REFERENCE', `PathFollower "${fid}" needs a Schedule window.`, fid);
+    const s = scheduleOf(ws[0], fid, 'window');
+    if (!s) return undefined;
+    const start = num(s, 'startTicks'), end = Math.min(doc.durationTicks, start + num(s, 'durationTicks'));
+    const ps = into(fid, 'paths');
+    if (ps.length !== 1 || ps[0].source.kind !== 'node') return fail('MISSING_REFERENCE', `PathFollower "${fid}" needs one connected path source.`, fid);
+    const src = ps[0].source, travel = num(f, 'durationTicks'), easing = param(f, 'easing') as Easing;
+    const positions: Vec3[] = [];
+    let last: Vec3 | undefined;
+    for (let tk = start; tk < end; tk++) {
+      const u = (tk - start) / travel;
+      if (u <= 1 || !last) {
+        const r = compilePathPreview(input, tk, { audioHandled: true, probe: { nodeId: src.nodeId, port: src.port } });
+        if (!r.ok) { errors.push(...r.errors.map(e => ({ ...e, nodeId: e.nodeId ?? fid }))); return undefined; }
+        const path = r.value.probe?.[0];
+        if (!path || path.points.length === 0) return fail('MISSING_REFERENCE', `PathFollower "${fid}" path source produced no path at tick ${tk}.`, fid);
+        last = pointAtArcFraction(path.points, ease(easing, Math.min(1, u)));
+      }
+      positions.push([last[0], last[1], last[2]]);
+    }
+    if (!positions.length) return undefined;
+    const t: Track = { startTick: start, positions, arrivalTick: start + travel, arrivalPos: positions[Math.min(travel, positions.length - 1)] };
+    tracks.set(fid, t);
+    return t;
+  };
+
+  /**
    * Child emission (05 ParticleEvents, GroundCollision.collision): the parent chain is compiled and
    * simulated once (deterministic), and each selected event becomes one burst at the event tick.
    */
@@ -271,8 +314,9 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     const anchorNode = anchors.length === 1 ? sourceNode(anchors[0].source, id, 'anchor') : undefined;
     const triggerSources = into(id, 'trigger').map(c => sourceNode(c.source, id, 'trigger'));
     const eventOnly = triggerSources.length > 0 && into(id, 'window').length === 0 && param(em, 'useEventPosition') === true
-      && triggerSources.every(s => s.node.type === 'ParticleEvents' || s.node.type === 'GroundCollision');
-    if (!anchorNode || anchorNode.node.type !== 'Anchor' || !anchorNode.effectiveEnabled) {
+      && triggerSources.every(s => s.node.type === 'ParticleEvents' || s.node.type === 'GroundCollision' || s.node.type === 'PathFollower');
+    const track = anchorNode?.node.type === 'PathFollower' ? followerTrack(anchorNode) : undefined;
+    if (track) { /* Moving source: positions come from the follower track. */ } else if (!anchorNode || anchorNode.node.type !== 'Anchor' || !anchorNode.effectiveEnabled) {
       if (!eventOnly) report('MISSING_REFERENCE', 'Emitter needs an enabled Anchor connected to its anchor input (Schedule events carry no position; particle events do when Use event position is on).', id);
     } else {
       const aid = param(anchorNode, 'anchorId') as string;
@@ -287,6 +331,15 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     const seen = new Set<string>();
     for (const c of into(id, 'trigger')) {
       const src = sourceNode(c.source, id, 'trigger');
+      if (src.node.type === 'PathFollower') {
+        const t = followerTrack(src);
+        if (!t || t.arrivalTick >= duration || burst <= 0) continue;
+        const key = JSON.stringify(['arrival', src.node.randomStreamId, t.arrivalTick]);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        bursts.push({ tick: t.arrivalTick, eventRandomKey: key, count: burst, ...(param(em, 'useEventPosition') === true ? { position: [...t.arrivalPos] as Vec3 } : {}) });
+        continue;
+      }
       if (src.node.type === 'ParticleEvents' || src.node.type === 'GroundCollision') {
         if (!src.effectiveEnabled) continue;
         for (const b of particleEventBursts(src, c.source.kind === 'node' ? c.source.port : '', id, burst, param(em, 'useEventPosition') === true, depth)) {
@@ -375,6 +428,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       operators,
     };
     if (rate) d.rate = rate;
+    if (track) { d.sourcePosition = [...track.positions[0]] as Vec3; d.sourceTrack = { startTick: track.startTick, positions: track.positions.map(p => [...p] as Vec3) }; }
     if (chain.initial) {
       const ip = chain.initial, r = [num(ip, 'rotationMin'), num(ip, 'rotationMax')], w = [num(ip, 'angularVelocityMin'), num(ip, 'angularVelocityMax')];
       if (r[0] > r[1]) report('INVALID_VALUE', 'InitialProperties rotationMin must be <= rotationMax.', ip.node.id, 'rotationMax');
@@ -402,8 +456,9 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         const lid = b.node.id;
         noDrivenParams(b, ['anchor', 'window']);
         const an = into(lid, 'anchor'), anchorNode = an.length === 1 ? sourceNode(an[0].source, lid, 'anchor') : undefined;
+        const ltrack = anchorNode?.node.type === 'PathFollower' ? followerTrack(anchorNode) : undefined;
         const ap = anchorNode && anchorNode.node.type === 'Anchor' && anchorNode.effectiveEnabled ? anchorPos.get(param(anchorNode, 'anchorId') as string) : undefined;
-        if (!ap) { fail('MISSING_REFERENCE', `PointLight "${lid}" needs an enabled Anchor referencing an existing document anchor.`, lid); }
+        if (!ap && !ltrack) { fail('MISSING_REFERENCE', `PointLight "${lid}" needs an enabled Anchor (or PathFollower) referencing an existing document anchor.`, lid); }
         const ws = into(lid, 'window');
         if (ws.length !== 1) { fail('MISSING_REFERENCE', `PointLight "${lid}" needs a Schedule window.`, lid); }
         const s = scheduleOf(ws[0], lid, 'window');
@@ -412,8 +467,9 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         if (start >= doc.durationTicks) continue;
         const curve = param(b, 'intensityOverWindow') as CurveValue, cerr = lifeCurveError(curve, { min: 0, max: 1 });
         if (cerr !== undefined) report('INVALID_VALUE', `PointLight "${lid}" intensityOverWindow: ${cerr}`, lid, 'intensityOverWindow');
-        const scale = transform.scale, a = ap as Vec3, q = rotate(transform.rotation, [a[0] * scale, a[1] * scale, a[2] * scale]);
+        const scale = transform.scale, a = (ap ?? [0, 0, 0]) as Vec3, q = rotate(transform.rotation, [a[0] * scale, a[1] * scale, a[2] * scale]);
         lights.push({
+          ...(ltrack ? { track: { startTick: ltrack.startTick, positions: ltrack.positions.map(p => [...p] as Vec3) } } : {}),
           nodeId: lid, position: [q[0] + transform.position[0], q[1] + transform.position[1], q[2] + transform.position[2]], color: param(b, 'color') as ColorValue,
           intensity: num(b, 'intensity'), range: num(b, 'range') * scale, startTick: start, endTick: Math.min(doc.durationTicks, start + num(s, 'durationTicks')),
           intensityOverWindow: structuredClone(curve), flicker: num(b, 'flicker'), flickerRate: num(b, 'flickerRate'),
@@ -431,8 +487,9 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         if (!mat || mat.node.type !== 'Material' || !mat.effectiveEnabled) { fail('MISSING_REFERENCE', `Required input "material" of "${sid}" needs an enabled Material.`, sid); }
         const m = mat as ExpandedNode;
         const an = into(sid, 'anchor'), anchorNode = an.length === 1 ? sourceNode(an[0].source, sid, 'anchor') : undefined;
+        const strack = anchorNode?.node.type === 'PathFollower' ? followerTrack(anchorNode) : undefined;
         const ap = anchorNode && anchorNode.node.type === 'Anchor' && anchorNode.effectiveEnabled ? anchorPos.get(param(anchorNode, 'anchorId') as string) : undefined;
-        if (!ap) { fail('MISSING_REFERENCE', `SpriteRenderer "${sid}" needs an enabled Anchor referencing an existing document anchor.`, sid); }
+        if (!ap && !strack) { fail('MISSING_REFERENCE', `SpriteRenderer "${sid}" needs an enabled Anchor (or PathFollower) referencing an existing document anchor.`, sid); }
         const ws = into(sid, 'window');
         if (ws.length !== 1) { fail('MISSING_REFERENCE', `SpriteRenderer "${sid}" needs a Schedule window.`, sid); }
         const s = scheduleOf(ws[0], sid, 'window');
@@ -440,7 +497,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         if (param(s, 'mode') === 'repeat') report('INVALID_VALUE', 'A repeating Schedule window is not supported for SpriteRenderer yet; use mode "window" or "once".', s.node.id, 'mode');
         const start = num(s, 'startTicks'), len = Math.max(1, Math.min(num(s, 'durationTicks'), doc.durationTicks - start));
         if (start >= doc.durationTicks) continue;
-        const scale = transform.scale, a = ap as Vec3, q = rotate(transform.rotation, [a[0] * scale, a[1] * scale, a[2] * scale]);
+        const scale = transform.scale, a = (ap ?? [0, 0, 0]) as Vec3, q = rotate(transform.rotation, [a[0] * scale, a[1] * scale, a[2] * scale]);
         const rot = num(b, 'rotation'), spin = num(b, 'spin');
         const d: ParticleEmitterDescriptor = {
           documentSeed: doc.seed, durationTicks: doc.durationTicks, emitterId: sid, randomStreamId: b.node.randomStreamId, shape: 'point',
@@ -449,6 +506,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
           lifetimeTicks: { min: len, max: len }, size: { min: num(b, 'size') * scale, max: num(b, 'size') * scale }, operators: [],
           ...(rot !== 0 || spin !== 0 ? { spin: { rotation: { min: rot, max: rot }, angularVelocity: { min: spin, max: spin } } } : {}),
         };
+        if (strack) { d.sourcePosition = [...strack.positions[0]] as Vec3; d.sourceTrack = { startTick: strack.startTick, positions: strack.positions.map(p => [...p] as Vec3) }; d.attachToSource = true; }
         const v = validateParticleDescriptor(d);
         if (!v.ok) { errors.push(...v.errors.map(e => ({ ...e, nodeId: sid }))); continue; }
         systems.push({ id: sid, descriptor: v.value });

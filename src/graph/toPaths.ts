@@ -64,6 +64,8 @@ export type PathPreviewLayer = {
 export type PathPreviewPlan = {
   durationTicks: number;
   effectTick: number;
+  /** Set only for a `probe` compile. */
+  probe?: PathData[];
   /** In root EffectOutput.visual connection order. */
   layers: PathPreviewLayer[];
 };
@@ -92,6 +94,8 @@ export type PathPreviewOptions = {
    * Presentation connections are errors regardless.
    */
   audioHandled?: boolean;
+  /** Evaluate only this node output (world space) and return it as `probe`; sinks are not compiled. */
+  probe?: { nodeId: string; port: string };
 };
 
 export function compilePathPreview(input: unknown, effectTick: number, options: PathPreviewOptions = {}): ValidationResult<PathPreviewPlan> {
@@ -335,6 +339,20 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
     memo.set(id, out);
     return out;
   };
+
+  if (options.probe) {
+    try {
+      const n = nodes.get(options.probe.nodeId);
+      if (!n) fail('MISSING_REFERENCE', `Probe node "${options.probe.nodeId}" is not in the expanded graph.`, options.probe.nodeId);
+      const out = evalNode(n as ExpandedNode).get(options.probe.port);
+      if (!out) fail('UNKNOWN_NODE', `Output "${options.probe.port}" of "${options.probe.nodeId}" is not a path output.`, options.probe.nodeId);
+      if (errors.length) return { ok: false, errors };
+      return { ok: true, value: { durationTicks: doc.durationTicks, effectTick, layers: [], probe: (out as PathData[]).map(p => toWorld(p, doc.rootTransform)) }, warnings };
+    } catch (e) {
+      if (!(e instanceof Fail)) throw e;
+      return { ok: false, errors };
+    }
+  }
 
   // ---------- layers ----------
   const transform: Transform = doc.rootTransform;
