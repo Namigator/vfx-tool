@@ -29,11 +29,15 @@
 ## Rendering
 - HDR composer + UnrealBloom (08 defaults .8/.45/1.0) + ACES/sRGB OutputPass; background via scene.background (renderer clear colour double-encoded through the composer). Glow toggle in the transport.
 
-## Next — gap order from docs/v2-plan/27-GAP-AUDIT.md (capability floor, 19-WORK-PACKAGES)
-1. DONE force Strength (literal / value node / EffectTimeCurve / Oscillator → per-tick gain) + Oscillator driver; recipes gravity-ramp, oscillator-pulse [SAW]. I8b complete except per-particle curve nodes (renderer over-life params cover them).
-2. Worker simulation (I12; seek checkpoints done); revision history + recovery (I11; shelf, IndexedDB assets, .vfxpack done).
-3. Wrap a selection as a group; non-number knobs (component groups + ParticlePaths done); PublicParameter, OffsetAnchor.
-4. A-05 model-build acceptance test — needs the user's go-ahead. Evidence recipe for this stretch: mcp/examples/event-chain.steps.json ([SAW] delayed second burst t26, landing dust t40).
+## Next (as of 2026-09-27 afternoon)
+Capability floor (27-GAP-AUDIT) is essentially done: value nodes, event routing, force strength/oscillator, ParticlePaths, OffsetAnchor, PublicParameter,
+presentation, seek checkpoints, texture + GLB import, .vfxpack (fflate), project shelf, draft recovery, grouped components with Start at, ground fade,
+dissolve, ribbon UV scroll/distortion. Remaining small floor items: worker simulation (deferred: no visible benefit yet), multi-tab CAS + trash,
+wrap-selection-as-group, non-number knobs, rim, depth soft intersection, sprite UV ops.
+1. Next phase = WP10+ element families to their effect docs (docs/v2-plan/effects/01..10): lightning parity first (quality bar), then fire, water, etc.
+   Build every look from generic nodes/components; get the user's VISUAL feedback per family (they only judge visuals; sound is parked).
+2. Known visual issues from the user: L01 wide bloom haze; flame slightly scaly vs standalone reference.
+3. A-05 model-build test only after everything is implemented (user decision).
 Sprite library: `node tools/bake-sprites.mjs` → assets/sprites/ (flame-tongue-a/b, smoke-puff, foam flipbooks 4×4/256; soft-glow, spark-streak, electric-arc, droplet, ripple-ring 2×2; dissolve-noise) + src/assets/builtinSprites.generated.ts; preview /assets/sprites/preview.html.
 
 ## Known limits
