@@ -32,6 +32,7 @@ import {
 import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { createRegistry } from './registry.ts';
+import { materialSheet } from './materialSprite.ts';
 import { lifeCurveError, OPACITY_OVER_LIFE_BOUNDS, SIZE_OVER_LIFE_BOUNDS } from '../render/billboardLife.ts';
 import { BUILTIN_SPRITES } from '../assets/builtinSprites.generated.ts';
 import { compilePathPreview } from './toPaths.ts';
@@ -733,9 +734,9 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         };
         let sprite: ParticlePreviewLayer['sprite'];
         if (param(m, 'template') === 'SpriteTextured') {
-          const sheet = BUILTIN_SPRITES.find(x => x.id === param(m, 'sprite'));
-          if (!sheet) report('MISSING_REFERENCE', `Material sprite "${String(param(m, 'sprite'))}" is not in the included library.`, m.node.id, 'sprite');
-          else sprite = { sheet: structuredClone(sheet) as SpriteSheet, mode: 'overLife', fps: 24, randomStart: false, variant: num(m, 'variant') };
+          const r = materialSheet(doc, param(m, 'sprite'), param(m, 'textureAsset'));
+          if ('error' in r) report('MISSING_REFERENCE', r.error, m.node.id, r.field);
+          else sprite = { sheet: r.sheet, mode: 'overLife', fps: 24, randomStart: false, variant: num(m, 'variant') };
         }
         layers.push({
           nodeId: sid, systemId: sid, color: param(m, 'tint') as ColorValue, opacity: num(m, 'opacity'), emission: num(m, 'emission'),
@@ -801,9 +802,9 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       const template = param(mat, 'template');
       let sprite: ParticlePreviewLayer['sprite'];
       if (template === 'SpriteTextured') {
-        const sheet = BUILTIN_SPRITES.find(s => s.id === param(mat, 'sprite'));
-        if (!sheet) report('MISSING_REFERENCE', `Material sprite "${String(param(mat, 'sprite'))}" is not in the included library.`, mat.node.id, 'sprite');
-        else sprite = { sheet: structuredClone(sheet) as SpriteSheet, mode: param(b, 'flipbookMode') as FlipbookMode, fps: num(b, 'flipbookFps'), randomStart: false, variant: num(mat, 'variant') };
+        const r = materialSheet(doc, param(mat, 'sprite'), param(mat, 'textureAsset'));
+        if ('error' in r) report('MISSING_REFERENCE', r.error, mat.node.id, r.field);
+        else sprite = { sheet: r.sheet, mode: param(b, 'flipbookMode') as FlipbookMode, fps: num(b, 'flipbookFps'), randomStart: false, variant: num(mat, 'variant') };
       } else if (template !== 'SpriteUnlit') report('INVALID_VALUE', `Material template "${String(template)}" is not supported.`, mat.node.id, 'template');
 
       const chain = traceChain(bid);

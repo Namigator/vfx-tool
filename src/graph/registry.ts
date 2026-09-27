@@ -493,6 +493,7 @@ function material(): NodeSpec {
     outputs: [port({ id: 'material', label: 'Material', type: 'material' })],
     parameters: [
       param({ id: 'template', label: 'Template', type: 'enum', unit: 'none', default: 'SpriteUnlit', choices: [...MATERIAL_TEMPLATES], description: 'SpriteUnlit: soft procedural disc. SpriteTextured: a sprite/flipbook from the included library.' }),
+      param({ id: 'textureAsset', label: 'Texture asset', type: 'string', unit: 'none', default: '', description: 'Imported texture/flipbook asset ID (Import texture…); when set it replaces Sprite. Empty = use the included library sprite.' }),
       param({ id: 'sprite', label: 'Sprite', type: 'enum', unit: 'none', default: 'soft-glow', choices: BUILTIN_SPRITES.map(s => s.id), description: 'Included library sheet (SpriteTextured only). Flipbooks animate; variant sets pick one cell per particle.' }),
       param({ id: 'variant', label: 'Variant', type: 'integer', unit: 'none', default: -1, min: -1, max: 255, step: 1, description: 'Variant/mask sheets: -1 picks a random cell per particle; otherwise this fixed cell (row-major).' }),
       param({ id: 'blend', label: 'Blend', type: 'enum', unit: 'none', default: 'additive', choices: ['normal', 'additive', 'cutout'] }),

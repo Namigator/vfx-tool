@@ -37,6 +37,7 @@ import { EFFECT_TIME_NODES, effectTimeValue } from './effectTime.ts';
 import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { createRegistry } from './registry.ts';
+import { materialSheet } from './materialSprite.ts';
 import { compileParticlePreview } from './toParticles.ts';
 import { ParticleSimulation, type ParticleEmitterDescriptor, type ParticleState } from '../runtime/particles.ts';
 import { fnv1a32Utf8 } from '../runtime/random.ts';
@@ -474,9 +475,9 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
       const opacity = drivenScalar(mat, 'opacity');
       let sprite: PathPreviewLayer['sprite'];
       if (param(mat, 'template') === 'SpriteTextured') {
-        const sheet = BUILTIN_SPRITES.find(s => s.id === param(mat, 'sprite'));
-        if (!sheet) report('MISSING_REFERENCE', `Material sprite "${String(param(mat, 'sprite'))}" is not in the included library.`, mat.node.id, 'sprite');
-        else sprite = { sheet: structuredClone(sheet) as SpriteSheet, variant: num(mat, 'variant') };
+        const r = materialSheet(doc, param(mat, 'sprite'), param(mat, 'textureAsset'));
+        if ('error' in r) report('MISSING_REFERENCE', r.error, mat.node.id, r.field);
+        else sprite = { sheet: r.sheet, variant: num(mat, 'variant') };
       } else if (param(mat, 'template') !== 'SpriteUnlit') report('INVALID_VALUE', `Material template "${String(param(mat, 'template'))}" is not supported.`, mat.node.id, 'template');
 
       let window: PathPreviewLayer['window'] = { startTick: 0, endTick: duration }; // Unconnected: whole document (25).

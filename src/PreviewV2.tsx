@@ -9,6 +9,9 @@ import { createRegistry } from './graph/registry.ts';
 import { compileParticlePreview } from './graph/toParticles.ts';
 import { compilePathPreview } from './graph/toPaths.ts';
 import { createBlankDocument, createF01Document, createForcesDemoDocument } from './graph/fixtures.ts';
+import { TexturePanel } from './editor/TexturePanel.tsx';
+import { getAssetBytes } from './model/assetStore.ts';
+import { hasAssetUrl, registerAssetUrl } from './assets/assetUrls.ts';
 import { documentFileName, loadDraftText, readShelf, removeFromShelf, saveDraft, saveToShelf, type ShelfEntry } from './model/persistence.ts';
 import { ControlsPanel } from './editor/ControlsPanel.tsx';
 import { compileAudio } from './graph/toAudio.ts';
@@ -468,6 +471,19 @@ export default function PreviewV2() {
   const graph = doc.graphs.find(g => g.id === graphId);
   const selectedNode = selectedNodeId ? graph?.nodes.find(n => n.id === selectedNodeId) : undefined;
 
+  // Imported texture bytes: register object URLs for document assets from the local asset store.
+  const [missingAssets, setMissingAssets] = useState<string[]>([]);
+  useEffect(() => {
+    let live = true;
+    const need = doc.assets.filter(a => (a.kind === 'texture' || a.kind === 'flipbook') && !hasAssetUrl(a.sha256));
+    void Promise.all(need.map(async a => {
+      const rec = await getAssetBytes(a.sha256);
+      if (rec) registerAssetUrl(a.sha256, URL.createObjectURL(rec.blob));
+      return rec ? null : a.provenance.originalFilename;
+    })).then(r => { if (live) setMissingAssets(r.filter((x): x is string => x !== null)); });
+    return () => { live = false; };
+  }, [doc.assets]);
+
   // A selection whose node was deleted (edit, undo/redo or JSON replace) is cleared.
   useEffect(() => {
     if (selectedNodeId !== null && !selectedNode) setSelectedNodeId(null);
@@ -607,6 +623,11 @@ export default function PreviewV2() {
             ) : (
               <p className="pv2-muted">No node selected. Select a node in the graph.</p>
             )}
+          </section>
+          <section className="pv2-panel" aria-label="Textures">
+            <h2 className="pv2-heading">Textures</h2>
+            <TexturePanel document={doc} graphId={graphId} selectedNodeId={selectedNode?.id} onEdit={onEdit} />
+            {missingAssets.length > 0 && <p className="pv2-warn" role="alert">Missing texture bytes on this device: {missingAssets.join(', ')}. Import the same file again to relink.</p>}
           </section>
           <section className="pv2-panel pv2-sound" aria-label="Sound audition">
             <h2 className="pv2-heading">Sound audition</h2>

@@ -5,6 +5,8 @@
 // plan; uploads write into those existing GPU instance buffers. Not allocation-free: each advanced tick
 // takes a fresh ParticleSimulation snapshot (new particle state objects). No bloom, textures or sound.
 import * as THREE from 'three';
+import { ASSET_FILE_PREFIX } from '../assets/importTexture.ts';
+import { whenAssetUrl } from '../assets/assetUrls.ts';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -492,8 +494,18 @@ export class PreviewViewport {
   /** Included-library atlas, loaded once per file and shared across layers (sRGB, mipmapped). */
   #spriteTexture(file: string): THREE.Texture {
     let t = this.#textures.get(file);
-    if (!t) {
+    if (!t && file.startsWith(ASSET_FILE_PREFIX)) {
+      // Imported asset: an empty texture until its bytes are registered (import or local asset store), then decoded.
+      const tex = new THREE.Texture();
+      t = tex;
+      whenAssetUrl(file.slice(ASSET_FILE_PREFIX.length), url => new THREE.ImageLoader().load(url, img => {
+        if (this.#disposed) return;
+        tex.image = img; tex.needsUpdate = true; this.#emitFrame(true);
+      }));
+    } else if (!t) {
       t = new THREE.TextureLoader().load(`/assets/sprites/${file}`, () => { if (!this.#disposed) this.#emitFrame(true); });
+    }
+    if (!this.#textures.has(file)) {
       t.colorSpace = THREE.SRGBColorSpace;
       t.anisotropy = 4;
       this.#textures.set(file, t);
