@@ -6,6 +6,10 @@
 // takes a fresh ParticleSimulation snapshot (new particle state objects). No bloom, textures or sound.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 //
 // Path mode (setPathSource): a document with RibbonRenderer sinks is recompiled per tick by the caller's
 // compile function (pure, deterministic per tick, so scrubbing needs no replay). Each layer owns one
@@ -204,6 +208,9 @@ export class PreviewViewport {
   readonly #container: HTMLElement;
   readonly #callbacks: PreviewViewportCallbacks;
   readonly #renderer: THREE.WebGLRenderer;
+  /** 08: HDR half-float target → bloom (strength .8, radius .45, threshold 1) → OutputPass (ACES + sRGB once). */
+  #composer: EffectComposer | null = null;
+  #bloom: UnrealBloomPass | null = null;
   readonly #scene = new THREE.Scene();
   readonly #camera = new THREE.PerspectiveCamera(45, 1, 0.01, 200);
   readonly #controls: OrbitControls;
@@ -255,6 +262,15 @@ export class PreviewViewport {
     try {
       renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
       renderer.setClearColor(0x0b0d12, 1);
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      this.#scene.background = new THREE.Color(0x0b0d12);
+      renderer.toneMappingExposure = 1;
+      const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
+      this.#composer = new EffectComposer(renderer, target);
+      this.#composer.addPass(new RenderPass(this.#scene, this.#camera));
+      this.#bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.8, 0.45, 1.0);
+      this.#composer.addPass(this.#bloom);
+      this.#composer.addPass(new OutputPass());
       renderer.domElement.className = 'pv2-canvas';
       container.appendChild(renderer.domElement);
 
@@ -536,6 +552,8 @@ export class PreviewViewport {
     (this.#grid.material as THREE.Material).dispose();
     this.#ground.geometry.dispose();
     this.#ground.material.dispose();
+    this.#bloom?.dispose();
+    this.#composer?.dispose();
     this.#renderer.dispose();
     this.#renderer.forceContextLoss();
     this.#renderer.domElement.remove();
@@ -812,13 +830,24 @@ export class PreviewViewport {
     // Re-billboard ribbons when orbiting (damping keeps moving the camera after input stops).
     if (this.#pathPlan && !this.#camera.position.equals(this.#ribbonCamera)) this.#updateRibbons();
     if (this.#disposed) return;
-    this.#renderer.render(this.#scene, this.#camera);
+    if (this.#composer) this.#composer.render();
+    else this.#renderer.render(this.#scene, this.#camera);
   };
+
+  /** Glow (bloom) on/off for inspection (08 "Provide glow-off inspection"); tone mapping stays identical. */
+  setGlow(on: boolean): void {
+    if (this.#bloom) this.#bloom.enabled = on;
+    if (!this.#disposed) this.#emitFrame(true);
+  }
+
+  get glow(): boolean { return this.#bloom?.enabled ?? false; }
 
   #resize(): void {
     if (this.#disposed) return;
     const w = Math.max(1, this.#container.clientWidth), h = Math.max(1, this.#container.clientHeight);
     this.#renderer.setSize(w, h, false);
+    this.#composer?.setPixelRatio(this.#renderer.getPixelRatio());
+    this.#composer?.setSize(w, h);
     this.#camera.aspect = w / h;
     this.#camera.updateProjectionMatrix();
     this.#framePaths();
