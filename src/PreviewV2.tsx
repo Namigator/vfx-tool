@@ -10,7 +10,8 @@ import { compileParticlePreview } from './graph/toParticles.ts';
 import { compilePathPreview } from './graph/toPaths.ts';
 import { createBlankDocument, createF01Document, createForcesDemoDocument } from './graph/fixtures.ts';
 import { TexturePanel } from './editor/TexturePanel.tsx';
-import { getAssetBytes } from './model/assetStore.ts';
+import { getAssetBytes, putAssetBytes } from './model/assetStore.ts';
+import { buildPack, readPack, type PackAsset } from './model/vfxpack.ts';
 import { hasAssetUrl, registerAssetUrl } from './assets/assetUrls.ts';
 import { documentFileName, loadDraftText, readShelf, removeFromShelf, saveDraft, saveToShelf, type ShelfEntry } from './model/persistence.ts';
 import { ControlsPanel } from './editor/ControlsPanel.tsx';
@@ -288,6 +289,8 @@ export default function PreviewV2() {
 
   // Autosave: mirror every committed document to local storage (debounced); status is announced politely.
   const [saveStatus, setSaveStatus] = useState('');
+  /** File actions (Keep, Export pack, Open pack, Remove) report here; autosave never overwrites it. */
+  const [fileNote, setFileNote] = useState('');
   useEffect(() => {
     const t = setTimeout(() => {
       const r = saveDraft(localStorage, doc);
@@ -306,13 +309,46 @@ export default function PreviewV2() {
   }, []);
   const openInputRef = useRef<HTMLInputElement>(null);
 
+  /** Portable .vfxpack: the effect plus every imported asset's bytes; missing bytes export a labelled draft. */
+  const downloadPack = useCallback(async () => {
+    const d = historyRef.current!.snapshot();
+    const bytes = new Map<string, PackAsset>();
+    for (const a of d.assets) {
+      const rec = a.source.kind === 'bundle' ? await getAssetBytes(a.sha256) : undefined;
+      if (rec) bytes.set(a.sha256, { sha256: a.sha256, mime: rec.mime, bytes: new Uint8Array(await rec.blob.arrayBuffer()) });
+    }
+    let r = await buildPack(d, bytes);
+    let note = '';
+    if (!r.ok && /Missing asset bytes/.test(r.message)) { note = ` Exported as a DRAFT: ${r.message}`; r = await buildPack(d, bytes, { draft: true }); }
+    if (!r.ok) { setFileNote(`Pack export failed: ${r.message}`); return; }
+    const url = URL.createObjectURL(new Blob([r.value as Uint8Array<ArrayBuffer>], { type: 'application/zip' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = documentFileName(d).replace(/\.vfx\.json$/, '.vfxpack');
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    setFileNote(`Pack exported (${(r.value.length / 1024).toFixed(0)} KiB).${note}`);
+  }, []);
+
+  /** Opens a .vfxpack: checksums and paths are verified first; asset bytes are stored locally, then the document replaces the current one. */
+  const openPack = useCallback(async (f: File) => {
+    const r = await readPack(new Uint8Array(await f.arrayBuffer()));
+    if (!r.ok) { setFileNote(`Pack rejected: ${r.message}`); return; }
+    for (const a of r.value.assets) {
+      const blob = new Blob([a.bytes as Uint8Array<ArrayBuffer>], { type: a.mime });
+      await putAssetBytes(a.sha256, a.mime, blob);
+      registerAssetUrl(a.sha256, URL.createObjectURL(blob));
+    }
+    if (replaceRef.current(JSON.stringify(r.value.document), `Open ${f.name}`)) setFileNote(`Opened ${f.name} (${r.value.manifest.state}, ${r.value.assets.length} asset file${r.value.assets.length === 1 ? '' : 's'}).`);
+  }, []);
+  const replaceRef = useRef<(source: string, origin: string) => boolean>(() => false);
+
   // Project shelf: several named effects kept in browser storage (Keep / choose / Remove).
   const [shelf, setShelf] = useState<ShelfEntry[]>(() => readShelf(typeof localStorage === 'undefined' ? undefined : localStorage));
   const [shelfPick, setShelfPick] = useState('');
   const keepProject = useCallback(() => {
     const r = saveToShelf(localStorage, historyRef.current!.snapshot());
-    if (r.ok) { setShelf(r.entries); setShelfPick(r.entries[0].name); setSaveStatus(`Kept "${r.entries[0].name}" in projects`); }
-    else setSaveStatus(r.message);
+    if (r.ok) { setShelf(r.entries); setShelfPick(r.entries[0].name); setFileNote(`Kept "${r.entries[0].name}" in projects`); }
+    else setFileNote(r.message);
   }, []);
 
   /** Downloads the exact mix held for the current audio revision; never re-renders. */
@@ -414,6 +450,7 @@ export default function PreviewV2() {
     publish(true);
     return true;
   }, [publish]);
+  replaceRef.current = replace;
 
   // Viewport lifetime; dispose is idempotent so StrictMode double-mount is safe.
   useEffect(() => {
@@ -545,16 +582,18 @@ export default function PreviewV2() {
         </span>
         <div className="pv2-history" role="group" aria-label="File">
           <button type="button" onClick={() => { setShelfPick(''); replace(toText(createBlankDocument()), 'New blank effect'); }} title="Start a new blank effect (clears undo history — Keep or Save first)">New</button>
-          <button type="button" onClick={() => openInputRef.current?.click()} title="Open a .vfx.json document">Open…</button>
-          <input ref={openInputRef} type="file" accept=".json,application/json" hidden onChange={e => { const f = e.currentTarget.files?.[0]; e.currentTarget.value = ''; if (f) void f.text().then(t => replace(t, `Open ${f.name}`)); }} />
-          <button type="button" onClick={downloadDocument} title="Download this effect as a .vfx.json file">Save .json</button>
+          <button type="button" onClick={() => openInputRef.current?.click()} title="Open a .vfx.json document or a .vfxpack">Open…</button>
+          <input ref={openInputRef} type="file" accept=".json,application/json,.vfxpack" hidden onChange={e => { const f = e.currentTarget.files?.[0]; e.currentTarget.value = ''; if (!f) return; if (f.name.endsWith('.vfxpack')) void openPack(f); else void f.text().then(t => replace(t, `Open ${f.name}`)); }} />
+          <button type="button" onClick={downloadDocument} title="Download this effect as a .vfx.json file (recipe only; imported asset bytes not included)">Save .json</button>
+          <button type="button" onClick={() => void downloadPack()} title="Download a portable .vfxpack: the effect plus its imported asset bytes and checksums">Export pack</button>
           <button type="button" onClick={keepProject} title="Keep a copy of this effect in the local project shelf (same name replaces)">Keep</button>
           <select aria-label="Projects" value={shelfPick} onChange={e => { const name = e.currentTarget.value; setShelfPick(name); const entry = shelf.find(s => s.name === name); if (entry) replace(entry.text, `Open project ${name}`); }}>
             <option value="">Projects ({shelf.length})…</option>
             {shelf.map(s => <option key={s.name} value={s.name}>{s.name} — {new Date(s.savedAt).toLocaleString()}</option>)}
           </select>
-          <button type="button" disabled={!shelfPick} onClick={() => { setShelf(removeFromShelf(localStorage, shelfPick)); setSaveStatus(`Removed "${shelfPick}" from projects`); setShelfPick(''); }} title="Remove the chosen project from the shelf (the open effect is untouched)">Remove</button>
+          <button type="button" disabled={!shelfPick} onClick={() => { setShelf(removeFromShelf(localStorage, shelfPick)); setFileNote(`Removed "${shelfPick}" from projects`); setShelfPick(''); }} title="Remove the chosen project from the shelf (the open effect is untouched)">Remove</button>
           <span className="pv2-note" role="status" aria-live="polite">{saveStatus}</span>
+          {fileNote && <span className="pv2-note" role="status" aria-live="polite">{fileNote}</span>}
         </div>
         <div className="pv2-history" role="group" aria-label="History">
           <button type="button" disabled={!historyFlags.canUndo} onClick={undo} title="Undo (Ctrl/Cmd+Z)">Undo</button>
