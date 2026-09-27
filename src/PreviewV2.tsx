@@ -557,7 +557,11 @@ export default function PreviewV2() {
     docLoadedRef.current = true;
     fetch(url, { cache: 'no-store' })
       .then(r => (r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then(t => { replace(t, `Load ${url}`); })
+      .then(t => {
+        // Bundle assets of a served document sit beside it (e.g. work/mcp/assets/ for MCP documents).
+        try { const d = JSON.parse(t) as { assets?: { sha256: string; source: { kind: string; path?: string } }[] }; const base = new URL(url, location.href); for (const x of d.assets ?? []) if (x.source.kind === 'bundle' && x.source.path && !hasAssetUrl(x.sha256)) registerAssetUrl(x.sha256, new URL(x.source.path, base).href); } catch { /* replace() reports invalid JSON */ }
+        replace(t, `Load ${url}`);
+      })
       .catch(e => { setJsonErrors([{ code: 'MISSING_REFERENCE', severity: 'error', message: `Could not load ${url}: ${e instanceof Error ? e.message : String(e)}` }]); });
   }, [replace]);
   const resetF01 = () => { replace(toText(createF01Document()), 'Reset to F01'); };

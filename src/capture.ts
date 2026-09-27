@@ -8,6 +8,7 @@ import { compileParticlePreview } from './graph/toParticles.ts';
 import { compilePathPreview } from './graph/toPaths.ts';
 import { choosePreviewMode, hasRootAudio } from './render/previewMode.ts';
 import { PreviewViewport } from './render/PreviewViewport.ts';
+import { registerAssetUrl } from './assets/assetUrls.ts';
 
 const q = new URLSearchParams(location.search);
 const msg = document.getElementById('msg') as HTMLElement;
@@ -23,6 +24,9 @@ async function main(): Promise<void> {
   const v = validateDocument(JSON.parse(await res.text()), { registry: createRegistry() });
   if (!v.ok) return fail(fmt(v.errors));
   const d = v.value;
+  // Bundle assets are served beside the document (the MCP writes them to work/mcp/assets/).
+  const base = new URL(url, location.href);
+  for (const a of d.assets) if (a.source.kind === 'bundle') registerAssetUrl(a.sha256, new URL(a.source.path, base).href);
   const opts = { audioHandled: hasRootAudio(d) };
   const vp = new PreviewViewport(document.getElementById('view') as HTMLElement, { onError: e => fail(fmt(e)) });
   const mode = choosePreviewMode(d).mode;

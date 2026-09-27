@@ -19,6 +19,8 @@ import { compilePathPreview } from '../src/graph/toPaths.ts';
 import { compileAudio } from '../src/graph/toAudio.ts';
 import { sampleParticlesAtTick } from '../src/runtime/particles.ts';
 import { encodeWavPcm16Stereo } from '../src/audio/wav.ts';
+import { createTextureAsset } from '../src/assets/importTexture.ts';
+import { buildPack, readPack, type PackAsset } from '../src/model/vfxpack.ts';
 
 export type VfxServerOptions = { root?: string; editorUrl?: string; chromePath?: string };
 
@@ -60,9 +62,9 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
     docs.set(id, v.value); persist(v.value);
     return ok(msg);
   };
-  const tool = <S extends z.ZodRawShape>(name: string, description: string, shape: S, fn: (a: z.infer<z.ZodObject<S>>) => Result) =>
+  const tool = <S extends z.ZodRawShape>(name: string, description: string, shape: S, fn: (a: z.infer<z.ZodObject<S>>) => Result | Promise<Result>) =>
     server.registerTool(name, { description, inputSchema: shape }, (async (a: z.infer<z.ZodObject<S>>) => {
-      try { return fn(a); } catch (e) { return bad(e instanceof Error ? e.message : String(e)); }
+      try { return await fn(a); } catch (e) { return bad(e instanceof Error ? e.message : String(e)); }
     }) as never);
 
   // ---------- catalog ----------
@@ -223,6 +225,60 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
     mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, encodeWavPcm16Stereo(m.left, m.right, m.sampleRate));
     return ok(`Wrote ${p}: ${(m.left.length / m.sampleRate).toFixed(2)} s, pre-peak ${m.prePeak.toFixed(3)}, post-peak ${m.postPeak.toFixed(3)}, limited ${(m.limitedFraction * 100).toFixed(1)}%${m.severeLimiting ? ' SEVERE' : ''}.`);
   });
+  // ---------- assets and packs ----------
+  // Imported bytes live beside the mirrored documents (work/mcp/assets/<sha256>.<ext>), which is where the
+  // capture page and the editor's ?doc= loader look for a document's bundle assets.
+  const assetDir = join(root, 'work', 'mcp', 'assets');
+  const safeProjectPath = (p: string) => { const abs = resolve(root, p); if (!abs.startsWith(root)) throw new Error(`Path "${p}" is outside the project.`); return abs; };
+  tool('vfx_import_texture', 'Import a PNG/static WebP/JPEG (path relative to the project) as a document texture or flipbook asset (≤16 MiB, ≤4096 px; grid 1..16). Optionally set it on a Material (template SpriteTextured, textureAsset). Returns the asset id.', {
+    docId: z.string(), path: z.string(), role: z.enum(['color', 'mask']).optional(), rows: z.number().int().min(1).max(16).optional(), columns: z.number().int().min(1).max(16).optional(), materialId: z.string().optional(),
+  }, async ({ docId, path, role, rows, columns, materialId }) => {
+    const bytes = new Uint8Array(readFileSync(safeProjectPath(path)));
+    const grid = (rows ?? 1) * (columns ?? 1) > 1 ? { rows: rows ?? 1, columns: columns ?? 1 } : undefined;
+    const r = await createTextureAsset(bytes, { filename: path.split(/[\\/]/).pop() ?? path, role: role ?? 'color', ...(grid ? { flipbook: grid } : {}) });
+    if (!r.ok) return bad(r.message);
+    const { asset, path: bundlePath } = r.value;
+    mkdirSync(assetDir, { recursive: true });
+    writeFileSync(join(root, 'work', 'mcp', bundlePath), bytes);
+    return mutate(docId, d => {
+      if (!d.assets.some(a => a.id === asset.id)) d.assets.push(asset);
+      if (materialId) {
+        const m = rootGraph(d).nodes.find(n => n.id === materialId);
+        if (!m || m.type !== 'Material') throw new Error(`"${materialId}" is not a Material in the root graph.`);
+        m.params.template = 'SpriteTextured'; m.params.textureAsset = asset.id;
+      }
+      return `Imported ${asset.provenance.originalFilename} as ${asset.kind} ${asset.width}×${asset.height} (id ${asset.id})${materialId ? `; set on ${materialId}` : ''}.`;
+    });
+  });
+  tool('vfx_export_pack', 'Write a portable .vfxpack (effect + imported asset bytes + manifest checksums) to a project path (default work/mcp/<id>.vfxpack). draft=true allows missing asset bytes.', {
+    docId: z.string(), path: z.string().optional(), draft: z.boolean().optional(),
+  }, async ({ docId, path, draft }) => {
+    const d = getDoc(docId), bytes = new Map<string, PackAsset>();
+    for (const a of d.assets) {
+      if (a.source.kind !== 'bundle') continue;
+      const f = join(root, 'work', 'mcp', a.source.path);
+      if (existsSync(f)) bytes.set(a.sha256, { sha256: a.sha256, mime: a.mime, bytes: new Uint8Array(readFileSync(f)) });
+    }
+    const r = await buildPack(d, bytes, { draft: draft === true, tool: 'vfx-studio-mcp' });
+    if (!r.ok) return bad(r.message);
+    const out = safeProjectPath(path ?? `work/mcp/${docId}.vfxpack`);
+    mkdirSync(dirname(out), { recursive: true }); writeFileSync(out, r.value);
+    return ok(`Wrote ${out} (${r.value.length} bytes).`);
+  });
+  tool('vfx_open_pack', 'Open a .vfxpack (project path): verifies paths and checksums, restores asset bytes, validates the document and opens it under its document id (or docId).', {
+    path: z.string(), docId: z.string().regex(ID).optional(),
+  }, async ({ path, docId }) => {
+    const r = await readPack(new Uint8Array(readFileSync(safeProjectPath(path))));
+    if (!r.ok) return bad(`Pack rejected: ${r.message}`);
+    const v = validateDocument(r.value.document, { registry });
+    if (!v.ok) return bad(`Pack document is invalid:\n${fmtErrors(v.errors)}`);
+    const d = { ...v.value, id: docId ?? v.value.id };
+    mkdirSync(assetDir, { recursive: true });
+    for (const a of r.value.assets) { const ref = d.assets.find(x => x.sha256 === a.sha256); if (ref && ref.source.kind === 'bundle') writeFileSync(join(root, 'work', 'mcp', ref.source.path), a.bytes); }
+    docs.set(d.id, d); persist(d);
+    return ok(`Opened "${d.id}" (${r.value.manifest.state}; ${r.value.assets.length} asset file(s)).`);
+  });
+
   tool('vfx_preview_url', 'URL that opens this document in the running editor (vite dev server) for visual inspection.', { docId: z.string() }, ({ docId }) => {
     persist(getDoc(docId));
     return ok(`${editorUrl}?workspace=v2&doc=/work/mcp/${encodeURIComponent(docId)}.json`);

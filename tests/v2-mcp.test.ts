@@ -82,3 +82,25 @@ test('components and knobs through MCP: insert, list, set, recompile', async () 
   assert.equal((await call('vfx_set_control', { docId: 'k', control: 'Sparks', value: -3 })).error, true, 'out of bounds is rejected');
   assert.match((await call('vfx_compile', { docId: 'k' })).text, /particles OK: 3 system/);
 });
+
+test('MCP: import a texture onto a Material, export a .vfxpack, reopen it with the bytes restored', async () => {
+  const { root, call } = await connect();
+  const { mkdirSync, writeFileSync, copyFileSync } = await import('node:fs');
+  mkdirSync(join(root, 'in'), { recursive: true });
+  copyFileSync(join(process.cwd(), 'mcp/examples/assets/four-blobs.png'), join(root, 'in/blobs.png'));
+  writeFileSync(join(root, 'in/not-an-image.png'), 'hello');
+  await call('vfx_new_document', { template: 'blank', id: 't' });
+  await call('vfx_add_node', { docId: 't', type: 'Material', id: 'mat' });
+  assert.match((await call('vfx_import_texture', { docId: 't', path: 'in/not-an-image.png' })).text, /Only PNG/);
+  assert.equal((await call('vfx_import_texture', { docId: 't', path: '../outside.png' })).error, true);
+  const imp = await call('vfx_import_texture', { docId: 't', path: 'in/blobs.png', rows: 2, columns: 2, materialId: 'mat' });
+  assert.equal(imp.error, false, imp.text);
+  const id = /id ([0-9a-f]{64})/.exec(imp.text)![1];
+  assert.match((await call('vfx_get_document', { docId: 't', full: true })).text, new RegExp(`"textureAsset": "${id}"`));
+  assert.match((await call('vfx_export_pack', { docId: 't' })).text, /Wrote/);
+  assert.ok(existsSync(join(root, 'work/mcp/t.vfxpack')));
+  const opened = await call('vfx_open_pack', { path: 'work/mcp/t.vfxpack', docId: 't2' });
+  assert.match(opened.text, /validated; 1 asset file/);
+  const sha = JSON.parse(readFileSync(join(root, 'work/mcp/t2.json'), 'utf8')).assets[0].sha256;
+  assert.ok(existsSync(join(root, `work/mcp/assets/${sha}.png`)));
+});
