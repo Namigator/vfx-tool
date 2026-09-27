@@ -631,6 +631,22 @@ function effectTimeCurve(): NodeSpec {
   });
 }
 
+/** 05 Oscillator: periodic effect-time driver between min and max (starts at min); drives what EffectTimeCurve drives. */
+function oscillator(): NodeSpec {
+  return node('Oscillator', {
+    inputs: [],
+    outputs: [port({ id: 'value', label: 'Value', type: 'scalarSignal', unit: 'normalized', domains: ['effectTime'] })],
+    parameters: [
+      param({ id: 'waveform', label: 'Waveform', type: 'enum', unit: 'none', default: 'sine', choices: ['sine', 'triangle', 'square', 'saw'] }),
+      param({ id: 'frequency', label: 'Frequency', type: 'number', unit: 'hertz', default: 2, min: 0.01, max: 30, description: 'Cycles per second of effect time.' }),
+      param({ id: 'min', label: 'Min', type: 'number', unit: 'normalized', default: 0, min: 0, max: 1 }),
+      param({ id: 'max', label: 'Max', type: 'number', unit: 'normalized', default: 1, min: 0, max: 1 }),
+      param({ id: 'phase', label: 'Phase', type: 'number', unit: 'normalized', default: 0, min: 0, max: 1, description: 'Cycle offset (0..1).' }),
+    ],
+    disabledBehavior: 'fallback',
+  });
+}
+
 // Bounds mirror runtime/radial.ts (24 "Path features required by the presets"). The catalog states the
 // cone angle in degrees (default 30°, [0,180°]); no degree unit exists, so it is stored in radians.
 function radialPath(): NodeSpec {
@@ -832,7 +848,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
     anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), constantNode(), scalarMath(), eventDelay(), mergeEvents(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
-    linePath(), bezierPath(), helixPathNode(), pathTransformNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(),
+    linePath(), bezierPath(), helixPathNode(), pathTransformNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(), oscillator(),
     audioSource(), audioEnvelope(), audioFilter(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),
   ];

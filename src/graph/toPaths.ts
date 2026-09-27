@@ -33,6 +33,7 @@ import { branchPaths, type BranchCountMode } from '../runtime/branches.ts';
 import { radialPaths, type RadialMode } from '../runtime/radial.ts';
 import { ringPath } from '../runtime/ring.ts';
 import { evaluateCurve } from '../runtime/curves.ts';
+import { EFFECT_TIME_NODES, effectTimeValue } from './effectTime.ts';
 import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { createRegistry } from './registry.ts';
@@ -210,17 +211,17 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
     if (cs.length > 1) return fail('MULTIPLE_DRIVERS', `Input "${id}" of "${n.node.id}" has ${cs.length} drivers; connect one.`, n.node.id, id);
     const s = cs[0].source;
     const d = sourceNode(s, n.node.id, id);
-    if (d.node.type !== 'EffectTimeCurve' || s.kind !== 'node' || s.port !== 'value') {
-      return fail('DOMAIN_MISMATCH', `Input "${id}" of "${n.node.id}" is driven by "${d.node.id}" (${d.node.type}); only EffectTimeCurve.value is supported by the path preview.`, n.node.id, id);
+    if (!EFFECT_TIME_NODES.has(d.node.type) || s.kind !== 'node' || s.port !== 'value') {
+      return fail('DOMAIN_MISMATCH', `Input "${id}" of "${n.node.id}" is driven by "${d.node.id}" (${d.node.type}); only EffectTimeCurve.value or Oscillator.value is supported by the path preview.`, n.node.id, id);
     }
     if (!d.effectiveEnabled) return num(n, id);
     noDrivenParams(d, []);
-    const curve = param(d, 'curve') as CurveValue;
+    const curve = d.node.type === 'EffectTimeCurve' ? param(d, 'curve') as CurveValue : { domain: 'effectSeconds' };
     if (curve?.domain !== 'effectSeconds') return fail('DOMAIN_MISMATCH', `EffectTimeCurve "${d.node.id}" curve must use domain "effectSeconds".`, d.node.id, 'curve');
     try {
-      return evaluateCurve(curve, seconds, { min: 0, max: 1 });
+      return effectTimeValue(d.node.type, k => param(d, k), seconds);
     } catch (e) {
-      if (e instanceof RangeError || e instanceof TypeError) return fail('INVALID_VALUE', `EffectTimeCurve "${d.node.id}": ${e.message}`, d.node.id, 'curve');
+      if (e instanceof RangeError || e instanceof TypeError) return fail('INVALID_VALUE', `${d.node.type} "${d.node.id}": ${e.message}`, d.node.id, 'curve');
       throw e;
     }
   };

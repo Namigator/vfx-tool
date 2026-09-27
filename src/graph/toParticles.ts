@@ -38,7 +38,7 @@ import { compilePathPreview } from './toPaths.ts';
 import { ease, pointAtArcFraction, type Easing } from '../runtime/paths.ts';
 import type { FlipbookMode, SpriteSheet } from '../assets/spriteLibrary.ts';
 
-import { evaluateCurve } from '../runtime/curves.ts';
+import { EFFECT_TIME_NODES, effectTimeValue } from './effectTime.ts';
 
 /** Value nodes evaluated once per cast when they drive a parameter port. */
 const VALUE_NODES = new Set(['RandomRange', 'Constant', 'ScalarMath']);
@@ -461,15 +461,15 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     const strengthOf = (f: ExpandedNode): { k: number; gain?: number[] } => {
       const cs = into(f.node.id, 'strength');
       const src = cs.length === 1 && cs[0].source.kind === 'node' ? nodes.get(cs[0].source.nodeId) : undefined;
-      if (!src || src.node.type !== 'EffectTimeCurve') return { k: num(f, 'strength') };
+      if (!src || !EFFECT_TIME_NODES.has(src.node.type)) return { k: num(f, 'strength') };
       if (!src.effectiveEnabled) return { k: num(f, 'strength') };
       noDrivenParams(src, []);
-      const curve = param(src, 'curve') as CurveValue;
+      const curve = src.node.type === 'EffectTimeCurve' ? param(src, 'curve') as CurveValue : { domain: 'effectSeconds' };
       if (curve?.domain !== 'effectSeconds') { report('DOMAIN_MISMATCH', `EffectTimeCurve "${src.node.id}" curve must use domain "effectSeconds".`, src.node.id, 'curve'); return { k: 1 }; }
       try {
-        return { k: 1, gain: Array.from({ length: doc.durationTicks + 1 }, (_, t) => evaluateCurve(curve, t / TICKS_PER_SECOND, { min: 0, max: 1 })) };
+        return { k: 1, gain: Array.from({ length: doc.durationTicks + 1 }, (_, t) => effectTimeValue(src.node.type, k => param(src, k), t / TICKS_PER_SECOND)) };
       } catch (e) {
-        if (e instanceof RangeError || e instanceof TypeError) { report('INVALID_VALUE', `EffectTimeCurve "${src.node.id}": ${e.message}`, src.node.id, 'curve'); return { k: 1 }; }
+        if (e instanceof RangeError || e instanceof TypeError) { report('INVALID_VALUE', `${src.node.type} "${src.node.id}": ${e.message}`, src.node.id, 'curve'); return { k: 1 }; }
         throw e;
       }
     };

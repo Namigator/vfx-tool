@@ -1,3 +1,4 @@
+import { waveAt } from '../src/graph/effectTime.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { Diagnostic, EffectDocumentV2, NodeDefinition, ValidationResult } from '../src/model/types.ts';
@@ -290,6 +291,15 @@ test('force Strength: a literal scales the operator; an EffectTimeCurve becomes 
   const off = plan(ramp(false)).systems[0].descriptor.operators[0] as { acceleration: number[]; gain?: number[] };
   assert.equal(off.gain, undefined);
   assert.ok(Math.abs(off.acceleration[1] + 9.81 * 0.3) < 1e-12);
+});
+
+test('Oscillator waves start at min and drive force Strength as a per-tick gain', () => {
+  assert.deepEqual((['sine', 'triangle', 'square', 'saw'] as const).map(w => [0, 0.25, 0.5].map(u => Math.round(waveAt(w, u) * 1e9) / 1e9)), [[0, 0.5, 1], [0, 0.5, 1], [0, 0, 1], [0, 0.25, 0.5]]);
+  const d = withForces({});
+  root(d).nodes.push(node('node-osc', 'Oscillator', { waveform: 'square', frequency: 1, min: 0.2, max: 0.8 }));
+  root(d).edges.push(edge('e-osc', 'node-osc', 'value', 'node-gravity', 'strength'));
+  const g = (plan(d).systems[0].descriptor.operators[0] as { gain?: number[] }).gain!;
+  assert.deepEqual([g[0], g[29], g[30], g[59], g[60]], [0.2, 0.2, 0.8, 0.8, 0.2]);
 });
 
 test('cone emitter with speed range and aim anchor compiles to a shaped, aimed descriptor', () => {
