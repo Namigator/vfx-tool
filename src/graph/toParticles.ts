@@ -294,7 +294,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
    * Child emission (05 ParticleEvents, GroundCollision.collision): the parent chain is compiled and
    * simulated once (deterministic), and each selected event becomes one burst at the event tick.
    */
-  const particleEventBursts = (src: ExpandedNode, port: string, childId: string, count: number, usePosition: boolean, depth: number): ParticleBurst[] => {
+  const particleEventBursts = (src: ExpandedNode, port: string, childId: string, count: number, usePosition: boolean, depth: number, inherit = 0): ParticleBurst[] => {
     if (depth > 4) return fail('GRAPH_CYCLE', `Particle event chain into "${childId}" is nested deeper than 4 levels.`, childId);
     noDrivenParams(src, src.node.type === 'ParticleEvents' ? IP_PORTS : IP_PORTS);
     let start: ExpandedNode | undefined = src;
@@ -321,7 +321,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       return [];
     }
     if (count <= 0) return [];
-    return events.map(e => ({ tick: e.tick, eventRandomKey: particleEventRandomKey(e.parentRandomKey, e.kind, e.ordinal), count, ...(usePosition ? { position: [e.position[0], Math.max(0, e.position[1]), e.position[2]] as Vec3 } : {}) }));
+    return events.map(e => ({ tick: e.tick, eventRandomKey: particleEventRandomKey(e.parentRandomKey, e.kind, e.ordinal), count, ...(usePosition ? { position: [e.position[0], Math.max(0, e.position[1]), e.position[2]] as Vec3 } : {}), ...(inherit > 0 ? { addVelocity: [e.velocity[0] * inherit, e.velocity[1] * inherit, e.velocity[2] * inherit] as Vec3 } : {}) }));
   };
 
   const buildDescriptor = (chain: Chain, depth = 0): ParticleEmitterDescriptor => {
@@ -372,7 +372,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       }
       if (src.node.type === 'ParticleEvents' || src.node.type === 'GroundCollision') {
         if (!src.effectiveEnabled) continue;
-        for (const b of particleEventBursts(src, c.source.kind === 'node' ? c.source.port : '', id, burst, param(em, 'useEventPosition') === true, depth)) {
+        for (const b of particleEventBursts(src, c.source.kind === 'node' ? c.source.port : '', id, burst, param(em, 'useEventPosition') === true, depth, num(em, 'inheritVelocity'))) {
           if (seen.has(b.eventRandomKey)) continue;
           seen.add(b.eventRandomKey);
           bursts.push(b);

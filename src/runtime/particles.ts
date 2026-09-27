@@ -58,6 +58,8 @@ export type ParticleBurst = {
   position?: Vec3;
   /** Event payload velocity; overrides emitter initial velocity when present. */
   velocity?: Vec3;
+  /** Added to each sampled birth velocity (05 inherit velocity: parent event velocity × fraction). */
+  addVelocity?: Vec3;
 };
 
 /** Active window startTick <= tick < endTick. */
@@ -265,7 +267,7 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
       if (!(i in arr)) { e.push(err('INVALID_VALUE', 'bursts must not be sparse (hole at this index).', bp)); continue; }
       const b = arr[i];
       if (!isObj(b)) { e.push(err('INVALID_VALUE', 'Burst must be an object.', bp)); continue; }
-      checkKeys(b, ['tick', 'eventRandomKey', 'count', 'position', 'velocity'], bp, e);
+      checkKeys(b, ['tick', 'eventRandomKey', 'count', 'position', 'velocity', 'addVelocity'], bp, e);
       let ok = true;
       if (!isTickInt(b.tick, 0, maxTick - 1)) { ok = false; e.push(err('INVALID_VALUE', 'Burst tick must be an integer in [0, durationTicks).', `${bp}.tick`)); }
       if (typeof b.eventRandomKey !== 'string') { ok = false; e.push(err('INVALID_VALUE', 'eventRandomKey must be a string.', `${bp}.eventRandomKey`)); }
@@ -275,10 +277,12 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
       if (!isTickInt(b.count, 0, limits.maxTotalBirths)) { ok = false; e.push(err('INVALID_VALUE', `Burst count must be an integer 0..${limits.maxTotalBirths}.`, `${bp}.count`)); }
       if (b.position !== undefined && !isVec3(b.position)) { ok = false; e.push(err('INVALID_VALUE', 'Burst position must be a finite vec3.', `${bp}.position`)); }
       if (b.velocity !== undefined && !isVec3(b.velocity)) { ok = false; e.push(err('INVALID_VALUE', 'Burst velocity must be a finite vec3.', `${bp}.velocity`)); }
+      if (b.addVelocity !== undefined && !isVec3(b.addVelocity)) { ok = false; e.push(err('INVALID_VALUE', 'Burst addVelocity must be a finite vec3.', `${bp}.addVelocity`)); }
       if (!ok) continue;
       const out: ParticleBurst = { tick: b.tick as number, eventRandomKey: b.eventRandomKey as string, count: b.count as number };
       if (b.position !== undefined) out.position = cloneVec(b.position as Vec3);
       if (b.velocity !== undefined) out.velocity = cloneVec(b.velocity as Vec3);
+      if (b.addVelocity !== undefined) out.addVelocity = cloneVec(b.addVelocity as Vec3);
       bursts.push(out);
     }
   }
@@ -653,7 +657,7 @@ export class ParticleSimulation {
     return [[base[0] + off[0], base[1] + off[1], base[2] + off[2]], vel];
   }
 
-  #birth(n: number, emission: 'burst' | 'rate', burstIndex: number, eventRandomKey: string, entityOrdinal: number, basePosition: Vec3, fixedVelocity: Vec3 | undefined, fallbackVelocity: Vec3): boolean {
+  #birth(n: number, emission: 'burst' | 'rate', burstIndex: number, eventRandomKey: string, entityOrdinal: number, basePosition: Vec3, fixedVelocity: Vec3 | undefined, fallbackVelocity: Vec3, addVelocity?: Vec3): boolean {
     const d = this.descriptor;
     if (this.#totalBirths >= this.limits.maxTotalBirths) {
       this.#failure = [{ ...err('BUDGET_EXCEEDED', `Emitter exceeded ${this.limits.maxTotalBirths} total births at tick ${n}; emitter stopped (no silent truncation).`), nodeId: d.emitterId }];
@@ -668,6 +672,7 @@ export class ParticleSimulation {
     const size = d.size.min === d.size.max ? d.size.min
       : d.size.min + this.#sample(eventRandomKey, entityOrdinal, PARTICLE_PROPERTY_KEYS.size) * (d.size.max - d.size.min);
     const [position, velocity] = this.#kinematics(eventRandomKey, entityOrdinal, basePosition, fixedVelocity, fallbackVelocity);
+    if (addVelocity) { velocity[0] += addVelocity[0]; velocity[1] += addVelocity[1]; velocity[2] += addVelocity[2]; }
     const id = emission === 'burst' ? burstParticleId(d.emitterId, eventRandomKey, entityOrdinal) : `${d.emitterId}:rate:${entityOrdinal}`;
     this.#particles.push({
       id, emission, burstIndex, entityOrdinal, eventRandomKey,
@@ -696,7 +701,7 @@ export class ParticleSimulation {
       const b = d.bursts[bi];
       const pos = b.position ?? this.#source(n);
       for (let i = 0; i < b.count; i++) {
-        if (!this.#birth(n, 'burst', bi, b.eventRandomKey, i, pos, b.velocity, baseVelocity)) return;
+        if (!this.#birth(n, 'burst', bi, b.eventRandomKey, i, pos, b.velocity, baseVelocity, b.addVelocity)) return;
       }
     }
     const r = d.rate;

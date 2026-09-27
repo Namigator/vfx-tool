@@ -92,6 +92,7 @@ function emitter(): NodeSpec {
       param({ id: 'direction', label: 'Direction', type: 'vec3', unit: 'none', default: [1, 0, 0], min: -1, max: 1, description: 'Spread direction (local +X axis); normalized at compile time. Ignored when the Aim input is connected.' }),
       param({ id: 'space', label: 'Space', type: 'enum', unit: 'none', default: 'world', choices: ['world', 'local'] }),
       param({ id: 'useEventPosition', label: 'Use event position', type: 'boolean', unit: 'none', default: true }),
+      param({ id: 'inheritVelocity', label: 'Inherit velocity', type: 'number', unit: 'normalized', default: 0, min: 0, max: 1, description: 'Particle-event triggers only: fraction of the parent particle velocity added to each child (e.g. debris carried along by a moving spark).' }),
     ],
     disabledBehavior: 'empty',
   });

@@ -402,3 +402,16 @@ test('attract pulls particles in and kills them at the kill radius; vortex swirl
   const cross = s.map(p => p.position[0] * p.velocity[2] - p.position[2] * p.velocity[0]);
   assert.ok(cross.every(c => c < 0) || cross.every(c => c > 0), 'all swirl the same way');
 });
+
+test('burst addVelocity (inherited parent velocity) is added to every sampled birth velocity', () => {
+  const plain = born(shaped('sphere'));
+  const d = shaped('sphere');
+  d.bursts[0].addVelocity = [3, 0, -1];
+  const moved = born(d);
+  assert.equal(moved.length, plain.length);
+  for (let i = 0; i < plain.length; i++) {
+    assert.ok(Math.abs(moved[i].velocity[0] - plain[i].velocity[0] - 3) < 1e-9);
+    assert.ok(Math.abs(moved[i].velocity[2] - plain[i].velocity[2] + 1) < 1e-9);
+  }
+  assert.equal(validateParticleDescriptor({ ...d, bursts: [{ ...d.bursts[0], addVelocity: [NaN, 0, 0] }] }).ok, false);
+});
