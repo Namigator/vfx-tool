@@ -564,3 +564,15 @@ test('MotionTrail compiles to a trail layer over a one-particle system attached 
   if (!r.ok) assert.fail(JSON.stringify(r.errors));
   assert.ok(Math.abs(r.value.particles[0].position[2] - 2.5) < 1e-9, 'the particle rides the follower');
 });
+
+test('OffsetAnchor chains add offsets to the emitter source; disabled passes through', () => {
+  const src = (enabled: boolean) => plan(f01(d => {
+    const g = root(d);
+    g.edges = g.edges.filter(e => e.id !== 'edge-anchor');
+    g.nodes.push({ ...node('node-off1', 'OffsetAnchor', { offset: [1, 0, 0] }), enabled }, node('node-off2', 'OffsetAnchor', { offset: [0, 0.5, -2] }));
+    g.edges.push(edge('e-o1', 'node-source', 'out', 'node-off1', 'anchor'), edge('e-o2', 'node-off1', 'out', 'node-off2', 'anchor'), edge('e-oe', 'node-off2', 'out', 'node-emitter', 'anchor'));
+  })).systems[0].descriptor.sourcePosition;
+  const base = plan(f01()).systems[0].descriptor.sourcePosition;
+  assert.deepEqual(src(true), [base[0] + 1, base[1] + 0.5, base[2] - 2]);
+  assert.deepEqual(src(false), [base[0], base[1] + 0.5, base[2] - 2]);
+});

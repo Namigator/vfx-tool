@@ -270,6 +270,22 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
 
   const transform: Transform = doc.rootTransform;
   const anchorPos = new Map(doc.anchors.map(a => [a.id, a.position]));
+  /** 05 Anchor / OffsetAnchor chain → document-space position; undefined when it does not resolve (disabled Anchor, missing document anchor). */
+  const staticAnchor = (n: ExpandedNode, depth = 0): Vec3 | undefined => {
+    if (n.node.type === 'Anchor') {
+      if (!n.effectiveEnabled) return undefined;
+      const p = anchorPos.get(param(n, 'anchorId') as string);
+      return p ? [p[0], p[1], p[2]] : undefined;
+    }
+    if (n.node.type !== 'OffsetAnchor' || depth > 16) return undefined;
+    const up = into(n.node.id, 'anchor');
+    const u = up.length === 1 && up[0].source.kind === 'node' ? nodes.get(up[0].source.nodeId) : undefined;
+    const b = u ? staticAnchor(u, depth + 1) : undefined;
+    if (!b || !n.effectiveEnabled) return b;
+    noDrivenParams(n, ['anchor']);
+    const o = param(n, 'offset') as Vec3;
+    return [b[0] + o[0], b[1] + o[1], b[2] + o[2]];
+  };
   /** 05 EventDelay / MergeEvents: follows a trigger connection back to its producers, summing delays. */
   type RoutedEvent = { c: ExpandedConnection; delay: number; consumer: string };
   const routeEvents = (c: ExpandedConnection, consumer: string, port: string, delay = 0, depth = 0): RoutedEvent[] => {
@@ -383,14 +399,10 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     const eventOnly = triggerSources.length > 0 && into(id, 'window').length === 0 && param(em, 'useEventPosition') === true
       && triggerSources.every(s => s.node.type === 'ParticleEvents' || s.node.type === 'GroundCollision' || s.node.type === 'PathFollower');
     const track = anchorNode?.node.type === 'PathFollower' ? followerTrack(anchorNode) : undefined;
-    if (track) { /* Moving source: positions come from the follower track. */ } else if (!anchorNode || anchorNode.node.type !== 'Anchor' || !anchorNode.effectiveEnabled) {
-      if (!eventOnly) report('MISSING_REFERENCE', 'Emitter needs an enabled Anchor connected to its anchor input (Schedule events carry no position; particle events do when Use event position is on).', id);
-    } else {
-      const aid = param(anchorNode, 'anchorId') as string;
-      const p = anchorPos.get(aid);
-      if (!p) report('MISSING_REFERENCE', `Document anchor "${aid}" does not exist.`, anchorNode.node.id, 'anchorId');
-      else local = p;
-    }
+    const sp = anchorNode && !track ? staticAnchor(anchorNode) : undefined;
+    if (track) { /* Moving source: positions come from the follower track. */ } else if (!sp) {
+      if (!eventOnly) report('MISSING_REFERENCE', 'Emitter needs an enabled Anchor (or OffsetAnchor) referencing an existing document anchor on its anchor input (Schedule events carry no position; particle events do when Use event position is on).', id);
+    } else local = sp;
 
     const duration = doc.durationTicks;
     const bursts: ParticleBurst[] = [];
@@ -491,7 +503,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       if (f.node.type === 'Drag') return { kind: 'drag', coefficient: num(f, 'coefficient') };
       if (f.node.type === 'Attract' || f.node.type === 'Vortex') {
         const an = into(f.node.id, 'anchor'), anode = an.length === 1 ? sourceNode(an[0].source, f.node.id, 'anchor') : undefined;
-        const ap = anode && anode.node.type === 'Anchor' && anode.effectiveEnabled ? anchorPos.get(param(anode, 'anchorId') as string) : undefined;
+        const ap = anode ? staticAnchor(anode) : undefined;
         if (!ap) { report('MISSING_REFERENCE', `${f.node.type} "${f.node.id}" needs an enabled Anchor referencing an existing document anchor.`, f.node.id); return { kind: 'drag', coefficient: 0 }; }
         const q = rotate(transform.rotation, [ap[0] * scale, ap[1] * scale, ap[2] * scale]);
         const center: Vec3 = [q[0] + transform.position[0], q[1] + transform.position[1], q[2] + transform.position[2]];
@@ -518,8 +530,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     const aims = into(id, 'aim');
     if (aims.length === 1) {
       const an = sourceNode(aims[0].source, id, 'aim');
-      const aid = an.node.type === 'Anchor' && an.effectiveEnabled ? param(an, 'anchorId') as string : undefined;
-      const ap = aid === undefined ? undefined : anchorPos.get(aid);
+      const ap = staticAnchor(an);
       if (!ap) report('MISSING_REFERENCE', 'Emitter aim needs an enabled Anchor referencing an existing document anchor.', id);
       else {
         const t = worldOf(ap), v: Vec3 = [t[0] - source[0], t[1] - source[1], t[2] - source[2]], l = Math.hypot(v[0], v[1], v[2]);
@@ -581,7 +592,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         const m = mat as ExpandedNode;
         const an = into(tid, 'anchor'), anchorNode = an.length === 1 ? sourceNode(an[0].source, tid, 'anchor') : undefined;
         const track = anchorNode?.node.type === 'PathFollower' ? followerTrack(anchorNode) : undefined;
-        const ap = anchorNode && anchorNode.node.type === 'Anchor' && anchorNode.effectiveEnabled ? anchorPos.get(param(anchorNode, 'anchorId') as string) : undefined;
+        const ap = anchorNode ? staticAnchor(anchorNode) : undefined;
         if (!ap && !track) { fail('MISSING_REFERENCE', `MotionTrail "${tid}" needs an enabled Anchor or PathFollower.`, tid); }
         const ws = into(tid, 'window');
         if (ws.length !== 1) { fail('MISSING_REFERENCE', `MotionTrail "${tid}" needs a Schedule window.`, tid); }
@@ -642,7 +653,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         noDrivenParams(b, ['anchor', 'window']);
         const an = into(lid, 'anchor'), anchorNode = an.length === 1 ? sourceNode(an[0].source, lid, 'anchor') : undefined;
         const ltrack = anchorNode?.node.type === 'PathFollower' ? followerTrack(anchorNode) : undefined;
-        const ap = anchorNode && anchorNode.node.type === 'Anchor' && anchorNode.effectiveEnabled ? anchorPos.get(param(anchorNode, 'anchorId') as string) : undefined;
+        const ap = anchorNode ? staticAnchor(anchorNode) : undefined;
         if (!ap && !ltrack) { fail('MISSING_REFERENCE', `PointLight "${lid}" needs an enabled Anchor (or PathFollower) referencing an existing document anchor.`, lid); }
         const ws = into(lid, 'window');
         if (ws.length !== 1) { fail('MISSING_REFERENCE', `PointLight "${lid}" needs a Schedule window.`, lid); }
@@ -673,7 +684,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         const m = mat as ExpandedNode;
         const an = into(sid, 'anchor'), anchorNode = an.length === 1 ? sourceNode(an[0].source, sid, 'anchor') : undefined;
         const strack = anchorNode?.node.type === 'PathFollower' ? followerTrack(anchorNode) : undefined;
-        const ap = anchorNode && anchorNode.node.type === 'Anchor' && anchorNode.effectiveEnabled ? anchorPos.get(param(anchorNode, 'anchorId') as string) : undefined;
+        const ap = anchorNode ? staticAnchor(anchorNode) : undefined;
         if (!ap && !strack) { fail('MISSING_REFERENCE', `SpriteRenderer "${sid}" needs an enabled Anchor (or PathFollower) referencing an existing document anchor.`, sid); }
         const ws = into(sid, 'window');
         if (ws.length !== 1) { fail('MISSING_REFERENCE', `SpriteRenderer "${sid}" needs a Schedule window.`, sid); }

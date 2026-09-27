@@ -188,16 +188,31 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
     if (totalPoints > MAX_PREVIEW_POINTS) fail('BUDGET_EXCEEDED', `Path preview would evaluate ${totalPoints} path points; the limit is ${MAX_PREVIEW_POINTS}. Reduce samples or branch counts.`, n.node.id);
   };
 
+  /** 05 Anchor / OffsetAnchor chain → document-space position; undefined when it does not resolve (disabled Anchor, missing document anchor). */
+  const staticAnchor = (n: ExpandedNode, depth = 0): Vec3 | undefined => {
+    if (n.node.type === 'Anchor') {
+      if (!n.effectiveEnabled) return undefined;
+      const p = anchorPos.get(param(n, 'anchorId') as string);
+      return p ? [p[0], p[1], p[2]] : undefined;
+    }
+    if (n.node.type !== 'OffsetAnchor' || depth > 16) return undefined;
+    const up = into(n.node.id, 'anchor');
+    const u = up.length === 1 && up[0].source.kind === 'node' ? nodes.get(up[0].source.nodeId) : undefined;
+    const b = u ? staticAnchor(u, depth + 1) : undefined;
+    if (!b || !n.effectiveEnabled) return b;
+    noDrivenParams(n, ['anchor']);
+    const o = param(n, 'offset') as Vec3;
+    return [b[0] + o[0], b[1] + o[1], b[2] + o[2]];
+  };
   const anchorOf = (n: ExpandedNode, port: string): Vec3 => {
     const cs = into(n.node.id, port);
     const a = cs.length === 1 ? sourceNode(cs[0].source, n.node.id, port) : undefined;
-    if (!a || a.node.type !== 'Anchor' || !a.effectiveEnabled) {
-      return fail('MISSING_REFERENCE', `Required input "${port}" of "${n.node.id}" needs an enabled Anchor (a disabled Anchor acts absent).`, n.node.id);
+    if (!a || (a.node.type !== 'Anchor' && a.node.type !== 'OffsetAnchor') || (a.node.type === 'Anchor' && !a.effectiveEnabled)) {
+      return fail('MISSING_REFERENCE', `Required input "${port}" of "${n.node.id}" needs an enabled Anchor or OffsetAnchor (a disabled Anchor acts absent).`, n.node.id);
     }
-    const id = param(a, 'anchorId') as string;
-    const p = anchorPos.get(id);
-    if (!p) return fail('MISSING_REFERENCE', `Document anchor "${id}" does not exist.`, a.node.id, 'anchorId');
-    return [p[0], p[1], p[2]];
+    const p = staticAnchor(a);
+    if (!p) return fail('MISSING_REFERENCE', `Anchor chain into "${n.node.id}.${port}" does not resolve to an existing document anchor.`, a.node.id);
+    return p;
   };
 
   /**

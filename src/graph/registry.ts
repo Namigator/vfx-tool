@@ -274,6 +274,17 @@ function forceStrength(): ParameterSpec {
   return param({ id: 'strength', label: 'Strength', type: 'number', unit: 'normalized', default: 1, min: 0, max: 1, domains: ['constant', 'effectTime'], editPolicy: 'live', description: 'Gain on this force (0..1); drive with an EffectTimeCurve to ramp it over time.' });
 }
 
+/** 05 OffsetAnchor: a fixed document-space offset from another anchor (chainable; disabled = pass-through). */
+function offsetAnchor(): NodeSpec {
+  return node('OffsetAnchor', {
+    inputs: [port({ id: 'anchor', label: 'Anchor', type: 'anchor', required: true })],
+    outputs: [port({ id: 'out', label: 'Out', type: 'anchor' })],
+    parameters: [param({ id: 'offset', label: 'Offset', type: 'vec3', unit: 'meter', default: [0, 1, 0], min: -100, max: 100 })],
+    disabledBehavior: 'bypass',
+    bypass: { input: 'anchor', output: 'out' },
+  });
+}
+
 function groundCollision(): NodeSpec {
   return node('GroundCollision', {
     inputs: [port({ id: 'particles', label: 'Particles', type: 'particles', required: true })],
@@ -847,7 +858,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 /** Fresh, independent registry each call. */
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
-    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), constantNode(), scalarMath(), eventDelay(), mergeEvents(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
+    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), constantNode(), scalarMath(), offsetAnchor(), eventDelay(), mergeEvents(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
     linePath(), bezierPath(), helixPathNode(), pathTransformNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(), oscillator(),
     audioSource(), audioEnvelope(), audioFilter(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),
