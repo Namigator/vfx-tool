@@ -512,7 +512,7 @@ export default function PreviewV2() {
   const [missingAssets, setMissingAssets] = useState<string[]>([]);
   useEffect(() => {
     let live = true;
-    const need = doc.assets.filter(a => (a.kind === 'texture' || a.kind === 'flipbook') && !hasAssetUrl(a.sha256));
+    const need = doc.assets.filter(a => (a.kind === 'texture' || a.kind === 'flipbook' || a.kind === 'mesh') && !hasAssetUrl(a.sha256));
     void Promise.all(need.map(async a => {
       const rec = await getAssetBytes(a.sha256);
       if (rec) registerAssetUrl(a.sha256, URL.createObjectURL(rec.blob));
@@ -667,10 +667,10 @@ export default function PreviewV2() {
               <p className="pv2-muted">No node selected. Select a node in the graph.</p>
             )}
           </section>
-          <section className="pv2-panel" aria-label="Textures">
-            <h2 className="pv2-heading">Textures</h2>
+          <section className="pv2-panel" aria-label="Imported assets">
+            <h2 className="pv2-heading">Imported assets</h2>
             <TexturePanel document={doc} graphId={graphId} selectedNodeId={selectedNode?.id} onEdit={onEdit} />
-            {missingAssets.length > 0 && <p className="pv2-warn" role="alert">Missing texture bytes on this device: {missingAssets.join(', ')}. Import the same file again to relink.</p>}
+            {missingAssets.length > 0 && <p className="pv2-warn" role="alert">Missing imported asset bytes on this device: {missingAssets.join(', ')}. Import the same file again to relink.</p>}
           </section>
           <section className="pv2-panel pv2-sound" aria-label="Sound audition">
             <h2 className="pv2-heading">Sound audition</h2>

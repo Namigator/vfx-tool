@@ -104,3 +104,20 @@ test('MCP: import a texture onto a Material, export a .vfxpack, reopen it with t
   const sha = JSON.parse(readFileSync(join(root, 'work/mcp/t2.json'), 'utf8')).assets[0].sha256;
   assert.ok(existsSync(join(root, `work/mcp/assets/${sha}.png`)));
 });
+
+test('MCP: import a GLB onto a MeshRenderer; non-GLB and bad renderer ids are rejected', async () => {
+  const { root, call } = await connect();
+  const { mkdirSync, copyFileSync, writeFileSync } = await import('node:fs');
+  mkdirSync(join(root, 'in'), { recursive: true });
+  copyFileSync(join(process.cwd(), 'mcp/examples/assets/star.glb'), join(root, 'in/star.glb'));
+  writeFileSync(join(root, 'in/fake.glb'), 'this is plainly not a glb file at all');
+  await call('vfx_new_document', { template: 'blank', id: 'm' });
+  await call('vfx_add_node', { docId: 'm', type: 'MeshRenderer', id: 'mr' });
+  assert.match((await call('vfx_import_mesh', { docId: 'm', path: 'in/fake.glb' })).text, /Not a GLB/);
+  assert.equal((await call('vfx_import_mesh', { docId: 'm', path: 'in/star.glb', rendererId: 'nope' })).error, true);
+  const r = await call('vfx_import_mesh', { docId: 'm', path: 'in/star.glb', rendererId: 'mr' });
+  assert.match(r.text, /40 triangles/);
+  const d = JSON.parse(readFileSync(join(root, 'work/mcp/m.json'), 'utf8'));
+  assert.equal(d.graphs[0].nodes.find((n: { id: string }) => n.id === 'mr').params.meshAsset, d.assets[0].id);
+  assert.ok(existsSync(join(root, `work/mcp/assets/${d.assets[0].sha256}.glb`)));
+});

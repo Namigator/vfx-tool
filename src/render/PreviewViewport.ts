@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { ASSET_FILE_PREFIX } from '../assets/importTexture.ts';
 import { whenAssetUrl } from '../assets/assetUrls.ts';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -419,8 +420,9 @@ export class PreviewViewport {
     this.#plan = plan;
     this.#presentation = plan.presentation ?? null;
     for (const layer of plan.meshes ?? []) {
-      let geometry = this.#meshGeometries.get(layer.mesh);
-      if (!geometry) { geometry = createBuiltinMesh(layer.mesh as BuiltinMesh); this.#meshGeometries.set(layer.mesh, geometry); }
+      const gkey = layer.meshAsset ? `asset:${layer.meshAsset}` : layer.mesh;
+      let geometry = this.#meshGeometries.get(gkey);
+      if (!geometry) { geometry = layer.meshAsset ? this.#importedMesh(layer.meshAsset, gkey) : createBuiltinMesh(layer.mesh as BuiltinMesh); this.#meshGeometries.set(gkey, geometry); }
       const color = new THREE.Color().setStyle(layer.color.srgb), additive = layer.blend === 'additive';
       const material: THREE.Material = !additive && layer.lit
         ? new THREE.MeshStandardMaterial({ color, roughness: 0.75, metalness: 0.05, flatShading: true, emissive: color.clone().multiplyScalar(layer.emission), transparent: layer.opacity < 1, opacity: layer.opacity })
@@ -488,6 +490,42 @@ export class PreviewViewport {
       this.#scene.add(mesh);
       this.#layers.push({ layer, mesh, material, sizeSampler: compileLifeCurve(layer.sizeOverLife), opacitySampler: compileLifeCurve(layer.opacityOverLife), colorSampler: compileLifeGradient(layer.colorOverLife) });
     }
+  }
+
+  /**
+   * Imported GLB for MeshRenderer: a small placeholder until the bytes are registered and parsed, then every
+   * mesh in the scene is flattened (world transforms applied) into one non-indexed position+normal geometry,
+   * centred and fitted to ≈1 m like the included meshes, and swapped into the instanced meshes using it.
+   */
+  #importedMesh(sha256: string, key: string): THREE.BufferGeometry {
+    const placeholder = new THREE.OctahedronGeometry(0.15, 0);
+    whenAssetUrl(sha256, url => new GLTFLoader().load(url, gltf => {
+      if (this.#disposed) return;
+      gltf.scene.updateMatrixWorld(true);
+      const pos: number[] = [], nor: number[] = [];
+      gltf.scene.traverse(o => {
+        const m = o as THREE.Mesh;
+        if (!m.isMesh) return;
+        let g = m.geometry.clone().applyMatrix4(m.matrixWorld);
+        if (g.index) g = g.toNonIndexed();
+        if (!g.getAttribute('normal')) g.computeVertexNormals();
+        for (const x of Array.from(g.getAttribute('position').array as ArrayLike<number>)) pos.push(x);
+        for (const x of Array.from(g.getAttribute('normal').array as ArrayLike<number>)) nor.push(x);
+      });
+      const merged = new THREE.BufferGeometry();
+      merged.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      merged.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+      merged.computeBoundingBox();
+      const bb = merged.boundingBox!, size = new THREE.Vector3(), centre = new THREE.Vector3();
+      bb.getSize(size); bb.getCenter(centre);
+      const k = 1 / Math.max(1e-6, size.x, size.y, size.z);
+      merged.translate(-centre.x, -centre.y, -centre.z).scale(k, k, k);
+      this.#meshGeometries.set(key, merged);
+      for (const x of this.#meshes) if (x.mesh.geometry === placeholder) x.mesh.geometry = merged;
+      placeholder.dispose();
+      this.#emitFrame(true);
+    }, undefined, () => { /* Unreadable bytes: the placeholder stays; import already validated the file. */ }));
+    return placeholder;
   }
 
   readonly #textures = new Map<string, THREE.Texture>();

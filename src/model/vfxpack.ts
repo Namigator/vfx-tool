@@ -103,7 +103,7 @@ export type PackManifest = {
   files: ManifestFile[]; creationTool: string; state: 'validated' | 'draft'; capabilities: string[];
 };
 
-const extOf = (mime: string) => (mime === 'image/png' ? 'png' : mime === 'image/jpeg' ? 'jpg' : mime === 'image/webp' ? 'webp' : 'bin');
+const extOf = (mime: string) => (mime === 'image/png' ? 'png' : mime === 'image/jpeg' ? 'jpg' : mime === 'image/webp' ? 'webp' : mime === 'model/gltf-binary' ? 'glb' : 'bin');
 
 /**
  * Builds a pack for `doc`. Every document asset with source kind "bundle" must be present in `bytes`

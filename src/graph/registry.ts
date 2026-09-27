@@ -377,6 +377,7 @@ function meshRenderer(): NodeSpec {
     ],
     outputs: [port({ id: 'visual', label: 'Visual', type: 'visual' })],
     parameters: [
+      param({ id: 'meshAsset', label: 'Mesh asset', type: 'string', unit: 'none', default: '', description: 'Imported GLB asset ID (Import 3D model…); when set it replaces Mesh. Fitted to ≈1 m like the included meshes, so particle size × Scale sets its size.' }),
       param({ id: 'mesh', label: 'Mesh', type: 'enum', unit: 'none', default: 'rock-a', choices: ['shard', 'rock-a', 'rock-b', 'rock-c', 'orb', 'cone'], description: 'Included procedural mesh (≈1 m across, scaled by particle size × Scale).' }),
       param({ id: 'scale', label: 'Scale', type: 'number', unit: 'none', default: 1, min: 0.01, max: 20, editPolicy: 'live' }),
       param({ id: 'orientation', label: 'Orientation', type: 'enum', unit: 'none', default: 'tumble', choices: ['tumble', 'velocity'], editPolicy: 'live', description: 'tumble: random axis per particle, spun by InitialProperties rotation/angular velocity; velocity: +Y follows the velocity.' }),

@@ -90,6 +90,8 @@ export type PointLightLayer = {
 /** 05 MeshRenderer: instanced built-in mesh per particle. */
 export type MeshLayer = {
   nodeId: string; systemId: string; mesh: 'shard' | 'rock-a' | 'rock-b' | 'rock-c' | 'orb' | 'cone'; scale: number;
+  /** Imported GLB (byte SHA-256) replacing `mesh` when present. */
+  meshAsset?: string;
   orientation: 'tumble' | 'velocity'; lit: boolean; color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout';
   sizeOverLife: CurveValue; colorOverLife: GradientValue; renderOrderOffset: number; visualOrder: number;
 };
@@ -666,7 +668,11 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         const sc = param(b, 'sizeOverLife') as CurveValue, serr = lifeCurveError(sc, SIZE_OVER_LIFE_BOUNDS);
         if (serr !== undefined) report('INVALID_VALUE', `MeshRenderer "${mid}" sizeOverLife: ${serr}`, mid, 'sizeOverLife');
         const base = chain.initial ? param(chain.initial, 'color') as ColorValue : { srgb: '#FFFFFF', alpha: 1 };
+        const ma = param(b, 'meshAsset') as string;
+        const imported = ma ? doc.assets.find(a => a.id === ma) : undefined;
+        if (ma && (!imported || imported.kind !== 'mesh')) report('MISSING_REFERENCE', imported ? `Asset "${imported.provenance.originalFilename}" is a ${imported.kind}, not a mesh.` : `Mesh asset "${ma}" is not listed in this document's assets.`, mid, 'meshAsset');
         meshes.push({
+          ...(imported?.kind === 'mesh' ? { meshAsset: imported.sha256 } : {}),
           nodeId: mid, systemId: chain.terminalId, mesh: param(b, 'mesh') as MeshLayer['mesh'], scale: num(b, 'scale'), orientation: param(b, 'orientation') as MeshLayer['orientation'],
           lit: param(b, 'lit') === true, color: multiplyColors(base, param(m, 'tint') as ColorValue), opacity: num(m, 'opacity'), emission: num(m, 'emission'), blend: param(m, 'blend') as MeshLayer['blend'],
           sizeOverLife: structuredClone(sc), colorOverLife: structuredClone(param(b, 'colorOverLife') as GradientValue), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,

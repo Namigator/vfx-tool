@@ -20,6 +20,7 @@ import { compileAudio } from '../src/graph/toAudio.ts';
 import { sampleParticlesAtTick } from '../src/runtime/particles.ts';
 import { encodeWavPcm16Stereo } from '../src/audio/wav.ts';
 import { createTextureAsset } from '../src/assets/importTexture.ts';
+import { createMeshAsset } from '../src/assets/importMesh.ts';
 import { buildPack, readPack, type PackAsset } from '../src/model/vfxpack.ts';
 
 export type VfxServerOptions = { root?: string; editorUrl?: string; chromePath?: string };
@@ -248,6 +249,25 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
         m.params.template = 'SpriteTextured'; m.params.textureAsset = asset.id;
       }
       return `Imported ${asset.provenance.originalFilename} as ${asset.kind} ${asset.width}×${asset.height} (id ${asset.id})${materialId ? `; set on ${materialId}` : ''}.`;
+    });
+  });
+  tool('vfx_import_mesh', 'Import a self-contained .glb (project path; ≤20 MiB, ≤50k triangles, no animation/cameras/lights) as a mesh asset; optionally set it on a MeshRenderer (meshAsset). The model is fitted to ≈1 m; particle size × Scale sets its size.', {
+    docId: z.string(), path: z.string(), rendererId: z.string().optional(),
+  }, async ({ docId, path, rendererId }) => {
+    const bytes = new Uint8Array(readFileSync(safeProjectPath(path)));
+    const r = await createMeshAsset(bytes, path.split(/[\\/]/).pop() ?? path);
+    if (!r.ok) return bad(r.message);
+    const { asset, path: bundlePath, summary } = r.value;
+    mkdirSync(assetDir, { recursive: true });
+    writeFileSync(join(root, 'work', 'mcp', bundlePath), bytes);
+    return mutate(docId, d => {
+      if (!d.assets.some(a => a.id === asset.id)) d.assets.push(asset);
+      if (rendererId) {
+        const m = rootGraph(d).nodes.find(n => n.id === rendererId);
+        if (!m || m.type !== 'MeshRenderer') throw new Error(`"${rendererId}" is not a MeshRenderer in the root graph.`);
+        m.params.meshAsset = asset.id;
+      }
+      return `Imported ${asset.provenance.originalFilename} (${summary.triangles} triangles, id ${asset.id})${rendererId ? `; set on ${rendererId}` : ''}.`;
     });
   });
   tool('vfx_export_pack', 'Write a portable .vfxpack (effect + imported asset bytes + manifest checksums) to a project path (default work/mcp/<id>.vfxpack). draft=true allows missing asset bytes.', {
