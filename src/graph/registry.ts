@@ -619,6 +619,36 @@ function audioOutput(): NodeSpec {
 
 // Per-input gain/pan are stored on incoming edges (edge.mix), not as parameters. Disabled contributes
 // nothing; bypass would be ambiguous with many inputs (WP04-AUDIO-MIX-CONTRACT §3).
+function audioEnvelope(): NodeSpec {
+  return node('AudioEnvelope', {
+    inputs: [port({ id: 'audio', label: 'Audio', type: 'audio', required: true })],
+    outputs: [port({ id: 'audio', label: 'Audio', type: 'audio' })],
+    parameters: [
+      param({ id: 'attack', label: 'Attack', type: 'number', unit: 'second', default: 0.01, min: 0, max: 10 }),
+      param({ id: 'hold', label: 'Hold', type: 'number', unit: 'second', default: 0.1, min: 0, max: 10 }),
+      param({ id: 'release', label: 'Release', type: 'number', unit: 'second', default: 0.3, min: 0, max: 10 }),
+      param({ id: 'curve', label: 'Release curve', type: 'enum', unit: 'none', default: 'exponential', choices: ['linear', 'exponential'] }),
+    ],
+    disabledBehavior: 'bypass',
+    bypass: { input: 'audio', output: 'audio' },
+  });
+}
+
+function audioFilter(): NodeSpec {
+  return node('AudioFilter', {
+    inputs: [port({ id: 'audio', label: 'Audio', type: 'audio', required: true })],
+    outputs: [port({ id: 'audio', label: 'Audio', type: 'audio' })],
+    parameters: [
+      param({ id: 'mode', label: 'Mode', type: 'enum', unit: 'none', default: 'lowpass', choices: ['lowpass', 'highpass', 'bandpass'] }),
+      param({ id: 'cutoffHz', label: 'Cutoff', type: 'number', unit: 'hertz', default: 1000, min: 20, max: 20000 }),
+      param({ id: 'cutoffEndHz', label: 'Cutoff at end', type: 'number', unit: 'hertz', default: 1000, min: 20, max: 20000, description: 'Cutoff sweeps (log frequency) from Cutoff to this over the voice: whooshes, closing rumbles.' }),
+      param({ id: 'q', label: 'Q', type: 'number', unit: 'none', default: 0.707, min: 0.1, max: 20 }),
+    ],
+    disabledBehavior: 'bypass',
+    bypass: { input: 'audio', output: 'audio' },
+  });
+}
+
 function audioMix(): NodeSpec {
   return node('AudioMix', {
     inputs: [port({ id: 'inputs', label: 'Inputs', type: 'audio', cardinality: 'many' })],
@@ -668,7 +698,7 @@ export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
     anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), particleEvents(), material(), billboardRenderer(), particleTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(),
     linePath(), bezierPath(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(),
-    audioSource(), audioMix(), audioOutput(),
+    audioSource(), audioEnvelope(), audioFilter(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),
   ];
   return new Map(specs.map(s => [`${s.type}@${s.definitionVersion}`, s]));

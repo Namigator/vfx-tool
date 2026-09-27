@@ -62,3 +62,28 @@ test('path preview: audio is rejected by default and ignored with audioHandled (
   if (!def.ok) assert.ok(def.errors.some(e => e.nodeId === 'node-output' && e.message.includes('EffectOutput.audio')));
   assert.deepEqual(ok(compilePathPreview(d, 30, { audioHandled: true })), ok(compilePathPreview(createL01Document(), 30)));
 });
+
+test('audio chains Source → Filter → Envelope → Mix compile into shaped voices; disabled modifiers bypass', async () => {
+  const { createL01AudioDocument } = await import('../src/graph/audioFixtures.ts');
+  const { compileAudio } = await import('../src/graph/toAudio.ts');
+  const d = createL01AudioDocument();
+  const g = d.graphs[0];
+  const into = g.edges.find(e => e.target.nodeId === 'node-audio-mix' && e.source.nodeId === 'node-strike-sound')!;
+  g.nodes.push(
+    { id: 'node-f', type: 'AudioFilter', definitionVersion: 1, label: 'f', enabled: true, randomStreamId: 'rs-f', params: { mode: 'lowpass', cutoffHz: 4000, cutoffEndHz: 300, q: 1 } },
+    { id: 'node-e', type: 'AudioEnvelope', definitionVersion: 1, label: 'e', enabled: true, randomStreamId: 'rs-e', params: { attack: 0.005, hold: 0.05, release: 0.4 } },
+  );
+  g.edges.push({ id: 'e-sf', source: { nodeId: 'node-strike-sound', port: 'audio' }, target: { nodeId: 'node-f', port: 'audio' }, order: 0 },
+    { id: 'e-fe', source: { nodeId: 'node-f', port: 'audio' }, target: { nodeId: 'node-e', port: 'audio' }, order: 0 });
+  into.source = { nodeId: 'node-e', port: 'audio' };
+  const r = compileAudio(d);
+  if (!r.ok) assert.fail(JSON.stringify(r.errors));
+  assert.equal(r.value.kind, 'mix');
+  const v = r.value.kind === 'mix' ? r.value.voices.find(x => x.sourceNodeId === 'node-strike-sound')!.voice : undefined;
+  assert.deepEqual(v?.filters, [{ mode: 'lowpass', cutoffHz: 4000, cutoffEndHz: 300, q: 1 }]);
+  assert.equal(v?.envelopes?.[0].release, 0.4);
+  g.nodes.find(n => n.id === 'node-f')!.enabled = false;
+  const b = compileAudio(d);
+  if (!b.ok) assert.fail(JSON.stringify(b.errors));
+  assert.equal(b.value.kind === 'mix' && b.value.voices.find(x => x.sourceNodeId === 'node-strike-sound')!.voice.filters, undefined, 'disabled filter bypassed');
+});

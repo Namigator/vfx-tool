@@ -8,7 +8,7 @@ import { resolveParameters } from '../src/model/controls.ts';
 import { createRegistry, MATERIAL_TEMPLATES } from '../src/graph/registry.ts';
 import { createF01Document } from '../src/graph/fixtures.ts';
 
-const EXPECTED_TYPES = ['Anchor', 'Schedule', 'Emitter', 'InitialProperties', 'Gravity', 'Drag', 'NoiseForce', 'Attract', 'Vortex', 'GroundCollision', 'RandomRange', 'ParticleEvents', 'Material', 'BillboardRenderer', 'ParticleTrail', 'MeshRenderer', 'SpriteRenderer', 'PointLight', 'PathFollower', 'EffectOutput', 'Group', 'GroupInput', 'GroupOutput', 'LinePath', 'BezierPath', 'JaggedPath', 'BranchPath', 'RevealPath', 'RadialPath', 'RingPath', 'RibbonRenderer', 'EffectTimeCurve', 'AudioSource', 'AudioMix', 'AudioOutput'];
+const EXPECTED_TYPES = ['Anchor', 'Schedule', 'Emitter', 'InitialProperties', 'Gravity', 'Drag', 'NoiseForce', 'Attract', 'Vortex', 'GroundCollision', 'RandomRange', 'ParticleEvents', 'Material', 'BillboardRenderer', 'ParticleTrail', 'MeshRenderer', 'SpriteRenderer', 'PointLight', 'PathFollower', 'EffectOutput', 'Group', 'GroupInput', 'GroupOutput', 'LinePath', 'BezierPath', 'JaggedPath', 'BranchPath', 'RevealPath', 'RadialPath', 'RingPath', 'RibbonRenderer', 'EffectTimeCurve', 'AudioSource', 'AudioEnvelope', 'AudioFilter', 'AudioMix', 'AudioOutput'];
 const LOWER_CAMEL = /^[a-z][A-Za-z0-9]*$/;
 
 test('registry contains the current graph catalog at version 1, keyed type@version', () => {
@@ -102,8 +102,10 @@ test('audio nodes follow plans 11, 24 and 25', () => {
   assert.deepEqual(ports('AudioSource', 'inputs'), ['trigger:event:many', 'window:timeWindow:one']);
   for (const t of ['AudioSource', 'AudioOutput']) assert.deepEqual(ports(t, 'outputs'), ['audio:audio:one']);
   assert.deepEqual(ports('AudioOutput', 'inputs'), ['audio:audio:one']);
-  assert.equal(reg.has('AudioEnvelope@1'), false, 'envelope stays unregistered until its controls are specified');
-  assert.equal(reg.has('AudioFilter@1'), false, 'filter deferred until the cutoff curve schema is decided');
+  // Decision 2026-09-27 (27-GAP-AUDIT): envelope = attack/hold/release seconds + release curve; filter = RBJ mode, cutoff start→end log sweep, Q.
+  for (const t of ['AudioEnvelope', 'AudioFilter']) { assert.deepEqual(ports(t, 'inputs'), ['audio:audio:one']); assert.deepEqual(ports(t, 'outputs'), ['audio:audio:one']); assert.equal(spec(t).disabledBehavior, 'bypass'); }
+  assert.deepEqual(bounds('AudioFilter', 'cutoffHz'), ['hertz', 20, 20000]);
+  assert.deepEqual(bounds('AudioFilter', 'q'), ['none', 0.1, 20]);
   assert.deepEqual(ports('AudioMix', 'inputs'), ['inputs:audio:many']);
   assert.deepEqual(ports('AudioMix', 'outputs'), ['audio:audio:one']);
   assert.equal(spec('AudioMix').inputs[0].required, false, 'zero inputs is valid silence');

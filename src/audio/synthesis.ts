@@ -35,12 +35,21 @@ export interface NoiseSource { kind: 'noise'; color: NoiseColor; randomStreamId:
 export interface ChirpSource { kind: 'chirp'; startHz: number; endHz: number; sweep: ChirpSweep }
 export type SynthSource = OscillatorSource | NoiseSource | ChirpSource;
 
+/** 11 AudioEnvelope: seconds; linear or exponential release; silent after attack+hold+release. */
+export interface VoiceEnvelope { attack: number; hold: number; release: number; curve: 'linear' | 'exponential' }
+/** 11 AudioFilter: RBJ biquad (24 amendment), cutoff swept in log frequency from cutoffHz to cutoffEndHz. */
+export interface VoiceFilter { mode: 'lowpass' | 'highpass' | 'bandpass'; cutoffHz: number; cutoffEndHz: number; q: number }
+
 export interface VoiceSpec {
   source: SynthSource;
   offsetTicks: number;
   durationTicks: number;
   gain: number;
   pitchRatio?: number;
+  /** Applied in order after the source, before the envelope. */
+  filters?: VoiceFilter[];
+  /** Multiple envelopes (a chain) multiply. */
+  envelopes?: VoiceEnvelope[];
 }
 
 /** Random identity for noise voices; eventRandomKey/entityOrdinal come from the cue schedule, never object IDs. */
@@ -88,6 +97,48 @@ export function validateVoice(spec: VoiceSpec): void {
     default:
       throw new TypeError('source kind is not supported.');
   }
+  for (const f of spec.filters ?? []) {
+    if (!['lowpass', 'highpass', 'bandpass'].includes(f.mode)) throw new TypeError('filter mode is not supported.');
+    assertRange(f.cutoffHz, 20, 20000, 'cutoffHz');
+    assertRange(f.cutoffEndHz, 20, 20000, 'cutoffEndHz');
+    assertRange(f.q, 0.1, 20, 'q');
+  }
+  for (const e of spec.envelopes ?? []) {
+    assertRange(e.attack, 0, 10, 'attack');
+    assertRange(e.hold, 0, 10, 'hold');
+    assertRange(e.release, 0, 10, 'release');
+    if (e.curve !== 'linear' && e.curve !== 'exponential') throw new TypeError('envelope curve is not supported.');
+  }
+}
+
+/** RBJ biquad, transposed direct form II; coefficients refreshed every 64 samples (log-frequency sweep). */
+export function applyFilter(buf: Float32Array, f: VoiceFilter, sampleRate = AUDIO_SAMPLE_RATE): void {
+  const n = buf.length, span = Math.max(1, n - 1), ratio = f.cutoffEndHz / f.cutoffHz;
+  let b0 = 0, b1 = 0, b2 = 0, a1 = 0, a2 = 0, z1 = 0, z2 = 0;
+  for (let i = 0; i < n; i++) {
+    if (i % 64 === 0) {
+      const fc = Math.min(sampleRate * 0.45, f.cutoffHz * Math.pow(ratio, i / span));
+      const w0 = 2 * Math.PI * fc / sampleRate, c = Math.cos(w0), alpha = Math.sin(w0) / (2 * f.q), a0 = 1 + alpha;
+      if (f.mode === 'lowpass') { b0 = (1 - c) / 2; b1 = 1 - c; b2 = (1 - c) / 2; }
+      else if (f.mode === 'highpass') { b0 = (1 + c) / 2; b1 = -(1 + c); b2 = (1 + c) / 2; }
+      else { b0 = alpha; b1 = 0; b2 = -alpha; }
+      b0 /= a0; b1 /= a0; b2 /= a0; a1 = (-2 * c) / a0; a2 = (1 - alpha) / a0;
+    }
+    const x = buf[i], y = b0 * x + z1;
+    z1 = b1 * x - a1 * y + z2;
+    z2 = b2 * x - a2 * y;
+    buf[i] = y;
+  }
+}
+
+/** Envelope gain at time t (seconds from the voice start). */
+export function envelopeGain(e: VoiceEnvelope, t: number): number {
+  if (t < e.attack) return e.attack > 0 ? t / e.attack : 1;
+  const r = t - e.attack - e.hold;
+  if (r < 0) return 1;
+  if (r >= e.release) return 0;
+  const u = e.release > 0 ? r / e.release : 1;
+  return e.curve === 'linear' ? 1 - u : Math.exp(-5 * u) * (1 - u);
 }
 
 /** Validates every voice and the voice/sample caps before any buffer is allocated. Returns total samples. */
@@ -229,8 +280,12 @@ export function renderVoice(spec: VoiceSpec, ctx: VoiceRandomContext): RenderedV
   } else {
     fillNoise(out, s.color, s.randomStreamId, ctx);
   }
+  for (const f of spec.filters ?? []) applyFilter(out, f);
+  const envs = spec.envelopes ?? [];
   for (let n = 0; n < length; n++) {
-    const v = out[n] * spec.gain;
+    let g = spec.gain;
+    for (const e of envs) g *= envelopeGain(e, n / AUDIO_SAMPLE_RATE);
+    const v = out[n] * g;
     if (!Number.isFinite(v)) throw new RangeError('voice rendered a nonfinite sample.');
     out[n] = v;
   }

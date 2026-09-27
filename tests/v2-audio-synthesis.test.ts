@@ -176,3 +176,22 @@ test('budget is checked before allocation', () => {
   assert.throws(() => assertVoiceBudget(Array.from({ length: MAX_VOICES + 1 }, () => osc('sine', 440, { durationTicks: 1 }))), RangeError);
   assert.throws(() => assertVoiceBudget(Array.from({ length: 11 }, () => osc('sine', 440, { durationTicks: 600 }))), RangeError);
 });
+
+test('envelope shapes a voice (attack ramp, hold, release to silence) and filters remove highs/lows', async () => {
+  const { renderVoice, envelopeGain, applyFilter } = await import('../src/audio/synthesis.ts');
+  const e = { attack: 0.1, hold: 0.1, release: 0.2, curve: 'linear' as const };
+  assert.equal(envelopeGain(e, 0.05), 0.5);
+  assert.equal(envelopeGain(e, 0.15), 1);
+  assert.ok(Math.abs(envelopeGain(e, 0.3) - 0.5) < 1e-9);
+  assert.equal(envelopeGain(e, 0.5), 0);
+  const v = renderVoice({ source: { kind: 'oscillator', waveform: 'sine', frequencyHz: 440 }, offsetTicks: 0, durationTicks: 30, gain: 1, envelopes: [e] }, { documentSeed: 1, eventRandomKey: 'k', entityOrdinal: 0 });
+  const rms = (a: Float32Array, s: number, n: number) => Math.sqrt(a.slice(s, s + n).reduce((q, x) => q + x * x, 0) / n);
+  assert.ok(rms(v.samples, 0, 480) < rms(v.samples, 7200, 480), 'quiet during the attack, full in the hold');
+  assert.ok(rms(v.samples, 23000, 900) < 1e-6, 'silent after the release');
+  const tone = (hz: number) => { const b = new Float32Array(48000); for (let i = 0; i < b.length; i++) b[i] = Math.sin(2 * Math.PI * hz * i / 48000); return b; };
+  const lo = tone(8000); applyFilter(lo, { mode: 'lowpass', cutoffHz: 500, cutoffEndHz: 500, q: 0.707 });
+  const hi = tone(60); applyFilter(hi, { mode: 'highpass', cutoffHz: 2000, cutoffEndHz: 2000, q: 0.707 });
+  const pass = tone(200); applyFilter(pass, { mode: 'lowpass', cutoffHz: 5000, cutoffEndHz: 5000, q: 0.707 });
+  assert.ok(rms(lo, 24000, 4800) < 0.02 && rms(hi, 24000, 4800) < 0.02, 'stopband attenuated');
+  assert.ok(rms(pass, 24000, 4800) > 0.65, 'passband kept');
+});

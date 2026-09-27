@@ -72,7 +72,8 @@ export type DirectAudioCompilePlan = {
 };
 
 const SOURCE_PORTS = ['trigger', 'window'];
-const AUDIO_TYPES = ['AudioSource', 'AudioOutput', AUDIO_MIX_NODE_TYPE];
+const AUDIO_TYPES = ['AudioSource', 'AudioEnvelope', 'AudioFilter', 'AudioOutput', AUDIO_MIX_NODE_TYPE];
+const AUDIO_MODIFIERS = ['AudioEnvelope', 'AudioFilter'];
 
 class Fail extends Error {}
 
@@ -195,6 +196,34 @@ export function compileAudio(input: unknown): ValidationResult<AudioCompilePlan>
     const eventRandomKey = scheduleEventRandomKey(sched.node.randomStreamId, cueTick, 0);
     return { sourceNodeId: sid, scheduleNodeId: sched.node.id, cueTick, startTick, startSample: startTick * SAMPLES_PER_TICK, eventRandomKey, voice };
   };
+  /**
+   * Walks AudioEnvelope/AudioFilter modifiers upstream from `n` to its AudioSource; modifiers apply in
+   * source-to-output order. Disabled modifiers bypass. Returns the source and the prepared voice.
+   */
+  const walkVoice = (n: ExpandedNode, consumer: string, chainIds: Set<string>): PreparedVoice => {
+    const mods: ExpandedNode[] = [];
+    let cur = n;
+    for (let guardN = 0; AUDIO_MODIFIERS.includes(cur.node.type); guardN++) {
+      if (guardN > 32) fail('GRAPH_CYCLE', `Audio modifier chain into "${consumer}" is too long.`, consumer);
+      if (cur.groupPath.length) fail('INVALID_VALUE', `${cur.node.type} "${cur.node.id}" is inside a group; grouped audio chains are not supported by the audio compiler yet.`, cur.node.id);
+      noDrivenParams(cur, ['audio']);
+      chainIds.add(cur.node.id);
+      if (cur.effectiveEnabled) mods.unshift(cur);
+      const up = into(cur.node.id, 'audio');
+      if (up.length !== 1 || up[0].source.kind !== 'node') fail('MISSING_REFERENCE', `${cur.node.type} "${cur.node.id}" needs exactly one audio input.`, cur.node.id);
+      cur = sourceNode(up[0].source, cur.node.id, 'audio');
+    }
+    if (cur.node.type !== 'AudioSource') fail('UNKNOWN_NODE', `Audio chain into "${consumer}" starts at ${cur.node.type} ("${cur.node.id}"); it must start at an AudioSource.`, cur.node.id);
+    if (!cur.effectiveEnabled) fail('INVALID_VALUE', `AudioSource "${cur.node.id}" is disabled; disabled nodes in the audio chain are not supported yet. Enable it or disconnect it.`, cur.node.id);
+    if (cur.groupPath.length) fail('INVALID_VALUE', `AudioSource "${cur.node.id}" is inside a group; grouped audio chains are not supported by the audio compiler yet.`, cur.node.id);
+    chainIds.add(cur.node.id);
+    const p = prepare(cur);
+    const filters = mods.filter(m => m.node.type === 'AudioFilter').map(m => ({ mode: param(m, 'mode') as 'lowpass' | 'highpass' | 'bandpass', cutoffHz: num(m, 'cutoffHz'), cutoffEndHz: num(m, 'cutoffEndHz'), q: num(m, 'q') }));
+    const envelopes = mods.filter(m => m.node.type === 'AudioEnvelope').map(m => ({ attack: num(m, 'attack'), hold: num(m, 'hold'), release: num(m, 'release'), curve: param(m, 'curve') as 'linear' | 'exponential' }));
+    if (filters.length) p.voice.filters = filters;
+    if (envelopes.length) p.voice.envelopes = envelopes;
+    return p;
+  };
   const render = (p: PreparedVoice) =>
     guard(p.sourceNodeId, () => renderVoice(p.voice, { documentSeed: doc.seed, eventRandomKey: p.eventRandomKey, entityOrdinal: 0 }));
   const authoredEdge = (id: string): EdgeDefinition | undefined => {
@@ -235,14 +264,11 @@ export function compileAudio(input: unknown): ValidationResult<AudioCompilePlan>
           const n = sourceNode(c.source, mixId, AUDIO_MIX_INPUT_PORT);
           const port = c.source.kind === 'node' ? c.source.port : '';
           if (n.node.type === AUDIO_MIX_NODE_TYPE) fail('INVALID_VALUE', `AudioMix "${n.node.id}" feeds AudioMix "${mixId}"; nested mixes are not supported by the audio compiler yet.`, n.node.id);
-          if (n.node.type !== 'AudioSource' || port !== 'audio') fail('UNKNOWN_NODE', `AudioMix "${mixId}" input is fed by ${n.node.type}.${port} ("${n.node.id}"); only AudioSource.audio is supported.`, n.node.id);
-          if (!n.effectiveEnabled) fail('INVALID_VALUE', `AudioSource "${n.node.id}" is disabled; disabled nodes in the audio chain are not supported yet. Enable it or disconnect it.`, n.node.id);
-          if (n.groupPath.length) fail('INVALID_VALUE', `AudioSource "${n.node.id}" is inside a group; grouped audio chains are not supported by the audio compiler yet.`, n.node.id);
+          if ((n.node.type !== 'AudioSource' && !AUDIO_MODIFIERS.includes(n.node.type)) || port !== 'audio') fail('UNKNOWN_NODE', `AudioMix "${mixId}" input is fed by ${n.node.type}.${port} ("${n.node.id}"); only AudioSource / AudioEnvelope / AudioFilter audio is supported.`, n.node.id);
           const edgeId = c.sourceEdgeIds[0];
           const m = authoredEdge(edgeId)?.mix ?? DEFAULT_EDGE_MIX;
-          voices.push(prepare(n));
+          voices.push(walkVoice(n, mixId, chain));
           settings.push({ edgeId, gain: m.gain, pan: m.pan });
-          chain.add(n.node.id);
         }
         let total = 0;
         for (const v of voices) total += v.voice.durationTicks * SAMPLES_PER_TICK;
@@ -259,8 +285,9 @@ export function compileAudio(input: unknown): ValidationResult<AudioCompilePlan>
           voices: voices.map((v, i) => ({ ...v, startSample: rendered[i].startSample, ...settings[i] })), mix };
       }
     } else {
-      const src = single(out.node.id, 'audio', 'AudioSource', 'audio');
-      const p = prepare(src);
+      const f0 = into(out.node.id, 'audio');
+      if (f0.length !== 1 || f0[0].source.kind !== 'node') fail('MISSING_REFERENCE', `Input "audio" of "${out.node.id}" needs exactly one audio connection.`, out.node.id);
+      const p = walkVoice(sourceNode(f0[0].source, out.node.id, 'audio'), out.node.id, chain);
       guard(p.sourceNodeId, () => assertVoiceBudget([p.voice]));
       const rendered = render(p);
       const mix = guard(p.sourceNodeId, () => mixStereo([{ startSample: rendered.startSample, samples: rendered.samples, gain: 1, pan: 0 }], 1));
