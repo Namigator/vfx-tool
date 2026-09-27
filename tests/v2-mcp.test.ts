@@ -80,5 +80,5 @@ test('components and knobs through MCP: insert, list, set, recompile', async () 
   assert.equal((await call('vfx_set_control', { docId: 'k', control: 'Sparks', value: 150 })).error, false);
   assert.match((await call('vfx_list_controls', { docId: 'k' })).text, /Sparks = 150/);
   assert.equal((await call('vfx_set_control', { docId: 'k', control: 'Sparks', value: -3 })).error, true, 'out of bounds is rejected');
-  assert.match((await call('vfx_compile', { docId: 'k' })).text, /particles OK: 2 system/);
+  assert.match((await call('vfx_compile', { docId: 'k' })).text, /particles OK: 3 system/);
 });
