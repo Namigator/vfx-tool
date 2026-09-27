@@ -8,7 +8,8 @@ import { validateDocument } from './model/document.ts';
 import { createRegistry } from './graph/registry.ts';
 import { compileParticlePreview } from './graph/toParticles.ts';
 import { compilePathPreview } from './graph/toPaths.ts';
-import { createF01Document, createForcesDemoDocument } from './graph/fixtures.ts';
+import { createBlankDocument, createF01Document, createForcesDemoDocument } from './graph/fixtures.ts';
+import { documentFileName, loadDraftText, saveDraft } from './model/persistence.ts';
 import { compileAudio } from './graph/toAudio.ts';
 import { choosePreviewMode, createLightningAudioDemoDocument, hasRootAudio, ribbonStyleDiagnostics, type PreviewModeChoice } from './render/previewMode.ts';
 import { AudioTransport, type AudioBufferLike, type AudioContextLike, type BufferSourceLike, type PlayResult } from './audio/transport.ts';
@@ -101,7 +102,17 @@ export default function PreviewV2() {
   const fileRef = useRef<HTMLInputElement>(null);
   const viewportRef = useRef<PreviewViewport | null>(null);
   const historyRef = useRef<DocumentHistory | null>(null);
-  if (historyRef.current === null) historyRef.current = new DocumentHistory(((demo) => demo === 'lightning' ? createLightningAudioDemoDocument() : demo === 'forces' ? createForcesDemoDocument() : createF01Document())(new URLSearchParams(window.location.search).get('demo')));
+  if (historyRef.current === null) {
+    const q = new URLSearchParams(window.location.search), demo = q.get('demo');
+    // Demo/doc URLs win; otherwise the last local draft (if it still validates), else the F01 fixture.
+    const draft = () => {
+      if (q.get('doc')) return null;
+      const text = loadDraftText(typeof localStorage === 'undefined' ? undefined : localStorage);
+      if (!text) return null;
+      try { const v = validateDocument(JSON.parse(text), { registry: createRegistry() }); return v.ok ? v.value : null; } catch { return null; }
+    };
+    historyRef.current = new DocumentHistory(demo === 'lightning' ? createLightningAudioDemoDocument() : demo === 'forces' ? createForcesDemoDocument() : draft() ?? createF01Document());
+  }
   const [doc, setDoc] = useState<EffectDocumentV2>(() => historyRef.current!.snapshot());
   const [text, setText] = useState(() => toText(doc));
   const [textDirty, setTextDirty] = useState(false);
@@ -260,6 +271,26 @@ export default function PreviewV2() {
       if (token === soundTokenRef.current) setSoundStatus('Sound finished.');
     }, ms);
   }, []);
+
+  // Autosave: mirror every committed document to local storage (debounced); status is announced politely.
+  const [saveStatus, setSaveStatus] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const r = saveDraft(localStorage, doc);
+      setSaveStatus(r.ok ? 'Saved locally' : `Save failed: ${r.message}`);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [doc]);
+
+  const downloadDocument = useCallback(() => {
+    const d = historyRef.current!.snapshot();
+    const url = URL.createObjectURL(new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = documentFileName(d);
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  }, []);
+  const openInputRef = useRef<HTMLInputElement>(null);
 
   /** Downloads the exact mix held for the current audio revision; never re-renders. */
   const downloadWav = useCallback(() => {
@@ -471,11 +502,18 @@ export default function PreviewV2() {
         <strong>V2 graph preview — {mode === 'paths' ? 'path ribbons' : mode === 'mixed' ? 'points and ribbons' : 'point particles'}</strong>
         <span className="pv2-note">
           {mode === 'paths'
-            ? 'Limited preview of graph data (camera-facing untextured ribbons). No textures or bloom; sound is auditioned separately.'
+            ? 'Preview of graph data: camera-facing ribbons. No bloom; sound is auditioned separately.'
             : mode === 'mixed'
-              ? 'Limited preview of graph data (point emitters and untextured ribbons, layered by visual order). No textures or bloom; sound is auditioned separately.'
-              : 'Limited preview of graph data (point emitters, camera quads). No textures or bloom; sound is auditioned separately.'}
+              ? 'Preview of graph data: particles (sprites, trails, lights) and ribbons, layered by visual order. No bloom; sound is auditioned separately.'
+              : 'Preview of graph data: particles with textured sprites, trails and lights. No bloom; sound is auditioned separately.'}
         </span>
+        <div className="pv2-history" role="group" aria-label="File">
+          <button type="button" onClick={() => replace(toText(createBlankDocument()), 'New blank effect')} title="Start a new blank effect (Undo returns to the previous one)">New</button>
+          <button type="button" onClick={() => openInputRef.current?.click()} title="Open a .vfx.json document">Open…</button>
+          <input ref={openInputRef} type="file" accept=".json,application/json" hidden onChange={e => { const f = e.currentTarget.files?.[0]; e.currentTarget.value = ''; if (f) void f.text().then(t => replace(t, `Open ${f.name}`)); }} />
+          <button type="button" onClick={downloadDocument} title="Download this effect as a .vfx.json file">Save .json</button>
+          <span className="pv2-note" role="status" aria-live="polite">{saveStatus}</span>
+        </div>
         <div className="pv2-history" role="group" aria-label="History">
           <button type="button" disabled={!historyFlags.canUndo} onClick={undo} title="Undo (Ctrl/Cmd+Z)">Undo</button>
           <button type="button" disabled={!historyFlags.canRedo} onClick={redo} title="Redo (Ctrl/Cmd+Shift+Z)">Redo</button>

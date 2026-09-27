@@ -11,7 +11,7 @@ import { dirname, join, resolve } from 'node:path';
 import type { Diagnostic, EffectDocumentV2, NodeDefinition, ParameterValue, Vec3 } from '../src/model/types.ts';
 import { validateDocument } from '../src/model/document.ts';
 import { createRegistry } from '../src/graph/registry.ts';
-import { createF01Document, createForcesDemoDocument, createL01Document } from '../src/graph/fixtures.ts';
+import { createBlankDocument, createF01Document, createForcesDemoDocument, createL01Document } from '../src/graph/fixtures.ts';
 import { createL01AudioDocument } from '../src/graph/audioFixtures.ts';
 import { compileParticlePreview } from '../src/graph/toParticles.ts';
 import { compilePathPreview } from '../src/graph/toPaths.ts';
@@ -34,16 +34,6 @@ type Result = { content: Content[]; isError?: boolean };
 const ok = (text: string): Result => ({ content: [{ type: 'text', text }] });
 const bad = (text: string): Result => ({ content: [{ type: 'text', text }], isError: true });
 const fmtErrors = (errors: Diagnostic[]) => errors.map(e => `- [${e.code}]${e.nodeId ? ` ${e.nodeId}` : ''}${e.fieldPath ? ` (${e.fieldPath})` : ''}: ${e.message}`).join('\n');
-
-function blankDocument(id: string, name: string): EffectDocumentV2 {
-  const d = createF01Document();
-  d.id = id; d.name = name; d.tags = [];
-  const g = d.graphs[0];
-  g.nodes = g.nodes.filter(n => ['node-source', 'node-target', 'node-output'].includes(n.id));
-  g.edges = [];
-  d.editor.graphs[g.id].nodes = { 'node-source': { x: 0, y: 0 }, 'node-target': { x: 0, y: 160 }, 'node-output': { x: 1040, y: 0 } };
-  return d;
-}
 
 export function createVfxServer(options: VfxServerOptions = {}): McpServer {
   const root = resolve(options.root ?? process.cwd());
@@ -89,7 +79,7 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
   // ---------- documents ----------
   tool('vfx_new_document', `Create an in-memory document from a template (${TEMPLATES.join(', ')}). "blank" has Source/Target anchors and an EffectOutput only.`,
     { template: z.enum(TEMPLATES), id: z.string().regex(ID).optional(), name: z.string().optional() }, ({ template, id, name }) => {
-      const fresh = template === 'blank' ? blankDocument('doc', 'Blank') : template === 'f01' ? createF01Document() : template === 'forces' ? createForcesDemoDocument()
+      const fresh = template === 'blank' ? createBlankDocument('doc', 'Blank') : template === 'f01' ? createF01Document() : template === 'forces' ? createForcesDemoDocument()
         : template === 'lightning' ? createL01Document() : createL01AudioDocument();
       fresh.id = id ?? `doc-${template}-${docs.size + 1}`;
       if (name) fresh.name = name; else if (template === 'blank') fresh.name = fresh.id;

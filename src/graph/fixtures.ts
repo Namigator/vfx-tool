@@ -336,3 +336,14 @@ export function createForcesDemoDocument(): EffectDocumentV2 {
   Object.assign(pos, { 'node-gravity': { x: 780, y: 0 }, 'node-drag': { x: 1040, y: 0 }, 'node-billboard': { x: 1300, y: 0 }, 'node-output': { x: 1560, y: 0 } });
   return d;
 }
+
+/** New Blank (01 R01): Source/Target anchors and one EffectOutput, nothing else. */
+export function createBlankDocument(id = 'doc-blank', name = 'Untitled effect'): EffectDocumentV2 {
+  const d = createF01Document();
+  d.id = id; d.name = name; d.tags = [];
+  const g = d.graphs[0];
+  g.nodes = g.nodes.filter(n => ['node-source', 'node-target', 'node-output'].includes(n.id));
+  g.edges = [];
+  d.editor.graphs[g.id].nodes = { 'node-source': { x: 0, y: 0 }, 'node-target': { x: 0, y: 160 }, 'node-output': { x: 1040, y: 0 } };
+  return d;
+}

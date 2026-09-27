@@ -45,7 +45,7 @@ Status legend: ✅ done, ◐ partial, ✗ missing. "Floor" = part of the P2 capa
 | I8 | Values (WP02/03) | Constant, Curve, Gradient, ScalarMath, Oscillator, RandomRange, PublicParameter, OffsetAnchor, EventDelay, MergeEvents | ✗ (EffectTimeCurve only) | Curve, RandomRange |
 | I9 | Paths (WP03) | PathFollower (+arrival event), HelixPath, PathTransform, ParticlePaths | ◐ PathFollower ✅ 2026-09-27 (eased travel along the first path, held at end; anchor drives Emitter/SpriteRenderer/PointLight; arrival event triggers bursts; [SAW] mcp/examples/fireball.steps.json); HelixPath, PathTransform, ParticlePaths ✗ | PathFollower |
 | I10 | Editor (WP07) | Simple view, component templates, published knobs, add-component auto-wire | ✗ graph + inspector only | — |
-| I11 | Persistence (WP08) | save/open/autosave, bundles | ✗ | — |
+| I11 | Persistence (WP08) | save/open/autosave, bundles | ◐ 2026-09-27: autosaved local draft (localStorage, restored on reload), New blank, Open/Save .vfx.json in the editor header ([SAW] reload restores draft). IndexedDB, multiple projects, asset bytes, bundles/ZIP ✗ | — |
 | I12 | Runtime (WP03) | worker simulation, seek checkpoints | ✗ main-thread replay | — |
 | I13 | Agent tooling (new) | MCP server so an agent can build/edit/compile/simulate/render/listen to effects without the UI (user request 2026-09-26) | ◐ WP-MCP1 core done 2026-09-26: 17 tools (`mcp/server.ts`, `.mcp.json`); visual loop via `vfx_preview_url` + editor `?doc=`; WP-MCP2 ✅ `vfx_render_frames` (headless Chrome + SwiftShader WebGL on capture.html) returns PNGs in the tool result | — |
 
