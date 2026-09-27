@@ -1,9 +1,10 @@
-// Portable .vfxpack archive (13-PERSISTENCE "Export formats" 2, first slice): a ZIP (stored entries, no
-// compression) holding manifest.json, effect.json, assets/<sha256>.<ext>, metadata/<assetId>.json and
+// Portable .vfxpack archive (13-PERSISTENCE "Export formats" 2, first slice): a ZIP (Deflate via the vetted
+// fflate 0.8.3 for JSON/text, stored for already-compressed images) holding manifest.json, effect.json, assets/<sha256>.<ext>, metadata/<assetId>.json and
 // licenses/NOTICE.txt. Pure: bytes in, bytes out. Import validates paths, limits, entry types and checksums
 // before anything is handed to the editor; the caller commits atomically.
 import type { EffectDocumentV2 } from './types.ts';
 import { sha256Hex } from '../assets/importTexture.ts';
+import { deflateSync, inflateSync } from 'fflate';
 
 export const PACK_FORMAT = 'vfx-studio-package';
 export const PACK_VERSION = 2;
@@ -16,21 +17,23 @@ export function crc32(b: Uint8Array): number { let c = 0xffffffff; for (let i = 
 export type ZipEntry = { path: string; bytes: Uint8Array };
 
 /** Writes stored (method 0) entries with UTF-8 names; deterministic (fixed DOS timestamp 1980-01-01). */
-export function writeZip(entries: ZipEntry[]): Uint8Array {
+export function writeZip(entries: ZipEntry[], opts: { deflate?: boolean } = {}): Uint8Array {
   const enc = new TextEncoder(), parts: Uint8Array[] = [], central: Uint8Array[] = [];
   let offset = 0;
   for (const e of entries) {
     const name = enc.encode(e.path), crc = crc32(e.bytes), n = e.bytes.length;
+    const packed = opts.deflate && !/.(png|jpe?g|webp)$/i.test(e.path) ? deflateSync(e.bytes, { level: 6 }) : undefined;
+    const useDeflate = packed !== undefined && packed.length < n, data = useDeflate ? packed : e.bytes, c = data.length, method = useDeflate ? 8 : 0;
     const local = new Uint8Array(30 + name.length), lv = new DataView(local.buffer);
-    lv.setUint32(0, 0x04034b50, true); lv.setUint16(4, 20, true); lv.setUint16(6, 0x0800, true); lv.setUint16(8, 0, true);
-    lv.setUint16(10, 0, true); lv.setUint16(12, 0x21, true); lv.setUint32(14, crc, true); lv.setUint32(18, n, true); lv.setUint32(22, n, true);
+    lv.setUint32(0, 0x04034b50, true); lv.setUint16(4, 20, true); lv.setUint16(6, 0x0800, true); lv.setUint16(8, method, true);
+    lv.setUint16(10, 0, true); lv.setUint16(12, 0x21, true); lv.setUint32(14, crc, true); lv.setUint32(18, c, true); lv.setUint32(22, n, true);
     lv.setUint16(26, name.length, true); lv.setUint16(28, 0, true); local.set(name, 30);
     const cen = new Uint8Array(46 + name.length), cv = new DataView(cen.buffer);
-    cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true); cv.setUint16(8, 0x0800, true); cv.setUint16(10, 0, true);
-    cv.setUint16(12, 0, true); cv.setUint16(14, 0x21, true); cv.setUint32(16, crc, true); cv.setUint32(20, n, true); cv.setUint32(24, n, true);
+    cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true); cv.setUint16(8, 0x0800, true); cv.setUint16(10, method, true);
+    cv.setUint16(12, 0, true); cv.setUint16(14, 0x21, true); cv.setUint32(16, crc, true); cv.setUint32(20, c, true); cv.setUint32(24, n, true);
     cv.setUint16(28, name.length, true); cv.setUint32(42, offset, true); cen.set(name, 46);
-    parts.push(local, e.bytes); central.push(cen);
-    offset += local.length + n;
+    parts.push(local, data); central.push(cen);
+    offset += local.length + c;
   }
   const cenSize = central.reduce((s, c) => s + c.length, 0), end = new Uint8Array(22), ev = new DataView(end.buffer);
   ev.setUint32(0, 0x06054b50, true); ev.setUint16(8, entries.length, true); ev.setUint16(10, entries.length, true); ev.setUint32(12, cenSize, true); ev.setUint32(16, offset, true);
@@ -67,19 +70,25 @@ export function readZip(b: Uint8Array): { ok: true; entries: ZipEntry[] } | { ok
     p += 46 + nlen + xlen + clen;
     if (path.endsWith('/')) continue; // Directory entries carry no data.
     if (flags & 1) return { ok: false, message: `Entry "${path}" is encrypted.` };
-    if (method !== 0) return { ok: false, message: `Entry "${path}" uses unsupported compression (method ${method}); packs are stored uncompressed.` };
+    if (method !== 0 && method !== 8) return { ok: false, message: `Entry "${path}" uses unsupported compression (method ${method}); only stored and Deflate are accepted.` };
     if (((extAttr >>> 16) & 0o170000) === 0o120000) return { ok: false, message: `Entry "${path}" is a symbolic link.` };
     if (!safeArchivePath(path)) return { ok: false, message: `Unsafe entry path "${path}".` };
     const norm = path.normalize('NFC').toLowerCase();
     if (seen.has(norm)) return { ok: false, message: `Duplicate entry "${path}".` };
     seen.add(norm);
-    if (csize !== usize) return { ok: false, message: `Entry "${path}" sizes disagree.` };
+    if (method === 0 && csize !== usize) return { ok: false, message: `Entry "${path}" sizes disagree.` };
     expanded += usize;
     if (expanded > LIMITS.expanded) return { ok: false, message: 'Archive expands beyond 256 MiB.' };
     if (local + 30 > b.length || v.getUint32(local, true) !== 0x04034b50) return { ok: false, message: `Entry "${path}" has no local header.` };
     const start = local + 30 + v.getUint16(local + 26, true) + v.getUint16(local + 28, true);
-    if (start + usize > b.length) return { ok: false, message: `Entry "${path}" runs past the end of the archive.` };
-    const bytes = b.slice(start, start + usize);
+    if (start + csize > b.length) return { ok: false, message: `Entry "${path}" runs past the end of the archive.` };
+    let bytes: Uint8Array;
+    if (method === 0) bytes = b.slice(start, start + usize);
+    else {
+      // Inflate into a buffer of the declared size; a stream that claims less than it holds fails the size/CRC checks.
+      try { bytes = inflateSync(b.subarray(start, start + csize), { out: new Uint8Array(usize) }); } catch { return { ok: false, message: `Entry "${path}" is not valid Deflate data.` }; }
+      if (bytes.length !== usize) return { ok: false, message: `Entry "${path}" inflated to ${bytes.length} bytes, not the declared ${usize}.` };
+    }
     if (crc32(bytes) !== crc) return { ok: false, message: `Entry "${path}" failed its CRC check.` };
     entries.push({ path, bytes });
   }
@@ -121,7 +130,7 @@ export async function buildPack(doc: EffectDocumentV2, bytes: Map<string, PackAs
     format: PACK_FORMAT, packageVersion: PACK_VERSION, documentPath: 'effect.json', schemaVersion: doc.schemaVersion, runtimeVersion: doc.runtimeVersion,
     files: manifest, creationTool: opts.tool ?? 'vfx-studio', state: missing.length ? 'draft' : 'validated', capabilities: [],
   };
-  return { ok: true, value: writeZip([{ path: 'manifest.json', bytes: enc.encode(JSON.stringify(m, null, 2)) }, ...files]) };
+  return { ok: true, value: writeZip([{ path: 'manifest.json', bytes: enc.encode(JSON.stringify(m, null, 2)) }, ...files], { deflate: true }) };
 }
 
 export type ReadPack = { document: unknown; manifest: PackManifest; assets: PackAsset[] };

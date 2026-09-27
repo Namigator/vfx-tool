@@ -9,8 +9,14 @@
 - **Acceptance test for "tool finished":** hand the tool to a model (fresh session, no code access, graph/layer UI only) and have it build a good-looking effect — first target: match `docs/v2-plan/references/standalone-flamethrower/flamethrower.html`. Every gap it hits becomes a new generic node/layer feature, then repeat.
 - Quality bars: `docs/v2-plan/references/original-lightning/lightning-arc.html` (lightning) and `docs/v2-plan/references/standalone-flamethrower/flamethrower.html` (fire; open via `http://127.0.0.1:5174/docs/v2-plan/references/standalone-flamethrower/flamethrower.html`, `?t=<sec>` freezes a frame). Flamethrower is a standalone canvas2D demo — 4 layers (core, tongues, embers, smoke) + light + synthesized audio, 8 procedural flame shapes × 12 frames; tuned above 02-FIRE spec (tongues 420/s, cone 6°). [SAW] still frames in the in-app browser only; audio not listened to.
 
+## User rules (2026-09-27)
+- User is a non-engineer (visual/sound feedback only). Decide technical questions; ask only visual questions with exact steps.
+- Libraries: add without asking if vetted (publisher, license, adoption, deps, install scripts, source scan); else a vettable alternative; else build.
+- If the user states an architecture direction: say once if I disagree; once decided it is final.
+- SOUND IS PARKED ("ignore the sounds for now"): no audio work, no listening asks; keep existing audio compiling.
+
 ## Now (2026-09-27 overnight session)
-- Working through docs/v2-plan/27-GAP-AUDIT.md; every item: runtime/compiler + tests + an MCP recipe rendered with vfx_render_frames and looked at. 484 tests + tsc pass — now 505 (gate: tsc && tests before every commit).
+- Working through docs/v2-plan/27-GAP-AUDIT.md; every item: runtime/compiler + tests + an MCP recipe rendered with vfx_render_frames and looked at. 484 tests + tsc pass — now 506 (gate: tsc && tests before every commit).
 - Landed since the audit: emitter shapes/speed/aim; Gravity, Drag, NoiseForce, Attract, Vortex, GroundCollision; colour/size/opacity over life, spin, velocity stretch + pivot, worldAxis alignment; textured flipbooks (library to 10-ASSETS); ParticleEvents child emission; ParticleTrail, MotionTrail, SpriteRenderer, PointLight, MeshRenderer (procedural rocks/shards); PathFollower (projectiles), HelixPath, PathTransform; rateOverWindow; value nodes RandomRange/Constant/ScalarMath (per-instance unit, chainable, once per cast); EventDelay + MergeEvents (emitter, presentation and audio triggers); Emitter.inheritVelocity; ScreenFlash + CameraImpulse (reduced-motion aware); textured ribbons; bloom + ACES; light/dark arena; AudioEnvelope + AudioFilter, repeat-schedule audio, AV-synced Play/Loop; persistence slice; 18 components with knobs and layered SFX (Add component + Controls panel); MCP with 24 tools incl. headless frames, texture import and .vfxpack export/open.
 - Evidence recipes: mcp/examples/*.steps.json (run: node mcp/run-steps.mjs <file>; frames land in work/mcp/frames/). Components are generated from them: node tools/build-components.mjs.
 - AV sync: editor Play/Restart start the mix at the current tick (800 samples/tick), Pause/scrub stop it; Sound on/off toggle. [RAN] status in browser; not listened to.
@@ -18,7 +24,7 @@
 
 ## MCP (agent tooling)
 - .mcp.json registers server `vfx` → node --experimental-strip-types --no-warnings mcp/vfx-mcp.ts (loads in a NEW Claude Code session). Tools: vfx_list_node_types, vfx_describe_node_type, vfx_new_document (blank/f01/forces/lightning/lightning-audio), vfx_open/save/get/set_document, vfx_set_anchor, vfx_add/remove_node, vfx_set_params, vfx_connect/disconnect, vfx_compile, vfx_sample_particles, vfx_render_audio, vfx_preview_url, vfx_list_components, vfx_add_component, vfx_list_controls, vfx_set_control, vfx_render_frames (PNG via headless Chrome → /capture.html?doc=…&tick=…[&glow=0]; needs the vite dev server; frames in work/mcp/frames/).
-- Deps: @modelcontextprotocol/sdk 1.30.1, zod 4.6.5 (user-approved 2026-09-26). [RAN] tests/v2-mcp.test.ts.
+- Deps: @modelcontextprotocol/sdk 1.30.1, zod 4.6.5 (user-approved 2026-09-26); fflate 0.8.3 (vetted 2026-09-27, see 27-GAP-AUDIT I11; npm install crashes with ERESOLVE here, so it was placed from the checksum-verified tarball). [RAN] tests/v2-mcp.test.ts.
 
 ## Rendering
 - HDR composer + UnrealBloom (08 defaults .8/.45/1.0) + ACES/sRGB OutputPass; background via scene.background (renderer clear colour double-encoded through the composer). Glow toggle in the transport.

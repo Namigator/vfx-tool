@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildPack, crc32, readPack, readZip, writeZip } from '../src/model/vfxpack.ts';
+import { zipSync } from 'fflate';
 import { createTextureAsset } from '../src/assets/importTexture.ts';
 import { createF01Document } from '../src/graph/fixtures.ts';
 import { validateDocument } from '../src/model/document.ts';
@@ -23,7 +24,7 @@ test('zip: CRC-32 reference value; stored entries round-trip byte-exactly', () =
   assert.deepEqual(z.ok && z.entries.map(e => [e.path, [...e.bytes]]), [['a.txt', [...enc('hello')]], ['dir/b.bin', [0, 255, 1]]]);
 });
 
-test('zip: unsafe paths, duplicates and compressed entries are rejected', () => {
+test('zip: unsafe paths, duplicates and unsupported (bzip2) compression are rejected', () => {
   for (const p of ['../evil', '/abs', 'C:/x', 'a\\b', 'a//b', './a']) {
     const r = readZip(writeZip([{ path: p, bytes: enc('x') }]));
     assert.ok(!r.ok && /Unsafe/.test(r.message), p);
@@ -32,7 +33,7 @@ test('zip: unsafe paths, duplicates and compressed entries are rejected', () => 
   assert.ok(!dup.ok && /Duplicate/.test(dup.message));
   const z = writeZip([{ path: 'a.txt', bytes: enc('x') }]);
   const v = new DataView(z.buffer), cen = v.getUint32(z.length - 22 + 16, true);
-  v.setUint16(cen + 10, 8, true);
+  v.setUint16(cen + 10, 12, true);
   const c = readZip(z);
   assert.ok(!c.ok && /compression/.test(c.message));
 });
@@ -67,4 +68,20 @@ test('pack: tampered bytes, unlisted entries and missing assets fail; draft pack
   if (!draft.ok) assert.fail(draft.message);
   const d = await readPack(draft.value);
   assert.ok(d.ok && d.value.manifest.state === 'draft' && d.value.assets.length === 0);
+});
+
+test('zip: Deflate archives from another writer open; a lying uncompressed size is caught; packs compress JSON', async () => {
+  const text = enc('effect '.repeat(500));
+  const other = readZip(zipSync({ 'notes/a.txt': text, 'b.bin': new Uint8Array([1, 2, 3]) }, { level: 9 }));
+  assert.ok(other.ok, !other.ok ? other.message : '');
+  assert.deepEqual(other.ok && [...other.entries.find(e => e.path === 'notes/a.txt')!.bytes], [...text]);
+  const z = writeZip([{ path: 'a.txt', bytes: text }], { deflate: true });
+  assert.ok(z.length < text.length / 5, 'deflated');
+  const v = new DataView(z.buffer), cen = v.getUint32(z.length - 22 + 16, true);
+  v.setUint32(cen + 24, 100, true);
+  const lie = readZip(z);
+  assert.ok(!lie.ok && /inflated|valid Deflate|CRC/.test(lie.message), !lie.ok ? lie.message : 'accepted');
+  const { doc, bytes, sha } = await docWithTexture();
+  const p = await buildPack(doc, new Map([[sha, { sha256: sha, mime: 'image/png', bytes }]]));
+  assert.ok(p.ok && (await readPack(p.value)).ok);
 });
