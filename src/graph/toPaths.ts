@@ -37,6 +37,37 @@ import { EFFECT_TIME_NODES, effectTimeValue } from './effectTime.ts';
 import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { createRegistry } from './registry.ts';
+import { compileParticlePreview } from './toParticles.ts';
+import { ParticleSimulation, type ParticleEmitterDescriptor, type ParticleState } from '../runtime/particles.ts';
+import { fnv1a32Utf8 } from '../runtime/random.ts';
+
+/**
+ * ParticlePaths simulation cache: per compiled descriptor, pristine checkpoints every 30 ticks, so
+ * per-tick path compiles do not replay the particle system from tick 0 (bounded to 16 descriptors).
+ */
+const particleCheckpoints = new Map<string, ParticleSimulation[]>();
+let particleProbeDepth = 0;
+function particlesAtTick(desc: ParticleEmitterDescriptor, tick: number): ParticleState[] | string {
+  const key = JSON.stringify(desc);
+  let cps = particleCheckpoints.get(key);
+  if (!cps) {
+    const c = ParticleSimulation.create(desc);
+    if (!c.ok) return c.errors.map(e => e.message).join(' ');
+    cps = [c.value];
+    particleCheckpoints.set(key, cps);
+    if (particleCheckpoints.size > 16) particleCheckpoints.delete(particleCheckpoints.keys().next().value as string);
+  }
+  const end = Math.min(tick, desc.durationTicks);
+  let base = cps[0];
+  for (const c of cps) if (c.tick <= end && c.tick > base.tick) base = c;
+  const sim = base.clone();
+  while (sim.tick < end) {
+    const r = sim.advance();
+    if (!r.ok) return r.errors.map(e => e.message).join(' ');
+    if (sim.tick % 30 === 0 && !cps.some(c => c.tick === sim.tick)) cps.push(sim.clone());
+  }
+  return sim.snapshot().particles;
+}
 
 export type PathPreviewLayer = {
   /** RibbonRenderer node ID. */
@@ -303,6 +334,31 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
         const q = param(n, 'rotation') as [number, number, number, number], ql = Math.hypot(q[0], q[1], q[2], q[3]) || 1;
         const qn: [number, number, number, number] = [q[0] / ql, q[1] / ql, q[2] / ql, q[3] / ql];
         out = new Map([['paths', guard(id, () => input.map(p => transformPath(p, param(n, 'offset') as Vec3, qn, num(n, 'scale'))))]]);
+        break;
+      }
+      case 'ParticlePaths': {
+        if (!on) { out = new Map([['paths', []]]); break; }
+        noDrivenParams(n, ['particles', 'anchor']);
+        const cs = into(id, 'particles');
+        if (cs.length !== 1 || cs[0].source.kind !== 'node') fail('MISSING_REFERENCE', `ParticlePaths "${id}" needs exactly one particle source.`, id);
+        const anchor = anchorOf(n, 'anchor');
+        if (particleProbeDepth > 2) fail('GRAPH_CYCLE', `ParticlePaths "${id}" feeds the motion of its own particle source.`, id);
+        particleProbeDepth++;
+        let sys;
+        try { sys = compileParticlePreview(input, { audioHandled: true, ribbonsHandled: true, probeParticles: (cs[0].source as { nodeId: string }).nodeId }); } finally { particleProbeDepth--; }
+        if (!sys.ok) { errors.push(...sys.errors); throw new Fail('particle source'); }
+        const desc = sys.value.systems[0]?.descriptor;
+        const alive = desc ? particlesAtTick(desc, effectTick) : [];
+        if (typeof alive === 'string') fail('INVALID_VALUE', `ParticlePaths "${id}" particle source failed: ${alive}`, id);
+        const t = doc.rootTransform, q = t.rotation, inv: Quaternion = [-q[0], -q[1], -q[2], q[3]];
+        const toLocal = (p: Vec3): Vec3 => { const r = rotate(inv, [p[0] - t.position[0], p[1] - t.position[1], p[2] - t.position[2]]); return [r[0] / t.scale, r[1] / t.scale, r[2] / t.scale]; };
+        const pick = [...(alive as ParticleState[])].map(p => ({ p, h: fnv1a32Utf8(`${n.node.randomStreamId}:${p.id}`) }))
+          .sort((a, b) => a.h - b.h || (a.p.id < b.p.id ? -1 : 1)).slice(0, num(n, 'maxCount'));
+        const toAnchor = param(n, 'direction') === 'particleToAnchor', samples = num(n, 'samples');
+        out = new Map([['paths', pick.map(({ p }) => guard(id, () => {
+          const pl = toLocal(p.position);
+          return linePath(p.id, toAnchor ? pl : anchor, toAnchor ? anchor : pl, samples);
+        }))]]);
         break;
       }
       case 'JaggedPath': {

@@ -454,6 +454,20 @@ function cameraImpulse(): NodeSpec {
   });
 }
 
+/** 25 ParticlePaths: paths from an anchor to up to maxCount live particles (stable selection by particle ID), e.g. charge tethers. */
+function particlePathsNode(): NodeSpec {
+  return node('ParticlePaths', {
+    inputs: [port({ id: 'particles', label: 'Particles', type: 'particles', required: true }), port({ id: 'anchor', label: 'Anchor', type: 'anchor', required: true })],
+    outputs: [port({ id: 'paths', label: 'Paths', type: 'paths' })],
+    parameters: [
+      param({ id: 'maxCount', label: 'Max count', type: 'integer', unit: 'none', default: 4, min: 1, max: 128, step: 1 }),
+      param({ id: 'direction', label: 'Direction', type: 'enum', unit: 'none', default: 'anchorToParticle', choices: ['anchorToParticle', 'particleToAnchor'] }),
+      param({ id: 'samples', label: 'Samples', type: 'integer', unit: 'none', default: 16, min: 2, max: 128, step: 1, description: 'Points per path (more lets JaggedPath displace it).' }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
 function particleTrail(): NodeSpec {
   return node('ParticleTrail', {
     inputs: [
@@ -859,7 +873,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
     anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), constantNode(), scalarMath(), offsetAnchor(), eventDelay(), mergeEvents(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
-    linePath(), bezierPath(), helixPathNode(), pathTransformNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(), oscillator(),
+    linePath(), bezierPath(), helixPathNode(), pathTransformNode(), particlePathsNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(), oscillator(),
     audioSource(), audioEnvelope(), audioFilter(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),
   ];

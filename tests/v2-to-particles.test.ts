@@ -1,3 +1,4 @@
+import { compilePathPreview } from '../src/graph/toPaths.ts';
 import { waveAt } from '../src/graph/effectTime.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -575,4 +576,23 @@ test('OffsetAnchor chains add offsets to the emitter source; disabled passes thr
   const base = plan(f01()).systems[0].descriptor.sourcePosition;
   assert.deepEqual(src(true), [base[0] + 1, base[1] + 0.5, base[2] - 2]);
   assert.deepEqual(src(false), [base[0], base[1] + 0.5, base[2] - 2]);
+});
+
+test('ParticlePaths: anchor-to-particle lines to a stable selection of live particles, capped by maxCount', () => {
+  const d = f01(dd => {
+    root(dd).nodes.push(node('node-pp', 'ParticlePaths', { maxCount: 3, samples: 4 }));
+    root(dd).edges.push(edge('e-pp', 'node-emitter', 'particles', 'node-pp', 'particles'), edge('e-pa', 'node-source', 'out', 'node-pp', 'anchor'));
+  });
+  const probe = (tick: number) => { const r = compilePathPreview(d, tick, { probe: { nodeId: 'node-pp', port: 'paths' } }); if (!r.ok) assert.fail(JSON.stringify(r.errors)); return r.value.probe!; };
+  const sys = plan(f01()).systems[0].descriptor, alive = sampleParticlesAtTick(sys, 10);
+  if (!alive.ok) assert.fail('sample');
+  const paths = probe(10);
+  assert.equal(paths.length, Math.min(3, alive.value.particles.length));
+  for (const p of paths) {
+    assert.equal(p.points.length, 4);
+    assert.deepEqual(p.points[0], sys.sourcePosition);
+    const hit: { position: number[] } | undefined = alive.value.particles.find(q => q.id === p.id);
+    assert.ok(hit && p.points[3].every((v, i) => Math.abs(v - hit.position[i]) < 1e-9));
+  }
+  assert.deepEqual(probe(10).map(p => p.id), paths.map(p => p.id), 'stable selection');
 });

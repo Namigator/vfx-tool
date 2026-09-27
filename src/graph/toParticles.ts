@@ -132,6 +132,8 @@ export type ParticlePreviewOptions = {
    * point compile then skips root RibbonRenderer sinks instead of reporting them. Default false.
    */
   ribbonsHandled?: boolean;
+  /** Compile only the particle chain ending at this node (ParticlePaths input) and return it as the single system; no layers. */
+  probeParticles?: string;
 };
 
 export function compileParticlePreview(input: unknown, options: ParticlePreviewOptions = {}): ValidationResult<ParticlePreviewPlan> {
@@ -567,6 +569,24 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     if (shaped && shape !== 'path') d.emission = { shape: d.shape, axis, radius: num(em, 'radius') * scale, coneAngle: num(em, 'coneAngle'), speed: { min: speedMin * scale, max: speedMax * scale } };
     return d;
   };
+
+  if (options.probeParticles !== undefined) {
+    const empty = { durationTicks: doc.durationTicks, layers: [], trails: [], lights: [], meshes: [], presentation: { flashes: [], impulses: [] } };
+    try {
+      const n = nodes.get(options.probeParticles);
+      if (!n) return fail('MISSING_REFERENCE', `Probe node "${options.probeParticles}" is not in the expanded graph.`, options.probeParticles);
+      const chain = traceFrom(n, n.node.id);
+      if (!chain) return { ok: true, value: { ...empty, systems: [] }, warnings };
+      const d = buildDescriptor(chain);
+      if (errors.length) return { ok: false, errors };
+      const v = validateParticleDescriptor(d);
+      if (!v.ok) return { ok: false, errors: v.errors.map(e => ({ ...e, nodeId: e.nodeId ?? n.node.id })) };
+      return { ok: true, value: { ...empty, systems: [{ id: chain.terminalId, descriptor: v.value }] }, warnings };
+    } catch (e) {
+      if (!(e instanceof Fail)) throw e;
+      return { ok: false, errors };
+    }
+  }
 
   // ---------- layers ----------
   const systems: ParticlePreviewSystem[] = [];
