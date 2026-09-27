@@ -2724,6 +2724,1547 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   ]
  },
  {
+  "id": "ice-shards",
+  "label": "Ice shards",
+  "description": "Lit crystal shards erupting from Target with frost mist and glints; shards slide to rest.",
+  "durationTicks": 150,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "burst",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 5,
+     "durationTicks": 1,
+     "mode": "once"
+    }
+   },
+   {
+    "id": "shards",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "coneAngle": 0.55,
+     "radius": 0.25,
+     "burst": 28,
+     "rate": 0,
+     "speedMin": 4,
+     "speedMax": 7.5,
+     "lifetimeMin": 1.6,
+     "lifetimeMax": 2.2
+    }
+   },
+   {
+    "id": "shardip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.18,
+     "sizeMax": 0.4,
+     "rotationMin": 0,
+     "rotationMax": 0,
+     "angularVelocityMin": 0,
+     "angularVelocityMax": 0,
+     "color": {
+      "srgb": "#A8E6FF",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "grav",
+    "type": "Gravity"
+   },
+   {
+    "id": "ground",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "slide",
+     "friction": 0.9
+    }
+   },
+   {
+    "id": "icemat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "emission": 0.35
+    }
+   },
+   {
+    "id": "shardmesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "shard",
+     "orientation": "velocity",
+     "colorOverLife": {
+      "stops": [
+       {
+        "position": 0,
+        "color": {
+         "srgb": "#FFFFFF",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 1,
+        "color": {
+         "srgb": "#9ED8FF",
+         "alpha": 1
+        }
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "frost",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.6,
+     "burst": 50,
+     "rate": 0,
+     "speedMin": 0.4,
+     "speedMax": 1.6,
+     "lifetimeMin": 1,
+     "lifetimeMax": 1.8
+    }
+   },
+   {
+    "id": "frostip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.35,
+     "sizeMax": 0.7,
+     "rotationMin": 0,
+     "rotationMax": 6.28,
+     "angularVelocityMin": -0.6,
+     "angularVelocityMax": 0.6,
+     "color": {
+      "srgb": "#CFEFFF",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "frostdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 2.2
+    }
+   },
+   {
+    "id": "frostmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "additive",
+     "opacity": 0.35
+    }
+   },
+   {
+    "id": "frostbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 1,
+        "y": 2
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.1,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "glints",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.4,
+     "burst": 60,
+     "rate": 0,
+     "speedMin": 1,
+     "speedMax": 4,
+     "lifetimeMin": 0.5,
+     "lifetimeMax": 1.2
+    }
+   },
+   {
+    "id": "glintip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.05,
+     "sizeMax": 0.1,
+     "rotationMin": 0,
+     "rotationMax": 6.28,
+     "angularVelocityMin": -6,
+     "angularVelocityMax": 6
+    }
+   },
+   {
+    "id": "glintmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "variant": 3,
+     "blend": "additive",
+     "tint": {
+      "srgb": "#DFF6FF",
+      "alpha": 1
+     },
+     "emission": 1.5
+    }
+   },
+   {
+    "id": "glintbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "shards.anchor"
+   ],
+   [
+    "burst.start",
+    "shards.trigger"
+   ],
+   [
+    "shards.particles",
+    "shardip.particles"
+   ],
+   [
+    "shardip.particles",
+    "grav.particles"
+   ],
+   [
+    "grav.particles",
+    "ground.particles"
+   ],
+   [
+    "ground.particles",
+    "shardmesh.particles"
+   ],
+   [
+    "icemat.material",
+    "shardmesh.material"
+   ],
+   [
+    "node-target.out",
+    "frost.anchor"
+   ],
+   [
+    "burst.start",
+    "frost.trigger"
+   ],
+   [
+    "frost.particles",
+    "frostip.particles"
+   ],
+   [
+    "frostip.particles",
+    "frostdrag.particles"
+   ],
+   [
+    "frostdrag.particles",
+    "frostbb.particles"
+   ],
+   [
+    "frostmat.material",
+    "frostbb.material"
+   ],
+   [
+    "node-target.out",
+    "glints.anchor"
+   ],
+   [
+    "burst.start",
+    "glints.trigger"
+   ],
+   [
+    "glints.particles",
+    "glintip.particles"
+   ],
+   [
+    "glintip.particles",
+    "glintbb.particles"
+   ],
+   [
+    "glintmat.material",
+    "glintbb.material"
+   ],
+   [
+    "frostbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "shardmesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "glintbb.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "shards",
+    "label": "Shard count",
+    "value": 28,
+    "bindings": [
+     {
+      "node": "shards",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "force",
+    "label": "Burst speed",
+    "value": 7.5,
+    "bindings": [
+     {
+      "node": "shards",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "shards",
+      "parameter": "speedMin",
+      "scale": 0.53
+     }
+    ]
+   },
+   {
+    "id": "size",
+    "label": "Shard size",
+    "value": 0.4,
+    "bindings": [
+     {
+      "node": "shardip",
+      "parameter": "sizeMax"
+     },
+     {
+      "node": "shardip",
+      "parameter": "sizeMin",
+      "scale": 0.45
+     }
+    ]
+   },
+   {
+    "id": "frost",
+    "label": "Frost amount",
+    "value": 50,
+    "bindings": [
+     {
+      "node": "frost",
+      "parameter": "burst"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "poison-cloud",
+  "label": "Poison cloud",
+  "description": "Seeping green cloud with rising bubbles and a sickly floor glow; ramps in and fades.",
+  "durationTicks": 240,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "seep",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 200,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "cloud",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.8,
+     "rate": 45,
+     "burst": 0,
+     "speedMin": 0.2,
+     "speedMax": 0.6,
+     "lifetimeMin": 2.5,
+     "lifetimeMax": 3.5,
+     "rateOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.1,
+        "y": 1
+       },
+       {
+        "x": 0.85,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "cloudip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.6,
+     "sizeMax": 1.1,
+     "rotationMin": 0,
+     "rotationMax": 6.28,
+     "angularVelocityMin": -0.4,
+     "angularVelocityMax": 0.4,
+     "color": {
+      "srgb": "#7CD13A",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "cloudlift",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      0.25,
+      0
+     ]
+    }
+   },
+   {
+    "id": "cloudnoise",
+    "type": "NoiseForce",
+    "params": {
+     "amplitude": 0.8,
+     "frequency": 0.6,
+     "evolution": 0.3
+    }
+   },
+   {
+    "id": "clouddrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1.4
+    }
+   },
+   {
+    "id": "cloudmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "opacity": 0.5
+    }
+   },
+   {
+    "id": "cloudbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 1,
+        "y": 2
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.2,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     },
+     "colorOverLife": {
+      "stops": [
+       {
+        "position": 0,
+        "color": {
+         "srgb": "#C8FF6A",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 1,
+        "color": {
+         "srgb": "#3A5A20",
+         "alpha": 1
+        }
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "bubbles",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.7,
+     "rate": 30,
+     "burst": 0,
+     "speedMin": 0.3,
+     "speedMax": 0.9,
+     "lifetimeMin": 0.8,
+     "lifetimeMax": 1.6
+    }
+   },
+   {
+    "id": "bubbleip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.06,
+     "sizeMax": 0.14,
+     "rotationMin": 0,
+     "rotationMax": 0,
+     "angularVelocityMin": 0,
+     "angularVelocityMax": 0,
+     "color": {
+      "srgb": "#B6FF5C",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "bubblemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "droplet",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#B6FF5C",
+      "alpha": 1
+     },
+     "emission": 0.4
+    }
+   },
+   {
+    "id": "bubblebb",
+    "type": "BillboardRenderer",
+    "params": {
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.4
+       },
+       {
+        "x": 0.9,
+        "y": 1.2
+       },
+       {
+        "x": 1,
+        "y": 1.6
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.92,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "glow",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#8CFF40",
+      "alpha": 1
+     },
+     "intensity": 18,
+     "range": 4,
+     "flicker": 0.2,
+     "flickerRate": 3,
+     "intensityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.1,
+        "y": 1
+       },
+       {
+        "x": 0.85,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "cloud.anchor"
+   ],
+   [
+    "seep.window",
+    "cloud.window"
+   ],
+   [
+    "cloud.particles",
+    "cloudip.particles"
+   ],
+   [
+    "cloudip.particles",
+    "cloudlift.particles"
+   ],
+   [
+    "cloudlift.particles",
+    "cloudnoise.particles"
+   ],
+   [
+    "cloudnoise.particles",
+    "clouddrag.particles"
+   ],
+   [
+    "clouddrag.particles",
+    "cloudbb.particles"
+   ],
+   [
+    "cloudmat.material",
+    "cloudbb.material"
+   ],
+   [
+    "node-target.out",
+    "bubbles.anchor"
+   ],
+   [
+    "seep.window",
+    "bubbles.window"
+   ],
+   [
+    "bubbles.particles",
+    "bubbleip.particles"
+   ],
+   [
+    "bubbleip.particles",
+    "bubblebb.particles"
+   ],
+   [
+    "bubblemat.material",
+    "bubblebb.material"
+   ],
+   [
+    "node-target.out",
+    "glow.anchor"
+   ],
+   [
+    "seep.window",
+    "glow.window"
+   ],
+   [
+    "cloudbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "bubblebb.visual",
+    "node-output.visual"
+   ],
+   [
+    "glow.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "amount",
+    "label": "Cloud rate",
+    "value": 45,
+    "bindings": [
+     {
+      "node": "cloud",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "spread",
+    "label": "Spread",
+    "value": 0.8,
+    "bindings": [
+     {
+      "node": "cloud",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "bubbles",
+    "label": "Bubbles",
+    "value": 30,
+    "bindings": [
+     {
+      "node": "bubbles",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "glow",
+    "label": "Glow",
+    "value": 18,
+    "bindings": [
+     {
+      "node": "glow",
+      "parameter": "intensity"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "shadow-vortex",
+  "label": "Shadow vortex",
+  "description": "Dark wisps pulled and swirled into a violet void core with a flickering violet light.",
+  "durationTicks": 180,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "gather",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 150,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "wisps",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 2,
+     "rate": 220,
+     "burst": 0,
+     "speedMin": 0,
+     "speedMax": 0.3,
+     "lifetimeMin": 1.2,
+     "lifetimeMax": 1.8
+    }
+   },
+   {
+    "id": "wispip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.35,
+     "sizeMax": 0.7,
+     "rotationMin": 0,
+     "rotationMax": 6.28,
+     "angularVelocityMin": -1.5,
+     "angularVelocityMax": 1.5,
+     "color": {
+      "srgb": "#2A1840",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "pull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 9,
+     "softRadius": 0.3,
+     "killRadius": 0.2
+    }
+   },
+   {
+    "id": "swirl",
+    "type": "Vortex",
+    "params": {
+     "tangential": 7,
+     "inward": 0,
+     "falloff": 2.5
+    }
+   },
+   {
+    "id": "drag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1.3
+    }
+   },
+   {
+    "id": "wispmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "opacity": 0.75
+    }
+   },
+   {
+    "id": "wispbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 1.8,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1.3
+       },
+       {
+        "x": 1,
+        "y": 0.4
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.25,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     },
+     "colorOverLife": {
+      "stops": [
+       {
+        "position": 0,
+        "color": {
+         "srgb": "#7A55B8",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 0.6,
+        "color": {
+         "srgb": "#2A1846",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 1,
+        "color": {
+         "srgb": "#07040D",
+         "alpha": 1
+        }
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "corematerial",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "variant": 1,
+     "blend": "additive",
+     "tint": {
+      "srgb": "#9A4CFF",
+      "alpha": 1
+     },
+     "emission": 1.6
+    }
+   },
+   {
+    "id": "core",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 2.2,
+     "spin": -2,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.3
+       },
+       {
+        "x": 0.9,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.2,
+        "y": 0.8
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "lamp",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#8A4CFF",
+      "alpha": 1
+     },
+     "intensity": 35,
+     "range": 5,
+     "flicker": 0.3,
+     "flickerRate": 6,
+     "intensityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.3,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "wisps.anchor"
+   ],
+   [
+    "gather.window",
+    "wisps.window"
+   ],
+   [
+    "wisps.particles",
+    "wispip.particles"
+   ],
+   [
+    "wispip.particles",
+    "pull.particles"
+   ],
+   [
+    "node-target.out",
+    "pull.anchor"
+   ],
+   [
+    "pull.particles",
+    "swirl.particles"
+   ],
+   [
+    "node-target.out",
+    "swirl.anchor"
+   ],
+   [
+    "swirl.particles",
+    "drag.particles"
+   ],
+   [
+    "drag.particles",
+    "wispbb.particles"
+   ],
+   [
+    "wispmat.material",
+    "wispbb.material"
+   ],
+   [
+    "node-target.out",
+    "core.anchor"
+   ],
+   [
+    "corematerial.material",
+    "core.material"
+   ],
+   [
+    "gather.window",
+    "core.window"
+   ],
+   [
+    "node-target.out",
+    "lamp.anchor"
+   ],
+   [
+    "gather.window",
+    "lamp.window"
+   ],
+   [
+    "wispbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "core.visual",
+    "node-output.visual"
+   ],
+   [
+    "lamp.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "wisps",
+    "label": "Wisp rate",
+    "value": 220,
+    "bindings": [
+     {
+      "node": "wisps",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "radius",
+    "label": "Gather radius",
+    "value": 2,
+    "bindings": [
+     {
+      "node": "wisps",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "pull",
+    "label": "Pull",
+    "value": 9,
+    "bindings": [
+     {
+      "node": "pull",
+      "parameter": "acceleration"
+     }
+    ]
+   },
+   {
+    "id": "swirl",
+    "label": "Swirl",
+    "value": 7,
+    "bindings": [
+     {
+      "node": "swirl",
+      "parameter": "tangential"
+     }
+    ]
+   },
+   {
+    "id": "core",
+    "label": "Core size",
+    "value": 2.2,
+    "bindings": [
+     {
+      "node": "core",
+      "parameter": "size"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "holy-light",
+  "label": "Holy light",
+  "description": "Radiating light rays, a white-gold core, a spinning ground halo and a warm light.",
+  "durationTicks": 120,
+  "anchors": [
+   {
+    "id": "groundpoint",
+    "position": [
+     0,
+     0.02,
+     0
+    ]
+   }
+  ],
+  "nodes": [
+   {
+    "id": "ground",
+    "type": "Anchor",
+    "params": {
+     "anchorId": "groundpoint"
+    }
+   },
+   {
+    "id": "pulse",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 10,
+     "durationTicks": 70,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "rays",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.15,
+     "rate": 90,
+     "burst": 0,
+     "speedMin": 5,
+     "speedMax": 7,
+     "lifetimeMin": 0.35,
+     "lifetimeMax": 0.5
+    }
+   },
+   {
+    "id": "rayip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.08,
+     "sizeMax": 0.14,
+     "rotationMin": 0,
+     "rotationMax": 0,
+     "angularVelocityMin": 0,
+     "angularVelocityMax": 0
+    }
+   },
+   {
+    "id": "raymat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "spark-streak",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFE9A8",
+      "alpha": 1
+     },
+     "emission": 1
+    }
+   },
+   {
+    "id": "raybb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 14,
+     "pivot": 0.95,
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.2,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "coremat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "variant": 0,
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFF6D8",
+      "alpha": 1
+     },
+     "emission": 2
+    }
+   },
+   {
+    "id": "core",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1.4,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.2
+       },
+       {
+        "x": 0.2,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 1.1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "ringmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "ripple-ring",
+     "variant": 2,
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFD98A",
+      "alpha": 1
+     },
+     "emission": 0.8
+    }
+   },
+   {
+    "id": "halo",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 3,
+     "alignment": "worldAxis",
+     "spin": 0.6,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.4
+       },
+       {
+        "x": 1,
+        "y": 1.3
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.2,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "lamp",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#FFE2A0",
+      "alpha": 1
+     },
+     "intensity": 50,
+     "range": 6,
+     "intensityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.2,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "rays.anchor"
+   ],
+   [
+    "pulse.window",
+    "rays.window"
+   ],
+   [
+    "rays.particles",
+    "rayip.particles"
+   ],
+   [
+    "rayip.particles",
+    "raybb.particles"
+   ],
+   [
+    "raymat.material",
+    "raybb.material"
+   ],
+   [
+    "node-target.out",
+    "core.anchor"
+   ],
+   [
+    "coremat.material",
+    "core.material"
+   ],
+   [
+    "pulse.window",
+    "core.window"
+   ],
+   [
+    "ground.out",
+    "halo.anchor"
+   ],
+   [
+    "ringmat.material",
+    "halo.material"
+   ],
+   [
+    "pulse.window",
+    "halo.window"
+   ],
+   [
+    "node-target.out",
+    "lamp.anchor"
+   ],
+   [
+    "pulse.window",
+    "lamp.window"
+   ],
+   [
+    "halo.visual",
+    "node-output.visual"
+   ],
+   [
+    "raybb.visual",
+    "node-output.visual"
+   ],
+   [
+    "core.visual",
+    "node-output.visual"
+   ],
+   [
+    "lamp.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "rays",
+    "label": "Ray rate",
+    "value": 90,
+    "bindings": [
+     {
+      "node": "rays",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "length",
+    "label": "Ray length",
+    "value": 14,
+    "bindings": [
+     {
+      "node": "raybb",
+      "parameter": "stretchRatio"
+     }
+    ]
+   },
+   {
+    "id": "core",
+    "label": "Core size",
+    "value": 1.4,
+    "bindings": [
+     {
+      "node": "core",
+      "parameter": "size"
+     }
+    ]
+   },
+   {
+    "id": "halo",
+    "label": "Halo size",
+    "value": 3,
+    "bindings": [
+     {
+      "node": "halo",
+      "parameter": "size"
+     }
+    ]
+   },
+   {
+    "id": "light",
+    "label": "Light",
+    "value": 50,
+    "bindings": [
+     {
+      "node": "lamp",
+      "parameter": "intensity"
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": "fireball",
   "label": "Fireball",
   "description": "Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.",
