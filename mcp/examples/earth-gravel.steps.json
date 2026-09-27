@@ -1,0 +1,1426 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "earthgravel"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "earthgravel",
+   "durationTicks": 216,
+   "seed": 42
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "earthgravel",
+   "anchorId": "source",
+   "position": [
+    -3,
+    1.3,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "earthgravel",
+   "anchorId": "target",
+   "position": [
+    0,
+    0,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Schedule",
+   "id": "erupt",
+   "params": {
+    "startTicks": 30,
+    "durationTicks": 30,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "OffsetAnchor",
+   "id": "floor",
+   "params": {
+    "offset": [
+     0,
+     0.02,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "node-target.out",
+   "to": "floor.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Schedule",
+   "id": "pulsewin",
+   "params": {
+    "startTicks": 12,
+    "durationTicks": 18,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Material",
+   "id": "pulsemat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "ripple-ring",
+    "blend": "normal",
+    "tint": {
+     "srgb": "#7A6A58",
+     "alpha": 1
+    },
+    "opacity": 0.7
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "SpriteRenderer",
+   "id": "pulse",
+   "params": {
+    "size": 2.8,
+    "alignment": "worldAxis",
+    "worldAxis": [
+     0,
+     1,
+     0
+    ],
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.14
+      },
+      {
+       "x": 1,
+       "y": 1
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.8
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "floor.out",
+   "to": "pulse.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "pulsemat.material",
+   "to": "pulse.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "pulsewin.window",
+   "to": "pulse.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "pulse.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Material",
+   "id": "rockmat",
+   "params": {
+    "blend": "normal",
+    "tint": {
+     "srgb": "#857566",
+     "alpha": 1
+    },
+    "roughness": 0.85,
+    "metalness": 0,
+    "emission": 0
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Schedule",
+   "id": "lightwin",
+   "params": {
+    "startTicks": 24,
+    "durationTicks": 150,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "OffsetAnchor",
+   "id": "lamp",
+   "params": {
+    "offset": [
+     1.8,
+     3.5,
+     2.4
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "node-target.out",
+   "to": "lamp.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "PointLight",
+   "id": "light",
+   "params": {
+    "color": {
+     "srgb": "#FFE6CC",
+     "alpha": 1
+    },
+    "intensity": 14,
+    "range": 10,
+    "intensityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.05,
+       "y": 1
+      },
+      {
+       "x": 0.8,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "lamp.out",
+   "to": "light.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "lightwin.window",
+   "to": "light.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "light.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Emitter",
+   "id": "stonesa",
+   "params": {
+    "shape": "cone",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "coneAngle": 0.55,
+    "radius": 1.1,
+    "burst": 2,
+    "rate": 0,
+    "speedMin": 3,
+    "speedMax": 6,
+    "lifetimeMin": 2.4,
+    "lifetimeMax": 2.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "InitialProperties",
+   "id": "stonesaip",
+   "params": {
+    "sizeMin": 0.12,
+    "sizeMax": 0.25,
+    "angularVelocityMin": -5,
+    "angularVelocityMax": 5
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "node-target.out",
+   "to": "stonesa.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "erupt.start",
+   "to": "stonesa.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonesa.particles",
+   "to": "stonesaip.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Gravity",
+   "id": "stonesag",
+   "params": {
+    "acceleration": [
+     0,
+     -9.81,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Drag",
+   "id": "stonesadrag",
+   "params": {
+    "coefficient": 0.15
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "GroundCollision",
+   "id": "stonesafloorhit",
+   "params": {
+    "mode": "bounce",
+    "restitution": 0.15,
+    "friction": 0.7,
+    "maxBounces": 2
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonesaip.particles",
+   "to": "stonesag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonesag.particles",
+   "to": "stonesadrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonesadrag.particles",
+   "to": "stonesafloorhit.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "MeshRenderer",
+   "id": "stonesamesh",
+   "params": {
+    "mesh": "rock-a",
+    "orientation": "tumble",
+    "lit": true,
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.85,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonesafloorhit.particles",
+   "to": "stonesamesh.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "rockmat.material",
+   "to": "stonesamesh.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonesamesh.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Emitter",
+   "id": "stonesb",
+   "params": {
+    "shape": "cone",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "coneAngle": 0.55,
+    "radius": 1.1,
+    "burst": 2,
+    "rate": 0,
+    "speedMin": 3,
+    "speedMax": 6,
+    "lifetimeMin": 2.4,
+    "lifetimeMax": 2.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "InitialProperties",
+   "id": "stonesbip",
+   "params": {
+    "sizeMin": 0.12,
+    "sizeMax": 0.25,
+    "angularVelocityMin": -5,
+    "angularVelocityMax": 5
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "node-target.out",
+   "to": "stonesb.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "erupt.start",
+   "to": "stonesb.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonesb.particles",
+   "to": "stonesbip.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Gravity",
+   "id": "stonesbg",
+   "params": {
+    "acceleration": [
+     0,
+     -9.81,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Drag",
+   "id": "stonesbdrag",
+   "params": {
+    "coefficient": 0.15
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "GroundCollision",
+   "id": "stonesbfloorhit",
+   "params": {
+    "mode": "bounce",
+    "restitution": 0.15,
+    "friction": 0.7,
+    "maxBounces": 2
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonesbip.particles",
+   "to": "stonesbg.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonesbg.particles",
+   "to": "stonesbdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonesbdrag.particles",
+   "to": "stonesbfloorhit.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "MeshRenderer",
+   "id": "stonesbmesh",
+   "params": {
+    "mesh": "rock-b",
+    "orientation": "tumble",
+    "lit": true,
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.85,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonesbfloorhit.particles",
+   "to": "stonesbmesh.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "rockmat.material",
+   "to": "stonesbmesh.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonesbmesh.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Emitter",
+   "id": "stonesc",
+   "params": {
+    "shape": "cone",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "coneAngle": 0.55,
+    "radius": 1.1,
+    "burst": 2,
+    "rate": 0,
+    "speedMin": 3,
+    "speedMax": 6,
+    "lifetimeMin": 2.4,
+    "lifetimeMax": 2.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "InitialProperties",
+   "id": "stonescip",
+   "params": {
+    "sizeMin": 0.12,
+    "sizeMax": 0.25,
+    "angularVelocityMin": -5,
+    "angularVelocityMax": 5
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "node-target.out",
+   "to": "stonesc.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "erupt.start",
+   "to": "stonesc.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonesc.particles",
+   "to": "stonescip.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Gravity",
+   "id": "stonescg",
+   "params": {
+    "acceleration": [
+     0,
+     -9.81,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Drag",
+   "id": "stonescdrag",
+   "params": {
+    "coefficient": 0.15
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "GroundCollision",
+   "id": "stonescfloorhit",
+   "params": {
+    "mode": "bounce",
+    "restitution": 0.15,
+    "friction": 0.7,
+    "maxBounces": 2
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonescip.particles",
+   "to": "stonescg.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonescg.particles",
+   "to": "stonescdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonescdrag.particles",
+   "to": "stonescfloorhit.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "MeshRenderer",
+   "id": "stonescmesh",
+   "params": {
+    "mesh": "rock-c",
+    "orientation": "tumble",
+    "lit": true,
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.85,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonescfloorhit.particles",
+   "to": "stonescmesh.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "rockmat.material",
+   "to": "stonescmesh.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonescmesh.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Emitter",
+   "id": "chips",
+   "params": {
+    "shape": "cone",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "coneAngle": 0.8,
+    "radius": 0.8800000000000001,
+    "burst": 110,
+    "rate": 0,
+    "speedMin": 3,
+    "speedMax": 8,
+    "lifetimeMin": 0.5,
+    "lifetimeMax": 1.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "InitialProperties",
+   "id": "chipip",
+   "params": {
+    "sizeMin": 0.02,
+    "sizeMax": 0.06,
+    "angularVelocityMin": -9,
+    "angularVelocityMax": 9
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "node-target.out",
+   "to": "chips.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "erupt.start",
+   "to": "chips.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "chips.particles",
+   "to": "chipip.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Gravity",
+   "id": "chipsg",
+   "params": {
+    "acceleration": [
+     0,
+     -9.81,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Drag",
+   "id": "chipsdrag",
+   "params": {
+    "coefficient": 0.15
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "GroundCollision",
+   "id": "chipsfloorhit",
+   "params": {
+    "mode": "bounce",
+    "restitution": 0.15,
+    "friction": 0.7,
+    "maxBounces": 2
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "chipip.particles",
+   "to": "chipsg.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "chipsg.particles",
+   "to": "chipsdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "chipsdrag.particles",
+   "to": "chipsfloorhit.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "MeshRenderer",
+   "id": "chipmesh",
+   "params": {
+    "mesh": "rock-c",
+    "orientation": "tumble",
+    "lit": true,
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.8,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "chipsfloorhit.particles",
+   "to": "chipmesh.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "rockmat.material",
+   "to": "chipmesh.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "chipmesh.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Emitter",
+   "id": "dust",
+   "params": {
+    "shape": "disc",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "radius": 1.1,
+    "burst": 14,
+    "rate": 8,
+    "speedMin": 0.3,
+    "speedMax": 1.2,
+    "lifetimeMin": 1,
+    "lifetimeMax": 2.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "InitialProperties",
+   "id": "dustip",
+   "params": {
+    "sizeMin": 0.3,
+    "sizeMax": 0.5,
+    "randomFrameStart": true,
+    "rotationMin": 0,
+    "rotationMax": 6.283,
+    "angularVelocityMin": -0.3,
+    "angularVelocityMax": 0.3
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Drag",
+   "id": "dustdrag",
+   "params": {
+    "coefficient": 1.4
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Gravity",
+   "id": "dustlift",
+   "params": {
+    "acceleration": [
+     0,
+     0.35,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "NoiseForce",
+   "id": "dustnoise",
+   "params": {
+    "mode": "curl",
+    "amplitude": 0.6,
+    "frequency": 0.6,
+    "evolution": 0.4
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Material",
+   "id": "dustmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "blend": "normal",
+    "tint": {
+     "srgb": "#A89A86",
+     "alpha": 1
+    },
+    "opacity": 1,
+    "groundFade": 0.25
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "BillboardRenderer",
+   "id": "dustbb",
+   "params": {
+    "flipbookMode": "overLife",
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.5
+      },
+      {
+       "x": 1,
+       "y": 2.6
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.12,
+       "y": 0.55
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "floor.out",
+   "to": "dust.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "erupt.start",
+   "to": "dust.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "erupt.window",
+   "to": "dust.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "dust.particles",
+   "to": "dustip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "dustip.particles",
+   "to": "dustdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "dustdrag.particles",
+   "to": "dustlift.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "dustlift.particles",
+   "to": "dustnoise.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "dustnoise.particles",
+   "to": "dustbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "dustmat.material",
+   "to": "dustbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "dustbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Emitter",
+   "id": "puffs",
+   "params": {
+    "shape": "sphere",
+    "radius": 0.05,
+    "burst": 2,
+    "rate": 0,
+    "speedMin": 0.2,
+    "speedMax": 0.6,
+    "lifetimeMin": 0.6,
+    "lifetimeMax": 1.1,
+    "useEventPosition": true
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "InitialProperties",
+   "id": "puffip",
+   "params": {
+    "sizeMin": 0.2,
+    "sizeMax": 0.35,
+    "randomFrameStart": true
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "Drag",
+   "id": "puffdrag",
+   "params": {
+    "coefficient": 1.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "BillboardRenderer",
+   "id": "puffbb",
+   "params": {
+    "flipbookMode": "overLife",
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.6
+      },
+      {
+       "x": 1,
+       "y": 1.8
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.5
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonesafloorhit.collision",
+   "to": "puffs.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonesbfloorhit.collision",
+   "to": "puffs.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "stonescfloorhit.collision",
+   "to": "puffs.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "puffs.particles",
+   "to": "puffip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "puffip.particles",
+   "to": "puffdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "puffdrag.particles",
+   "to": "puffbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "dustmat.material",
+   "to": "puffbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "puffbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "earthgravel"
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "earthgravel",
+   "ticks": [
+    22,
+    42,
+    70,
+    120,
+    205
+   ]
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "earthgravel",
+   "ticks": [
+    70
+   ],
+   "background": "light",
+   "glow": false
+  },
+  true
+ ]
+]

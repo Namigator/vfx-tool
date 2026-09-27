@@ -24312,6 +24312,3150 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   ]
  },
  {
+  "id": "earth-upheaval",
+  "label": "Earth: stone upheaval",
+  "description": "Ground pulse, then stones and chips erupt at Target, bounce and settle with ground-hugging dust and contact puffs (06-EARTH).",
+  "durationTicks": 216,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "erupt",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 30,
+     "durationTicks": 30,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "floor",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      0.02,
+      0
+     ]
+    }
+   },
+   {
+    "id": "pulsewin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 12,
+     "durationTicks": 18,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "pulsemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "ripple-ring",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#7A6A58",
+      "alpha": 1
+     },
+     "opacity": 0.7
+    }
+   },
+   {
+    "id": "pulse",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 2.8,
+     "alignment": "worldAxis",
+     "worldAxis": [
+      0,
+      1,
+      0
+     ],
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.14
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.8
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "rockmat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#857566",
+      "alpha": 1
+     },
+     "roughness": 0.85,
+     "metalness": 0,
+     "emission": 0
+    }
+   },
+   {
+    "id": "lightwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 24,
+     "durationTicks": 150,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "lamp",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      1.8,
+      3.5,
+      2.4
+     ]
+    }
+   },
+   {
+    "id": "light",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#FFE6CC",
+      "alpha": 1
+     },
+     "intensity": 14,
+     "range": 10,
+     "intensityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.05,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "stonesa",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "coneAngle": 0.55,
+     "radius": 0.8,
+     "burst": 6,
+     "rate": 0,
+     "speedMin": 2,
+     "speedMax": 5,
+     "lifetimeMin": 2.4,
+     "lifetimeMax": 2.9
+    }
+   },
+   {
+    "id": "stonesaip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.18,
+     "sizeMax": 0.5,
+     "angularVelocityMin": -5,
+     "angularVelocityMax": 5
+    }
+   },
+   {
+    "id": "stonesag",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "stonesadrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.15
+    }
+   },
+   {
+    "id": "stonesafloorhit",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.15,
+     "friction": 0.7,
+     "maxBounces": 2
+    }
+   },
+   {
+    "id": "stonesamesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "rock-a",
+     "orientation": "tumble",
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.85,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "stonesb",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "coneAngle": 0.55,
+     "radius": 0.8,
+     "burst": 6,
+     "rate": 0,
+     "speedMin": 2,
+     "speedMax": 5,
+     "lifetimeMin": 2.4,
+     "lifetimeMax": 2.9
+    }
+   },
+   {
+    "id": "stonesbip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.18,
+     "sizeMax": 0.5,
+     "angularVelocityMin": -5,
+     "angularVelocityMax": 5
+    }
+   },
+   {
+    "id": "stonesbg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "stonesbdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.15
+    }
+   },
+   {
+    "id": "stonesbfloorhit",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.15,
+     "friction": 0.7,
+     "maxBounces": 2
+    }
+   },
+   {
+    "id": "stonesbmesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "rock-b",
+     "orientation": "tumble",
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.85,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "stonesc",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "coneAngle": 0.55,
+     "radius": 0.8,
+     "burst": 6,
+     "rate": 0,
+     "speedMin": 2,
+     "speedMax": 5,
+     "lifetimeMin": 2.4,
+     "lifetimeMax": 2.9
+    }
+   },
+   {
+    "id": "stonescip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.18,
+     "sizeMax": 0.5,
+     "angularVelocityMin": -5,
+     "angularVelocityMax": 5
+    }
+   },
+   {
+    "id": "stonescg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "stonescdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.15
+    }
+   },
+   {
+    "id": "stonescfloorhit",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.15,
+     "friction": 0.7,
+     "maxBounces": 2
+    }
+   },
+   {
+    "id": "stonescmesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "rock-c",
+     "orientation": "tumble",
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.85,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "chips",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "coneAngle": 0.8,
+     "radius": 0.6400000000000001,
+     "burst": 48,
+     "rate": 0,
+     "speedMin": 2,
+     "speedMax": 6,
+     "lifetimeMin": 0.5,
+     "lifetimeMax": 1.5
+    }
+   },
+   {
+    "id": "chipip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.025,
+     "sizeMax": 0.1,
+     "angularVelocityMin": -9,
+     "angularVelocityMax": 9
+    }
+   },
+   {
+    "id": "chipsg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "chipsdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.15
+    }
+   },
+   {
+    "id": "chipsfloorhit",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.15,
+     "friction": 0.7,
+     "maxBounces": 2
+    }
+   },
+   {
+    "id": "chipmesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "rock-c",
+     "orientation": "tumble",
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "dust",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.8,
+     "burst": 35,
+     "rate": 20,
+     "speedMin": 0.3,
+     "speedMax": 1.2,
+     "lifetimeMin": 1,
+     "lifetimeMax": 2.5
+    }
+   },
+   {
+    "id": "dustip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.3,
+     "sizeMax": 0.5,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283,
+     "angularVelocityMin": -0.3,
+     "angularVelocityMax": 0.3
+    }
+   },
+   {
+    "id": "dustdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1.4
+    }
+   },
+   {
+    "id": "dustlift",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      0.35,
+      0
+     ]
+    }
+   },
+   {
+    "id": "dustnoise",
+    "type": "NoiseForce",
+    "params": {
+     "mode": "curl",
+     "amplitude": 0.6,
+     "frequency": 0.6,
+     "evolution": 0.4
+    }
+   },
+   {
+    "id": "dustmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#A89A86",
+      "alpha": 1
+     },
+     "opacity": 1,
+     "groundFade": 0.25
+    }
+   },
+   {
+    "id": "dustbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 1,
+        "y": 2.6
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.12,
+        "y": 0.55
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "puffs",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.05,
+     "burst": 2,
+     "rate": 0,
+     "speedMin": 0.2,
+     "speedMax": 0.6,
+     "lifetimeMin": 0.6,
+     "lifetimeMax": 1.1,
+     "useEventPosition": true
+    }
+   },
+   {
+    "id": "puffip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.2,
+     "sizeMax": 0.35,
+     "randomFrameStart": true
+    }
+   },
+   {
+    "id": "puffdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1.6
+    }
+   },
+   {
+    "id": "puffbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 1.8
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "floor.anchor"
+   ],
+   [
+    "floor.out",
+    "pulse.anchor"
+   ],
+   [
+    "pulsemat.material",
+    "pulse.material"
+   ],
+   [
+    "pulsewin.window",
+    "pulse.window"
+   ],
+   [
+    "pulse.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "lamp.anchor"
+   ],
+   [
+    "lamp.out",
+    "light.anchor"
+   ],
+   [
+    "lightwin.window",
+    "light.window"
+   ],
+   [
+    "light.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "stonesa.anchor"
+   ],
+   [
+    "erupt.start",
+    "stonesa.trigger"
+   ],
+   [
+    "stonesa.particles",
+    "stonesaip.particles"
+   ],
+   [
+    "stonesaip.particles",
+    "stonesag.particles"
+   ],
+   [
+    "stonesag.particles",
+    "stonesadrag.particles"
+   ],
+   [
+    "stonesadrag.particles",
+    "stonesafloorhit.particles"
+   ],
+   [
+    "stonesafloorhit.particles",
+    "stonesamesh.particles"
+   ],
+   [
+    "rockmat.material",
+    "stonesamesh.material"
+   ],
+   [
+    "stonesamesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "stonesb.anchor"
+   ],
+   [
+    "erupt.start",
+    "stonesb.trigger"
+   ],
+   [
+    "stonesb.particles",
+    "stonesbip.particles"
+   ],
+   [
+    "stonesbip.particles",
+    "stonesbg.particles"
+   ],
+   [
+    "stonesbg.particles",
+    "stonesbdrag.particles"
+   ],
+   [
+    "stonesbdrag.particles",
+    "stonesbfloorhit.particles"
+   ],
+   [
+    "stonesbfloorhit.particles",
+    "stonesbmesh.particles"
+   ],
+   [
+    "rockmat.material",
+    "stonesbmesh.material"
+   ],
+   [
+    "stonesbmesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "stonesc.anchor"
+   ],
+   [
+    "erupt.start",
+    "stonesc.trigger"
+   ],
+   [
+    "stonesc.particles",
+    "stonescip.particles"
+   ],
+   [
+    "stonescip.particles",
+    "stonescg.particles"
+   ],
+   [
+    "stonescg.particles",
+    "stonescdrag.particles"
+   ],
+   [
+    "stonescdrag.particles",
+    "stonescfloorhit.particles"
+   ],
+   [
+    "stonescfloorhit.particles",
+    "stonescmesh.particles"
+   ],
+   [
+    "rockmat.material",
+    "stonescmesh.material"
+   ],
+   [
+    "stonescmesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "chips.anchor"
+   ],
+   [
+    "erupt.start",
+    "chips.trigger"
+   ],
+   [
+    "chips.particles",
+    "chipip.particles"
+   ],
+   [
+    "chipip.particles",
+    "chipsg.particles"
+   ],
+   [
+    "chipsg.particles",
+    "chipsdrag.particles"
+   ],
+   [
+    "chipsdrag.particles",
+    "chipsfloorhit.particles"
+   ],
+   [
+    "chipsfloorhit.particles",
+    "chipmesh.particles"
+   ],
+   [
+    "rockmat.material",
+    "chipmesh.material"
+   ],
+   [
+    "chipmesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "floor.out",
+    "dust.anchor"
+   ],
+   [
+    "erupt.start",
+    "dust.trigger"
+   ],
+   [
+    "erupt.window",
+    "dust.window"
+   ],
+   [
+    "dust.particles",
+    "dustip.particles"
+   ],
+   [
+    "dustip.particles",
+    "dustdrag.particles"
+   ],
+   [
+    "dustdrag.particles",
+    "dustlift.particles"
+   ],
+   [
+    "dustlift.particles",
+    "dustnoise.particles"
+   ],
+   [
+    "dustnoise.particles",
+    "dustbb.particles"
+   ],
+   [
+    "dustmat.material",
+    "dustbb.material"
+   ],
+   [
+    "dustbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "stonesafloorhit.collision",
+    "puffs.trigger"
+   ],
+   [
+    "stonesbfloorhit.collision",
+    "puffs.trigger"
+   ],
+   [
+    "stonescfloorhit.collision",
+    "puffs.trigger"
+   ],
+   [
+    "puffs.particles",
+    "puffip.particles"
+   ],
+   [
+    "puffip.particles",
+    "puffdrag.particles"
+   ],
+   [
+    "puffdrag.particles",
+    "puffbb.particles"
+   ],
+   [
+    "dustmat.material",
+    "puffbb.material"
+   ],
+   [
+    "puffbb.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "stones",
+    "label": "Stones per shape",
+    "value": 6,
+    "bindings": [
+     {
+      "node": "stonesa",
+      "parameter": "burst"
+     },
+     {
+      "node": "stonesb",
+      "parameter": "burst"
+     },
+     {
+      "node": "stonesc",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "size",
+    "label": "Stone size",
+    "value": 0.5,
+    "bindings": [
+     {
+      "node": "stonesaip",
+      "parameter": "sizeMax"
+     },
+     {
+      "node": "stonesbip",
+      "parameter": "sizeMax"
+     },
+     {
+      "node": "stonescip",
+      "parameter": "sizeMax"
+     }
+    ]
+   },
+   {
+    "id": "force",
+    "label": "Eruption force",
+    "value": 5,
+    "bindings": [
+     {
+      "node": "stonesa",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "stonesb",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "stonesc",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "chips",
+      "parameter": "speedMax",
+      "scale": 1.2
+     }
+    ]
+   },
+   {
+    "id": "spread",
+    "label": "Spread",
+    "value": 0.8,
+    "bindings": [
+     {
+      "node": "stonesa",
+      "parameter": "radius"
+     },
+     {
+      "node": "stonesb",
+      "parameter": "radius"
+     },
+     {
+      "node": "stonesc",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "bounce",
+    "label": "Bounce",
+    "value": 0.15,
+    "bindings": [
+     {
+      "node": "stonesafloorhit",
+      "parameter": "restitution"
+     },
+     {
+      "node": "stonesbfloorhit",
+      "parameter": "restitution"
+     },
+     {
+      "node": "stonescfloorhit",
+      "parameter": "restitution"
+     }
+    ]
+   },
+   {
+    "id": "dust",
+    "label": "Dust density",
+    "value": 35,
+    "bindings": [
+     {
+      "node": "dust",
+      "parameter": "burst"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "earth-heavy",
+  "label": "Earth: heavy eruption",
+  "description": "Few large, slow boulders (06-EARTH variant).",
+  "durationTicks": 216,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "erupt",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 30,
+     "durationTicks": 30,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "floor",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      0.02,
+      0
+     ]
+    }
+   },
+   {
+    "id": "pulsewin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 12,
+     "durationTicks": 18,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "pulsemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "ripple-ring",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#7A6A58",
+      "alpha": 1
+     },
+     "opacity": 0.7
+    }
+   },
+   {
+    "id": "pulse",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 2.8,
+     "alignment": "worldAxis",
+     "worldAxis": [
+      0,
+      1,
+      0
+     ],
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.14
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.8
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "rockmat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#857566",
+      "alpha": 1
+     },
+     "roughness": 0.85,
+     "metalness": 0,
+     "emission": 0
+    }
+   },
+   {
+    "id": "lightwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 24,
+     "durationTicks": 150,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "lamp",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      1.8,
+      3.5,
+      2.4
+     ]
+    }
+   },
+   {
+    "id": "light",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#FFE6CC",
+      "alpha": 1
+     },
+     "intensity": 14,
+     "range": 10,
+     "intensityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.05,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "stonesa",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "coneAngle": 0.55,
+     "radius": 0.5,
+     "burst": 3,
+     "rate": 0,
+     "speedMin": 1.5,
+     "speedMax": 3.2,
+     "lifetimeMin": 2.4,
+     "lifetimeMax": 2.9
+    }
+   },
+   {
+    "id": "stonesaip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.35,
+     "sizeMax": 0.7,
+     "angularVelocityMin": -5,
+     "angularVelocityMax": 5
+    }
+   },
+   {
+    "id": "stonesag",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "stonesadrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.15
+    }
+   },
+   {
+    "id": "stonesafloorhit",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.15,
+     "friction": 0.7,
+     "maxBounces": 2
+    }
+   },
+   {
+    "id": "stonesamesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "rock-a",
+     "orientation": "tumble",
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.85,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "stonesb",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "coneAngle": 0.55,
+     "radius": 0.5,
+     "burst": 3,
+     "rate": 0,
+     "speedMin": 1.5,
+     "speedMax": 3.2,
+     "lifetimeMin": 2.4,
+     "lifetimeMax": 2.9
+    }
+   },
+   {
+    "id": "stonesbip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.35,
+     "sizeMax": 0.7,
+     "angularVelocityMin": -5,
+     "angularVelocityMax": 5
+    }
+   },
+   {
+    "id": "stonesbg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "stonesbdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.15
+    }
+   },
+   {
+    "id": "stonesbfloorhit",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.15,
+     "friction": 0.7,
+     "maxBounces": 2
+    }
+   },
+   {
+    "id": "stonesbmesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "rock-b",
+     "orientation": "tumble",
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.85,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "stonesc",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "coneAngle": 0.55,
+     "radius": 0.5,
+     "burst": 3,
+     "rate": 0,
+     "speedMin": 1.5,
+     "speedMax": 3.2,
+     "lifetimeMin": 2.4,
+     "lifetimeMax": 2.9
+    }
+   },
+   {
+    "id": "stonescip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.35,
+     "sizeMax": 0.7,
+     "angularVelocityMin": -5,
+     "angularVelocityMax": 5
+    }
+   },
+   {
+    "id": "stonescg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "stonescdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.15
+    }
+   },
+   {
+    "id": "stonescfloorhit",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.15,
+     "friction": 0.7,
+     "maxBounces": 2
+    }
+   },
+   {
+    "id": "stonescmesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "rock-c",
+     "orientation": "tumble",
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.85,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "chips",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "coneAngle": 0.8,
+     "radius": 0.4,
+     "burst": 24,
+     "rate": 0,
+     "speedMin": 1.5,
+     "speedMax": 4,
+     "lifetimeMin": 0.5,
+     "lifetimeMax": 1.5
+    }
+   },
+   {
+    "id": "chipip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.04,
+     "sizeMax": 0.12,
+     "angularVelocityMin": -9,
+     "angularVelocityMax": 9
+    }
+   },
+   {
+    "id": "chipsg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "chipsdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.15
+    }
+   },
+   {
+    "id": "chipsfloorhit",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.15,
+     "friction": 0.7,
+     "maxBounces": 2
+    }
+   },
+   {
+    "id": "chipmesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "rock-c",
+     "orientation": "tumble",
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "dust",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.5,
+     "burst": 30,
+     "rate": 14,
+     "speedMin": 0.3,
+     "speedMax": 1.2,
+     "lifetimeMin": 1,
+     "lifetimeMax": 2.5
+    }
+   },
+   {
+    "id": "dustip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.3,
+     "sizeMax": 0.5,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283,
+     "angularVelocityMin": -0.3,
+     "angularVelocityMax": 0.3
+    }
+   },
+   {
+    "id": "dustdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1.4
+    }
+   },
+   {
+    "id": "dustlift",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      0.35,
+      0
+     ]
+    }
+   },
+   {
+    "id": "dustnoise",
+    "type": "NoiseForce",
+    "params": {
+     "mode": "curl",
+     "amplitude": 0.6,
+     "frequency": 0.6,
+     "evolution": 0.4
+    }
+   },
+   {
+    "id": "dustmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#A89A86",
+      "alpha": 1
+     },
+     "opacity": 1,
+     "groundFade": 0.25
+    }
+   },
+   {
+    "id": "dustbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 1,
+        "y": 2.6
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.12,
+        "y": 0.55
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "puffs",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.05,
+     "burst": 2,
+     "rate": 0,
+     "speedMin": 0.2,
+     "speedMax": 0.6,
+     "lifetimeMin": 0.6,
+     "lifetimeMax": 1.1,
+     "useEventPosition": true
+    }
+   },
+   {
+    "id": "puffip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.2,
+     "sizeMax": 0.35,
+     "randomFrameStart": true
+    }
+   },
+   {
+    "id": "puffdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1.6
+    }
+   },
+   {
+    "id": "puffbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 1.8
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "floor.anchor"
+   ],
+   [
+    "floor.out",
+    "pulse.anchor"
+   ],
+   [
+    "pulsemat.material",
+    "pulse.material"
+   ],
+   [
+    "pulsewin.window",
+    "pulse.window"
+   ],
+   [
+    "pulse.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "lamp.anchor"
+   ],
+   [
+    "lamp.out",
+    "light.anchor"
+   ],
+   [
+    "lightwin.window",
+    "light.window"
+   ],
+   [
+    "light.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "stonesa.anchor"
+   ],
+   [
+    "erupt.start",
+    "stonesa.trigger"
+   ],
+   [
+    "stonesa.particles",
+    "stonesaip.particles"
+   ],
+   [
+    "stonesaip.particles",
+    "stonesag.particles"
+   ],
+   [
+    "stonesag.particles",
+    "stonesadrag.particles"
+   ],
+   [
+    "stonesadrag.particles",
+    "stonesafloorhit.particles"
+   ],
+   [
+    "stonesafloorhit.particles",
+    "stonesamesh.particles"
+   ],
+   [
+    "rockmat.material",
+    "stonesamesh.material"
+   ],
+   [
+    "stonesamesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "stonesb.anchor"
+   ],
+   [
+    "erupt.start",
+    "stonesb.trigger"
+   ],
+   [
+    "stonesb.particles",
+    "stonesbip.particles"
+   ],
+   [
+    "stonesbip.particles",
+    "stonesbg.particles"
+   ],
+   [
+    "stonesbg.particles",
+    "stonesbdrag.particles"
+   ],
+   [
+    "stonesbdrag.particles",
+    "stonesbfloorhit.particles"
+   ],
+   [
+    "stonesbfloorhit.particles",
+    "stonesbmesh.particles"
+   ],
+   [
+    "rockmat.material",
+    "stonesbmesh.material"
+   ],
+   [
+    "stonesbmesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "stonesc.anchor"
+   ],
+   [
+    "erupt.start",
+    "stonesc.trigger"
+   ],
+   [
+    "stonesc.particles",
+    "stonescip.particles"
+   ],
+   [
+    "stonescip.particles",
+    "stonescg.particles"
+   ],
+   [
+    "stonescg.particles",
+    "stonescdrag.particles"
+   ],
+   [
+    "stonescdrag.particles",
+    "stonescfloorhit.particles"
+   ],
+   [
+    "stonescfloorhit.particles",
+    "stonescmesh.particles"
+   ],
+   [
+    "rockmat.material",
+    "stonescmesh.material"
+   ],
+   [
+    "stonescmesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "chips.anchor"
+   ],
+   [
+    "erupt.start",
+    "chips.trigger"
+   ],
+   [
+    "chips.particles",
+    "chipip.particles"
+   ],
+   [
+    "chipip.particles",
+    "chipsg.particles"
+   ],
+   [
+    "chipsg.particles",
+    "chipsdrag.particles"
+   ],
+   [
+    "chipsdrag.particles",
+    "chipsfloorhit.particles"
+   ],
+   [
+    "chipsfloorhit.particles",
+    "chipmesh.particles"
+   ],
+   [
+    "rockmat.material",
+    "chipmesh.material"
+   ],
+   [
+    "chipmesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "floor.out",
+    "dust.anchor"
+   ],
+   [
+    "erupt.start",
+    "dust.trigger"
+   ],
+   [
+    "erupt.window",
+    "dust.window"
+   ],
+   [
+    "dust.particles",
+    "dustip.particles"
+   ],
+   [
+    "dustip.particles",
+    "dustdrag.particles"
+   ],
+   [
+    "dustdrag.particles",
+    "dustlift.particles"
+   ],
+   [
+    "dustlift.particles",
+    "dustnoise.particles"
+   ],
+   [
+    "dustnoise.particles",
+    "dustbb.particles"
+   ],
+   [
+    "dustmat.material",
+    "dustbb.material"
+   ],
+   [
+    "dustbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "stonesafloorhit.collision",
+    "puffs.trigger"
+   ],
+   [
+    "stonesbfloorhit.collision",
+    "puffs.trigger"
+   ],
+   [
+    "stonescfloorhit.collision",
+    "puffs.trigger"
+   ],
+   [
+    "puffs.particles",
+    "puffip.particles"
+   ],
+   [
+    "puffip.particles",
+    "puffdrag.particles"
+   ],
+   [
+    "puffdrag.particles",
+    "puffbb.particles"
+   ],
+   [
+    "dustmat.material",
+    "puffbb.material"
+   ],
+   [
+    "puffbb.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "stones",
+    "label": "Stones per shape",
+    "value": 3,
+    "bindings": [
+     {
+      "node": "stonesa",
+      "parameter": "burst"
+     },
+     {
+      "node": "stonesb",
+      "parameter": "burst"
+     },
+     {
+      "node": "stonesc",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "size",
+    "label": "Stone size",
+    "value": 0.7,
+    "bindings": [
+     {
+      "node": "stonesaip",
+      "parameter": "sizeMax"
+     },
+     {
+      "node": "stonesbip",
+      "parameter": "sizeMax"
+     },
+     {
+      "node": "stonescip",
+      "parameter": "sizeMax"
+     }
+    ]
+   },
+   {
+    "id": "force",
+    "label": "Eruption force",
+    "value": 3.2,
+    "bindings": [
+     {
+      "node": "stonesa",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "stonesb",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "stonesc",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "chips",
+      "parameter": "speedMax",
+      "scale": 1.2
+     }
+    ]
+   },
+   {
+    "id": "spread",
+    "label": "Spread",
+    "value": 0.5,
+    "bindings": [
+     {
+      "node": "stonesa",
+      "parameter": "radius"
+     },
+     {
+      "node": "stonesb",
+      "parameter": "radius"
+     },
+     {
+      "node": "stonesc",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "bounce",
+    "label": "Bounce",
+    "value": 0.15,
+    "bindings": [
+     {
+      "node": "stonesafloorhit",
+      "parameter": "restitution"
+     },
+     {
+      "node": "stonesbfloorhit",
+      "parameter": "restitution"
+     },
+     {
+      "node": "stonescfloorhit",
+      "parameter": "restitution"
+     }
+    ]
+   },
+   {
+    "id": "dust",
+    "label": "Dust density",
+    "value": 30,
+    "bindings": [
+     {
+      "node": "dust",
+      "parameter": "burst"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "earth-gravel",
+  "label": "Earth: gravel burst",
+  "description": "Many small fast chips, restrained dust (06-EARTH variant).",
+  "durationTicks": 216,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "erupt",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 30,
+     "durationTicks": 30,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "floor",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      0.02,
+      0
+     ]
+    }
+   },
+   {
+    "id": "pulsewin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 12,
+     "durationTicks": 18,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "pulsemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "ripple-ring",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#7A6A58",
+      "alpha": 1
+     },
+     "opacity": 0.7
+    }
+   },
+   {
+    "id": "pulse",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 2.8,
+     "alignment": "worldAxis",
+     "worldAxis": [
+      0,
+      1,
+      0
+     ],
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.14
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.8
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "rockmat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#857566",
+      "alpha": 1
+     },
+     "roughness": 0.85,
+     "metalness": 0,
+     "emission": 0
+    }
+   },
+   {
+    "id": "lightwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 24,
+     "durationTicks": 150,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "lamp",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      1.8,
+      3.5,
+      2.4
+     ]
+    }
+   },
+   {
+    "id": "light",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#FFE6CC",
+      "alpha": 1
+     },
+     "intensity": 14,
+     "range": 10,
+     "intensityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.05,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "stonesa",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "coneAngle": 0.55,
+     "radius": 1.1,
+     "burst": 2,
+     "rate": 0,
+     "speedMin": 3,
+     "speedMax": 6,
+     "lifetimeMin": 2.4,
+     "lifetimeMax": 2.9
+    }
+   },
+   {
+    "id": "stonesaip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.12,
+     "sizeMax": 0.25,
+     "angularVelocityMin": -5,
+     "angularVelocityMax": 5
+    }
+   },
+   {
+    "id": "stonesag",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "stonesadrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.15
+    }
+   },
+   {
+    "id": "stonesafloorhit",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.15,
+     "friction": 0.7,
+     "maxBounces": 2
+    }
+   },
+   {
+    "id": "stonesamesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "rock-a",
+     "orientation": "tumble",
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.85,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "stonesb",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "coneAngle": 0.55,
+     "radius": 1.1,
+     "burst": 2,
+     "rate": 0,
+     "speedMin": 3,
+     "speedMax": 6,
+     "lifetimeMin": 2.4,
+     "lifetimeMax": 2.9
+    }
+   },
+   {
+    "id": "stonesbip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.12,
+     "sizeMax": 0.25,
+     "angularVelocityMin": -5,
+     "angularVelocityMax": 5
+    }
+   },
+   {
+    "id": "stonesbg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "stonesbdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.15
+    }
+   },
+   {
+    "id": "stonesbfloorhit",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.15,
+     "friction": 0.7,
+     "maxBounces": 2
+    }
+   },
+   {
+    "id": "stonesbmesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "rock-b",
+     "orientation": "tumble",
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.85,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "stonesc",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "coneAngle": 0.55,
+     "radius": 1.1,
+     "burst": 2,
+     "rate": 0,
+     "speedMin": 3,
+     "speedMax": 6,
+     "lifetimeMin": 2.4,
+     "lifetimeMax": 2.9
+    }
+   },
+   {
+    "id": "stonescip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.12,
+     "sizeMax": 0.25,
+     "angularVelocityMin": -5,
+     "angularVelocityMax": 5
+    }
+   },
+   {
+    "id": "stonescg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "stonescdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.15
+    }
+   },
+   {
+    "id": "stonescfloorhit",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.15,
+     "friction": 0.7,
+     "maxBounces": 2
+    }
+   },
+   {
+    "id": "stonescmesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "rock-c",
+     "orientation": "tumble",
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.85,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "chips",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "coneAngle": 0.8,
+     "radius": 0.8800000000000001,
+     "burst": 110,
+     "rate": 0,
+     "speedMin": 3,
+     "speedMax": 8,
+     "lifetimeMin": 0.5,
+     "lifetimeMax": 1.5
+    }
+   },
+   {
+    "id": "chipip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.02,
+     "sizeMax": 0.06,
+     "angularVelocityMin": -9,
+     "angularVelocityMax": 9
+    }
+   },
+   {
+    "id": "chipsg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "chipsdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.15
+    }
+   },
+   {
+    "id": "chipsfloorhit",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.15,
+     "friction": 0.7,
+     "maxBounces": 2
+    }
+   },
+   {
+    "id": "chipmesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "rock-c",
+     "orientation": "tumble",
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "dust",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 1.1,
+     "burst": 14,
+     "rate": 8,
+     "speedMin": 0.3,
+     "speedMax": 1.2,
+     "lifetimeMin": 1,
+     "lifetimeMax": 2.5
+    }
+   },
+   {
+    "id": "dustip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.3,
+     "sizeMax": 0.5,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283,
+     "angularVelocityMin": -0.3,
+     "angularVelocityMax": 0.3
+    }
+   },
+   {
+    "id": "dustdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1.4
+    }
+   },
+   {
+    "id": "dustlift",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      0.35,
+      0
+     ]
+    }
+   },
+   {
+    "id": "dustnoise",
+    "type": "NoiseForce",
+    "params": {
+     "mode": "curl",
+     "amplitude": 0.6,
+     "frequency": 0.6,
+     "evolution": 0.4
+    }
+   },
+   {
+    "id": "dustmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#A89A86",
+      "alpha": 1
+     },
+     "opacity": 1,
+     "groundFade": 0.25
+    }
+   },
+   {
+    "id": "dustbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 1,
+        "y": 2.6
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.12,
+        "y": 0.55
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "puffs",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.05,
+     "burst": 2,
+     "rate": 0,
+     "speedMin": 0.2,
+     "speedMax": 0.6,
+     "lifetimeMin": 0.6,
+     "lifetimeMax": 1.1,
+     "useEventPosition": true
+    }
+   },
+   {
+    "id": "puffip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.2,
+     "sizeMax": 0.35,
+     "randomFrameStart": true
+    }
+   },
+   {
+    "id": "puffdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1.6
+    }
+   },
+   {
+    "id": "puffbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 1.8
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "floor.anchor"
+   ],
+   [
+    "floor.out",
+    "pulse.anchor"
+   ],
+   [
+    "pulsemat.material",
+    "pulse.material"
+   ],
+   [
+    "pulsewin.window",
+    "pulse.window"
+   ],
+   [
+    "pulse.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "lamp.anchor"
+   ],
+   [
+    "lamp.out",
+    "light.anchor"
+   ],
+   [
+    "lightwin.window",
+    "light.window"
+   ],
+   [
+    "light.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "stonesa.anchor"
+   ],
+   [
+    "erupt.start",
+    "stonesa.trigger"
+   ],
+   [
+    "stonesa.particles",
+    "stonesaip.particles"
+   ],
+   [
+    "stonesaip.particles",
+    "stonesag.particles"
+   ],
+   [
+    "stonesag.particles",
+    "stonesadrag.particles"
+   ],
+   [
+    "stonesadrag.particles",
+    "stonesafloorhit.particles"
+   ],
+   [
+    "stonesafloorhit.particles",
+    "stonesamesh.particles"
+   ],
+   [
+    "rockmat.material",
+    "stonesamesh.material"
+   ],
+   [
+    "stonesamesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "stonesb.anchor"
+   ],
+   [
+    "erupt.start",
+    "stonesb.trigger"
+   ],
+   [
+    "stonesb.particles",
+    "stonesbip.particles"
+   ],
+   [
+    "stonesbip.particles",
+    "stonesbg.particles"
+   ],
+   [
+    "stonesbg.particles",
+    "stonesbdrag.particles"
+   ],
+   [
+    "stonesbdrag.particles",
+    "stonesbfloorhit.particles"
+   ],
+   [
+    "stonesbfloorhit.particles",
+    "stonesbmesh.particles"
+   ],
+   [
+    "rockmat.material",
+    "stonesbmesh.material"
+   ],
+   [
+    "stonesbmesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "stonesc.anchor"
+   ],
+   [
+    "erupt.start",
+    "stonesc.trigger"
+   ],
+   [
+    "stonesc.particles",
+    "stonescip.particles"
+   ],
+   [
+    "stonescip.particles",
+    "stonescg.particles"
+   ],
+   [
+    "stonescg.particles",
+    "stonescdrag.particles"
+   ],
+   [
+    "stonescdrag.particles",
+    "stonescfloorhit.particles"
+   ],
+   [
+    "stonescfloorhit.particles",
+    "stonescmesh.particles"
+   ],
+   [
+    "rockmat.material",
+    "stonescmesh.material"
+   ],
+   [
+    "stonescmesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "chips.anchor"
+   ],
+   [
+    "erupt.start",
+    "chips.trigger"
+   ],
+   [
+    "chips.particles",
+    "chipip.particles"
+   ],
+   [
+    "chipip.particles",
+    "chipsg.particles"
+   ],
+   [
+    "chipsg.particles",
+    "chipsdrag.particles"
+   ],
+   [
+    "chipsdrag.particles",
+    "chipsfloorhit.particles"
+   ],
+   [
+    "chipsfloorhit.particles",
+    "chipmesh.particles"
+   ],
+   [
+    "rockmat.material",
+    "chipmesh.material"
+   ],
+   [
+    "chipmesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "floor.out",
+    "dust.anchor"
+   ],
+   [
+    "erupt.start",
+    "dust.trigger"
+   ],
+   [
+    "erupt.window",
+    "dust.window"
+   ],
+   [
+    "dust.particles",
+    "dustip.particles"
+   ],
+   [
+    "dustip.particles",
+    "dustdrag.particles"
+   ],
+   [
+    "dustdrag.particles",
+    "dustlift.particles"
+   ],
+   [
+    "dustlift.particles",
+    "dustnoise.particles"
+   ],
+   [
+    "dustnoise.particles",
+    "dustbb.particles"
+   ],
+   [
+    "dustmat.material",
+    "dustbb.material"
+   ],
+   [
+    "dustbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "stonesafloorhit.collision",
+    "puffs.trigger"
+   ],
+   [
+    "stonesbfloorhit.collision",
+    "puffs.trigger"
+   ],
+   [
+    "stonescfloorhit.collision",
+    "puffs.trigger"
+   ],
+   [
+    "puffs.particles",
+    "puffip.particles"
+   ],
+   [
+    "puffip.particles",
+    "puffdrag.particles"
+   ],
+   [
+    "puffdrag.particles",
+    "puffbb.particles"
+   ],
+   [
+    "dustmat.material",
+    "puffbb.material"
+   ],
+   [
+    "puffbb.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "stones",
+    "label": "Stones per shape",
+    "value": 2,
+    "bindings": [
+     {
+      "node": "stonesa",
+      "parameter": "burst"
+     },
+     {
+      "node": "stonesb",
+      "parameter": "burst"
+     },
+     {
+      "node": "stonesc",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "size",
+    "label": "Stone size",
+    "value": 0.25,
+    "bindings": [
+     {
+      "node": "stonesaip",
+      "parameter": "sizeMax"
+     },
+     {
+      "node": "stonesbip",
+      "parameter": "sizeMax"
+     },
+     {
+      "node": "stonescip",
+      "parameter": "sizeMax"
+     }
+    ]
+   },
+   {
+    "id": "force",
+    "label": "Eruption force",
+    "value": 6,
+    "bindings": [
+     {
+      "node": "stonesa",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "stonesb",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "stonesc",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "chips",
+      "parameter": "speedMax",
+      "scale": 1.2
+     }
+    ]
+   },
+   {
+    "id": "spread",
+    "label": "Spread",
+    "value": 1.1,
+    "bindings": [
+     {
+      "node": "stonesa",
+      "parameter": "radius"
+     },
+     {
+      "node": "stonesb",
+      "parameter": "radius"
+     },
+     {
+      "node": "stonesc",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "bounce",
+    "label": "Bounce",
+    "value": 0.15,
+    "bindings": [
+     {
+      "node": "stonesafloorhit",
+      "parameter": "restitution"
+     },
+     {
+      "node": "stonesbfloorhit",
+      "parameter": "restitution"
+     },
+     {
+      "node": "stonescfloorhit",
+      "parameter": "restitution"
+     }
+    ]
+   },
+   {
+    "id": "dust",
+    "label": "Dust density",
+    "value": 14,
+    "bindings": [
+     {
+      "node": "dust",
+      "parameter": "burst"
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": "fireball",
   "label": "Fireball",
   "description": "Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.",
