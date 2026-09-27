@@ -357,6 +357,32 @@ function motionTrail(): NodeSpec {
   });
 }
 
+function screenFlash(): NodeSpec {
+  return node('ScreenFlash', {
+    inputs: [port({ id: 'trigger', label: 'Trigger', type: 'event', cardinality: 'many' })],
+    outputs: [port({ id: 'presentation', label: 'Presentation', type: 'presentation' })],
+    parameters: [
+      param({ id: 'color', label: 'Colour', type: 'color', unit: 'none', default: white(), editPolicy: 'live' }),
+      param({ id: 'alpha', label: 'Alpha', type: 'number', unit: 'normalized', default: 0.12, min: 0, max: 0.15, editPolicy: 'live', description: 'Peak overlay opacity (bounded; suppressed by reduced motion).' }),
+      param({ id: 'durationTicks', label: 'Duration', type: 'integer', unit: 'tick', default: 3, min: 1, max: 60, step: 1 }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
+function cameraImpulse(): NodeSpec {
+  return node('CameraImpulse', {
+    inputs: [port({ id: 'trigger', label: 'Trigger', type: 'event', cardinality: 'many' })],
+    outputs: [port({ id: 'presentation', label: 'Presentation', type: 'presentation' })],
+    parameters: [
+      param({ id: 'durationTicks', label: 'Duration', type: 'integer', unit: 'tick', default: 6, min: 1, max: 60, step: 1 }),
+      param({ id: 'translation', label: 'Translation', type: 'number', unit: 'meter', default: 0.05, min: 0, max: 0.05, description: 'Peak camera shake offset (bounded; suppressed by reduced motion).' }),
+      param({ id: 'rotation', label: 'Rotation', type: 'number', unit: 'radian', default: 0.01, min: 0, max: 0.01 }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
 function particleTrail(): NodeSpec {
   return node('ParticleTrail', {
     inputs: [
@@ -745,7 +771,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 /** Fresh, independent registry each call. */
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
-    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(),
+    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
     linePath(), bezierPath(), helixPathNode(), pathTransformNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(),
     audioSource(), audioEnvelope(), audioFilter(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),

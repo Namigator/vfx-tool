@@ -635,6 +635,65 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "ScreenFlash",
+   "id": "screenflash",
+   "params": {
+    "color": {
+     "srgb": "#FFE2B0",
+     "alpha": 1
+    },
+    "alpha": 0.15,
+    "durationTicks": 4
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "CameraImpulse",
+   "id": "shake",
+   "params": {
+    "durationTicks": 8
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "hit.start",
+   "to": "screenflash.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "hit.start",
+   "to": "shake.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "screenflash.presentation",
+   "to": "node-output.presentation"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "shake.presentation",
+   "to": "node-output.presentation"
+  }
+ ],
+ [
   "vfx_compile",
   {
    "docId": "impact"
@@ -646,8 +705,10 @@
   {
    "docId": "impact",
    "ticks": [
-    18,
-    30
+    9,
+    10,
+    12,
+    20
    ]
   },
   true

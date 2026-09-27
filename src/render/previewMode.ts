@@ -36,6 +36,7 @@ export function choosePreviewMode(doc: unknown): PreviewModeChoice {
     if (n.node.type === 'RibbonRenderer' && n.effectiveEnabled && !ribbons.includes(n.node.id)) ribbons.push(n.node.id);
     if ((n.node.type === 'BillboardRenderer' || n.node.type === 'ParticleTrail' || n.node.type === 'SpriteRenderer' || n.node.type === 'PointLight' || n.node.type === 'MeshRenderer' || n.node.type === 'MotionTrail') && n.effectiveEnabled && !billboards.includes(n.node.id)) billboards.push(n.node.id);
   }
+  if (x.connections.some(c => c.target.nodeId === x.rootOutputNodeId && c.target.port === 'presentation' && c.source.kind === 'node')) billboards.push('<presentation>');
   if (ribbons.length === 0) return { mode: 'points' };
   if (billboards.length === 0) return { mode: 'paths' };
   return { mode: 'mixed' };

@@ -172,7 +172,7 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
     report('INVALID_VALUE', `Exposed control "${d.controlId}" of Group "${d.groupNodeId}" is driven by a connection; control expressions are not supported by the path preview yet.`, d.groupNodeId);
   }
   const outputId = x.rootOutputNodeId;
-  for (const port of options.audioHandled === true ? ['presentation'] : ['audio', 'presentation']) {
+  for (const port of options.audioHandled === true ? [] : ['audio']) {
     if (into(outputId, port).length) report('INVALID_VALUE', `EffectOutput.${port} is connected, but ${port} output is not supported by the path preview yet.`, outputId);
   }
 

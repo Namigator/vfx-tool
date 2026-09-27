@@ -87,6 +87,11 @@ export type MeshLayer = {
   orientation: 'tumble' | 'velocity'; lit: boolean; color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout';
   sizeOverLife: CurveValue; colorOverLife: GradientValue; renderOrderOffset: number; visualOrder: number;
 };
+/** 05 presentation: screen flashes and camera impulses at event ticks (preview-only, reduced-motion aware). */
+export type PresentationPlan = {
+  flashes: { nodeId: string; tick: number; durationTicks: number; color: ColorValue; alpha: number }[];
+  impulses: { nodeId: string; tick: number; durationTicks: number; translation: number; rotation: number; seed: number }[];
+};
 export type ParticlePreviewPlan = {
   durationTicks: number;
   /** One per distinct particle chain, in first-use order of layers. */
@@ -97,6 +102,7 @@ export type ParticlePreviewPlan = {
   trails: ParticleTrailLayer[];
   lights: PointLightLayer[];
   meshes: MeshLayer[];
+  presentation: PresentationPlan;
 };
 
 export const DEFAULT_PREVIEW_SIZE = { min: 0.08, max: 0.16 } as const;
@@ -195,7 +201,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     report('INVALID_VALUE', `Exposed control "${d.controlId}" of Group "${d.groupNodeId}" is driven by a connection; control expressions are not supported by the point preview yet.`, d.groupNodeId);
   }
   const outputId = x.rootOutputNodeId;
-  for (const port of options.audioHandled === true ? ['presentation'] : ['audio', 'presentation']) {
+  for (const port of options.audioHandled === true ? [] : ['audio']) {
     if (into(outputId, port).length) report('INVALID_VALUE', `EffectOutput.${port} is connected, but ${port} output is not supported by the point preview yet.`, outputId);
   }
 
@@ -737,12 +743,41 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     }
   }
 
+  // ---------- presentation ----------
+  const presentation: PresentationPlan = { flashes: [], impulses: [] };
+  for (const c of into(outputId, 'presentation')) {
+    try {
+      const p = sourceNode(c.source, outputId, 'presentation');
+      if (!p.effectiveEnabled) continue;
+      if (p.node.type !== 'ScreenFlash' && p.node.type !== 'CameraImpulse') fail('UNKNOWN_NODE', `Presentation source "${p.node.id}" (${p.node.type}) is not supported; use ScreenFlash or CameraImpulse.`, p.node.id);
+      noDrivenParams(p, ['trigger']);
+      const ticks: number[] = [];
+      for (const tc of into(p.node.id, 'trigger')) {
+        const s = sourceNode(tc.source, p.node.id, 'trigger'), port = tc.source.kind === 'node' ? tc.source.port : '';
+        if (!s.effectiveEnabled) continue;
+        if (s.node.type === 'Schedule') {
+          const repeat = param(s, 'mode') === 'repeat', n = repeat ? num(s, 'repeatCount') : 1;
+          for (let k = 0; k < n; k++) ticks.push(num(s, 'startTicks') + k * (repeat ? num(s, 'repeatIntervalTicks') : 0) + (port === 'end' ? num(s, 'durationTicks') : 0));
+        } else if (s.node.type === 'PathFollower') { const tr = followerTrack(s); if (tr) ticks.push(tr.arrivalTick); }
+        else fail('UNKNOWN_NODE', `${p.node.type} "${p.node.id}" trigger from ${s.node.type} is not supported; use a Schedule or PathFollower arrival.`, p.node.id);
+      }
+      for (const tick of ticks) {
+        if (tick >= doc.durationTicks) continue;
+        if (p.node.type === 'ScreenFlash') presentation.flashes.push({ nodeId: p.node.id, tick, durationTicks: num(p, 'durationTicks'), color: param(p, 'color') as ColorValue, alpha: num(p, 'alpha') });
+        else presentation.impulses.push({ nodeId: p.node.id, tick, durationTicks: num(p, 'durationTicks'), translation: num(p, 'translation') * transform.scale, rotation: num(p, 'rotation'),
+          seed: sampleUnit({ documentSeed: doc.seed, randomStreamId: p.node.randomStreamId, eventRandomKey: String(tick), entityOrdinal: 0, propertyKey: 'shake', sampleOrdinal: 0 }) * 4294967296 >>> 0 });
+      }
+    } catch (e) {
+      if (!(e instanceof Fail)) throw e;
+    }
+  }
+
   if (!errors.length) {
     const budget = checkBudget(systems.map(s => s.descriptor), doc.durationTicks);
     if (budget) errors.push(budget);
   }
   if (errors.length) return { ok: false, errors };
-  return { ok: true, value: { durationTicks: doc.durationTicks, systems, layers, trails, lights, meshes }, warnings };
+  return { ok: true, value: { durationTicks: doc.durationTicks, systems, layers, trails, lights, meshes, presentation }, warnings };
 }
 
 /** Aggregate worst case over all systems: total births and live particles at any tick (plan15 caps). */

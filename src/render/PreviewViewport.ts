@@ -300,6 +300,11 @@ export class PreviewViewport {
       this.#composer.addPass(new OutputPass());
       renderer.domElement.className = 'pv2-canvas';
       container.appendChild(renderer.domElement);
+      const flashEl = document.createElement('div');
+      Object.assign(flashEl.style, { position: 'absolute', inset: '0', pointerEvents: 'none', opacity: '0', background: '#ffffff' });
+      if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
+      container.appendChild(flashEl);
+      this.#flashEl = flashEl;
 
       this.#camera.position.set(...DEFAULT_CAMERA);
       controls = new OrbitControls(this.#camera, renderer.domElement);
@@ -407,6 +412,7 @@ export class PreviewViewport {
 
   #addPointLayers(plan: ParticlePreviewPlan): void {
     this.#plan = plan;
+    this.#presentation = plan.presentation ?? null;
     for (const layer of plan.meshes ?? []) {
       let geometry = this.#meshGeometries.get(layer.mesh);
       if (!geometry) { geometry = createBuiltinMesh(layer.mesh as BuiltinMesh); this.#meshGeometries.set(layer.mesh, geometry); }
@@ -915,8 +921,28 @@ export class PreviewViewport {
     // Re-billboard ribbons when orbiting (damping keeps moving the camera after input stops).
     if (this.#pathPlan && !this.#camera.position.equals(this.#ribbonCamera)) this.#updateRibbons();
     if (this.#disposed) return;
+    // Presentation (flash overlay, camera impulse) applies to this rendered frame only; orbit state is untouched.
+    const pres = this.#reducedMotion ? null : this.#presentation, t = (this.#clock ? this.#clock.tick + this.#clock.alpha : 0);
+    let shaken = false;
+    const cam = this.#camera, savedPos = cam.position.clone(), savedQuat = cam.quaternion.clone();
+    if (pres) {
+      let flash = 0, color = '#ffffff';
+      for (const f of pres.flashes) { const u = (t - f.tick) / f.durationTicks; if (u >= 0 && u < 1) { const a = f.alpha * (1 - u); if (a > flash) { flash = a; color = f.color.srgb; } } }
+      if (this.#flashEl) { this.#flashEl.style.opacity = String(flash); this.#flashEl.style.background = color; }
+      for (const i of pres.impulses) {
+        const u = (t - i.tick) / i.durationTicks;
+        if (u < 0 || u >= 1) continue;
+        const k = (1 - u) * (1 - u), ts = t * PARTICLE_DT * 40;
+        cam.position.x += valueNoise4(i.seed, ts, 0.1, 0.2, 0) * i.translation * k;
+        cam.position.y += valueNoise4(i.seed + 1, ts, 0.3, 0.4, 0) * i.translation * k;
+        cam.position.z += valueNoise4(i.seed + 2, ts, 0.5, 0.6, 0) * i.translation * k;
+        cam.rotateZ(valueNoise4(i.seed + 3, ts, 0.7, 0.8, 0) * i.rotation * k);
+        shaken = true;
+      }
+    } else if (this.#flashEl) this.#flashEl.style.opacity = '0';
     if (this.#composer) this.#composer.render();
     else this.#renderer.render(this.#scene, this.#camera);
+    if (shaken) { cam.position.copy(savedPos); cam.quaternion.copy(savedQuat); }
   };
 
   /** 12 "dark/light background" inspection: arena backdrop and floor colours only; effects are unchanged. */
@@ -927,6 +953,10 @@ export class PreviewViewport {
     if (!this.#disposed) this.#emitFrame(true);
   }
 
+  #presentation: ParticlePreviewPlan['presentation'] | null = null;
+  #flashEl: HTMLDivElement | null = null;
+  /** 08/12: presentation effects obey prefers-reduced-motion. */
+  readonly #reducedMotion = typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   #looping = false;
   /** 12 transport Loop: at the end, restart from tick 0 with the same seed. */
   setLoop(on: boolean): void { this.#looping = on; }
