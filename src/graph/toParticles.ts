@@ -58,7 +58,9 @@ export type ParticlePreviewLayer = {
   opacityOverLife: CurveValue;
   /** Colour × alpha multiplier over normalized age; document validation owns stop rules. */
   colorOverLife: GradientValue;
-  alignment: 'camera' | 'velocity';
+  alignment: 'camera' | 'velocity' | 'worldAxis';
+  /** Unit normal the quad faces for worldAxis alignment. */
+  worldAxis: Vec3;
   /** Quad length multiplier along its local up axis (velocity direction when velocity-aligned). */
   stretchRatio: number;
   /** Particle position along the stretch axis: 0 trailing end, 1 leading tip. */
@@ -533,7 +535,8 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
           nodeId: sid, systemId: sid, color: param(m, 'tint') as ColorValue, opacity: num(m, 'opacity'), emission: num(m, 'emission'),
           blend: param(m, 'blend') as ParticlePreviewLayer['blend'], alphaCutoff: num(m, 'alphaCutoff'), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
           sizeOverLife: curve('sizeOverWindow', SIZE_OVER_LIFE_BOUNDS), opacityOverLife: curve('opacityOverWindow', OPACITY_OVER_LIFE_BOUNDS),
-          colorOverLife: structuredClone(param(b, 'colorOverWindow') as GradientValue), alignment: 'camera', stretchRatio: 1, pivot: 0.5, ...(sprite ? { sprite } : {}),
+          colorOverLife: structuredClone(param(b, 'colorOverWindow') as GradientValue), stretchRatio: 1, pivot: 0.5,
+          ...((): Pick<ParticlePreviewLayer, 'alignment' | 'worldAxis'> => { const w = param(b, 'worldAxis') as Vec3, l = Math.hypot(w[0], w[1], w[2]); return param(b, 'alignment') === 'worldAxis' && l > 1e-9 ? { alignment: 'worldAxis', worldAxis: rotate(transform.rotation, [w[0] / l, w[1] / l, w[2] / l]) } : { alignment: 'camera', worldAxis: [0, 1, 0] }; })(), ...(sprite ? { sprite } : {}),
         });
         continue;
       }
@@ -570,7 +573,9 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       const bid = b.node.id;
       noDrivenParams(b, BILLBOARD_PORTS);
       const alignment = param(b, 'alignment') as string;
-      if (alignment === 'worldAxis') report('INVALID_VALUE', 'Billboard alignment "worldAxis" is not supported by the point preview yet; use "camera" or "velocity".', bid, 'alignment');
+      const wa = param(b, 'worldAxis') as Vec3, wl = Math.hypot(wa[0], wa[1], wa[2]);
+      if (alignment === 'worldAxis' && !(wl > 1e-9)) report('INVALID_VALUE', 'Billboard worldAxis must be nonzero.', bid, 'worldAxis');
+      const worldAxis: Vec3 = wl > 1e-9 ? rotate(transform.rotation, [wa[0] / wl, wa[1] / wl, wa[2] / wl]) : [0, 1, 0];
       if (param(b, 'softIntersection') !== false) report('INVALID_VALUE', 'Soft intersection is not supported by the point preview; turn it off.', bid, 'softIntersection');
       const lifeCurve = (id: string, bounds: { min: number; max: number }): CurveValue => {
         const curve = param(b, id) as CurveValue;
@@ -621,7 +626,8 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         sizeOverLife,
         opacityOverLife,
         colorOverLife: structuredClone(param(b, 'colorOverLife') as GradientValue),
-        alignment: alignment === 'velocity' ? 'velocity' : 'camera',
+        alignment: alignment === 'velocity' ? 'velocity' : alignment === 'worldAxis' ? 'worldAxis' : 'camera',
+        worldAxis,
         stretchRatio: num(b, 'stretchRatio'),
         pivot: num(b, 'pivot'),
         ...(sprite ? { sprite: { ...sprite, randomStart: chain.initial ? param(chain.initial, 'randomFrameStart') === true : false } } : {}),

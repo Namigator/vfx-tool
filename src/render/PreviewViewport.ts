@@ -79,6 +79,8 @@ uniform vec2 uGrid;
 uniform vec2 uInset;
 varying vec2 vAtlas;
 uniform float uAlign;
+uniform vec3 uAxisU;
+uniform vec3 uAxisV;
 uniform float uStretch;
 uniform float uPivot;
 varying vec2 vUv;
@@ -97,12 +99,14 @@ void main() {
   // Local quad: pivot shifts the particle along +Y (0 trailing end, 1 leading tip), then stretch along +Y.
   vec2 p = vec2(position.x, (position.y + 0.5 - uPivot) * uStretch);
   float ang = spinAngle;
-  if (uAlign > 0.5) {
+  if (uAlign > 0.5 && uAlign < 1.5) {
     vec3 vv = (modelViewMatrix * vec4(worldVelocity, 0.0)).xyz;
     ang = dot(vv.xy, vv.xy) > 1e-10 ? atan(vv.y, vv.x) - 1.5707963 : 0.0;
   }
   float c = cos(ang), s = sin(ang);
-  mv.xy += vec2(c * p.x - s * p.y, s * p.x + c * p.y) * instanceMatrix[0][0];
+  vec2 r = vec2(c * p.x - s * p.y, s * p.x + c * p.y) * instanceMatrix[0][0];
+  if (uAlign > 1.5) mv.xyz += (modelViewMatrix * vec4(uAxisU * r.x + uAxisV * r.y, 0.0)).xyz; // Quad in the world plane.
+  else mv.xy += r;
   gl_Position = projectionMatrix * mv;
 }`;
 
@@ -385,7 +389,15 @@ export class PreviewViewport {
         attr.setUsage(THREE.DynamicDrawUsage);
         geometry.setAttribute(name, attr);
       }
-      material.uniforms.uAlign = { value: layer.alignment === 'velocity' ? 1 : 0 };
+      material.uniforms.uAlign = { value: layer.alignment === 'velocity' ? 1 : layer.alignment === 'worldAxis' ? 2 : 0 };
+      {
+        // In-plane basis for worldAxis quads: U, V perpendicular to the axis (right-handed, V toward +Y/-Z).
+        const n = new THREE.Vector3(...(layer.worldAxis ?? [0, 1, 0])).normalize();
+        const helper = Math.abs(n.y) > 0.9 ? new THREE.Vector3(0, 0, -1) : new THREE.Vector3(0, 1, 0);
+        const u = new THREE.Vector3().crossVectors(helper, n).normalize(), v = new THREE.Vector3().crossVectors(n, u);
+        material.uniforms.uAxisU = { value: u };
+        material.uniforms.uAxisV = { value: v };
+      }
       material.uniforms.uStretch = { value: layer.stretchRatio };
       material.uniforms.uPivot = { value: layer.pivot };
       const sheet = layer.sprite?.sheet;

@@ -1406,7 +1406,16 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "label": "Impact flash",
   "description": "Timed glow sprite with a spark burst at Target.",
   "durationTicks": 90,
-  "anchors": [],
+  "anchors": [
+   {
+    "id": "groundpoint",
+    "position": [
+     0,
+     0.02,
+     0
+    ]
+   }
+  ],
   "nodes": [
    {
     "id": "hit",
@@ -1544,6 +1553,64 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "stretchRatio": 5,
      "pivot": 0.8
     }
+   },
+   {
+    "id": "ground",
+    "type": "Anchor",
+    "params": {
+     "anchorId": "groundpoint"
+    }
+   },
+   {
+    "id": "ringmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "ripple-ring",
+     "variant": 0,
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFB060",
+      "alpha": 1
+     },
+     "emission": 0.5
+    }
+   },
+   {
+    "id": "shockwave",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1,
+     "alignment": "worldAxis",
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.2
+       },
+       {
+        "x": 1,
+        "y": 5
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
    }
   ],
   "edges": [
@@ -1589,6 +1656,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "bb.visual",
+    "node-output.visual"
+   ],
+   [
+    "ground.out",
+    "shockwave.anchor"
+   ],
+   [
+    "ringmat.material",
+    "shockwave.material"
+   ],
+   [
+    "hit.window",
+    "shockwave.window"
+   ],
+   [
+    "shockwave.visual",
     "node-output.visual"
    ]
   ],

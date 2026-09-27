@@ -283,6 +283,120 @@
   }
  ],
  [
+  "vfx_set_anchor",
+  {
+   "docId": "impact",
+   "anchorId": "groundpoint",
+   "position": [
+    0,
+    0.02,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "Anchor",
+   "id": "ground",
+   "params": {
+    "anchorId": "groundpoint"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "Material",
+   "id": "ringmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "ripple-ring",
+    "variant": 0,
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFB060",
+     "alpha": 1
+    },
+    "emission": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "impact",
+   "type": "SpriteRenderer",
+   "id": "shockwave",
+   "params": {
+    "size": 1,
+    "alignment": "worldAxis",
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.2
+      },
+      {
+       "x": 1,
+       "y": 5
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "ground.out",
+   "to": "shockwave.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "ringmat.material",
+   "to": "shockwave.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "hit.window",
+   "to": "shockwave.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "shockwave.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
   "vfx_compile",
   {
    "docId": "impact"
@@ -294,8 +408,8 @@
   {
    "docId": "impact",
    "ticks": [
-    13,
-    24
+    18,
+    30
    ]
   },
   true

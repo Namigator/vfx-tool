@@ -51,7 +51,7 @@ test('F01 graph compiles to one point system and one billboard layer with exact 
     sizeOverLife: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] },
     opacityOverLife: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] },
     colorOverLife: { stops: [{ position: 0, color: { srgb: '#FFFFFF', alpha: 1 } }, { position: 1, color: { srgb: '#FFFFFF', alpha: 1 } }] },
-    alignment: 'camera', stretchRatio: 1, pivot: 0.5,
+    alignment: 'camera', worldAxis: [0, 1, 0], stretchRatio: 1, pivot: 0.5,
   }]);
   assert.equal(countAt(p, 0), 1);
   assert.equal(countAt(p, 59), 1);
@@ -148,7 +148,7 @@ test('unsupported settings are addressed errors, never ignored', () => {
   const cases: Array<[string, NodeDefinition['params'], string]> = [
     ['node-emitter', { shape: 'path' }, 'shape'],
     ['node-emitter', { space: 'local' }, 'space'],
-    ['node-billboard', { alignment: 'worldAxis' }, 'alignment'],
+    ['node-billboard', { alignment: 'worldAxis', worldAxis: [0, 0, 0] }, 'worldAxis'],
     ['node-billboard', { softIntersection: true }, 'softIntersection'],
   ];
   for (const [id, params, field] of cases) {
