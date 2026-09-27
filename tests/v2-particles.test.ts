@@ -154,6 +154,17 @@ test('snapshot and input mutation isolation', () => {
   assert.throws(() => { (sim.descriptor.sourcePosition as number[])[0] = 5; });
 });
 
+test('operator gain scales a force per tick (index tick-1, last value holds); bad gain is rejected', () => {
+  const gain = [0, 0, 0, 1];
+  const d = base({ durationTicks: 10, bursts: [{ tick: 0, eventRandomKey: 'e', count: 1 }], initialVelocity: { kind: 'vector', value: [0, 0, 0] }, operators: [{ kind: 'gravity', acceleration: [0, -10, 0], gain }] });
+  const s = run(d);
+  assert.equal(s[3].particles[0].velocity[1], 0, 'gain 0 for steps 1..3');
+  assert.ok(Math.abs(s[4].particles[0].velocity[1] + 10 / 60) < 1e-12, 'full gain from step 4');
+  assert.ok(Math.abs(s[6].particles[0].velocity[1] + 30 / 60) < 1e-12, 'last value holds');
+  assert.equal(validateParticleDescriptor({ ...d, operators: [{ kind: 'gravity', acceleration: [0, -10, 0], gain: [2] }] }).ok, false);
+  assert.equal(validateParticleDescriptor({ ...d, operators: [{ kind: 'ground', mode: 'kill', restitution: 0, friction: 0, maxBounces: 0, gain: [1] }] }).ok, false);
+});
+
 test('drag is exponential and applied after gravity velocity update', () => {
   const c = 0.9, dt = 1 / 60;
   const d = base({

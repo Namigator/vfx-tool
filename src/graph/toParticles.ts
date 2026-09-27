@@ -38,6 +38,8 @@ import { compilePathPreview } from './toPaths.ts';
 import { ease, pointAtArcFraction, type Easing } from '../runtime/paths.ts';
 import type { FlipbookMode, SpriteSheet } from '../assets/spriteLibrary.ts';
 
+import { evaluateCurve } from '../runtime/curves.ts';
+
 /** Value nodes evaluated once per cast when they drive a parameter port. */
 const VALUE_NODES = new Set(['RandomRange', 'Constant', 'ScalarMath']);
 
@@ -455,8 +457,37 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     }
 
     const scale = transform.scale;
+    /** Force Strength: a per-tick gain track when an enabled EffectTimeCurve drives it, otherwise a constant (literal or value node). */
+    const strengthOf = (f: ExpandedNode): { k: number; gain?: number[] } => {
+      const cs = into(f.node.id, 'strength');
+      const src = cs.length === 1 && cs[0].source.kind === 'node' ? nodes.get(cs[0].source.nodeId) : undefined;
+      if (!src || src.node.type !== 'EffectTimeCurve') return { k: num(f, 'strength') };
+      if (!src.effectiveEnabled) return { k: num(f, 'strength') };
+      noDrivenParams(src, []);
+      const curve = param(src, 'curve') as CurveValue;
+      if (curve?.domain !== 'effectSeconds') { report('DOMAIN_MISMATCH', `EffectTimeCurve "${src.node.id}" curve must use domain "effectSeconds".`, src.node.id, 'curve'); return { k: 1 }; }
+      try {
+        return { k: 1, gain: Array.from({ length: doc.durationTicks + 1 }, (_, t) => evaluateCurve(curve, t / TICKS_PER_SECOND, { min: 0, max: 1 })) };
+      } catch (e) {
+        if (e instanceof RangeError || e instanceof TypeError) { report('INVALID_VALUE', `EffectTimeCurve "${src.node.id}": ${e.message}`, src.node.id, 'curve'); return { k: 1 }; }
+        throw e;
+      }
+    };
     const operators: ParticleOperator[] = chain.forces.map((f): ParticleOperator => {
-      noDrivenParams(f, [...IP_PORTS, 'anchor']);
+      const op = forceOperator(f);
+      if (f.node.type === 'GroundCollision') return op;
+      const s = strengthOf(f);
+      if (s.gain) return { ...op, gain: s.gain } as ParticleOperator;
+      if (s.k === 1) return op;
+      if (op.kind === 'gravity') return { ...op, acceleration: [op.acceleration[0] * s.k, op.acceleration[1] * s.k, op.acceleration[2] * s.k] };
+      if (op.kind === 'drag') return { ...op, coefficient: op.coefficient * s.k };
+      if (op.kind === 'noise') return { ...op, amplitude: op.amplitude * s.k };
+      if (op.kind === 'attract') return { ...op, acceleration: op.acceleration * s.k };
+      if (op.kind === 'vortex') return { ...op, tangential: op.tangential * s.k, inward: op.inward * s.k };
+      return op;
+    });
+    function forceOperator(f: ExpandedNode): ParticleOperator {
+      noDrivenParams(f, [...IP_PORTS, 'anchor', 'strength']);
       if (f.node.type === 'Drag') return { kind: 'drag', coefficient: num(f, 'coefficient') };
       if (f.node.type === 'Attract' || f.node.type === 'Vortex') {
         const an = into(f.node.id, 'anchor'), anode = an.length === 1 ? sourceNode(an[0].source, f.node.id, 'anchor') : undefined;
@@ -475,7 +506,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       }
       const a = param(f, 'acceleration') as Vec3;
       return { kind: 'gravity', acceleration: [a[0] * scale, a[1] * scale, a[2] * scale] };
-    });
+    }
     const dir = param(em, 'direction') as Vec3;
     const k = (speedMin * scale) / Math.hypot(dir[0], dir[1], dir[2]);
     let velocity = rotate(transform.rotation, [dir[0] * k, dir[1] * k, dir[2] * k]);

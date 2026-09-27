@@ -126,6 +126,7 @@ function gravity(): NodeSpec {
     inputs: [port({ id: 'particles', label: 'Particles', type: 'particles', required: true })],
     outputs: [port({ id: 'particles', label: 'Particles', type: 'particles' })],
     parameters: [
+      forceStrength(),
       param({ id: 'acceleration', label: 'Acceleration', type: 'vec3', unit: 'metersPerSecondSquared', default: [0, -9.81, 0], min: -100, max: 100, description: 'World-space acceleration in m/s². Positive Y gives buoyancy (rising smoke/flame).' }),
     ],
     disabledBehavior: 'bypass',
@@ -138,6 +139,7 @@ function drag(): NodeSpec {
     inputs: [port({ id: 'particles', label: 'Particles', type: 'particles', required: true })],
     outputs: [port({ id: 'particles', label: 'Particles', type: 'particles' })],
     parameters: [
+      forceStrength(),
       param({ id: 'coefficient', label: 'Coefficient', type: 'number', unit: 'perSecond', default: 0.8, min: 0, max: 20, description: 'Exponential velocity damping: velocity *= exp(-coefficient·dt).' }),
     ],
     disabledBehavior: 'bypass',
@@ -150,6 +152,7 @@ function noiseForce(): NodeSpec {
     inputs: [port({ id: 'particles', label: 'Particles', type: 'particles', required: true })],
     outputs: [port({ id: 'particles', label: 'Particles', type: 'particles' })],
     parameters: [
+      forceStrength(),
       param({ id: 'amplitude', label: 'Amplitude', type: 'number', unit: 'metersPerSecondSquared', default: 1, min: 0, max: 100, description: 'Peak turbulent acceleration.' }),
       param({ id: 'frequency', label: 'Frequency', type: 'number', unit: 'perSecond', default: 1, min: 0.01, max: 20, description: 'Spatial frequency (cycles per meter); low values give broad coherent swirls.' }),
       param({ id: 'evolution', label: 'Evolution', type: 'number', unit: 'perSecond', default: 0.5, min: 0, max: 10, description: 'How fast the field changes over effect time; 0 freezes it.' }),
@@ -177,6 +180,7 @@ function attract(): NodeSpec {
     inputs: [port({ id: 'particles', label: 'Particles', type: 'particles', required: true }), port({ id: 'anchor', label: 'Anchor', type: 'anchor', required: true })],
     outputs: [port({ id: 'particles', label: 'Particles', type: 'particles' })],
     parameters: [
+      forceStrength(),
       param({ id: 'acceleration', label: 'Acceleration', type: 'number', unit: 'metersPerSecondSquared', default: 2, min: 0, max: 100 }),
       param({ id: 'softRadius', label: 'Soft radius', type: 'number', unit: 'meter', default: 0.1, min: 0.01, max: 10, description: 'Pull fades smoothly inside this radius (no singularity at the centre).' }),
       param({ id: 'killRadius', label: 'Kill radius', type: 'number', unit: 'meter', default: 0, min: 0, max: 10, description: 'Particles reaching this distance die (0 = never): absorption / charge-up.' }),
@@ -191,6 +195,7 @@ function vortex(): NodeSpec {
     inputs: [port({ id: 'particles', label: 'Particles', type: 'particles', required: true }), port({ id: 'anchor', label: 'Anchor', type: 'anchor', required: true })],
     outputs: [port({ id: 'particles', label: 'Particles', type: 'particles' })],
     parameters: [
+      forceStrength(),
       param({ id: 'axis', label: 'Axis', type: 'vec3', unit: 'none', default: [0, 1, 0], min: -1, max: 1 }),
       param({ id: 'tangential', label: 'Tangential', type: 'number', unit: 'metersPerSecondSquared', default: 3, min: -100, max: 100, description: 'Swirl strength (sign sets the direction).' }),
       param({ id: 'inward', label: 'Inward', type: 'number', unit: 'metersPerSecondSquared', default: 1, min: -100, max: 100, description: 'Pull toward the axis (negative pushes out).' }),
@@ -262,6 +267,11 @@ function mergeEvents(): NodeSpec {
     parameters: [],
     disabledBehavior: 'empty',
   });
+}
+
+/** 05 force Strength: multiplies the force's magnitude; an EffectTimeCurve makes it ramp over effect time. */
+function forceStrength(): ParameterSpec {
+  return param({ id: 'strength', label: 'Strength', type: 'number', unit: 'normalized', default: 1, min: 0, max: 1, domains: ['constant', 'effectTime'], editPolicy: 'live', description: 'Gain on this force (0..1); drive with an EffectTimeCurve to ramp it over time.' });
 }
 
 function groundCollision(): NodeSpec {

@@ -274,6 +274,24 @@ test('disabled Gravity bypasses; gravity scales with the effect transform and mo
   assert.deepEqual(two.value.systems[0].descriptor.operators[0], { kind: 'gravity', acceleration: [0, -6, 0] });
 });
 
+test('force Strength: a literal scales the operator; an EffectTimeCurve becomes a per-tick gain; disabled curve falls back', () => {
+  const p = plan(withForces({ gravity: { acceleration: [0, -10, 0], strength: 0.5 }, drag: { coefficient: 2, strength: 0.25 } }));
+  assert.deepEqual(p.systems[0].descriptor.operators, [{ kind: 'gravity', acceleration: [0, -5, 0] }, { kind: 'drag', coefficient: 0.5 }]);
+  const ramp = (enabled: boolean) => (() => {
+    const d = withForces({ gravity: { strength: 0.3 } });
+    root(d).nodes.push({ ...node('node-ramp', 'EffectTimeCurve', { curve: { domain: 'effectSeconds', interpolation: 'linear', keys: [{ x: 0, y: 0 }, { x: 1, y: 1 }] } }), enabled });
+    root(d).edges.push(edge('e-ramp', 'node-ramp', 'value', 'node-gravity', 'strength'));
+    return d;
+  })();
+  const g = plan(ramp(true)).systems[0].descriptor.operators[0] as { acceleration: number[]; gain?: number[] };
+  assert.deepEqual(g.acceleration, [0, -9.81, 0]);
+  assert.equal(g.gain!.length, 121);
+  assert.deepEqual([g.gain![0], g.gain![30], g.gain![60], g.gain![90]], [0, 0.5, 1, 1]);
+  const off = plan(ramp(false)).systems[0].descriptor.operators[0] as { acceleration: number[]; gain?: number[] };
+  assert.equal(off.gain, undefined);
+  assert.ok(Math.abs(off.acceleration[1] + 9.81 * 0.3) < 1e-12);
+});
+
 test('cone emitter with speed range and aim anchor compiles to a shaped, aimed descriptor', () => {
   const p = plan(f01(d => {
     set('node-emitter', { shape: 'cone', coneAngle: 0.2, radius: 0.1, speedMin: 2, speedMax: 3, burst: 50 })(d);

@@ -74,15 +74,16 @@ export type GroundMode = 'kill' | 'slide' | 'bounce';
  * decreases by friction·9.81·dt per tick (Coulomb-style).
  */
 export type ParticleOperator =
-  | { kind: 'gravity'; acceleration: Vec3 }
-  | { kind: 'drag'; coefficient: number }
+  | { kind: 'gravity'; acceleration: Vec3; gain?: number[] }
+  | { kind: 'drag'; coefficient: number; gain?: number[] }
   | { kind: 'ground'; mode: GroundMode; restitution: number; friction: number; maxBounces: number }
   /** 05 NoiseForce: amplitude m/s², frequency 1/m, evolution 1/s of effect time; fields seeded from randomStreamId. */
-  | { kind: 'noise'; mode: 'vector' | 'curl'; amplitude: number; frequency: number; evolution: number; randomStreamId: string }
+  | { kind: 'noise'; mode: 'vector' | 'curl'; amplitude: number; frequency: number; evolution: number; randomStreamId: string; gain?: number[] }
   /** 05 Attract: toward center, magnitude acceleration·d/sqrt(d²+soft²); particles inside killRadius (>0) die. */
-  | { kind: 'attract'; center: Vec3; acceleration: number; softRadius: number; killRadius: number }
+  | { kind: 'attract'; center: Vec3; acceleration: number; softRadius: number; killRadius: number; gain?: number[] }
   /** 05 Vortex: around the unit axis through center; tangential and inward accelerations scaled by exp(-ρ/falloff). */
-  | { kind: 'vortex'; center: Vec3; axis: Vec3; tangential: number; inward: number; falloff: number };
+  | { kind: 'vortex'; center: Vec3; axis: Vec3; tangential: number; inward: number; falloff: number; gain?: number[] };
+/** Force `gain` (optional): per-tick strength multiplier in 0..1; index = tick - 1 (start of the step), the last value holds. */
 
 export type ParticleEmitterDescriptor = {
   documentSeed: number;
@@ -353,16 +354,17 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
     if (!(i in ops)) { e.push(err('INVALID_VALUE', 'operators must not be sparse (hole at this index).', op)); continue; }
     const o = ops[i];
     if (!isObj(o)) { e.push(err('INVALID_VALUE', 'Operator must be an object.', op)); continue; }
+    const opsBefore = operators.length;
     if (o.kind === 'gravity') {
-      checkKeys(o, ['kind', 'acceleration'], op, e);
+      checkKeys(o, ['kind', 'acceleration', 'gain'], op, e);
       if (!isVec3(o.acceleration)) e.push(err('INVALID_VALUE', 'gravity.acceleration must be a finite vec3.', `${op}.acceleration`));
       else operators.push({ kind: 'gravity', acceleration: cloneVec(o.acceleration) });
     } else if (o.kind === 'drag') {
-      checkKeys(o, ['kind', 'coefficient'], op, e);
+      checkKeys(o, ['kind', 'coefficient', 'gain'], op, e);
       if (!isFiniteNum(o.coefficient) || o.coefficient < 0 || o.coefficient > MAX_DRAG_COEFFICIENT) e.push(err('INVALID_VALUE', `drag.coefficient must be finite in 0..${MAX_DRAG_COEFFICIENT}.`, `${op}.coefficient`));
       else operators.push({ kind: 'drag', coefficient: o.coefficient });
     } else if (o.kind === 'noise') {
-      checkKeys(o, ['kind', 'mode', 'amplitude', 'frequency', 'evolution', 'randomStreamId'], op, e);
+      checkKeys(o, ['kind', 'mode', 'amplitude', 'frequency', 'evolution', 'randomStreamId', 'gain'], op, e);
       let ok = true;
       if (o.mode !== 'vector' && o.mode !== 'curl') { ok = false; e.push(err('INVALID_VALUE', 'noise.mode must be vector or curl.', `${op}.mode`)); }
       const bounds: [string, number, number][] = [['amplitude', 0, 100], ['frequency', 0.01, 20], ['evolution', 0, 10]];
@@ -371,7 +373,7 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
       if (ok) operators.push({ kind: 'noise', mode: o.mode as 'vector' | 'curl', amplitude: o.amplitude as number, frequency: o.frequency as number, evolution: o.evolution as number, randomStreamId: o.randomStreamId as string });
     } else if (o.kind === 'attract' || o.kind === 'vortex') {
       const attract = o.kind === 'attract';
-      checkKeys(o, attract ? ['kind', 'center', 'acceleration', 'softRadius', 'killRadius'] : ['kind', 'center', 'axis', 'tangential', 'inward', 'falloff'], op, e);
+      checkKeys(o, attract ? ['kind', 'center', 'acceleration', 'softRadius', 'killRadius', 'gain'] : ['kind', 'center', 'axis', 'tangential', 'inward', 'falloff', 'gain'], op, e);
       let ok = isVec3(o.center);
       if (!ok) e.push(err('INVALID_VALUE', `${o.kind}.center must be a finite vec3.`, `${op}.center`));
       const bounds: [string, number, number][] = attract ? [['acceleration', 0, 100], ['softRadius', 0.01, 10], ['killRadius', 0, 10]] : [['tangential', -100, 100], ['inward', -100, 100], ['falloff', 0.01, 20]];
@@ -388,6 +390,11 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
       if (!isTickInt(o.maxBounces, 0, 8)) { ok = false; e.push(err('INVALID_VALUE', 'ground.maxBounces must be an integer 0..8.', `${op}.maxBounces`)); }
       if (ok) operators.push({ kind: 'ground', mode: o.mode as GroundMode, restitution: o.restitution as number, friction: o.friction as number, maxBounces: o.maxBounces as number });
     } else e.push(err('INVALID_VALUE', 'Only gravity, drag, noise, attract, vortex and ground operators are implemented.', `${op}.kind`));
+    if (o.gain !== undefined && operators.length > opsBefore) {
+      const g = o.gain;
+      if (!Array.isArray(g) || g.length < 1 || g.length > MAX_DURATION_TICKS + 1 || !g.every(v => isFiniteNum(v) && v >= 0 && v <= 1)) e.push(err('INVALID_VALUE', 'Operator gain must be 1..601 finite values in 0..1.', `${op}.gain`));
+      else (operators[opsBefore] as { gain?: number[] }).gain = [...(g as number[])];
+    }
   }
 
   if (e.length) return { ok: false, errors: e };
@@ -526,35 +533,36 @@ export class ParticleSimulation {
     this.#particles = survivors;
     const dt = PARTICLE_DT;
     let ax = 0, ay = 0, az = 0, dragFactor = 1;
+    const gainOf = (o: { gain?: number[] }) => o.gain ? o.gain[Math.min(Math.max(0, n - 1), o.gain.length - 1)] : 1;
     for (const op of d.operators) {
-      if (op.kind === 'gravity') { ax += op.acceleration[0]; ay += op.acceleration[1]; az += op.acceleration[2]; }
-      else if (op.kind === 'drag') dragFactor *= Math.exp(-op.coefficient * dt);
+      if (op.kind === 'gravity') { const g = gainOf(op); ax += op.acceleration[0] * g; ay += op.acceleration[1] * g; az += op.acceleration[2] * g; }
+      else if (op.kind === 'drag') dragFactor *= Math.exp(-op.coefficient * gainOf(op) * dt);
     }
-    const noises = d.operators.flatMap(o => o.kind === 'noise' ? [{ o, seeds: this.#noiseSeeds(o.randomStreamId) }] : []);
+    const noises = d.operators.flatMap(o => o.kind === 'noise' ? [{ o, seeds: this.#noiseSeeds(o.randomStreamId), g: gainOf(o) }] : []);
     const na: Vec3 = [0, 0, 0];
     const killed = new Set<ParticleState>();
-    const fields = d.operators.filter((o): o is Extract<ParticleOperator, { kind: 'attract' | 'vortex' }> => o.kind === 'attract' || o.kind === 'vortex');
+    const fields = d.operators.filter((o): o is Extract<ParticleOperator, { kind: 'attract' | 'vortex' }> => o.kind === 'attract' || o.kind === 'vortex').map(f => ({ f, g: gainOf(f) }));
     const ground = d.operators.find((o): o is Extract<ParticleOperator, { kind: 'ground' }> => o.kind === 'ground');
     for (const p of survivors) {
       const v = p.velocity, x = p.position;
       let px = ax, py = ay, pz = az;
-      for (const { o, seeds } of noises) {
+      for (const { o, seeds, g } of noises) {
         // Field sampled at the start-of-tick position; time is effect seconds × evolution.
-        noiseAcceleration(seeds, o.mode, o.amplitude, o.frequency, (n - 1) * dt * o.evolution, x, na);
+        noiseAcceleration(seeds, o.mode, o.amplitude * g, o.frequency, (n - 1) * dt * o.evolution, x, na);
         px += na[0]; py += na[1]; pz += na[2];
       }
-      for (const f of fields) {
+      for (const { f, g: fg } of fields) {
         const rx = x[0] - f.center[0], ry = x[1] - f.center[1], rz = x[2] - f.center[2];
         if (f.kind === 'attract') {
           const dd = Math.hypot(rx, ry, rz);
           if (f.killRadius > 0 && dd < f.killRadius) { killed.add(p); continue; }
-          const k = dd > 1e-9 ? -f.acceleration / Math.sqrt(dd * dd + f.softRadius * f.softRadius) : 0;
+          const k = dd > 1e-9 ? -f.acceleration * fg / Math.sqrt(dd * dd + f.softRadius * f.softRadius) : 0;
           px += rx * k; py += ry * k; pz += rz * k;
         } else {
           const a = f.axis, along = rx * a[0] + ry * a[1] + rz * a[2];
           const qx = rx - a[0] * along, qy = ry - a[1] * along, qz = rz - a[2] * along, rho = Math.hypot(qx, qy, qz);
           if (rho < 1e-9) continue;
-          const ux = qx / rho, uy = qy / rho, uz = qz / rho, fall = Math.exp(-rho / f.falloff);
+          const ux = qx / rho, uy = qy / rho, uz = qz / rho, fall = Math.exp(-rho / f.falloff) * fg;
           const tx = a[1] * uz - a[2] * uy, ty = a[2] * ux - a[0] * uz, tz = a[0] * uy - a[1] * ux;
           px += fall * (f.tangential * tx - f.inward * ux); py += fall * (f.tangential * ty - f.inward * uy); pz += fall * (f.tangential * tz - f.inward * uz);
         }
