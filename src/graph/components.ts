@@ -173,3 +173,12 @@ export function insertComponent(doc: EffectDocumentV2, componentId: string, pref
   if (rl) rl[groupId] = { x: -300, y: Math.max(0, ...Object.values(rl).map(v => v.y)) + 160 };
   return { doc: d, prefix: p, groupNodeId: groupId };
 }
+
+/** Where a component plays, from which document anchors its template wires (shown when choosing a component). */
+export function componentPlacement(componentId: string): string {
+  const c = getComponent(componentId);
+  const uses = (id: string) => c.edges.some(([from]) => from.startsWith(`${id}.`));
+  const viaAnchor = (anchorId: string) => c.nodes.some(n => n.type === 'Anchor' && n.params?.anchorId === anchorId && uses(n.id));
+  const s = uses('node-source') || viaAnchor('source'), t = uses('node-target') || viaAnchor('target');
+  return s && t ? 'travels from Source to Target' : s ? 'plays at Source' : t ? 'plays at Target' : 'plays at its own position';
+}

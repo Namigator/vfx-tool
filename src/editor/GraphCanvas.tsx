@@ -2,7 +2,7 @@
 // authoritative: every authored change leaves through onEdit as history patches, and React Flow change
 // events never mutate it. Only the in-progress drag preview and edge selection are local state.
 // Deferred here: Group authoring, multi-node selection, viewport persistence, parameter editing.
-import { COMPONENT_TEMPLATES, getComponent, insertComponent } from '../graph/components.ts';
+import { COMPONENT_TEMPLATES, componentPlacement, getComponent, insertComponent } from '../graph/components.ts';
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import {
   Handle, Panel, Position, ReactFlow, ReactFlowProvider, useNodesInitialized, useReactFlow,
@@ -428,6 +428,7 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
           <button type="button" onClick={addComponent} disabled={!componentId}>Insert</button>
           {selectedNode?.type === GROUP_NODE_TYPE && <button type="button" onClick={() => openGraph(selectedNode.params.graphId as string, `Open ${selectedNode.label}`)} title="Show the nodes inside this group">Open internals</button>}
         </div>
+        {componentId && <p className="gc-hint" role="note">{getComponent(componentId).label}: {getComponent(componentId).description.replace(/s*([^)]*)/g, "")} It {componentPlacement(componentId)}; use its Start at knob to play it after other parts.</p>}
         {trail.length > 1 && (
           <nav className="gc-trail" aria-label="Graph path">
             {trail.map((t, i) => i < trail.length - 1
