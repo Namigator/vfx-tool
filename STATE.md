@@ -29,13 +29,15 @@
 ## Rendering
 - HDR composer + UnrealBloom (08 defaults .8/.45/1.0) + ACES/sRGB OutputPass; background via scene.background (renderer clear colour double-encoded through the composer). Glow toggle in the transport.
 
-## Next (as of 2026-09-27 afternoon)
+## Next (as of 2026-09-27 night)
+All ten element families (effects/01..10) are built as components (3 variants each via tools/make-<family>-recipe.mjs, 48 components total),
+each with [SAW] headless frames. Next: (a) visual review with the user, family by family, in the editor (Add component → Play);
+(b) remaining small floor items below; (c) A-05 model-build test and the full testing pass; (d) merge squad/vfx-v2 → main only after the user's visual OK.
 Capability floor (27-GAP-AUDIT) is essentially done: value nodes, event routing, force strength/oscillator, ParticlePaths, OffsetAnchor, PublicParameter,
 presentation, seek checkpoints, texture + GLB import, .vfxpack (fflate), project shelf, draft recovery, grouped components with Start at, ground fade,
 dissolve, ribbon UV scroll/distortion. Remaining small floor items: worker simulation (deferred: no visible benefit yet), multi-tab CAS + trash,
 wrap-selection-as-group, non-number knobs, rim, depth soft intersection, sprite UV ops.
-1. Next phase = WP10+ element families to their effect docs (docs/v2-plan/effects/01..10): lightning parity first (quality bar), then fire, water, etc.
-   Build every look from generic nodes/components; get the user's VISUAL feedback per family (they only judge visuals; sound is parked).
+1. (Done 2026-09-27) WP10+ element families 01..10. Build every look from generic nodes/components; get the user's VISUAL feedback per family (they only judge visuals; sound is parked).
 2. Known visual issues from the user: L01 wide bloom haze; flame slightly scaly vs standalone reference.
 3. A-05 model-build test only after everything is implemented (user decision).
 Sprite library: `node tools/bake-sprites.mjs` → assets/sprites/ (flame-tongue-a/b, smoke-puff, foam flipbooks 4×4/256; soft-glow, spark-streak, electric-arc, droplet, ripple-ring 2×2; dissolve-noise) + src/assets/builtinSprites.generated.ts; preview /assets/sprites/preview.html.
