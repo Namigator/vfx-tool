@@ -80,6 +80,13 @@ const CHECKPOINT_TICKS = 30;
 
 export class WebGLUnavailableError extends Error {}
 
+/** Base pivot: shift a mesh so its lowest point sits at the origin (grows up from the particle position). */
+function basePivot(g: THREE.BufferGeometry, base: boolean): THREE.BufferGeometry {
+  if (!base) return g;
+  g.computeBoundingBox();
+  return g.translate(0, -g.boundingBox!.min.y, 0);
+}
+
 const rgbaScratch = new Float32Array(4);
 
 const VERTEX = /* glsl */ `
@@ -458,12 +465,12 @@ export class PreviewViewport {
     this.#plan = plan;
     this.#presentation = plan.presentation ?? null;
     for (const layer of plan.meshes ?? []) {
-      const gkey = layer.meshAsset ? `asset:${layer.meshAsset}` : layer.mesh;
+      const base = layer.pivot === 'base', gkey = `${layer.meshAsset ? `asset:${layer.meshAsset}` : layer.mesh}${base ? ':base' : ''}`;
       let geometry = this.#meshGeometries.get(gkey);
-      if (!geometry) { geometry = layer.meshAsset ? this.#importedMesh(layer.meshAsset, gkey) : createBuiltinMesh(layer.mesh as BuiltinMesh); this.#meshGeometries.set(gkey, geometry); }
+      if (!geometry) { geometry = layer.meshAsset ? this.#importedMesh(layer.meshAsset, gkey, base) : basePivot(createBuiltinMesh(layer.mesh as BuiltinMesh), base); this.#meshGeometries.set(gkey, geometry); }
       const color = new THREE.Color().setStyle(layer.color.srgb), additive = layer.blend === 'additive';
       const material: THREE.Material = !additive && layer.lit
-        ? new THREE.MeshStandardMaterial({ color, roughness: 0.75, metalness: 0.05, flatShading: true, emissive: color.clone().multiplyScalar(layer.emission), transparent: layer.opacity < 1, opacity: layer.opacity })
+        ? new THREE.MeshStandardMaterial({ color, roughness: layer.roughness ?? 0.75, metalness: layer.metalness ?? 0.05, flatShading: true, emissive: color.clone().multiplyScalar(layer.emission), transparent: layer.opacity < 1, opacity: layer.opacity })
         : new THREE.MeshBasicMaterial({ color: color.clone().multiplyScalar(1 + layer.emission), transparent: additive || layer.opacity < 1, opacity: layer.opacity, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending, depthWrite: !additive });
       const mesh = new THREE.InstancedMesh(geometry, material, PREVIEW_POOL_SIZE);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -541,7 +548,7 @@ export class PreviewViewport {
    * mesh in the scene is flattened (world transforms applied) into one non-indexed position+normal geometry,
    * centred and fitted to ≈1 m like the included meshes, and swapped into the instanced meshes using it.
    */
-  #importedMesh(sha256: string, key: string): THREE.BufferGeometry {
+  #importedMesh(sha256: string, key: string, base = false): THREE.BufferGeometry {
     const placeholder = new THREE.OctahedronGeometry(0.15, 0);
     whenAssetUrl(sha256, url => new GLTFLoader().load(url, gltf => {
       if (this.#disposed) return;
@@ -564,6 +571,7 @@ export class PreviewViewport {
       bb.getSize(size); bb.getCenter(centre);
       const k = 1 / Math.max(1e-6, size.x, size.y, size.z);
       merged.translate(-centre.x, -centre.y, -centre.z).scale(k, k, k);
+      basePivot(merged, base);
       this.#meshGeometries.set(key, merged);
       for (const x of this.#meshes) if (x.mesh.geometry === placeholder) x.mesh.geometry = merged;
       placeholder.dispose();
@@ -897,20 +905,24 @@ export class PreviewViewport {
 
   /** Instanced mesh transforms: size × scale × size-over-life, tumble (random axis, spin) or velocity (+Y forward). */
   #updateMeshes(alpha: number): void {
-    const step = alpha * PARTICLE_DT, q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), mtx = new THREE.Matrix4(), axis = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), col = new THREE.Color();
+    const step = alpha * PARTICLE_DT, q = new THREE.Quaternion(), qYaw = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), mtx = new THREE.Matrix4(), axis = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), col = new THREE.Color();
     for (const m of this.#meshes) {
       const ps = this.#snapshots.get(m.layer.systemId) ?? [], n = Math.min(ps.length, PREVIEW_POOL_SIZE);
       for (let i = 0; i < n; i++) {
         const pt = ps[i], u = lifeFraction(pt.ageTicks, pt.lifetimeTicks, alpha), h = fnv1a32Utf8(pt.parentRandomKey);
         p.set(pt.position[0] + pt.velocity[0] * step, pt.position[1] + pt.velocity[1] * step, pt.position[2] + pt.velocity[2] * step);
-        if (m.layer.orientation === 'velocity' && Math.hypot(pt.velocity[0], pt.velocity[1], pt.velocity[2]) > 1e-6) q.setFromUnitVectors(up, axis.set(pt.velocity[0], pt.velocity[1], pt.velocity[2]).normalize());
+        if (m.layer.orientation === 'upright') {
+          // +Y up with a deterministic random yaw and a lean of up to `tilt` toward a random horizontal direction.
+          const yaw = (h & 1023) / 1023 * Math.PI * 2, lean = ((h >>> 10) & 1023) / 1023 * (m.layer.tilt ?? 0.2), dir = ((h >>> 20) & 1023) / 1023 * Math.PI * 2;
+          q.setFromAxisAngle(axis.set(Math.cos(dir), 0, Math.sin(dir)), lean).multiply(qYaw.setFromAxisAngle(up, yaw));
+        } else if (m.layer.orientation === 'velocity' && Math.hypot(pt.velocity[0], pt.velocity[1], pt.velocity[2]) > 1e-6) q.setFromUnitVectors(up, axis.set(pt.velocity[0], pt.velocity[1], pt.velocity[2]).normalize());
         else {
           const a = (h & 1023) / 1023 * Math.PI * 2, b = ((h >>> 10) & 1023) / 1023 * 2 - 1, r = Math.sqrt(1 - b * b);
           const angle = (pt.rotation ?? (h >>> 20) / 4096 * Math.PI * 2) + (pt.angularVelocity ?? 0) * (pt.ageTicks + alpha) * PARTICLE_DT;
           q.setFromAxisAngle(axis.set(r * Math.cos(a), b, r * Math.sin(a)), angle);
         }
         const k = pt.size * m.layer.scale * sampleLifeCurve(m.size, u);
-        s.set(k, k, k);
+        s.set(k, k * (m.layer.scaleY ?? 1), k);
         m.mesh.setMatrixAt(i, mtx.compose(p, q, s));
         sampleLifeGradient(m.color, u, rgbaScratch);
         m.mesh.setColorAt(i, col.setRGB(rgbaScratch[0], rgbaScratch[1], rgbaScratch[2]));

@@ -21411,6 +21411,2907 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   ]
  },
  {
+  "id": "ice-eruption",
+  "label": "Ice: shard eruption",
+  "description": "Faceted crystals grow from the ground at Target, hold, then fracture into falling fragments and frost (05-ICE).",
+  "durationTicks": 192,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "charge",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 24,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "erupt",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 24,
+     "durationTicks": 66,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "fracture",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 90,
+     "durationTicks": 60,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "chest",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      0.4,
+      0
+     ]
+    }
+   },
+   {
+    "id": "motes",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 1.5,
+     "burst": 20,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0.1,
+     "lifetimeMin": 0.4,
+     "lifetimeMax": 0.4
+    }
+   },
+   {
+    "id": "moteip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.04,
+     "sizeMax": 0.07
+    }
+   },
+   {
+    "id": "motepull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 20,
+     "softRadius": 0.15,
+     "killRadius": 0.06
+    }
+   },
+   {
+    "id": "motemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#BFEAFF",
+      "alpha": 1
+     },
+     "emission": 0.6
+    }
+   },
+   {
+    "id": "motebb",
+    "type": "BillboardRenderer"
+   },
+   {
+    "id": "icemat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#8FCBE6",
+      "alpha": 1
+     },
+     "roughness": 0.18,
+     "metalness": 0.05,
+     "emission": 0,
+     "opacity": 0.94
+    }
+   },
+   {
+    "id": "shardsa",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 1.1,
+     "burst": 10,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0,
+     "lifetimeMin": 1.1,
+     "lifetimeMax": 1.1
+    }
+   },
+   {
+    "id": "shardsaip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.15,
+     "sizeMax": 0.35
+    }
+   },
+   {
+    "id": "shardsamesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "crystal",
+     "orientation": "upright",
+     "pivot": "base",
+     "tilt": 0.28,
+     "scaleY": 4,
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.36363636363636365,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "shardsb",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 1.1,
+     "burst": 9,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0,
+     "lifetimeMin": 1.1,
+     "lifetimeMax": 1.1
+    }
+   },
+   {
+    "id": "shardsbip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.15,
+     "sizeMax": 0.35
+    }
+   },
+   {
+    "id": "shardsbmesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "crystal-b",
+     "orientation": "upright",
+     "pivot": "base",
+     "tilt": 0.28,
+     "scaleY": 3.2,
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.36363636363636365,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "shardsc",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 1.1,
+     "burst": 9,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0,
+     "lifetimeMin": 1.1,
+     "lifetimeMax": 1.1
+    }
+   },
+   {
+    "id": "shardscip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.15,
+     "sizeMax": 0.35
+    }
+   },
+   {
+    "id": "shardscmesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "shard",
+     "orientation": "upright",
+     "pivot": "base",
+     "tilt": 0.28,
+     "scaleY": 2.4,
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.36363636363636365,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "lightwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 24,
+     "durationTicks": 96,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "lamp",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      1.6,
+      3.6,
+      2.6
+     ]
+    }
+   },
+   {
+    "id": "light",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#CFEFFF",
+      "alpha": 1
+     },
+     "intensity": 16,
+     "range": 9,
+     "intensityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.1,
+        "y": 1
+       },
+       {
+        "x": 0.7,
+        "y": 0.9
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "ringwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 24,
+     "durationTicks": 40,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ringclock",
+    "type": "Time"
+   },
+   {
+    "id": "ring",
+    "type": "RingPath",
+    "params": {
+     "radius": 1.5,
+     "samples": 96
+    }
+   },
+   {
+    "id": "ringsize",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "max",
+     "b": 0.13,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringdim",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.5,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringfade",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.5,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "floor",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      0.02,
+      0
+     ]
+    }
+   },
+   {
+    "id": "ringmat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#DDF4FF",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "ringrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.03,
+     "endFade": 0
+    }
+   },
+   {
+    "id": "frags",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.66,
+     "burst": 36,
+     "rate": 0,
+     "speedMin": 1,
+     "speedMax": 3,
+     "lifetimeMin": 0.75,
+     "lifetimeMax": 1.2
+    }
+   },
+   {
+    "id": "fragip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.05,
+     "sizeMax": 0.12,
+     "angularVelocityMin": -6,
+     "angularVelocityMax": 6
+    }
+   },
+   {
+    "id": "fragg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "fragfloor",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.3,
+     "friction": 0.4,
+     "maxBounces": 2
+    }
+   },
+   {
+    "id": "fragmesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "shard",
+     "orientation": "tumble",
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.7,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "frost",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.8,
+     "burst": 30,
+     "rate": 0,
+     "speedMin": 0.3,
+     "speedMax": 0.8,
+     "lifetimeMin": 0.8,
+     "lifetimeMax": 1.4
+    }
+   },
+   {
+    "id": "frostip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.4,
+     "sizeMax": 0.7,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283
+    }
+   },
+   {
+    "id": "frostlift",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      0.5,
+      0
+     ]
+    }
+   },
+   {
+    "id": "frostdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1.2
+    }
+   },
+   {
+    "id": "frostmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#DDEFF8",
+      "alpha": 1
+     },
+     "opacity": 1,
+     "groundFade": 0.3
+    }
+   },
+   {
+    "id": "frostbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.7
+       },
+       {
+        "x": 1,
+        "y": 1.6
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.2,
+        "y": 0.35
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "glintmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "spark-streak",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#E8F8FF",
+      "alpha": 1
+     },
+     "emission": 0.6
+    }
+   },
+   {
+    "id": "glintbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 2,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 1,
+        "y": 0.3
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "chest.anchor"
+   ],
+   [
+    "chest.out",
+    "motes.anchor"
+   ],
+   [
+    "charge.start",
+    "motes.trigger"
+   ],
+   [
+    "motes.particles",
+    "moteip.particles"
+   ],
+   [
+    "moteip.particles",
+    "motepull.particles"
+   ],
+   [
+    "chest.out",
+    "motepull.anchor"
+   ],
+   [
+    "motepull.particles",
+    "motebb.particles"
+   ],
+   [
+    "motemat.material",
+    "motebb.material"
+   ],
+   [
+    "motebb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "shardsa.anchor"
+   ],
+   [
+    "erupt.start",
+    "shardsa.trigger"
+   ],
+   [
+    "shardsa.particles",
+    "shardsaip.particles"
+   ],
+   [
+    "shardsaip.particles",
+    "shardsamesh.particles"
+   ],
+   [
+    "icemat.material",
+    "shardsamesh.material"
+   ],
+   [
+    "shardsamesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "shardsb.anchor"
+   ],
+   [
+    "erupt.start",
+    "shardsb.trigger"
+   ],
+   [
+    "shardsb.particles",
+    "shardsbip.particles"
+   ],
+   [
+    "shardsbip.particles",
+    "shardsbmesh.particles"
+   ],
+   [
+    "icemat.material",
+    "shardsbmesh.material"
+   ],
+   [
+    "shardsbmesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "shardsc.anchor"
+   ],
+   [
+    "erupt.start",
+    "shardsc.trigger"
+   ],
+   [
+    "shardsc.particles",
+    "shardscip.particles"
+   ],
+   [
+    "shardscip.particles",
+    "shardscmesh.particles"
+   ],
+   [
+    "icemat.material",
+    "shardscmesh.material"
+   ],
+   [
+    "shardscmesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "lamp.anchor"
+   ],
+   [
+    "lamp.out",
+    "light.anchor"
+   ],
+   [
+    "lightwin.window",
+    "light.window"
+   ],
+   [
+    "light.visual",
+    "node-output.visual"
+   ],
+   [
+    "ringwin.window",
+    "ringclock.window"
+   ],
+   [
+    "ringclock.progress",
+    "ringsize.a"
+   ],
+   [
+    "ringclock.progress",
+    "ringdim.a"
+   ],
+   [
+    "ringdim.value",
+    "ringfade.a"
+   ],
+   [
+    "node-target.out",
+    "floor.anchor"
+   ],
+   [
+    "floor.out",
+    "ring.center"
+   ],
+   [
+    "ringsize.value",
+    "ring.radiusScale"
+   ],
+   [
+    "ringfade.value",
+    "ringmat.opacity"
+   ],
+   [
+    "ring.paths",
+    "ringrib.paths"
+   ],
+   [
+    "ringmat.material",
+    "ringrib.material"
+   ],
+   [
+    "ringwin.window",
+    "ringrib.window"
+   ],
+   [
+    "ringrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "chest.out",
+    "frags.anchor"
+   ],
+   [
+    "fracture.start",
+    "frags.trigger"
+   ],
+   [
+    "frags.particles",
+    "fragip.particles"
+   ],
+   [
+    "fragip.particles",
+    "fragg.particles"
+   ],
+   [
+    "fragg.particles",
+    "fragfloor.particles"
+   ],
+   [
+    "fragfloor.particles",
+    "fragmesh.particles"
+   ],
+   [
+    "icemat.material",
+    "fragmesh.material"
+   ],
+   [
+    "fragmesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "chest.out",
+    "frost.anchor"
+   ],
+   [
+    "fracture.start",
+    "frost.trigger"
+   ],
+   [
+    "frost.particles",
+    "frostip.particles"
+   ],
+   [
+    "frostip.particles",
+    "frostlift.particles"
+   ],
+   [
+    "frostlift.particles",
+    "frostdrag.particles"
+   ],
+   [
+    "frostdrag.particles",
+    "frostbb.particles"
+   ],
+   [
+    "frostmat.material",
+    "frostbb.material"
+   ],
+   [
+    "frostbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "fragfloor.particles",
+    "glintbb.particles"
+   ],
+   [
+    "glintmat.material",
+    "glintbb.material"
+   ],
+   [
+    "glintbb.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "count",
+    "label": "Shards per shape",
+    "value": 10,
+    "bindings": [
+     {
+      "node": "shardsa",
+      "parameter": "burst"
+     },
+     {
+      "node": "shardsb",
+      "parameter": "burst"
+     },
+     {
+      "node": "shardsc",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "height",
+    "label": "Shard height",
+    "value": 4,
+    "bindings": [
+     {
+      "node": "shardsamesh",
+      "parameter": "scaleY"
+     },
+     {
+      "node": "shardsbmesh",
+      "parameter": "scaleY",
+      "scale": 0.8
+     },
+     {
+      "node": "shardscmesh",
+      "parameter": "scaleY",
+      "scale": 0.6
+     }
+    ]
+   },
+   {
+    "id": "spread",
+    "label": "Spread",
+    "value": 1.1,
+    "bindings": [
+     {
+      "node": "shardsa",
+      "parameter": "radius"
+     },
+     {
+      "node": "shardsb",
+      "parameter": "radius"
+     },
+     {
+      "node": "shardsc",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "frost",
+    "label": "Frost density",
+    "value": 30,
+    "bindings": [
+     {
+      "node": "frost",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "edge",
+    "label": "Edge brightness",
+    "value": 0,
+    "bindings": [
+     {
+      "node": "icemat",
+      "parameter": "emission"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "ice-fan",
+  "label": "Ice: low fan",
+  "description": "Short, low, outward-leaning ice shards (05-ICE variant).",
+  "durationTicks": 192,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "charge",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 24,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "erupt",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 24,
+     "durationTicks": 66,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "fracture",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 90,
+     "durationTicks": 60,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "chest",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      0.4,
+      0
+     ]
+    }
+   },
+   {
+    "id": "motes",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 1.5,
+     "burst": 20,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0.1,
+     "lifetimeMin": 0.4,
+     "lifetimeMax": 0.4
+    }
+   },
+   {
+    "id": "moteip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.04,
+     "sizeMax": 0.07
+    }
+   },
+   {
+    "id": "motepull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 20,
+     "softRadius": 0.15,
+     "killRadius": 0.06
+    }
+   },
+   {
+    "id": "motemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#BFEAFF",
+      "alpha": 1
+     },
+     "emission": 0.6
+    }
+   },
+   {
+    "id": "motebb",
+    "type": "BillboardRenderer"
+   },
+   {
+    "id": "icemat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#8FCBE6",
+      "alpha": 1
+     },
+     "roughness": 0.18,
+     "metalness": 0.05,
+     "emission": 0,
+     "opacity": 0.94
+    }
+   },
+   {
+    "id": "shardsa",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 1.4,
+     "burst": 8,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0,
+     "lifetimeMin": 1.1,
+     "lifetimeMax": 1.1
+    }
+   },
+   {
+    "id": "shardsaip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.15,
+     "sizeMax": 0.35
+    }
+   },
+   {
+    "id": "shardsamesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "crystal",
+     "orientation": "upright",
+     "pivot": "base",
+     "tilt": 0.95,
+     "scaleY": 1.8,
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.24242424242424243,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "shardsb",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 1.4,
+     "burst": 7,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0,
+     "lifetimeMin": 1.1,
+     "lifetimeMax": 1.1
+    }
+   },
+   {
+    "id": "shardsbip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.15,
+     "sizeMax": 0.35
+    }
+   },
+   {
+    "id": "shardsbmesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "crystal-b",
+     "orientation": "upright",
+     "pivot": "base",
+     "tilt": 0.95,
+     "scaleY": 1.44,
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.24242424242424243,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "shardsc",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 1.4,
+     "burst": 7,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0,
+     "lifetimeMin": 1.1,
+     "lifetimeMax": 1.1
+    }
+   },
+   {
+    "id": "shardscip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.15,
+     "sizeMax": 0.35
+    }
+   },
+   {
+    "id": "shardscmesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "shard",
+     "orientation": "upright",
+     "pivot": "base",
+     "tilt": 0.95,
+     "scaleY": 1.08,
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.24242424242424243,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "lightwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 24,
+     "durationTicks": 96,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "lamp",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      1.6,
+      3.6,
+      2.6
+     ]
+    }
+   },
+   {
+    "id": "light",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#CFEFFF",
+      "alpha": 1
+     },
+     "intensity": 16,
+     "range": 9,
+     "intensityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.1,
+        "y": 1
+       },
+       {
+        "x": 0.7,
+        "y": 0.9
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "ringwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 24,
+     "durationTicks": 40,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ringclock",
+    "type": "Time"
+   },
+   {
+    "id": "ring",
+    "type": "RingPath",
+    "params": {
+     "radius": 1.5,
+     "samples": 96
+    }
+   },
+   {
+    "id": "ringsize",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "max",
+     "b": 0.13,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringdim",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.5,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringfade",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.5,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "floor",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      0.02,
+      0
+     ]
+    }
+   },
+   {
+    "id": "ringmat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#DDF4FF",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "ringrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.03,
+     "endFade": 0
+    }
+   },
+   {
+    "id": "frags",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.84,
+     "burst": 30,
+     "rate": 0,
+     "speedMin": 1,
+     "speedMax": 3,
+     "lifetimeMin": 0.75,
+     "lifetimeMax": 1.2
+    }
+   },
+   {
+    "id": "fragip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.05,
+     "sizeMax": 0.12,
+     "angularVelocityMin": -6,
+     "angularVelocityMax": 6
+    }
+   },
+   {
+    "id": "fragg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "fragfloor",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.3,
+     "friction": 0.4,
+     "maxBounces": 2
+    }
+   },
+   {
+    "id": "fragmesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "shard",
+     "orientation": "tumble",
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.7,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "frost",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.8,
+     "burst": 24,
+     "rate": 0,
+     "speedMin": 0.3,
+     "speedMax": 0.8,
+     "lifetimeMin": 0.8,
+     "lifetimeMax": 1.4
+    }
+   },
+   {
+    "id": "frostip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.4,
+     "sizeMax": 0.7,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283
+    }
+   },
+   {
+    "id": "frostlift",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      0.5,
+      0
+     ]
+    }
+   },
+   {
+    "id": "frostdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1.2
+    }
+   },
+   {
+    "id": "frostmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#DDEFF8",
+      "alpha": 1
+     },
+     "opacity": 1,
+     "groundFade": 0.3
+    }
+   },
+   {
+    "id": "frostbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.7
+       },
+       {
+        "x": 1,
+        "y": 1.6
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.2,
+        "y": 0.35
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "glintmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "spark-streak",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#E8F8FF",
+      "alpha": 1
+     },
+     "emission": 0.6
+    }
+   },
+   {
+    "id": "glintbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 2,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 1,
+        "y": 0.3
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "chest.anchor"
+   ],
+   [
+    "chest.out",
+    "motes.anchor"
+   ],
+   [
+    "charge.start",
+    "motes.trigger"
+   ],
+   [
+    "motes.particles",
+    "moteip.particles"
+   ],
+   [
+    "moteip.particles",
+    "motepull.particles"
+   ],
+   [
+    "chest.out",
+    "motepull.anchor"
+   ],
+   [
+    "motepull.particles",
+    "motebb.particles"
+   ],
+   [
+    "motemat.material",
+    "motebb.material"
+   ],
+   [
+    "motebb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "shardsa.anchor"
+   ],
+   [
+    "erupt.start",
+    "shardsa.trigger"
+   ],
+   [
+    "shardsa.particles",
+    "shardsaip.particles"
+   ],
+   [
+    "shardsaip.particles",
+    "shardsamesh.particles"
+   ],
+   [
+    "icemat.material",
+    "shardsamesh.material"
+   ],
+   [
+    "shardsamesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "shardsb.anchor"
+   ],
+   [
+    "erupt.start",
+    "shardsb.trigger"
+   ],
+   [
+    "shardsb.particles",
+    "shardsbip.particles"
+   ],
+   [
+    "shardsbip.particles",
+    "shardsbmesh.particles"
+   ],
+   [
+    "icemat.material",
+    "shardsbmesh.material"
+   ],
+   [
+    "shardsbmesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "shardsc.anchor"
+   ],
+   [
+    "erupt.start",
+    "shardsc.trigger"
+   ],
+   [
+    "shardsc.particles",
+    "shardscip.particles"
+   ],
+   [
+    "shardscip.particles",
+    "shardscmesh.particles"
+   ],
+   [
+    "icemat.material",
+    "shardscmesh.material"
+   ],
+   [
+    "shardscmesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "lamp.anchor"
+   ],
+   [
+    "lamp.out",
+    "light.anchor"
+   ],
+   [
+    "lightwin.window",
+    "light.window"
+   ],
+   [
+    "light.visual",
+    "node-output.visual"
+   ],
+   [
+    "ringwin.window",
+    "ringclock.window"
+   ],
+   [
+    "ringclock.progress",
+    "ringsize.a"
+   ],
+   [
+    "ringclock.progress",
+    "ringdim.a"
+   ],
+   [
+    "ringdim.value",
+    "ringfade.a"
+   ],
+   [
+    "node-target.out",
+    "floor.anchor"
+   ],
+   [
+    "floor.out",
+    "ring.center"
+   ],
+   [
+    "ringsize.value",
+    "ring.radiusScale"
+   ],
+   [
+    "ringfade.value",
+    "ringmat.opacity"
+   ],
+   [
+    "ring.paths",
+    "ringrib.paths"
+   ],
+   [
+    "ringmat.material",
+    "ringrib.material"
+   ],
+   [
+    "ringwin.window",
+    "ringrib.window"
+   ],
+   [
+    "ringrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "chest.out",
+    "frags.anchor"
+   ],
+   [
+    "fracture.start",
+    "frags.trigger"
+   ],
+   [
+    "frags.particles",
+    "fragip.particles"
+   ],
+   [
+    "fragip.particles",
+    "fragg.particles"
+   ],
+   [
+    "fragg.particles",
+    "fragfloor.particles"
+   ],
+   [
+    "fragfloor.particles",
+    "fragmesh.particles"
+   ],
+   [
+    "icemat.material",
+    "fragmesh.material"
+   ],
+   [
+    "fragmesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "chest.out",
+    "frost.anchor"
+   ],
+   [
+    "fracture.start",
+    "frost.trigger"
+   ],
+   [
+    "frost.particles",
+    "frostip.particles"
+   ],
+   [
+    "frostip.particles",
+    "frostlift.particles"
+   ],
+   [
+    "frostlift.particles",
+    "frostdrag.particles"
+   ],
+   [
+    "frostdrag.particles",
+    "frostbb.particles"
+   ],
+   [
+    "frostmat.material",
+    "frostbb.material"
+   ],
+   [
+    "frostbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "fragfloor.particles",
+    "glintbb.particles"
+   ],
+   [
+    "glintmat.material",
+    "glintbb.material"
+   ],
+   [
+    "glintbb.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "count",
+    "label": "Shards per shape",
+    "value": 8,
+    "bindings": [
+     {
+      "node": "shardsa",
+      "parameter": "burst"
+     },
+     {
+      "node": "shardsb",
+      "parameter": "burst"
+     },
+     {
+      "node": "shardsc",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "height",
+    "label": "Shard height",
+    "value": 1.8,
+    "bindings": [
+     {
+      "node": "shardsamesh",
+      "parameter": "scaleY"
+     },
+     {
+      "node": "shardsbmesh",
+      "parameter": "scaleY",
+      "scale": 0.8
+     },
+     {
+      "node": "shardscmesh",
+      "parameter": "scaleY",
+      "scale": 0.6
+     }
+    ]
+   },
+   {
+    "id": "spread",
+    "label": "Spread",
+    "value": 1.4,
+    "bindings": [
+     {
+      "node": "shardsa",
+      "parameter": "radius"
+     },
+     {
+      "node": "shardsb",
+      "parameter": "radius"
+     },
+     {
+      "node": "shardsc",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "frost",
+    "label": "Frost density",
+    "value": 24,
+    "bindings": [
+     {
+      "node": "frost",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "edge",
+    "label": "Edge brightness",
+    "value": 0,
+    "bindings": [
+     {
+      "node": "icemat",
+      "parameter": "emission"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "ice-cluster",
+  "label": "Ice: tall cluster",
+  "description": "A few tall crystals growing slowly, restrained frost (05-ICE variant).",
+  "durationTicks": 192,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "charge",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 24,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "erupt",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 24,
+     "durationTicks": 66,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "fracture",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 90,
+     "durationTicks": 60,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "chest",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      0.4,
+      0
+     ]
+    }
+   },
+   {
+    "id": "motes",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 1.5,
+     "burst": 20,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0.1,
+     "lifetimeMin": 0.4,
+     "lifetimeMax": 0.4
+    }
+   },
+   {
+    "id": "moteip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.04,
+     "sizeMax": 0.07
+    }
+   },
+   {
+    "id": "motepull",
+    "type": "Attract",
+    "params": {
+     "acceleration": 20,
+     "softRadius": 0.15,
+     "killRadius": 0.06
+    }
+   },
+   {
+    "id": "motemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#BFEAFF",
+      "alpha": 1
+     },
+     "emission": 0.6
+    }
+   },
+   {
+    "id": "motebb",
+    "type": "BillboardRenderer"
+   },
+   {
+    "id": "icemat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#8FCBE6",
+      "alpha": 1
+     },
+     "roughness": 0.18,
+     "metalness": 0.05,
+     "emission": 0,
+     "opacity": 0.94
+    }
+   },
+   {
+    "id": "shardsa",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.55,
+     "burst": 4,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0,
+     "lifetimeMin": 1.1,
+     "lifetimeMax": 1.1
+    }
+   },
+   {
+    "id": "shardsaip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.15,
+     "sizeMax": 0.35
+    }
+   },
+   {
+    "id": "shardsamesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "crystal",
+     "orientation": "upright",
+     "pivot": "base",
+     "tilt": 0.18,
+     "scaleY": 6,
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.6060606060606061,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "shardsb",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.55,
+     "burst": 3,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0,
+     "lifetimeMin": 1.1,
+     "lifetimeMax": 1.1
+    }
+   },
+   {
+    "id": "shardsbip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.15,
+     "sizeMax": 0.35
+    }
+   },
+   {
+    "id": "shardsbmesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "crystal-b",
+     "orientation": "upright",
+     "pivot": "base",
+     "tilt": 0.18,
+     "scaleY": 4.8,
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.6060606060606061,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "shardsc",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.55,
+     "burst": 3,
+     "rate": 0,
+     "speedMin": 0,
+     "speedMax": 0,
+     "lifetimeMin": 1.1,
+     "lifetimeMax": 1.1
+    }
+   },
+   {
+    "id": "shardscip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.15,
+     "sizeMax": 0.35
+    }
+   },
+   {
+    "id": "shardscmesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "shard",
+     "orientation": "upright",
+     "pivot": "base",
+     "tilt": 0.18,
+     "scaleY": 3.6,
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.6060606060606061,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "lightwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 24,
+     "durationTicks": 96,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "lamp",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      1.6,
+      3.6,
+      2.6
+     ]
+    }
+   },
+   {
+    "id": "light",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#CFEFFF",
+      "alpha": 1
+     },
+     "intensity": 16,
+     "range": 9,
+     "intensityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.1,
+        "y": 1
+       },
+       {
+        "x": 0.7,
+        "y": 0.9
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "ringwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 24,
+     "durationTicks": 40,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ringclock",
+    "type": "Time"
+   },
+   {
+    "id": "ring",
+    "type": "RingPath",
+    "params": {
+     "radius": 1.5,
+     "samples": 96
+    }
+   },
+   {
+    "id": "ringsize",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "max",
+     "b": 0.13,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringdim",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": -0.5,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ringfade",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "add",
+     "b": 0.5,
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "floor",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      0.02,
+      0
+     ]
+    }
+   },
+   {
+    "id": "ringmat",
+    "type": "Material",
+    "params": {
+     "blend": "normal",
+     "tint": {
+      "srgb": "#DDF4FF",
+      "alpha": 1
+     }
+    }
+   },
+   {
+    "id": "ringrib",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.03,
+     "endFade": 0
+    }
+   },
+   {
+    "id": "frags",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.33,
+     "burst": 24,
+     "rate": 0,
+     "speedMin": 1,
+     "speedMax": 3,
+     "lifetimeMin": 0.75,
+     "lifetimeMax": 1.2
+    }
+   },
+   {
+    "id": "fragip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.05,
+     "sizeMax": 0.12,
+     "angularVelocityMin": -6,
+     "angularVelocityMax": 6
+    }
+   },
+   {
+    "id": "fragg",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      -9.81,
+      0
+     ]
+    }
+   },
+   {
+    "id": "fragfloor",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.3,
+     "friction": 0.4,
+     "maxBounces": 2
+    }
+   },
+   {
+    "id": "fragmesh",
+    "type": "MeshRenderer",
+    "params": {
+     "mesh": "shard",
+     "orientation": "tumble",
+     "lit": true,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.7,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "frost",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.8,
+     "burst": 12,
+     "rate": 0,
+     "speedMin": 0.3,
+     "speedMax": 0.8,
+     "lifetimeMin": 0.8,
+     "lifetimeMax": 1.4
+    }
+   },
+   {
+    "id": "frostip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.4,
+     "sizeMax": 0.7,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283
+    }
+   },
+   {
+    "id": "frostlift",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      0.5,
+      0
+     ]
+    }
+   },
+   {
+    "id": "frostdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1.2
+    }
+   },
+   {
+    "id": "frostmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#DDEFF8",
+      "alpha": 1
+     },
+     "opacity": 1,
+     "groundFade": 0.3
+    }
+   },
+   {
+    "id": "frostbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.7
+       },
+       {
+        "x": 1,
+        "y": 1.6
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.2,
+        "y": 0.35
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "glintmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "spark-streak",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#E8F8FF",
+      "alpha": 1
+     },
+     "emission": 0.6
+    }
+   },
+   {
+    "id": "glintbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 2,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 1,
+        "y": 0.3
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-target.out",
+    "chest.anchor"
+   ],
+   [
+    "chest.out",
+    "motes.anchor"
+   ],
+   [
+    "charge.start",
+    "motes.trigger"
+   ],
+   [
+    "motes.particles",
+    "moteip.particles"
+   ],
+   [
+    "moteip.particles",
+    "motepull.particles"
+   ],
+   [
+    "chest.out",
+    "motepull.anchor"
+   ],
+   [
+    "motepull.particles",
+    "motebb.particles"
+   ],
+   [
+    "motemat.material",
+    "motebb.material"
+   ],
+   [
+    "motebb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "shardsa.anchor"
+   ],
+   [
+    "erupt.start",
+    "shardsa.trigger"
+   ],
+   [
+    "shardsa.particles",
+    "shardsaip.particles"
+   ],
+   [
+    "shardsaip.particles",
+    "shardsamesh.particles"
+   ],
+   [
+    "icemat.material",
+    "shardsamesh.material"
+   ],
+   [
+    "shardsamesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "shardsb.anchor"
+   ],
+   [
+    "erupt.start",
+    "shardsb.trigger"
+   ],
+   [
+    "shardsb.particles",
+    "shardsbip.particles"
+   ],
+   [
+    "shardsbip.particles",
+    "shardsbmesh.particles"
+   ],
+   [
+    "icemat.material",
+    "shardsbmesh.material"
+   ],
+   [
+    "shardsbmesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "shardsc.anchor"
+   ],
+   [
+    "erupt.start",
+    "shardsc.trigger"
+   ],
+   [
+    "shardsc.particles",
+    "shardscip.particles"
+   ],
+   [
+    "shardscip.particles",
+    "shardscmesh.particles"
+   ],
+   [
+    "icemat.material",
+    "shardscmesh.material"
+   ],
+   [
+    "shardscmesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "lamp.anchor"
+   ],
+   [
+    "lamp.out",
+    "light.anchor"
+   ],
+   [
+    "lightwin.window",
+    "light.window"
+   ],
+   [
+    "light.visual",
+    "node-output.visual"
+   ],
+   [
+    "ringwin.window",
+    "ringclock.window"
+   ],
+   [
+    "ringclock.progress",
+    "ringsize.a"
+   ],
+   [
+    "ringclock.progress",
+    "ringdim.a"
+   ],
+   [
+    "ringdim.value",
+    "ringfade.a"
+   ],
+   [
+    "node-target.out",
+    "floor.anchor"
+   ],
+   [
+    "floor.out",
+    "ring.center"
+   ],
+   [
+    "ringsize.value",
+    "ring.radiusScale"
+   ],
+   [
+    "ringfade.value",
+    "ringmat.opacity"
+   ],
+   [
+    "ring.paths",
+    "ringrib.paths"
+   ],
+   [
+    "ringmat.material",
+    "ringrib.material"
+   ],
+   [
+    "ringwin.window",
+    "ringrib.window"
+   ],
+   [
+    "ringrib.visual",
+    "node-output.visual"
+   ],
+   [
+    "chest.out",
+    "frags.anchor"
+   ],
+   [
+    "fracture.start",
+    "frags.trigger"
+   ],
+   [
+    "frags.particles",
+    "fragip.particles"
+   ],
+   [
+    "fragip.particles",
+    "fragg.particles"
+   ],
+   [
+    "fragg.particles",
+    "fragfloor.particles"
+   ],
+   [
+    "fragfloor.particles",
+    "fragmesh.particles"
+   ],
+   [
+    "icemat.material",
+    "fragmesh.material"
+   ],
+   [
+    "fragmesh.visual",
+    "node-output.visual"
+   ],
+   [
+    "chest.out",
+    "frost.anchor"
+   ],
+   [
+    "fracture.start",
+    "frost.trigger"
+   ],
+   [
+    "frost.particles",
+    "frostip.particles"
+   ],
+   [
+    "frostip.particles",
+    "frostlift.particles"
+   ],
+   [
+    "frostlift.particles",
+    "frostdrag.particles"
+   ],
+   [
+    "frostdrag.particles",
+    "frostbb.particles"
+   ],
+   [
+    "frostmat.material",
+    "frostbb.material"
+   ],
+   [
+    "frostbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "fragfloor.particles",
+    "glintbb.particles"
+   ],
+   [
+    "glintmat.material",
+    "glintbb.material"
+   ],
+   [
+    "glintbb.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "count",
+    "label": "Shards per shape",
+    "value": 4,
+    "bindings": [
+     {
+      "node": "shardsa",
+      "parameter": "burst"
+     },
+     {
+      "node": "shardsb",
+      "parameter": "burst"
+     },
+     {
+      "node": "shardsc",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "height",
+    "label": "Shard height",
+    "value": 6,
+    "bindings": [
+     {
+      "node": "shardsamesh",
+      "parameter": "scaleY"
+     },
+     {
+      "node": "shardsbmesh",
+      "parameter": "scaleY",
+      "scale": 0.8
+     },
+     {
+      "node": "shardscmesh",
+      "parameter": "scaleY",
+      "scale": 0.6
+     }
+    ]
+   },
+   {
+    "id": "spread",
+    "label": "Spread",
+    "value": 0.55,
+    "bindings": [
+     {
+      "node": "shardsa",
+      "parameter": "radius"
+     },
+     {
+      "node": "shardsb",
+      "parameter": "radius"
+     },
+     {
+      "node": "shardsc",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "frost",
+    "label": "Frost density",
+    "value": 12,
+    "bindings": [
+     {
+      "node": "frost",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "edge",
+    "label": "Edge brightness",
+    "value": 0,
+    "bindings": [
+     {
+      "node": "icemat",
+      "parameter": "emission"
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": "fireball",
   "label": "Fireball",
   "description": "Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.",

@@ -95,10 +95,12 @@ export type PointLightLayer = {
 };
 /** 05 MeshRenderer: instanced built-in mesh per particle. */
 export type MeshLayer = {
-  nodeId: string; systemId: string; mesh: 'shard' | 'rock-a' | 'rock-b' | 'rock-c' | 'orb' | 'cone'; scale: number;
+  nodeId: string; systemId: string; mesh: 'shard' | 'rock-a' | 'rock-b' | 'rock-c' | 'orb' | 'cone' | 'crystal' | 'crystal-b'; scale: number;
   /** Imported GLB (byte SHA-256) replacing `mesh` when present. */
   meshAsset?: string;
-  orientation: 'tumble' | 'velocity'; lit: boolean; color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout';
+  orientation: 'tumble' | 'velocity' | 'upright'; lit: boolean;
+  /** Height stretch, pivot and upright lean; lit-material roughness/metalness. */
+  scaleY?: number; pivot?: 'center' | 'base'; tilt?: number; roughness?: number; metalness?: number; color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout';
   sizeOverLife: CurveValue; colorOverLife: GradientValue; renderOrderOffset: number; visualOrder: number;
 };
 /** 05 presentation: screen flashes and camera impulses at event ticks (preview-only, reduced-motion aware). */
@@ -702,6 +704,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         meshes.push({
           ...(imported?.kind === 'mesh' ? { meshAsset: imported.sha256 } : {}),
           nodeId: mid, systemId: chain.terminalId, mesh: param(b, 'mesh') as MeshLayer['mesh'], scale: num(b, 'scale'), orientation: param(b, 'orientation') as MeshLayer['orientation'],
+          scaleY: num(b, 'scaleY'), pivot: param(b, 'pivot') as 'center' | 'base', tilt: num(b, 'tilt'), roughness: num(m, 'roughness'), metalness: num(m, 'metalness'),
           lit: param(b, 'lit') === true, color: multiplyColors(base, param(m, 'tint') as ColorValue), opacity: num(m, 'opacity'), emission: num(m, 'emission'), blend: param(m, 'blend') as MeshLayer['blend'],
           sizeOverLife: structuredClone(sc), colorOverLife: structuredClone(param(b, 'colorOverLife') as GradientValue), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
         });

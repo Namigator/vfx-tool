@@ -34,6 +34,9 @@ const COMPONENTS = [
   ['shadow-collapse', 'Shadow: vortex & collapse', 'Dark swirling mass at Target: body, inward wisps, curling tendrils, violet edge accent, collapse and residue (04-SHADOW).', 'shadow-vortex-full'],
   ['shadow-puff', 'Shadow: inward puff', 'Brief outward burst of dark wisps rapidly absorbed inward (04-SHADOW variant).', 'shadow-puff'],
   ['shadow-tendril', 'Shadow: narrow tendril', 'Dark curling tendril Source→Target feeding a small receiving vortex (04-SHADOW variant).', 'shadow-tendril'],
+  ['ice-eruption', 'Ice: shard eruption', 'Faceted crystals grow from the ground at Target, hold, then fracture into falling fragments and frost (05-ICE).', 'ice-eruption'],
+  ['ice-fan', 'Ice: low fan', 'Short, low, outward-leaning ice shards (05-ICE variant).', 'ice-fan'],
+  ['ice-cluster', 'Ice: tall cluster', 'A few tall crystals growing slowly, restrained frost (05-ICE variant).', 'ice-cluster'],
   ['fireball', 'Fireball', 'Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.', 'fireball'],
 ];
 
@@ -67,6 +70,9 @@ const KNOBS = {
   'shadow-collapse': [['radius', 'Vortex radius', [['wisps', 'radius']]], ['inward', 'Inward speed', [['swirl', 'inward']]], ['swirl', 'Swirl', [['swirl', 'tangential']]], ['density', 'Body density', [['body', 'rate']]], ['edge', 'Edge visibility', [['accentmat', 'opacity']]]],
   'shadow-puff': [['radius', 'Vortex radius', [['wisps', 'radius']]], ['inward', 'Inward speed', [['swirl', 'inward']]], ['swirl', 'Swirl', [['swirl', 'tangential']]], ['density', 'Body density', [['body', 'rate']]], ['edge', 'Edge visibility', [['accentmat', 'opacity']]]],
   'shadow-tendril': [['radius', 'Vortex radius', [['wisps', 'radius']]], ['inward', 'Inward speed', [['swirl', 'inward']]], ['swirl', 'Swirl', [['swirl', 'tangential']]], ['density', 'Body density', [['body', 'rate']]], ['edge', 'Edge visibility', [['accentmat', 'opacity']]]],
+  'ice-eruption': [['count', 'Shards per shape', [['shardsa', 'burst'], ['shardsb', 'burst'], ['shardsc', 'burst']]], ['height', 'Shard height', [['shardsamesh', 'scaleY'], ['shardsbmesh', 'scaleY', 0.8], ['shardscmesh', 'scaleY', 0.6]]], ['spread', 'Spread', [['shardsa', 'radius'], ['shardsb', 'radius'], ['shardsc', 'radius']]], ['frost', 'Frost density', [['frost', 'burst']]], ['edge', 'Edge brightness', [['icemat', 'emission']]]],
+  'ice-fan': [['count', 'Shards per shape', [['shardsa', 'burst'], ['shardsb', 'burst'], ['shardsc', 'burst']]], ['height', 'Shard height', [['shardsamesh', 'scaleY'], ['shardsbmesh', 'scaleY', 0.8], ['shardscmesh', 'scaleY', 0.6]]], ['spread', 'Spread', [['shardsa', 'radius'], ['shardsb', 'radius'], ['shardsc', 'radius']]], ['frost', 'Frost density', [['frost', 'burst']]], ['edge', 'Edge brightness', [['icemat', 'emission']]]],
+  'ice-cluster': [['count', 'Shards per shape', [['shardsa', 'burst'], ['shardsb', 'burst'], ['shardsc', 'burst']]], ['height', 'Shard height', [['shardsamesh', 'scaleY'], ['shardsbmesh', 'scaleY', 0.8], ['shardscmesh', 'scaleY', 0.6]]], ['spread', 'Spread', [['shardsa', 'radius'], ['shardsb', 'radius'], ['shardsc', 'radius']]], ['frost', 'Frost density', [['frost', 'burst']]], ['edge', 'Edge brightness', [['icemat', 'emission']]]],
   'fireball': [['travel', 'Travel ticks', [['ball', 'durationTicks']]], ['trail', 'Trail density', [['trailem', 'rate']]], ['core', 'Core size', [['core', 'size']]], ['impact', 'Impact sparks', [['boom', 'burst']]], ['flash', 'Flash size', [['flash', 'size']]], ['light', 'Ball light', [['balllight', 'intensity']]]],
 };
 
