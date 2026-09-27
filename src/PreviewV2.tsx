@@ -128,6 +128,7 @@ export default function PreviewV2() {
   const [compiled, setCompiled] = useState(false);
   const [mode, setMode] = useState<PreviewModeChoice['mode']>('points');
   const [glow, setGlow] = useState(true);
+  const [syncSound, setSyncSound] = useState(true);
   const [lightBg, setLightBg] = useState(false);
   const [expanded, setExpanded] = useState(() => new URLSearchParams(window.location.search).get('expand') === '1');
   // Bumped by every document replacement; async file reads apply only if still the latest request.
@@ -238,7 +239,8 @@ export default function PreviewV2() {
   }, [stopSound]);
 
   /** User gesture only: lazily creates the AudioContext, loads the current mix and plays it from the start. */
-  const playSound = useCallback(async () => {
+  /** Plays the held mix from `fromTick` (800 samples per tick); the visual transport calls this to stay in sync. */
+  const playSound = useCallback(async (fromTick = 0) => {
     const held = audioRef.current;
     if (!held) return;
     const token = ++soundTokenRef.current;
@@ -263,12 +265,14 @@ export default function PreviewV2() {
       return;
     }
     setSoundStatus('Starting sound…');
-    const r = await transport.play(0);
+    const offset = Math.max(0, Math.round(fromTick * 800));
+    if (offset >= held.mix.left.length) { setSoundStatus('Sound already finished at this tick.'); return; }
+    const r = await transport.play(offset);
     if (!mountedRef.current || token !== soundTokenRef.current) return; // Stopped, replaced or unmounted meanwhile.
     if (audioRef.current !== held) { transport.stop(); return; }
     if (!r.ok) { setSoundStatus(`Sound not played: ${PLAY_FAILURES[r.reason]}`); return; }
-    setSoundStatus('Playing sound from the start.');
-    const ms = (held.mix.left.length / held.mix.sampleRate) * 1000 + 250;
+    setSoundStatus(offset === 0 ? 'Playing sound from the start.' : `Playing sound from tick ${fromTick}.`);
+    const ms = ((held.mix.left.length - offset) / held.mix.sampleRate) * 1000 + 250;
     soundTimerRef.current = setTimeout(() => {
       soundTimerRef.current = null;
       if (token === soundTokenRef.current) setSoundStatus('Sound finished.');
@@ -534,19 +538,20 @@ export default function PreviewV2() {
             </div>
           )}
           <div className="pv2-transport">
-            <button type="button" disabled={disabled} onClick={() => (frame.playing ? vp?.pause() : vp?.play())}>
+            <button type="button" disabled={disabled} onClick={() => { if (frame.playing) { vp?.pause(); stopSound(''); } else { vp?.play(); if (syncSound && audio) void playSound(frame.tick); } }}>
               {frame.playing ? 'Pause' : frame.suspended ? 'Resume' : 'Play'}
             </button>
-            <button type="button" disabled={disabled} onClick={() => vp?.restart()}>Restart</button>
+            <button type="button" disabled={disabled} onClick={() => { vp?.restart(); if (syncSound && audio) void playSound(0); else stopSound(''); }}>Restart</button>
             {/* Viewport ResizeObserver refits path framing to the new size until the user orbits. */}
             <button type="button" aria-pressed={expanded} onClick={() => setExpanded(e => !e)}>
               {expanded ? 'Collapse preview' : 'Expand preview'}
             </button>
             <button type="button" aria-pressed={glow} title="Bloom glow on/off (inspect the effect without glow)" onClick={() => { const g = !glow; setGlow(g); vp?.setGlow(g); }}>{glow ? 'Glow on' : 'Glow off'}</button>
+            <button type="button" aria-pressed={syncSound} disabled={!audio} title="Play the effect's sound in sync with Play/Restart" onClick={() => { const s = !syncSound; setSyncSound(s); if (!s) stopSound(''); }}>{syncSound ? 'Sound on' : 'Sound off'}</button>
             <button type="button" aria-pressed={lightBg} title="Inspect on a light arena" onClick={() => { const l = !lightBg; setLightBg(l); vp?.setBackground(l ? 'light' : 'dark'); }}>{lightBg ? 'Light arena' : 'Dark arena'}</button>
             <input
               type="range" min={0} max={frame.durationTicks} step={1} value={frame.tick} disabled={disabled}
-              aria-label="Tick" onChange={e => vp?.seek(Number(e.target.value))}
+              aria-label="Tick" onChange={e => { vp?.seek(Number(e.target.value)); stopSound(''); }}
             />
             {/* Not a live region: per-frame tick changes must not be announced. Errors use role="alert". */}
             <span className="pv2-readout" title={frame.sampleParticleId ? `Sample particle ${frame.sampleParticleId}` : undefined}>
@@ -586,11 +591,11 @@ export default function PreviewV2() {
           <section className="pv2-panel pv2-sound" aria-label="Sound audition">
             <h2 className="pv2-heading">Sound audition</h2>
             <p className="pv2-muted">
-              Plays the document's rendered audio mix on its own, from the start. It is not synchronized with the
-              visual preview.
+              Plays the document's rendered audio mix on its own, from the start. With Sound on, the preview's Play and
+              Restart also play it in sync from the current tick.
             </p>
             <div className="pv2-actions">
-              <button type="button" disabled={!audio} onClick={() => { void playSound(); }}>Play sound</button>
+              <button type="button" disabled={!audio} onClick={() => { void playSound(0); }}>Play sound</button>
               <button type="button" disabled={!audio} onClick={() => stopSound('Sound stopped.')}>Stop sound</button>
               <button type="button" disabled={!audio} onClick={downloadWav}>Download WAV</button>
             </div>

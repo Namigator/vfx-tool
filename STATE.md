@@ -13,6 +13,7 @@
 - Working through docs/v2-plan/27-GAP-AUDIT.md in order; every item: runtime/compiler + tests + an MCP recipe rendered with vfx_render_frames and looked at. 476 tests pass; tsc + vite build pass.
 - Landed since the audit: emitter shapes/speed/aim; Gravity, Drag, NoiseForce, GroundCollision; colour/size/opacity over life, spin, velocity stretch + pivot, worldAxis alignment; textured flipbook sprites (library rebaked to 10-ASSETS); ParticleEvents child emission; ParticleTrail; SpriteRenderer; PointLight; PathFollower (projectiles); rateOverWindow; textured ribbons; bloom + ACES; particle-aware framing; persistence slice (autosave, New/Open/Save); Add component (8 templates) with published knobs in a Controls panel; MCP server with 21 tools incl. headless frame rendering.
 - Evidence recipes: mcp/examples/*.steps.json (run: node mcp/run-steps.mjs <file>; frames land in work/mcp/frames/). Components are generated from them: node tools/build-components.mjs.
+- AV sync: editor Play/Restart start the mix at the current tick (800 samples/tick), Pause/scrub stop it; Sound on/off toggle. [RAN] status in browser; not listened to.
 - Open for the user: L01 lightning now blooms into a wide haze (emission tuned pre-bloom); water realism backlog; flame look still slightly scaly vs standalone reference.
 
 ## MCP (agent tooling)
