@@ -1,0 +1,18 @@
+[
+  ["vfx_new_document", { "template": "blank", "id": "burn" }],
+  ["vfx_set_document", { "docId": "burn", "durationTicks": 120 }],
+  ["vfx_set_anchor", { "docId": "burn", "anchorId": "source", "position": [0, 1.2, 0] }],
+  ["vfx_add_node", { "docId": "burn", "type": "Schedule", "id": "go", "params": { "startTicks": 0, "durationTicks": 1, "mode": "once" } }],
+  ["vfx_add_node", { "docId": "burn", "type": "Emitter", "id": "em", "params": { "shape": "sphere", "radius": 0.6, "burst": 9, "rate": 0, "speedMin": 0.05, "speedMax": 0.15, "lifetimeMin": 1.6, "lifetimeMax": 1.6 } }],
+  ["vfx_add_node", { "docId": "burn", "type": "InitialProperties", "id": "ip", "params": { "sizeMin": 0.7, "sizeMax": 0.9 } }],
+  ["vfx_add_node", { "docId": "burn", "type": "Material", "id": "mat", "params": { "template": "SpriteTextured", "sprite": "smoke-puff", "blend": "normal", "tint": { "srgb": "#9A8F86", "alpha": 1 }, "dissolve": 1, "dissolveStart": 0.2, "dissolveSoftness": 0.04, "dissolveEdge": 0.06, "dissolveEdgeColor": { "srgb": "#FF8A20", "alpha": 1 } } }],
+  ["vfx_add_node", { "docId": "burn", "type": "BillboardRenderer", "id": "bb", "params": { "flipbookMode": "first" } }],
+  ["vfx_connect", { "docId": "burn", "from": "node-source.out", "to": "em.anchor" }],
+  ["vfx_connect", { "docId": "burn", "from": "go.start", "to": "em.trigger" }],
+  ["vfx_connect", { "docId": "burn", "from": "em.particles", "to": "ip.particles" }],
+  ["vfx_connect", { "docId": "burn", "from": "ip.particles", "to": "bb.particles" }],
+  ["vfx_connect", { "docId": "burn", "from": "mat.material", "to": "bb.material" }],
+  ["vfx_connect", { "docId": "burn", "from": "bb.visual", "to": "node-output.visual" }],
+  ["vfx_compile", { "docId": "burn" }, true],
+  ["vfx_render_frames", { "docId": "burn", "ticks": [10, 50, 75] }, true]
+]

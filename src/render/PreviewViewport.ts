@@ -88,6 +88,8 @@ attribute vec3 lifeColor;
 attribute float spinAngle;
 attribute vec3 worldVelocity;
 attribute float cell;
+attribute vec2 lifeSeed;
+varying vec2 vLifeSeed;
 uniform vec2 uGrid;
 uniform vec2 uInset;
 varying vec2 vAtlas;
@@ -104,6 +106,7 @@ void main() {
   vUv = uv;
   vLifeOpacity = lifeOpacity;
   vLifeColor = lifeColor;
+  vLifeSeed = lifeSeed;
   // Atlas cell (row 0 = top of the image; textures are flipY) with a half-texel inset against bleeding.
   float col = mod(cell, uGrid.x), row = floor(cell / uGrid.x);
   vec2 cu = clamp(uv, uInset, 1.0 - uInset);
@@ -139,6 +142,11 @@ uniform sampler2D uTex;
 uniform float uUseTex;
 uniform float uGroundFade;
 varying float vWorldY;
+varying vec2 vLifeSeed;
+uniform float uDissolve;
+uniform vec4 uDissolveShape; // start, softness, edge width, unused
+uniform vec3 uDissolveEdgeColor;
+uniform sampler2D uDissolveTex;
 void main() {
   vec4 t = vec4(1.0);
   float mask;
@@ -147,9 +155,21 @@ void main() {
   float a = uAlpha * vLifeOpacity * mask;
   // Analytic ground fade (08): soft contact with the floor plane y = 0, no depth texture needed.
   if (uGroundFade > 0.0) a *= smoothstep(0.0, uGroundFade, vWorldY);
+  vec3 edgeRgb = vec3(0.0);
+  if (uDissolve > 0.0) {
+    // 09 dissolve: threshold d rises over life from the start fraction; mask m from the noise texture, offset per particle.
+    float d = uDissolve * clamp((vLifeSeed.x - uDissolveShape.x) / max(1e-3, 1.0 - uDissolveShape.x), 0.0, 1.0);
+    float m = texture2D(uDissolveTex, vUv * 0.85 + vLifeSeed.y * vec2(7.13, 3.71)).r; // Repeat-wrapped; no fract() (its seam breaks mip selection).
+    float s = uDissolveShape.y, w = uDissolveShape.z;
+    float keep = d >= 0.999 ? 0.0 : smoothstep(d - s, d + s, m);
+    // Edge glow fades out toward the quad border so clipped sprite edges never draw straight glowing lines.
+    float border = smoothstep(0.0, 0.18, min(min(vUv.x, 1.0 - vUv.x), min(vUv.y, 1.0 - vUv.y)));
+    if (w > 0.0 && d > 0.0) edgeRgb = uDissolveEdgeColor * (keep - smoothstep(d + w - s, d + w + s, m)) * 4.0 * border * mask;
+    a *= keep;
+  }
   if (uCutout > 0.5) { if (a < uCutoff) discard; a = 1.0; }
   else if (a <= 0.0) discard;
-  gl_FragColor = vec4(t.rgb * uColor * vLifeColor * (1.0 + uEmission), a);
+  gl_FragColor = vec4(t.rgb * uColor * vLifeColor * (1.0 + uEmission) + edgeRgb, a);
   #include <colorspace_fragment>
 }`;
 
@@ -467,13 +487,18 @@ export class PreviewViewport {
       const lifeOpacity = new THREE.InstancedBufferAttribute(new Float32Array(PREVIEW_POOL_SIZE).fill(1), 1);
       lifeOpacity.setUsage(THREE.DynamicDrawUsage);
       geometry.setAttribute('lifeOpacity', lifeOpacity);
-      for (const [name, size, fill] of [['lifeColor', 3, 1], ['spinAngle', 1, 0], ['worldVelocity', 3, 0], ['cell', 1, 0]] as const) {
+      for (const [name, size, fill] of [['lifeColor', 3, 1], ['spinAngle', 1, 0], ['worldVelocity', 3, 0], ['cell', 1, 0], ['lifeSeed', 2, 0]] as const) {
         const attr = new THREE.InstancedBufferAttribute(new Float32Array(PREVIEW_POOL_SIZE * size).fill(fill), size);
         attr.setUsage(THREE.DynamicDrawUsage);
         geometry.setAttribute(name, attr);
       }
       material.uniforms.uAlign = { value: layer.alignment === 'velocity' ? 1 : layer.alignment === 'worldAxis' ? 2 : 0 };
       material.uniforms.uGroundFade = { value: layer.groundFade ?? 0 };
+      const dv = layer.dissolve;
+      material.uniforms.uDissolve = { value: dv?.amount ?? 0 };
+      material.uniforms.uDissolveShape = { value: new THREE.Vector4(dv?.start ?? 0, dv?.softness ?? 0.08, dv?.edge ?? 0, 0) };
+      material.uniforms.uDissolveEdgeColor = { value: new THREE.Color().setStyle(dv?.edgeColor.srgb ?? '#ffb040') };
+      material.uniforms.uDissolveTex = { value: dv ? this.#noiseTexture() : null };
       {
         // In-plane basis for worldAxis quads: U, V perpendicular to the axis (right-handed, V toward +Y/-Z).
         const n = new THREE.Vector3(...(layer.worldAxis ?? [0, 1, 0])).normalize();
@@ -533,6 +558,16 @@ export class PreviewViewport {
       this.#emitFrame(true);
     }, undefined, () => { /* Unreadable bytes: the placeholder stays; import already validated the file. */ }));
     return placeholder;
+  }
+
+  #noiseTex: THREE.Texture | null = null;
+  /** Included dissolve-noise mask, sampled as data (no colour-space conversion) and wrapped for per-particle offsets. */
+  #noiseTexture(): THREE.Texture {
+    if (!this.#noiseTex) {
+      this.#noiseTex = new THREE.TextureLoader().load('/assets/sprites/dissolve-noise.png', () => { if (!this.#disposed) this.#emitFrame(true); });
+      this.#noiseTex.wrapS = this.#noiseTex.wrapT = THREE.RepeatWrapping;
+    }
+    return this.#noiseTex;
   }
 
   readonly #textures = new Map<string, THREE.Texture>();
@@ -926,6 +961,7 @@ export class PreviewViewport {
       const colAttr = g.getAttribute('lifeColor') as THREE.InstancedBufferAttribute, spinAttr = g.getAttribute('spinAngle') as THREE.InstancedBufferAttribute, velAttr = g.getAttribute('worldVelocity') as THREE.InstancedBufferAttribute;
       const col = colAttr.array as Float32Array, spin = spinAttr.array as Float32Array, vel = velAttr.array as Float32Array;
       const cellAttr = g.getAttribute('cell') as THREE.InstancedBufferAttribute, cells = cellAttr.array as Float32Array, sprite = l.layer.sprite;
+      const seedAttr = g.getAttribute('lifeSeed') as THREE.InstancedBufferAttribute, seeds = seedAttr.array as Float32Array;
       // Normal blending needs back-to-front order; additive does not.
       let order: ParticleState[] = particles ? (particles as ParticleState[]).slice(0, n) : [];
       if (l.layer.blend === 'normal' && n > 1) {
@@ -936,6 +972,7 @@ export class PreviewViewport {
         const p = order[i];
         if (sprite) cells[i] = spriteCell(sprite.sheet, sprite.mode, sprite.fps, lifeFraction(p.ageTicks, p.lifetimeTicks, alpha), (p.ageTicks + alpha) * PARTICLE_DT, fnv1a32Utf8(p.parentRandomKey) / 4294967296, sprite.randomStart, sprite.variant);
         const u = lifeFraction(p.ageTicks, p.lifetimeTicks, alpha);
+        seeds[i * 2] = u; seeds[i * 2 + 1] = (fnv1a32Utf8(p.id) % 4096) / 4096;
         const o = i * 16, s = p.size * sampleLifeCurve(l.sizeSampler, u);
         sampleLifeGradient(l.colorSampler, u, rgbaScratch);
         col[i * 3] = rgbaScratch[0]; col[i * 3 + 1] = rgbaScratch[1]; col[i * 3 + 2] = rgbaScratch[2];
@@ -953,7 +990,7 @@ export class PreviewViewport {
       l.mesh.count = n;
       l.mesh.instanceMatrix.needsUpdate = true;
       opAttr.needsUpdate = true;
-      colAttr.needsUpdate = true; spinAttr.needsUpdate = true; velAttr.needsUpdate = true; cellAttr.needsUpdate = true;
+      colAttr.needsUpdate = true; spinAttr.needsUpdate = true; velAttr.needsUpdate = true; cellAttr.needsUpdate = true; seedAttr.needsUpdate = true;
     }
     this.#updateTrails(alpha);
     this.#updateLights(alpha);
