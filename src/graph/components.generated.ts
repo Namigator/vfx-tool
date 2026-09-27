@@ -285,7 +285,29 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "speedMin": 7,
      "speedMax": 9,
      "lifetimeMin": 0.4,
-     "lifetimeMax": 0.7
+     "lifetimeMax": 0.7,
+     "rateOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.15
+       },
+       {
+        "x": 0.1,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
     }
    },
    {

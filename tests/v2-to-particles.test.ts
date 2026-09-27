@@ -465,3 +465,10 @@ test('PathFollower arrival triggers a burst at the path end', () => {
   assert.equal(b.length, 1);
   assert.deepEqual([b[0].tick, b[0].count, b[0].position], [30, 12, [0, 1, 5]]);
 });
+
+test('Emitter rateOverWindow compiles to a rate curve (flat curves stay plain)', () => {
+  const win = (d: EffectDocumentV2) => { set('node-emitter', { burst: 0, rate: 30 })(d); set('node-schedule', { mode: 'window', durationTicks: 60 })(d); const t = root(d).edges.find(e => e.id === 'edge-trigger')!; t.source.port = 'window'; t.target.port = 'window'; };
+  const p = plan(f01(d => { win(d); set('node-emitter', { rateOverWindow: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 0 }, { x: 1, y: 2 }] } })(d); }));
+  assert.deepEqual(p.systems[0].descriptor.rate!.curve, [{ x: 0, y: 0 }, { x: 1, y: 2 }]);
+  assert.equal(plan(f01(win)).systems[0].descriptor.rate!.curve, undefined);
+});

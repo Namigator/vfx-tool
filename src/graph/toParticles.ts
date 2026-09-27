@@ -374,7 +374,15 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       if (s && param(s, 'mode') === 'repeat') report('INVALID_VALUE', 'A repeating Schedule window is not supported by the point preview; use mode "window" or "once".', s.node.id, 'mode');
       else if (s && perSecond > 0) {
         const startTick = num(s, 'startTicks');
-        if (startTick < duration) rate = { perSecond, startTick, endTick: Math.min(duration, startTick + num(s, 'durationTicks')) };
+        if (startTick < duration) {
+          rate = { perSecond, startTick, endTick: Math.min(duration, startTick + num(s, 'durationTicks')) };
+          const rc = param(em, 'rateOverWindow') as CurveValue, rerr = lifeCurveError(rc, { min: 0, max: 4 });
+          if (rerr !== undefined) report('INVALID_VALUE', `Emitter "${id}" rateOverWindow: ${rerr}`, id, 'rateOverWindow');
+          else if (!rc.keys.every(k => k.y === 1)) {
+            if (rc.interpolation === 'hold') report('INVALID_VALUE', 'Emitter rateOverWindow supports linear interpolation only.', id, 'rateOverWindow');
+            rate.curve = rc.keys.map(k => ({ x: k.x, y: k.y }));
+          }
+        }
       }
     }
 

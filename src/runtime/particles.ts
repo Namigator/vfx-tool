@@ -61,7 +61,8 @@ export type ParticleBurst = {
 };
 
 /** Active window startTick <= tick < endTick. */
-export type ParticleRate = { perSecond: number; startTick: number; endTick: number };
+/** `curve` (optional) scales perSecond over the window's normalized time: keys x ascending in [0,1], y in [0,4], linear. */
+export type ParticleRate = { perSecond: number; startTick: number; endTick: number; curve?: { x: number; y: number }[] };
 
 export type GroundMode = 'kill' | 'slide' | 'bounce';
 /**
@@ -284,13 +285,14 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
     const rp = `${p}.rate`;
     if (!isObj(r)) e.push(err('INVALID_VALUE', 'rate must be an object.', rp));
     else {
-      checkKeys(r, ['perSecond', 'startTick', 'endTick'], rp, e);
+      checkKeys(r, ['perSecond', 'startTick', 'endTick', 'curve'], rp, e);
+      if (r.curve !== undefined && (!Array.isArray(r.curve) || r.curve.length < 1 || !r.curve.every((k: unknown, i: number, a: unknown[]) => isObj(k) && isFiniteNum(k.x) && isFiniteNum(k.y) && k.x >= 0 && k.x <= 1 && k.y >= 0 && k.y <= 4 && (i === 0 || (k.x as number) > ((a[i - 1] as Record<string, number>).x))))) { e.push(err('INVALID_VALUE', 'rate.curve must be keys {x in [0,1] ascending, y in [0,4]}.', `${rp}.curve`)); }
       let ok = true;
       if (!isFiniteNum(r.perSecond) || r.perSecond < 0 || r.perSecond > MAX_RATE_PER_SECOND) { ok = false; e.push(err('INVALID_VALUE', `rate.perSecond must be finite in 0..${MAX_RATE_PER_SECOND}.`, `${rp}.perSecond`)); }
       if (!isTickInt(r.startTick, 0, maxTick)) { ok = false; e.push(err('INVALID_VALUE', 'rate.startTick must be an integer in [0, durationTicks].', `${rp}.startTick`)); }
       if (!isTickInt(r.endTick, 0, maxTick)) { ok = false; e.push(err('INVALID_VALUE', 'rate.endTick must be an integer in [0, durationTicks].', `${rp}.endTick`)); }
       else if (ok && (r.endTick as number) < (r.startTick as number)) { ok = false; e.push(err('INVALID_VALUE', 'rate.endTick must be >= startTick (end-exclusive window).', `${rp}.endTick`)); }
-      if (ok) rate = { perSecond: r.perSecond as number, startTick: r.startTick as number, endTick: r.endTick as number };
+      if (ok) rate = { perSecond: r.perSecond as number, startTick: r.startTick as number, endTick: r.endTick as number, ...(Array.isArray(r.curve) ? { curve: (r.curve as { x: number; y: number }[]).map(k => ({ x: k.x, y: k.y })) } : {}) };
     }
   }
 
@@ -430,6 +432,8 @@ export class ParticleSimulation {
   #totalDeaths = 0;
   #rateEligibleTicks = 0;
   #rateEmitted = 0;
+  /** Curved rates integrate rate×curve per tick (flat rates keep the exact integer formula). */
+  #rateIntegral = 0;
   #burstCursor = 0;
   #failure: Diagnostic[] | null = null;
   readonly #parentKeys = new Map<string, string>();
@@ -466,7 +470,7 @@ export class ParticleSimulation {
   snapshot(): ParticleTickSnapshot {
     const ended = this.#tick >= this.descriptor.durationTicks;
     const rate = this.descriptor.rate;
-    const remainder = rate ? (this.#rateEligibleTicks * rate.perSecond) / TICKS_PER_SECOND - this.#rateEmitted : 0;
+    const remainder = !rate ? 0 : rate.curve ? this.#rateIntegral - this.#rateEmitted : (this.#rateEligibleTicks * rate.perSecond) / TICKS_PER_SECOND - this.#rateEmitted;
     return {
       tick: this.#tick,
       ended,
@@ -667,7 +671,15 @@ export class ParticleSimulation {
     if (r && n >= r.startTick && n < r.endTick) {
       this.#rateEligibleTicks++;
       // floor(eligibleTicks*r/60) equals the r/60 accumulator without float drift for integer rates.
-      const due = Math.floor((this.#rateEligibleTicks * r.perSecond) / TICKS_PER_SECOND);
+      let due: number;
+      if (r.curve) {
+        const u = (n - r.startTick) / Math.max(1, r.endTick - r.startTick), c = r.curve;
+        let m = c[0].y;
+        if (u >= c[c.length - 1].x) m = c[c.length - 1].y;
+        else if (u > c[0].x) { let i = 1; while (c[i].x <= u) i++; m = c[i - 1].y + (c[i].y - c[i - 1].y) * ((u - c[i - 1].x) / (c[i].x - c[i - 1].x)); }
+        this.#rateIntegral += (r.perSecond * m) / TICKS_PER_SECOND;
+        due = Math.floor(this.#rateIntegral + 1e-9);
+      } else due = Math.floor((this.#rateEligibleTicks * r.perSecond) / TICKS_PER_SECOND);
       while (this.#rateEmitted < due) {
         const k = this.#rateEmitted;
         if (!this.#birth(n, 'rate', -1, RATE_EVENT_RANDOM_KEY, k, this.#source(n), undefined, baseVelocity)) return;

@@ -82,6 +82,7 @@ function emitter(): NodeSpec {
       param({ id: 'shape', label: 'Shape', type: 'enum', unit: 'none', default: 'point', choices: ['point', 'cone', 'sphere', 'disc', 'box', 'path'] }),
       param({ id: 'burst', label: 'Burst', type: 'integer', unit: 'none', default: 32, min: 0, max: 4096, step: 1, description: 'Particles per trigger event.' }),
       param({ id: 'rate', label: 'Rate', type: 'number', unit: 'perSecond', default: 0, min: 0, max: 4096, description: 'Continuous particles per second while the window is open.' }),
+      param({ id: 'rateOverWindow', label: 'Rate over window', type: 'curve', unit: 'none', curveDomain: 'normalized', default: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] }, min: 0, max: 4, description: 'Rate multiplier across the emission window (0 = window start, 1 = end): ramps, pulses, tails.' }),
       param({ id: 'lifetimeMin', label: 'Lifetime min', type: 'number', unit: 'second', default: 0.6, min: ONE_TICK_SECONDS, max: 10, description: 'Authored in seconds; simulation converts to ticks.' }),
       param({ id: 'lifetimeMax', label: 'Lifetime max', type: 'number', unit: 'second', default: 1.2, min: ONE_TICK_SECONDS, max: 10, description: 'Authored in seconds; simulation converts to ticks.' }),
       param({ id: 'radius', label: 'Radius', type: 'number', unit: 'meter', default: 0.2, min: 0, max: 20 }),

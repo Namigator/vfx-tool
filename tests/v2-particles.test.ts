@@ -374,3 +374,14 @@ test('collectParticleEvents records births, lifetime deaths and ground contacts 
   const again = collectParticleEvents(d);
   assert.deepEqual(again.ok && again.value, r.value, 'deterministic');
 });
+
+test('rate curve ramps emission over the window and integrates to the expected total', () => {
+  const d = (curve?: { x: number; y: number }[]) => base({ durationTicks: 130, lifetimeTicks: { min: 200, max: 200 }, rate: { perSecond: 120, startTick: 0, endTick: 120, ...(curve ? { curve } : {}) } });
+  const births = (desc: ParticleEmitterDescriptor, t: number) => { const r = sampleParticlesAtTick(desc, t); if (!r.ok) assert.fail(JSON.stringify(r.errors)); return r.value.totalBirths; };
+  const ramp = d([{ x: 0, y: 0 }, { x: 1, y: 1 }]);
+  const firstHalf = births(ramp, 60), total = births(ramp, 120);
+  assert.ok(firstHalf < total - firstHalf, `ramp: ${firstHalf} early vs ${total - firstHalf} late`);
+  assert.ok(Math.abs(total - 120) <= 2, `integrates to ~average 0.5 × 240 = 120 (got ${total})`);
+  assert.equal(births(d(), 120), 240, 'flat rate unchanged');
+  assert.equal(births(d([{ x: 0, y: 1 }, { x: 0.5, y: 1 }, { x: 0.51, y: 0 }]), 120), births(d([{ x: 0, y: 1 }, { x: 0.5, y: 1 }, { x: 0.51, y: 0 }]), 62), 'cut off after the curve drops to 0');
+});
