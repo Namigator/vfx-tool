@@ -215,6 +215,34 @@ function randomRange(): NodeSpec {
   });
 }
 
+/** 05 Constant: one literal value with a per-instance unit, so a single number can feed several parameters. */
+function constantNode(): NodeSpec {
+  return node('Constant', {
+    inputs: [],
+    outputs: [port({ id: 'value', label: 'Value', type: 'scalarSignal', unit: 'none', domains: ['constant'] })],
+    parameters: [
+      param({ id: 'value', label: 'Value', type: 'number', unit: 'none', default: 1, min: -10000, max: 10000 }),
+      param({ id: 'unit', label: 'Unit', type: 'enum', unit: 'none', default: 'none', choices: ['none', 'meter', 'second', 'tick', 'radian', 'metersPerSecond', 'metersPerSecondSquared', 'hertz', 'perSecond', 'linearGain', 'normalized'], description: 'Output unit; must match the parameter it drives.' }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
+/** 05 ScalarMath: a (op) b, evaluated once per cast. a/b are literals or driven by other value nodes. */
+function scalarMath(): NodeSpec {
+  return node('ScalarMath', {
+    inputs: [],
+    outputs: [port({ id: 'value', label: 'Value', type: 'scalarSignal', unit: 'none', domains: ['constant'] })],
+    parameters: [
+      param({ id: 'operation', label: 'Operation', type: 'enum', unit: 'none', default: 'add', choices: ['add', 'subtract', 'multiply', 'divide', 'min', 'max'] }),
+      param({ id: 'a', label: 'A', type: 'number', unit: 'none', default: 0, min: -10000, max: 10000 }),
+      param({ id: 'b', label: 'B', type: 'number', unit: 'none', default: 1, min: -10000, max: 10000, description: 'Unitless for multiply/divide; otherwise the same unit as A.' }),
+      param({ id: 'unit', label: 'Unit', type: 'enum', unit: 'none', default: 'none', choices: ['none', 'meter', 'second', 'tick', 'radian', 'metersPerSecond', 'metersPerSecondSquared', 'hertz', 'perSecond', 'linearGain', 'normalized'], description: 'Unit of A and of the output.' }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
 function groundCollision(): NodeSpec {
   return node('GroundCollision', {
     inputs: [port({ id: 'particles', label: 'Particles', type: 'particles', required: true })],
@@ -772,7 +800,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 /** Fresh, independent registry each call. */
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
-    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
+    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), constantNode(), scalarMath(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
     linePath(), bezierPath(), helixPathNode(), pathTransformNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(),
     audioSource(), audioEnvelope(), audioFilter(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),

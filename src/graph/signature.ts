@@ -38,7 +38,7 @@ export const BRIDGE_PORT_PARAM = 'portId';
 export const GROUP_INPUT_PORT = 'out';
 export const GROUP_OUTPUT_PORT = 'in';
 /** Dynamic literal nodes whose specialization is deliberately not implemented yet. */
-const UNSPECIALIZED_TYPES = ['Constant', 'PublicParameter'];
+const UNSPECIALIZED_TYPES = ['PublicParameter'];
 
 const VALUE_PORT: Partial<Record<ValueType, PortType>> = {
   number: 'scalarSignal', integer: 'scalarSignal', boolean: 'booleanSignal', color: 'colorSignal',
@@ -198,9 +198,13 @@ export function resolveSignature(node: NodeDefinition, spec: NodeSpec, context: 
   }
 
   // RandomRange: the output unit is chosen per instance (params.unit), so it can drive any scalar parameter.
-  if (node.type === 'RandomRange') {
+  if (node.type === 'RandomRange' || node.type === 'Constant' || node.type === 'ScalarMath') {
     const o = outputs.find(p => p.id === 'value'), u = node.params.unit;
     if (o && typeof u === 'string') o.unit = u as Unit;
+    if (node.type === 'ScalarMath' && typeof u === 'string') {
+      const scaling = node.params.operation === 'multiply' || node.params.operation === 'divide';
+      for (const p of inputs) if (p.id === 'a' || (p.id === 'b' && !scaling)) p.unit = u as Unit;
+    }
   }
 
   // Every concrete signal port must declare nonempty domains, connected or not.

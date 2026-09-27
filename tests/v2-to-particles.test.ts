@@ -497,6 +497,17 @@ test('RandomRange drives a parameter with one seeded sample per cast; its unit m
   assert.ok(errs.some(e => e.code === 'TYPE_MISMATCH'), JSON.stringify(errs.map(e => e.code)));
 });
 
+test('Constant and ScalarMath drive a parameter; chains evaluate once per cast; units are checked', () => {
+  const withMath = (op: string, unit = 'none', aUnit = 'none') => f01(d => {
+    root(d).nodes.push(node('node-c', 'Constant', { value: 3, unit: aUnit }), node('node-m', 'ScalarMath', { operation: op, b: 4, unit }));
+    root(d).edges.push(edge('e-c', 'node-c', 'value', 'node-m', 'a'), edge('e-m', 'node-m', 'value', 'node-emitter', 'burst'));
+  });
+  const count = (op: string) => plan(withMath(op)).systems[0].descriptor.bursts[0].count;
+  assert.deepEqual(['add', 'min', 'multiply', 'max'].map(count), [7, 3, 12, 4]);
+  assert.ok(errorsOf(compileParticlePreview(withMath('add', 'meter', 'meter'))).some(e => e.code === 'TYPE_MISMATCH'), 'meter output into unitless burst');
+  assert.ok(errorsOf(compileParticlePreview(withMath('add', 'none', 'meter'))).some(e => e.code === 'TYPE_MISMATCH'), 'meter constant into unitless a');
+});
+
 test('MotionTrail compiles to a trail layer over a one-particle system attached to the follower track', () => {
   const p = plan(followerDoc(d => {
     const g = root(d);

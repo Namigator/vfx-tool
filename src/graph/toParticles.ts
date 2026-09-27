@@ -38,6 +38,9 @@ import { compilePathPreview } from './toPaths.ts';
 import { ease, pointAtArcFraction, type Easing } from '../runtime/paths.ts';
 import type { FlipbookMode, SpriteSheet } from '../assets/spriteLibrary.ts';
 
+/** Value nodes evaluated once per cast when they drive a parameter port. */
+const VALUE_NODES = new Set(['RandomRange', 'Constant', 'ScalarMath']);
+
 export type ParticlePreviewSystem = { id: string; descriptor: ParticleEmitterDescriptor };
 export type ParticlePreviewLayer = {
   /** BillboardRenderer node ID. */
@@ -170,15 +173,36 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     return spec.default;
   };
   const num = (n: ExpandedNode, id: string) => param(n, id) as number;
-  /** Value nodes feeding a parameter port (RandomRange): sampled once per cast. Undefined when not driven by one. */
-  const drivenValue = (n: ExpandedNode, id: string): number | undefined => {
-    const c = x.connections.find(e => e.target.nodeId === n.node.id && e.target.port === id && e.source.kind === 'node');
+  /** Value nodes feeding a parameter port (RandomRange, Constant, ScalarMath): evaluated once per cast. Undefined when not driven by one. */
+  const valueSource = (nodeId: string, port: string): ExpandedNode | undefined => {
+    const c = x.connections.find(e => e.target.nodeId === nodeId && e.target.port === port && e.source.kind === 'node');
     if (!c || c.source.kind !== 'node') return undefined;
     const src = nodes.get(c.source.nodeId);
-    if (!src || src.node.type !== 'RandomRange' || !src.effectiveEnabled) return undefined;
-    const lo = param(src, 'min') as number, hi = param(src, 'max') as number;
-    const u = sampleUnit({ documentSeed: doc.seed, randomStreamId: src.node.randomStreamId, eventRandomKey: 'value', entityOrdinal: 0, propertyKey: 'value', sampleOrdinal: 0 });
-    const v = Math.min(lo, hi) + u * Math.abs(hi - lo);
+    return src && VALUE_NODES.has(src.node.type) && src.effectiveEnabled ? src : undefined;
+  };
+  const valueOf = (src: ExpandedNode, depth: number): number => {
+    if (depth > 32) return fail('INVALID_VALUE', `Value chain through "${src.node.id}" is too deep.`, src.node.id);
+    if (src.node.type === 'Constant') return param(src, 'value') as number;
+    if (src.node.type === 'RandomRange') {
+      const lo = param(src, 'min') as number, hi = param(src, 'max') as number;
+      const u = sampleUnit({ documentSeed: doc.seed, randomStreamId: src.node.randomStreamId, eventRandomKey: 'value', entityOrdinal: 0, propertyKey: 'value', sampleOrdinal: 0 });
+      return Math.min(lo, hi) + u * Math.abs(hi - lo);
+    }
+    const operand = (id: string) => { const s = valueSource(src.node.id, id); return s ? valueOf(s, depth + 1) : param(src, id) as number; };
+    const a = operand('a'), b = operand('b');
+    switch (param(src, 'operation')) {
+      case 'subtract': return a - b;
+      case 'multiply': return a * b;
+      case 'divide': return b === 0 ? fail('INVALID_VALUE', `ScalarMath "${src.node.id}" divides by zero.`, src.node.id, 'b') : a / b;
+      case 'min': return Math.min(a, b);
+      case 'max': return Math.max(a, b);
+      default: return a + b;
+    }
+  };
+  const drivenValue = (n: ExpandedNode, id: string): number | undefined => {
+    const src = valueSource(n.node.id, id);
+    if (!src) return undefined;
+    const v = valueOf(src, 0);
     const spec = registry.get(registryKey(n.node.type, n.node.definitionVersion))?.parameters.find(p => p.id === id);
     return spec?.type === 'integer' ? Math.round(v) : v;
   };
@@ -186,7 +210,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
   const noDrivenParams = (n: ExpandedNode, structural: string[]) => {
     for (const c of x.connections) {
       if (c.target.nodeId !== n.node.id || structural.includes(c.target.port) || c.source.kind === 'empty') continue;
-      if (c.source.kind === 'node' && nodes.get(c.source.nodeId)?.node.type === 'RandomRange') continue; // Resolved by drivenValue.
+      if (c.source.kind === 'node' && VALUE_NODES.has(nodes.get(c.source.nodeId)?.node.type ?? '')) continue; // Resolved by drivenValue.
       report('DOMAIN_MISMATCH', `Input "${c.target.port}" of "${n.node.id}" is driven by a connection; connected/animated parameters are not supported by the point preview yet. Disconnect it and set a literal.`, n.node.id, c.target.port);
     }
   };
