@@ -207,6 +207,25 @@ function spriteRenderer(): NodeSpec {
   });
 }
 
+function pointLight(): NodeSpec {
+  return node('PointLight', {
+    inputs: [
+      port({ id: 'anchor', label: 'Anchor', type: 'anchor', required: true }),
+      port({ id: 'window', label: 'Window', type: 'timeWindow', required: true }),
+    ],
+    outputs: [port({ id: 'visual', label: 'Visual', type: 'visual' })],
+    parameters: [
+      param({ id: 'color', label: 'Colour', type: 'color', unit: 'none', default: white(), editPolicy: 'live' }),
+      param({ id: 'intensity', label: 'Intensity', type: 'number', unit: 'linearGain', default: 20, min: 0, max: 100, editPolicy: 'live', description: 'Peak intensity (candela-like preview units).' }),
+      param({ id: 'intensityOverWindow', label: 'Intensity over window', type: 'curve', unit: 'normalized', curveDomain: 'normalized', default: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 0 }, { x: 0.1, y: 1 }, { x: 1, y: 0 }] }, min: 0, max: 1, editPolicy: 'live' }),
+      param({ id: 'range', label: 'Range', type: 'number', unit: 'meter', default: 5, min: 0.1, max: 50, editPolicy: 'live' }),
+      param({ id: 'flicker', label: 'Flicker', type: 'number', unit: 'normalized', default: 0, min: 0, max: 1, editPolicy: 'live', description: 'Depth of deterministic noise flicker (fire, electricity).' }),
+      param({ id: 'flickerRate', label: 'Flicker rate', type: 'number', unit: 'hertz', default: 12, min: 0, max: 60, editPolicy: 'live' }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
 function particleTrail(): NodeSpec {
   return node('ParticleTrail', {
     inputs: [
@@ -564,7 +583,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 /** Fresh, independent registry each call. */
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
-    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), groundCollision(), particleEvents(), material(), billboardRenderer(), particleTrail(), spriteRenderer(),
+    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), groundCollision(), particleEvents(), material(), billboardRenderer(), particleTrail(), spriteRenderer(), pointLight(),
     linePath(), bezierPath(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(),
     audioSource(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),

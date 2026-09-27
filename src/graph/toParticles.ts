@@ -70,6 +70,11 @@ export type ParticleTrailLayer = {
   color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout'; alphaCutoff: number;
   renderOrderOffset: number; visualOrder: number;
 };
+/** 05 PointLight: lights the preview ground over its window. */
+export type PointLightLayer = {
+  nodeId: string; position: Vec3; color: ColorValue; intensity: number; range: number;
+  startTick: number; endTick: number; intensityOverWindow: CurveValue; flicker: number; flickerRate: number; seed: number;
+};
 export type ParticlePreviewPlan = {
   durationTicks: number;
   /** One per distinct particle chain, in first-use order of layers. */
@@ -78,6 +83,7 @@ export type ParticlePreviewPlan = {
   layers: ParticlePreviewLayer[];
   /** ParticleTrail sinks, in root EffectOutput.visual connection order. */
   trails: ParticleTrailLayer[];
+  lights: PointLightLayer[];
 };
 
 export const DEFAULT_PREVIEW_SIZE = { min: 0.08, max: 0.16 } as const;
@@ -383,6 +389,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
   const systems: ParticlePreviewSystem[] = [];
   const layers: ParticlePreviewLayer[] = [];
   const trails: ParticleTrailLayer[] = [];
+  const lights: PointLightLayer[] = [];
   const done = new Set<string>();
   const visual = into(outputId, 'visual');
   for (const [visualOrder, c] of visual.entries()) {
@@ -390,6 +397,30 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       const b = sourceNode(c.source, outputId, 'visual');
       if (options.ribbonsHandled === true && b.node.type === 'RibbonRenderer') continue; // Ribbon layers: compilePathPreview.
       if (done.has(b.node.id) || !b.effectiveEnabled) continue; // Disabled sink contributes nothing.
+      if (b.node.type === 'PointLight') {
+        done.add(b.node.id);
+        const lid = b.node.id;
+        noDrivenParams(b, ['anchor', 'window']);
+        const an = into(lid, 'anchor'), anchorNode = an.length === 1 ? sourceNode(an[0].source, lid, 'anchor') : undefined;
+        const ap = anchorNode && anchorNode.node.type === 'Anchor' && anchorNode.effectiveEnabled ? anchorPos.get(param(anchorNode, 'anchorId') as string) : undefined;
+        if (!ap) { fail('MISSING_REFERENCE', `PointLight "${lid}" needs an enabled Anchor referencing an existing document anchor.`, lid); }
+        const ws = into(lid, 'window');
+        if (ws.length !== 1) { fail('MISSING_REFERENCE', `PointLight "${lid}" needs a Schedule window.`, lid); }
+        const s = scheduleOf(ws[0], lid, 'window');
+        if (!s) continue;
+        const start = num(s, 'startTicks');
+        if (start >= doc.durationTicks) continue;
+        const curve = param(b, 'intensityOverWindow') as CurveValue, cerr = lifeCurveError(curve, { min: 0, max: 1 });
+        if (cerr !== undefined) report('INVALID_VALUE', `PointLight "${lid}" intensityOverWindow: ${cerr}`, lid, 'intensityOverWindow');
+        const scale = transform.scale, a = ap as Vec3, q = rotate(transform.rotation, [a[0] * scale, a[1] * scale, a[2] * scale]);
+        lights.push({
+          nodeId: lid, position: [q[0] + transform.position[0], q[1] + transform.position[1], q[2] + transform.position[2]], color: param(b, 'color') as ColorValue,
+          intensity: num(b, 'intensity'), range: num(b, 'range') * scale, startTick: start, endTick: Math.min(doc.durationTicks, start + num(s, 'durationTicks')),
+          intensityOverWindow: structuredClone(curve), flicker: num(b, 'flicker'), flickerRate: num(b, 'flickerRate'),
+          seed: sampleUnit({ documentSeed: doc.seed, randomStreamId: b.node.randomStreamId, eventRandomKey: 'light', entityOrdinal: 0, propertyKey: 'flicker', sampleOrdinal: 0 }) * 4294967296 >>> 0,
+        });
+        continue;
+      }
       if (b.node.type === 'SpriteRenderer') {
         // A sprite is a one-particle system: born at the window start, living for the window length.
         done.add(b.node.id);
@@ -539,7 +570,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     if (budget) errors.push(budget);
   }
   if (errors.length) return { ok: false, errors };
-  return { ok: true, value: { durationTicks: doc.durationTicks, systems, layers, trails }, warnings };
+  return { ok: true, value: { durationTicks: doc.durationTicks, systems, layers, trails, lights }, warnings };
 }
 
 /** Aggregate worst case over all systems: total births and live particles at any tick (plan15 caps). */

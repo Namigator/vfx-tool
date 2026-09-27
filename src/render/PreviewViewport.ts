@@ -15,7 +15,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 // Mixed mode (setMixedSource): point simulations and a path source share one clock; render order of
 // both layer kinds comes from layerRenderOrder(renderOrderOffset, visualOrder).
 import type { Diagnostic, ValidationResult, Vec3 } from '../model/types.ts';
-import type { ParticlePreviewLayer, ParticlePreviewPlan, ParticleTrailLayer } from '../graph/toParticles.ts';
+import type { ParticlePreviewLayer, ParticlePreviewPlan, ParticleTrailLayer, PointLightLayer } from '../graph/toParticles.ts';
+import { valueNoise4 } from '../runtime/noise.ts';
 import { spriteCell } from '../assets/spriteLibrary.ts';
 import { TrailHistory } from './particleTrails.ts';
 import { fnv1a32Utf8 } from '../runtime/random.ts';
@@ -205,7 +206,7 @@ export class PreviewViewport {
   readonly #observer: ResizeObserver;
   readonly #quad = new THREE.PlaneGeometry(1, 1);
   readonly #grid: THREE.GridHelper;
-  readonly #ground: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
+  readonly #ground: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial>;
   #plan: ParticlePreviewPlan | null = null;
   #sims = new Map<string, ParticleSimulation>();
   #snapshots = new Map<string, ParticleState[]>();
@@ -214,6 +215,7 @@ export class PreviewViewport {
   #pathPlan: PathPreviewPlan | null = null;
   #ribbons: RibbonMesh[] = [];
   #trails: TrailMesh[] = [];
+  #lights: { layer: PointLightLayer; light: THREE.PointLight; curve: LifeCurveSampler }[] = [];
   #ribbonKey = '';
   #ribbonCamera = new THREE.Vector3(Number.NaN, 0, 0);
   #drawnPaths = 0;
@@ -245,7 +247,7 @@ export class PreviewViewport {
     this.#renderer = renderer;
     // Partial construction failure releases everything created so far before rethrowing.
     let controls: OrbitControls | null = null, observer: ResizeObserver | null = null;
-    let grid: THREE.GridHelper | null = null, ground: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> | null = null;
+    let grid: THREE.GridHelper | null = null, ground: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial> | null = null;
     try {
       renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
       renderer.setClearColor(0x0b0d12, 1);
@@ -262,7 +264,9 @@ export class PreviewViewport {
 
       grid = new THREE.GridHelper(10, 20, 0x3a4150, 0x1d222c);
       this.#scene.add(grid);
-      ground = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshBasicMaterial({ color: 0x10131a, depthWrite: true }));
+      // Lit (PointLight nodes illuminate it); ambient π reproduces the former unlit base colour.
+      ground = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ color: 0x10131a, roughness: 0.85, metalness: 0, depthWrite: true }));
+      this.#scene.add(new THREE.AmbientLight(0xffffff, Math.PI));
       ground.rotation.x = -Math.PI / 2;
       ground.position.y = -0.001;
       this.#scene.add(ground);
@@ -352,6 +356,12 @@ export class PreviewViewport {
 
   #addPointLayers(plan: ParticlePreviewPlan): void {
     this.#plan = plan;
+    for (const layer of plan.lights ?? []) {
+      const light = new THREE.PointLight(new THREE.Color().setStyle(layer.color.srgb), 0, layer.range, 2);
+      light.position.set(layer.position[0], layer.position[1], layer.position[2]);
+      this.#scene.add(light);
+      this.#lights.push({ layer, light, curve: compileLifeCurve(layer.intensityOverWindow) });
+    }
     for (const layer of plan.trails ?? []) {
       const ribbon = new RibbonGeometry({ maxPoints: MAX_PREVIEW_POINTS });
       const material = materialFor(RIBBON_VERTEX, RIBBON_FRAGMENT, layer);
@@ -529,6 +539,8 @@ export class PreviewViewport {
     this.#layers = [];
     for (const t of this.#trails) { this.#scene.remove(t.mesh); t.ribbon.dispose(); t.material.dispose(); }
     this.#trails = [];
+    for (const l of this.#lights) { this.#scene.remove(l.light); l.light.dispose(); }
+    this.#lights = [];
     this.#sims.clear();
     this.#snapshots.clear();
     this.#clearRibbons();
@@ -655,6 +667,17 @@ export class PreviewViewport {
     for (const t of this.#trails) if (t.layer.systemId === systemId) t.history.push(sim.tick, snap ??= sim.snapshot().particles);
   }
 
+  /** Light intensity = peak × window curve × (1 − flicker·noise), zero outside the window. */
+  #updateLights(alpha: number): void {
+    const tick = (this.#clock ? this.#clock.tick : 0) + alpha;
+    for (const { layer: l, light, curve } of this.#lights) {
+      const inside = tick >= l.startTick && tick < l.endTick;
+      const u = (tick - l.startTick) / Math.max(1, l.endTick - l.startTick);
+      const f = l.flicker > 0 ? 1 - l.flicker * (0.5 + 0.5 * valueNoise4(l.seed, (tick * PARTICLE_DT) * l.flickerRate, 0.5, 0.5, 0)) : 1;
+      light.intensity = inside ? l.intensity * sampleLifeCurve(curve, u) * f : 0;
+    }
+  }
+
   /** Rebuilds trail ribbons for the current tick, interpolated heads and camera. */
   #updateTrails(alpha: number): void {
     if (!this.#trails.length || !this.#clock) return;
@@ -731,6 +754,7 @@ export class PreviewViewport {
       colAttr.needsUpdate = true; spinAttr.needsUpdate = true; velAttr.needsUpdate = true; cellAttr.needsUpdate = true;
     }
     this.#updateTrails(alpha);
+    this.#updateLights(alpha);
   }
 
   #emitFrame(force: boolean): void {

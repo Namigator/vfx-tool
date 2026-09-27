@@ -410,3 +410,15 @@ test('SpriteRenderer compiles to a one-particle system living for its window, wi
   const at = (t: number) => { const r = sampleParticlesAtTick(sys, t); if (!r.ok) assert.fail('sample'); return r.value.particles.length; };
   assert.deepEqual([at(29), at(30), at(49), at(50)], [0, 1, 1, 0]);
 });
+
+test('PointLight compiles to a light layer at its anchor over its window', () => {
+  const p = plan(f01(d => {
+    const g = root(d);
+    g.nodes.push(node('node-lw', 'Schedule', { startTicks: 5, durationTicks: 40, mode: 'window' }), node('node-light', 'PointLight', { intensity: 30, range: 4, flicker: 0.3 }));
+    g.edges.push(edge('e-la', 'node-source', 'out', 'node-light', 'anchor'), edge('e-lw', 'node-lw', 'window', 'node-light', 'window'), edge('e-lv', 'node-light', 'visual', 'node-output', 'visual', 1));
+  }));
+  const l = p.lights[0];
+  assert.deepEqual([l.nodeId, l.position, l.intensity, l.range, l.startTick, l.endTick, l.flicker], ['node-light', [0, 1, 0], 30, 4, 5, 45, 0.3]);
+  assert.ok(Number.isInteger(l.seed));
+  assert.deepEqual(plan(f01()).lights, []);
+});

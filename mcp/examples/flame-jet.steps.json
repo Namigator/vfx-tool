@@ -384,6 +384,106 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "Schedule",
+   "id": "lightwin",
+   "params": {
+    "startTicks": 10,
+    "durationTicks": 140,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "PointLight",
+   "id": "glow",
+   "params": {
+    "color": {
+     "srgb": "#FF8A3A",
+     "alpha": 1
+    },
+    "intensity": 40,
+    "range": 6,
+    "flicker": 0.35,
+    "flickerRate": 10,
+    "intensityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.05,
+       "y": 1
+      },
+      {
+       "x": 0.85,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "flame-jet",
+   "anchorId": "flamecenter",
+   "position": [
+    0,
+    0.9,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flame-jet",
+   "type": "Anchor",
+   "id": "centeranchor",
+   "params": {
+    "anchorId": "flamecenter"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "centeranchor.out",
+   "to": "glow.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "lightwin.window",
+   "to": "glow.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "glow.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
   "vfx_compile",
   {
    "docId": "flame-jet"
@@ -391,18 +491,12 @@
   true
  ],
  [
-  "vfx_sample_particles",
+  "vfx_render_frames",
   {
    "docId": "flame-jet",
-   "tick": 80,
-   "show": 0
-  },
-  true
- ],
- [
-  "vfx_preview_url",
-  {
-   "docId": "flame-jet"
+   "ticks": [
+    80
+   ]
   },
   true
  ]
