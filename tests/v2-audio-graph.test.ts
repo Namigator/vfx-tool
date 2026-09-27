@@ -96,7 +96,7 @@ test('unsupported or ambiguous audio graphs return addressed errors, never silen
       root(d).edges.push(edge('e-trig2', 'n-cue2', 'start', 'n-src', 'trigger', 1));
     }, 'MULTIPLE_DRIVERS', 'n-src'],
     ['end event trigger', d => { (root(d).edges.find(e => e.id === 'e-trig') as ReturnType<typeof edge>).source.port = 'end'; }, 'UNKNOWN_NODE', 'n-cue'],
-    ['repeat schedule', d => { find(d, 'n-cue').params.mode = 'repeat'; }, 'INVALID_VALUE', 'n-cue'],
+    ['repeat schedule without a mix', d => { Object.assign(find(d, 'n-cue').params, { mode: 'repeat', repeatCount: 3, repeatIntervalTicks: 10 }); }, 'INVALID_VALUE', 'n-cue'],
     ['multiple outputs', d => {
       root(d).nodes.push(node('n-aout2', 'AudioOutput'));
       root(d).edges.push(edge('e-sa2', 'n-src', 'audio', 'n-aout2', 'audio'), edge('e-ao2', 'n-aout2', 'audio', 'node-output', 'audio', 1));
@@ -258,7 +258,13 @@ test('invalid mix values, nested mixes and unsupported inputs return addressed e
     root(d).edges.push(edge('e-nest', 'n-mix2', 'audio', 'n-mix', 'inputs', 5));
   })), 'INVALID_VALUE', addressed('n-mix2'), 'nested mix');
   at(compileAudio(mixDoc([{ id: 'a', params: OSC }], {}, d => { find(d, 'n-src-a').enabled = false; })), 'INVALID_VALUE', addressed('n-src-a'), 'disabled source');
-  at(compileAudio(mixDoc([{ id: 'a', params: OSC }], {}, d => { find(d, 'n-cue-a').params.mode = 'repeat'; })), 'INVALID_VALUE', addressed('n-cue-a'), 'repeat schedule');
+  {
+    // A repeating Schedule through an AudioMix yields one voice per repeat (cue ticks start + k·interval).
+    const r = compileAudio(mixDoc([{ id: 'a', params: OSC }], {}, d => { Object.assign(find(d, 'n-cue-a').params, { mode: 'repeat', repeatCount: 3, repeatIntervalTicks: 10 }); }));
+    if (!r.ok) assert.fail(JSON.stringify(r.errors));
+    assert.equal(r.value.kind === 'mix' && r.value.voices.length, 3);
+    assert.deepEqual(r.value.kind === 'mix' && r.value.voices.map(v => v.cueTick - r.value.voices[0].cueTick), [0, 10, 20]);
+  }
   at(compileAudio(mixDoc([{ id: 'a', params: OSC }], {}, d => {
     root(d).edges.push(edge('e-win', 'n-cue-a', 'window', 'n-src-a', 'window'));
   })), 'INVALID_VALUE', addressed('n-src-a'), 'connected window');

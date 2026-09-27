@@ -267,6 +267,170 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "spark-trails",
+   "type": "AudioMix",
+   "id": "sfx-mix",
+   "params": {
+    "masterGain": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "spark-trails",
+   "type": "AudioOutput",
+   "id": "sfx-out",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "spark-trails",
+   "type": "AudioSource",
+   "id": "sfx-crackle",
+   "params": {
+    "source": "noise",
+    "noiseColor": "white",
+    "durationTicks": 28,
+    "gain": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "spark-trails",
+   "from": "sched.start",
+   "to": "sfx-crackle.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "spark-trails",
+   "type": "AudioFilter",
+   "id": "sfx-crackle-f",
+   "params": {
+    "mode": "highpass",
+    "cutoffHz": 3000,
+    "cutoffEndHz": 6000,
+    "q": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "spark-trails",
+   "from": "sfx-crackle.audio",
+   "to": "sfx-crackle-f.audio"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "spark-trails",
+   "type": "AudioEnvelope",
+   "id": "sfx-crackle-e",
+   "params": {
+    "attack": 0.001,
+    "hold": 0.04,
+    "release": 0.4,
+    "curve": "exponential"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "spark-trails",
+   "from": "sfx-crackle-f.audio",
+   "to": "sfx-crackle-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "spark-trails",
+   "from": "sfx-crackle-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "spark-trails",
+   "type": "AudioSource",
+   "id": "sfx-snap",
+   "params": {
+    "source": "chirp",
+    "chirpStartHz": 2400,
+    "chirpEndHz": 500,
+    "chirpSweep": "exponential",
+    "durationTicks": 8,
+    "gain": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "spark-trails",
+   "from": "sched.start",
+   "to": "sfx-snap.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "spark-trails",
+   "type": "AudioEnvelope",
+   "id": "sfx-snap-e",
+   "params": {
+    "attack": 0.001,
+    "hold": 0.01,
+    "release": 0.08,
+    "curve": "exponential"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "spark-trails",
+   "from": "sfx-snap.audio",
+   "to": "sfx-snap-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "spark-trails",
+   "from": "sfx-snap-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "spark-trails",
+   "from": "sfx-mix.audio",
+   "to": "sfx-out.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "spark-trails",
+   "from": "sfx-out.audio",
+   "to": "node-output.audio"
+  }
+ ],
+ [
   "vfx_compile",
   {
    "docId": "spark-trails"
@@ -281,6 +445,13 @@
     12,
     40
    ]
+  },
+  true
+ ],
+ [
+  "vfx_render_audio",
+  {
+   "docId": "spark-trails"
   },
   true
  ]

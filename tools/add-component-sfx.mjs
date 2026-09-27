@@ -24,9 +24,10 @@ const SFX = {
   'holy-light': [['c5', 'pulse', osc('sine', 523.25, 80, 0.32), null, env(0.25, 0.7, 0.4, 'linear')], ['e5', 'pulse', osc('sine', 659.25, 80, 0.26), null, env(0.3, 0.65, 0.4, 'linear')], ['g5', 'pulse', osc('sine', 783.99, 80, 0.22), null, env(0.35, 0.6, 0.4, 'linear')], ['shimmer', 'pulse', noise('white', 80, 0.18), hp(6000, 8000), env(0.3, 0.6, 0.4, 'linear')]],
   'tornado': [['wind', 'spin', noise('pink', 220, 2), bp(350, 900, 1.1), env(0.8, 2.2, 0.7, 'linear')], ['roar', 'spin', noise('brown', 220, 1.8), lp(400, 600), env(0.8, 2.2, 0.7, 'linear')]],
   'fountain': [['water', 'sched', noise('white', 180, 0.7), bp(2200, 2000, 0.7), env(0.15, 2.5, 0.4, 'linear')], ['gurgle', 'sched', noise('brown', 180, 0.6), lp(600, 500, 2), env(0.2, 2.4, 0.4, 'linear')]],
+  'spark-burst': [['crackle', 'sched', noise('white', 28, 0.9), hp(3000, 6000, 0.9), env(0.001, 0.04, 0.4)], ['snap', 'sched', chirp(2400, 500, 8, 0.6), null, env(0.001, 0.01, 0.08)]],
   'rain': [['rain', 'sched', noise('pink', 200, 2), hp(2500, 2200, 0.7), env(0.4, 2.3, 0.6, 'linear')]],
 };
-const FILES = { 'flame-jet': 'flame-jet', 'impact-flash': 'impact-flash', 'rock-burst': 'rock-burst', 'ice-shards': 'ice-shards', 'arc-beam': 'arc-beam', 'charge-up': 'charge-up', 'poison-cloud': 'poison-cloud', 'shadow-vortex': 'shadow-vortex', 'holy-light': 'holy-light', 'tornado': 'tornado', 'fountain': 'fountain', 'rain': 'rain-splash' };
+const FILES = { 'flame-jet': 'flame-jet', 'impact-flash': 'impact-flash', 'rock-burst': 'rock-burst', 'ice-shards': 'ice-shards', 'arc-beam': 'arc-beam', 'charge-up': 'charge-up', 'poison-cloud': 'poison-cloud', 'shadow-vortex': 'shadow-vortex', 'holy-light': 'holy-light', 'tornado': 'tornado', 'fountain': 'fountain', 'rain': 'rain-splash', 'spark-burst': 'spark-trails' };
 
 for (const [key, voices] of Object.entries(SFX)) {
   const file = `mcp/examples/${FILES[key]}.steps.json`;

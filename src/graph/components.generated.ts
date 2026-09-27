@@ -132,6 +132,70 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "width": 0.018,
      "endFade": 0.4
     }
+   },
+   {
+    "id": "sfx-mix",
+    "type": "AudioMix",
+    "params": {
+     "masterGain": 0.9
+    }
+   },
+   {
+    "id": "sfx-out",
+    "type": "AudioOutput",
+    "params": {}
+   },
+   {
+    "id": "sfx-crackle",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "white",
+     "durationTicks": 28,
+     "gain": 0.9
+    }
+   },
+   {
+    "id": "sfx-crackle-f",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "highpass",
+     "cutoffHz": 3000,
+     "cutoffEndHz": 6000,
+     "q": 0.9
+    }
+   },
+   {
+    "id": "sfx-crackle-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.001,
+     "hold": 0.04,
+     "release": 0.4,
+     "curve": "exponential"
+    }
+   },
+   {
+    "id": "sfx-snap",
+    "type": "AudioSource",
+    "params": {
+     "source": "chirp",
+     "chirpStartHz": 2400,
+     "chirpEndHz": 500,
+     "chirpSweep": "exponential",
+     "durationTicks": 8,
+     "gain": 0.6
+    }
+   },
+   {
+    "id": "sfx-snap-e",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.001,
+     "hold": 0.01,
+     "release": 0.08,
+     "curve": "exponential"
+    }
    }
   ],
   "edges": [
@@ -178,6 +242,42 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    [
     "trail.visual",
     "node-output.visual"
+   ],
+   [
+    "sched.start",
+    "sfx-crackle.trigger"
+   ],
+   [
+    "sfx-crackle.audio",
+    "sfx-crackle-f.audio"
+   ],
+   [
+    "sfx-crackle-f.audio",
+    "sfx-crackle-e.audio"
+   ],
+   [
+    "sfx-crackle-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "sched.start",
+    "sfx-snap.trigger"
+   ],
+   [
+    "sfx-snap.audio",
+    "sfx-snap-e.audio"
+   ],
+   [
+    "sfx-snap-e.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "sfx-mix.audio",
+    "sfx-out.audio"
+   ],
+   [
+    "sfx-out.audio",
+    "node-output.audio"
    ]
   ],
   "knobs": [
