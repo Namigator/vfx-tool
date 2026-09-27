@@ -217,7 +217,8 @@
     "template": "SpriteTextured",
     "sprite": "smoke-puff",
     "blend": "normal",
-    "opacity": 0.55
+    "opacity": 0.55,
+    "groundFade": 0.3
    }
   }
  ],

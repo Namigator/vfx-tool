@@ -49,7 +49,7 @@ test('F01 graph compiles to one point system and one billboard layer with exact 
   });
   assert.deepEqual(p.layers, [{
     nodeId: 'node-billboard', systemId: 'node-initial', color: { srgb: '#FFFFFF', alpha: 1 },
-    opacity: 1, emission: 0, blend: 'additive', alphaCutoff: 0.5, renderOrderOffset: 0, visualOrder: 0,
+    opacity: 1, emission: 0, blend: 'additive', alphaCutoff: 0.5, groundFade: 0, renderOrderOffset: 0, visualOrder: 0,
     sizeOverLife: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] },
     opacityOverLife: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] },
     colorOverLife: { stops: [{ position: 0, color: { srgb: '#FFFFFF', alpha: 1 } }, { position: 1, color: { srgb: '#FFFFFF', alpha: 1 } }] },

@@ -48,6 +48,8 @@ export type ParticlePreviewSystem = { id: string; descriptor: ParticleEmitterDes
 export type ParticlePreviewLayer = {
   /** BillboardRenderer node ID. */
   nodeId: string;
+  /** Material ground fade height in world meters (0 = off). */
+  groundFade?: number;
   systemId: string;
   /** InitialProperties.color × Material.tint, multiplied in linear RGB, returned as encoded sRGB; alpha multiplied. */
   color: ColorValue;
@@ -751,7 +753,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         }
         layers.push({
           nodeId: sid, systemId: sid, color: param(m, 'tint') as ColorValue, opacity: num(m, 'opacity'), emission: num(m, 'emission'),
-          blend: param(m, 'blend') as ParticlePreviewLayer['blend'], alphaCutoff: num(m, 'alphaCutoff'), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
+          blend: param(m, 'blend') as ParticlePreviewLayer['blend'], alphaCutoff: num(m, 'alphaCutoff'), groundFade: num(m, 'groundFade') * transform.scale, renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
           sizeOverLife: curve('sizeOverWindow', SIZE_OVER_LIFE_BOUNDS), opacityOverLife: curve('opacityOverWindow', OPACITY_OVER_LIFE_BOUNDS),
           colorOverLife: structuredClone(param(b, 'colorOverWindow') as GradientValue), stretchRatio: 1, pivot: 0.5,
           ...((): Pick<ParticlePreviewLayer, 'alignment' | 'worldAxis'> => { const w = param(b, 'worldAxis') as Vec3, l = Math.hypot(w[0], w[1], w[2]); return param(b, 'alignment') === 'worldAxis' && l > 1e-9 ? { alignment: 'worldAxis', worldAxis: rotate(transform.rotation, [w[0] / l, w[1] / l, w[2] / l]) } : { alignment: 'camera', worldAxis: [0, 1, 0] }; })(), ...(sprite ? { sprite } : {}),
@@ -839,6 +841,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         emission: num(mat, 'emission'),
         blend: param(mat, 'blend') as ParticlePreviewLayer['blend'],
         alphaCutoff: num(mat, 'alphaCutoff'),
+        groundFade: num(mat, 'groundFade') * transform.scale,
         renderOrderOffset: num(b, 'renderOrderOffset'),
         visualOrder,
         sizeOverLife,

@@ -99,6 +99,7 @@ uniform float uPivot;
 varying vec2 vUv;
 varying float vLifeOpacity;
 varying vec3 vLifeColor;
+varying float vWorldY;
 void main() {
   vUv = uv;
   vLifeOpacity = lifeOpacity;
@@ -118,8 +119,9 @@ void main() {
   }
   float c = cos(ang), s = sin(ang);
   vec2 r = vec2(c * p.x - s * p.y, s * p.x + c * p.y) * instanceMatrix[0][0];
-  if (uAlign > 1.5) mv.xyz += (modelViewMatrix * vec4(uAxisU * r.x + uAxisV * r.y, 0.0)).xyz; // Quad in the world plane.
-  else mv.xy += r;
+  vec3 centre = (modelMatrix * vec4(instanceMatrix[3].xyz, 1.0)).xyz;
+  if (uAlign > 1.5) { mv.xyz += (modelViewMatrix * vec4(uAxisU * r.x + uAxisV * r.y, 0.0)).xyz; vWorldY = centre.y + (uAxisU * r.x + uAxisV * r.y).y; } // Quad in the world plane.
+  else { mv.xy += r; vWorldY = centre.y + (vec3(r, 0.0) * mat3(viewMatrix)).y; } // View-space offset back to world (orthonormal view).
   gl_Position = projectionMatrix * mv;
 }`;
 
@@ -135,12 +137,16 @@ varying vec3 vLifeColor;
 varying vec2 vAtlas;
 uniform sampler2D uTex;
 uniform float uUseTex;
+uniform float uGroundFade;
+varying float vWorldY;
 void main() {
   vec4 t = vec4(1.0);
   float mask;
   if (uUseTex > 0.5) { t = texture2D(uTex, vAtlas); mask = t.a; }
   else { float d = length(vUv - 0.5) * 2.0; mask = 1.0 - smoothstep(0.6, 1.0, d); }
   float a = uAlpha * vLifeOpacity * mask;
+  // Analytic ground fade (08): soft contact with the floor plane y = 0, no depth texture needed.
+  if (uGroundFade > 0.0) a *= smoothstep(0.0, uGroundFade, vWorldY);
   if (uCutout > 0.5) { if (a < uCutoff) discard; a = 1.0; }
   else if (a <= 0.0) discard;
   gl_FragColor = vec4(t.rgb * uColor * vLifeColor * (1.0 + uEmission), a);
@@ -467,6 +473,7 @@ export class PreviewViewport {
         geometry.setAttribute(name, attr);
       }
       material.uniforms.uAlign = { value: layer.alignment === 'velocity' ? 1 : layer.alignment === 'worldAxis' ? 2 : 0 };
+      material.uniforms.uGroundFade = { value: layer.groundFade ?? 0 };
       {
         // In-plane basis for worldAxis quads: U, V perpendicular to the axis (right-handed, V toward +Y/-Z).
         const n = new THREE.Vector3(...(layer.worldAxis ?? [0, 1, 0])).normalize();

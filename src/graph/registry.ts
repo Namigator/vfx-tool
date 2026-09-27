@@ -511,6 +511,7 @@ function material(): NodeSpec {
       param({ id: 'tint', label: 'Tint', type: 'color', unit: 'none', default: white(), domains: [...signal], editPolicy: 'live' }),
       param({ id: 'opacity', label: 'Opacity', type: 'number', unit: 'normalized', default: 1, min: 0, max: 1, domains: [...signal], editPolicy: 'live' }),
       param({ id: 'emission', label: 'Emission', type: 'number', unit: 'linearGain', default: 0, min: 0, max: 20, domains: [...signal], editPolicy: 'live' }),
+      param({ id: 'groundFade', label: 'Ground fade', type: 'number', unit: 'meter', default: 0, min: 0, max: 2, editPolicy: 'live', description: 'Sprites fade out over this height above the floor (y = 0) instead of being cut by it (08 analytic ground fade). 0 = off.' }),
       param({ id: 'alphaCutoff', label: 'Alpha cutoff', type: 'number', unit: 'normalized', default: 0.5, min: 0, max: 1, editPolicy: 'live', description: 'Cutout blend only.' }),
     ],
     disabledBehavior: 'fallback',

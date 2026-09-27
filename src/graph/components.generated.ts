@@ -2784,7 +2784,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "template": "SpriteTextured",
      "sprite": "smoke-puff",
      "blend": "normal",
-     "opacity": 0.55
+     "opacity": 0.55,
+     "groundFade": 0.3
     }
    },
    {
@@ -4511,7 +4512,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "template": "SpriteTextured",
      "sprite": "smoke-puff",
      "blend": "normal",
-     "opacity": 0.5
+     "opacity": 0.5,
+     "groundFade": 0.3
     }
    },
    {
