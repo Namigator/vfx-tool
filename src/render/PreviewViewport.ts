@@ -141,11 +141,14 @@ void main() {
 const RIBBON_VERTEX = /* glsl */ `
 attribute float opacity;
 attribute float side;
+attribute vec3 strip;
 varying float vOpacity;
 varying float vSide;
+varying vec3 vStrip;
 void main() {
   vOpacity = opacity;
   vSide = side;
+  vStrip = strip;
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 }`;
 
@@ -156,17 +159,36 @@ uniform float uEmission;
 uniform float uCutoff;
 uniform float uCutout;
 uniform float uSoftness;
+uniform float uUseTex;
+uniform sampler2D uTex;
+uniform vec2 uGrid;
+uniform float uVariant;
+uniform float uTile;
 varying float vOpacity;
 varying float vSide;
+varying vec3 vStrip;
 void main() {
   // Transverse falloff: full on the centreline, fading to 0 at the strip edge over the outer
   // uSoftness fraction (1 = whole half-width, soft glow; 0 = hard edge).
   float s = abs(vSide);
   float edge = uSoftness > 0.0 ? 1.0 - smoothstep(1.0 - uSoftness, 1.0, s) : 1.0;
+  vec3 rgb = uColor;
   float a = uAlpha * vOpacity * edge;
+  if (uUseTex > 0.5) {
+    if (vStrip.z < -0.001) discard; // Round-join fans would smear the texture into spikes.
+    // u along the strip (stretched over the path, or tiled every uTile metres), v across it.
+    float u = uTile > 0.0 ? fract(vStrip.x / uTile) : clamp(vStrip.x / max(vStrip.y, 1e-6), 0.0, 1.0);
+    float cells = uGrid.x * uGrid.y;
+    float cell = uVariant >= 0.0 ? min(uVariant, cells - 1.0) : floor(vStrip.z * cells);
+    float col = mod(cell, uGrid.x), row = floor(cell / uGrid.x);
+    vec2 cu = clamp(vec2(u, vSide * 0.5 + 0.5), 0.002, 0.998);
+    vec4 t = texture2D(uTex, vec2((col + cu.x) / uGrid.x, (uGrid.y - 1.0 - row + cu.y) / uGrid.y));
+    rgb *= t.rgb;
+    a = uAlpha * vOpacity * t.a; // The texture supplies the cross-section; no procedural edge falloff.
+  }
   if (uCutout > 0.5) { if (a < uCutoff) discard; a = 1.0; }
   else if (a <= 0.0) discard;
-  gl_FragColor = vec4(uColor * (1.0 + uEmission), a);
+  gl_FragColor = vec4(rgb * (1.0 + uEmission), a);
   #include <colorspace_fragment>
 }`;
 
@@ -387,6 +409,7 @@ export class PreviewViewport {
       const material = materialFor(RIBBON_VERTEX, RIBBON_FRAGMENT, layer);
       material.side = THREE.DoubleSide;
       material.uniforms.uSoftness = { value: ribbonSoftness(layer.blend) };
+      Object.assign(material.uniforms, { uUseTex: { value: 0 }, uTex: { value: null }, uGrid: { value: new THREE.Vector2(1, 1) }, uVariant: { value: -1 }, uTile: { value: 0 } });
       const mesh = new THREE.Mesh(ribbon.geometry, material);
       mesh.frustumCulled = false;
       mesh.renderOrder = layerRenderOrder(layer.renderOrderOffset, layer.visualOrder);
@@ -615,6 +638,12 @@ export class PreviewViewport {
         const material = materialFor(RIBBON_VERTEX, RIBBON_FRAGMENT, layer);
         material.side = THREE.DoubleSide; // Camera-facing strips can wind either way.
         material.uniforms.uSoftness = { value: ribbonSoftness(layer.blend) };
+        const sheet = layer.sprite?.sheet;
+        material.uniforms.uUseTex = { value: sheet ? 1 : 0 };
+        material.uniforms.uTex = { value: sheet ? this.#spriteTexture(sheet.file) : null };
+        material.uniforms.uGrid = { value: new THREE.Vector2(sheet?.columns ?? 1, sheet?.rows ?? 1) };
+        material.uniforms.uVariant = { value: layer.sprite?.variant ?? -1 };
+        material.uniforms.uTile = { value: layer.uvMode === 'tile' ? layer.uvTileLength : 0 };
         const mesh = new THREE.Mesh(ribbon.geometry, material);
         mesh.renderOrder = layerRenderOrder(layer.renderOrderOffset, layer.visualOrder);
         this.#scene.add(mesh);

@@ -23,6 +23,8 @@
 //   Material.opacity may be driven by EffectTimeCurve.value (curve sampled at effect seconds; disabled driver falls back to the literal). Disabled nodes are not parameter-checked (they contribute no values).
 // - Validation does not depend on effectTick: geometry is always evaluated; a layer outside its window
 //   (or at/after the document end) is inactive and carries no paths.
+import { BUILTIN_SPRITES } from '../assets/builtinSprites.generated.ts';
+import type { SpriteSheet } from '../assets/spriteLibrary.ts';
 import type { ColorValue, CurveValue, Diagnostic, ErrorCode, ParameterValue, Quaternion, Transform, ValidationResult, Vec3 } from '../model/types.ts';
 import { TICKS_PER_SECOND } from '../model/types.ts';
 import { registryKey } from '../model/controls.ts';
@@ -49,6 +51,8 @@ export type PathPreviewLayer = {
   /** Fraction (0..0.5) of each path's arc length over which both ends taper and fade. */
   endFade: number;
   uvMode: 'stretch' | 'tile';
+  /** SpriteTextured material: library sheet mapped along the ribbon (u = arc, v = across); cell per path. */
+  sprite?: { sheet: SpriteSheet; variant: number };
   uvTileLength: number;
   orientation: 'camera' | 'parallelTransport';
   renderOrderOffset: number;
@@ -379,7 +383,12 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
       }
       noDrivenParams(mat, ['opacity']);
       const opacity = drivenScalar(mat, 'opacity');
-      if (param(mat, 'template') !== 'SpriteUnlit') report('INVALID_VALUE', 'Only the SpriteUnlit material template is supported.', mat.node.id, 'template');
+      let sprite: PathPreviewLayer['sprite'];
+      if (param(mat, 'template') === 'SpriteTextured') {
+        const sheet = BUILTIN_SPRITES.find(s => s.id === param(mat, 'sprite'));
+        if (!sheet) report('MISSING_REFERENCE', `Material sprite "${String(param(mat, 'sprite'))}" is not in the included library.`, mat.node.id, 'sprite');
+        else sprite = { sheet: structuredClone(sheet) as SpriteSheet, variant: num(mat, 'variant') };
+      } else if (param(mat, 'template') !== 'SpriteUnlit') report('INVALID_VALUE', `Material template "${String(param(mat, 'template'))}" is not supported.`, mat.node.id, 'template');
 
       let window: PathPreviewLayer['window'] = { startTick: 0, endTick: duration }; // Unconnected: whole document (25).
       const ws = into(rid, 'window');
@@ -421,6 +430,7 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
         emission: num(mat, 'emission'),
         blend: param(mat, 'blend') as PathPreviewLayer['blend'],
         alphaCutoff: num(mat, 'alphaCutoff'),
+        ...(sprite ? { sprite } : {}),
       });
     } catch (e) {
       if (!(e instanceof Fail)) throw e;

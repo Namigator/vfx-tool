@@ -94,8 +94,8 @@ export function ribbonStyleDiagnostics(doc: EffectDocumentV2, layers: readonly P
     if (l.orientation !== 'camera') {
       out.push({ code: 'INVALID_VALUE', severity: 'error', nodeId: l.nodeId, ...at(l.nodeId, 'orientation'), message: `RibbonRenderer "${l.nodeId}" orientation "${l.orientation}" is not supported by the preview; use "camera".` });
     }
-    if (l.uvMode !== 'stretch') {
-      out.push({ code: 'INVALID_VALUE', severity: 'warning', nodeId: l.nodeId, ...at(l.nodeId, 'uvMode'), message: `RibbonRenderer "${l.nodeId}" uvMode "${l.uvMode}" (tile length ${l.uvTileLength}) has no visible effect: the preview draws untextured ribbons.` });
+    if (l.uvMode !== 'stretch' && !l.sprite) {
+      out.push({ code: 'INVALID_VALUE', severity: 'warning', nodeId: l.nodeId, ...at(l.nodeId, 'uvMode'), message: `RibbonRenderer "${l.nodeId}" uvMode "${l.uvMode}" (tile length ${l.uvTileLength}) has no visible effect: this ribbon is untextured (use a SpriteTextured material).` });
     }
   }
   return out;

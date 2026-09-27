@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import type { Vec3 } from '../model/types.ts';
 import type { PathData } from '../runtime/paths.ts';
+import { fnv1a32Utf8 } from '../runtime/random.ts';
 
 export interface RibbonUpdateOptions {
   /** World-space camera position used for billboarding. */
@@ -105,6 +106,8 @@ export class RibbonGeometry {
   private positions = new Float32Array(0);
   private opacities = new Float32Array(0);
   private sides = new Float32Array(0);
+  /** Per vertex: arc length from the path start, total path length, stable per-path key in [0,1). */
+  private strips = new Float32Array(0);
   private indices = new Uint32Array(0);
   private disposed = false;
   private readonly bounds = new THREE.Box3();
@@ -163,6 +166,7 @@ export class RibbonGeometry {
     const pos = this.positions;
     const op = this.opacities;
     const sd = this.sides;
+    const st = this.strips;
     const idx = this.indices;
     let v = 0;
     let n = 0;
@@ -191,7 +195,10 @@ export class RibbonGeometry {
         const e = Math.min(1, Math.min(arc, totalLength - arc) / fadeLength);
         return e * e * (3 - 2 * e);
       };
-      const put = (p: Vec3, side: V, w: number, sign: number, opacity: number): number => {
+      const key = fnv1a32Utf8(String(path.id)) / 4294967296;
+      // strip.z = -1 marks round-join fan vertices (textured ribbons skip them; untextured ones use them).
+      const put = (p: Vec3, side: V, w: number, sign: number, opacity: number, arcAt: number, join = false): number => {
+        st[v * 3] = arcAt; st[v * 3 + 1] = totalLength; st[v * 3 + 2] = join ? -1 : key;
         const o = v * 3;
         pos[o] = p[0] + side[0] * w * sign;
         pos[o + 1] = p[1] + side[1] * w * sign;
@@ -252,9 +259,9 @@ export class RibbonGeometry {
         const f0 = fadeAt(arc0);
         const w0 = half * (endWidth + (1 - endWidth) * f0);
         const o0 = path.opacityScale * f0;
-        const l0 = put(a, side, w0, 1, o0);
+        const l0 = put(a, side, w0, 1, o0, arc0);
         let lPrev = l0;
-        let rPrev = put(a, side, w0, -1, o0);
+        let rPrev = put(a, side, w0, -1, o0, arc0);
         let l1 = l0;
         for (let k = 0; k < cuts.length; k += 1) {
           const last = k === cuts.length - 1;
@@ -264,8 +271,9 @@ export class RibbonGeometry {
           const f1 = fadeAt(last ? arc : cuts[k]);
           const w1 = half * (endWidth + (1 - endWidth) * f1);
           const o1 = path.opacityScale * f1;
-          l1 = put(q, side, w1, 1, o1);
-          const r1 = put(q, side, w1, -1, o1);
+          const arcQ = last ? arc : cuts[k];
+          l1 = put(q, side, w1, 1, o1, arcQ);
+          const r1 = put(q, side, w1, -1, o1, arcQ);
           idx[n] = lPrev; idx[n + 1] = rPrev; idx[n + 2] = l1;
           idx[n + 3] = rPrev; idx[n + 4] = r1; idx[n + 5] = l1;
           n += 6;
@@ -288,7 +296,7 @@ export class RibbonGeometry {
           // Sweep from u0 through the previous forward direction to u1 (π for a full reversal).
           const phi = Math.atan2(Math.max(0, dot(u1, prevT)), dot(u1, u0));
           const steps = Math.min(JOIN_MAX_STEPS, Math.max(1, Math.ceil(phi / JOIN_STEP)));
-          const centre = put(a, side, 0, 0, o0);
+          const centre = put(a, side, 0, 0, o0, arc0, true);
           let last = prevEnd + (sp < 0 ? 1 : 0);
           for (let j = 1; j <= steps; j += 1) {
             let next = l0 + (sc < 0 ? 1 : 0);
@@ -296,7 +304,7 @@ export class RibbonGeometry {
               const ang = (phi * j) / steps;
               const c = Math.cos(ang), s = Math.sin(ang);
               const u = normalize(u0[0] * c + prevT[0] * s, u0[1] * c + prevT[1] * s, u0[2] * c + prevT[2] * s) ?? u1;
-              next = put(a, u, w0, 1, o0);
+              next = put(a, u, w0, 1, o0, arc0, true);
             }
             idx[n] = centre; idx[n + 1] = last; idx[n + 2] = next;
             n += 3;
@@ -313,6 +321,7 @@ export class RibbonGeometry {
     markLive(this.geometry.getAttribute('position') as THREE.BufferAttribute, v * 3);
     markLive(this.geometry.getAttribute('opacity') as THREE.BufferAttribute, v);
     markLive(this.geometry.getAttribute('side') as THREE.BufferAttribute, v);
+    markLive(this.geometry.getAttribute('strip') as THREE.BufferAttribute, v * 3);
     markLive(this.geometry.getIndex() as THREE.BufferAttribute, n);
     this.geometry.setDrawRange(0, n);
     // Bounds cover only the live vertex prefix, not stale capacity. Objects are reused.
@@ -337,10 +346,13 @@ export class RibbonGeometry {
     this.positions = new Float32Array(points * VERTS_PER_POINT * 3);
     this.opacities = new Float32Array(points * VERTS_PER_POINT);
     this.sides = new Float32Array(points * VERTS_PER_POINT);
+    this.strips = new Float32Array(points * VERTS_PER_POINT * 3);
     this.indices = new Uint32Array(points * INDICES_PER_POINT);
     const position = new THREE.BufferAttribute(this.positions, 3);
     const opacity = new THREE.BufferAttribute(this.opacities, 1);
     const side = new THREE.BufferAttribute(this.sides, 1);
+    const strip = new THREE.BufferAttribute(this.strips, 3);
+    strip.setUsage(THREE.DynamicDrawUsage);
     const index = new THREE.BufferAttribute(this.indices, 1);
     position.setUsage(THREE.DynamicDrawUsage);
     opacity.setUsage(THREE.DynamicDrawUsage);
@@ -349,6 +361,7 @@ export class RibbonGeometry {
     this.geometry.setAttribute('position', position);
     this.geometry.setAttribute('opacity', opacity);
     this.geometry.setAttribute('side', side);
+    this.geometry.setAttribute('strip', strip);
     this.geometry.setIndex(index);
   }
 }

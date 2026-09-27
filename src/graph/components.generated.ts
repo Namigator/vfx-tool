@@ -1717,6 +1717,174 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   ]
  },
  {
+  "id": "arc-beam",
+  "label": "Arc beam",
+  "description": "Textured electric arc Source→Target on a jagged, re-rolling path with a soft glow ribbon.",
+  "durationTicks": 90,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "line",
+    "type": "LinePath",
+    "params": {
+     "samples": 48
+    }
+   },
+   {
+    "id": "jag",
+    "type": "JaggedPath",
+    "params": {
+     "amplitude": 0.18,
+     "regenerationHz": 20,
+     "samples": 48
+    }
+   },
+   {
+    "id": "on",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 5,
+     "durationTicks": 70,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "arcmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "electric-arc",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#B8E2FF",
+      "alpha": 1
+     },
+     "emission": 1.5
+    }
+   },
+   {
+    "id": "core",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.6,
+     "endFade": 0.08
+    }
+   },
+   {
+    "id": "glowmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#3A7BFF",
+      "alpha": 1
+     },
+     "opacity": 0.35
+    }
+   },
+   {
+    "id": "halo",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.35,
+     "endFade": 0.1
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-source.out",
+    "line.start"
+   ],
+   [
+    "node-target.out",
+    "line.end"
+   ],
+   [
+    "line.paths",
+    "jag.paths"
+   ],
+   [
+    "jag.paths",
+    "core.paths"
+   ],
+   [
+    "line.paths",
+    "halo.paths"
+   ],
+   [
+    "arcmat.material",
+    "core.material"
+   ],
+   [
+    "glowmat.material",
+    "halo.material"
+   ],
+   [
+    "on.window",
+    "core.window"
+   ],
+   [
+    "on.window",
+    "halo.window"
+   ],
+   [
+    "halo.visual",
+    "node-output.visual"
+   ],
+   [
+    "core.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "width",
+    "label": "Beam width",
+    "value": 0.6,
+    "bindings": [
+     {
+      "node": "core",
+      "parameter": "width"
+     }
+    ]
+   },
+   {
+    "id": "jagged",
+    "label": "Jaggedness",
+    "value": 0.18,
+    "bindings": [
+     {
+      "node": "jag",
+      "parameter": "amplitude"
+     }
+    ]
+   },
+   {
+    "id": "flicker",
+    "label": "Re-roll rate",
+    "value": 20,
+    "bindings": [
+     {
+      "node": "jag",
+      "parameter": "regenerationHz"
+     }
+    ]
+   },
+   {
+    "id": "glow",
+    "label": "Glow width",
+    "value": 0.35,
+    "bindings": [
+     {
+      "node": "halo",
+      "parameter": "width"
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": "fireball",
   "label": "Fireball",
   "description": "Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.",

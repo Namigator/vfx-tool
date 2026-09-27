@@ -11,6 +11,7 @@ const COMPONENTS = [
   ['fountain', 'Water fountain', 'Upward cone of droplets with gravity and bouncing ground collision.', 'fountain'],
   ['rain-splash', 'Rain with splashes', 'Falling droplets that die on the ground and spawn splash bursts.', 'rain-splash'],
   ['impact-flash', 'Impact flash', 'Timed glow sprite with a spark burst at Target.', 'impact-flash'],
+  ['arc-beam', 'Arc beam', 'Textured electric arc Source→Target on a jagged, re-rolling path with a soft glow ribbon.', 'arc-beam'],
   ['fireball', 'Fireball', 'Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.', 'fireball'],
 ];
 
@@ -21,6 +22,7 @@ const KNOBS = {
   'fountain': [['flow', 'Flow', [['em', 'rate']]], ['height', 'Jet speed', [['em', 'speedMax'], ['em', 'speedMin', 0.77]]], ['spread', 'Spread', [['em', 'coneAngle']]], ['bounce', 'Bounce', [['ground', 'restitution']]]],
   'rain-splash': [['rain', 'Rain rate', [['clouds', 'rate']]], ['area', 'Rain area', [['clouds', 'radius']]], ['splash', 'Splash drops', [['splash', 'burst']]], ['splash-speed', 'Splash speed', [['splash', 'speedMax'], ['splash', 'speedMin', 0.42]]]],
   'impact-flash': [['flash', 'Flash size', [['flash', 'size']]], ['sparks', 'Sparks', [['sparks', 'burst']]], ['speed', 'Spark speed', [['sparks', 'speedMax'], ['sparks', 'speedMin', 0.33]]]],
+  'arc-beam': [['width', 'Beam width', [['core', 'width']]], ['jagged', 'Jaggedness', [['jag', 'amplitude']]], ['flicker', 'Re-roll rate', [['jag', 'regenerationHz']]], ['glow', 'Glow width', [['halo', 'width']]]],
   'fireball': [['travel', 'Travel ticks', [['ball', 'durationTicks']]], ['trail', 'Trail density', [['trailem', 'rate']]], ['core', 'Core size', [['core', 'size']]], ['impact', 'Impact sparks', [['boom', 'burst']]], ['flash', 'Flash size', [['flash', 'size']]], ['light', 'Ball light', [['balllight', 'intensity']]]],
 };
 

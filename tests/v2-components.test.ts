@@ -5,6 +5,7 @@ import { createBlankDocument, createF01Document } from '../src/graph/fixtures.ts
 import { validateDocument } from '../src/model/document.ts';
 import { createRegistry } from '../src/graph/registry.ts';
 import { compileParticlePreview } from '../src/graph/toParticles.ts';
+import { compilePathPreview } from '../src/graph/toPaths.ts';
 
 const valid = (d: unknown) => { const v = validateDocument(d, { registry: createRegistry() }); if (!v.ok) assert.fail(JSON.stringify(v.errors.slice(0, 3))); return v.value; };
 const compiles = (d: unknown) => { const r = compileParticlePreview(d, { ribbonsHandled: true }); if (!r.ok) assert.fail(JSON.stringify(r.errors.slice(0, 3))); return r.value; };
@@ -13,8 +14,9 @@ test('every component inserts into a blank document, validates and compiles', ()
   assert.ok(COMPONENT_TEMPLATES.length >= 7);
   for (const c of COMPONENT_TEMPLATES) {
     const { doc } = insertComponent(createBlankDocument(), c.id);
-    const p = compiles(valid(doc));
-    assert.ok(p.layers.length + p.trails.length > 0, `${c.id} draws something`);
+    const p = compiles(valid(doc)), r = compilePathPreview(doc, 30);
+    if (!r.ok) assert.fail(JSON.stringify(r.errors.slice(0, 3)));
+    assert.ok(p.layers.length + p.trails.length + r.value.layers.length > 0, `${c.id} draws something`);
   }
 });
 
