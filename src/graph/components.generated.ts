@@ -27456,6 +27456,2310 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   ]
  },
  {
+  "id": "wind-gust",
+  "label": "Wind: spiral gust",
+  "description": "Broken teal air ribbons spiralling Source→Target with fast streaks and faint wisps, attack/hold/fall envelope (07-WIND).",
+  "durationTicks": 180,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "gust",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 138,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "envelope",
+    "type": "EffectTimeCurve",
+    "params": {
+     "curve": {
+      "domain": "effectSeconds",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.3,
+        "y": 0.4
+       },
+       {
+        "x": 0.5,
+        "y": 1
+       },
+       {
+        "x": 1.4667,
+        "y": 0.85
+       },
+       {
+        "x": 1.8,
+        "y": 0.6
+       },
+       {
+        "x": 2.3,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "helix0",
+    "type": "HelixPath",
+    "params": {
+     "radius": 0.44,
+     "turns": 1.5,
+     "phase": 0,
+     "spin": 3.2,
+     "taper": "both",
+     "samples": 72
+    }
+   },
+   {
+    "id": "ribmat0",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "variant": 0,
+     "blend": "normal",
+     "tint": {
+      "srgb": "#76AAA6",
+      "alpha": 1
+     },
+     "emission": 0.15,
+     "uvScroll": [
+      -2.5,
+      0
+     ],
+     "uvDistort": 0.06
+    }
+   },
+   {
+    "id": "ribfade0",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.85,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ribbon0",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.07700000000000001,
+     "endFade": 0.3,
+     "uvMode": "tile",
+     "uvTileLength": 1.4
+    }
+   },
+   {
+    "id": "helix1",
+    "type": "HelixPath",
+    "params": {
+     "radius": 0.495,
+     "turns": 1.5,
+     "phase": 1.941,
+     "spin": 4,
+     "taper": "both",
+     "samples": 72
+    }
+   },
+   {
+    "id": "ribmat1",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "variant": 1,
+     "blend": "normal",
+     "tint": {
+      "srgb": "#8FBDB9",
+      "alpha": 1
+     },
+     "emission": 0.15,
+     "uvScroll": [
+      -2.875,
+      0
+     ],
+     "uvDistort": 0.06
+    }
+   },
+   {
+    "id": "ribfade1",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.77,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ribbon1",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.11000000000000001,
+     "endFade": 0.3,
+     "uvMode": "tile",
+     "uvTileLength": 1.4
+    }
+   },
+   {
+    "id": "helix2",
+    "type": "HelixPath",
+    "params": {
+     "radius": 0.55,
+     "turns": 1.5,
+     "phase": 3.882,
+     "spin": 3.2,
+     "taper": "both",
+     "samples": 72
+    }
+   },
+   {
+    "id": "ribmat2",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "variant": 2,
+     "blend": "normal",
+     "tint": {
+      "srgb": "#76AAA6",
+      "alpha": 1
+     },
+     "emission": 0.15,
+     "uvScroll": [
+      -3.25,
+      0
+     ],
+     "uvDistort": 0.06
+    }
+   },
+   {
+    "id": "ribfade2",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.69,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ribbon2",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.14300000000000002,
+     "endFade": 0.3,
+     "uvMode": "tile",
+     "uvTileLength": 1.4
+    }
+   },
+   {
+    "id": "helix3",
+    "type": "HelixPath",
+    "params": {
+     "radius": 0.44,
+     "turns": 1.5,
+     "phase": 5.822,
+     "spin": 4,
+     "taper": "both",
+     "samples": 72
+    }
+   },
+   {
+    "id": "ribmat3",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "variant": 3,
+     "blend": "normal",
+     "tint": {
+      "srgb": "#8FBDB9",
+      "alpha": 1
+     },
+     "emission": 0.15,
+     "uvScroll": [
+      -3.625,
+      0
+     ],
+     "uvDistort": 0.06
+    }
+   },
+   {
+    "id": "ribfade3",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.85,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ribbon3",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.17600000000000002,
+     "endFade": 0.3,
+     "uvMode": "tile",
+     "uvTileLength": 1.4
+    }
+   },
+   {
+    "id": "streakwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 18,
+     "durationTicks": 90,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "streaks",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "coneAngle": 0.12,
+     "radius": 0.66,
+     "rate": 45,
+     "burst": 0,
+     "speedMin": 6,
+     "speedMax": 9,
+     "lifetimeMin": 0.3,
+     "lifetimeMax": 0.6,
+     "direction": [
+      1,
+      0,
+      0
+     ],
+     "rateOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.3
+       },
+       {
+        "x": 0.15,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "streakip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.02,
+     "sizeMax": 0.04
+    }
+   },
+   {
+    "id": "streakmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "spark-streak",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#88B8B4",
+      "alpha": 1
+     },
+     "opacity": 0.75,
+     "emission": 0.1
+    }
+   },
+   {
+    "id": "streakbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 6,
+     "pivot": 0.7,
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.15,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "wisps",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "coneAngle": 0.25,
+     "radius": 0.55,
+     "rate": 10,
+     "burst": 0,
+     "speedMin": 2,
+     "speedMax": 3.5,
+     "lifetimeMin": 0.9,
+     "lifetimeMax": 1.5,
+     "direction": [
+      1,
+      0,
+      0
+     ]
+    }
+   },
+   {
+    "id": "wispip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.35,
+     "sizeMax": 0.6,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283,
+     "angularVelocityMin": -1,
+     "angularVelocityMax": 1
+    }
+   },
+   {
+    "id": "swirl",
+    "type": "Vortex",
+    "params": {
+     "axis": [
+      1,
+      0,
+      0
+     ],
+     "tangential": 2.5,
+     "inward": 0.2,
+     "falloff": 2,
+     "strength": 1
+    }
+   },
+   {
+    "id": "wispdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.6
+    }
+   },
+   {
+    "id": "wispmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#B0CFCC",
+      "alpha": 1
+     },
+     "opacity": 0.12
+    }
+   },
+   {
+    "id": "wispbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 1.6
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.3,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-source.out",
+    "helix0.start"
+   ],
+   [
+    "node-target.out",
+    "helix0.end"
+   ],
+   [
+    "envelope.value",
+    "ribfade0.a"
+   ],
+   [
+    "ribfade0.value",
+    "ribmat0.opacity"
+   ],
+   [
+    "helix0.paths",
+    "ribbon0.paths"
+   ],
+   [
+    "ribmat0.material",
+    "ribbon0.material"
+   ],
+   [
+    "gust.window",
+    "ribbon0.window"
+   ],
+   [
+    "ribbon0.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "helix1.start"
+   ],
+   [
+    "node-target.out",
+    "helix1.end"
+   ],
+   [
+    "envelope.value",
+    "ribfade1.a"
+   ],
+   [
+    "ribfade1.value",
+    "ribmat1.opacity"
+   ],
+   [
+    "helix1.paths",
+    "ribbon1.paths"
+   ],
+   [
+    "ribmat1.material",
+    "ribbon1.material"
+   ],
+   [
+    "gust.window",
+    "ribbon1.window"
+   ],
+   [
+    "ribbon1.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "helix2.start"
+   ],
+   [
+    "node-target.out",
+    "helix2.end"
+   ],
+   [
+    "envelope.value",
+    "ribfade2.a"
+   ],
+   [
+    "ribfade2.value",
+    "ribmat2.opacity"
+   ],
+   [
+    "helix2.paths",
+    "ribbon2.paths"
+   ],
+   [
+    "ribmat2.material",
+    "ribbon2.material"
+   ],
+   [
+    "gust.window",
+    "ribbon2.window"
+   ],
+   [
+    "ribbon2.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "helix3.start"
+   ],
+   [
+    "node-target.out",
+    "helix3.end"
+   ],
+   [
+    "envelope.value",
+    "ribfade3.a"
+   ],
+   [
+    "ribfade3.value",
+    "ribmat3.opacity"
+   ],
+   [
+    "helix3.paths",
+    "ribbon3.paths"
+   ],
+   [
+    "ribmat3.material",
+    "ribbon3.material"
+   ],
+   [
+    "gust.window",
+    "ribbon3.window"
+   ],
+   [
+    "ribbon3.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "streaks.anchor"
+   ],
+   [
+    "node-target.out",
+    "streaks.aim"
+   ],
+   [
+    "streakwin.window",
+    "streaks.window"
+   ],
+   [
+    "streaks.particles",
+    "streakip.particles"
+   ],
+   [
+    "streakip.particles",
+    "streakbb.particles"
+   ],
+   [
+    "streakmat.material",
+    "streakbb.material"
+   ],
+   [
+    "streakbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "wisps.anchor"
+   ],
+   [
+    "node-target.out",
+    "wisps.aim"
+   ],
+   [
+    "streakwin.window",
+    "wisps.window"
+   ],
+   [
+    "wisps.particles",
+    "wispip.particles"
+   ],
+   [
+    "wispip.particles",
+    "swirl.particles"
+   ],
+   [
+    "node-source.out",
+    "swirl.anchor"
+   ],
+   [
+    "swirl.particles",
+    "wispdrag.particles"
+   ],
+   [
+    "envelope.value",
+    "swirl.strength"
+   ],
+   [
+    "wispdrag.particles",
+    "wispbb.particles"
+   ],
+   [
+    "wispmat.material",
+    "wispbb.material"
+   ],
+   [
+    "wispbb.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "width",
+    "label": "Gust width",
+    "value": 0.44,
+    "bindings": [
+     {
+      "node": "helix0",
+      "parameter": "radius"
+     },
+     {
+      "node": "helix1",
+      "parameter": "radius"
+     },
+     {
+      "node": "helix2",
+      "parameter": "radius"
+     },
+     {
+      "node": "helix3",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "twist",
+    "label": "Twist",
+    "value": 1.5,
+    "bindings": [
+     {
+      "node": "helix0",
+      "parameter": "turns"
+     },
+     {
+      "node": "helix1",
+      "parameter": "turns"
+     },
+     {
+      "node": "helix2",
+      "parameter": "turns"
+     },
+     {
+      "node": "helix3",
+      "parameter": "turns"
+     }
+    ]
+   },
+   {
+    "id": "streaks",
+    "label": "Streak density",
+    "value": 45,
+    "bindings": [
+     {
+      "node": "streaks",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "wisps",
+    "label": "Wisp amount",
+    "value": 10,
+    "bindings": [
+     {
+      "node": "wisps",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "speed",
+    "label": "Travel speed",
+    "value": 9,
+    "bindings": [
+     {
+      "node": "streaks",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "streaks",
+      "parameter": "speedMin",
+      "scale": 0.67
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "wind-cut",
+  "label": "Wind: cutting gust",
+  "description": "Straight low-twist gust with long thin streaks (07-WIND variant).",
+  "durationTicks": 180,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "gust",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 138,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "envelope",
+    "type": "EffectTimeCurve",
+    "params": {
+     "curve": {
+      "domain": "effectSeconds",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.3,
+        "y": 0.4
+       },
+       {
+        "x": 0.5,
+        "y": 1
+       },
+       {
+        "x": 1.4667,
+        "y": 0.85
+       },
+       {
+        "x": 1.8,
+        "y": 0.6
+       },
+       {
+        "x": 2.3,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "helix0",
+    "type": "HelixPath",
+    "params": {
+     "radius": 0.16,
+     "turns": 0.35,
+     "phase": 0,
+     "spin": 0.8,
+     "taper": "both",
+     "samples": 72
+    }
+   },
+   {
+    "id": "ribmat0",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "variant": 0,
+     "blend": "normal",
+     "tint": {
+      "srgb": "#76AAA6",
+      "alpha": 1
+     },
+     "emission": 0.15,
+     "uvScroll": [
+      -4,
+      0
+     ],
+     "uvDistort": 0.06
+    }
+   },
+   {
+    "id": "ribfade0",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.85,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ribbon0",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.07700000000000001,
+     "endFade": 0.3,
+     "uvMode": "tile",
+     "uvTileLength": 1.4
+    }
+   },
+   {
+    "id": "helix1",
+    "type": "HelixPath",
+    "params": {
+     "radius": 0.18,
+     "turns": 0.35,
+     "phase": 2.464,
+     "spin": 1,
+     "taper": "both",
+     "samples": 72
+    }
+   },
+   {
+    "id": "ribmat1",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "variant": 1,
+     "blend": "normal",
+     "tint": {
+      "srgb": "#8FBDB9",
+      "alpha": 1
+     },
+     "emission": 0.15,
+     "uvScroll": [
+      -4.6,
+      0
+     ],
+     "uvDistort": 0.06
+    }
+   },
+   {
+    "id": "ribfade1",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.77,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ribbon1",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.11000000000000001,
+     "endFade": 0.3,
+     "uvMode": "tile",
+     "uvTileLength": 1.4
+    }
+   },
+   {
+    "id": "helix2",
+    "type": "HelixPath",
+    "params": {
+     "radius": 0.2,
+     "turns": 0.35,
+     "phase": 4.929,
+     "spin": 0.8,
+     "taper": "both",
+     "samples": 72
+    }
+   },
+   {
+    "id": "ribmat2",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "variant": 2,
+     "blend": "normal",
+     "tint": {
+      "srgb": "#76AAA6",
+      "alpha": 1
+     },
+     "emission": 0.15,
+     "uvScroll": [
+      -5.2,
+      0
+     ],
+     "uvDistort": 0.06
+    }
+   },
+   {
+    "id": "ribfade2",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.69,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ribbon2",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.14300000000000002,
+     "endFade": 0.3,
+     "uvMode": "tile",
+     "uvTileLength": 1.4
+    }
+   },
+   {
+    "id": "streakwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 18,
+     "durationTicks": 90,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "streaks",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "coneAngle": 0.12,
+     "radius": 0.24,
+     "rate": 80,
+     "burst": 0,
+     "speedMin": 6,
+     "speedMax": 9,
+     "lifetimeMin": 0.3,
+     "lifetimeMax": 0.6,
+     "direction": [
+      1,
+      0,
+      0
+     ],
+     "rateOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.3
+       },
+       {
+        "x": 0.15,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "streakip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.02,
+     "sizeMax": 0.04
+    }
+   },
+   {
+    "id": "streakmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "spark-streak",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#88B8B4",
+      "alpha": 1
+     },
+     "opacity": 0.75,
+     "emission": 0.1
+    }
+   },
+   {
+    "id": "streakbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 12,
+     "pivot": 0.7,
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.15,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "wisps",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "coneAngle": 0.25,
+     "radius": 0.2,
+     "rate": 5,
+     "burst": 0,
+     "speedMin": 2,
+     "speedMax": 3.5,
+     "lifetimeMin": 0.9,
+     "lifetimeMax": 1.5,
+     "direction": [
+      1,
+      0,
+      0
+     ]
+    }
+   },
+   {
+    "id": "wispip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.35,
+     "sizeMax": 0.6,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283,
+     "angularVelocityMin": -1,
+     "angularVelocityMax": 1
+    }
+   },
+   {
+    "id": "swirl",
+    "type": "Vortex",
+    "params": {
+     "axis": [
+      1,
+      0,
+      0
+     ],
+     "tangential": 2.5,
+     "inward": 0.2,
+     "falloff": 2,
+     "strength": 1
+    }
+   },
+   {
+    "id": "wispdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.6
+    }
+   },
+   {
+    "id": "wispmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#B0CFCC",
+      "alpha": 1
+     },
+     "opacity": 0.12
+    }
+   },
+   {
+    "id": "wispbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 1.6
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.3,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-source.out",
+    "helix0.start"
+   ],
+   [
+    "node-target.out",
+    "helix0.end"
+   ],
+   [
+    "envelope.value",
+    "ribfade0.a"
+   ],
+   [
+    "ribfade0.value",
+    "ribmat0.opacity"
+   ],
+   [
+    "helix0.paths",
+    "ribbon0.paths"
+   ],
+   [
+    "ribmat0.material",
+    "ribbon0.material"
+   ],
+   [
+    "gust.window",
+    "ribbon0.window"
+   ],
+   [
+    "ribbon0.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "helix1.start"
+   ],
+   [
+    "node-target.out",
+    "helix1.end"
+   ],
+   [
+    "envelope.value",
+    "ribfade1.a"
+   ],
+   [
+    "ribfade1.value",
+    "ribmat1.opacity"
+   ],
+   [
+    "helix1.paths",
+    "ribbon1.paths"
+   ],
+   [
+    "ribmat1.material",
+    "ribbon1.material"
+   ],
+   [
+    "gust.window",
+    "ribbon1.window"
+   ],
+   [
+    "ribbon1.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "helix2.start"
+   ],
+   [
+    "node-target.out",
+    "helix2.end"
+   ],
+   [
+    "envelope.value",
+    "ribfade2.a"
+   ],
+   [
+    "ribfade2.value",
+    "ribmat2.opacity"
+   ],
+   [
+    "helix2.paths",
+    "ribbon2.paths"
+   ],
+   [
+    "ribmat2.material",
+    "ribbon2.material"
+   ],
+   [
+    "gust.window",
+    "ribbon2.window"
+   ],
+   [
+    "ribbon2.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "streaks.anchor"
+   ],
+   [
+    "node-target.out",
+    "streaks.aim"
+   ],
+   [
+    "streakwin.window",
+    "streaks.window"
+   ],
+   [
+    "streaks.particles",
+    "streakip.particles"
+   ],
+   [
+    "streakip.particles",
+    "streakbb.particles"
+   ],
+   [
+    "streakmat.material",
+    "streakbb.material"
+   ],
+   [
+    "streakbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "wisps.anchor"
+   ],
+   [
+    "node-target.out",
+    "wisps.aim"
+   ],
+   [
+    "streakwin.window",
+    "wisps.window"
+   ],
+   [
+    "wisps.particles",
+    "wispip.particles"
+   ],
+   [
+    "wispip.particles",
+    "swirl.particles"
+   ],
+   [
+    "node-source.out",
+    "swirl.anchor"
+   ],
+   [
+    "swirl.particles",
+    "wispdrag.particles"
+   ],
+   [
+    "envelope.value",
+    "swirl.strength"
+   ],
+   [
+    "wispdrag.particles",
+    "wispbb.particles"
+   ],
+   [
+    "wispmat.material",
+    "wispbb.material"
+   ],
+   [
+    "wispbb.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "width",
+    "label": "Gust width",
+    "value": 0.16,
+    "bindings": [
+     {
+      "node": "helix0",
+      "parameter": "radius"
+     },
+     {
+      "node": "helix1",
+      "parameter": "radius"
+     },
+     {
+      "node": "helix2",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "twist",
+    "label": "Twist",
+    "value": 0.35,
+    "bindings": [
+     {
+      "node": "helix0",
+      "parameter": "turns"
+     },
+     {
+      "node": "helix1",
+      "parameter": "turns"
+     },
+     {
+      "node": "helix2",
+      "parameter": "turns"
+     }
+    ]
+   },
+   {
+    "id": "streaks",
+    "label": "Streak density",
+    "value": 80,
+    "bindings": [
+     {
+      "node": "streaks",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "wisps",
+    "label": "Wisp amount",
+    "value": 5,
+    "bindings": [
+     {
+      "node": "wisps",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "speed",
+    "label": "Travel speed",
+    "value": 9,
+    "bindings": [
+     {
+      "node": "streaks",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "streaks",
+      "parameter": "speedMin",
+      "scale": 0.67
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "wind-whirl",
+  "label": "Wind: compact whirl",
+  "description": "Wide whirling burst around a short axis at Source (07-WIND variant).",
+  "durationTicks": 180,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "gust",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 138,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "axisend",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      1.6,
+      0.25,
+      0
+     ]
+    }
+   },
+   {
+    "id": "envelope",
+    "type": "EffectTimeCurve",
+    "params": {
+     "curve": {
+      "domain": "effectSeconds",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.3,
+        "y": 0.4
+       },
+       {
+        "x": 0.5,
+        "y": 1
+       },
+       {
+        "x": 1.4667,
+        "y": 0.85
+       },
+       {
+        "x": 1.8,
+        "y": 0.6
+       },
+       {
+        "x": 2.3,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "helix0",
+    "type": "HelixPath",
+    "params": {
+     "radius": 0.76,
+     "turns": 3,
+     "phase": 0,
+     "spin": 5.6000000000000005,
+     "taper": "both",
+     "samples": 72
+    }
+   },
+   {
+    "id": "ribmat0",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "variant": 0,
+     "blend": "normal",
+     "tint": {
+      "srgb": "#76AAA6",
+      "alpha": 1
+     },
+     "emission": 0.15,
+     "uvScroll": [
+      -1.6,
+      0
+     ],
+     "uvDistort": 0.06
+    }
+   },
+   {
+    "id": "ribfade0",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.85,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ribbon0",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.07700000000000001,
+     "endFade": 0.3,
+     "uvMode": "tile",
+     "uvTileLength": 1.4
+    }
+   },
+   {
+    "id": "helix1",
+    "type": "HelixPath",
+    "params": {
+     "radius": 0.855,
+     "turns": 3,
+     "phase": 1.627,
+     "spin": 7,
+     "taper": "both",
+     "samples": 72
+    }
+   },
+   {
+    "id": "ribmat1",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "variant": 1,
+     "blend": "normal",
+     "tint": {
+      "srgb": "#8FBDB9",
+      "alpha": 1
+     },
+     "emission": 0.15,
+     "uvScroll": [
+      -1.8399999999999999,
+      0
+     ],
+     "uvDistort": 0.06
+    }
+   },
+   {
+    "id": "ribfade1",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.77,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ribbon1",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.11000000000000001,
+     "endFade": 0.3,
+     "uvMode": "tile",
+     "uvTileLength": 1.4
+    }
+   },
+   {
+    "id": "helix2",
+    "type": "HelixPath",
+    "params": {
+     "radius": 0.95,
+     "turns": 3,
+     "phase": 3.253,
+     "spin": 5.6000000000000005,
+     "taper": "both",
+     "samples": 72
+    }
+   },
+   {
+    "id": "ribmat2",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "variant": 2,
+     "blend": "normal",
+     "tint": {
+      "srgb": "#76AAA6",
+      "alpha": 1
+     },
+     "emission": 0.15,
+     "uvScroll": [
+      -2.08,
+      0
+     ],
+     "uvDistort": 0.06
+    }
+   },
+   {
+    "id": "ribfade2",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.69,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ribbon2",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.14300000000000002,
+     "endFade": 0.3,
+     "uvMode": "tile",
+     "uvTileLength": 1.4
+    }
+   },
+   {
+    "id": "helix3",
+    "type": "HelixPath",
+    "params": {
+     "radius": 0.76,
+     "turns": 3,
+     "phase": 4.88,
+     "spin": 7,
+     "taper": "both",
+     "samples": 72
+    }
+   },
+   {
+    "id": "ribmat3",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "variant": 3,
+     "blend": "normal",
+     "tint": {
+      "srgb": "#8FBDB9",
+      "alpha": 1
+     },
+     "emission": 0.15,
+     "uvScroll": [
+      -2.32,
+      0
+     ],
+     "uvDistort": 0.06
+    }
+   },
+   {
+    "id": "ribfade3",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.85,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ribbon3",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.17600000000000002,
+     "endFade": 0.3,
+     "uvMode": "tile",
+     "uvTileLength": 1.4
+    }
+   },
+   {
+    "id": "helix4",
+    "type": "HelixPath",
+    "params": {
+     "radius": 0.855,
+     "turns": 3,
+     "phase": 0.223,
+     "spin": 5.6000000000000005,
+     "taper": "both",
+     "samples": 72
+    }
+   },
+   {
+    "id": "ribmat4",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "variant": 4,
+     "blend": "normal",
+     "tint": {
+      "srgb": "#76AAA6",
+      "alpha": 1
+     },
+     "emission": 0.15,
+     "uvScroll": [
+      -2.5600000000000005,
+      0
+     ],
+     "uvDistort": 0.06
+    }
+   },
+   {
+    "id": "ribfade4",
+    "type": "ScalarMath",
+    "params": {
+     "operation": "multiply",
+     "b": 0.77,
+     "inputUnit": "normalized",
+     "unit": "normalized"
+    }
+   },
+   {
+    "id": "ribbon4",
+    "type": "RibbonRenderer",
+    "params": {
+     "width": 0.07700000000000001,
+     "endFade": 0.3,
+     "uvMode": "tile",
+     "uvTileLength": 1.4
+    }
+   },
+   {
+    "id": "streakwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 18,
+     "durationTicks": 90,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "streaks",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "coneAngle": 0.12,
+     "radius": 1.14,
+     "rate": 25,
+     "burst": 0,
+     "speedMin": 6,
+     "speedMax": 9,
+     "lifetimeMin": 0.3,
+     "lifetimeMax": 0.6,
+     "direction": [
+      1,
+      0,
+      0
+     ],
+     "rateOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.3
+       },
+       {
+        "x": 0.15,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "streakip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.02,
+     "sizeMax": 0.04
+    }
+   },
+   {
+    "id": "streakmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "spark-streak",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#88B8B4",
+      "alpha": 1
+     },
+     "opacity": 0.75,
+     "emission": 0.1
+    }
+   },
+   {
+    "id": "streakbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 4,
+     "pivot": 0.7,
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.15,
+        "y": 1
+       },
+       {
+        "x": 0.8,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "wisps",
+    "type": "Emitter",
+    "params": {
+     "shape": "cone",
+     "coneAngle": 0.25,
+     "radius": 0.95,
+     "rate": 16,
+     "burst": 0,
+     "speedMin": 2,
+     "speedMax": 3.5,
+     "lifetimeMin": 0.9,
+     "lifetimeMax": 1.5,
+     "direction": [
+      1,
+      0,
+      0
+     ]
+    }
+   },
+   {
+    "id": "wispip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.35,
+     "sizeMax": 0.6,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283,
+     "angularVelocityMin": -1,
+     "angularVelocityMax": 1
+    }
+   },
+   {
+    "id": "swirl",
+    "type": "Vortex",
+    "params": {
+     "axis": [
+      1,
+      0,
+      0
+     ],
+     "tangential": 2.5,
+     "inward": 0.2,
+     "falloff": 2,
+     "strength": 1
+    }
+   },
+   {
+    "id": "wispdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 0.6
+    }
+   },
+   {
+    "id": "wispmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#B0CFCC",
+      "alpha": 1
+     },
+     "opacity": 0.12
+    }
+   },
+   {
+    "id": "wispbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 1.6
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.3,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-source.out",
+    "axisend.anchor"
+   ],
+   [
+    "node-source.out",
+    "helix0.start"
+   ],
+   [
+    "axisend.out",
+    "helix0.end"
+   ],
+   [
+    "envelope.value",
+    "ribfade0.a"
+   ],
+   [
+    "ribfade0.value",
+    "ribmat0.opacity"
+   ],
+   [
+    "helix0.paths",
+    "ribbon0.paths"
+   ],
+   [
+    "ribmat0.material",
+    "ribbon0.material"
+   ],
+   [
+    "gust.window",
+    "ribbon0.window"
+   ],
+   [
+    "ribbon0.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "helix1.start"
+   ],
+   [
+    "axisend.out",
+    "helix1.end"
+   ],
+   [
+    "envelope.value",
+    "ribfade1.a"
+   ],
+   [
+    "ribfade1.value",
+    "ribmat1.opacity"
+   ],
+   [
+    "helix1.paths",
+    "ribbon1.paths"
+   ],
+   [
+    "ribmat1.material",
+    "ribbon1.material"
+   ],
+   [
+    "gust.window",
+    "ribbon1.window"
+   ],
+   [
+    "ribbon1.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "helix2.start"
+   ],
+   [
+    "axisend.out",
+    "helix2.end"
+   ],
+   [
+    "envelope.value",
+    "ribfade2.a"
+   ],
+   [
+    "ribfade2.value",
+    "ribmat2.opacity"
+   ],
+   [
+    "helix2.paths",
+    "ribbon2.paths"
+   ],
+   [
+    "ribmat2.material",
+    "ribbon2.material"
+   ],
+   [
+    "gust.window",
+    "ribbon2.window"
+   ],
+   [
+    "ribbon2.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "helix3.start"
+   ],
+   [
+    "axisend.out",
+    "helix3.end"
+   ],
+   [
+    "envelope.value",
+    "ribfade3.a"
+   ],
+   [
+    "ribfade3.value",
+    "ribmat3.opacity"
+   ],
+   [
+    "helix3.paths",
+    "ribbon3.paths"
+   ],
+   [
+    "ribmat3.material",
+    "ribbon3.material"
+   ],
+   [
+    "gust.window",
+    "ribbon3.window"
+   ],
+   [
+    "ribbon3.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "helix4.start"
+   ],
+   [
+    "axisend.out",
+    "helix4.end"
+   ],
+   [
+    "envelope.value",
+    "ribfade4.a"
+   ],
+   [
+    "ribfade4.value",
+    "ribmat4.opacity"
+   ],
+   [
+    "helix4.paths",
+    "ribbon4.paths"
+   ],
+   [
+    "ribmat4.material",
+    "ribbon4.material"
+   ],
+   [
+    "gust.window",
+    "ribbon4.window"
+   ],
+   [
+    "ribbon4.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "streaks.anchor"
+   ],
+   [
+    "axisend.out",
+    "streaks.aim"
+   ],
+   [
+    "streakwin.window",
+    "streaks.window"
+   ],
+   [
+    "streaks.particles",
+    "streakip.particles"
+   ],
+   [
+    "streakip.particles",
+    "streakbb.particles"
+   ],
+   [
+    "streakmat.material",
+    "streakbb.material"
+   ],
+   [
+    "streakbb.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "wisps.anchor"
+   ],
+   [
+    "axisend.out",
+    "wisps.aim"
+   ],
+   [
+    "streakwin.window",
+    "wisps.window"
+   ],
+   [
+    "wisps.particles",
+    "wispip.particles"
+   ],
+   [
+    "wispip.particles",
+    "swirl.particles"
+   ],
+   [
+    "node-source.out",
+    "swirl.anchor"
+   ],
+   [
+    "swirl.particles",
+    "wispdrag.particles"
+   ],
+   [
+    "envelope.value",
+    "swirl.strength"
+   ],
+   [
+    "wispdrag.particles",
+    "wispbb.particles"
+   ],
+   [
+    "wispmat.material",
+    "wispbb.material"
+   ],
+   [
+    "wispbb.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "width",
+    "label": "Gust width",
+    "value": 0.76,
+    "bindings": [
+     {
+      "node": "helix0",
+      "parameter": "radius"
+     },
+     {
+      "node": "helix1",
+      "parameter": "radius"
+     },
+     {
+      "node": "helix2",
+      "parameter": "radius"
+     },
+     {
+      "node": "helix3",
+      "parameter": "radius"
+     },
+     {
+      "node": "helix4",
+      "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "twist",
+    "label": "Twist",
+    "value": 3,
+    "bindings": [
+     {
+      "node": "helix0",
+      "parameter": "turns"
+     },
+     {
+      "node": "helix1",
+      "parameter": "turns"
+     },
+     {
+      "node": "helix2",
+      "parameter": "turns"
+     },
+     {
+      "node": "helix3",
+      "parameter": "turns"
+     },
+     {
+      "node": "helix4",
+      "parameter": "turns"
+     }
+    ]
+   },
+   {
+    "id": "streaks",
+    "label": "Streak density",
+    "value": 25,
+    "bindings": [
+     {
+      "node": "streaks",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "wisps",
+    "label": "Wisp amount",
+    "value": 16,
+    "bindings": [
+     {
+      "node": "wisps",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "speed",
+    "label": "Travel speed",
+    "value": 9,
+    "bindings": [
+     {
+      "node": "streaks",
+      "parameter": "speedMax"
+     },
+     {
+      "node": "streaks",
+      "parameter": "speedMin",
+      "scale": 0.67
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": "fireball",
   "label": "Fireball",
   "description": "Projectile along an arc: glowing core, flame trail, moving light, impact sparks, flash and light.",

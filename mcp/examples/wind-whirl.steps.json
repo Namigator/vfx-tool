@@ -1,0 +1,1210 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "windwhirl"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "windwhirl",
+   "durationTicks": 180,
+   "seed": 42
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "windwhirl",
+   "anchorId": "source",
+   "position": [
+    -3,
+    1.1,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "windwhirl",
+   "anchorId": "target",
+   "position": [
+    3,
+    1.1,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "Schedule",
+   "id": "gust",
+   "params": {
+    "startTicks": 0,
+    "durationTicks": 138,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "OffsetAnchor",
+   "id": "axisend",
+   "params": {
+    "offset": [
+     1.6,
+     0.25,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "node-source.out",
+   "to": "axisend.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "EffectTimeCurve",
+   "id": "envelope",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.3,
+       "y": 0.4
+      },
+      {
+       "x": 0.5,
+       "y": 1
+      },
+      {
+       "x": 1.4667,
+       "y": 0.85
+      },
+      {
+       "x": 1.8,
+       "y": 0.6
+      },
+      {
+       "x": 2.3,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "HelixPath",
+   "id": "helix0",
+   "params": {
+    "radius": 0.76,
+    "turns": 3,
+    "phase": 0,
+    "spin": 5.6000000000000005,
+    "taper": "both",
+    "samples": 72
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "node-source.out",
+   "to": "helix0.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "axisend.out",
+   "to": "helix0.end"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "Material",
+   "id": "ribmat0",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "variant": 0,
+    "blend": "normal",
+    "tint": {
+     "srgb": "#76AAA6",
+     "alpha": 1
+    },
+    "emission": 0.15,
+    "uvScroll": [
+     -1.6,
+     0
+    ],
+    "uvDistort": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "ScalarMath",
+   "id": "ribfade0",
+   "params": {
+    "operation": "multiply",
+    "b": 0.85,
+    "inputUnit": "normalized",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "envelope.value",
+   "to": "ribfade0.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "ribfade0.value",
+   "to": "ribmat0.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "RibbonRenderer",
+   "id": "ribbon0",
+   "params": {
+    "width": 0.07700000000000001,
+    "endFade": 0.3,
+    "uvMode": "tile",
+    "uvTileLength": 1.4
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "helix0.paths",
+   "to": "ribbon0.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "ribmat0.material",
+   "to": "ribbon0.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "gust.window",
+   "to": "ribbon0.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "ribbon0.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "HelixPath",
+   "id": "helix1",
+   "params": {
+    "radius": 0.855,
+    "turns": 3,
+    "phase": 1.627,
+    "spin": 7,
+    "taper": "both",
+    "samples": 72
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "node-source.out",
+   "to": "helix1.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "axisend.out",
+   "to": "helix1.end"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "Material",
+   "id": "ribmat1",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "variant": 1,
+    "blend": "normal",
+    "tint": {
+     "srgb": "#8FBDB9",
+     "alpha": 1
+    },
+    "emission": 0.15,
+    "uvScroll": [
+     -1.8399999999999999,
+     0
+    ],
+    "uvDistort": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "ScalarMath",
+   "id": "ribfade1",
+   "params": {
+    "operation": "multiply",
+    "b": 0.77,
+    "inputUnit": "normalized",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "envelope.value",
+   "to": "ribfade1.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "ribfade1.value",
+   "to": "ribmat1.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "RibbonRenderer",
+   "id": "ribbon1",
+   "params": {
+    "width": 0.11000000000000001,
+    "endFade": 0.3,
+    "uvMode": "tile",
+    "uvTileLength": 1.4
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "helix1.paths",
+   "to": "ribbon1.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "ribmat1.material",
+   "to": "ribbon1.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "gust.window",
+   "to": "ribbon1.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "ribbon1.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "HelixPath",
+   "id": "helix2",
+   "params": {
+    "radius": 0.95,
+    "turns": 3,
+    "phase": 3.253,
+    "spin": 5.6000000000000005,
+    "taper": "both",
+    "samples": 72
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "node-source.out",
+   "to": "helix2.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "axisend.out",
+   "to": "helix2.end"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "Material",
+   "id": "ribmat2",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "variant": 2,
+    "blend": "normal",
+    "tint": {
+     "srgb": "#76AAA6",
+     "alpha": 1
+    },
+    "emission": 0.15,
+    "uvScroll": [
+     -2.08,
+     0
+    ],
+    "uvDistort": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "ScalarMath",
+   "id": "ribfade2",
+   "params": {
+    "operation": "multiply",
+    "b": 0.69,
+    "inputUnit": "normalized",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "envelope.value",
+   "to": "ribfade2.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "ribfade2.value",
+   "to": "ribmat2.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "RibbonRenderer",
+   "id": "ribbon2",
+   "params": {
+    "width": 0.14300000000000002,
+    "endFade": 0.3,
+    "uvMode": "tile",
+    "uvTileLength": 1.4
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "helix2.paths",
+   "to": "ribbon2.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "ribmat2.material",
+   "to": "ribbon2.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "gust.window",
+   "to": "ribbon2.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "ribbon2.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "HelixPath",
+   "id": "helix3",
+   "params": {
+    "radius": 0.76,
+    "turns": 3,
+    "phase": 4.88,
+    "spin": 7,
+    "taper": "both",
+    "samples": 72
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "node-source.out",
+   "to": "helix3.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "axisend.out",
+   "to": "helix3.end"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "Material",
+   "id": "ribmat3",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "variant": 3,
+    "blend": "normal",
+    "tint": {
+     "srgb": "#8FBDB9",
+     "alpha": 1
+    },
+    "emission": 0.15,
+    "uvScroll": [
+     -2.32,
+     0
+    ],
+    "uvDistort": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "ScalarMath",
+   "id": "ribfade3",
+   "params": {
+    "operation": "multiply",
+    "b": 0.85,
+    "inputUnit": "normalized",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "envelope.value",
+   "to": "ribfade3.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "ribfade3.value",
+   "to": "ribmat3.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "RibbonRenderer",
+   "id": "ribbon3",
+   "params": {
+    "width": 0.17600000000000002,
+    "endFade": 0.3,
+    "uvMode": "tile",
+    "uvTileLength": 1.4
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "helix3.paths",
+   "to": "ribbon3.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "ribmat3.material",
+   "to": "ribbon3.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "gust.window",
+   "to": "ribbon3.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "ribbon3.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "HelixPath",
+   "id": "helix4",
+   "params": {
+    "radius": 0.855,
+    "turns": 3,
+    "phase": 0.223,
+    "spin": 5.6000000000000005,
+    "taper": "both",
+    "samples": 72
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "node-source.out",
+   "to": "helix4.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "axisend.out",
+   "to": "helix4.end"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "Material",
+   "id": "ribmat4",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "variant": 4,
+    "blend": "normal",
+    "tint": {
+     "srgb": "#76AAA6",
+     "alpha": 1
+    },
+    "emission": 0.15,
+    "uvScroll": [
+     -2.5600000000000005,
+     0
+    ],
+    "uvDistort": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "ScalarMath",
+   "id": "ribfade4",
+   "params": {
+    "operation": "multiply",
+    "b": 0.77,
+    "inputUnit": "normalized",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "envelope.value",
+   "to": "ribfade4.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "ribfade4.value",
+   "to": "ribmat4.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "RibbonRenderer",
+   "id": "ribbon4",
+   "params": {
+    "width": 0.07700000000000001,
+    "endFade": 0.3,
+    "uvMode": "tile",
+    "uvTileLength": 1.4
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "helix4.paths",
+   "to": "ribbon4.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "ribmat4.material",
+   "to": "ribbon4.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "gust.window",
+   "to": "ribbon4.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "ribbon4.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "Schedule",
+   "id": "streakwin",
+   "params": {
+    "startTicks": 18,
+    "durationTicks": 90,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "Emitter",
+   "id": "streaks",
+   "params": {
+    "shape": "cone",
+    "coneAngle": 0.12,
+    "radius": 1.14,
+    "rate": 25,
+    "burst": 0,
+    "speedMin": 6,
+    "speedMax": 9,
+    "lifetimeMin": 0.3,
+    "lifetimeMax": 0.6,
+    "direction": [
+     1,
+     0,
+     0
+    ],
+    "rateOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.3
+      },
+      {
+       "x": 0.15,
+       "y": 1
+      },
+      {
+       "x": 0.8,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "InitialProperties",
+   "id": "streakip",
+   "params": {
+    "sizeMin": 0.02,
+    "sizeMax": 0.04
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "Material",
+   "id": "streakmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "spark-streak",
+    "blend": "normal",
+    "tint": {
+     "srgb": "#88B8B4",
+     "alpha": 1
+    },
+    "opacity": 0.75,
+    "emission": 0.1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "BillboardRenderer",
+   "id": "streakbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 4,
+    "pivot": 0.7,
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.15,
+       "y": 1
+      },
+      {
+       "x": 0.8,
+       "y": 0.6
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "node-source.out",
+   "to": "streaks.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "axisend.out",
+   "to": "streaks.aim"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "streakwin.window",
+   "to": "streaks.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "streaks.particles",
+   "to": "streakip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "streakip.particles",
+   "to": "streakbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "streakmat.material",
+   "to": "streakbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "streakbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "Emitter",
+   "id": "wisps",
+   "params": {
+    "shape": "cone",
+    "coneAngle": 0.25,
+    "radius": 0.95,
+    "rate": 16,
+    "burst": 0,
+    "speedMin": 2,
+    "speedMax": 3.5,
+    "lifetimeMin": 0.9,
+    "lifetimeMax": 1.5,
+    "direction": [
+     1,
+     0,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "InitialProperties",
+   "id": "wispip",
+   "params": {
+    "sizeMin": 0.35,
+    "sizeMax": 0.6,
+    "randomFrameStart": true,
+    "rotationMin": 0,
+    "rotationMax": 6.283,
+    "angularVelocityMin": -1,
+    "angularVelocityMax": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "Vortex",
+   "id": "swirl",
+   "params": {
+    "axis": [
+     1,
+     0,
+     0
+    ],
+    "tangential": 2.5,
+    "inward": 0.2,
+    "falloff": 2,
+    "strength": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "Drag",
+   "id": "wispdrag",
+   "params": {
+    "coefficient": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "Material",
+   "id": "wispmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "blend": "normal",
+    "tint": {
+     "srgb": "#B0CFCC",
+     "alpha": 1
+    },
+    "opacity": 0.12
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windwhirl",
+   "type": "BillboardRenderer",
+   "id": "wispbb",
+   "params": {
+    "flipbookMode": "overLife",
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.6
+      },
+      {
+       "x": 1,
+       "y": 1.6
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.3,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "node-source.out",
+   "to": "wisps.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "axisend.out",
+   "to": "wisps.aim"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "streakwin.window",
+   "to": "wisps.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "wisps.particles",
+   "to": "wispip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "wispip.particles",
+   "to": "swirl.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "node-source.out",
+   "to": "swirl.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "swirl.particles",
+   "to": "wispdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "envelope.value",
+   "to": "swirl.strength"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "wispdrag.particles",
+   "to": "wispbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "wispmat.material",
+   "to": "wispbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windwhirl",
+   "from": "wispbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "windwhirl"
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "windwhirl",
+   "ticks": [
+    12,
+    40,
+    80,
+    125,
+    170
+   ]
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "windwhirl",
+   "ticks": [
+    60
+   ],
+   "background": "light"
+  },
+  true
+ ]
+]
