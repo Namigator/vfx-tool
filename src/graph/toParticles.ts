@@ -791,7 +791,8 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         const scale = transform.scale, a = ap as Vec3, off = param(b, 'offset') as Vec3;
         const toWorld = (v: Vec3): Vec3 => { const r = rotate(transform.rotation, [v[0] * scale, v[1] * scale, v[2] * scale]); return [r[0] + transform.position[0], r[1] + transform.position[1], r[2] + transform.position[2]]; };
         const at = toWorld([a[0] + off[0], a[1] + off[1], a[2] + off[2]]);
-        let dir: Vec3 = rotate(transform.rotation, [0, 1, 0]);
+        const pd = param(b, 'direction') as Vec3, pl = Math.hypot(pd[0], pd[1], pd[2]);
+        let dir: Vec3 = rotate(transform.rotation, pl > 1e-9 ? [pd[0] / pl, pd[1] / pl, pd[2] / pl] : [0, 1, 0]);
         if (aim) { const t = toWorld(aim), v: Vec3 = [t[0] - at[0], t[1] - at[1], t[2] - at[2]], l = Math.hypot(v[0], v[1], v[2]); if (l > 1e-9) dir = [v[0] / l, v[1] / l, v[2] / l]; }
         const width = num(b, 'size') * scale, length = num(b, 'length') * scale;
         const back = param(b, 'pivot') === 'end' ? length / 2 : 0;

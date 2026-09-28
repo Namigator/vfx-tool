@@ -656,3 +656,13 @@ test('PropMesh: one fixed mesh at its anchor, +Y aimed at the aim anchor, ending
   const sys = p.systems.find(s => s.id === 'node-prop')!.descriptor;
   assert.deepEqual(sys.sourcePosition.map(v => +v.toFixed(6)), [-0.4, 1, 0], 'centre sits half a length behind the anchor');
 });
+
+test('PropMesh without Aim points its length along the Direction parameter', () => {
+  const p = plan(f01(d => {
+    const g = root(d);
+    g.nodes.push(node('node-pw', 'Schedule', { startTicks: 0, durationTicks: 60, mode: 'window' }), node('node-bar', 'PropMesh', { mesh: 'box', direction: [0, 0, 2], pivot: 'center' }));
+    g.edges.push(edge('e-pa', 'node-source', 'out', 'node-bar', 'anchor'), edge('e-pm', 'node-material', 'material', 'node-bar', 'material'),
+      edge('e-pw', 'node-pw', 'window', 'node-bar', 'window'), edge('e-pv', 'node-bar', 'visual', 'node-output', 'visual', 1));
+  }));
+  assert.deepEqual(p.meshes.find(m => m.nodeId === 'node-bar')!.direction, [0, 0, 1]);
+});

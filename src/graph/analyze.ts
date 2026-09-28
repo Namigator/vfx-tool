@@ -331,7 +331,7 @@ export function analyzeGraph(input: unknown, options: AnalyzeOptions): Validatio
       return;
     }
     if (maybeNonzero('rate') && !has('window')) diag('error', 'MISSING_REFERENCE', 'Emitter rate is nonzero but no window is connected.', `${path}.params.rate`, nodeId);
-    if (maybeNonzero('burst') && !has('trigger')) diag('error', 'MISSING_REFERENCE', 'Emitter burst is nonzero but no trigger is connected.', `${path}.params.burst`, nodeId);
+    if (maybeNonzero('burst') && !has('trigger')) diag('error', 'MISSING_REFERENCE', 'Emitter burst is nonzero but no trigger is connected. For continuous emission set Burst to 0 (Rate + Window); for a burst connect a Schedule start or another event to Trigger.', `${path}.params.burst`, nodeId);
   }
 
   if (errors.length) return { ok: false, errors };

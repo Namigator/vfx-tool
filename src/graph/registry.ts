@@ -81,7 +81,7 @@ function emitter(): NodeSpec {
     outputs: [port({ id: 'particles', label: 'Particles', type: 'particles' })],
     parameters: [
       param({ id: 'shape', label: 'Shape', type: 'enum', unit: 'none', default: 'point', choices: ['point', 'cone', 'sphere', 'disc', 'box', 'path'] }),
-      param({ id: 'burst', label: 'Burst', type: 'integer', unit: 'none', default: 32, min: 0, max: 4096, step: 1, description: 'Particles per trigger event.' }),
+      param({ id: 'burst', label: 'Burst', type: 'integer', unit: 'none', default: 32, min: 0, max: 4096, step: 1, description: 'Particles per trigger event (needs the Trigger input). For continuous emission only, set Burst to 0 and use Rate with a Window.' }),
       param({ id: 'rate', label: 'Rate', type: 'number', unit: 'perSecond', default: 0, min: 0, max: 4096, description: 'Continuous particles per second while the window is open.' }),
       param({ id: 'rateOverWindow', label: 'Rate over window', type: 'curve', unit: 'none', curveDomain: 'normalized', default: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] }, min: 0, max: 4, description: 'Rate multiplier across the emission window (0 = window start, 1 = end): ramps, pulses, tails.' }),
       param({ id: 'lifetimeMin', label: 'Lifetime min', type: 'number', unit: 'second', default: 0.6, min: ONE_TICK_SECONDS, max: 10, description: 'Authored in seconds; simulation converts to ticks.' }),
@@ -346,6 +346,7 @@ function propMesh(): NodeSpec {
       param({ id: 'size', label: 'Width', type: 'number', unit: 'meter', default: 0.12, min: 0.001, max: 20, editPolicy: 'live' }),
       param({ id: 'length', label: 'Length', type: 'number', unit: 'meter', default: 0.6, min: 0.001, max: 50, editPolicy: 'live', description: 'Size along the aim direction (+Y).' }),
       param({ id: 'offset', label: 'Offset', type: 'vec3', unit: 'meter', default: [0, 0, 0], min: -50, max: 50, editPolicy: 'live', description: 'Shift from the anchor in world meters (e.g. put the nozzle behind the flame start).' }),
+      param({ id: 'direction', label: 'Direction', type: 'vec3', unit: 'none', default: [0, 1, 0], min: -1, max: 1, editPolicy: 'live', description: 'World direction the mesh length (+Y) points in when Aim is not connected ([0,1,0] = upright, [0,0,1] = a crossbar); normalized.' }),
       param({ id: 'pivot', label: 'Pivot', type: 'enum', unit: 'none', default: 'end', choices: ['center', 'end'], description: 'end: the mesh ends at the anchor and extends backwards from the aim direction (a nozzle behind its muzzle); center: centred on the anchor.' }),
       param({ id: 'lit', label: 'Lit', type: 'boolean', unit: 'none', default: true }),
       param({ id: 'renderOrderOffset', label: 'Render order offset', type: 'integer', unit: 'none', default: 0, min: -32, max: 32, step: 1, editPolicy: 'live' }),
