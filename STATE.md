@@ -29,6 +29,13 @@
 ## Rendering
 - HDR composer + UnrealBloom (08 defaults .8/.45/1.0) + ACES/sRGB OutputPass; background via scene.background (renderer clear colour double-encoded through the composer). Glow toggle in the transport.
 
+## Session 2026-09-28 (user away: "cant test rn, please implement")
+- Done: Light (09) + Energy (10) families; trails fade only at the tail (head solid); non-number knobs (colour picker commits on close,
+  vector fields, checkbox, dropdown) + axis bindings (a number knob drives one axis of a vec2/vec3); Energy knobs Arc bend, Accent colour,
+  Speed; PathFollower speed mode (travel = path length ÷ speed, rounded ticks; all compilers agree) + "Projectile travel" readout.
+- Queue (in order): GLB importScale; material rim; sprite UV rotation; wrap-selection-as-group; trash + multi-tab conflict check; worker sim.
+- User visual review still pending for every family (they could not test today).
+
 ## Next (as of 2026-09-27 night)
 All ten element families (effects/01..10) are built as components (3 variants each via tools/make-<family>-recipe.mjs, 48 components total),
 each with [SAW] headless frames. Next: (a) visual review with the user, family by family, in the editor (Add component → Play);
@@ -36,7 +43,7 @@ each with [SAW] headless frames. Next: (a) visual review with the user, family b
 Capability floor (27-GAP-AUDIT) is essentially done: value nodes, event routing, force strength/oscillator, ParticlePaths, OffsetAnchor, PublicParameter,
 presentation, seek checkpoints, texture + GLB import, .vfxpack (fflate), project shelf, draft recovery, grouped components with Start at, ground fade,
 dissolve, ribbon UV scroll/distortion. Remaining small floor items: worker simulation (deferred: no visible benefit yet), multi-tab CAS + trash,
-wrap-selection-as-group, non-number knobs, rim, depth soft intersection, sprite UV ops.
+wrap-selection-as-group, rim, sprite UV ops (non-number knobs done 2026-09-28; depth soft intersection was done 2026-09-27).
 1. (Done 2026-09-27) WP10+ element families 01..10. Build every look from generic nodes/components; get the user's VISUAL feedback per family (they only judge visuals; sound is parked).
 2. Known visual issues from the user: L01 wide bloom haze; flame slightly scaly vs standalone reference.
 3. A-05 model-build test only after everything is implemented (user decision).
