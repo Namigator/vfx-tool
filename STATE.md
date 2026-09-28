@@ -82,6 +82,9 @@ size/triangles/validation directly). MCP user components live in work/mcp/user-c
   the smoke+ember decay closely -> the gap was mostly know-how. Fire guide rewritten with these values. Added: matched
   camera (vfx_render_frames camera, capture cam/look/fov). ref-t0.35.png was black (canvas resize) - recaptured.
   Remaining visible differences: scene dressing (arena), nozzle heat glow, slightly streakier tongues.
+- 2026-09-29: "Fire: flamethrower" component (49 components; knobs jet length, width, density, smoke, embers, burn
+  time), tuned to look right under DEFAULT glow (components cannot carry EffectOutput glow). A-05 run 6 launched
+  (doc a05f, reference camera, updated fire guide). Codex desktop app is running again (not ours) - watch for edits.
 - Commit gate is now `bash tools/gate.sh && git commit ...` (tsc + fresh test log; a stale-log slip committed a broken
   file once, fixed in 03fcb35).
 - Left: sound (parked); user visual review of all families; merge to main after visual OK.
