@@ -263,6 +263,12 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
     const r = compilePathPreview(d, 0, { audioHandled: true });
     out.push(r.ok ? `paths OK at tick 0: ${r.value.layers.length} ribbon layer(s)` : `paths FAILED:\n${fmtErrors(r.errors)}`);
     const hasAudio = d.graphs.some(g => g.edges.some(e => e.target.nodeId === 'node-output' && e.target.port === 'audio'));
+    // Things a still frame cannot prove (A-05 gap): when flashes, camera shakes and lights happen.
+    if (p.ok) {
+      for (const f of p.value.presentation.flashes) out.push(`screen flash ${f.nodeId}: ticks ${f.tick}-${f.tick + f.durationTicks}, alpha ${f.alpha}, colour ${f.color.srgb}`);
+      for (const i of p.value.presentation.impulses) out.push(`camera shake ${i.nodeId}: ticks ${i.tick}-${i.tick + i.durationTicks}, translation ${i.translation} m, rotation ${i.rotation} rad`);
+      for (const l of p.value.lights) out.push(`light ${l.nodeId}: ticks ${l.startTick}-${l.endTick}, intensity ${l.intensity}, range ${l.range} m${l.track ? ', moving' : ''}`);
+    }
     if (p.ok) for (const f of p.value.followers) out.push(`travel ${f.nodeId}: ${f.lengthMeters.toFixed(2)} m in ${f.travelTicks} ticks = ${(f.lengthMeters / (f.travelTicks / 60)).toFixed(1)} m/s (${f.speedMode ? 'speed' : 'duration'} mode)`);
     const cut = truncationWarning(d);
     if (cut) out.push(`WARNING: ${cut.message}`);
