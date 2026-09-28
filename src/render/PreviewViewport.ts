@@ -81,6 +81,31 @@ const CHECKPOINT_TICKS = 30;
 export class WebGLUnavailableError extends Error {}
 
 /** Base pivot: shift a mesh so its lowest point sits at the origin (grows up from the particle position). */
+/**
+ * 09 rim: adds fresnel edge emission to an instanced mesh material (lit or unlit): view-space normal and view
+ * vector from the instance transform, rim = colour × strength × (1 − |n·v|)^power, added before tone mapping.
+ */
+function addRim(material: THREE.Material, rim: { strength: number; color: { srgb: string }; power: number }): void {
+  const uniforms = { uRim: { value: rim.strength }, uRimPower: { value: rim.power }, uRimColor: { value: new THREE.Color().setStyle(rim.color.srgb) } };
+  material.onBeforeCompile = shader => {
+    Object.assign(shader.uniforms, uniforms);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vRimN;\nvarying vec3 vRimV;')
+      .replace('#include <project_vertex>', `#include <project_vertex>
+  vec3 rimObjN = normal;
+  #ifdef USE_INSTANCING
+    rimObjN = mat3(instanceMatrix) * rimObjN;
+  #endif
+  vRimN = normalize(normalMatrix * rimObjN);
+  vRimV = -mvPosition.xyz;`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vRimN;\nvarying vec3 vRimV;\nuniform float uRim;\nuniform float uRimPower;\nuniform vec3 uRimColor;')
+      .replace('#include <tonemapping_fragment>', `gl_FragColor.rgb += uRimColor * uRim * pow(1.0 - abs(dot(normalize(vRimN), normalize(vRimV))), uRimPower);
+#include <tonemapping_fragment>`);
+  };
+  material.customProgramCacheKey = () => 'rim';
+}
+
 function basePivot(g: THREE.BufferGeometry, base: boolean): THREE.BufferGeometry {
   if (!base) return g;
   g.computeBoundingBox();
@@ -473,6 +498,7 @@ export class PreviewViewport {
       const material: THREE.Material = !additive && layer.lit
         ? new THREE.MeshStandardMaterial({ color, roughness: layer.roughness ?? 0.75, metalness: layer.metalness ?? 0.05, flatShading: true, emissive: color.clone().multiplyScalar(layer.emission), transparent: layer.opacity < 1, opacity: layer.opacity })
         : new THREE.MeshBasicMaterial({ color: color.clone().multiplyScalar(1 + layer.emission), transparent: additive || layer.opacity < 1, opacity: layer.opacity, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending, depthWrite: !additive });
+      if (layer.rim) addRim(material, layer.rim);
       const mesh = new THREE.InstancedMesh(geometry, material, PREVIEW_POOL_SIZE);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(PREVIEW_POOL_SIZE * 3).fill(1), 3);

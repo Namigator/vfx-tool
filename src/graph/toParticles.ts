@@ -102,7 +102,10 @@ export type MeshLayer = {
   meshAssetSize?: { mode: 'fit' | 'real'; importScale: number };
   orientation: 'tumble' | 'velocity' | 'upright'; lit: boolean;
   /** Height stretch, pivot and upright lean; lit-material roughness/metalness. */
-  scaleY?: number; pivot?: 'center' | 'base'; tilt?: number; roughness?: number; metalness?: number; color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout';
+  scaleY?: number; pivot?: 'center' | 'base'; tilt?: number; roughness?: number; metalness?: number;
+  /** 09 rim: fresnel edge emission (strength 0 = off). */
+  rim?: { strength: number; color: ColorValue; power: number };
+  color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout';
   sizeOverLife: CurveValue; colorOverLife: GradientValue; renderOrderOffset: number; visualOrder: number;
 };
 /** 05 presentation: screen flashes and camera impulses at event ticks (preview-only, reduced-motion aware). */
@@ -719,6 +722,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
           ...(imported?.kind === 'mesh' ? { meshAsset: imported.sha256, meshAssetSize: { mode: param(b, 'importedSize') as 'fit' | 'real', importScale: imported.interpretation.mesh?.importScale ?? 1 } } : {}),
           nodeId: mid, systemId: chain.terminalId, mesh: param(b, 'mesh') as MeshLayer['mesh'], scale: num(b, 'scale'), orientation: param(b, 'orientation') as MeshLayer['orientation'],
           scaleY: num(b, 'scaleY'), pivot: param(b, 'pivot') as 'center' | 'base', tilt: num(b, 'tilt'), roughness: num(m, 'roughness'), metalness: num(m, 'metalness'),
+          ...(num(m, 'rim') > 0 ? { rim: { strength: num(m, 'rim'), color: structuredClone(param(m, 'rimColor') as ColorValue), power: num(m, 'rimPower') } } : {}),
           lit: param(b, 'lit') === true, color: multiplyColors(base, param(m, 'tint') as ColorValue), opacity: num(m, 'opacity'), emission: num(m, 'emission'), blend: param(m, 'blend') as MeshLayer['blend'],
           sizeOverLife: structuredClone(sc), colorOverLife: structuredClone(param(b, 'colorOverLife') as GradientValue), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
         });
