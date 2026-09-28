@@ -3,6 +3,7 @@
 // template; compile/render/preview steps and Source/Target anchor moves are dropped (components adapt to
 // the document's anchors). Usage: node tools/build-components.mjs
 import { readFileSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 
 const COMPONENTS = [
   ['spark-burst', 'Spark burst', 'Velocity-stretched sparks with glowing trails, three bursts.', 'spark-trails'],
@@ -136,3 +137,5 @@ import type { ComponentTemplate } from './components.ts';
 export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = ${JSON.stringify(out, null, 1)};
 `);
 console.log(`wrote ${out.length} components`);
+// Second pass (TypeScript, needs the compilers): stretch each component's length to include its tail.
+execFileSync(process.execPath, ['--experimental-strip-types', '--no-warnings', 'tools/fit-component-durations.ts'], { stdio: 'inherit' });

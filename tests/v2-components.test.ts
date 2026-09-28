@@ -158,3 +158,14 @@ test('axis bindings: a whole-parameter owner and an axis owner of the same param
   const w = validateDocument(doc, { registry: createRegistry() });
   assert.ok(!w.ok && w.errors.some(e => e.code === 'INVALID_VALUE'));
 });
+
+test('component lengths include their tails; shortening the effect afterwards is reported', async () => {
+  const { effectEndTick, truncationWarning } = await import('../src/graph/truncation.ts');
+  for (const id of ['smoke-plume', 'energy-bolt', 'spark-burst']) {
+    const { doc } = insertComponent(createBlankDocument(), id, undefined, { group: true });
+    assert.ok(effectEndTick(doc)! <= doc.durationTicks, `${id} fits (${effectEndTick(doc)} <= ${doc.durationTicks})`);
+    assert.equal(truncationWarning(doc), undefined);
+    const short = { ...doc, durationTicks: 60 };
+    assert.match(truncationWarning(short)!.message, /cut off/);
+  }
+});

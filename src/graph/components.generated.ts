@@ -6,7 +6,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "spark-burst",
   "label": "Spark burst",
   "description": "Velocity-stretched sparks with glowing trails, three bursts.",
-  "durationTicks": 0,
+  "durationTicks": 142,
   "anchors": [],
   "nodes": [
    {
@@ -936,7 +936,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "smoke-plume",
   "label": "Smoke plume",
   "description": "Rising curl-noise smoke with growth and fade over life.",
-  "durationTicks": 300,
+  "durationTicks": 450,
   "anchors": [],
   "nodes": [
    {
@@ -1177,7 +1177,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "fountain",
   "label": "Water fountain",
   "description": "Upward cone of droplets with gravity and bouncing ground collision.",
-  "durationTicks": 240,
+  "durationTicks": 312,
   "anchors": [],
   "nodes": [
    {
@@ -1490,7 +1490,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "rain-splash",
   "label": "Rain with splashes",
   "description": "Falling droplets that die on the ground and spawn splash bursts.",
-  "durationTicks": 240,
+  "durationTicks": 320,
   "anchors": [],
   "nodes": [
    {
@@ -3104,7 +3104,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "charge-up",
   "label": "Charge-up",
   "description": "Motes pulled and swirled into a growing glowing orb at Source with a rising light (Attract + Vortex).",
-  "durationTicks": 90,
+  "durationTicks": 166,
   "anchors": [],
   "nodes": [
    {
@@ -3510,7 +3510,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "tornado",
   "label": "Tornado",
   "description": "Dust funnel: rising particles swirled and pulled toward a vertical axis at Source (Vortex + lift).",
-  "durationTicks": 240,
+  "durationTicks": 364,
   "anchors": [],
   "nodes": [
    {
@@ -4409,7 +4409,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "poison-cloud",
   "label": "Poison cloud",
   "description": "Seeping green cloud with rising bubbles and a sickly floor glow; ramps in and fades.",
-  "durationTicks": 240,
+  "durationTicks": 410,
   "anchors": [],
   "nodes": [
    {
@@ -4938,7 +4938,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "shadow-vortex",
   "label": "Shadow vortex",
   "description": "Dark wisps pulled and swirled into a violet void core with a flickering violet light.",
-  "durationTicks": 180,
+  "durationTicks": 258,
   "anchors": [],
   "nodes": [
    {
@@ -6205,7 +6205,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "charge-tethers",
   "label": "Charge tethers",
   "description": "Motes pulled into Source with jagged electric tethers to a few of them (ParticlePaths + JaggedPath).",
-  "durationTicks": 90,
+  "durationTicks": 91,
   "anchors": [],
   "nodes": [
    {
@@ -6457,7 +6457,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "spark-aftershock",
   "label": "Spark aftershock",
   "description": "Spark burst at Target plus a delayed second burst (EventDelay + MergeEvents); sparks that land kick up dust.",
-  "durationTicks": 90,
+  "durationTicks": 122,
   "anchors": [],
   "nodes": [
    {
@@ -13903,7 +13903,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "fire-burst",
   "label": "Fire: wide burst",
   "description": "Short wide 35° burst with strong launch and extra embers (02-FIRE variant).",
-  "durationTicks": 150,
+  "durationTicks": 153,
   "anchors": [],
   "nodes": [
    {
@@ -18613,7 +18613,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "shadow-collapse",
   "label": "Shadow: vortex & collapse",
   "description": "Dark swirling mass at Target: body, inward wisps, curling tendrils, violet edge accent, collapse and residue (04-SHADOW).",
-  "durationTicks": 210,
+  "durationTicks": 228,
   "anchors": [],
   "nodes": [
    {
@@ -19672,7 +19672,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "shadow-puff",
   "label": "Shadow: inward puff",
   "description": "Brief outward burst of dark wisps rapidly absorbed inward (04-SHADOW variant).",
-  "durationTicks": 120,
+  "durationTicks": 150,
   "anchors": [],
   "nodes": [
    {
@@ -20423,7 +20423,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "shadow-tendril",
   "label": "Shadow: narrow tendril",
   "description": "Dark curling tendril Source→Target feeding a small receiving vortex (04-SHADOW variant).",
-  "durationTicks": 170,
+  "durationTicks": 200,
   "anchors": [],
   "nodes": [
    {
@@ -27459,7 +27459,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "wind-gust",
   "label": "Wind: spiral gust",
   "description": "Broken teal air ribbons spiralling Source→Target with fast streaks and faint wisps, attack/hold/fall envelope (07-WIND).",
-  "durationTicks": 180,
+  "durationTicks": 198,
   "anchors": [],
   "nodes": [
    {
@@ -28222,7 +28222,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "wind-cut",
   "label": "Wind: cutting gust",
   "description": "Straight low-twist gust with long thin streaks (07-WIND variant).",
-  "durationTicks": 180,
+  "durationTicks": 198,
   "anchors": [],
   "nodes": [
    {
@@ -28893,7 +28893,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "wind-whirl",
   "label": "Wind: compact whirl",
   "description": "Wide whirling burst around a short axis at Source (07-WIND variant).",
-  "durationTicks": 180,
+  "durationTicks": 198,
   "anchors": [],
   "nodes": [
    {
@@ -29763,7 +29763,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "poison-caustic",
   "label": "Poison: caustic cloud",
   "description": "Slow yellow-green cloud at Target with rising rim bubbles that pop into droplets, dark drips and a ground stain (08-POISON).",
-  "durationTicks": 240,
+  "durationTicks": 276,
   "anchors": [],
   "nodes": [
    {
@@ -30521,7 +30521,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "poison-pool",
   "label": "Poison: creeping pool",
   "description": "Low creeping cloud with few bubbles (08-POISON variant).",
-  "durationTicks": 240,
+  "durationTicks": 276,
   "anchors": [],
   "nodes": [
    {
@@ -31279,7 +31279,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "poison-plume",
   "label": "Poison: bubbling plume",
   "description": "Taller plume from a narrow base with many bubbles and drips (08-POISON variant).",
-  "durationTicks": 240,
+  "durationTicks": 276,
   "anchors": [],
   "nodes": [
    {
@@ -33743,7 +33743,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "light-blessing",
   "label": "Light: blessing",
   "description": "Fewer, softer rays with a wide halo and many lingering motes (09-LIGHT variant).",
-  "durationTicks": 168,
+  "durationTicks": 193,
   "anchors": [],
   "nodes": [
    {
@@ -34596,7 +34596,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "energy-bolt",
   "label": "Energy: charged bolt",
   "description": "Charge gathers at Source, a violet core flies a shallow arc with a trail and shed sparks; its arrival drives the flash, ring, burst and light at Target (10-ENERGY).",
-  "durationTicks": 180,
+  "durationTicks": 199,
   "anchors": [],
   "nodes": [
    {
@@ -35802,7 +35802,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "energy-needle",
   "label": "Energy: fast needle",
   "description": "Fast narrow projectile with a long thin trail and a small sharp impact (10-ENERGY variant).",
-  "durationTicks": 180,
+  "durationTicks": 208,
   "anchors": [],
   "nodes": [
    {
@@ -37008,7 +37008,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "id": "energy-orb",
   "label": "Energy: heavy orb",
   "description": "Slow heavy orb with a broad short trail and a larger ring and burst (10-ENERGY variant).",
-  "durationTicks": 180,
+  "durationTicks": 192,
   "anchors": [],
   "nodes": [
    {

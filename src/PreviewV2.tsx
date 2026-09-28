@@ -7,6 +7,7 @@ import type { Diagnostic, EffectDocumentV2 } from './model/types.ts';
 import { validateDocument } from './model/document.ts';
 import { createRegistry } from './graph/registry.ts';
 import { compileParticlePreview, type FollowerTravel } from './graph/toParticles.ts';
+import { truncationWarning } from './graph/truncation.ts';
 import { compilePathPreview } from './graph/toPaths.ts';
 import { createBlankDocument, createF01Document, createForcesDemoDocument } from './graph/fixtures.ts';
 import { TexturePanel } from './editor/TexturePanel.tsx';
@@ -207,7 +208,8 @@ export default function PreviewV2() {
         return;
       }
       const style = ribbonStyleDiagnostics(d, first.value.layers);
-      setDiagnostics(mergeDiagnostics(audioWarnings, points.warnings, first.warnings, style));
+      const cut = truncationWarning(d);
+      setDiagnostics(mergeDiagnostics(audioWarnings, points.warnings, first.warnings, style, cut ? [cut] : []));
       if (style.some(s => s.severity === 'error')) {
         vp?.clearPlan();
         setCompiled(false);
@@ -228,7 +230,8 @@ export default function PreviewV2() {
       }
       const style = ribbonStyleDiagnostics(d, first.value.layers);
       const blocked = style.some(s => s.severity === 'error');
-      setDiagnostics([...audioWarnings, ...first.warnings, ...style]);
+      const cut = truncationWarning(d);
+      setDiagnostics([...audioWarnings, ...first.warnings, ...style, ...(cut ? [cut] : [])]);
       if (blocked) {
         vp?.clearPlan();
         setCompiled(false);
@@ -244,7 +247,8 @@ export default function PreviewV2() {
       fail([...result.errors, ...audioWarnings]);
       return;
     }
-    setDiagnostics([...audioWarnings, ...result.warnings]);
+    const cut = truncationWarning(d);
+    setDiagnostics([...audioWarnings, ...result.warnings, ...(cut ? [cut] : [])]);
     setCompiled(true);
     setFollowers(result.value.followers);
     vp?.setPlan(result.value); // Starts paused at tick 0.
