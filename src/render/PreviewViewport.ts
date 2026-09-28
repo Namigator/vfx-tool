@@ -32,7 +32,7 @@ import { compileLifeCurve, compileLifeGradient, lifeFraction, sampleLifeCurve, s
 import { MAX_PREVIEW_POINTS, type PathPreviewLayer, type PathPreviewPlan } from '../graph/toPaths.ts';
 import { DEFAULT_MAX_LIVE_PARTICLES, PARTICLE_DT, ParticleSimulation, type ParticleState } from '../runtime/particles.ts';
 import { PlaybackClock } from '../runtime/clock.ts';
-import { framePoints, RibbonGeometry, ribbonSoftness, type FramePointSet } from './RibbonGeometry.ts';
+import { DEFAULT_RIBBON_END_FADE, framePoints, RibbonGeometry, ribbonSoftness, type FramePointSet } from './RibbonGeometry.ts';
 import { pathViewDirection } from './pathView.ts';
 import { collectTimelineFrameSets, particleFrameSets } from './pathFraming.ts';
 import { layerRenderOrder } from './layerOrder.ts';
@@ -556,7 +556,7 @@ export class PreviewViewport {
       const material = materialFor(RIBBON_VERTEX, RIBBON_FRAGMENT, layer);
       material.side = THREE.DoubleSide;
       material.uniforms.uSoftness = { value: ribbonSoftness(layer.blend) };
-      Object.assign(material.uniforms, { uUseTex: { value: 0 }, uTex: { value: null }, uGrid: { value: new THREE.Vector2(1, 1) }, uVariant: { value: -1 }, uTile: { value: 0 }, uScroll: { value: new THREE.Vector2(0, 0) }, uDistort: { value: 0 }, uTime: this.#effectTime, uNoise: { value: null }, uEndFade: { value: layer.endFade }, uFadeHead: { value: 0 } });
+      Object.assign(material.uniforms, { uUseTex: { value: 0 }, uTex: { value: null }, uGrid: { value: new THREE.Vector2(1, 1) }, uVariant: { value: -1 }, uTile: { value: 0 }, uScroll: { value: new THREE.Vector2(0, 0) }, uDistort: { value: 0 }, uTime: this.#effectTime, uNoise: { value: null }, uEndFade: { value: layer.endFade ?? DEFAULT_RIBBON_END_FADE }, uFadeHead: { value: 0 } });
       const mesh = new THREE.Mesh(ribbon.geometry, material);
       mesh.frustumCulled = false;
       mesh.renderOrder = layerRenderOrder(layer.renderOrderOffset, layer.visualOrder);
@@ -861,7 +861,7 @@ export class PreviewViewport {
         const material = materialFor(RIBBON_VERTEX, RIBBON_FRAGMENT, layer);
         material.side = THREE.DoubleSide; // Camera-facing strips can wind either way.
         material.uniforms.uSoftness = { value: ribbonSoftness(layer.blend) };
-        material.uniforms.uEndFade = { value: layer.endFade };
+        material.uniforms.uEndFade = { value: layer.endFade ?? DEFAULT_RIBBON_END_FADE };
         material.uniforms.uFadeHead = { value: 1 };
         const sheet = layer.sprite?.sheet;
         material.uniforms.uUseTex = { value: sheet ? 1 : 0 };

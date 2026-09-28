@@ -191,8 +191,9 @@ export class RibbonGeometry {
         totalLength += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1], pts[i][2] - pts[i - 1][2]);
       }
       const fadeLength = endFade * totalLength;
-      // Longitudinal end taper/fade: smoothstep over fadeLength from each end, so branch tips
-      // and bolt ends dissolve instead of ending in a hard full-width edge.
+      // Longitudinal width taper uses smoothstep samples at geometry vertices. Alpha fade is
+      // evaluated analytically in the ribbon fragment shader from strip arc length; vertex alpha
+      // interpolation would turn this curve into a visibly linear ramp on long segments.
       const fadeAt = (arc: number): number => {
         if (fadeLength <= EPSILON) return 1;
         const e = Math.min(1, (fadeHead ? Math.min(arc, totalLength - arc) : arc) / fadeLength);

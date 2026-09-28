@@ -251,16 +251,16 @@ test('short zigzag segments much shorter than the width produce no off-path shar
   r.dispose();
 });
 
-test('ends taper and fade by arc length; interior stays full; endFade 0 disables', () => {
+test('ends taper by arc length; shader evaluates smooth alpha fade; endFade 0 disables taper', () => {
   const r = new RibbonGeometry();
   const pts: Vec3[] = Array.from({ length: 11 }, (_, i): Vec3 => [i, 0, 0]);
   // Collinear: pairs are [seg0 start, seg0 end, seg1 start, ...]; point i = pair 2i (last: pair 19).
   const at = (i: number) => { const p = pairs(r, 40); return i < 10 ? p[2 * i] : p[19]; };
   r.update([path(pts, 1, 0.8)], { cameraPosition: cam, width: 2, endFade: 0.2, endWidth: 0.25 });
-  assert.equal(at(0).op, 0);
-  assert.equal(at(10).op, 0);
+  assert.ok(Math.abs(at(0).op - 0.8) < 1e-6);
+  assert.ok(Math.abs(at(10).op - 0.8) < 1e-6);
   assert.ok(Math.abs(at(0).w - 0.25) < 1e-6 && Math.abs(at(10).w - 0.25) < 1e-6);
-  assert.ok(at(1).op > 0 && at(1).op < at(2).op, 'monotonic fade-in');
+  assert.ok(at(1).w > at(0).w && at(1).w < at(2).w, 'monotonic width taper');
   for (const i of [2, 5, 8]) {
     assert.ok(Math.abs(at(i).op - 0.8) < 1e-6 && Math.abs(at(i).w - 1) < 1e-6);
   }
@@ -305,9 +305,8 @@ test('sparse two-point path with default fade reaches full interior opacity on-p
   const sd = Array.from((r.geometry.getAttribute('side').array as Float32Array).subarray(0, 8));
   assert.ok(sd.every((x) => x !== 0), 'no join centre vertices on collinear splits');
   const p = pairs(r, s.vertexCount);
-  assert.equal(p[0].op, 0);
-  assert.equal(p[p.length - 1].op, 0);
-  assert.ok(Math.max(...p.map((q) => q.op)) > 0.89, 'interior reaches full opacity');
+  assert.ok(p.every((q) => Math.abs(q.op - 0.9) < 1e-6), 'vertex opacity remains constant for analytic shader fade');
+  assert.ok(Math.max(...p.map((q) => q.w)) > 0.49, 'interior reaches full width');
   // Exact start/end preserved; taper deterministic.
   const first = vertex(r, 0), last = vertex(r, 6);
   assert.ok(Math.abs(first[0]) < 1e-6 && Math.abs(last[0] - 2) < 1e-6);
@@ -323,7 +322,7 @@ test('sparse two-point path with default fade reaches full interior opacity on-p
   // endFade 0.5: both transitions coincide at the midpoint, one split.
   const h = r.update([path(pts)], { cameraPosition: cam, width: 1, endFade: 0.5 });
   assert.equal(h.vertexCount, 6);
-  assert.ok(Math.max(...pairs(r, 6).map((q) => q.op)) === 1);
+  assert.ok(pairs(r, 6).every((q) => q.op === 1));
   r.dispose();
 });
 
@@ -346,7 +345,7 @@ test('fadeHead false fades only the tail: the last point (trail head) keeps full
     const op = r.geometry.getAttribute('opacity').array as Float32Array;
     return [op[0], op[vertexCount - 1]];
   };
-  assert.deepEqual(ends(), [0, 0]);
-  assert.deepEqual(ends(false), [0, 1]);
+  assert.deepEqual(ends(), [1, 1]);
+  assert.deepEqual(ends(false), [1, 1]);
   r.dispose();
 });
