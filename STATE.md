@@ -71,7 +71,11 @@ size/triangles/validation directly). MCP user components live in work/mcp/user-c
 - A-05 run 3 (fresh server, 2026-09-28): [SAW] nozzle prop, controlled glow, jagged turbulent flame, embers; still redder,
   shorter jet, faint smoke vs reference. Gaps fixed: PropMesh Direction; Emitter burst/rate guidance; render_frames
   now reports lit/bright coverage + glow-flood warning. Run 4 launched (doc a05d). Frames sent to user for a look.
-- Rule learned: commit only when the gate shows `fail 0` (two slips today).
+- A-05 run 4: T-nozzle ok, glow controlled, but flame = scattered red blobs. [SAW] my own fire-jet (same tool) makes a
+  continuous jet -> capability exists, know-how missing -> added MCP vfx_guide (recipes per element). Run 5 launched
+  (doc a05e) with the guide. Also: PropMesh pivot wording; MCP reload wrapper backs off on crash.
+- Commit gate is now `bash tools/gate.sh && git commit ...` (tsc + fresh test log; a stale-log slip committed a broken
+  file once, fixed in 03fcb35).
 - Left: sound (parked); user visual review of all families; merge to main after visual OK.
 - User visual review still pending for every family (they could not test today).
 
