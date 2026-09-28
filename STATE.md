@@ -64,6 +64,10 @@ size/triangles/validation directly). MCP user components live in work/mcp/user-c
   (3) vfx_compile lists flash/shake/light ticks; (4) fire-puff flipbook. Next: rerun A-05 with a fresh agent.
 - 2026-09-28 ~17:40: a stray Codex desktop app session (user did not start it; killed with user OK) edited src/render (ribbon end-fade moved into the shader, RibbonGeometry +
   PreviewViewport); its per-pixel end fade was kept after tests + renders (commit after d256cb6).
+- A-05 run 2 INVALID: the vfx MCP server process was started before the fixes (26/33 tools, no PropMesh/glow), so
+  the agent re-reported fixed gaps. Fix: .mcp.json now runs mcp/vfx-mcp-reload.mjs (restarts the server on src/mcp
+  changes, replays the handshake, documents reopen from work/mcp mirrors) — needs ONE user reconnect of "vfx" to take
+  effect, then rerun A-05 (run 3). Also documented Emitter coneAngle/space.
 - Left: sound (parked); user visual review of all families; merge to main after visual OK.
 - User visual review still pending for every family (they could not test today).
 
