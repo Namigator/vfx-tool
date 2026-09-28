@@ -24,10 +24,10 @@ export const GUIDE: Record<string, string> = {
 - Material: blend NORMAL (not additive), opacity ~0.62, dissolve 0.6 from 0.5 of life. Normal blend keeps the body readable and never floods the glow.
 - Faint additive accent: a second BillboardRenderer on the same particles (flame-tongue-a, additive, opacity ~0.05, tint #FFF2D0), visible only while young (opacityOverLife [0:0, 0.05:1, 0.45:0]).
 - Hot core: cone 3 deg (0.052), rate ~130/s, speed 10-13, life 0.23-0.43 s, size 0.15-0.18, additive, opacity ~0.13, tint #FFF6E0, stretchRatio ~1.9.
-- Smoke and embers are born WHERE TONGUES DIE: ParticleEvents(death) on each tongue chain -> Emitter with Burst 1, useEventPosition, inheritVelocity 0.35-0.45. Smoke probability ~0.08 (smoke-puff, normal, #6A625A, opacity peak ~0.32, size 0.35-0.5 growing x2.4, Gravity up 1.6, life 1-1.9 s). Embers probability ~0.1 (spark-streak additive + a SpriteUnlit ParticleTrail, Gravity down ~3.5, life 0.5-1.2 s).
+- Smoke and embers are born WHERE TONGUES DIE: ParticleEvents(death) on each tongue chain -> Emitter with Burst 1, useEventPosition, inheritVelocity 0.35-0.45. Smoke probability ~0.08 (smoke-puff, normal, #6A625A, opacity peak ~0.32, size 0.35-0.5 growing x2.4, Gravity up 1.6, life 1-1.9 s). Event-born particles INHERIT the jet speed: always add Drag (~1.2-1.6) to smoke and embers or they fly out of frame; check with vfx_sample_particles if something seems missing. Embers probability ~0.1 (spark-streak additive + a SpriteUnlit ParticleTrail, Gravity down ~3.5, life 0.5-1.2 s).
 - Glow: the default EffectOutput glow works with these values (core opacity ~0.13, accent ~0.05); only touch glow settings if vfx_render_frames warns about flooding.
 - Light: two PointLights along the jet (OffsetAnchor 1.2 m and 3 m from Source, 0.3 m up), #FF7A28, intensity ~16, range ~3.5, flicker 0.25.
-- Ignition: SpriteRenderer soft-glow variant 1 at the muzzle (11 ticks) + CameraImpulse (translation 0.03). Nozzle: PropMesh cylinder at Source aimed at Target (pivot end), leg PropMesh Direction [0,-1,0] pivot start.
+- Ignition: SpriteRenderer soft-glow variant 1 at the muzzle (11 ticks) + CameraImpulse (translation 0.03). Nozzle: PropMesh cylinder at Source aimed at Target (pivot end), leg PropMesh Direction [0,-1,0] pivot start; a dark lit Material (#3A2E26, roughness ~0.55, metalness ~0.4) so it reads as metal, not a bright grey bar.
 - Decay / billows elsewhere: sprite fire-puff (a fire blob that cools and tears apart).`,
 
   smoke: `SMOKE / DUST / CLOUDS
