@@ -60,3 +60,5 @@ Work order: I13 core (headless) early, since it speeds every later check → I1 
 A-05 model build test. Update the Status column as items land.
 
 2026-09-28: A-05 part 2 (reusable group) ✅ [RAN] tests/v2-user-components.test.ts + live editor (Save as my component → insert from My components; two independent bolts). MCP parity re-audited: 33 tools cover every editor action (map in STATE.md).
+
+A-05 part 1 (model build) 2026-09-28: 5 runs of a fresh MCP-only agent building the flamethrower from Blank. Gaps turned into generic features between runs: EffectOutput glow settings + glow limit, PropMesh (+cylinder/box, Direction, pivot start), compile event listing, fire-puff flipbook, render_frames lit/bright stats + flood warning, MCP auto-reload, vfx_guide recipes, clearer Emitter/trail/pivot descriptions. Run 5 [SAW]: continuous orange jet, core, ember trails, smoke tail, floor light, nozzle; no capability gap reported. Pass pending the user's visual approval.

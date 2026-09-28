@@ -74,6 +74,9 @@ size/triangles/validation directly). MCP user components live in work/mcp/user-c
 - A-05 run 4: T-nozzle ok, glow controlled, but flame = scattered red blobs. [SAW] my own fire-jet (same tool) makes a
   continuous jet -> capability exists, know-how missing -> added MCP vfx_guide (recipes per element). Run 5 launched
   (doc a05e) with the guide. Also: PropMesh pivot wording; MCP reload wrapper backs off on crash.
+- A-05 run 5 (with vfx_guide): [SAW] long continuous orange jet, hot core, ember trails, lingering smoke, floor light,
+  nozzle; agent found NO capability gap, only rough edges (fixed: PropMesh pivot start, trail material note, guide core
+  values). Doc work/a05/a05e.vfx.json. AWAITING USER VISUAL VERDICT (ref-t*.png vs a05e-t*.png) = A-05 pass/fail.
 - Commit gate is now `bash tools/gate.sh && git commit ...` (tsc + fresh test log; a stale-log slip committed a broken
   file once, fixed in 03fcb35).
 - Left: sound (parked); user visual review of all families; merge to main after visual OK.
