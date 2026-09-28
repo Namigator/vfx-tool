@@ -48,6 +48,10 @@ async function main(): Promise<void> {
   vp.setGlow(q.get('glow') !== '0');
   vp.setGlowSettings(glowSettings(d));
   vp.setBackground(q.get('bg') === 'light' ? 'light' : 'dark');
+  // Optional matched camera: cam=x,y,z&look=x,y,z[&fov=deg].
+  const vec = (s: string | null) => { const v = (s ?? '').split(',').map(Number); return v.length === 3 && v.every(Number.isFinite) ? v as [number, number, number] : undefined; };
+  const cam = vec(q.get('cam')), look = vec(q.get('look'));
+  if (cam && look) vp.setCameraPose(cam, look, q.get('fov') ? Number(q.get('fov')) : undefined);
   vp.seek(Math.min(tick, d.durationTicks - 1));
   if (q.get('label') === '1') msg.textContent = `${d.name} — tick ${tick}/${d.durationTicks}`;
   // Let sprite atlases finish loading and a few frames present before the screenshot is taken.

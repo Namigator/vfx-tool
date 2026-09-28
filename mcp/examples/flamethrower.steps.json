@@ -1,0 +1,2060 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "flamethrower"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "flamethrower",
+   "durationTicks": 242,
+   "seed": 42,
+   "name": "Flamethrower (hand-built)"
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "flamethrower",
+   "anchorId": "source",
+   "position": [
+    -3,
+    1.2,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "flamethrower",
+   "anchorId": "target",
+   "position": [
+    3,
+    1.1,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_set_params",
+  {
+   "docId": "flamethrower",
+   "nodeId": "node-output",
+   "params": {
+    "glowStrength": 0.55,
+    "glowRadius": 0.3,
+    "glowThreshold": 1.2,
+    "glowLimit": 2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Schedule",
+   "id": "emit",
+   "params": {
+    "startTicks": 12,
+    "durationTicks": 84,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Emitter",
+   "id": "tonguea",
+   "params": {
+    "shape": "cone",
+    "coneAngle": 0.1047,
+    "radius": 0.02,
+    "rate": 210,
+    "burst": 0,
+    "speedMin": 8.5,
+    "speedMax": 11,
+    "lifetimeMin": 0.4,
+    "lifetimeMax": 0.75,
+    "rateOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.35
+      },
+      {
+       "x": 0.04,
+       "y": 1
+      },
+      {
+       "x": 0.92,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "InitialProperties",
+   "id": "tongueaip",
+   "params": {
+    "sizeMin": 0.22,
+    "sizeMax": 0.3,
+    "randomFrameStart": false
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Drag",
+   "id": "tongueadrag",
+   "params": {
+    "coefficient": 0.18
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "NoiseForce",
+   "id": "tongueanoise",
+   "params": {
+    "mode": "vector",
+    "amplitude": 3,
+    "frequency": 0.55,
+    "evolution": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Gravity",
+   "id": "tonguealift",
+   "params": {
+    "acceleration": [
+     0,
+     0.9,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Material",
+   "id": "tongueamat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "flame-tongue-a",
+    "blend": "normal",
+    "opacity": 0.62,
+    "dissolve": 0.6,
+    "dissolveStart": 0.5,
+    "dissolveSoftness": 0.12
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "BillboardRenderer",
+   "id": "tongueabb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 1.6,
+    "pivot": 0.38,
+    "flipbookMode": "overLife",
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.7,
+       "y": 3.7
+      },
+      {
+       "x": 1,
+       "y": 2.2
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.07,
+       "y": 1
+      },
+      {
+       "x": 0.55,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    },
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFFFFF",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.25,
+       "color": {
+        "srgb": "#FFE0A0",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.5,
+       "color": {
+        "srgb": "#FFA050",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.75,
+       "color": {
+        "srgb": "#C8501E",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#5A1E0A",
+        "alpha": 1
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "node-source.out",
+   "to": "tonguea.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "node-target.out",
+   "to": "tonguea.aim"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "emit.window",
+   "to": "tonguea.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "tonguea.particles",
+   "to": "tongueaip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "tongueaip.particles",
+   "to": "tongueadrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "tongueadrag.particles",
+   "to": "tongueanoise.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "tongueanoise.particles",
+   "to": "tonguealift.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "tonguealift.particles",
+   "to": "tongueabb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "tongueamat.material",
+   "to": "tongueabb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "tongueabb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Emitter",
+   "id": "tongueb",
+   "params": {
+    "shape": "cone",
+    "coneAngle": 0.1047,
+    "radius": 0.02,
+    "rate": 210,
+    "burst": 0,
+    "speedMin": 8.5,
+    "speedMax": 11,
+    "lifetimeMin": 0.4,
+    "lifetimeMax": 0.75,
+    "rateOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.35
+      },
+      {
+       "x": 0.04,
+       "y": 1
+      },
+      {
+       "x": 0.92,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "InitialProperties",
+   "id": "tonguebip",
+   "params": {
+    "sizeMin": 0.22,
+    "sizeMax": 0.3,
+    "randomFrameStart": false
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Drag",
+   "id": "tonguebdrag",
+   "params": {
+    "coefficient": 0.18
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "NoiseForce",
+   "id": "tonguebnoise",
+   "params": {
+    "mode": "vector",
+    "amplitude": 3,
+    "frequency": 0.55,
+    "evolution": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Gravity",
+   "id": "tongueblift",
+   "params": {
+    "acceleration": [
+     0,
+     0.9,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Material",
+   "id": "tonguebmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "flame-tongue-b",
+    "blend": "normal",
+    "opacity": 0.62,
+    "dissolve": 0.6,
+    "dissolveStart": 0.5,
+    "dissolveSoftness": 0.12
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "BillboardRenderer",
+   "id": "tonguebbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 1.6,
+    "pivot": 0.38,
+    "flipbookMode": "overLife",
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.7,
+       "y": 3.7
+      },
+      {
+       "x": 1,
+       "y": 2.2
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.07,
+       "y": 1
+      },
+      {
+       "x": 0.55,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    },
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFFFFF",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.25,
+       "color": {
+        "srgb": "#FFE0A0",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.5,
+       "color": {
+        "srgb": "#FFA050",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.75,
+       "color": {
+        "srgb": "#C8501E",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#5A1E0A",
+        "alpha": 1
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "node-source.out",
+   "to": "tongueb.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "node-target.out",
+   "to": "tongueb.aim"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "emit.window",
+   "to": "tongueb.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "tongueb.particles",
+   "to": "tonguebip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "tonguebip.particles",
+   "to": "tonguebdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "tonguebdrag.particles",
+   "to": "tonguebnoise.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "tonguebnoise.particles",
+   "to": "tongueblift.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "tongueblift.particles",
+   "to": "tonguebbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "tonguebmat.material",
+   "to": "tonguebbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "tonguebbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Material",
+   "id": "accentmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "flame-tongue-a",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFF2D0",
+     "alpha": 1
+    },
+    "opacity": 0.09
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "BillboardRenderer",
+   "id": "accentbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 1.6,
+    "pivot": 0.38,
+    "flipbookMode": "overLife",
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.8
+      },
+      {
+       "x": 0.45,
+       "y": 2.2
+      },
+      {
+       "x": 0.46,
+       "y": 0
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.05,
+       "y": 1
+      },
+      {
+       "x": 0.45,
+       "y": 0
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "tonguealift.particles",
+   "to": "accentbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "accentmat.material",
+   "to": "accentbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "accentbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Emitter",
+   "id": "core",
+   "params": {
+    "shape": "cone",
+    "coneAngle": 0.0524,
+    "radius": 0.015,
+    "rate": 130,
+    "burst": 0,
+    "speedMin": 10,
+    "speedMax": 13,
+    "lifetimeMin": 0.23333333333333334,
+    "lifetimeMax": 0.43333333333333335,
+    "rateOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.35
+      },
+      {
+       "x": 0.04,
+       "y": 1
+      },
+      {
+       "x": 0.92,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "InitialProperties",
+   "id": "coreip",
+   "params": {
+    "sizeMin": 0.15,
+    "sizeMax": 0.18
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Drag",
+   "id": "coredrag",
+   "params": {
+    "coefficient": 0.12
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "NoiseForce",
+   "id": "corenoise",
+   "params": {
+    "mode": "vector",
+    "amplitude": 1,
+    "frequency": 0.55,
+    "evolution": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Material",
+   "id": "coremat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "flame-tongue-b",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFF6E0",
+     "alpha": 1
+    },
+    "opacity": 0.24
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "BillboardRenderer",
+   "id": "corebb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 1.9,
+    "pivot": 0.38,
+    "flipbookMode": "overLife",
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.4,
+       "y": 3.4
+      },
+      {
+       "x": 1,
+       "y": 2
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.6,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "node-source.out",
+   "to": "core.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "node-target.out",
+   "to": "core.aim"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "emit.window",
+   "to": "core.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "core.particles",
+   "to": "coreip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "coreip.particles",
+   "to": "coredrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "coredrag.particles",
+   "to": "corenoise.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "corenoise.particles",
+   "to": "corebb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "coremat.material",
+   "to": "corebb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "corebb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "ParticleEvents",
+   "id": "smokeeva",
+   "params": {
+    "probability": 0.08,
+    "maxEvents": 1024
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "ParticleEvents",
+   "id": "embereva",
+   "params": {
+    "probability": 0.1,
+    "maxEvents": 1024
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "tonguealift.particles",
+   "to": "smokeeva.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "tonguealift.particles",
+   "to": "embereva.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "ParticleEvents",
+   "id": "smokeevb",
+   "params": {
+    "probability": 0.08,
+    "maxEvents": 1024
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "ParticleEvents",
+   "id": "emberevb",
+   "params": {
+    "probability": 0.1,
+    "maxEvents": 1024
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "tongueblift.particles",
+   "to": "smokeevb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "tongueblift.particles",
+   "to": "emberevb.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Emitter",
+   "id": "smoke",
+   "params": {
+    "shape": "sphere",
+    "radius": 0.05,
+    "burst": 1,
+    "rate": 0,
+    "speedMin": 0.2,
+    "speedMax": 0.6,
+    "lifetimeMin": 1,
+    "lifetimeMax": 1.9,
+    "useEventPosition": true,
+    "inheritVelocity": 0.35
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "InitialProperties",
+   "id": "smokeip",
+   "params": {
+    "sizeMin": 0.35,
+    "sizeMax": 0.5,
+    "randomFrameStart": true,
+    "rotationMin": 0,
+    "rotationMax": 6.283,
+    "angularVelocityMin": -0.7,
+    "angularVelocityMax": 0.7
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Drag",
+   "id": "smokedrag",
+   "params": {
+    "coefficient": 1.2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Gravity",
+   "id": "smokelift",
+   "params": {
+    "acceleration": [
+     0,
+     1.6,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "NoiseForce",
+   "id": "smokenoise",
+   "params": {
+    "mode": "curl",
+    "amplitude": 2.2,
+    "frequency": 0.55,
+    "evolution": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Material",
+   "id": "smokemat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "blend": "normal",
+    "tint": {
+     "srgb": "#6A625A",
+     "alpha": 1
+    },
+    "opacity": 1,
+    "groundFade": 0.2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "BillboardRenderer",
+   "id": "smokebb",
+   "params": {
+    "flipbookMode": "overLife",
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.45
+      },
+      {
+       "x": 1,
+       "y": 2.4
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.15
+      },
+      {
+       "x": 0.2,
+       "y": 0.32
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "smokeeva.death",
+   "to": "smoke.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "smokeevb.death",
+   "to": "smoke.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "smoke.particles",
+   "to": "smokeip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "smokeip.particles",
+   "to": "smokedrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "smokedrag.particles",
+   "to": "smokelift.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "smokelift.particles",
+   "to": "smokenoise.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "smokenoise.particles",
+   "to": "smokebb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "smokemat.material",
+   "to": "smokebb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "smokebb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Emitter",
+   "id": "embers",
+   "params": {
+    "shape": "sphere",
+    "radius": 0.03,
+    "burst": 1,
+    "rate": 0,
+    "speedMin": 2,
+    "speedMax": 4,
+    "lifetimeMin": 0.5,
+    "lifetimeMax": 1.2,
+    "useEventPosition": true,
+    "inheritVelocity": 0.45
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "InitialProperties",
+   "id": "emberip",
+   "params": {
+    "sizeMin": 0.012,
+    "sizeMax": 0.03
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Drag",
+   "id": "emberdrag",
+   "params": {
+    "coefficient": 1.1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Gravity",
+   "id": "embergrav",
+   "params": {
+    "acceleration": [
+     0,
+     -3.5,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "NoiseForce",
+   "id": "embernoise",
+   "params": {
+    "mode": "vector",
+    "amplitude": 4,
+    "frequency": 0.55,
+    "evolution": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Material",
+   "id": "embermat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "spark-streak",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFC080",
+     "alpha": 1
+    },
+    "emission": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "BillboardRenderer",
+   "id": "emberbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 3,
+    "pivot": 0.8,
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    },
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFDC8C",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#FF5A14",
+        "alpha": 1
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Material",
+   "id": "embertrailmat",
+   "params": {
+    "template": "SpriteUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FF9040",
+     "alpha": 1
+    },
+    "opacity": 0.7
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "ParticleTrail",
+   "id": "embertrail",
+   "params": {
+    "history": 0.05,
+    "width": 0.012,
+    "endFade": 0.4
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "embereva.death",
+   "to": "embers.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "emberevb.death",
+   "to": "embers.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "embers.particles",
+   "to": "emberip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "emberip.particles",
+   "to": "emberdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "emberdrag.particles",
+   "to": "embergrav.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "embergrav.particles",
+   "to": "embernoise.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "embernoise.particles",
+   "to": "emberbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "embermat.material",
+   "to": "emberbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "emberbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "embernoise.particles",
+   "to": "embertrail.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "embertrailmat.material",
+   "to": "embertrail.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "embertrail.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Schedule",
+   "id": "ignite",
+   "params": {
+    "startTicks": 12,
+    "durationTicks": 11,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "OffsetAnchor",
+   "id": "muzzle",
+   "params": {
+    "offset": [
+     0.25,
+     0,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "node-source.out",
+   "to": "muzzle.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Material",
+   "id": "flashmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "variant": 1,
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFE0A8",
+     "alpha": 1
+    },
+    "emission": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "SpriteRenderer",
+   "id": "flash",
+   "params": {
+    "size": 0.9,
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.35
+      },
+      {
+       "x": 0.55,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 1
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.55,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "muzzle.out",
+   "to": "flash.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "flashmat.material",
+   "to": "flash.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "ignite.window",
+   "to": "flash.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "flash.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "CameraImpulse",
+   "id": "shake",
+   "params": {
+    "durationTicks": 18,
+    "translation": 0.03,
+    "rotation": 0.004
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "ignite.start",
+   "to": "shake.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "shake.presentation",
+   "to": "node-output.presentation"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Schedule",
+   "id": "lightwin",
+   "params": {
+    "startTicks": 12,
+    "durationTicks": 114,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "OffsetAnchor",
+   "id": "lamp0",
+   "params": {
+    "offset": [
+     1.2,
+     0.3,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "node-source.out",
+   "to": "lamp0.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "PointLight",
+   "id": "light0",
+   "params": {
+    "color": {
+     "srgb": "#FF7A28",
+     "alpha": 1
+    },
+    "intensity": 16,
+    "range": 3.5,
+    "flicker": 0.25,
+    "flickerRate": 11,
+    "intensityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.04,
+       "y": 1
+      },
+      {
+       "x": 0.73,
+       "y": 0.95
+      },
+      {
+       "x": 0.85,
+       "y": 0.3
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "lamp0.out",
+   "to": "light0.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "lightwin.window",
+   "to": "light0.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "light0.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "OffsetAnchor",
+   "id": "lamp1",
+   "params": {
+    "offset": [
+     3,
+     0.3,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "node-source.out",
+   "to": "lamp1.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "PointLight",
+   "id": "light1",
+   "params": {
+    "color": {
+     "srgb": "#FF7A28",
+     "alpha": 1
+    },
+    "intensity": 16,
+    "range": 3.5,
+    "flicker": 0.25,
+    "flickerRate": 11,
+    "intensityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.04,
+       "y": 1
+      },
+      {
+       "x": 0.73,
+       "y": 0.95
+      },
+      {
+       "x": 0.85,
+       "y": 0.3
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "lamp1.out",
+   "to": "light1.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "lightwin.window",
+   "to": "light1.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "light1.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Schedule",
+   "id": "always",
+   "params": {
+    "startTicks": 0,
+    "durationTicks": 240,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "Material",
+   "id": "steel",
+   "params": {
+    "blend": "normal",
+    "tint": {
+     "srgb": "#3A2E26",
+     "alpha": 1
+    },
+    "roughness": 0.55,
+    "metalness": 0.4
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "PropMesh",
+   "id": "barrel",
+   "params": {
+    "mesh": "cylinder",
+    "size": 0.11,
+    "length": 1.1,
+    "pivot": "end"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "node-source.out",
+   "to": "barrel.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "node-target.out",
+   "to": "barrel.aim"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "steel.material",
+   "to": "barrel.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "always.window",
+   "to": "barrel.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "barrel.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "OffsetAnchor",
+   "id": "legtop",
+   "params": {
+    "offset": [
+     -0.85,
+     -0.05,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "node-source.out",
+   "to": "legtop.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flamethrower",
+   "type": "PropMesh",
+   "id": "leg",
+   "params": {
+    "mesh": "cylinder",
+    "size": 0.06,
+    "length": 0.5,
+    "pivot": "start",
+    "direction": [
+     0,
+     -1,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "legtop.out",
+   "to": "leg.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "steel.material",
+   "to": "leg.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "always.window",
+   "to": "leg.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flamethrower",
+   "from": "leg.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "flamethrower"
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "flamethrower",
+   "ticks": [
+    6,
+    21,
+    48,
+    72,
+    90,
+    132,
+    180
+   ],
+   "width": 847,
+   "height": 922,
+   "camera": {
+    "position": [
+     -3.51,
+     4.29,
+     11.34
+    ],
+    "target": [
+     0.25,
+     0.6,
+     0
+    ],
+    "fov": 76
+   }
+  },
+  true
+ ]
+]

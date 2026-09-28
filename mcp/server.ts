@@ -390,7 +390,8 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
   });
   tool('vfx_render_frames', 'Render effect frames to PNG with headless Chrome (needs the vite dev server) and return the images. Look at them before claiming anything about the visual result. Glow (bloom) is on by default and is tuned per effect on the EffectOutput node (glowStrength, glowRadius, glowThreshold, glowLimit — see vfx_describe_node_type EffectOutput); glow:false shows the raw shapes.', {
     docId: z.string(), ticks: z.array(z.number().int().min(0)).min(1).max(8), width: z.number().int().min(160).max(1920).optional(), height: z.number().int().min(120).max(1080).optional(), glow: z.boolean().optional(), background: z.enum(['dark', 'light']).optional(),
-  }, ({ docId, ticks, width, height, glow, background }) => {
+    camera: z.object({ position: z.tuple([z.number(), z.number(), z.number()]), target: z.tuple([z.number(), z.number(), z.number()]), fov: z.number().min(5).max(120).optional() }).optional(),
+  }, ({ docId, ticks, width, height, glow, background, camera }) => {
     const d = getDoc(docId); persist(d);
     const chrome = options.chromePath ?? CHROME_CANDIDATES.find(p => p && existsSync(p));
     if (!chrome) return bad('No Chrome/Edge found; set VFX_CHROME to its executable path.');
@@ -399,7 +400,7 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
     for (const tick of ticks) {
       const out = join(dir, `${docId}-t${tick}${background === 'light' ? '-light' : ''}.png`), profile = mkdtempSync(join(tmpdir(), 'vfx-chrome-'));
       rmSync(out, { force: true });
-      const url = new URL(`capture.html?doc=/work/mcp/${encodeURIComponent(docId)}.json&tick=${tick}&label=1${glow === false ? '&glow=0' : ''}${background === 'light' ? '&bg=light' : ''}`, editorUrl).href;
+      const url = new URL(`capture.html?doc=/work/mcp/${encodeURIComponent(docId)}.json&tick=${tick}&label=1${glow === false ? '&glow=0' : ''}${background === 'light' ? '&bg=light' : ''}${camera ? `&cam=${camera.position.join(',')}&look=${camera.target.join(',')}${camera.fov ? `&fov=${camera.fov}` : ''}` : ''}`, editorUrl).href;
       spawnSync(chrome, ['--headless=new', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--hide-scrollbars', '--no-first-run', '--no-default-browser-check',
         `--user-data-dir=${profile}`, `--window-size=${width ?? 960},${height ?? 540}`, '--virtual-time-budget=6000', `--screenshot=${out}`, url], { timeout: 90_000, stdio: 'ignore' });
       rmSync(profile, { recursive: true, force: true });

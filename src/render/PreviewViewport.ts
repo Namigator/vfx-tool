@@ -706,6 +706,22 @@ export class PreviewViewport {
     this.#applyPathPlan(plan);
   }
 
+  /**
+   * Explicit camera pose (matched framing for A/B comparisons, 17 Gate B): world position, look-at target and
+   * optional vertical field of view in degrees. Stays until the next plan load resets the camera.
+   */
+  setCameraPose(position: readonly [number, number, number], target: readonly [number, number, number], fovDeg?: number): void {
+    this.#camera.position.set(position[0], position[1], position[2]);
+    this.#controls.target.set(target[0], target[1], target[2]);
+    if (fovDeg !== undefined && fovDeg > 1 && fovDeg < 170) this.#camera.fov = fovDeg;
+    this.#camera.updateProjectionMatrix();
+    this.#controls.update();
+    this.#pathCamera = false;
+    this.#userOrbited = true; // Plan reloads keep the pose instead of re-framing.
+    this.#frameSets = null; // Resizes must not auto-frame over an explicit pose (same as a user orbit).
+    this.#emitFrame(true);
+  }
+
   /** Restores the point-mode camera pose, clip planes and orbit target. */
   #resetCamera(): void {
     this.#camera.position.set(...DEFAULT_CAMERA);
