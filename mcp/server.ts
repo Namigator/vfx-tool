@@ -51,7 +51,16 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
 
   const mirrorPath = (id: string) => join(root, 'work', 'mcp', `${id}.json`);
   const persist = (d: EffectDocumentV2) => { mkdirSync(dirname(mirrorPath(d.id)), { recursive: true }); writeFileSync(mirrorPath(d.id), JSON.stringify(d, null, 2)); };
-  const getDoc = (id: string) => { const d = docs.get(id); if (!d) throw new Error(`No open document "${id}". Open ones: ${[...docs.keys()].join(', ') || 'none'}.`); return d; };
+  const getDoc = (id: string) => {
+    let d = docs.get(id);
+    // After an automatic server reload (mcp/vfx-mcp-reload.mjs) open documents come back from their mirror.
+    if (!d && /^[A-Za-z0-9_-]+$/.test(id) && existsSync(mirrorPath(id))) {
+      const v = validateDocument(JSON.parse(readFileSync(mirrorPath(id), 'utf8')), { registry });
+      if (v.ok) { d = v.value; docs.set(id, d); }
+    }
+    if (!d) throw new Error(`No open document "${id}". Open ones: ${[...docs.keys()].join(', ') || 'none'}.`);
+    return d;
+  };
   const rootGraph = (d: EffectDocumentV2, graphId?: string) => {
     const g = d.graphs.find(x => x.id === (graphId ?? d.rootGraphId));
     if (!g) throw new Error(`Graph "${graphId}" not found.`);
