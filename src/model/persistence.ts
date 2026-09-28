@@ -8,7 +8,23 @@ export const DRAFT_KEY = 'vfx-studio.v2.draft';
 /** Minimal Storage surface (localStorage in the browser, a Map-backed fake in tests). */
 export type DraftStorage = { getItem(key: string): string | null; setItem(key: string, value: string): void };
 
-export type DraftSaveResult = { ok: true; bytes: number } | { ok: false; message: string };
+export type DraftSaveResult = { ok: true; bytes: number; revision: number } | { ok: false; message: string; conflict?: true };
+
+/**
+ * 13 "Two tabs editing one document": the draft carries a revision counter and the tab that wrote it. A tab
+ * saves only if the stored revision is still the one it loaded or last wrote (compare-and-swap); otherwise it
+ * is stale and must reload or keep its version as a copy — it never overwrites the other tab's work.
+ */
+export const DRAFT_META_KEY = 'vfx-studio.v2.draft-meta';
+export type DraftMeta = { revision: number; tabId: string };
+export type DraftGuard = { tabId: string; baseRevision: number };
+
+export function readDraftMeta(storage: DraftStorage | undefined): DraftMeta {
+  try {
+    const m = storage ? JSON.parse(storage.getItem(DRAFT_META_KEY) ?? 'null') : null;
+    return m && Number.isInteger(m.revision) && typeof m.tabId === 'string' ? m : { revision: 0, tabId: '' };
+  } catch { return { revision: 0, tabId: '' }; }
+}
 
 export const REVISIONS_KEY = 'vfx-studio.v2.draft-revisions';
 export const CORRUPT_KEY = 'vfx-studio.v2.draft-corrupt';
@@ -23,18 +39,25 @@ export function readRevisions(storage: DraftStorage | undefined): DraftRevision[
   } catch { return []; }
 }
 
-export function saveDraft(storage: DraftStorage, doc: EffectDocumentV2, now = new Date()): DraftSaveResult {
+export function saveDraft(storage: DraftStorage, doc: EffectDocumentV2, now = new Date(), guard?: DraftGuard): DraftSaveResult {
   try {
+    const meta = readDraftMeta(storage);
+    if (guard && meta.revision !== guard.baseRevision && meta.tabId !== guard.tabId) {
+      return { ok: false, conflict: true, message: 'This effect was changed in another tab; this tab will not overwrite it.' };
+    }
     const text = JSON.stringify(doc);
     let previous: string | null = null;
     try { previous = storage.getItem(DRAFT_KEY); } catch { /* unreadable storage: no revision */ }
+    if (previous === text) return { ok: true, bytes: text.length, revision: meta.revision }; // Unchanged: no new revision, other tabs stay current.
     storage.setItem(DRAFT_KEY, text);
     // The draft being replaced becomes a revision (newest first) unless the last revision is recent.
     const revs = readRevisions(storage);
     if (previous && previous !== text && (!revs.length || now.getTime() - Date.parse(revs[0].savedAt) >= REVISION_INTERVAL_MS)) {
       try { storage.setItem(REVISIONS_KEY, JSON.stringify([{ savedAt: now.toISOString(), text: previous }, ...revs].slice(0, MAX_REVISIONS))); } catch { /* quota: the latest draft is already saved */ }
     }
-    return { ok: true, bytes: text.length };
+    const revision = meta.revision + 1;
+    storage.setItem(DRAFT_META_KEY, JSON.stringify({ revision, tabId: guard?.tabId ?? '' }));
+    return { ok: true, bytes: text.length, revision };
   } catch (e) {
     return { ok: false, message: e instanceof Error ? e.message : String(e) };
   }
@@ -72,10 +95,43 @@ export function saveToShelf(storage: DraftStorage, doc: EffectDocumentV2, now = 
   return { ok: true, entries };
 }
 
-export function removeFromShelf(storage: DraftStorage, name: string): ShelfEntry[] {
-  const entries = readShelf(storage).filter(e => e.name !== name);
-  try { storage.setItem(SHELF_KEY, JSON.stringify(entries)); } catch { /* storage unavailable: the in-memory list still updates */ }
+/** Removing a project moves it to the trash (13 "Delete project moves it to a local trash record"). */
+export function removeFromShelf(storage: DraftStorage, name: string, now = new Date()): ShelfEntry[] {
+  const all = readShelf(storage), gone = all.find(e => e.name === name);
+  const entries = all.filter(e => e.name !== name);
+  try {
+    storage.setItem(SHELF_KEY, JSON.stringify(entries));
+    if (gone) storage.setItem(TRASH_KEY, JSON.stringify([{ ...gone, removedAt: now.toISOString() }, ...readTrash(storage).filter(t => t.name !== name)].slice(0, MAX_SHELF)));
+  } catch { /* storage unavailable: the in-memory list still updates */ }
   return entries;
+}
+
+export const TRASH_KEY = 'vfx-studio.v2.trash';
+export type TrashEntry = ShelfEntry & { removedAt: string };
+
+export function readTrash(storage: DraftStorage | undefined): TrashEntry[] {
+  try {
+    const raw = storage ? JSON.parse(storage.getItem(TRASH_KEY) ?? '[]') : [];
+    return Array.isArray(raw) ? raw.filter((e): e is TrashEntry => !!e && typeof e.name === 'string' && typeof e.text === 'string' && typeof e.removedAt === 'string') : [];
+  } catch { return []; }
+}
+
+/** Puts a trashed project back on the shelf (replacing a same-name project is refused, never silent). */
+export function restoreFromTrash(storage: DraftStorage, name: string): { ok: true; shelf: ShelfEntry[]; trash: TrashEntry[] } | { ok: false; message: string } {
+  const trash = readTrash(storage), item = trash.find(t => t.name === name);
+  if (!item) return { ok: false, message: `"${name}" is not in the trash.` };
+  const shelf = readShelf(storage);
+  if (shelf.some(e => e.name === name)) return { ok: false, message: `A project named "${name}" already exists; rename or remove it first.` };
+  if (shelf.length >= MAX_SHELF) return { ok: false, message: `The project shelf is full (${MAX_SHELF}).` };
+  const { removedAt: _removed, ...entry } = item;
+  const nextShelf = [entry, ...shelf], nextTrash = trash.filter(t => t.name !== name);
+  try { storage.setItem(SHELF_KEY, JSON.stringify(nextShelf)); storage.setItem(TRASH_KEY, JSON.stringify(nextTrash)); } catch (e) { return { ok: false, message: e instanceof Error ? e.message : String(e) }; }
+  return { ok: true, shelf: nextShelf, trash: nextTrash };
+}
+
+/** Empty trash: the explicit, final removal. */
+export function emptyTrash(storage: DraftStorage): void {
+  try { storage.setItem(TRASH_KEY, '[]'); } catch { /* storage unavailable */ }
 }
 
 /**

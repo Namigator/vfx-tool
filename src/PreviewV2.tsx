@@ -13,7 +13,7 @@ import { TexturePanel } from './editor/TexturePanel.tsx';
 import { getAssetBytes, putAssetBytes } from './model/assetStore.ts';
 import { buildPack, readPack, type PackAsset } from './model/vfxpack.ts';
 import { hasAssetUrl, registerAssetUrl } from './assets/assetUrls.ts';
-import { documentFileName, loadDraftText, recoverDraft, readShelf, removeFromShelf, saveDraft, saveToShelf, type ShelfEntry } from './model/persistence.ts';
+import { DRAFT_META_KEY, documentFileName, emptyTrash, loadDraftText, readDraftMeta, readShelf, readTrash, recoverDraft, removeFromShelf, restoreFromTrash, saveDraft, saveToShelf, type ShelfEntry, type TrashEntry } from './model/persistence.ts';
 import { ControlsPanel } from './editor/ControlsPanel.tsx';
 import { compileAudio } from './graph/toAudio.ts';
 import { choosePreviewMode, createLightningAudioDemoDocument, hasRootAudio, ribbonStyleDiagnostics, type PreviewModeChoice } from './render/previewMode.ts';
@@ -297,13 +297,30 @@ export default function PreviewV2() {
   const [saveStatus, setSaveStatus] = useState('');
   /** File actions (Keep, Export pack, Open pack, Remove) report here; autosave never overwrites it. */
   const [fileNote, setFileNote] = useState(() => recoveredFromRef.current ? `The latest autosave could not be read; restored the version saved ${new Date(recoveredFromRef.current).toLocaleString()}.` : '');
+  // Two tabs (13): autosave is a compare-and-swap on the draft revision; a tab that fell behind stops saving
+  // and offers to load the other tab's version or keep its own as a project copy.
+  const tabIdRef = useRef(Math.random().toString(36).slice(2));
+  const baseRevisionRef = useRef(readDraftMeta(typeof localStorage === 'undefined' ? undefined : localStorage).revision);
+  const [stale, setStale] = useState(false);
   useEffect(() => {
+    if (stale) return;
     const t = setTimeout(() => {
-      const r = saveDraft(localStorage, doc);
-      setSaveStatus(r.ok ? 'Saved locally' : `Save failed: ${r.message}`);
+      const r = saveDraft(localStorage, doc, new Date(), { tabId: tabIdRef.current, baseRevision: baseRevisionRef.current });
+      if (r.ok) baseRevisionRef.current = r.revision;
+      else if (r.conflict) setStale(true);
+      setSaveStatus(r.ok ? 'Saved locally' : r.conflict ? 'Not saved: changed in another tab' : `Save failed: ${r.message}`);
     }, 400);
     return () => clearTimeout(t);
-  }, [doc]);
+  }, [doc, stale]);
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== DRAFT_META_KEY) return;
+      const m = readDraftMeta(localStorage);
+      if (m.tabId !== tabIdRef.current && m.revision !== baseRevisionRef.current) setStale(true);
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   const downloadDocument = useCallback(() => {
     const d = historyRef.current!.snapshot();
@@ -351,6 +368,8 @@ export default function PreviewV2() {
   // Project shelf: several named effects kept in browser storage (Keep / choose / Remove).
   const [shelf, setShelf] = useState<ShelfEntry[]>(() => readShelf(typeof localStorage === 'undefined' ? undefined : localStorage));
   const [shelfPick, setShelfPick] = useState('');
+  const [trash, setTrash] = useState<TrashEntry[]>(() => readTrash(typeof localStorage === 'undefined' ? undefined : localStorage));
+  const [trashPick, setTrashPick] = useState('');
   const keepProject = useCallback(() => {
     const r = saveToShelf(localStorage, historyRef.current!.snapshot());
     if (r.ok) { setShelf(r.entries); setShelfPick(r.entries[0].name); setFileNote(`Kept "${r.entries[0].name}" in projects`); }
@@ -601,8 +620,23 @@ export default function PreviewV2() {
             <option value="">Projects ({shelf.length})…</option>
             {shelf.map(s => <option key={s.name} value={s.name}>{s.name} — {new Date(s.savedAt).toLocaleString()}</option>)}
           </select>
-          <button type="button" disabled={!shelfPick} onClick={() => { setShelf(removeFromShelf(localStorage, shelfPick)); setFileNote(`Removed "${shelfPick}" from projects`); setShelfPick(''); }} title="Remove the chosen project from the shelf (the open effect is untouched)">Remove</button>
+          <button type="button" disabled={!shelfPick} onClick={() => { setShelf(removeFromShelf(localStorage, shelfPick)); setTrash(readTrash(localStorage)); setFileNote(`Moved "${shelfPick}" to the trash`); setShelfPick(''); }} title="Move the chosen project to the trash (the open effect is untouched; restore it from Trash)">Remove</button>
+          {trash.length > 0 && <>
+            <select aria-label="Trash" value={trashPick} onChange={e => setTrashPick(e.currentTarget.value)}>
+              <option value="">Trash ({trash.length})…</option>
+              {trash.map(t => <option key={t.name} value={t.name}>{t.name} — removed {new Date(t.removedAt).toLocaleString()}</option>)}
+            </select>
+            <button type="button" disabled={!trashPick} onClick={() => { const r = restoreFromTrash(localStorage, trashPick); if (r.ok) { setShelf(r.shelf); setTrash(r.trash); setFileNote(`Restored "${trashPick}" to projects`); setTrashPick(''); } else setFileNote(r.message); }} title="Put the chosen project back in Projects">Restore</button>
+            <button type="button" onClick={() => { if (window.confirm(`Permanently delete ${trash.length} project(s) in the trash?`)) { emptyTrash(localStorage); setTrash([]); setTrashPick(''); setFileNote('Trash emptied'); } }} title="Permanently delete everything in the trash">Empty trash</button>
+          </>}
           <span className="pv2-note" role="status" aria-live="polite">{saveStatus}</span>
+          {stale && (
+            <span className="pv2-stale" role="alert">
+              This effect was changed in another tab, so this tab stopped saving.
+              <button type="button" onClick={() => { const t = loadDraftText(localStorage); baseRevisionRef.current = readDraftMeta(localStorage).revision; setStale(false); if (t) replace(t, 'Load the version from the other tab'); }}>Load the other tab's version</button>
+              <button type="button" onClick={() => { const mine = historyRef.current!.snapshot(); const r = saveToShelf(localStorage, { ...mine, name: `${mine.name || 'effect'} (copy)` }); if (r.ok) setShelf(r.entries); const t = loadDraftText(localStorage); baseRevisionRef.current = readDraftMeta(localStorage).revision; setStale(false); if (t) replace(t, 'Load the version from the other tab'); setFileNote(r.ok ? `Kept this tab's version as "${r.entries[0].name}" in Projects` : r.message); }}>Keep mine as a copy, then load theirs</button>
+            </span>
+          )}
           {fileNote && <span className="pv2-note" role="status" aria-live="polite">{fileNote}</span>}
         </div>
         <div className="pv2-history" role="group" aria-label="History">

@@ -68,3 +68,41 @@ test('draft revisions: replaced drafts become revisions (throttled, max 5); a co
   assert.ok(r.recoveredFrom);
   assert.equal(s.m.get(CORRUPT_KEY), '{"format": broken', 'unreadable draft preserved');
 });
+
+test('two tabs: compare-and-swap on the draft revision blocks a stale tab; unchanged saves do not bump the revision', async () => {
+  const { readDraftMeta } = await import('../src/model/persistence.ts');
+  const s = memory(), a = { tabId: 'A', baseRevision: 0 }, b = { tabId: 'B', baseRevision: 0 };
+  const d1 = createF01Document(), d2 = { ...createF01Document(), name: 'changed in A' }, d3 = { ...createF01Document(), name: 'changed in B' };
+  const r1 = saveDraft(s, d1, new Date(), a); assert.ok(r1.ok); a.baseRevision = r1.ok ? r1.revision : -1;
+  const r2 = saveDraft(s, d2, new Date(), a); assert.ok(r2.ok); a.baseRevision = r2.ok ? r2.revision : -1;
+  // B loaded at revision 0 and never saw A's writes: its save is refused and A's work survives.
+  const rb = saveDraft(s, d3, new Date(), b);
+  assert.ok(!rb.ok && rb.conflict);
+  assert.equal(JSON.parse(loadDraftText(s)!).name, 'changed in A');
+  // B reloads (takes the current revision) and may save again.
+  b.baseRevision = readDraftMeta(s).revision;
+  assert.ok(saveDraft(s, d3, new Date(), b).ok);
+  // Saving identical content does not create a new revision (other tabs stay current).
+  const before = readDraftMeta(s).revision;
+  assert.ok(saveDraft(s, d3, new Date(), { tabId: 'B', baseRevision: before }).ok);
+  assert.equal(readDraftMeta(s).revision, before);
+});
+
+test('trash: Remove moves a project to the trash; Restore puts it back; Empty trash deletes; name clashes are refused', async () => {
+  const { readTrash, restoreFromTrash, emptyTrash } = await import('../src/model/persistence.ts');
+  const s = memory();
+  saveToShelf(s, { ...createF01Document(), name: 'keep me' });
+  removeFromShelf(s, 'keep me');
+  assert.deepEqual(readShelf(s).map(e => e.name), []);
+  assert.deepEqual(readTrash(s).map(e => e.name), ['keep me']);
+  const r = restoreFromTrash(s, 'keep me');
+  assert.ok(r.ok);
+  assert.deepEqual(readShelf(s).map(e => e.name), ['keep me']);
+  assert.deepEqual(readTrash(s), []);
+  removeFromShelf(s, 'keep me');
+  saveToShelf(s, { ...createF01Document(), name: 'keep me' });
+  const clash = restoreFromTrash(s, 'keep me');
+  assert.ok(!clash.ok && /already exists/.test(clash.message));
+  emptyTrash(s);
+  assert.deepEqual(readTrash(s), []);
+});
