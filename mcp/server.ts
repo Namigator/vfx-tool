@@ -16,6 +16,7 @@ import { COMPONENT_TEMPLATES, insertComponent } from '../src/graph/components.ts
 import { groupSelection } from '../src/graph/groupSelection.ts';
 import { insertUserComponent, saveGroupAsComponent, type UserComponent } from '../src/graph/userComponents.ts';
 import { truncationWarning } from '../src/graph/truncation.ts';
+import { describeFrameStats, pngFrameStats } from './frameStats.ts';
 import { createL01AudioDocument } from '../src/graph/audioFixtures.ts';
 import { compileParticlePreview } from '../src/graph/toParticles.ts';
 import { compilePathPreview } from '../src/graph/toPaths.ts';
@@ -391,7 +392,7 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
     const chrome = options.chromePath ?? CHROME_CANDIDATES.find(p => p && existsSync(p));
     if (!chrome) return bad('No Chrome/Edge found; set VFX_CHROME to its executable path.');
     const dir = join(root, 'work', 'mcp', 'frames'); mkdirSync(dir, { recursive: true });
-    const content: Content[] = [], paths: string[] = [];
+    const content: Content[] = [], paths: string[] = [], stats: string[] = [];
     for (const tick of ticks) {
       const out = join(dir, `${docId}-t${tick}${background === 'light' ? '-light' : ''}.png`), profile = mkdtempSync(join(tmpdir(), 'vfx-chrome-'));
       rmSync(out, { force: true });
@@ -400,9 +401,11 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
         `--user-data-dir=${profile}`, `--window-size=${width ?? 960},${height ?? 540}`, '--virtual-time-budget=6000', `--screenshot=${out}`, url], { timeout: 90_000, stdio: 'ignore' });
       rmSync(profile, { recursive: true, force: true });
       if (!existsSync(out)) return bad(`Chrome produced no image for tick ${tick}. Is the dev server running at ${editorUrl}?`);
-      content.push({ type: 'image', data: readFileSync(out).toString('base64'), mimeType: 'image/png' }); paths.push(out);
+      const bytes = readFileSync(out);
+      content.push({ type: 'image', data: bytes.toString('base64'), mimeType: 'image/png' }); paths.push(out);
+      stats.push(describeFrameStats(tick, pngFrameStats(bytes)));
     }
-    content.unshift({ type: 'text', text: `Rendered ${ticks.length} frame(s): ${paths.join(', ')}` });
+    content.unshift({ type: 'text', text: `Rendered ${ticks.length} frame(s): ${paths.join(', ')}\n${stats.join('\n')}` });
     return { content };
   });
   return server;
