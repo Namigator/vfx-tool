@@ -127,3 +127,38 @@ test('MCP: import a GLB onto a MeshRenderer; non-GLB and bad renderer ids are re
   const d2 = JSON.parse(readFileSync(join(root, 'work/mcp/m2.json'), 'utf8'));
   assert.equal(d2.assets[0].interpretation.mesh.importScale, 0.01);
 });
+
+test('MCP parity: group nodes, save a group as a user component, insert it twice, compile reports travel', async () => {
+  const { call } = await connect();
+  await call('vfx_new_document', { template: 'blank', id: 'u' });
+  const ins = await call('vfx_add_component', { docId: 'u', component: 'energy-bolt', group: true });
+  const gid = /Group node "([^"]+)"/.exec(ins.text)![1];
+  const saved = await call('vfx_save_group_component', { docId: 'u', groupNodeId: gid, name: 'Parity bolt' });
+  const uid = /as (user:[^.]+)\./.exec(saved.text)![1];
+  assert.match((await call('vfx_list_components', {})).text, new RegExp(uid));
+  await call('vfx_new_document', { template: 'blank', id: 'u2' });
+  assert.equal((await call('vfx_add_component', { docId: 'u2', component: uid })).error, false);
+  assert.equal((await call('vfx_add_component', { docId: 'u2', component: uid })).error, false);
+  const compiled = (await call('vfx_compile', { docId: 'u2' })).text;
+  assert.equal((compiled.match(/^travel /gm) ?? []).length, 2, compiled);
+  await call('vfx_new_document', { template: 'f01', id: 'g' });
+  const grouped = await call('vfx_group_nodes', { docId: 'g', nodeIds: ['node-emitter', 'node-initial'], label: 'Block' });
+  assert.match(grouped.text, /Group node "group" wraps graph/);
+  assert.equal((await call('vfx_group_nodes', { docId: 'g', nodeIds: ['node-output'] })).error, true);
+  assert.match((await call('vfx_delete_user_component', { id: uid })).text, /Deleted/);
+});
+
+test('MCP parity: undo/redo, list documents, move node', async () => {
+  const { call } = await connect();
+  await call('vfx_new_document', { template: 'blank', id: 'h' });
+  await call('vfx_add_node', { docId: 'h', type: 'Gravity', id: 'grav' });
+  assert.match((await call('vfx_get_document', { docId: 'h' })).text, /grav Gravity/);
+  assert.match((await call('vfx_undo', { docId: 'h' })).text, /Undone/);
+  assert.doesNotMatch((await call('vfx_get_document', { docId: 'h' })).text, /grav Gravity/);
+  assert.match((await call('vfx_redo', { docId: 'h' })).text, /Redone/);
+  assert.match((await call('vfx_get_document', { docId: 'h' })).text, /grav Gravity/);
+  assert.equal((await call('vfx_redo', { docId: 'h' })).error, true);
+  assert.match((await call('vfx_move_node', { docId: 'h', nodeId: 'grav', x: 40, y: 80 })).text, /Moved/);
+  assert.match((await call('vfx_get_document', { docId: 'h', full: true })).text, /"grav": \{\s*"x": 40,\s*"y": 80/);
+  assert.match((await call('vfx_list_documents', {})).text, /work\/mcp\/h\.json/);
+});

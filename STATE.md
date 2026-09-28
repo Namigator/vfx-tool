@@ -29,6 +29,18 @@
 ## Rendering
 - HDR composer + UnrealBloom (08 defaults .8/.45/1.0) + ACES/sRGB OutputPass; background via scene.background (renderer clear colour double-encoded through the composer). Glow toggle in the transport.
 
+## Standing rule: MCP parity (user, 2026-09-28)
+Every editor function must also exist as an MCP tool (33 tools). Editor → MCP map: New/Open/Save/Export pack/Open pack
+→ vfx_new/open/save_document, vfx_export_pack, vfx_open_pack; Projects list → vfx_list_documents; Undo/Redo → vfx_undo/redo;
+Add node/remove/connect/disconnect/inspector/enable/rename → vfx_add/remove_node, vfx_connect/disconnect, vfx_set_params;
+drag node → vfx_move_node; Add component (built-in + My components) → vfx_list/add_component; Group selection →
+vfx_group_nodes; Save as my component / delete → vfx_save_group_component, vfx_delete_user_component; knobs (number,
+colour, vector) → vfx_list/set_control; anchors → vfx_set_anchor; duration/seed/name → vfx_set_document; import texture /
+3D model (+scale) → vfx_import_texture/mesh; Play/scrub/glow/light arena → vfx_render_frames (glow, background);
+sound → vfx_render_audio; diagnostics, travel readout, tail warning → vfx_compile; particle inspection → vfx_sample_particles.
+Browser-only by nature: two-tab conflict banner, trash (MCP documents are files), import previews (MCP import reports
+size/triangles/validation directly). MCP user components live in work/mcp/user-components.json (editor: browser storage).
+
 ## Session 2026-09-28 (user away: "cant test rn, please implement")
 - Done: Light (09) + Energy (10) families; trails fade only at the tail (head solid); non-number knobs (colour picker commits on close,
   vector fields, checkbox, dropdown) + axis bindings (a number knob drives one axis of a vec2/vec3); Energy knobs Arc bend, Accent colour,
@@ -40,6 +52,8 @@
   preview with flipbook grid (+ fixed a crash typing in Grid); projects/trash in IndexedDB (migrated, merged).
 - Decided: worker simulation stays deferred (measured < 1 ms/tick avg, ≤ 4.5 ms worst vs 16 ms frame).
 - Also done: GLB preview before import (picture, size in metres, triangle count).
+- Also done: Save group as my component (A-05 part 2 [RAN]: insert twice, edit one, other unchanged); MCP parity tools
+  (group nodes, user components, undo/redo, list documents, move node, travel + tail warning in compile). 530 tests.
 - Left: sound (parked); user visual review of all families; A-05 model-build test; merge to main after visual OK.
 - User visual review still pending for every family (they could not test today).
 

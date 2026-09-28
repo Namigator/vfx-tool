@@ -4,7 +4,7 @@
 // work/mcp/<id>.json after every successful change, which the editor opens via ?workspace=v2&doc=...
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -13,6 +13,9 @@ import { validateDocument } from '../src/model/document.ts';
 import { createRegistry } from '../src/graph/registry.ts';
 import { createBlankDocument, createF01Document, createForcesDemoDocument, createL01Document } from '../src/graph/fixtures.ts';
 import { COMPONENT_TEMPLATES, insertComponent } from '../src/graph/components.ts';
+import { groupSelection } from '../src/graph/groupSelection.ts';
+import { insertUserComponent, saveGroupAsComponent, type UserComponent } from '../src/graph/userComponents.ts';
+import { truncationWarning } from '../src/graph/truncation.ts';
 import { createL01AudioDocument } from '../src/graph/audioFixtures.ts';
 import { compileParticlePreview } from '../src/graph/toParticles.ts';
 import { compilePathPreview } from '../src/graph/toPaths.ts';
@@ -60,9 +63,14 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
     const msg = fn(next);
     const v = validateDocument(next, { registry });
     if (!v.ok) return bad(`Rejected (document unchanged):\n${fmtErrors(v.errors)}`);
+    // Undo/redo like the editor: every committed change pushes the previous version (max 100 per document).
+    const past = undo.get(id) ?? [];
+    past.push(getDoc(id)); if (past.length > 100) past.shift();
+    undo.set(id, past); redo.delete(id);
     docs.set(id, v.value); persist(v.value);
     return ok(msg);
   };
+  const undo = new Map<string, EffectDocumentV2[]>(), redo = new Map<string, EffectDocumentV2[]>();
   const tool = <S extends z.ZodRawShape>(name: string, description: string, shape: S, fn: (a: z.infer<z.ZodObject<S>>) => Result | Promise<Result>) =>
     server.registerTool(name, { description, inputSchema: shape }, (async (a: z.infer<z.ZodObject<S>>) => {
       try { return await fn(a); } catch (e) { return bad(e instanceof Error ? e.message : String(e)); }
@@ -123,12 +131,67 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
       d.anchors.push({ id: a.anchorId, name: a.name ?? a.anchorId, position: a.position as Vec3 }); return `Added anchor ${a.anchorId}.`;
     }));
 
+  tool('vfx_undo', 'Undo the last change to a document (like the editor Undo).', { docId: z.string() }, ({ docId }) => {
+    const past = undo.get(docId) ?? [];
+    const prev = past.pop();
+    if (!prev) return bad('Nothing to undo.');
+    redo.set(docId, [...(redo.get(docId) ?? []), getDoc(docId)]);
+    docs.set(docId, prev); persist(prev);
+    return ok(`Undone (${past.length} more step(s) available).`);
+  });
+  tool('vfx_redo', 'Redo the last undone change (like the editor Redo).', { docId: z.string() }, ({ docId }) => {
+    const next = redo.get(docId)?.pop();
+    if (!next) return bad('Nothing to redo.');
+    undo.set(docId, [...(undo.get(docId) ?? []), getDoc(docId)]);
+    docs.set(docId, next); persist(next);
+    return ok('Redone.');
+  });
+  tool('vfx_list_documents', 'Documents open in memory plus saved files (work/mcp/*.json mirrors and presets/*.vfx.json), like the editor Projects list.', {}, () => {
+    const files = (dir: string, suffix: string) => { try { return readdirSync(join(root, dir)).filter(f => f.endsWith(suffix) && f !== 'user-components.json').map(f => `${dir}/${f}`); } catch { return []; } };
+    return ok([`open: ${[...docs.keys()].join(', ') || 'none'}`, ...files('work/mcp', '.json'), ...files('presets', '.vfx.json')].join('\n'));
+  });
+  tool('vfx_move_node', 'Place a node on the graph canvas (editor layout x/y), like dragging it in the editor.', { docId: z.string(), nodeId: z.string(), x: z.number(), y: z.number(), graphId: z.string().optional() }, a =>
+    mutate(a.docId, d => {
+      const g = rootGraph(d, a.graphId);
+      if (!g.nodes.some(n => n.id === a.nodeId)) throw new Error(`No node "${a.nodeId}" in graph ${g.id}.`);
+      (d.editor.graphs[g.id] ??= { nodes: {}, viewport: { x: 0, y: 0, zoom: 1 } }).nodes[a.nodeId] = { x: a.x, y: a.y };
+      return `Moved ${a.nodeId} to (${a.x}, ${a.y}).`;
+    }));
+
   // ---------- components ----------
-  tool('vfx_list_components', 'Ready-made, pre-wired components (the same list as the editor Add component menu).', {}, () =>
-    ok(COMPONENT_TEMPLATES.map(c => `${c.id}: ${c.label} — ${c.description} (${c.nodes.length} nodes)`).join('\n')));
-  tool('vfx_add_component', 'Insert a component, auto-wired to its Source/Target anchors and Output. Node ids are prefixed; returns the prefix. group=true wraps its visual nodes in one Group node (own graph "graph-<prefix>", knobs exposed on the Group; sound nodes stay in the root), like the editor.', {
+  // Saved user components (editor: Save as my component). The MCP keeps them in work/mcp/user-components.json;
+  // the editor keeps its own in browser storage (documents and .vfxpack files carry inserted copies either way).
+  const userFile = () => join(root, 'work/mcp/user-components.json');
+  const readUser = (): UserComponent[] => { try { const v = JSON.parse(readFileSync(userFile(), 'utf8')); return Array.isArray(v) ? v : []; } catch { return []; } };
+  const writeUser = (l: UserComponent[]) => { mkdirSync(dirname(userFile()), { recursive: true }); writeFileSync(userFile(), JSON.stringify(l, null, 1)); };
+  tool('vfx_list_components', 'Ready-made, pre-wired components (the same list as the editor Add component menu), then saved user components as "user:<id>".', {}, () =>
+    ok([...COMPONENT_TEMPLATES.map(c => `${c.id}: ${c.label} — ${c.description} (${c.nodes.length} nodes)`), ...readUser().map(c => `user:${c.id}: ${c.name} — saved group (${c.graphs[0].nodes.length} nodes, ${c.controls.length} knobs)`)].join('\n')));
+  tool('vfx_save_group_component', 'Save a Group node (its internal graph, nested groups, knobs, used anchors/assets) as a reusable user component, like the editor\'s "Save as my component". Same name replaces.', {
+    docId: z.string(), groupNodeId: z.string(), name: z.string().min(1),
+  }, a => {
+    const r = saveGroupAsComponent(getDoc(a.docId), a.groupNodeId, a.name);
+    if (!r.ok) return bad(r.message);
+    writeUser([r.value, ...readUser().filter(c => c.name !== r.value.name)]);
+    return ok(`Saved "${r.value.name}" as user:${r.value.id}. Insert with vfx_add_component component "user:${r.value.id}".`);
+  });
+  tool('vfx_delete_user_component', 'Remove a saved user component (effects already using it keep their copies).', { id: z.string() }, ({ id }) => {
+    const key = id.replace(/^user:/, ''), l = readUser();
+    if (!l.some(c => c.id === key)) return bad(`No user component "${id}".`);
+    writeUser(l.filter(c => c.id !== key));
+    return ok(`Deleted user:${key}.`);
+  });
+  tool('vfx_group_nodes', 'Wrap nodes of one graph into a new Group, like the editor\'s Group selection: crossing links become interface ports, knobs that only drive those nodes move inside. Output, sound nodes and split knobs are refused.', {
+    docId: z.string(), nodeIds: z.array(z.string()).min(1), label: z.string().optional(), graphId: z.string().optional(),
+  }, a => { let info = ''; const r = mutate(a.docId, d => { const x = groupSelection(d, a.graphId ?? d.rootGraphId, a.nodeIds, a.label); if (!x.ok) throw new Error(x.message); info = `Group node "${x.groupNodeId}" wraps graph "${x.childGraphId}"`; Object.assign(d, x.doc); return ''; }); return r.isError ? r : ok(`${info}.`); });
+  tool('vfx_add_component', 'Insert a component, auto-wired to its Source/Target anchors and Output. Node ids are prefixed; returns the prefix. group=true wraps its visual nodes in one Group node (own graph "graph-<prefix>", knobs exposed on the Group; sound nodes stay in the root), like the editor. "user:<id>" inserts an independent copy of a saved user component as one Group.', {
     docId: z.string(), component: z.string(), prefix: z.string().regex(ID).optional(), group: z.boolean().optional(),
-  }, a => { let used = '', gid: string | undefined; const r = mutate(a.docId, d => { const x = insertComponent(d, a.component, a.prefix, { group: a.group === true }); used = x.prefix; gid = x.groupNodeId; Object.assign(d, x.doc); return ''; }); return r.isError ? r : ok(`Inserted ${a.component} with prefix "${used}" (node ids "${used}-<node>")${gid ? `; Group node "${gid}" wraps graph "graph-${used}"` : ''}.`); });
+  }, a => { let used = '', gid: string | undefined; const r = mutate(a.docId, d => {
+    if (a.component.startsWith('user:')) {
+      const c = readUser().find(u => u.id === a.component.slice(5));
+      if (!c) throw new Error(`No user component "${a.component}". Use vfx_list_components.`);
+      const y = insertUserComponent(d, c); used = y.groupNodeId; gid = y.groupNodeId; Object.assign(d, y.doc); return '';
+    }
+    const x = insertComponent(d, a.component, a.prefix, { group: a.group === true }); used = x.prefix; gid = x.groupNodeId; Object.assign(d, x.doc); return ''; }); return r.isError ? r : ok(`Inserted ${a.component} with prefix "${used}" (node ids "${used}-<node>")${gid ? `; Group node "${gid}" wraps graph "graph-${used}"` : ''}.`); });
 
   tool('vfx_list_controls', 'Published knobs (document controls) with value, bounds and what they drive.', { docId: z.string() }, ({ docId }) =>
     ok(getDoc(docId).controls.map(c => `${c.id} [${c.section}] ${c.label} = ${JSON.stringify(c.value)} (${c.min ?? '-'}..${c.max ?? '-'} ${c.unit}) -> ${c.bindings.map(b => `${b.nodeId}.${b.parameter}${b.scale ? ' x' + b.scale : ''}`).join(', ')}`).join('\n') || 'No controls.'));
@@ -200,6 +263,9 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
     const r = compilePathPreview(d, 0, { audioHandled: true });
     out.push(r.ok ? `paths OK at tick 0: ${r.value.layers.length} ribbon layer(s)` : `paths FAILED:\n${fmtErrors(r.errors)}`);
     const hasAudio = d.graphs.some(g => g.edges.some(e => e.target.nodeId === 'node-output' && e.target.port === 'audio'));
+    if (p.ok) for (const f of p.value.followers) out.push(`travel ${f.nodeId}: ${f.lengthMeters.toFixed(2)} m in ${f.travelTicks} ticks = ${(f.lengthMeters / (f.travelTicks / 60)).toFixed(1)} m/s (${f.speedMode ? 'speed' : 'duration'} mode)`);
+    const cut = truncationWarning(d);
+    if (cut) out.push(`WARNING: ${cut.message}`);
     if (hasAudio) { const a = compileAudio(d); out.push(a.ok ? `audio OK: ${a.value.kind}, peak ${a.value.mix.postPeak.toFixed(3)}${a.value.mix.severeLimiting ? ' (SEVERE LIMITING)' : ''}` : `audio FAILED:\n${fmtErrors(a.errors)}`); }
     return ok(out.join('\n'));
   });

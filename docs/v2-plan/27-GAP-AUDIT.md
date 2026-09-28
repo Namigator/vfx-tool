@@ -58,3 +58,5 @@ Status legend: ✅ done, ◐ partial, ✗ missing. "Floor" = part of the P2 capa
 
 Work order: I13 core (headless) early, since it speeds every later check → I1 → I4 → I3 → I5 → I6 → I7 → I8/I9 → I10 → I11 → I12, then resume WP10 lightning and the
 A-05 model build test. Update the Status column as items land.
+
+2026-09-28: A-05 part 2 (reusable group) ✅ [RAN] tests/v2-user-components.test.ts + live editor (Save as my component → insert from My components; two independent bolts). MCP parity re-audited: 33 tools cover every editor action (map in STATE.md).

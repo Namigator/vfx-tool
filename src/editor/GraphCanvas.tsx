@@ -4,6 +4,8 @@
 // Deferred here: Group authoring, multi-node selection, viewport persistence, parameter editing.
 import { COMPONENT_TEMPLATES, componentPlacement, getComponent, insertComponent } from '../graph/components.ts';
 import { groupSelection } from '../graph/groupSelection.ts';
+import { insertUserComponent, saveGroupAsComponent } from '../graph/userComponents.ts';
+import { removeUserComponent, saveUserComponent, useUserComponents } from './userComponentStore.ts';
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import {
   Handle, Panel, Position, ReactFlow, ReactFlowProvider, useNodesInitialized, useReactFlow,
@@ -119,6 +121,8 @@ const nodeTypes = { card: NodeCard };
 
 function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }: GraphCanvasProps) {
   const [componentId, setComponentId] = useState('');
+  const userComponents = useUserComponents();
+  const userPick = componentId.startsWith('user:') ? userComponents.find(c => c.id === componentId.slice(5)) : undefined;
   const flow = useReactFlow();
   const wrapper = useRef<HTMLDivElement>(null);
   const [dragPreview, setDragPreview] = useState<Record<string, { x: number; y: number }>>({});
@@ -381,6 +385,21 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
   /** Inserts a ready-made component as one undoable edit (graph, anchors, duration and layout). */
   const addComponent = () => {
     if (!componentId) return;
+    if (componentId.startsWith('user:')) {
+      if (!userPick) return;
+      const r = insertUserComponent(doc, userPick, graphId);
+      onEdit(`Add my component ${userPick.name}`, [
+        { op: 'set', path: ['graphs'], value: r.doc.graphs },
+        { op: 'set', path: ['anchors'], value: r.doc.anchors },
+        { op: 'set', path: ['assets'], value: r.doc.assets },
+        { op: 'set', path: ['controls'], value: r.doc.controls },
+        { op: 'set', path: ['durationTicks'], value: r.doc.durationTicks },
+        { op: 'set', path: ['editor', 'graphs'], value: r.doc.editor.graphs },
+      ]);
+      setComponentId('');
+      onSelectNode(r.groupNodeId);
+      return;
+    }
     let next;
     // Components insert as one Group node (double-click or Open internals to see the nodes inside).
     try { next = insertComponent(doc, componentId, undefined, { group: true }).doc; } catch (e) { window.alert(e instanceof Error ? e.message : String(e)); return; }
@@ -441,13 +460,24 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
             <span>Add component</span>
             <select value={componentId} onChange={e => setComponentId(e.target.value)} disabled={graphId !== doc.rootGraphId}>
               <option value="">Choose…</option>
-              {COMPONENT_TEMPLATES.map(c => <option key={c.id} value={c.id} title={c.description}>{c.label}</option>)}
+              {userComponents.length > 0 && <optgroup label="My components">{userComponents.map(c => <option key={c.id} value={`user:${c.id}`}>{c.name}</option>)}</optgroup>}
+              <optgroup label="Built-in">{COMPONENT_TEMPLATES.map(c => <option key={c.id} value={c.id} title={c.description}>{c.label}</option>)}</optgroup>
             </select>
           </label>
           <button type="button" onClick={addComponent} disabled={!componentId}>Insert</button>
+          {userPick && <button type="button" onClick={() => { if (window.confirm(`Delete "${userPick.name}" from My components? Effects already using it keep their copy.`)) { removeUserComponent(userPick.id); setComponentId(''); } }} title="Remove this saved component from the list">Delete from My components</button>}
+          {selectedNode?.type === GROUP_NODE_TYPE && <button type="button" onClick={() => {
+            const name = window.prompt('Name for this component (it appears under Add component → My components):', selectedNode.label);
+            if (!name) return;
+            const r = saveGroupAsComponent(doc, selectedNode.id, name);
+            if (!r.ok) { setNotice({ kind: 'error', lines: [r.message] }); return; }
+            saveUserComponent(r.value);
+            setNotice({ kind: 'info', lines: [`Saved "${r.value.name}" to My components. Insert it from Add component; each copy is independent.`] });
+          }} title="Save this group so you can insert copies of it later (in any effect)">Save as my component</button>}
           {selectedNode?.type === GROUP_NODE_TYPE && <button type="button" onClick={() => openGraph(selectedNode.params.graphId as string, `Open ${selectedNode.label}`)} title="Show the nodes inside this group">Open internals</button>}
         </div>
-        {componentId && <p className="gc-hint" role="note">{getComponent(componentId).label}: {getComponent(componentId).description.replace(/s*([^)]*)/g, "")} It {componentPlacement(componentId)}; use its Start at knob to play it after other parts.</p>}
+        {userPick && <p className="gc-hint" role="note">{userPick.name}: your saved group ({userPick.graphs[0].nodes.length} nodes). Each insert is an independent copy.</p>}
+        {componentId && !userPick && !componentId.startsWith('user:') && <p className="gc-hint" role="note">{getComponent(componentId).label}: {getComponent(componentId).description.replace(/s*([^)]*)/g, "")} It {componentPlacement(componentId)}; use its Start at knob to play it after other parts.</p>}
         {trail.length > 1 && (
           <nav className="gc-trail" aria-label="Graph path">
             {trail.map((t, i) => i < trail.length - 1
