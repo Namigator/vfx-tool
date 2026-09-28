@@ -162,3 +162,10 @@ test('MCP parity: undo/redo, list documents, move node', async () => {
   assert.match((await call('vfx_get_document', { docId: 'h', full: true })).text, /"grav": \{\s*"x": 40,\s*"y": 80/);
   assert.match((await call('vfx_list_documents', {})).text, /work\/mcp\/h\.json/);
 });
+
+test('MCP: vfx_guide lists topics and returns a recipe', async () => {
+  const { call } = await connect();
+  assert.match((await call('vfx_guide', {})).text, /Topics: basics, glow, fire/);
+  assert.match((await call('vfx_guide', { topic: 'fire' })).text, /flame-tongue-a/);
+  assert.match((await call('vfx_guide', { topic: 'nope' })).text, /Unknown topic/);
+});

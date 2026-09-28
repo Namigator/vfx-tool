@@ -17,6 +17,7 @@ import { groupSelection } from '../src/graph/groupSelection.ts';
 import { insertUserComponent, saveGroupAsComponent, type UserComponent } from '../src/graph/userComponents.ts';
 import { truncationWarning } from '../src/graph/truncation.ts';
 import { describeFrameStats, pngFrameStats } from './frameStats.ts';
+import { guideText } from './guide.ts';
 import { createL01AudioDocument } from '../src/graph/audioFixtures.ts';
 import { compileParticlePreview } from '../src/graph/toParticles.ts';
 import { compilePathPreview } from '../src/graph/toPaths.ts';
@@ -97,6 +98,8 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
     if (!s) return bad(`Unknown node type "${type}".`);
     return ok(JSON.stringify({ type: s.type, disabledBehavior: s.disabledBehavior, inputs: s.inputs, outputs: s.outputs, parameters: s.parameters }, null, 1));
   });
+
+  tool('vfx_guide', 'Authoring know-how per topic (basics, glow, fire, smoke, sparks, beams, projectile, props): proven parameter ranges and layer recipes from the built-in effects. Read "basics" and "glow" before building; read the element topic you are making.', { topic: z.string().optional() }, ({ topic }) => ok(guideText(topic)));
 
   // ---------- documents ----------
   tool('vfx_new_document', `Create an in-memory document from a template (${TEMPLATES.join(', ')}). "blank" has Source/Target anchors and an EffectOutput only.`,
