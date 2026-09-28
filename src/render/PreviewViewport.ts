@@ -124,7 +124,7 @@ attribute vec2 lifeSeed;
 varying vec2 vLifeSeed;
 uniform vec2 uGrid;
 uniform vec2 uInset;
-varying vec2 vAtlas;
+varying vec2 vCell;
 uniform float uAlign;
 uniform vec3 uAxisU;
 uniform vec3 uAxisV;
@@ -141,8 +141,7 @@ void main() {
   vLifeSeed = lifeSeed;
   // Atlas cell (row 0 = top of the image; textures are flipY) with a half-texel inset against bleeding.
   float col = mod(cell, uGrid.x), row = floor(cell / uGrid.x);
-  vec2 cu = clamp(uv, uInset, 1.0 - uInset);
-  vAtlas = vec2((col + cu.x) / uGrid.x, (uGrid.y - 1.0 - row + cu.y) / uGrid.y);
+  vCell = vec2(col, uGrid.y - 1.0 - row); // Atlas cell origin in cells; the fragment adds the (UV-op) position inside it.
   // Instance matrix carries translation (column 3) and uniform size (column 0.x); quad faces the camera.
   vec4 mv = modelViewMatrix * vec4(instanceMatrix[3].xyz, 1.0);
   // Local quad: pivot shifts the particle along +Y (0 trailing end, 1 leading tip), then stretch along +Y.
@@ -169,9 +168,17 @@ uniform float uCutout;
 varying vec2 vUv;
 varying float vLifeOpacity;
 varying vec3 vLifeColor;
-varying vec2 vAtlas;
+varying vec2 vCell;
+uniform vec2 uGrid;
+uniform vec2 uInset;
 uniform sampler2D uTex;
 uniform float uUseTex;
+uniform float uUvOps;
+uniform vec4 uUvTileOffset; // tiling xy, offset zw
+uniform vec3 uUvRotScroll; // rotation, scroll xy (UV/s)
+uniform float uTime;
+uniform vec3 uRim; // strength, power, unused
+uniform vec3 uRimColor;
 uniform float uGroundFade;
 varying float vWorldY;
 varying vec2 vLifeSeed;
@@ -182,7 +189,20 @@ uniform sampler2D uDissolveTex;
 void main() {
   vec4 t = vec4(1.0);
   float mask;
-  if (uUseTex > 0.5) { t = texture2D(uTex, vAtlas); mask = t.a; }
+  if (uUseTex > 0.5) {
+    if (uUvOps > 0.5) {
+      // 09 UV ops: rotate about the centre, tile, offset, scroll; wrap inside this particle's atlas cell.
+      // Gradients come from the unwrapped coordinate so the fract() seam does not pick a tiny mip level.
+      vec2 q = vUv - 0.5;
+      float c = cos(uUvRotScroll.x), s = sin(uUvRotScroll.x);
+      vec2 g = vec2(c * q.x - s * q.y, s * q.x + c * q.y) * uUvTileOffset.xy + 0.5 + uUvTileOffset.zw + uUvRotScroll.yz * uTime;
+      vec2 cu = clamp(fract(g), uInset, 1.0 - uInset);
+      t = textureGrad(uTex, (vCell + cu) / uGrid, dFdx(g) / uGrid, dFdy(g) / uGrid);
+    } else {
+      t = texture2D(uTex, (vCell + clamp(vUv, uInset, 1.0 - uInset)) / uGrid);
+    }
+    mask = t.a;
+  }
   else { float d = length(vUv - 0.5) * 2.0; mask = 1.0 - smoothstep(0.6, 1.0, d); }
   float a = uAlpha * vLifeOpacity * mask;
   // Analytic ground fade (08): soft contact with the floor plane y = 0, no depth texture needed.
@@ -201,7 +221,9 @@ void main() {
   }
   if (uCutout > 0.5) { if (a < uCutoff) discard; a = 1.0; }
   else if (a <= 0.0) discard;
-  gl_FragColor = vec4(t.rgb * uColor * vLifeColor * (1.0 + uEmission) + edgeRgb, a);
+  // 09 sprite rim: radial (a camera-facing quad has no useful fresnel normal).
+  vec3 rimRgb = uRim.x > 0.0 ? uRimColor * uRim.x * pow(clamp(length(vUv - 0.5) * 2.0, 0.0, 1.0), uRim.y) : vec3(0.0);
+  gl_FragColor = vec4(t.rgb * uColor * vLifeColor * (1.0 + uEmission) + edgeRgb + rimRgb, a);
   #include <colorspace_fragment>
 }`;
 
@@ -545,6 +567,13 @@ export class PreviewViewport {
       material.uniforms.uDissolveShape = { value: new THREE.Vector4(dv?.start ?? 0, dv?.softness ?? 0.08, dv?.edge ?? 0, 0) };
       material.uniforms.uDissolveEdgeColor = { value: new THREE.Color().setStyle(dv?.edgeColor.srgb ?? '#ffb040') };
       material.uniforms.uDissolveTex = { value: dv ? this.#noiseTexture() : null };
+      const uvo = layer.uv;
+      material.uniforms.uUvOps = { value: uvo ? 1 : 0 };
+      material.uniforms.uUvTileOffset = { value: new THREE.Vector4(uvo?.tiling[0] ?? 1, uvo?.tiling[1] ?? 1, uvo?.offset[0] ?? 0, uvo?.offset[1] ?? 0) };
+      material.uniforms.uUvRotScroll = { value: new THREE.Vector3(uvo?.rotation ?? 0, uvo?.scroll[0] ?? 0, uvo?.scroll[1] ?? 0) };
+      material.uniforms.uTime = this.#effectTime;
+      material.uniforms.uRim = { value: new THREE.Vector3(layer.rim?.strength ?? 0, layer.rim?.power ?? 3, 0) };
+      material.uniforms.uRimColor = { value: new THREE.Color().setStyle(layer.rim?.color.srgb ?? '#ffffff') };
       {
         // In-plane basis for worldAxis quads: U, V perpendicular to the axis (right-handed, V toward +Y/-Z).
         const n = new THREE.Vector3(...(layer.worldAxis ?? [0, 1, 0])).normalize();

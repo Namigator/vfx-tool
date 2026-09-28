@@ -54,6 +54,10 @@ export type ParticlePreviewLayer = {
   groundFade?: number;
   /** 09 dissolve over life (amount 0 = off). */
   dissolve?: { amount: number; start: number; softness: number; edge: number; edgeColor: ColorValue };
+  /** 09 UV ops on textured billboards (tiling, offset, rotation, scroll per second); absent = identity. */
+  uv?: { tiling: [number, number]; offset: [number, number]; rotation: number; scroll: [number, number] };
+  /** 09 radial sprite rim (strength 0 = off). */
+  rim?: { strength: number; color: ColorValue; power: number };
   systemId: string;
   /** InitialProperties.color × Material.tint, multiplied in linear RGB, returned as encoded sRGB; alpha multiplied. */
   color: ColorValue;
@@ -259,6 +263,15 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
   const dissolveOf = (m: ExpandedNode): Pick<ParticlePreviewLayer, 'dissolve'> => num(m, 'dissolve') > 0
     ? { dissolve: { amount: num(m, 'dissolve'), start: num(m, 'dissolveStart'), softness: num(m, 'dissolveSoftness'), edge: num(m, 'dissolveEdge'), edgeColor: param(m, 'dissolveEdgeColor') as ColorValue } }
     : {};
+  /** 09 UV ops and sprite rim of a Material, present only when they differ from identity/off. */
+  const spriteOpsOf = (m: ExpandedNode): Pick<ParticlePreviewLayer, 'uv' | 'rim'> => {
+    const t = param(m, 'uvTiling') as number[], o = param(m, 'uvOffset') as number[], sc = param(m, 'uvScroll') as number[], r = num(m, 'uvRotation');
+    const identity = t[0] === 1 && t[1] === 1 && o[0] === 0 && o[1] === 0 && sc[0] === 0 && sc[1] === 0 && r === 0;
+    return {
+      ...(identity ? {} : { uv: { tiling: [t[0], t[1]], offset: [o[0], o[1]], rotation: r, scroll: [sc[0], sc[1]] } }),
+      ...(num(m, 'rim') > 0 ? { rim: { strength: num(m, 'rim'), color: structuredClone(param(m, 'rimColor') as ColorValue), power: num(m, 'rimPower') } } : {}),
+    };
+  };
   /** Effect-time signal view of the expanded graph (shared evaluator in signals.ts). */
   const signals: SignalContext = {
     node: id => { const x = nodes.get(id); return x ? { id, type: x.node.type, enabled: x.effectiveEnabled } : undefined; },
@@ -800,7 +813,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         }
         layers.push({
           nodeId: sid, systemId: sid, color: param(m, 'tint') as ColorValue, opacity: num(m, 'opacity'), emission: num(m, 'emission'),
-          blend: param(m, 'blend') as ParticlePreviewLayer['blend'], alphaCutoff: num(m, 'alphaCutoff'), groundFade: num(m, 'groundFade') * transform.scale, ...dissolveOf(m), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
+          blend: param(m, 'blend') as ParticlePreviewLayer['blend'], alphaCutoff: num(m, 'alphaCutoff'), groundFade: num(m, 'groundFade') * transform.scale, ...dissolveOf(m), ...spriteOpsOf(m), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
           sizeOverLife: curve('sizeOverWindow', SIZE_OVER_LIFE_BOUNDS), opacityOverLife: curve('opacityOverWindow', OPACITY_OVER_LIFE_BOUNDS),
           colorOverLife: structuredClone(param(b, 'colorOverWindow') as GradientValue), stretchRatio: 1, pivot: 0.5,
           ...((): Pick<ParticlePreviewLayer, 'alignment' | 'worldAxis'> => { const w = param(b, 'worldAxis') as Vec3, l = Math.hypot(w[0], w[1], w[2]); return param(b, 'alignment') === 'worldAxis' && l > 1e-9 ? { alignment: 'worldAxis', worldAxis: rotate(transform.rotation, [w[0] / l, w[1] / l, w[2] / l]) } : { alignment: 'camera', worldAxis: [0, 1, 0] }; })(), ...(sprite ? { sprite } : {}),
@@ -890,6 +903,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         alphaCutoff: num(mat, 'alphaCutoff'),
         groundFade: num(mat, 'groundFade') * transform.scale,
         ...dissolveOf(mat),
+        ...spriteOpsOf(mat),
         renderOrderOffset: num(b, 'renderOrderOffset'),
         visualOrder,
         sizeOverLife,

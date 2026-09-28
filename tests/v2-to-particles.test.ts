@@ -527,6 +527,14 @@ test('Material rim reaches mesh layers only when switched on', () => {
   assert.deepEqual(plan(meshDoc(3)).meshes[0].rim, { strength: 3, color: { srgb: '#40E0FF', alpha: 1 }, power: 2 });
 });
 
+test('Material UV ops and sprite rim reach billboard layers only when they differ from identity/off', () => {
+  assert.equal(plan(f01()).layers[0].uv, undefined);
+  assert.equal(plan(f01()).layers[0].rim, undefined);
+  const l = plan(f01(set('node-material', { uvTiling: [2, 3], uvRotation: 0.5, uvScroll: [0.1, 0], rim: 2, rimPower: 4 }))).layers[0];
+  assert.deepEqual(l.uv, { tiling: [2, 3], offset: [0, 0], rotation: 0.5, scroll: [0.1, 0] });
+  assert.deepEqual(l.rim, { strength: 2, color: { srgb: '#FFFFFF', alpha: 1 }, power: 4 });
+});
+
 test('MeshRenderer compiles to a mesh layer on the chain system', () => {
   const p = plan(f01(d => {
     const g = root(d);
