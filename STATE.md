@@ -58,6 +58,12 @@ size/triangles/validation directly). MCP user components live in work/mcp/user-c
   components) builds the flamethrower from blank; reference frames in work/a05/ref-t*.png (captured from the in-app
   browser: headless Chrome can't draw that canvas). Output: work/a05/a05.vfx.json + a gap log → each gap becomes a
   generic node/control, then rerun. Passing needs the user's visual OK.
+- A-05 run 1 done: fresh MCP-only agent built work/a05/a05.vfx.json (core, tongues, embers, smoke, light, flash/shake).
+  [SAW] glow off = decent structure; glow on = halo swallowed the flame. Gap log → fixed: (1) EffectOutput glow
+  strength/radius/threshold/limit (limit caps stacked additive brightness); (2) PropMesh node + cylinder/box meshes;
+  (3) vfx_compile lists flash/shake/light ticks; (4) fire-puff flipbook. Next: rerun A-05 with a fresh agent.
+- 2026-09-28 ~17:40: ANOTHER process is editing src/render (ribbon end-fade moved into the shader, RibbonGeometry +
+  PreviewViewport). Commit d256cb6 accidentally included part of it. Stage only own files; ask the user.
 - Left: sound (parked); user visual review of all families; merge to main after visual OK.
 - User visual review still pending for every family (they could not test today).
 
