@@ -11,10 +11,10 @@ import { truncationWarning } from './graph/truncation.ts';
 import { compilePathPreview } from './graph/toPaths.ts';
 import { createBlankDocument, createF01Document, createForcesDemoDocument } from './graph/fixtures.ts';
 import { TexturePanel } from './editor/TexturePanel.tsx';
-import { getAssetBytes, putAssetBytes } from './model/assetStore.ts';
+import { getAssetBytes, openProjectStorage, putAssetBytes } from './model/assetStore.ts';
 import { buildPack, readPack, type PackAsset } from './model/vfxpack.ts';
 import { hasAssetUrl, registerAssetUrl } from './assets/assetUrls.ts';
-import { DRAFT_META_KEY, documentFileName, emptyTrash, loadDraftText, readDraftMeta, readShelf, readTrash, recoverDraft, removeFromShelf, restoreFromTrash, saveDraft, saveToShelf, type ShelfEntry, type TrashEntry } from './model/persistence.ts';
+import { DRAFT_META_KEY, SHELF_KEY, TRASH_KEY, documentFileName, mergeEntryLists, emptyTrash, loadDraftText, readDraftMeta, readShelf, readTrash, recoverDraft, removeFromShelf, restoreFromTrash, saveDraft, saveToShelf, type DraftStorage, type ShelfEntry, type TrashEntry } from './model/persistence.ts';
 import { ControlsPanel } from './editor/ControlsPanel.tsx';
 import { compileAudio } from './graph/toAudio.ts';
 import { choosePreviewMode, createLightningAudioDemoDocument, hasRootAudio, ribbonStyleDiagnostics, type PreviewModeChoice } from './render/previewMode.ts';
@@ -374,8 +374,20 @@ export default function PreviewV2() {
   const [shelfPick, setShelfPick] = useState('');
   const [trash, setTrash] = useState<TrashEntry[]>(() => readTrash(typeof localStorage === 'undefined' ? undefined : localStorage));
   const [trashPick, setTrashPick] = useState('');
+  // Projects and trash live in IndexedDB once it opens (localStorage until then, and as the fallback).
+  const projectsRef = useRef<DraftStorage>(typeof localStorage === 'undefined' ? { getItem: () => null, setItem: () => {} } : localStorage);
+  useEffect(() => {
+    let live = true;
+    void openProjectStorage([SHELF_KEY, TRASH_KEY], m => setFileNote(m), (_key, stored, legacy) => mergeEntryLists(stored, legacy)).then(store => {
+      if (!live || !store) return;
+      projectsRef.current = store;
+      setShelf(readShelf(store));
+      setTrash(readTrash(store));
+    });
+    return () => { live = false; };
+  }, []);
   const keepProject = useCallback(() => {
-    const r = saveToShelf(localStorage, historyRef.current!.snapshot());
+    const r = saveToShelf(projectsRef.current, historyRef.current!.snapshot());
     if (r.ok) { setShelf(r.entries); setShelfPick(r.entries[0].name); setFileNote(`Kept "${r.entries[0].name}" in projects`); }
     else setFileNote(r.message);
   }, []);
@@ -624,21 +636,21 @@ export default function PreviewV2() {
             <option value="">Projects ({shelf.length})…</option>
             {shelf.map(s => <option key={s.name} value={s.name}>{s.name} — {new Date(s.savedAt).toLocaleString()}</option>)}
           </select>
-          <button type="button" disabled={!shelfPick} onClick={() => { setShelf(removeFromShelf(localStorage, shelfPick)); setTrash(readTrash(localStorage)); setFileNote(`Moved "${shelfPick}" to the trash`); setShelfPick(''); }} title="Move the chosen project to the trash (the open effect is untouched; restore it from Trash)">Remove</button>
+          <button type="button" disabled={!shelfPick} onClick={() => { setShelf(removeFromShelf(projectsRef.current, shelfPick)); setTrash(readTrash(projectsRef.current)); setFileNote(`Moved "${shelfPick}" to the trash`); setShelfPick(''); }} title="Move the chosen project to the trash (the open effect is untouched; restore it from Trash)">Remove</button>
           {trash.length > 0 && <>
             <select aria-label="Trash" value={trashPick} onChange={e => setTrashPick(e.currentTarget.value)}>
               <option value="">Trash ({trash.length})…</option>
               {trash.map(t => <option key={t.name} value={t.name}>{t.name} — removed {new Date(t.removedAt).toLocaleString()}</option>)}
             </select>
-            <button type="button" disabled={!trashPick} onClick={() => { const r = restoreFromTrash(localStorage, trashPick); if (r.ok) { setShelf(r.shelf); setTrash(r.trash); setFileNote(`Restored "${trashPick}" to projects`); setTrashPick(''); } else setFileNote(r.message); }} title="Put the chosen project back in Projects">Restore</button>
-            <button type="button" onClick={() => { if (window.confirm(`Permanently delete ${trash.length} project(s) in the trash?`)) { emptyTrash(localStorage); setTrash([]); setTrashPick(''); setFileNote('Trash emptied'); } }} title="Permanently delete everything in the trash">Empty trash</button>
+            <button type="button" disabled={!trashPick} onClick={() => { const r = restoreFromTrash(projectsRef.current, trashPick); if (r.ok) { setShelf(r.shelf); setTrash(r.trash); setFileNote(`Restored "${trashPick}" to projects`); setTrashPick(''); } else setFileNote(r.message); }} title="Put the chosen project back in Projects">Restore</button>
+            <button type="button" onClick={() => { if (window.confirm(`Permanently delete ${trash.length} project(s) in the trash?`)) { emptyTrash(projectsRef.current); setTrash([]); setTrashPick(''); setFileNote('Trash emptied'); } }} title="Permanently delete everything in the trash">Empty trash</button>
           </>}
           <span className="pv2-note" role="status" aria-live="polite">{saveStatus}</span>
           {stale && (
             <span className="pv2-stale" role="alert">
               This effect was changed in another tab, so this tab stopped saving.
               <button type="button" onClick={() => { const t = loadDraftText(localStorage); baseRevisionRef.current = readDraftMeta(localStorage).revision; setStale(false); if (t) replace(t, 'Load the version from the other tab'); }}>Load the other tab's version</button>
-              <button type="button" onClick={() => { const mine = historyRef.current!.snapshot(); const r = saveToShelf(localStorage, { ...mine, name: `${mine.name || 'effect'} (copy)` }); if (r.ok) setShelf(r.entries); const t = loadDraftText(localStorage); baseRevisionRef.current = readDraftMeta(localStorage).revision; setStale(false); if (t) replace(t, 'Load the version from the other tab'); setFileNote(r.ok ? `Kept this tab's version as "${r.entries[0].name}" in Projects` : r.message); }}>Keep mine as a copy, then load theirs</button>
+              <button type="button" onClick={() => { const mine = historyRef.current!.snapshot(); const r = saveToShelf(projectsRef.current, { ...mine, name: `${mine.name || 'effect'} (copy)` }); if (r.ok) setShelf(r.entries); const t = loadDraftText(localStorage); baseRevisionRef.current = readDraftMeta(localStorage).revision; setStale(false); if (t) replace(t, 'Load the version from the other tab'); setFileNote(r.ok ? `Kept this tab's version as "${r.entries[0].name}" in Projects` : r.message); }}>Keep mine as a copy, then load theirs</button>
             </span>
           )}
           {fileNote && <span className="pv2-note" role="status" aria-live="polite">{fileNote}</span>}

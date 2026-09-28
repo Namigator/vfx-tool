@@ -150,3 +150,11 @@ export function recoverDraft<T>(storage: DraftStorage | undefined, parse: (text:
   }
   return null;
 }
+
+/** Merges two stored shelf/trash lists (JSON) by name; the newer copy of a name wins; newest first. */
+export function mergeEntryLists(a: string, b: string): string {
+  const parse = (t: string): ShelfEntry[] => { try { const v = JSON.parse(t); return Array.isArray(v) ? v.filter(e => e && typeof e.name === 'string' && typeof e.savedAt === 'string') : []; } catch { return []; } };
+  const byName = new Map<string, ShelfEntry>();
+  for (const e of [...parse(a), ...parse(b)]) { const old = byName.get(e.name); if (!old || Date.parse(e.savedAt) > Date.parse(old.savedAt)) byName.set(e.name, e); }
+  return JSON.stringify([...byName.values()].sort((x, y) => Date.parse(y.savedAt) - Date.parse(x.savedAt)).slice(0, MAX_SHELF));
+}

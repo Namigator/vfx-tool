@@ -33,7 +33,13 @@
 - Done: Light (09) + Energy (10) families; trails fade only at the tail (head solid); non-number knobs (colour picker commits on close,
   vector fields, checkbox, dropdown) + axis bindings (a number knob drives one axis of a vec2/vec3); Energy knobs Arc bend, Accent colour,
   Speed; PathFollower speed mode (travel = path length ÷ speed, rounded ticks; all compilers agree) + "Projectile travel" readout.
-- Queue (in order): GLB importScale; material rim; sprite UV rotation; wrap-selection-as-group; trash + multi-tab conflict check; worker sim.
+- Also done: GLB Imported size fit|real (import scale applied); Material rim (meshes: fresnel; sprites: radial);
+  sprite UV tiling/offset/rotation/scroll; Group selection (Shift+click → wrap into a Group); project Trash; two-tab
+  draft compare-and-swap with stale-tab banner. Gate: 524 tests + tsc.
+- Also done: duration tails (components include their tails; warning when the effect is too short); texture import
+  preview with flipbook grid (+ fixed a crash typing in Grid); projects/trash in IndexedDB (migrated, merged).
+- Decided: worker simulation stays deferred (measured < 1 ms/tick avg, ≤ 4.5 ms worst vs 16 ms frame).
+- Left: GLB 3D preview before import; sound (parked); user visual review of all families; A-05 model-build test.
 - User visual review still pending for every family (they could not test today).
 
 ## Next (as of 2026-09-27 night)

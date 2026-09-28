@@ -106,3 +106,14 @@ test('trash: Remove moves a project to the trash; Restore puts it back; Empty tr
   emptyTrash(s);
   assert.deepEqual(readTrash(s), []);
 });
+
+test('merging project lists keeps every name once (newest copy wins), newest first', async () => {
+  const { mergeEntryLists } = await import('../src/model/persistence.ts');
+  const e = (name: string, savedAt: string, text = name) => ({ name, savedAt, text });
+  const a = JSON.stringify([e('x', '2026-09-28T10:00:00Z', 'x-new'), e('y', '2026-09-27T10:00:00Z')]);
+  const b = JSON.stringify([e('x', '2026-09-26T10:00:00Z', 'x-old'), e('z', '2026-09-28T11:00:00Z')]);
+  const m = JSON.parse(mergeEntryLists(a, b));
+  assert.deepEqual(m.map((x: { name: string }) => x.name), ['z', 'x', 'y']);
+  assert.equal(m[1].text, 'x-new');
+  assert.equal(mergeEntryLists('not json', '[]'), '[]');
+});

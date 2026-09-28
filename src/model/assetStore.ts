@@ -59,3 +59,47 @@ export async function getAssetBytes(byteHash: string): Promise<AssetBytesRecord 
     return undefined;
   }
 }
+
+/**
+ * Project shelf and trash in IndexedDB (13: named documents must not be squeezed by the ~5 MB localStorage
+ * quota). A synchronous key/value view over the `preferences` store: values for `keys` are loaded once into
+ * memory, reads are synchronous, writes update memory at once and persist in the background (failures are
+ * reported through onError, never thrown). Values still in localStorage from before are migrated once.
+ */
+export async function openProjectStorage(keys: readonly string[], onError: (message: string) => void, merge: (key: string, stored: string, legacy: string) => string = (_k, stored) => stored): Promise<{ getItem(key: string): string | null; setItem(key: string, value: string): void } | null> {
+  let db: IDBDatabase;
+  try { db = await openDb(); } catch { return null; }
+  const mem = new Map<string, string>();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction('preferences', 'readwrite'), store = tx.objectStore('preferences');
+      for (const key of keys) {
+        const req = store.get(key);
+        req.onsuccess = () => {
+          const rec = req.result as { key: string; value: string } | undefined;
+          const stored = rec && typeof rec.value === 'string' ? rec.value : null;
+          let legacy: string | null = null;
+          try { legacy = typeof localStorage === 'undefined' ? null : localStorage.getItem(key); } catch { /* unavailable */ }
+          // A value left in localStorage (older tab or version) is merged in, never dropped.
+          const value = stored !== null && legacy !== null ? merge(key, stored, legacy) : stored ?? legacy;
+          if (value === null) return;
+          mem.set(key, value);
+          if (value !== stored) store.put({ key, value });
+        };
+      }
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error ?? new Error('Project store read failed.'));
+    });
+  } catch { return null; }
+  // Migrated values leave localStorage only after they are safely in IndexedDB.
+  for (const key of keys) { try { if (mem.has(key) && typeof localStorage !== 'undefined') localStorage.removeItem(key); } catch { /* best effort */ } }
+  return {
+    getItem: key => mem.get(key) ?? null,
+    setItem: (key, value) => {
+      mem.set(key, value);
+      const tx = db.transaction('preferences', 'readwrite');
+      tx.objectStore('preferences').put({ key, value });
+      tx.onabort = () => onError(`Could not save projects: ${tx.error?.message ?? 'storage quota?'}`);
+    },
+  };
+}
