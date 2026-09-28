@@ -96,6 +96,9 @@ size/triangles/validation directly). MCP user components live in work/mcp/user-c
   WP26 review packet: REVIEW.md + review.html (strips from work/review/manifest.json; regenerate with
   `node mcp/run-steps.mjs work/review.steps.json` then the manifest script). NEXT: user does REVIEW.md, then fixes
   from their notes, then merge squad/vfx-v2 -> main. Parked: sound; comprehensive AI guide (later).
+- d34e8cc: New effect anchors run left-to-right; first component into a fresh doc adopts its designed layout.
+  All 49 review strips re-rendered after it (49/49, no errors [RAN]); water splash lands at stream end [SAW].
+  REVIEW PACKET READY (2026-09-29) — waiting on the user's notes.
 - Commit gate is now `bash tools/gate.sh && git commit ...` (tsc + fresh test log; a stale-log slip committed a broken
   file once, fixed in 03fcb35).
 - Left: sound (parked); user visual review of all families; merge to main after visual OK.
