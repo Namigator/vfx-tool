@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VFX Review</title>
+<style>
+  :root { --bg: #0b0d12; --card: #141823; --line: #2a3140; --text: #d6dae3; --muted: #8a92a3; --accent: #7fb4ff; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, sans-serif; }
+  header { padding: 16px 20px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); z-index: 1; }
+  h1 { margin: 0 0 4px; font-size: 20px; }
+  header p { margin: 0; color: var(--muted); }
+  main { padding: 16px 20px; display: flex; flex-direction: column; gap: 18px; max-width: 1400px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+  h2 { margin: 0 0 4px; font-size: 16px; }
+  .desc { color: var(--muted); margin: 0 0 8px; }
+  img { width: 100%; height: auto; border-radius: 4px; display: block; }
+  .row { display: flex; gap: 12px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+  .row label { display: flex; gap: 4px; align-items: center; }
+  textarea { width: 100%; min-height: 44px; background: #0f131b; color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 6px; font: inherit; }
+  button { background: #1d2433; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; font: inherit; cursor: pointer; }
+  .count { color: var(--accent); }
+  @media (max-width: 700px) { header, main { padding-left: 16px; padding-right: 16px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>VFX review <span class="count" id="count"></span></h1>
+  <p>Each strip shows one effect from start (left) to end (right). Mark it and jot what looks wrong; your notes stay in this browser. When done, press <b>Copy all notes</b> and paste them to Claude.</p>
+  <div class="row"><button id="copy">Copy all notes</button><span id="copied" class="desc"></span></div>
+</header>
+<main id="list"><p class="desc">Loading…</p></main>
+<script type="module">
+  const key = id => `vfx-review:${id}`;
+  const read = id => { try { return JSON.parse(localStorage.getItem(key(id)) ?? '{}'); } catch { return {}; } };
+  const write = (id, v) => { try { localStorage.setItem(key(id), JSON.stringify(v)); } catch { /* storage unavailable */ } };
+  const list = document.getElementById('list');
+  const items = await (await fetch('/work/review/manifest.json', { cache: 'no-store' })).json();
+  document.getElementById('count').textContent = `(${items.length} effects)`;
+  list.innerHTML = '';
+  for (const it of items) {
+    const s = read(it.id), sec = document.createElement('section');
+    sec.innerHTML = `<h2></h2><p class="desc"></p><img loading="lazy" alt=""><div class="row">
+      <label><input type="radio" name="${it.id}" value="good"> Looks good</label>
+      <label><input type="radio" name="${it.id}" value="ok"> OK, could be better</label>
+      <label><input type="radio" name="${it.id}" value="bad"> Needs work</label></div><textarea placeholder="What looks wrong or what you would change?"></textarea>`;
+    sec.querySelector('h2').textContent = it.label;
+    sec.querySelector('.desc').textContent = it.description;
+    const img = sec.querySelector('img'); img.src = `/${it.sheet}`; img.alt = `${it.label}: frames from start to end`;
+    for (const r of sec.querySelectorAll('input[type=radio]')) { r.checked = s.mark === r.value; r.addEventListener('change', () => write(it.id, { ...read(it.id), mark: r.value })); }
+    const ta = sec.querySelector('textarea'); ta.value = s.note ?? ''; ta.addEventListener('input', () => write(it.id, { ...read(it.id), note: ta.value }));
+    list.appendChild(sec);
+  }
+  document.getElementById('copy').addEventListener('click', async () => {
+    const text = items.map(it => { const s = read(it.id); return s.mark || s.note ? `${it.label}: ${s.mark ?? '-'}${s.note ? ` — ${s.note}` : ''}` : null; }).filter(Boolean).join('\n') || 'No notes yet.';
+    try { await navigator.clipboard.writeText(text); document.getElementById('copied').textContent = 'Copied. Paste it to Claude.'; } catch { document.getElementById('copied').textContent = text; }
+  });
+</script>
+</body>
+</html>

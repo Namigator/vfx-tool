@@ -89,6 +89,13 @@ size/triangles/validation directly). MCP user components live in work/mcp/user-c
   nozzle too bright. Guide fixed (Drag for event-born particles, nozzle material). Agent noted the fire guide makes
   flamethrower a transcription -> the free-form test must use a DIFFERENT reference next (no guide recipe for it).
   Awaiting user's visual verdict on run 6.
+- 2026-09-29 user: "finish everything, then give me all the tests at once" (no more build-test-build loops with them).
+  Done since: WP23 legacy migration (T33), WP24 reliability (context loss, T38 plateau), WP25 (quality profiles,
+  benchmark evidence, Outline panel, graph keyboard, Reduced effects), WP-MCP2 (contact sheet, compare images),
+  WP27 delivery (prod build now includes capture page + sprites, README, licences, examples/, evidence INDEX).
+  WP26 review packet: REVIEW.md + review.html (strips from work/review/manifest.json; regenerate with
+  `node mcp/run-steps.mjs work/review.steps.json` then the manifest script). NEXT: user does REVIEW.md, then fixes
+  from their notes, then merge squad/vfx-v2 -> main. Parked: sound; comprehensive AI guide (later).
 - Commit gate is now `bash tools/gate.sh && git commit ...` (tsc + fresh test log; a stale-log slip committed a broken
   file once, fixed in 03fcb35).
 - Left: sound (parked); user visual review of all families; merge to main after visual OK.
