@@ -116,7 +116,8 @@ export type NodeSpec = {
 /** Schema for a registered record; fields reuse ParameterSpec (nested records allowed). */
 export type RegisteredRecordSpec = { recordType: string; fields: ParameterSpec[] };
 
-export type ControlBinding = { nodeId: string; parameter: string; scale?: number; offset?: number };
+/** `axis` (0..2): a numeric control drives one component of a vec2/vec3 parameter; the other components keep their literal. */
+export type ControlBinding = { nodeId: string; parameter: string; scale?: number; offset?: number; axis?: number };
 export type PublicControl = {
   id: string; scopeGraphId: string; label: string; type: ValueType; unit: Unit;
   value: ParameterValue; default: ParameterValue;

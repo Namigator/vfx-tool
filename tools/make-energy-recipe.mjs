@@ -10,6 +10,8 @@ const VARIANTS = {
   'energy-orb': { doc: 'energyorb', travel: 56, bend: 0.7, core: 0.38, halo: 1, history: 0.18, width: 0.2, shed: 80, burst: 150, ring: 3.6, flash: 2.4 },
 };
 const CHARGE = 30, END = 180;
+// One accent colour (the Accent colour knob) tints every coloured layer; the cores stay white.
+const ACCENT = '#9B6BFF';
 
 for (const [file, V] of Object.entries(VARIANTS)) {
   const D = V.doc, S = [];
@@ -33,19 +35,19 @@ for (const [file, V] of Object.entries(VARIANTS)) {
   add('Emitter', 'gather', { shape: 'sphere', radius: 1.2, burst: 24, rate: 0, speedMin: 0, speedMax: 0.1, lifetimeMin: CHARGE / 60, lifetimeMax: CHARGE / 60 });
   add('InitialProperties', 'gatherip', { sizeMin: 0.03, sizeMax: 0.06 });
   add('Attract', 'gatherpull', { acceleration: 12, softRadius: 0.12, killRadius: 0.05 });
-  glow('motemat', '#D9C6FF', { emission: 0.8 });
+  glow('motemat', '#F2F0F6', { emission: 0.8 });
   add('BillboardRenderer', 'gatherbb');
   wire('node-source.out', 'gather.anchor'); wire('charge.start', 'gather.trigger');
   wire('gather.particles', 'gatherip.particles'); wire('gatherip.particles', 'gatherpull.particles'); wire('node-source.out', 'gatherpull.anchor');
   wire('gatherpull.particles', 'gatherbb.particles'); wire('motemat.material', 'gatherbb.material'); out('gatherbb');
-  glow('coremat', '#F6EEFF', { emission: 1.4 });
-  glow('halomat', '#9B6BFF', { opacity: 0.35, emission: 0.4 });
+  glow('coremat', '#FFFFFF', { emission: 1.4 });
+  glow('halomat', ACCENT, { opacity: 0.35, emission: 0.4 });
   add('SpriteRenderer', 'chargecore', { size: 0.3, sizeOverWindow: lin([[0, 0.27], [1, 1]]), opacityOverWindow: lin([[0, 0.3], [1, 1]]) });
   add('SpriteRenderer', 'chargehalo', { size: 0.9, sizeOverWindow: lin([[0, 0.2], [1, 1]]), opacityOverWindow: lin([[0, 0], [1, 0.8]]) });
   for (const [r, m] of [['chargecore', 'coremat'], ['chargehalo', 'halomat']]) { wire('node-source.out', `${r}.anchor`); wire(`${m}.material`, `${r}.material`); wire('charge.window', `${r}.window`); out(r); }
 
   // ---- Travel: shallow Bezier arc, PathFollower; the flight window stays open so the trail drains at the target ----
-  const h = +(V.bend / 0.75).toFixed(3);
+  const h = V.bend * 4 / 3; // Cubic Bezier peak = .75 × handle height, so the arc rises by V.bend.
   add('BezierPath', 'arc', { startHandle: [2.6, h, 0], endHandle: [-2.6, h, 0], samples: 64 });
   wire('node-source.out', 'arc.start'); wire('node-target.out', 'arc.end');
   add('Schedule', 'flight', { startTicks: CHARGE, durationTicks: END - CHARGE, mode: 'window' });
@@ -56,13 +58,13 @@ for (const [file, V] of Object.entries(VARIANTS)) {
   add('SpriteRenderer', 'core', { size: V.core });
   add('SpriteRenderer', 'halo', { size: V.halo, opacityOverWindow: lin([[0, 0.8], [1, 0.8]]) });
   for (const [r, m] of [['core', 'coremat'], ['halo', 'halomat']]) { wire('ball.anchor', `${r}.anchor`); wire(`${m}.material`, `${r}.material`); wire('corewin.window', `${r}.window`); out(r); }
-  add('PointLight', 'balllight', { color: col('#B48CFF'), intensity: 18, range: 4 });
+  add('PointLight', 'balllight', { color: col(ACCENT), intensity: 18, range: 4 });
   wire('ball.anchor', 'balllight.anchor'); wire('corewin.window', 'balllight.window'); out('balllight');
 
   // ---- Main trail: past positions only (MotionTrail), white core over a wider violet sheath ----
-  add('Material', 'trailmat', { blend: 'additive', tint: col('#E6D8FF'), emission: 0.5, opacity: 0.55 });
+  add('Material', 'trailmat', { blend: 'additive', tint: col('#F0EEF4'), emission: 0.5, opacity: 0.55 });
   add('MotionTrail', 'trail', { history: V.history, maxPoints: 64, width: V.width, endFade: 0.5 });
-  add('Material', 'sheathmat', { blend: 'additive', tint: col('#6A3BEF'), emission: 0.4, opacity: 0.45 });
+  add('Material', 'sheathmat', { blend: 'additive', tint: col(ACCENT), emission: 0.4, opacity: 0.45 });
   add('MotionTrail', 'sheath', { history: +(V.history * 0.8).toFixed(3), maxPoints: 64, width: +(V.width * 2.6).toFixed(3), endFade: 0.5 });
   for (const [r, m] of [['trail', 'trailmat'], ['sheath', 'sheathmat']]) { wire('ball.anchor', `${r}.anchor`); wire(`${m}.material`, `${r}.material`); wire('flight.window', `${r}.window`); out(r); }
 
@@ -78,7 +80,7 @@ for (const [file, V] of Object.entries(VARIANTS)) {
   add('InitialProperties', 'shedip', { sizeMin: 0.02, sizeMax: 0.035 });
   add('NoiseForce', 'shednoise', { mode: 'curl', amplitude: 0.8, frequency: 1.2, evolution: 1 });
   add('Drag', 'sheddrag', { coefficient: 1 });
-  add('Material', 'shedmat', { blend: 'additive', tint: col('#C9A8FF'), emission: 0.8 });
+  add('Material', 'shedmat', { blend: 'additive', tint: col(ACCENT), emission: 0.8 });
   add('ParticleTrail', 'shedtrail', { history: 0.15, maxPoints: 10, width: 0.015, endFade: 0.5 });
   wire('ball.anchor', 'shed.anchor'); wire('corewin.window', 'shed.window');
   wire('shed.particles', 'shedip.particles'); wire('shedip.particles', 'shednoise.particles'); wire('shednoise.particles', 'sheddrag.particles');
@@ -90,9 +92,11 @@ for (const [file, V] of Object.entries(VARIANTS)) {
   add('Schedule', 'lightwin', { startTicks: 0, durationTicks: 30, mode: 'window' });
   for (const w of ['flashwin', 'ringwin', 'lightwin']) wire('ball.arrival', `${w}.trigger`);
   add('SpriteRenderer', 'flash', { size: V.flash, sizeOverWindow: lin([[0, 0.4], [0.15, 1], [1, 1.2]]), opacityOverWindow: lin([[0, 1], [0.3, 0.6], [1, 0]]),
-    colorOverWindow: grad([[0, '#FFFFFF'], [0.4, '#B48CFF'], [1, '#5A2DCC']]) });
+    colorOverWindow: grad([[0, '#FFFFFF'], [1, '#8C8C8C']]) });
   wire('node-target.out', 'flash.anchor'); wire('coremat.material', 'flash.material'); wire('flashwin.window', 'flash.window'); out('flash');
-  add('PointLight', 'impactlight', { color: col('#B48CFF'), intensity: 50, range: 6, intensityOverWindow: lin([[0, 1], [1, 0]]) });
+  add('SpriteRenderer', 'flashglow', { size: +(V.flash * 1.8).toFixed(2), sizeOverWindow: lin([[0, 0.5], [0.2, 1], [1, 1.3]]), opacityOverWindow: lin([[0, 1], [1, 0]]) });
+  wire('node-target.out', 'flashglow.anchor'); wire('halomat.material', 'flashglow.material'); wire('flashwin.window', 'flashglow.window'); out('flashglow');
+  add('PointLight', 'impactlight', { color: col(ACCENT), intensity: 50, range: 6, intensityOverWindow: lin([[0, 1], [1, 0]]) });
   wire('node-target.out', 'impactlight.anchor'); wire('lightwin.window', 'impactlight.window'); out('impactlight');
   // Ring: thin, flat at the impact height, radius .2 → ring size over 36 ticks, fading.
   add('Time', 'ringclock'); wire('ringwin.window', 'ringclock.window');
@@ -101,7 +105,7 @@ for (const [file, V] of Object.entries(VARIANTS)) {
   add('ScalarMath', 'ringfade', { operation: 'add', b: 0.8, unit: 'normalized' });
   wire('ringclock.progress', 'ringsize.a'); wire('ringclock.progress', 'ringdim.a'); wire('ringdim.value', 'ringfade.a');
   add('RingPath', 'ring', { radius: V.ring, samples: 96 });
-  add('Material', 'ringmat', { blend: 'additive', tint: col('#C9A8FF'), emission: 0.5 });
+  add('Material', 'ringmat', { blend: 'additive', tint: col(ACCENT), emission: 0.5 });
   add('RibbonRenderer', 'ringrib', { width: 0.03, endFade: 0 });
   wire('node-target.out', 'ring.center'); wire('ringsize.value', 'ring.radiusScale'); wire('ringfade.value', 'ringmat.opacity');
   wire('ring.paths', 'ringrib.paths'); wire('ringmat.material', 'ringrib.material'); wire('ringwin.window', 'ringrib.window'); out('ringrib');
@@ -110,8 +114,8 @@ for (const [file, V] of Object.entries(VARIANTS)) {
   add('InitialProperties', 'burstip', { sizeMin: 0.02, sizeMax: 0.04 });
   add('Drag', 'burstdrag', { coefficient: 2 });
   add('Gravity', 'burstg', { acceleration: [0, -3, 0] });
-  add('Material', 'burstmat', { template: 'SpriteTextured', sprite: 'spark-streak', blend: 'additive', tint: col('#D8C4FF'), emission: 0.8 });
-  add('BillboardRenderer', 'burstbb', { alignment: 'velocity', stretchRatio: 4, pivot: 0.8, colorOverLife: grad([[0, '#FFFFFF'], [0.4, '#C9A8FF'], [1, '#5A2DCC', 0]]) });
+  add('Material', 'burstmat', { template: 'SpriteTextured', sprite: 'spark-streak', blend: 'additive', tint: col(ACCENT), emission: 0.8 });
+  add('BillboardRenderer', 'burstbb', { alignment: 'velocity', stretchRatio: 4, pivot: 0.8, colorOverLife: grad([[0, '#FFFFFF'], [0.4, '#D0D0D0'], [1, '#707070', 0]]) });
   wire('node-target.out', 'burst.anchor'); wire('ball.arrival', 'burst.trigger');
   wire('burst.particles', 'burstip.particles'); wire('burstip.particles', 'burstdrag.particles'); wire('burstdrag.particles', 'burstg.particles');
   wire('burstg.particles', 'burstbb.particles'); wire('burstmat.material', 'burstbb.material'); out('burstbb');

@@ -1,7 +1,8 @@
-// Simple view (01 "Simple surface", 12 "Open a preset in Simple view"): the document's published number
-// controls grouped by section, each a slider + number field. A drag previews locally and commits one
+// Simple view (01 "Simple surface", 12 "Open a preset in Simple view"): the document's published controls
+// grouped by section. Numbers get a slider + number field; colours a colour picker; vectors three number fields;
+// booleans a checkbox; choices a dropdown. A drag previews locally and commits one
 // undoable edit on release (only if it moved: focusing a slider never commits its step-snapped value); the field commits on Enter/blur. Every control lists what it drives.
-import { useState } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import type { EffectDocumentV2, PublicControl } from '../model/types.ts';
 import type { Patch as HistoryPatch } from './history.ts';
 
@@ -39,8 +40,53 @@ function ControlRow({ c, index, onEdit, durationTicks }: { c: PublicControl; ind
   );
 }
 
+/** Colour picker committing once when the picker closes (native `change`), not on every drag step (`input`). */
+function ColorInput({ id, value, onCommit }: { id: string; value: string; onCommit: (srgb: string) => void }) {
+  const ref = useRef<HTMLInputElement>(null);
+  const commit = useRef(onCommit);
+  commit.current = onCommit;
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const on = () => commit.current(el.value.toUpperCase());
+    el.addEventListener('change', on);
+    return () => el.removeEventListener('change', on);
+  }, []);
+  return <input ref={ref} id={id} type="color" defaultValue={value} />;
+}
+
+/** Non-number knobs: each change is one undoable edit. */
+function ValueRow({ c, index, onEdit }: { c: PublicControl; index: number; onEdit: Props['onEdit'] }) {
+  const set = (value: PublicControl['value'], text: string) => onEdit(`Set ${c.label} = ${text}`, [{ op: 'set', path: ['controls', index, 'value'], value }]);
+  let input: ReactElement | null = null;
+  const v = c.value as unknown;
+  if (c.type === 'color' && typeof v === 'object' && v !== null && 'srgb' in v) {
+    const col = v as { srgb: string; alpha: number };
+    input = <ColorInput id={`cp-${c.id}`} value={col.srgb.slice(0, 7).toLowerCase()} onCommit={srgb => { if (srgb !== col.srgb.toUpperCase()) set({ ...col, srgb }, srgb); }} />;
+  } else if ((c.type === 'vec2' || c.type === 'vec3') && Array.isArray(v)) {
+    const vec = v as number[];
+    input = <span className="cp-vec">{vec.map((x, axis) => (
+      <input key={axis} className="cp-num" type="number" step="any" defaultValue={x} aria-label={`${c.label} ${'xyz'[axis]}`}
+        onBlur={e => { const n = Number(e.currentTarget.value); if (Number.isFinite(n) && n !== x) { const next = [...vec]; next[axis] = n; set(next as PublicControl['value'], `[${next.join(', ')}]`); } }} />
+    ))}</span>;
+  } else if (c.type === 'boolean' && typeof v === 'boolean') {
+    input = <input id={`cp-${c.id}`} type="checkbox" checked={v} onChange={e => set(e.currentTarget.checked, String(e.currentTarget.checked))} />;
+  } else if (c.choices && typeof v === 'string') {
+    input = <select id={`cp-${c.id}`} value={v} onChange={e => set(e.currentTarget.value, e.currentTarget.value)}>{c.choices.map(x => <option key={x} value={x}>{x}</option>)}</select>;
+  }
+  if (!input) return null;
+  return (
+    <div className="cp-row cp-row-value" title={c.description}>
+      <label className="cp-label" htmlFor={`cp-${c.id}`}>{c.label}</label>
+      {input}
+    </div>
+  );
+}
+
+const isNumber = (c: PublicControl) => c.type === 'number' || c.type === 'integer';
+
 export function ControlsPanel({ document: doc, onEdit }: Props) {
-  const numeric = doc.controls.map((c, i) => [c, i] as const).filter(([c]) => c.type === 'number' || c.type === 'integer');
+  const numeric = doc.controls.map((c, i) => [c, i] as const);
   if (!numeric.length) return <p className="pv2-muted">No published controls. Insert a component (Add component) to get its knobs.</p>;
   const sections = [...new Set(numeric.map(([c]) => c.section))];
   return (
@@ -48,10 +94,12 @@ export function ControlsPanel({ document: doc, onEdit }: Props) {
       {sections.map(s => (
         <fieldset key={s} className="cp-section">
           <legend>{s}</legend>
-          {numeric.filter(([c]) => c.section === s).map(([c, i]) => <ControlRow key={c.id} c={c} index={i} onEdit={onEdit} durationTicks={doc.durationTicks} />)}
+          {numeric.filter(([c]) => c.section === s).map(([c, i]) => isNumber(c)
+            ? <ControlRow key={c.id} c={c} index={i} onEdit={onEdit} durationTicks={doc.durationTicks} />
+            : <ValueRow key={`${c.id}-${JSON.stringify(c.value)}`} c={c} index={i} onEdit={onEdit} />)}
         </fieldset>
       ))}
-      <style>{`.cp-root{display:flex;flex-direction:column;gap:10px}.cp-section{border:1px solid #2a3140;border-radius:6px;padding:6px 8px 8px;margin:0}.cp-section legend{font-size:13px;font-weight:600;padding:0 4px}.cp-row{display:grid;grid-template-columns:minmax(90px,1fr) 2fr 72px auto;gap:6px;align-items:center;font-size:13px;margin-top:4px}.cp-num{width:72px}.cp-unit{font-size:11px;opacity:.7}`}</style>
+      <style>{`.cp-root{display:flex;flex-direction:column;gap:10px}.cp-section{border:1px solid #2a3140;border-radius:6px;padding:6px 8px 8px;margin:0}.cp-section legend{font-size:13px;font-weight:600;padding:0 4px}.cp-row{display:grid;grid-template-columns:minmax(90px,1fr) 2fr 72px auto;gap:6px;align-items:center;font-size:13px;margin-top:4px}.cp-num{width:72px}.cp-row-value{grid-template-columns:minmax(90px,1fr) 3fr}.cp-vec{display:flex;gap:4px}.cp-unit{font-size:11px;opacity:.7}`}</style>
     </div>
   );
 }

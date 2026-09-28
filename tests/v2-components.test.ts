@@ -125,3 +125,36 @@ test('event-triggered Schedules: water splash/ripples follow the arrival, so the
   const later = structuredClone(doc); later.controls.find(c => c.label === 'Start at')!.value = 20; later.durationTicks = 200;
   assert.deepEqual(ticks(later), { dropfloor: 68, splash: 68 }, 'Start at shifts the arrival once, not twice');
 });
+
+test('number knobs can drive one axis of a vector; colour knobs copy a colour to every bound tint', async () => {
+  const { resolveParameters } = await import('../src/model/controls.ts');
+  const { doc } = insertComponent(createBlankDocument(), 'energy-bolt', undefined, { group: true });
+  const bend = doc.controls.find(c => c.label === 'Arc bend')!, accent = doc.controls.find(c => c.label === 'Accent colour')!;
+  assert.equal(bend.type, 'number');
+  assert.ok(Math.abs((bend.value as number) - 0.4) < 1e-3);
+  assert.equal(accent.type, 'color');
+  bend.value = 1;
+  accent.value = { srgb: '#33CC66', alpha: 1 };
+  valid(doc);
+  const res = resolveParameters(doc, createRegistry());
+  if (!res.ok) assert.fail(JSON.stringify(res.errors.slice(0, 3)));
+  const get = (suffix: string, param: string) => res.value.find(r => r.nodeId.endsWith(suffix) && r.parameter === param)!.value;
+  const sh = get('-arc', 'startHandle') as number[], eh = get('-arc', 'endHandle') as number[];
+  assert.ok(Math.abs(sh[1] - 4 / 3) < 1e-9 && Math.abs(eh[1] - 4 / 3) < 1e-9, 'y axis driven');
+  assert.equal(sh[0], 2.6); assert.equal(eh[0], -2.6); // other axes keep their literal
+  assert.deepEqual(get('-ringmat', 'tint'), { srgb: '#33CC66', alpha: 1 });
+  assert.deepEqual(get('-impactlight', 'color'), { srgb: '#33CC66', alpha: 1 });
+  compiles(doc);
+});
+
+test('axis bindings: a whole-parameter owner and an axis owner of the same parameter conflict', () => {
+  const { doc } = insertComponent(createBlankDocument(), 'energy-bolt', undefined, { group: true });
+  const bend = doc.controls.find(c => c.label === 'Arc bend')!;
+  doc.controls.push({ ...structuredClone(bend), id: 'ctl-extra', label: 'Extra', bindings: [{ nodeId: bend.bindings[0].nodeId, parameter: 'startHandle', axis: 1 }] });
+  const v = validateDocument(doc, { registry: createRegistry() });
+  assert.ok(!v.ok && v.errors.some(e => e.code === 'MULTIPLE_DRIVERS'));
+  doc.controls.pop();
+  bend.bindings[0] = { ...bend.bindings[0], axis: 5 };
+  const w = validateDocument(doc, { registry: createRegistry() });
+  assert.ok(!w.ok && w.errors.some(e => e.code === 'INVALID_VALUE'));
+});

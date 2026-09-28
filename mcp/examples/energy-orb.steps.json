@@ -105,7 +105,7 @@
     "sprite": "soft-glow",
     "blend": "additive",
     "tint": {
-     "srgb": "#D9C6FF",
+     "srgb": "#F2F0F6",
      "alpha": 1
     },
     "emission": 0.8
@@ -195,7 +195,7 @@
     "sprite": "soft-glow",
     "blend": "additive",
     "tint": {
-     "srgb": "#F6EEFF",
+     "srgb": "#FFFFFF",
      "alpha": 1
     },
     "emission": 1.4
@@ -372,12 +372,12 @@
    "params": {
     "startHandle": [
      2.6,
-     0.933,
+     0.9333333333333332,
      0
     ],
     "endHandle": [
      -2.6,
-     0.933,
+     0.9333333333333332,
      0
     ],
     "samples": 64
@@ -562,7 +562,7 @@
    "id": "balllight",
    "params": {
     "color": {
-     "srgb": "#B48CFF",
+     "srgb": "#9B6BFF",
      "alpha": 1
     },
     "intensity": 18,
@@ -603,7 +603,7 @@
    "params": {
     "blend": "additive",
     "tint": {
-     "srgb": "#E6D8FF",
+     "srgb": "#F0EEF4",
      "alpha": 1
     },
     "emission": 0.5,
@@ -634,7 +634,7 @@
    "params": {
     "blend": "additive",
     "tint": {
-     "srgb": "#6A3BEF",
+     "srgb": "#9B6BFF",
      "alpha": 1
     },
     "emission": 0.4,
@@ -886,7 +886,7 @@
    "params": {
     "blend": "additive",
     "tint": {
-     "srgb": "#C9A8FF",
+     "srgb": "#9B6BFF",
      "alpha": 1
     },
     "emission": 0.8
@@ -1088,16 +1088,9 @@
        }
       },
       {
-       "position": 0.4,
-       "color": {
-        "srgb": "#B48CFF",
-        "alpha": 1
-       }
-      },
-      {
        "position": 1,
        "color": {
-        "srgb": "#5A2DCC",
+        "srgb": "#8C8C8C",
         "alpha": 1
        }
       }
@@ -1142,11 +1135,86 @@
   "vfx_add_node",
   {
    "docId": "energyorb",
+   "type": "SpriteRenderer",
+   "id": "flashglow",
+   "params": {
+    "size": 4.32,
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.5
+      },
+      {
+       "x": 0.2,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 1.3
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "node-target.out",
+   "to": "flashglow.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "halomat.material",
+   "to": "flashglow.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "flashwin.window",
+   "to": "flashglow.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "flashglow.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
    "type": "PointLight",
    "id": "impactlight",
    "params": {
     "color": {
-     "srgb": "#B48CFF",
+     "srgb": "#9B6BFF",
      "alpha": 1
     },
     "intensity": 50,
@@ -1293,7 +1361,7 @@
    "params": {
     "blend": "additive",
     "tint": {
-     "srgb": "#C9A8FF",
+     "srgb": "#9B6BFF",
      "alpha": 1
     },
     "emission": 0.5
@@ -1435,7 +1503,7 @@
     "sprite": "spark-streak",
     "blend": "additive",
     "tint": {
-     "srgb": "#D8C4FF",
+     "srgb": "#9B6BFF",
      "alpha": 1
     },
     "emission": 0.8
@@ -1464,14 +1532,14 @@
       {
        "position": 0.4,
        "color": {
-        "srgb": "#C9A8FF",
+        "srgb": "#D0D0D0",
         "alpha": 1
        }
       },
       {
        "position": 1,
        "color": {
-        "srgb": "#5A2DCC",
+        "srgb": "#707070",
         "alpha": 0
        }
       }

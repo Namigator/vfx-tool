@@ -739,7 +739,8 @@ function checkControl(ctx: Ctx, p: string, c: unknown, targets: Map<string, stri
 }
 
 function checkBinding(ctx: Ctx, p: string, b: unknown, scope: string | undefined, targets: Map<string, string>) {
-  if (!shape(ctx, p, b, ['nodeId', 'parameter'], ['scale', 'offset'], 'binding')) return;
+  if (!shape(ctx, p, b, ['nodeId', 'parameter'], ['scale', 'offset', 'axis'], 'binding')) return;
+  if (hasOwn(b, 'axis') && !(Number.isInteger(b.axis) && (b.axis as number) >= 0 && (b.axis as number) <= 2)) err(ctx, 'INVALID_VALUE', `${p}.axis`, 'axis must be 0, 1 or 2.');
   for (const k of ['scale', 'offset']) {
     if (hasOwn(b, k) && !isFiniteNumber(b[k])) err(ctx, 'INVALID_VALUE', `${p}.${k}`, `${k} must be a finite number.`);
   }
@@ -763,10 +764,13 @@ function checkBinding(ctx: Ctx, p: string, b: unknown, scope: string | undefined
     }
     if (!ok) { err(ctx, 'MISSING_REFERENCE', `${p}.parameter`, `Node ${quote(b.nodeId)} has no parameter ${quote(b.parameter)}.`, b.nodeId); return; }
   }
-  const key = `${b.nodeId}\u0000${b.parameter}`;
-  const first = targets.get(key);
+  // A whole-parameter binding owns every axis; an axis binding owns one component.
+  const base = `${b.nodeId}\u0000${b.parameter}`;
+  const own = hasOwn(b, 'axis') ? `${base}\u0000${b.axis}` : base;
+  const clashes = hasOwn(b, 'axis') ? [base, own] : [base, ...[0, 1, 2].map(a => `${base}\u0000${a}`)];
+  const first = clashes.map(k => targets.get(k)).find(v => v !== undefined);
   if (first !== undefined) err(ctx, 'MULTIPLE_DRIVERS', p, `Parameter ${quote(b.parameter)} of node ${quote(b.nodeId)} is already bound at ${first}; a target has one control owner.`, b.nodeId);
-  else targets.set(key, p);
+  else targets.set(own, p);
 }
 
 // ---------- editor layout ----------

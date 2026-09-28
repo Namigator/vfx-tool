@@ -100,9 +100,9 @@ const KNOBS = {
   'light-pulse': [['rays', 'Ray count', [['rays', 'count']]], ['length', 'Ray length', [['rays', 'lengthMax'], ['rays', 'lengthMin', 0.25]]], ['pulse', 'Pulse size', [['core', 'size']]], ['halo', 'Halo softness', [['halo', 'size']]], ['motes', 'Mote amount', [['motes', 'burst']]], ['light', 'Brightness', [['lamp', 'intensity']]]],
   'light-cone': [['rays', 'Ray count', [['rays', 'count']]], ['length', 'Ray length', [['rays', 'lengthMax'], ['rays', 'lengthMin', 0.375]]], ['pulse', 'Pulse size', [['core', 'size']]], ['halo', 'Halo softness', [['halo', 'size']]], ['motes', 'Mote amount', [['motes', 'burst']]], ['light', 'Brightness', [['lamp', 'intensity']]]],
   'light-blessing': [['rays', 'Ray count', [['rays', 'count']]], ['length', 'Ray length', [['rays', 'lengthMax'], ['rays', 'lengthMin', 0.44]]], ['pulse', 'Pulse size', [['core', 'size']]], ['halo', 'Halo softness', [['halo', 'size']]], ['motes', 'Mote amount', [['motes', 'burst']]], ['light', 'Brightness', [['lamp', 'intensity']]]],
-  'energy-bolt': [['travel', 'Travel ticks', [['ball', 'durationTicks'], ['corewin', 'durationTicks', 1, 2]]], ['core', 'Core size', [['core', 'size'], ['halo', 'size', 2.7273]]], ['trail', 'Trail length', [['trail', 'history'], ['sheath', 'history', 0.8]]], ['width', 'Trail width', [['trail', 'width'], ['sheath', 'width', 2.6]]], ['impact', 'Impact amount', [['burst', 'burst']]], ['ring', 'Ring size', [['ring', 'radius']]]],
-  'energy-needle': [['travel', 'Travel ticks', [['ball', 'durationTicks'], ['corewin', 'durationTicks', 1, 2]]], ['core', 'Core size', [['core', 'size'], ['halo', 'size', 2.9167]]], ['trail', 'Trail length', [['trail', 'history'], ['sheath', 'history', 0.8]]], ['width', 'Trail width', [['trail', 'width'], ['sheath', 'width', 2.6]]], ['impact', 'Impact amount', [['burst', 'burst']]], ['ring', 'Ring size', [['ring', 'radius']]]],
-  'energy-orb': [['travel', 'Travel ticks', [['ball', 'durationTicks'], ['corewin', 'durationTicks', 1, 2]]], ['core', 'Core size', [['core', 'size'], ['halo', 'size', 2.6316]]], ['trail', 'Trail length', [['trail', 'history'], ['sheath', 'history', 0.8]]], ['width', 'Trail width', [['trail', 'width'], ['sheath', 'width', 2.6]]], ['impact', 'Impact amount', [['burst', 'burst']]], ['ring', 'Ring size', [['ring', 'radius']]]],
+  'energy-bolt': [['travel', 'Travel ticks', [['ball', 'durationTicks'], ['corewin', 'durationTicks', 1, 2]]], ['core', 'Core size', [['core', 'size'], ['halo', 'size', 2.7273]]], ['trail', 'Trail length', [['trail', 'history'], ['sheath', 'history', 0.8]]], ['width', 'Trail width', [['trail', 'width'], ['sheath', 'width', 2.6]]], ['impact', 'Impact amount', [['burst', 'burst']]], ['ring', 'Ring size', [['ring', 'radius']]], ['bend', 'Arc bend', [['arc', 'startHandle', 4 / 3, 0, 1], ['arc', 'endHandle', 4 / 3, 0, 1]], { min: 0, max: 2 }], ['accent', 'Accent colour', [['halomat', 'tint'], ['sheathmat', 'tint'], ['shedmat', 'tint'], ['ringmat', 'tint'], ['burstmat', 'tint'], ['balllight', 'color'], ['impactlight', 'color']]]],
+  'energy-needle': [['travel', 'Travel ticks', [['ball', 'durationTicks'], ['corewin', 'durationTicks', 1, 2]]], ['core', 'Core size', [['core', 'size'], ['halo', 'size', 2.9167]]], ['trail', 'Trail length', [['trail', 'history'], ['sheath', 'history', 0.8]]], ['width', 'Trail width', [['trail', 'width'], ['sheath', 'width', 2.6]]], ['impact', 'Impact amount', [['burst', 'burst']]], ['ring', 'Ring size', [['ring', 'radius']]], ['bend', 'Arc bend', [['arc', 'startHandle', 4 / 3, 0, 1], ['arc', 'endHandle', 4 / 3, 0, 1]], { min: 0, max: 2 }], ['accent', 'Accent colour', [['halomat', 'tint'], ['sheathmat', 'tint'], ['shedmat', 'tint'], ['ringmat', 'tint'], ['burstmat', 'tint'], ['balllight', 'color'], ['impactlight', 'color']]]],
+  'energy-orb': [['travel', 'Travel ticks', [['ball', 'durationTicks'], ['corewin', 'durationTicks', 1, 2]]], ['core', 'Core size', [['core', 'size'], ['halo', 'size', 2.6316]]], ['trail', 'Trail length', [['trail', 'history'], ['sheath', 'history', 0.8]]], ['width', 'Trail width', [['trail', 'width'], ['sheath', 'width', 2.6]]], ['impact', 'Impact amount', [['burst', 'burst']]], ['ring', 'Ring size', [['ring', 'radius']]], ['bend', 'Arc bend', [['arc', 'startHandle', 4 / 3, 0, 1], ['arc', 'endHandle', 4 / 3, 0, 1]], { min: 0, max: 2 }], ['accent', 'Accent colour', [['halomat', 'tint'], ['sheathmat', 'tint'], ['shedmat', 'tint'], ['ringmat', 'tint'], ['burstmat', 'tint'], ['balllight', 'color'], ['impactlight', 'color']]]],
   'fireball': [['travel', 'Travel ticks', [['ball', 'durationTicks']]], ['trail', 'Trail density', [['trailem', 'rate']]], ['core', 'Core size', [['core', 'size']]], ['impact', 'Impact sparks', [['boom', 'burst']]], ['flash', 'Flash size', [['flash', 'size']]], ['light', 'Ball light', [['balllight', 'intensity']]]],
 };
 
@@ -117,14 +117,16 @@ for (const [id, label, description, file] of COMPONENTS) {
     else if (tool === 'vfx_set_anchor' && a.anchorId !== 'source' && a.anchorId !== 'target') anchors.push({ id: a.anchorId, position: a.position });
     else if (tool === 'vfx_set_document' && a.durationTicks) durationTicks = a.durationTicks;
   }
-  const knobs = (KNOBS[id] ?? []).map(([kid, klabel, binds]) => {
-    const [n0, p0, s0 = 1] = binds[0], node = nodes.find(n => n.id === n0);
+  const knobs = (KNOBS[id] ?? []).map(([kid, klabel, binds, opts = {}]) => {
+    const [n0, p0, s0 = 1, o0 = 0, a0] = binds[0], node = nodes.find(n => n.id === n0);
     if (!node) throw new Error(`${id}: knob ${kid} binds missing node ${n0}`);
-    const v = node.params?.[p0];
-    if (typeof v !== 'number') throw new Error(`${id}: knob ${kid} needs a literal number at ${n0}.${p0} in the recipe`);
-    // Bindings: [node, parameter, scale = 1, offset = 0]; param = knob × scale + offset.
-    const o0 = binds[0][3] ?? 0;
-    return { id: kid, label: klabel, value: (v - o0) / s0, bindings: binds.map(([n, p, s, o]) => ({ node: n, parameter: p, ...(s && s !== 1 ? { scale: s } : {}), ...(o ? { offset: o } : {}) })) };
+    // Bindings: [node, parameter, scale = 1, offset = 0, axis?]; param (or param[axis]) = knob × scale + offset.
+    // A non-number literal (colour, vector, boolean, choice) becomes a same-typed knob copied as-is.
+    let v = node.params?.[p0];
+    if (a0 !== undefined) v = Array.isArray(v) ? v[a0] : undefined;
+    if (v === undefined) throw new Error(`${id}: knob ${kid} needs a literal at ${n0}.${p0} in the recipe`);
+    const value = typeof v === 'number' ? (v - o0) / s0 : v;
+    return { id: kid, label: klabel, value, ...opts, bindings: binds.map(([n, p, s, o, a]) => ({ node: n, parameter: p, ...(s && s !== 1 ? { scale: s } : {}), ...(o ? { offset: o } : {}), ...(a !== undefined ? { axis: a } : {}) })) };
   });
   out.push({ id, label, description, durationTicks, anchors, nodes, edges, knobs });
 }

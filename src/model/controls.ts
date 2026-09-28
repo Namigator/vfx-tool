@@ -231,13 +231,16 @@ export function resolveParameters(
 
   // Bindings: scope, target, type, unit and affine checks; ownership index.
   const owners = new Map<string, BindingRef[]>();
+  /** Axis bindings (a numeric control driving one vec2/vec3 component), per parameter. */
+  const axisOwners = new Map<string, BindingRef[]>();
   doc.controls.forEach((c, ci) => c.bindings.forEach((b, bi) => {
     const path = `controls[${ci}].bindings[${bi}]`;
     const ref: BindingRef = { control: c, ci, bi, path };
     const key = targetKey(b.nodeId, b.parameter);
-    const list = owners.get(key) ?? [];
+    const map = b.axis === undefined ? owners : axisOwners;
+    const list = map.get(key) ?? [];
     list.push(ref);
-    owners.set(key, list);
+    map.set(key, list);
     const target = nodes.get(b.nodeId);
     if (!target) { err('MISSING_REFERENCE', `Binding targets unknown node "${b.nodeId}".`, `${path}.nodeId`); return; }
     if (target.graphId !== c.scopeGraphId) {
@@ -252,8 +255,13 @@ export function resolveParameters(
     if (!specs) return; // UNKNOWN_NODE already reported.
     const spec = specs.find(s => s.id === b.parameter);
     if (!spec) { err('MISSING_REFERENCE', `Node "${b.nodeId}" has no parameter "${b.parameter}".`, `${path}.parameter`, b.nodeId); return; }
+    if (b.axis !== undefined) {
+      const dims = spec.type === 'vec2' ? 2 : spec.type === 'vec3' ? 3 : 0;
+      if (!isNumericType(c.type) || !dims) err('TYPE_MISMATCH', `Axis bindings need a number control and a vec2/vec3 parameter ("${b.parameter}" is ${spec.type}).`, path, b.nodeId);
+      else if (!Number.isInteger(b.axis) || b.axis < 0 || b.axis >= dims) err('INVALID_VALUE', `Axis ${b.axis} is outside ${spec.type} "${b.parameter}".`, `${path}.axis`, b.nodeId);
+    }
     const numeric = isNumericType(c.type) && isNumericType(spec.type);
-    if (!numeric && c.type !== spec.type) {
+    if (b.axis === undefined && !numeric && c.type !== spec.type) {
       err('TYPE_MISMATCH', `Control type "${c.type}" cannot drive "${spec.type}" parameter "${b.parameter}".`, path, b.nodeId);
     }
     if (c.unit !== spec.unit) {
@@ -269,6 +277,14 @@ export function resolveParameters(
     if (list.length < 2) continue;
     const ids = list.map(r => r.control.id).join(', ');
     for (const r of list.slice(1)) err('MULTIPLE_DRIVERS', `Parameter has multiple control owners (${ids}).`, r.path, list[0].control.bindings[list[0].bi].nodeId);
+  }
+  for (const [key, list] of axisOwners) {
+    const seen = new Set<number>();
+    for (const r of list) {
+      const b = r.control.bindings[r.bi];
+      if (owners.has(key) || seen.has(b.axis as number)) err('MULTIPLE_DRIVERS', `Axis ${b.axis} of "${b.parameter}" has more than one control owner.`, r.path, b.nodeId);
+      seen.add(b.axis as number);
+    }
   }
 
   // Connections: references and duplicate drivers.
@@ -312,6 +328,7 @@ export function resolveParameters(
         let source: ParameterSource;
         const conn = connections.get(key);
         const owner = owners.get(key)?.[0];
+        const axisList = owners.has(key) ? undefined : axisOwners.get(key)?.filter(r => controlValue.has(r.control.id));
         if (conn) {
           value = conn.value;
           source = { kind: 'connection' };
@@ -320,6 +337,16 @@ export function resolveParameters(
           const b = owner.control.bindings[owner.bi];
           value = typeof v === 'number' && isNumericType(owner.control.type) ? v * (b.scale ?? 1) + (b.offset ?? 0) : v;
           source = { kind: 'control', controlId: owner.control.id };
+        } else if (axisList?.length) {
+          // Start from the literal (or default) vector and replace each driven component.
+          const base = Object.prototype.hasOwnProperty.call(n.params, spec.id) ? n.params[spec.id] : spec.default;
+          const vec = Array.isArray(base) ? [...base] as number[] : [];
+          for (const r of axisList) {
+            const b = r.control.bindings[r.bi], v = controlValue.get(r.control.id);
+            if (typeof v === 'number') vec[b.axis as number] = v * (b.scale ?? 1) + (b.offset ?? 0);
+          }
+          value = vec as ParameterValue;
+          source = { kind: 'control', controlId: axisList[0].control.id };
         } else if (isGroup && overrides.has(spec.id)) {
           value = overrides.get(spec.id) as ParameterValue;
           source = { kind: 'controlOverride', controlId: spec.id };

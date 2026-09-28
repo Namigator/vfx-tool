@@ -34647,7 +34647,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sprite": "soft-glow",
      "blend": "additive",
      "tint": {
-      "srgb": "#D9C6FF",
+      "srgb": "#F2F0F6",
       "alpha": 1
      },
      "emission": 0.8
@@ -34665,7 +34665,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sprite": "soft-glow",
      "blend": "additive",
      "tint": {
-      "srgb": "#F6EEFF",
+      "srgb": "#FFFFFF",
       "alpha": 1
      },
      "emission": 1.4
@@ -34762,12 +34762,12 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "startHandle": [
       2.6,
-      0.533,
+      0.5333333333333333,
       0
      ],
      "endHandle": [
       -2.6,
-      0.533,
+      0.5333333333333333,
       0
      ],
      "samples": 64
@@ -34832,7 +34832,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "PointLight",
     "params": {
      "color": {
-      "srgb": "#B48CFF",
+      "srgb": "#9B6BFF",
       "alpha": 1
      },
      "intensity": 18,
@@ -34845,7 +34845,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "additive",
      "tint": {
-      "srgb": "#E6D8FF",
+      "srgb": "#F0EEF4",
       "alpha": 1
      },
      "emission": 0.5,
@@ -34868,7 +34868,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "additive",
      "tint": {
-      "srgb": "#6A3BEF",
+      "srgb": "#9B6BFF",
       "alpha": 1
      },
      "emission": 0.4,
@@ -34972,7 +34972,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "additive",
      "tint": {
-      "srgb": "#C9A8FF",
+      "srgb": "#9B6BFF",
       "alpha": 1
      },
      "emission": 0.8
@@ -35066,18 +35066,50 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
         }
        },
        {
-        "position": 0.4,
-        "color": {
-         "srgb": "#B48CFF",
-         "alpha": 1
-        }
-       },
-       {
         "position": 1,
         "color": {
-         "srgb": "#5A2DCC",
+         "srgb": "#8C8C8C",
          "alpha": 1
         }
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "flashglow",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 2.88,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 0.2,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1.3
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
        }
       ]
      }
@@ -35088,7 +35120,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "PointLight",
     "params": {
      "color": {
-      "srgb": "#B48CFF",
+      "srgb": "#9B6BFF",
       "alpha": 1
      },
      "intensity": 50,
@@ -35155,7 +35187,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "additive",
      "tint": {
-      "srgb": "#C9A8FF",
+      "srgb": "#9B6BFF",
       "alpha": 1
      },
      "emission": 0.5
@@ -35217,7 +35249,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sprite": "spark-streak",
      "blend": "additive",
      "tint": {
-      "srgb": "#D8C4FF",
+      "srgb": "#9B6BFF",
       "alpha": 1
      },
      "emission": 0.8
@@ -35242,14 +35274,14 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
        {
         "position": 0.4,
         "color": {
-         "srgb": "#C9A8FF",
+         "srgb": "#D0D0D0",
          "alpha": 1
         }
        },
        {
         "position": 1,
         "color": {
-         "srgb": "#5A2DCC",
+         "srgb": "#707070",
          "alpha": 0
         }
        }
@@ -35497,6 +35529,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "flash.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "flashglow.anchor"
+   ],
+   [
+    "halomat.material",
+    "flashglow.material"
+   ],
+   [
+    "flashwin.window",
+    "flashglow.window"
+   ],
+   [
+    "flashglow.visual",
     "node-output.visual"
    ],
    [
@@ -35674,6 +35722,65 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       "parameter": "radius"
      }
     ]
+   },
+   {
+    "id": "bend",
+    "label": "Arc bend",
+    "value": 0.4,
+    "min": 0,
+    "max": 2,
+    "bindings": [
+     {
+      "node": "arc",
+      "parameter": "startHandle",
+      "scale": 1.3333333333333333,
+      "axis": 1
+     },
+     {
+      "node": "arc",
+      "parameter": "endHandle",
+      "scale": 1.3333333333333333,
+      "axis": 1
+     }
+    ]
+   },
+   {
+    "id": "accent",
+    "label": "Accent colour",
+    "value": {
+     "srgb": "#9B6BFF",
+     "alpha": 1
+    },
+    "bindings": [
+     {
+      "node": "halomat",
+      "parameter": "tint"
+     },
+     {
+      "node": "sheathmat",
+      "parameter": "tint"
+     },
+     {
+      "node": "shedmat",
+      "parameter": "tint"
+     },
+     {
+      "node": "ringmat",
+      "parameter": "tint"
+     },
+     {
+      "node": "burstmat",
+      "parameter": "tint"
+     },
+     {
+      "node": "balllight",
+      "parameter": "color"
+     },
+     {
+      "node": "impactlight",
+      "parameter": "color"
+     }
+    ]
    }
   ]
  },
@@ -35732,7 +35839,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sprite": "soft-glow",
      "blend": "additive",
      "tint": {
-      "srgb": "#D9C6FF",
+      "srgb": "#F2F0F6",
       "alpha": 1
      },
      "emission": 0.8
@@ -35750,7 +35857,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sprite": "soft-glow",
      "blend": "additive",
      "tint": {
-      "srgb": "#F6EEFF",
+      "srgb": "#FFFFFF",
       "alpha": 1
      },
      "emission": 1.4
@@ -35847,12 +35954,12 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "startHandle": [
       2.6,
-      0.133,
+      0.13333333333333333,
       0
      ],
      "endHandle": [
       -2.6,
-      0.133,
+      0.13333333333333333,
       0
      ],
      "samples": 64
@@ -35917,7 +36024,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "PointLight",
     "params": {
      "color": {
-      "srgb": "#B48CFF",
+      "srgb": "#9B6BFF",
       "alpha": 1
      },
      "intensity": 18,
@@ -35930,7 +36037,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "additive",
      "tint": {
-      "srgb": "#E6D8FF",
+      "srgb": "#F0EEF4",
       "alpha": 1
      },
      "emission": 0.5,
@@ -35953,7 +36060,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "additive",
      "tint": {
-      "srgb": "#6A3BEF",
+      "srgb": "#9B6BFF",
       "alpha": 1
      },
      "emission": 0.4,
@@ -36057,7 +36164,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "additive",
      "tint": {
-      "srgb": "#C9A8FF",
+      "srgb": "#9B6BFF",
       "alpha": 1
      },
      "emission": 0.8
@@ -36151,18 +36258,50 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
         }
        },
        {
-        "position": 0.4,
-        "color": {
-         "srgb": "#B48CFF",
-         "alpha": 1
-        }
-       },
-       {
         "position": 1,
         "color": {
-         "srgb": "#5A2DCC",
+         "srgb": "#8C8C8C",
          "alpha": 1
         }
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "flashglow",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1.8,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 0.2,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1.3
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
        }
       ]
      }
@@ -36173,7 +36312,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "PointLight",
     "params": {
      "color": {
-      "srgb": "#B48CFF",
+      "srgb": "#9B6BFF",
       "alpha": 1
      },
      "intensity": 50,
@@ -36240,7 +36379,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "additive",
      "tint": {
-      "srgb": "#C9A8FF",
+      "srgb": "#9B6BFF",
       "alpha": 1
      },
      "emission": 0.5
@@ -36302,7 +36441,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sprite": "spark-streak",
      "blend": "additive",
      "tint": {
-      "srgb": "#D8C4FF",
+      "srgb": "#9B6BFF",
       "alpha": 1
      },
      "emission": 0.8
@@ -36327,14 +36466,14 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
        {
         "position": 0.4,
         "color": {
-         "srgb": "#C9A8FF",
+         "srgb": "#D0D0D0",
          "alpha": 1
         }
        },
        {
         "position": 1,
         "color": {
-         "srgb": "#5A2DCC",
+         "srgb": "#707070",
          "alpha": 0
         }
        }
@@ -36582,6 +36721,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "flash.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "flashglow.anchor"
+   ],
+   [
+    "halomat.material",
+    "flashglow.material"
+   ],
+   [
+    "flashwin.window",
+    "flashglow.window"
+   ],
+   [
+    "flashglow.visual",
     "node-output.visual"
    ],
    [
@@ -36759,6 +36914,65 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       "parameter": "radius"
      }
     ]
+   },
+   {
+    "id": "bend",
+    "label": "Arc bend",
+    "value": 0.1,
+    "min": 0,
+    "max": 2,
+    "bindings": [
+     {
+      "node": "arc",
+      "parameter": "startHandle",
+      "scale": 1.3333333333333333,
+      "axis": 1
+     },
+     {
+      "node": "arc",
+      "parameter": "endHandle",
+      "scale": 1.3333333333333333,
+      "axis": 1
+     }
+    ]
+   },
+   {
+    "id": "accent",
+    "label": "Accent colour",
+    "value": {
+     "srgb": "#9B6BFF",
+     "alpha": 1
+    },
+    "bindings": [
+     {
+      "node": "halomat",
+      "parameter": "tint"
+     },
+     {
+      "node": "sheathmat",
+      "parameter": "tint"
+     },
+     {
+      "node": "shedmat",
+      "parameter": "tint"
+     },
+     {
+      "node": "ringmat",
+      "parameter": "tint"
+     },
+     {
+      "node": "burstmat",
+      "parameter": "tint"
+     },
+     {
+      "node": "balllight",
+      "parameter": "color"
+     },
+     {
+      "node": "impactlight",
+      "parameter": "color"
+     }
+    ]
    }
   ]
  },
@@ -36817,7 +37031,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sprite": "soft-glow",
      "blend": "additive",
      "tint": {
-      "srgb": "#D9C6FF",
+      "srgb": "#F2F0F6",
       "alpha": 1
      },
      "emission": 0.8
@@ -36835,7 +37049,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sprite": "soft-glow",
      "blend": "additive",
      "tint": {
-      "srgb": "#F6EEFF",
+      "srgb": "#FFFFFF",
       "alpha": 1
      },
      "emission": 1.4
@@ -36932,12 +37146,12 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "startHandle": [
       2.6,
-      0.933,
+      0.9333333333333332,
       0
      ],
      "endHandle": [
       -2.6,
-      0.933,
+      0.9333333333333332,
       0
      ],
      "samples": 64
@@ -37002,7 +37216,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "PointLight",
     "params": {
      "color": {
-      "srgb": "#B48CFF",
+      "srgb": "#9B6BFF",
       "alpha": 1
      },
      "intensity": 18,
@@ -37015,7 +37229,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "additive",
      "tint": {
-      "srgb": "#E6D8FF",
+      "srgb": "#F0EEF4",
       "alpha": 1
      },
      "emission": 0.5,
@@ -37038,7 +37252,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "additive",
      "tint": {
-      "srgb": "#6A3BEF",
+      "srgb": "#9B6BFF",
       "alpha": 1
      },
      "emission": 0.4,
@@ -37142,7 +37356,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "additive",
      "tint": {
-      "srgb": "#C9A8FF",
+      "srgb": "#9B6BFF",
       "alpha": 1
      },
      "emission": 0.8
@@ -37236,18 +37450,50 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
         }
        },
        {
-        "position": 0.4,
-        "color": {
-         "srgb": "#B48CFF",
-         "alpha": 1
-        }
-       },
-       {
         "position": 1,
         "color": {
-         "srgb": "#5A2DCC",
+         "srgb": "#8C8C8C",
          "alpha": 1
         }
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "flashglow",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 4.32,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 0.2,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1.3
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
        }
       ]
      }
@@ -37258,7 +37504,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "PointLight",
     "params": {
      "color": {
-      "srgb": "#B48CFF",
+      "srgb": "#9B6BFF",
       "alpha": 1
      },
      "intensity": 50,
@@ -37325,7 +37571,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "additive",
      "tint": {
-      "srgb": "#C9A8FF",
+      "srgb": "#9B6BFF",
       "alpha": 1
      },
      "emission": 0.5
@@ -37387,7 +37633,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sprite": "spark-streak",
      "blend": "additive",
      "tint": {
-      "srgb": "#D8C4FF",
+      "srgb": "#9B6BFF",
       "alpha": 1
      },
      "emission": 0.8
@@ -37412,14 +37658,14 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
        {
         "position": 0.4,
         "color": {
-         "srgb": "#C9A8FF",
+         "srgb": "#D0D0D0",
          "alpha": 1
         }
        },
        {
         "position": 1,
         "color": {
-         "srgb": "#5A2DCC",
+         "srgb": "#707070",
          "alpha": 0
         }
        }
@@ -37671,6 +37917,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "node-target.out",
+    "flashglow.anchor"
+   ],
+   [
+    "halomat.material",
+    "flashglow.material"
+   ],
+   [
+    "flashwin.window",
+    "flashglow.window"
+   ],
+   [
+    "flashglow.visual",
+    "node-output.visual"
+   ],
+   [
+    "node-target.out",
     "impactlight.anchor"
    ],
    [
@@ -37842,6 +38104,65 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      {
       "node": "ring",
       "parameter": "radius"
+     }
+    ]
+   },
+   {
+    "id": "bend",
+    "label": "Arc bend",
+    "value": 0.7,
+    "min": 0,
+    "max": 2,
+    "bindings": [
+     {
+      "node": "arc",
+      "parameter": "startHandle",
+      "scale": 1.3333333333333333,
+      "axis": 1
+     },
+     {
+      "node": "arc",
+      "parameter": "endHandle",
+      "scale": 1.3333333333333333,
+      "axis": 1
+     }
+    ]
+   },
+   {
+    "id": "accent",
+    "label": "Accent colour",
+    "value": {
+     "srgb": "#9B6BFF",
+     "alpha": 1
+    },
+    "bindings": [
+     {
+      "node": "halomat",
+      "parameter": "tint"
+     },
+     {
+      "node": "sheathmat",
+      "parameter": "tint"
+     },
+     {
+      "node": "shedmat",
+      "parameter": "tint"
+     },
+     {
+      "node": "ringmat",
+      "parameter": "tint"
+     },
+     {
+      "node": "burstmat",
+      "parameter": "tint"
+     },
+     {
+      "node": "balllight",
+      "parameter": "color"
+     },
+     {
+      "node": "impactlight",
+      "parameter": "color"
      }
     ]
    }

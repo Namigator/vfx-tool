@@ -132,7 +132,7 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
 
   tool('vfx_list_controls', 'Published knobs (document controls) with value, bounds and what they drive.', { docId: z.string() }, ({ docId }) =>
     ok(getDoc(docId).controls.map(c => `${c.id} [${c.section}] ${c.label} = ${JSON.stringify(c.value)} (${c.min ?? '-'}..${c.max ?? '-'} ${c.unit}) -> ${c.bindings.map(b => `${b.nodeId}.${b.parameter}${b.scale ? ' x' + b.scale : ''}`).join(', ')}`).join('\n') || 'No controls.'));
-  tool('vfx_set_control', 'Set a published knob by id or label (document validation enforces its bounds).', { docId: z.string(), control: z.string(), value: z.union([z.number(), z.boolean(), z.string()]) }, a =>
+  tool('vfx_set_control', 'Set a published knob by id or label (document validation enforces its bounds). Colour knobs take {srgb:"#RRGGBB",alpha}; vector knobs take [x,y,z].', { docId: z.string(), control: z.string(), value: z.union([z.number(), z.boolean(), z.string(), z.array(z.number()), z.object({ srgb: z.string(), alpha: z.number() })]) }, a =>
     mutate(a.docId, d => {
       const c = d.controls.find(x => x.id === a.control) ?? d.controls.filter(x => x.label === a.control).at(-1);
       if (!c) throw new Error(`No control "${a.control}". Use vfx_list_controls.`);
