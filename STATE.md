@@ -77,6 +77,11 @@ size/triangles/validation directly). MCP user components live in work/mcp/user-c
 - A-05 run 5 (with vfx_guide): [SAW] long continuous orange jet, hot core, ember trails, lingering smoke, floor light,
   nozzle; agent found NO capability gap, only rough edges (fixed: PropMesh pivot start, trail material note, guide core
   values). Doc work/a05/a05e.vfx.json. AWAITING USER VISUAL VERDICT (ref-t*.png vs a05e-t*.png) = A-05 pass/fail.
+- Ceiling test (user: "tool issue or model issue?"): tools/make-flamethrower-recipe.mjs ports the standalone layer by
+  layer onto tool nodes. [SAW] at the reference camera it matches the burn shape/reach/cooling colours, ignition and
+  the smoke+ember decay closely -> the gap was mostly know-how. Fire guide rewritten with these values. Added: matched
+  camera (vfx_render_frames camera, capture cam/look/fov). ref-t0.35.png was black (canvas resize) - recaptured.
+  Remaining visible differences: scene dressing (arena), nozzle heat glow, slightly streakier tongues.
 - Commit gate is now `bash tools/gate.sh && git commit ...` (tsc + fresh test log; a stale-log slip committed a broken
   file once, fixed in 03fcb35).
 - Left: sound (parked); user visual review of all families; merge to main after visual OK.
