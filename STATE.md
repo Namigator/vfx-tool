@@ -151,3 +151,7 @@ Sprite library: `node tools/bake-sprites.mjs` → assets/sprites/ (flame-tongue-
 - Claude Opus 5.5 LOW tasks assigned to visible workers: `d748e2b1-20f4-4ea4-9dea-cf6bc1164de5` (generic ribbon joins/length fade) and `39de94e1-c95d-4bcd-8354-b69e3c1c05ae` (read-only audio mix/WAV review). Await reports; do not poll. New terminals use `claude-model-2`, `claude-review-2`; coordinator is `vfx-manager-2` because old IDs remain in squad history.
 - Next: finish the wide ring lifecycle visual check; receive worker reports; run targeted/full regressions for any change; inspect the browser again; then update this state and checkpoint.
 - Squad recovery note: the first launch hit identity conflicts (`ID already occupied`); the project’s exact-registration resume option restarted only `claude-model-2` and `claude-review-2` in visible terminals. [RAN] `claude-model-2` received its assigned task at 00:27 local. This confirms dispatch, not that the Anthropic spend limit has cleared; no worker result yet.
+- 3d4dae4 (2026-09-29): user reported low lightning fps. Cause [RAN]: path preview recompiled the whole graph
+  (clone/analyze/expand + ParticlePaths particle compile) every tick = 86 ms/frame. Now cached per document
+  (hit only if JSON unchanged): ~3 ms/frame path compile; est. total 7-13 ms/frame [PROXY: parts measured, real
+  rAF fps not measurable in the throttled browser pane]. User to confirm smoothness.
