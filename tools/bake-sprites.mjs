@@ -72,6 +72,21 @@ function flame(k) {
 sheet('flame-tongue-a', 4, 4, 'flipbook', flame(0), { blend: 'normal', usage: 'flame tongue, leans left; tip up (+V); play over life', tint: 'hot palette baked in; darken/redden with colour over life' });
 sheet('flame-tongue-b', 4, 4, 'flipbook', flame(1), { blend: 'normal', usage: 'flame tongue, leans right, different silhouette', tint: 'hot palette baked in' });
 
+// ---- Fire puff flipbook (A-05 gap: decaying flame read as leaf/petal shapes): a lumpy, billowing fire blob
+// with a hot core and ragged cooler edges that expands, cools white-yellow → orange → deep red and tears into
+// wisps over 16 frames. Premultiplied-friendly: colour fades with density.
+sheet('fire-puff', 4, 4, 'flipbook', (fi, x, y) => {
+  const f = fi / 15, u = x - .5, v = y - .5;
+  const r = Math.hypot(u, v) * 2 / mix(.5, .92, Math.sqrt(f));
+  const n = fbm(u * 3.2 + f * 1.1, v * 3.2 - f * 1.6, 131), n2 = fbm(u * 7.5 - f, v * 7.5 - f * 2.2, 151), n3 = fbm(u * 14, v * 14 - f * 3, 171);
+  const body = 1 - smooth(.05, 1, r + (n - .5) * 1.1 + (n2 - .5) * .35);
+  const tear = smooth(f * .8 - .25, f * .8 + .35, n2 * .7 + n3 * .3);
+  const de = clamp(body * tear * (.55 + .45 * n3) * 1.25) * (1 - smooth(.7, 1, f) * .5);
+  const heat = clamp((1 - r * .8) * (1.1 - f * .75) + (n2 - .5) * .45 + (n3 - .5) * .15);
+  const [cr, cg, cb] = heatColor(heat * .95 + .05);
+  return [cr, cg, cb, de];
+}, { blend: 'normal', usage: 'billowing fire blob that cools and tears apart over life: flame body, fire decay, fireball puffs; play over life, additive or normal', tint: 'hot palette baked in' });
+
 // ---- Smoke evolution flipbook: soft lumpy puff that expands, thins and breaks up.
 sheet('smoke-puff', 4, 4, 'flipbook', (fi, x, y) => {
   const f = fi / 15, u = x - .5, v = y - .5, r = Math.hypot(u, v) * 2 / mix(.55, .95, Math.sqrt(f));

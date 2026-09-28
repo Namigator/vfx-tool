@@ -30,6 +30,20 @@
       "tint": "hot palette baked in"
     },
     {
+      "id": "fire-puff",
+      "file": "fire-puff.png",
+      "kind": "flipbook",
+      "cell": [
+        256,
+        256
+      ],
+      "columns": 4,
+      "rows": 4,
+      "blend": "normal",
+      "usage": "billowing fire blob that cools and tears apart over life: flame body, fire decay, fireball puffs; play over life, additive or normal",
+      "tint": "hot palette baked in"
+    },
+    {
       "id": "smoke-puff",
       "file": "smoke-puff.png",
       "kind": "flipbook",

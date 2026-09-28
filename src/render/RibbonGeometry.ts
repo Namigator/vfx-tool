@@ -261,7 +261,7 @@ export class RibbonGeometry {
         cuts.push(arc);
         const f0 = fadeAt(arc0);
         const w0 = half * (endWidth + (1 - endWidth) * f0);
-        const o0 = path.opacityScale * f0;
+        const o0 = path.opacityScale;
         const l0 = put(a, side, w0, 1, o0, arc0);
         let lPrev = l0;
         let rPrev = put(a, side, w0, -1, o0, arc0);
@@ -273,7 +273,7 @@ export class RibbonGeometry {
           const q: Vec3 = last ? b : [a[0] + (b[0] - a[0]) * s, a[1] + (b[1] - a[1]) * s, a[2] + (b[2] - a[2]) * s];
           const f1 = fadeAt(last ? arc : cuts[k]);
           const w1 = half * (endWidth + (1 - endWidth) * f1);
-          const o1 = path.opacityScale * f1;
+          const o1 = path.opacityScale;
           const arcQ = last ? arc : cuts[k];
           l1 = put(q, side, w1, 1, o1, arcQ);
           const r1 = put(q, side, w1, -1, o1, arcQ);

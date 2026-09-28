@@ -4,6 +4,7 @@ import type { SpriteSheet } from './spriteLibrary.ts';
 export const BUILTIN_SPRITES: readonly SpriteSheet[] = [
   { id: "flame-tongue-a", file: "flame-tongue-a.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "normal" },
   { id: "flame-tongue-b", file: "flame-tongue-b.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "normal" },
+  { id: "fire-puff", file: "fire-puff.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "normal" },
   { id: "smoke-puff", file: "smoke-puff.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "normal" },
   { id: "foam", file: "foam.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "normal" },
   { id: "soft-glow", file: "soft-glow.png", kind: "variants", cell: [256,256], columns: 2, rows: 2, blend: "additive" },
