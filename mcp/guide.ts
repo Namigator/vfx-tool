@@ -16,17 +16,19 @@ export const GUIDE: Record<string, string> = {
 - blend "normal" for smoke, dust, water, dark or opaque stuff; "additive" for fire tongues, sparks, glows, energy.
 - Colour: keep fire orange-yellow (#FFB040..#FFE9B0); reds (#C02000) only at the very end of life and faint. Saturated red at full opacity reads as "petals".`,
 
-  fire: `FIRE / FLAMETHROWER JET (continuous flame body)
-- Two tongue layers (sprites flame-tongue-a and flame-tongue-b), each: Emitter cone, radius 0.03-0.04, coneAngle 0.08-0.12 (half-angle), rate ~200/s, speed 7-10 m/s, life 0.4-0.75 s, Burst 0, rateOverWindow ramp [0:0.2, 0.1:1, 0.8:1, 1:0].
-- InitialProperties size 0.10-0.16 m (SMALL) + randomFrameStart. Forces: Drag 0.9, NoiseForce curl amplitude ~3.5 freq 0.7, Gravity [0,1.6,0] (heat rises).
-- BillboardRenderer alignment "velocity", stretchRatio ~1.5, pivot 0.3, flipbookMode "overLife"; sizeOverLife [0:1, 0.45:2.6, 1:1.5] (they GROW into each other - that is what makes one continuous mass); opacityOverLife [0:0, 0.06:1, 0.6:0.75, 1:0].
-- Material SpriteTextured, blend additive, opacity ~0.11, emission 0, dissolve 0.85 (dissolveStart 0.45, softness 0.1, edge 0.04, edgeColor #FFB040) so tongues burn away instead of popping.
-- Hot core: a third emitter, cone 0.06, rate ~140/s, speed 9-12, life 0.3-0.5, size 0.10-0.14 growing x2.5 early, tint #FFF1C8, opacity ~0.15, emission ~0.5. Stacked with the tongues this is already bright: if vfx_render_frames warns about glow flooding, cut core opacity first, then EffectOutput glowLimit ~1.6 / glowThreshold ~1.4 / glowRadius ~0.3.
-- Decay / billows: sprite fire-puff (a fire blob that cools and tears apart over its 16 frames), flipbook overLife.
-- Embers: spark-streak, additive, emission ~1.2, size 0.015-0.035, cone 0.35, speed 3-6, Gravity up [0,1.8,0], NoiseForce curl, optional ParticleTrail (history 0.08 s, width 0.01) with its OWN Material, template SpriteUnlit (trails are untextured).
-- Smoke: smoke-puff normal blend, grey #8A8078, rate ~18/s, size 0.2-0.3 growing x4, opacity peak ~0.25, Drag 1.6, Gravity up [0,1.4,0]; keep it going ~1 s after the flame so it lingers.
-- Light: PointLight #FF8A3A intensity ~35 range 6 with flicker 0.3 over the emit window. Ignition: a SpriteRenderer soft-glow flash (6 ticks) + optional ScreenFlash / CameraImpulse.
-- Nozzle: PropMesh cylinder at Source aimed at Target (pivot end: the muzzle is at Source, the barrel behind it) + a stand: PropMesh box, Direction [0,-1,0], pivot start (hangs down from the anchor), placed with an OffsetAnchor a little behind the muzzle.`,
+  fire: `FIRE / FLAMETHROWER JET (continuous flame body) - proven against the standalone reference
+- Flame BODY: two emitters (sprites flame-tongue-a / flame-tongue-b), each: cone, coneAngle ~0.105 (6 deg half-angle), radius 0.02, rate ~210/s (420 total), speed 8.5-11 m/s, life 0.4-0.75 s, Burst 0, rateOverWindow [0:0.35, 0.04:1, 0.92:1, 1:0], Aim = Target.
+- InitialProperties size 0.22-0.30 (the tongue fills only half its square cell, so sprites must be about twice the flame width you want).
+- Forces: Drag 0.18, NoiseForce vector amplitude ~3 frequency 0.55, Gravity [0,0.9,0] (the far end billows up).
+- BillboardRenderer: alignment velocity, stretchRatio ~1.6, pivot 0.38, flipbookMode overLife; sizeOverLife [0:1, 0.7:3.7, 1:2.2]; opacityOverLife [0:0, 0.07:1, 0.55:1, 1:0]; colorOverLife white -> #FFE0A0 -> #FFA050 -> #C8501E -> #5A1E0A (the flame COOLS as it ages - this is what gives the white root, orange body and dark red tips).
+- Material: blend NORMAL (not additive), opacity ~0.62, dissolve 0.6 from 0.5 of life. Normal blend keeps the body readable and never floods the glow.
+- Faint additive accent: a second BillboardRenderer on the same particles (flame-tongue-a, additive, opacity ~0.09, tint #FFF2D0), visible only while young (opacityOverLife [0:0, 0.05:1, 0.45:0]).
+- Hot core: cone 3 deg (0.052), rate ~130/s, speed 10-13, life 0.23-0.43 s, size 0.15-0.18, additive, opacity ~0.24, tint #FFF6E0, stretchRatio ~1.9.
+- Smoke and embers are born WHERE TONGUES DIE: ParticleEvents(death) on each tongue chain -> Emitter with Burst 1, useEventPosition, inheritVelocity 0.35-0.45. Smoke probability ~0.08 (smoke-puff, normal, #6A625A, opacity peak ~0.32, size 0.35-0.5 growing x2.4, Gravity up 1.6, life 1-1.9 s). Embers probability ~0.1 (spark-streak additive + a SpriteUnlit ParticleTrail, Gravity down ~3.5, life 0.5-1.2 s).
+- Glow: EffectOutput glowStrength ~0.55, glowRadius ~0.3, glowThreshold ~1.2, glowLimit ~2.
+- Light: two PointLights along the jet (OffsetAnchor 1.2 m and 3 m from Source, 0.3 m up), #FF7A28, intensity ~16, range ~3.5, flicker 0.25.
+- Ignition: SpriteRenderer soft-glow variant 1 at the muzzle (11 ticks) + CameraImpulse (translation 0.03). Nozzle: PropMesh cylinder at Source aimed at Target (pivot end), leg PropMesh Direction [0,-1,0] pivot start.
+- Decay / billows elsewhere: sprite fire-puff (a fire blob that cools and tears apart).`,
 
   smoke: `SMOKE / DUST / CLOUDS
 - smoke-puff flipbook (overLife), blend normal, tint greys/browns, randomFrameStart + random rotation + slow spin (angular velocity +-0.4).
