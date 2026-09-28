@@ -1150,6 +1150,19 @@ export class PreviewViewport {
     });
   }
 
+  /**
+   * 15/T37 benchmark primitive: draws the current tick once, synchronously, and waits for the GPU (gl.finish), so
+   * the cost of a frame can be measured even where the browser throttles requestAnimationFrame.
+   */
+  measureFrame(): { cpuMs: number; totalMs: number } {
+    const gl = this.#renderer.getContext(), t0 = performance.now();
+    if (this.#plan && this.#clock) this.#upload(0);
+    if (this.#composer) this.#composer.render(); else this.#renderer.render(this.#scene, this.#camera);
+    const t1 = performance.now();
+    gl.finish();
+    return { cpuMs: t1 - t0, totalMs: performance.now() - t0 };
+  }
+
   #loop = (now: number): void => {
     if (this.#disposed) return;
     this.#raf = requestAnimationFrame(this.#loop);
@@ -1207,14 +1220,17 @@ export class PreviewViewport {
   #presentation: ParticlePreviewPlan['presentation'] | null = null;
   #flashEl: HTMLDivElement | null = null;
   /** 08/12: presentation effects obey prefers-reduced-motion. */
-  readonly #reducedMotion = typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  #reducedMotion = typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /** 12: explicit reduced-effects switch (overrides the system preference for this viewport). */
+  setReducedEffects(on: boolean): void { this.#reducedMotion = on; if (!this.#disposed) this.#emitFrame(true); }
   #looping = false;
   /** 12 transport Loop: at the end, restart from tick 0 with the same seed. */
   setLoop(on: boolean): void { this.#looping = on; }
 
   /** Glow (bloom) on/off for inspection (08 "Provide glow-off inspection"); tone mapping stays identical. */
   setGlow(on: boolean): void {
-    if (this.#bloom) this.#bloom.enabled = on;
+    this.#glowWanted = on;
+    if (this.#bloom) this.#bloom.enabled = on && this.#profile !== 'economy';
     if (!this.#disposed) this.#emitFrame(true);
   }
 
@@ -1247,9 +1263,27 @@ export class PreviewViewport {
     this.#emitFrame(true);
   }
 
+  /**
+   * 15 preview profiles: reference (device pixel ratio up to 2, full glow), balanced (default: pixel ratio up to 1.5,
+   * at most 1920×1080 internal pixels), economy (at most 1280×720, glow off). Rendering quality only - the
+   * document, seed and simulation are never changed.
+   */
+  #profile: 'reference' | 'balanced' | 'economy' = 'balanced';
+  setQualityProfile(profile: 'reference' | 'balanced' | 'economy'): void {
+    this.#profile = profile;
+    if (this.#bloom) this.#bloom.enabled = profile === 'economy' ? false : this.#glowWanted;
+    this.#resize();
+    if (!this.#disposed) this.#emitFrame(true);
+  }
+  get qualityProfile(): 'reference' | 'balanced' | 'economy' { return this.#profile; }
+  #glowWanted = true;
+
   #resize(): void {
     if (this.#disposed) return;
     const w = Math.max(1, this.#container.clientWidth), h = Math.max(1, this.#container.clientHeight);
+    const dpr = window.devicePixelRatio || 1, p = this.#profile;
+    const cap = p === 'reference' ? Math.min(2, dpr) : p === 'balanced' ? Math.min(1.5, dpr, Math.sqrt((1920 * 1080) / (w * h))) : Math.min(1, Math.sqrt((1280 * 720) / (w * h)));
+    this.#renderer.setPixelRatio(Math.max(0.25, cap));
     this.#renderer.setSize(w, h, false);
     this.#composer?.setPixelRatio(this.#renderer.getPixelRatio());
     this.#composer?.setSize(w, h);

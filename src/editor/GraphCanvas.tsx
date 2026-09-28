@@ -485,7 +485,13 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
               : <strong key={t.id}>{t.label}</strong>)}
           </nav>
         )}
-      <div className="gc-flow" ref={wrapper}>
+      <div className="gc-flow" ref={wrapper} onKeyDown={e => {
+        // 12 keyboard equivalents: Delete/Backspace removes the selection, Enter opens a selected group.
+        const t = e.target as HTMLElement;
+        if (t.closest('input, textarea, select, [contenteditable="true"]')) return;
+        if ((e.key === 'Delete' || e.key === 'Backspace') && canDelete) { e.preventDefault(); deleteSelection(); }
+        else if (e.key === 'Enter' && selectedNode?.type === GROUP_NODE_TYPE) { e.preventDefault(); openGraph(selectedNode.params.graphId as string, `Open ${selectedNode.label}`); }
+      }}>
       <ReactFlow<CardNode, Edge>
         nodes={nodes} edges={edges} nodeTypes={nodeTypes}
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}

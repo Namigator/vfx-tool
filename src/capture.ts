@@ -52,6 +52,26 @@ async function main(): Promise<void> {
   const vec = (s: string | null) => { const v = (s ?? '').split(',').map(Number); return v.length === 3 && v.every(Number.isFinite) ? v as [number, number, number] : undefined; };
   const cam = vec(q.get('cam')), look = vec(q.get('look'));
   if (cam && look) vp.setCameraPose(cam, look, q.get('fov') ? Number(q.get('fov')) : undefined);
+  // Benchmark mode (15/T37): ?bench=seconds[&profile=reference|balanced|economy] plays from the start and records
+  // frame intervals; the result lands in window.__benchResult and the title.
+  const bench = Number(q.get('bench'));
+  if (bench > 0) {
+    const profile = q.get('profile');
+    if (profile === 'reference' || profile === 'balanced' || profile === 'economy') vp.setQualityProfile(profile);
+    await new Promise(r => setTimeout(r, 800)); // Sprite atlases load.
+    // Draw every 6th tick synchronously and wait for the GPU: frame cost independent of rAF throttling.
+    const costs: number[] = [], cpu: number[] = [];
+    for (let t = 0; t < d.durationTicks; t += 6) {
+      vp.seek(t);
+      const m = [vp.measureFrame(), vp.measureFrame(), vp.measureFrame()].sort((a, b) => a.totalMs - b.totalMs)[1];
+      costs.push(m.totalMs); cpu.push(m.cpuMs);
+    }
+    const sorted = [...costs].sort((a, b) => a - b), avg = costs.reduce((a, b) => a + b, 0) / costs.length;
+    const result = { frames: costs.length, avgMs: +avg.toFixed(2), p95Ms: +sorted[Math.floor(sorted.length * 0.95)].toFixed(2), maxMs: +sorted[sorted.length - 1].toFixed(2), cpuAvgMs: +(cpu.reduce((a, b) => a + b, 0) / cpu.length).toFixed(2), over16ms: costs.filter(c => c > 16.7).length };
+    (window as unknown as { __benchResult?: unknown }).__benchResult = result;
+    document.title = `BENCH ${JSON.stringify(result)}`;
+    return;
+  }
   vp.seek(Math.min(tick, d.durationTicks - 1));
   if (q.get('label') === '1') msg.textContent = `${d.name} — tick ${tick}/${d.durationTicks}`;
   // Let sprite atlases finish loading and a few frames present before the screenshot is taken.

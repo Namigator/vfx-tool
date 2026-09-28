@@ -20,6 +20,7 @@ import { buildPack, readPack, type PackAsset } from './model/vfxpack.ts';
 import { hasAssetUrl, registerAssetUrl } from './assets/assetUrls.ts';
 import { DRAFT_META_KEY, SHELF_KEY, TRASH_KEY, documentFileName, mergeEntryLists, emptyTrash, loadDraftText, readDraftMeta, readShelf, readTrash, recoverDraft, removeFromShelf, restoreFromTrash, saveDraft, saveToShelf, type DraftStorage, type ShelfEntry, type TrashEntry } from './model/persistence.ts';
 import { ControlsPanel } from './editor/ControlsPanel.tsx';
+import { OutlinePanel } from './editor/OutlinePanel.tsx';
 import { compileAudio } from './graph/toAudio.ts';
 import { choosePreviewMode, createLightningAudioDemoDocument, hasRootAudio, ribbonStyleDiagnostics, type PreviewModeChoice } from './render/previewMode.ts';
 import { AudioTransport, type AudioBufferLike, type AudioContextLike, type BufferSourceLike, type PlayResult } from './audio/transport.ts';
@@ -139,6 +140,8 @@ export default function PreviewV2() {
   const [frame, setFrame] = useState<PreviewFrameInfo>(EMPTY_FRAME);
   const [compiled, setCompiled] = useState(false);
   const [gpuLost, setGpuLost] = useState(false);
+  /** 12: reduced effects (no screen flash / camera shake); starts from the system prefers-reduced-motion setting. */
+  const [reducedEffects, setReducedEffects] = useState(() => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [followers, setFollowers] = useState<FollowerTravel[]>([]);
   const [mode, setMode] = useState<PreviewModeChoice['mode']>('points');
   const [glow, setGlow] = useState(true);
@@ -726,6 +729,10 @@ export default function PreviewV2() {
             <button type="button" aria-pressed={glow} title="Bloom glow on/off (inspect the effect without glow)" onClick={() => { const g = !glow; setGlow(g); vp?.setGlow(g); }}>{glow ? 'Glow on' : 'Glow off'}</button>
             <button type="button" aria-pressed={looping} disabled={disabled} title="Replay from tick 0 when the effect ends" onClick={() => { const l = !looping; setLooping(l); vp?.setLoop(l); }}>{looping ? 'Loop on' : 'Loop off'}</button>
             <button type="button" aria-pressed={syncSound} disabled={!audio} title="Play the effect's sound in sync with Play/Restart" onClick={() => { const s = !syncSound; setSyncSound(s); if (!s) stopSound(''); }}>{syncSound ? 'Sound on' : 'Sound off'}</button>
+            <select aria-label="Preview quality" defaultValue="balanced" title="Preview quality: Reference (sharpest), Balanced (default), Economy (fast, no glow). Only the preview changes, never the effect." onChange={e => vp?.setQualityProfile(e.currentTarget.value as 'reference' | 'balanced' | 'economy')}>
+              <option value="reference">Quality: Reference</option><option value="balanced">Quality: Balanced</option><option value="economy">Quality: Economy</option>
+            </select>
+            <button type="button" aria-pressed={reducedEffects} title="Reduced effects: no screen flashes or camera shake in the preview (the effect itself is unchanged)" onClick={() => { const r = !reducedEffects; setReducedEffects(r); vp?.setReducedEffects(r); }}>{reducedEffects ? 'Reduced effects on' : 'Reduced effects off'}</button>
             <button type="button" aria-pressed={lightBg} title="Inspect on a light arena" onClick={() => { const l = !lightBg; setLightBg(l); vp?.setBackground(l ? 'light' : 'dark'); }}>{lightBg ? 'Light arena' : 'Dark arena'}</button>
             <input
               type="range" min={0} max={frame.durationTicks} step={1} value={frame.tick} disabled={disabled}
@@ -754,6 +761,10 @@ export default function PreviewV2() {
           </div>
         </section>
         <aside className="pv2-side">
+          <details className="pv2-panel" aria-label="Outline">
+            <summary className="pv2-heading">Outline (parts list)</summary>
+            <OutlinePanel document={doc} graphId={graphId} selectedNodeId={selectedNode ? selectedNode.id : undefined} onSelectNode={setSelectedNodeId} onEdit={onEdit} />
+          </details>
           <section className="pv2-panel" aria-label="Controls">
             <h2 className="pv2-heading">Controls</h2>
             <ControlsPanel document={doc} onEdit={onEdit} followers={followers} />
