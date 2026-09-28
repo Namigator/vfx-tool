@@ -98,6 +98,8 @@ export type MeshLayer = {
   nodeId: string; systemId: string; mesh: 'shard' | 'rock-a' | 'rock-b' | 'rock-c' | 'orb' | 'cone' | 'crystal' | 'crystal-b'; scale: number;
   /** Imported GLB (byte SHA-256) replacing `mesh` when present. */
   meshAsset?: string;
+  /** Imported GLB sizing: fitted to ≈1 m, or its real size = file units × importScale meters. */
+  meshAssetSize?: { mode: 'fit' | 'real'; importScale: number };
   orientation: 'tumble' | 'velocity' | 'upright'; lit: boolean;
   /** Height stretch, pivot and upright lean; lit-material roughness/metalness. */
   scaleY?: number; pivot?: 'center' | 'base'; tilt?: number; roughness?: number; metalness?: number; color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout';
@@ -714,7 +716,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         const imported = ma ? doc.assets.find(a => a.id === ma) : undefined;
         if (ma && (!imported || imported.kind !== 'mesh')) report('MISSING_REFERENCE', imported ? `Asset "${imported.provenance.originalFilename}" is a ${imported.kind}, not a mesh.` : `Mesh asset "${ma}" is not listed in this document's assets.`, mid, 'meshAsset');
         meshes.push({
-          ...(imported?.kind === 'mesh' ? { meshAsset: imported.sha256 } : {}),
+          ...(imported?.kind === 'mesh' ? { meshAsset: imported.sha256, meshAssetSize: { mode: param(b, 'importedSize') as 'fit' | 'real', importScale: imported.interpretation.mesh?.importScale ?? 1 } } : {}),
           nodeId: mid, systemId: chain.terminalId, mesh: param(b, 'mesh') as MeshLayer['mesh'], scale: num(b, 'scale'), orientation: param(b, 'orientation') as MeshLayer['orientation'],
           scaleY: num(b, 'scaleY'), pivot: param(b, 'pivot') as 'center' | 'base', tilt: num(b, 'tilt'), roughness: num(m, 'roughness'), metalness: num(m, 'metalness'),
           lit: param(b, 'lit') === true, color: multiplyColors(base, param(m, 'tint') as ColorValue), opacity: num(m, 'opacity'), emission: num(m, 'emission'), blend: param(m, 'blend') as MeshLayer['blend'],

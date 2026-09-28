@@ -120,4 +120,10 @@ test('MCP: import a GLB onto a MeshRenderer; non-GLB and bad renderer ids are re
   const d = JSON.parse(readFileSync(join(root, 'work/mcp/m.json'), 'utf8'));
   assert.equal(d.graphs[0].nodes.find((n: { id: string }) => n.id === 'mr').params.meshAsset, d.assets[0].id);
   assert.ok(existsSync(join(root, `work/mcp/assets/${d.assets[0].sha256}.glb`)));
+  // importScale is recorded and reaches the mesh layer when the renderer uses the model's real size.
+  await call('vfx_new_document', { template: 'blank', id: 'm2' });
+  await call('vfx_add_node', { docId: 'm2', type: 'MeshRenderer', id: 'mr', params: { importedSize: 'real' } });
+  await call('vfx_import_mesh', { docId: 'm2', path: 'in/star.glb', rendererId: 'mr', importScale: 0.01 });
+  const d2 = JSON.parse(readFileSync(join(root, 'work/mcp/m2.json'), 'utf8'));
+  assert.equal(d2.assets[0].interpretation.mesh.importScale, 0.01);
 });

@@ -394,7 +394,8 @@ function meshRenderer(): NodeSpec {
     ],
     outputs: [port({ id: 'visual', label: 'Visual', type: 'visual' })],
     parameters: [
-      param({ id: 'meshAsset', label: 'Mesh asset', type: 'string', unit: 'none', default: '', description: 'Imported GLB asset ID (Import 3D model…); when set it replaces Mesh. Fitted to ≈1 m like the included meshes, so particle size × Scale sets its size.' }),
+      param({ id: 'meshAsset', label: 'Mesh asset', type: 'string', unit: 'none', default: '', description: 'Imported GLB asset ID (Import 3D model…); when set it replaces Mesh. See Imported size.' }),
+      param({ id: 'importedSize', label: 'Imported size', type: 'enum', unit: 'none', default: 'fit', choices: ['fit', 'real'], description: 'fit: the imported model is fitted to ≈1 m like the included meshes. real: its true size (file units × the import scale chosen at import) in meters. Particle size × Scale multiplies either.' }),
       param({ id: 'mesh', label: 'Mesh', type: 'enum', unit: 'none', default: 'rock-a', choices: ['shard', 'rock-a', 'rock-b', 'rock-c', 'orb', 'cone', 'crystal', 'crystal-b'], description: 'Included procedural mesh (≈1 m across, scaled by particle size × Scale).' }),
       param({ id: 'scale', label: 'Scale', type: 'number', unit: 'none', default: 1, min: 0.01, max: 20, editPolicy: 'live' }),
       param({ id: 'scaleY', label: 'Height scale', type: 'number', unit: 'none', default: 1, min: 0.05, max: 20, editPolicy: 'live', description: 'Extra stretch along the mesh +Y (tall shards: height independent of width).' }),

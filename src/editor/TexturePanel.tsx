@@ -22,6 +22,8 @@ export function TexturePanel({ document: doc, graphId, selectedNodeId, onEdit }:
   const [role, setRole] = useState<'color' | 'mask'>('color');
   const [grid, setGrid] = useState({ rows: 1, columns: 1 });
   const [status, setStatus] = useState('');
+  /** 10-ASSETS: the user confirms a uniform import scale (file units → meters; 0.01 for centimetres). */
+  const [meshScale, setMeshScale] = useState(1);
   const textures = doc.assets.filter(a => a.kind === 'texture' || a.kind === 'flipbook');
   const gi = doc.graphs.findIndex(g => g.id === graphId);
   const ni = gi < 0 || !selectedNodeId ? -1 : doc.graphs[gi].nodes.findIndex(n => n.id === selectedNodeId);
@@ -47,7 +49,7 @@ export function TexturePanel({ document: doc, graphId, selectedNodeId, onEdit }:
   const importModel = async (f: File) => {
     setStatus(`Reading ${f.name}…`);
     const bytes = new Uint8Array(await f.arrayBuffer());
-    const r = await createMeshAsset(bytes, f.name);
+    const r = await createMeshAsset(bytes, f.name, meshScale);
     if (!r.ok) { setStatus(`Import failed: ${r.message}`); return; }
     const { asset, summary } = r.value;
     const blob = new Blob([bytes], { type: 'model/gltf-binary' });
@@ -78,6 +80,8 @@ export function TexturePanel({ document: doc, graphId, selectedNodeId, onEdit }:
           <input type="number" min={1} max={16} value={grid.rows} aria-label="Flipbook rows" onChange={e => setGrid(g => ({ ...g, rows: Math.max(1, Math.min(16, Math.round(Number(e.currentTarget.value) || 1))) }))} /></label>
         <button type="button" onClick={() => fileRef.current?.click()} title="PNG, static WebP or JPEG; up to 16 MiB and 4096 px">Import texture…</button>
         <input ref={fileRef} type="file" accept="image/png,image/webp,image/jpeg" hidden onChange={e => { const f = e.currentTarget.files?.[0]; e.currentTarget.value = ''; if (f) void importFile(f); }} />
+        <label title="File units → meters, used when a MeshRenderer's Imported size is 'real' (0.01 for a model made in centimetres)">Model scale <input type="number" min={0.001} max={1000} step="any" value={meshScale} aria-label="Model import scale"
+          onChange={e => { const v = Number(e.currentTarget.value); if (v > 0 && v <= 1000) setMeshScale(v); }} /></label>
         <button type="button" onClick={() => meshRef.current?.click()} title="Self-contained .glb (glTF 2.0), up to 20 MiB and 50k triangles; no animation">Import 3D model…</button>
         <input ref={meshRef} type="file" accept=".glb,model/gltf-binary" hidden onChange={e => { const f = e.currentTarget.files?.[0]; e.currentTarget.value = ''; if (f) void importModel(f); }} />
       </div>

@@ -251,11 +251,11 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
       return `Imported ${asset.provenance.originalFilename} as ${asset.kind} ${asset.width}×${asset.height} (id ${asset.id})${materialId ? `; set on ${materialId}` : ''}.`;
     });
   });
-  tool('vfx_import_mesh', 'Import a self-contained .glb (project path; ≤20 MiB, ≤50k triangles, no animation/cameras/lights) as a mesh asset; optionally set it on a MeshRenderer (meshAsset). The model is fitted to ≈1 m; particle size × Scale sets its size.', {
-    docId: z.string(), path: z.string(), rendererId: z.string().optional(),
-  }, async ({ docId, path, rendererId }) => {
+  tool('vfx_import_mesh', 'Import a self-contained .glb (project path; ≤20 MiB, ≤50k triangles, no animation/cameras/lights) as a mesh asset; optionally set it on a MeshRenderer (meshAsset). By default the model is fitted to ≈1 m; with MeshRenderer importedSize "real" it keeps file units × importScale meters. Particle size × Scale multiplies either.', {
+    docId: z.string(), path: z.string(), rendererId: z.string().optional(), importScale: z.number().positive().max(1000).optional(),
+  }, async ({ docId, path, rendererId, importScale }) => {
     const bytes = new Uint8Array(readFileSync(safeProjectPath(path)));
-    const r = await createMeshAsset(bytes, path.split(/[\\/]/).pop() ?? path);
+    const r = await createMeshAsset(bytes, path.split(/[\\/]/).pop() ?? path, importScale ?? 1);
     if (!r.ok) return bad(r.message);
     const { asset, path: bundlePath, summary } = r.value;
     mkdirSync(assetDir, { recursive: true });

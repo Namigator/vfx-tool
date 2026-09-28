@@ -465,9 +465,10 @@ export class PreviewViewport {
     this.#plan = plan;
     this.#presentation = plan.presentation ?? null;
     for (const layer of plan.meshes ?? []) {
-      const base = layer.pivot === 'base', gkey = `${layer.meshAsset ? `asset:${layer.meshAsset}` : layer.mesh}${base ? ':base' : ''}`;
+      const base = layer.pivot === 'base', size = layer.meshAssetSize;
+      const gkey = `${layer.meshAsset ? `asset:${layer.meshAsset}:${size?.mode === 'real' ? `real${size.importScale}` : 'fit'}` : layer.mesh}${base ? ':base' : ''}`;
       let geometry = this.#meshGeometries.get(gkey);
-      if (!geometry) { geometry = layer.meshAsset ? this.#importedMesh(layer.meshAsset, gkey, base) : basePivot(createBuiltinMesh(layer.mesh as BuiltinMesh), base); this.#meshGeometries.set(gkey, geometry); }
+      if (!geometry) { geometry = layer.meshAsset ? this.#importedMesh(layer.meshAsset, gkey, base, size?.mode === 'real' ? size.importScale : undefined) : basePivot(createBuiltinMesh(layer.mesh as BuiltinMesh), base); this.#meshGeometries.set(gkey, geometry); }
       const color = new THREE.Color().setStyle(layer.color.srgb), additive = layer.blend === 'additive';
       const material: THREE.Material = !additive && layer.lit
         ? new THREE.MeshStandardMaterial({ color, roughness: layer.roughness ?? 0.75, metalness: layer.metalness ?? 0.05, flatShading: true, emissive: color.clone().multiplyScalar(layer.emission), transparent: layer.opacity < 1, opacity: layer.opacity })
@@ -546,9 +547,10 @@ export class PreviewViewport {
   /**
    * Imported GLB for MeshRenderer: a small placeholder until the bytes are registered and parsed, then every
    * mesh in the scene is flattened (world transforms applied) into one non-indexed position+normal geometry,
-   * centred and fitted to ≈1 m like the included meshes, and swapped into the instanced meshes using it.
+   * centred and fitted to ≈1 m like the included meshes (or, with `realScale`, kept at file units × realScale
+   * meters), and swapped into the instanced meshes using it.
    */
-  #importedMesh(sha256: string, key: string, base = false): THREE.BufferGeometry {
+  #importedMesh(sha256: string, key: string, base = false, realScale?: number): THREE.BufferGeometry {
     const placeholder = new THREE.OctahedronGeometry(0.15, 0);
     whenAssetUrl(sha256, url => new GLTFLoader().load(url, gltf => {
       if (this.#disposed) return;
@@ -569,7 +571,7 @@ export class PreviewViewport {
       merged.computeBoundingBox();
       const bb = merged.boundingBox!, size = new THREE.Vector3(), centre = new THREE.Vector3();
       bb.getSize(size); bb.getCenter(centre);
-      const k = 1 / Math.max(1e-6, size.x, size.y, size.z);
+      const k = realScale ?? 1 / Math.max(1e-6, size.x, size.y, size.z);
       merged.translate(-centre.x, -centre.y, -centre.z).scale(k, k, k);
       basePivot(merged, base);
       this.#meshGeometries.set(key, merged);
