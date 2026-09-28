@@ -186,3 +186,15 @@ test('MCP: vfx_convert_legacy converts a v1 default or a v1 file into a new grap
   assert.match(f.text, /count: 14 → mapped/);
   assert.equal((await call('vfx_convert_legacy', {})).error, true);
 });
+
+test('MCP: vfx_compare_images puts two PNGs side by side with a difference score', async () => {
+  const { root, call } = await connect();
+  const { mkdirSync, writeFileSync } = await import('node:fs');
+  const { encodePng } = await import('../mcp/imageTools.ts');
+  mkdirSync(join(root, 'in'), { recursive: true });
+  const img = (v: number) => encodePng({ w: 4, h: 4, px: new Uint8Array(64).map((_, i) => (i % 4 === 3 ? 255 : v)) });
+  writeFileSync(join(root, 'in/a.png'), img(0)); writeFileSync(join(root, 'in/b.png'), img(51));
+  const r = await call('vfx_compare_images', { a: 'in/a.png', b: 'in/b.png' });
+  assert.equal(r.error, false, r.text);
+  assert.match(r.text, /Mean colour difference 51\.0/);
+});

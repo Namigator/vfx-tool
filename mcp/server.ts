@@ -18,6 +18,7 @@ import { insertUserComponent, saveGroupAsComponent, type UserComponent } from '.
 import { truncationWarning } from '../src/graph/truncation.ts';
 import { describeFrameStats, pngFrameStats } from './frameStats.ts';
 import { guideText } from './guide.ts';
+import { decodePng, downscale, encodePng, grid, meanDifference, type Rgba } from './imageTools.ts';
 import { convertLegacyRecipe, formatMigrationReport } from '../src/model/migrate.ts';
 import { createRecipe, parseRecipe } from '../src/core/recipe.ts';
 import { FAMILIES } from '../src/core/types.ts';
@@ -406,10 +407,8 @@ ${formatMigrationReport(report)}`);
     persist(getDoc(docId));
     return ok(`${editorUrl}?workspace=v2&doc=/work/mcp/${encodeURIComponent(docId)}.json`);
   });
-  tool('vfx_render_frames', 'Render effect frames to PNG with headless Chrome (needs the vite dev server) and return the images. Look at them before claiming anything about the visual result. Glow (bloom) is on by default and is tuned per effect on the EffectOutput node (glowStrength, glowRadius, glowThreshold, glowLimit — see vfx_describe_node_type EffectOutput); glow:false shows the raw shapes.', {
-    docId: z.string(), ticks: z.array(z.number().int().min(0)).min(1).max(8), width: z.number().int().min(160).max(1920).optional(), height: z.number().int().min(120).max(1080).optional(), glow: z.boolean().optional(), background: z.enum(['dark', 'light']).optional(),
-    camera: z.object({ position: z.tuple([z.number(), z.number(), z.number()]), target: z.tuple([z.number(), z.number(), z.number()]), fov: z.number().min(5).max(120).optional() }).optional(),
-  }, ({ docId, ticks, width, height, glow, background, camera }) => {
+  type RenderArgs = { docId: string; ticks: number[]; width?: number; height?: number; glow?: boolean; background?: 'dark' | 'light'; camera?: { position: [number, number, number]; target: [number, number, number]; fov?: number } };
+  const renderFrames = ({ docId, ticks, width, height, glow, background, camera }: RenderArgs): Result => {
     const d = getDoc(docId); persist(d);
     const chrome = options.chromePath ?? CHROME_CANDIDATES.find(p => p && existsSync(p));
     if (!chrome) return bad('No Chrome/Edge found; set VFX_CHROME to its executable path.');
@@ -429,6 +428,37 @@ ${formatMigrationReport(report)}`);
     }
     content.unshift({ type: 'text', text: `Rendered ${ticks.length} frame(s): ${paths.join(', ')}\n${stats.join('\n')}` });
     return { content };
+  };
+  tool('vfx_render_frames', 'Render effect frames to PNG with headless Chrome (needs the vite dev server) and return the images. Look at them before claiming anything about the visual result. Glow (bloom) is on by default and is tuned per effect on the EffectOutput node (glowStrength, glowRadius, glowThreshold, glowLimit — see vfx_describe_node_type EffectOutput); glow:false shows the raw shapes.', {
+    docId: z.string(), ticks: z.array(z.number().int().min(0)).min(1).max(8), width: z.number().int().min(160).max(1920).optional(), height: z.number().int().min(120).max(1080).optional(), glow: z.boolean().optional(), background: z.enum(['dark', 'light']).optional(),
+    camera: z.object({ position: z.tuple([z.number(), z.number(), z.number()]), target: z.tuple([z.number(), z.number(), z.number()]), fov: z.number().min(5).max(120).optional() }).optional(),
+  }, args => renderFrames(args));
+
+  // WP-MCP2: one image over the whole timeline, and a side-by-side comparison of two captures.
+  tool('vfx_contact_sheet', 'Render frames at evenly spaced ticks (or the given ticks) and return them as ONE grid image (a timeline strip). Saved to work/mcp/frames/<doc>-sheet.png.', {
+    docId: z.string(), count: z.number().int().min(2).max(16).optional(), ticks: z.array(z.number().int().min(0)).min(2).max(16).optional(), columns: z.number().int().min(1).max(8).optional(),
+    glow: z.boolean().optional(), background: z.enum(['dark', 'light']).optional(),
+  }, async ({ docId, count, ticks, columns, glow, background }) => {
+    const d = getDoc(docId), n = count ?? 8;
+    const list = ticks ?? Array.from({ length: n }, (_, i) => Math.round((i / (n - 1)) * (d.durationTicks - 1)));
+    const frames: Rgba[] = [];
+    for (let i = 0; i < list.length; i += 8) {
+      const r = await renderFrames({ docId, ticks: list.slice(i, i + 8), width: 480, height: 270, ...(glow === false ? { glow } : {}), ...(background ? { background } : {}) });
+      if (r.isError) return r;
+      for (const c of r.content) if (c.type === 'image') frames.push(decodePng(Buffer.from(c.data, 'base64')));
+    }
+    const sheet = grid(frames, columns ?? 4), out = join(root, 'work', 'mcp', 'frames', `${docId}-sheet.png`), bytes = encodePng(sheet);
+    writeFileSync(out, bytes);
+    return { content: [{ type: 'text', text: `Contact sheet of ticks ${list.join(', ')}: ${out}` }, { type: 'image', data: bytes.toString('base64'), mimeType: 'image/png' }] };
+  });
+  tool('vfx_compare_images', 'Put two PNGs side by side (project paths, e.g. a reference frame and your render) and report their mean colour difference (0 = identical, 255 = opposite). Saved to work/mcp/frames/compare.png.', {
+    a: z.string(), b: z.string(),
+  }, ({ a, b }) => {
+    const A = decodePng(readFileSync(safeProjectPath(a))), B = decodePng(readFileSync(safeProjectPath(b)));
+    const k = Math.max(1, Math.ceil(Math.max(A.w, B.w) / 800));
+    const side = grid([downscale(A, k), downscale(B, k)], 2), out = join(root, 'work', 'mcp', 'frames', 'compare.png'), bytes = encodePng(side);
+    mkdirSync(dirname(out), { recursive: true }); writeFileSync(out, bytes);
+    return { content: [{ type: 'text', text: `Left: ${a}\nRight: ${b}\nMean colour difference ${meanDifference(A, B).toFixed(1)} / 255 (size ${A.w}x${A.h} vs ${B.w}x${B.h}). Saved ${out}` }, { type: 'image', data: bytes.toString('base64'), mimeType: 'image/png' }] };
   });
   return server;
 }
