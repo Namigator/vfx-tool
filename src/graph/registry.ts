@@ -347,7 +347,7 @@ function propMesh(): NodeSpec {
       param({ id: 'length', label: 'Length', type: 'number', unit: 'meter', default: 0.6, min: 0.001, max: 50, editPolicy: 'live', description: 'Size along the aim direction (+Y).' }),
       param({ id: 'offset', label: 'Offset', type: 'vec3', unit: 'meter', default: [0, 0, 0], min: -50, max: 50, editPolicy: 'live', description: 'Shift from the anchor in world meters (e.g. put the nozzle behind the flame start).' }),
       param({ id: 'direction', label: 'Direction', type: 'vec3', unit: 'none', default: [0, 1, 0], min: -1, max: 1, editPolicy: 'live', description: 'World direction the mesh length (+Y) points in when Aim is not connected ([0,1,0] = upright, [0,0,1] = a crossbar); normalized.' }),
-      param({ id: 'pivot', label: 'Pivot', type: 'enum', unit: 'none', default: 'end', choices: ['center', 'end'], description: 'end: the mesh ends at the anchor and extends backwards from the aim direction (a nozzle behind its muzzle); center: centred on the anchor.' }),
+      param({ id: 'pivot', label: 'Pivot', type: 'enum', unit: 'none', default: 'end', choices: ['center', 'end'], description: 'end: the mesh's front tip sits on the anchor and its body lies BEHIND it, opposite to the pointing direction (Aim or Direction) — a nozzle whose muzzle is at the anchor. So a leg hanging DOWN from the anchor needs Direction [0,1,0] with pivot end, or Direction [0,-1,0] with pivot center plus a downward Offset. center: the mesh is centred on the anchor (+Offset).' }),
       param({ id: 'lit', label: 'Lit', type: 'boolean', unit: 'none', default: true }),
       param({ id: 'renderOrderOffset', label: 'Render order offset', type: 'integer', unit: 'none', default: 0, min: -32, max: 32, step: 1, editPolicy: 'live' }),
     ],
