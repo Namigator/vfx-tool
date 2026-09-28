@@ -99,6 +99,10 @@ size/triangles/validation directly). MCP user components live in work/mcp/user-c
 - d34e8cc: New effect anchors run left-to-right; first component into a fresh doc adopts its designed layout.
   All 49 review strips re-rendered after it (49/49, no errors [RAN]); water splash lands at stream end [SAW].
   REVIEW PACKET READY (2026-09-29) — waiting on the user's notes.
+- 4fc250f: ribbons draw widthOverPath (RibbonGeometry widthAt); the editor had refused 8 components with it
+  (water x3, light pulse/cone/blessing, shadow collapse/tendril) while MCP renders silently ignored it. All 49 review
+  docs now load in the editor [RAN]; those 8 strips re-rendered. review.html: "Watch it play" opens
+  /?workspace=v2&view=1&autoplay=1&doc=... (view=1 never autosaves over the user's draft [RAN]); click strip to enlarge.
 - Commit gate is now `bash tools/gate.sh && git commit ...` (tsc + fresh test log; a stale-log slip committed a broken
   file once, fixed in 03fcb35).
 - Left: sound (parked); user visual review of all families; merge to main after visual OK.
