@@ -66,6 +66,8 @@ export type PreviewViewportCallbacks = {
   onFrame?: (info: PreviewFrameInfo) => void;
   /** Runtime failure: output is cleared and playback paused. */
   onError?: (errors: Diagnostic[]) => void;
+  /** WP24: the GPU context was lost (true) or restored (false); the viewport pauses drawing meanwhile. */
+  onContextLost?: (lost: boolean) => void;
   /** Loop mode wrapped playback back to tick 0 (same seed); e.g. restart synced sound. */
   onLoop?: () => void;
 };
@@ -376,6 +378,7 @@ export class PreviewViewport {
   #lastSuspended = false;
   #suspended = false;
   #failed = false;
+  #contextLost = false;
   #disposed = false;
 
   constructor(container: HTMLElement, callbacks: PreviewViewportCallbacks = {}) {
@@ -412,6 +415,10 @@ export class PreviewViewport {
       this.#composer.addPass(this.#bloom);
       this.#composer.addPass(new OutputPass());
       renderer.domElement.className = 'pv2-canvas';
+      // WP24 context loss (driver reset, GPU memory pressure, too many tabs): keep the page alive, stop drawing,
+      // and let three.js rebuild its GPU state when the browser restores the context; then redraw this tick.
+      renderer.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); this.#contextLost = true; this.#clock?.pause(); this.#callbacks.onContextLost?.(true); });
+      renderer.domElement.addEventListener('webglcontextrestored', () => { this.#contextLost = false; this.#callbacks.onContextLost?.(false); if (!this.#disposed) this.#emitFrame(true); });
       container.appendChild(renderer.domElement);
       const flashEl = document.createElement('div');
       Object.assign(flashEl.style, { position: 'absolute', inset: '0', pointerEvents: 'none', opacity: '0', background: '#ffffff' });
@@ -1146,6 +1153,7 @@ export class PreviewViewport {
   #loop = (now: number): void => {
     if (this.#disposed) return;
     this.#raf = requestAnimationFrame(this.#loop);
+    if (this.#contextLost) return; // Nothing can be drawn until the browser restores the GPU context.
     const dt = this.#lastTime < 0 ? 0 : Math.min(MAX_FRAME_SECONDS, Math.max(0, (now - this.#lastTime) / 1000));
     this.#lastTime = now;
     const clock = this.#clock;
@@ -1211,6 +1219,26 @@ export class PreviewViewport {
   }
 
   get glow(): boolean { return this.#bloom?.enabled ?? false; }
+  /**
+   * WP24/T38 resource check: what this viewport holds in its scene (objects, unique geometries, materials and
+   * textures reachable from it), so repeated loads can be shown to plateau instead of growing.
+   */
+  resourceStats(): { objects: number; geometries: number; materials: number; textures: number; contextLost: boolean } {
+    let objects = 0;
+    const geos = new Set<unknown>(), mats = new Set<THREE.Material>(), texs = new Set<unknown>();
+    this.#scene.traverse(o => {
+      objects++;
+      const m = o as THREE.Mesh;
+      if (m.geometry) geos.add(m.geometry);
+      for (const mat of m.material ? (Array.isArray(m.material) ? m.material : [m.material]) : []) {
+        mats.add(mat);
+        for (const v of Object.values(mat as unknown as Record<string, unknown>)) if (v instanceof THREE.Texture) texs.add(v);
+        const u = (mat as THREE.ShaderMaterial).uniforms;
+        if (u) for (const x of Object.values(u)) if (x?.value instanceof THREE.Texture) texs.add(x.value);
+      }
+    });
+    return { objects, geometries: geos.size, materials: mats.size, textures: texs.size, contextLost: this.#contextLost };
+  }
   /** The effect's own glow settings (EffectOutput glowStrength / glowRadius / glowThreshold). */
   setGlowSettings(s: { strength: number; radius: number; threshold: number; limit: number }): void {
     if (!this.#bloom) return;

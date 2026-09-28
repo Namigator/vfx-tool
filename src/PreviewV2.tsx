@@ -138,6 +138,7 @@ export default function PreviewV2() {
   const [fatal, setFatal] = useState('');
   const [frame, setFrame] = useState<PreviewFrameInfo>(EMPTY_FRAME);
   const [compiled, setCompiled] = useState(false);
+  const [gpuLost, setGpuLost] = useState(false);
   const [followers, setFollowers] = useState<FollowerTravel[]>([]);
   const [mode, setMode] = useState<PreviewModeChoice['mode']>('points');
   const [glow, setGlow] = useState(true);
@@ -521,8 +522,10 @@ export default function PreviewV2() {
     mountedRef.current = true;
     let vp: PreviewViewport | null = null;
     try {
-      vp = new PreviewViewport(host, { onFrame: setFrame, onError: setRuntimeErrors, onLoop: () => onLoopRef.current() });
+      vp = new PreviewViewport(host, { onFrame: setFrame, onError: setRuntimeErrors, onLoop: () => onLoopRef.current(), onContextLost: setGpuLost });
       viewportRef.current = vp;
+      // Dev-only diagnostics hook (resource plateau / context-loss checks); absent from production builds.
+      if (import.meta.env.DEV) (window as unknown as { __vfxDebug?: unknown }).__vfxDebug = { viewport: vp, load: (text: string) => replaceRef.current?.(text, 'debug load') };
     } catch (e) {
       setFatal(e instanceof Error ? e.message : String(e));
     }
@@ -704,6 +707,7 @@ export default function PreviewV2() {
         <section className={expanded ? 'pv2-stage pv2-expanded' : 'pv2-stage'}>
           <div className="pv2-host" ref={hostRef} />
           {fatal && <div className="pv2-overlay pv2-error" role="alert">{fatal}</div>}
+          {gpuLost && <div className="pv2-overlay pv2-error" role="alert">The 3D view lost the graphics device (a driver reset or too many open tabs). It comes back by itself; your effect and edits are safe.</div>}
           {!fatal && !compiled && <div className="pv2-overlay">No preview: the document does not compile (see diagnostics).</div>}
           {runtimeErrors.length > 0 && (
             <div className="pv2-overlay pv2-error" role="alert">
