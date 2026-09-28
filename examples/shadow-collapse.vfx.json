@@ -1,0 +1,2278 @@
+{
+  "format": "vfx-studio",
+  "schemaVersion": 2,
+  "runtimeVersion": "2.0.0",
+  "id": "example-shadow-collapse",
+  "name": "Shadow vortex",
+  "tags": [],
+  "seed": 42,
+  "rootTransform": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "scale": 1
+  },
+  "anchors": [
+    {
+      "id": "source",
+      "name": "Source",
+      "position": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "id": "target",
+      "name": "Target",
+      "position": [
+        0,
+        1,
+        5
+      ]
+    }
+  ],
+  "durationTicks": 228,
+  "rootGraphId": "graph-root",
+  "graphs": [
+    {
+      "id": "graph-root",
+      "inputs": [],
+      "outputs": [],
+      "nodes": [
+        {
+          "id": "node-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Source",
+          "enabled": true,
+          "randomStreamId": "rs-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "node-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Target",
+          "enabled": true,
+          "randomStreamId": "rs-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "node-output",
+          "type": "EffectOutput",
+          "definitionVersion": 1,
+          "label": "Output",
+          "enabled": true,
+          "randomStreamId": "rs-output",
+          "params": {}
+        },
+        {
+          "id": "shadow-collapse",
+          "type": "Group",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse",
+          "params": {
+            "graphId": "graph-shadow-collapse"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "shadow-collapse-e-group-visual",
+          "source": {
+            "nodeId": "shadow-collapse",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "node-output",
+            "port": "visual"
+          },
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "graph-shadow-collapse",
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "visual",
+          "label": "Visual",
+          "type": "visual",
+          "cardinality": "many",
+          "required": false,
+          "direction": "output"
+        }
+      ],
+      "nodes": [
+        {
+          "id": "shadow-collapse-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "source",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "shadow-collapse-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "target",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "shadow-collapse-active",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: active",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-active",
+          "params": {
+            "startTicks": 0,
+            "durationTicks": 138,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "shadow-collapse-collapse",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: collapse",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-collapse",
+          "params": {
+            "startTicks": 138,
+            "durationTicks": 30,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "shadow-collapse-body",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: body",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-body",
+          "params": {
+            "shape": "sphere",
+            "radius": 0.55,
+            "rate": 14,
+            "burst": 10,
+            "speedMin": 0,
+            "speedMax": 0.15,
+            "lifetimeMin": 1,
+            "lifetimeMax": 1.4
+          }
+        },
+        {
+          "id": "shadow-collapse-bodyip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: bodyip",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-bodyip",
+          "params": {
+            "sizeMin": 1,
+            "sizeMax": 1.4,
+            "randomFrameStart": true,
+            "rotationMin": 0,
+            "rotationMax": 6.283,
+            "angularVelocityMin": -0.5,
+            "angularVelocityMax": 0.5
+          }
+        },
+        {
+          "id": "shadow-collapse-bodypull",
+          "type": "Attract",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: bodypull",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-bodypull",
+          "params": {
+            "acceleration": 0.6,
+            "softRadius": 0.4,
+            "killRadius": 0
+          }
+        },
+        {
+          "id": "shadow-collapse-bodymat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: bodymat",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-bodymat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "smoke-puff",
+            "blend": "normal",
+            "tint": {
+              "srgb": "#161823",
+              "alpha": 1
+            },
+            "opacity": 1
+          }
+        },
+        {
+          "id": "shadow-collapse-bodybb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: bodybb",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-bodybb",
+          "params": {
+            "flipbookMode": "fps",
+            "flipbookFps": 6,
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.6
+                },
+                {
+                  "x": 0.5,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0.8
+                }
+              ]
+            },
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.2,
+                  "y": 0.55
+                },
+                {
+                  "x": 0.7,
+                  "y": 0.45
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "shadow-collapse-wisps",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: wisps",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-wisps",
+          "params": {
+            "shape": "sphere",
+            "radius": 1.4,
+            "rate": 36,
+            "burst": 0,
+            "speedMin": 0,
+            "speedMax": 0.2,
+            "lifetimeMin": 0.8,
+            "lifetimeMax": 1.5
+          }
+        },
+        {
+          "id": "shadow-collapse-wispip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: wispip",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-wispip",
+          "params": {
+            "sizeMin": 0.3,
+            "sizeMax": 0.5,
+            "randomFrameStart": true
+          }
+        },
+        {
+          "id": "shadow-collapse-swirl",
+          "type": "Vortex",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: swirl",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-swirl",
+          "params": {
+            "axis": [
+              0,
+              1,
+              0
+            ],
+            "tangential": 2.5,
+            "inward": 1.8,
+            "falloff": 2
+          }
+        },
+        {
+          "id": "shadow-collapse-pull",
+          "type": "Attract",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: pull",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-pull",
+          "params": {
+            "acceleration": 1.6,
+            "softRadius": 0.3,
+            "killRadius": 0.08
+          }
+        },
+        {
+          "id": "shadow-collapse-wispdrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: wispdrag",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-wispdrag",
+          "params": {
+            "coefficient": 0.4
+          }
+        },
+        {
+          "id": "shadow-collapse-wispmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: wispmat",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-wispmat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "smoke-puff",
+            "blend": "normal",
+            "tint": {
+              "srgb": "#1E1D29",
+              "alpha": 1
+            },
+            "opacity": 0.9,
+            "dissolve": 0.6,
+            "dissolveStart": 0.5,
+            "dissolveSoftness": 0.2
+          }
+        },
+        {
+          "id": "shadow-collapse-wispbb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: wispbb",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-wispbb",
+          "params": {
+            "alignment": "velocity",
+            "stretchRatio": 2.4,
+            "pivot": 0.4,
+            "flipbookMode": "overLife",
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.2,
+                  "y": 1
+                },
+                {
+                  "x": 0.8,
+                  "y": 0.8
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "shadow-collapse-accentmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: accentmat",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-accentmat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "smoke-puff",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#6A5C94",
+              "alpha": 1
+            },
+            "opacity": 0.18,
+            "emission": 0.2
+          }
+        },
+        {
+          "id": "shadow-collapse-accentbb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: accentbb",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-accentbb",
+          "params": {
+            "alignment": "velocity",
+            "stretchRatio": 2.4,
+            "pivot": 0.4,
+            "flipbookMode": "overLife",
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1.1
+                },
+                {
+                  "x": 1,
+                  "y": 0.9
+                }
+              ]
+            },
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.3,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "shadow-collapse-tip0",
+          "type": "OffsetAnchor",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: tip0",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-tip0",
+          "params": {
+            "offset": [
+              1.197,
+              -0.35,
+              0.506
+            ]
+          }
+        },
+        {
+          "id": "shadow-collapse-tendril0",
+          "type": "HelixPath",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: tendril0",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-tendril0",
+          "params": {
+            "radius": 0.35,
+            "turns": 0.8,
+            "phase": 0.4,
+            "spin": 3,
+            "taper": "out",
+            "samples": 40
+          }
+        },
+        {
+          "id": "shadow-collapse-tip1",
+          "type": "OffsetAnchor",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: tip1",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-tip1",
+          "params": {
+            "offset": [
+              -0.111,
+              0,
+              1.295
+            ]
+          }
+        },
+        {
+          "id": "shadow-collapse-tendril1",
+          "type": "HelixPath",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: tendril1",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-tendril1",
+          "params": {
+            "radius": 0.35,
+            "turns": 0.8,
+            "phase": 1.657,
+            "spin": 3,
+            "taper": "out",
+            "samples": 40
+          }
+        },
+        {
+          "id": "shadow-collapse-tip2",
+          "type": "OffsetAnchor",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: tip2",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-tip2",
+          "params": {
+            "offset": [
+              -1.266,
+              0.35,
+              0.294
+            ]
+          }
+        },
+        {
+          "id": "shadow-collapse-tendril2",
+          "type": "HelixPath",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: tendril2",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-tendril2",
+          "params": {
+            "radius": 0.35,
+            "turns": 0.8,
+            "phase": 2.913,
+            "spin": 3,
+            "taper": "out",
+            "samples": 40
+          }
+        },
+        {
+          "id": "shadow-collapse-tip3",
+          "type": "OffsetAnchor",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: tip3",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-tip3",
+          "params": {
+            "offset": [
+              -0.671,
+              -0.35,
+              -1.113
+            ]
+          }
+        },
+        {
+          "id": "shadow-collapse-tendril3",
+          "type": "HelixPath",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: tendril3",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-tendril3",
+          "params": {
+            "radius": 0.35,
+            "turns": 0.8,
+            "phase": 4.17,
+            "spin": 3,
+            "taper": "out",
+            "samples": 40
+          }
+        },
+        {
+          "id": "shadow-collapse-tip4",
+          "type": "OffsetAnchor",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: tip4",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-tip4",
+          "params": {
+            "offset": [
+              0.851,
+              0,
+              -0.982
+            ]
+          }
+        },
+        {
+          "id": "shadow-collapse-tendril4",
+          "type": "HelixPath",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: tendril4",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-tendril4",
+          "params": {
+            "radius": 0.35,
+            "turns": 0.8,
+            "phase": 5.427,
+            "spin": 3,
+            "taper": "out",
+            "samples": 40
+          }
+        },
+        {
+          "id": "shadow-collapse-tendrils",
+          "type": "MergePaths",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: tendrils",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-tendrils",
+          "params": {}
+        },
+        {
+          "id": "shadow-collapse-tendrilmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: tendrilmat",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-tendrilmat",
+          "params": {
+            "blend": "normal",
+            "tint": {
+              "srgb": "#12131B",
+              "alpha": 1
+            },
+            "opacity": 0.6
+          }
+        },
+        {
+          "id": "shadow-collapse-tendrilrib",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: tendrilrib",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-tendrilrib",
+          "params": {
+            "width": 0.16,
+            "endFade": 0.35,
+            "widthOverPath": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.4
+                },
+                {
+                  "x": 0.4,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0.2
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "shadow-collapse-tendrilrimmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: tendrilrimmat",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-tendrilrimmat",
+          "params": {
+            "blend": "additive",
+            "tint": {
+              "srgb": "#5E5288",
+              "alpha": 1
+            },
+            "opacity": 0.14,
+            "emission": 0.1
+          }
+        },
+        {
+          "id": "shadow-collapse-tendrilrim",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: tendrilrim",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-tendrilrim",
+          "params": {
+            "width": 0.2,
+            "endFade": 0.35,
+            "widthOverPath": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.4
+                },
+                {
+                  "x": 0.4,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0.2
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "shadow-collapse-coremat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: coremat",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-coremat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "smoke-puff",
+            "blend": "normal",
+            "tint": {
+              "srgb": "#0E0F16",
+              "alpha": 1
+            },
+            "opacity": 0.85
+          }
+        },
+        {
+          "id": "shadow-collapse-core",
+          "type": "SpriteRenderer",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: core",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-core",
+          "params": {
+            "size": 1.2,
+            "sizeOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            },
+            "opacityOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.9
+                },
+                {
+                  "x": 0.8,
+                  "y": 0.6
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "shadow-collapse-corerimmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: corerimmat",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-corerimmat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "soft-glow",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#7A6AA8",
+              "alpha": 1
+            },
+            "opacity": 0.25,
+            "emission": 0.2
+          }
+        },
+        {
+          "id": "shadow-collapse-corerim",
+          "type": "SpriteRenderer",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: corerim",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-corerim",
+          "params": {
+            "size": 1.5,
+            "sizeOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            },
+            "opacityOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "shadow-collapse-implode",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: implode",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-implode",
+          "params": {
+            "shape": "sphere",
+            "radius": 0.9,
+            "burst": 40,
+            "rate": 0,
+            "speedMin": 0,
+            "speedMax": 0.1,
+            "lifetimeMin": 0.3,
+            "lifetimeMax": 0.5
+          }
+        },
+        {
+          "id": "shadow-collapse-implodeip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: implodeip",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-implodeip",
+          "params": {
+            "sizeMin": 0.1,
+            "sizeMax": 0.2,
+            "randomFrameStart": true
+          }
+        },
+        {
+          "id": "shadow-collapse-implodepull",
+          "type": "Attract",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: implodepull",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-implodepull",
+          "params": {
+            "acceleration": 18,
+            "softRadius": 0.1,
+            "killRadius": 0.06
+          }
+        },
+        {
+          "id": "shadow-collapse-implodebb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: implodebb",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-implodebb",
+          "params": {
+            "alignment": "velocity",
+            "stretchRatio": 3,
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.8
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "shadow-collapse-residuewin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: residuewin",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-residuewin",
+          "params": {
+            "startTicks": 168,
+            "durationTicks": 1,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "shadow-collapse-residue",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: residue",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-residue",
+          "params": {
+            "shape": "sphere",
+            "radius": 0.4,
+            "rate": 8,
+            "burst": 0,
+            "speedMin": 0.1,
+            "speedMax": 0.3,
+            "lifetimeMin": 0.4,
+            "lifetimeMax": 0.7
+          }
+        },
+        {
+          "id": "shadow-collapse-residueip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: residueip",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-residueip",
+          "params": {
+            "sizeMin": 0.1,
+            "sizeMax": 0.2,
+            "randomFrameStart": true
+          }
+        },
+        {
+          "id": "shadow-collapse-residuelift",
+          "type": "Gravity",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: residuelift",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-residuelift",
+          "params": {
+            "acceleration": [
+              0,
+              0.4,
+              0
+            ]
+          }
+        },
+        {
+          "id": "shadow-collapse-residuebb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Shadow: vortex & collapse: residuebb",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-residuebb",
+          "params": {
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.5
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "shadow-collapse-out-visual",
+          "type": "GroupOutput",
+          "definitionVersion": 1,
+          "label": "Out: visual",
+          "enabled": true,
+          "randomStreamId": "rs-shadow-collapse-out-visual",
+          "params": {
+            "portId": "visual"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "shadow-collapse-e-node-target-body",
+          "source": {
+            "nodeId": "shadow-collapse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-body",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-active-body",
+          "source": {
+            "nodeId": "shadow-collapse-active",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-body",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-active-body-2",
+          "source": {
+            "nodeId": "shadow-collapse-active",
+            "port": "start"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-body",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-body-bodyip",
+          "source": {
+            "nodeId": "shadow-collapse-body",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-bodyip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-bodyip-bodypull",
+          "source": {
+            "nodeId": "shadow-collapse-bodyip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-bodypull",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-node-target-bodypull",
+          "source": {
+            "nodeId": "shadow-collapse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-bodypull",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-bodypull-bodybb",
+          "source": {
+            "nodeId": "shadow-collapse-bodypull",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-bodybb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-bodymat-bodybb",
+          "source": {
+            "nodeId": "shadow-collapse-bodymat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-bodybb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-bodybb-out-visual",
+          "source": {
+            "nodeId": "shadow-collapse-bodybb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-out-visual",
+            "port": "in"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-node-target-wisps",
+          "source": {
+            "nodeId": "shadow-collapse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-wisps",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-active-wisps",
+          "source": {
+            "nodeId": "shadow-collapse-active",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-wisps",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-active-wisps-2",
+          "source": {
+            "nodeId": "shadow-collapse-active",
+            "port": "start"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-wisps",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-wisps-wispip",
+          "source": {
+            "nodeId": "shadow-collapse-wisps",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-wispip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-wispip-wispdrag",
+          "source": {
+            "nodeId": "shadow-collapse-wispip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-wispdrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-wispdrag-swirl",
+          "source": {
+            "nodeId": "shadow-collapse-wispdrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-swirl",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-swirl-pull",
+          "source": {
+            "nodeId": "shadow-collapse-swirl",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-pull",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-node-target-swirl",
+          "source": {
+            "nodeId": "shadow-collapse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-swirl",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-node-target-pull",
+          "source": {
+            "nodeId": "shadow-collapse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-pull",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-pull-wispbb",
+          "source": {
+            "nodeId": "shadow-collapse-pull",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-wispbb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-wispmat-wispbb",
+          "source": {
+            "nodeId": "shadow-collapse-wispmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-wispbb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-wispbb-out-visual",
+          "source": {
+            "nodeId": "shadow-collapse-wispbb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-out-visual",
+            "port": "in"
+          },
+          "order": 1
+        },
+        {
+          "id": "shadow-collapse-e-pull-accentbb",
+          "source": {
+            "nodeId": "shadow-collapse-pull",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-accentbb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-accentmat-accentbb",
+          "source": {
+            "nodeId": "shadow-collapse-accentmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-accentbb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-accentbb-out-visual",
+          "source": {
+            "nodeId": "shadow-collapse-accentbb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-out-visual",
+            "port": "in"
+          },
+          "order": 2
+        },
+        {
+          "id": "shadow-collapse-e-node-target-tip0",
+          "source": {
+            "nodeId": "shadow-collapse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tip0",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-tip0-tendril0",
+          "source": {
+            "nodeId": "shadow-collapse-tip0",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendril0",
+            "port": "start"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-node-target-tendril0",
+          "source": {
+            "nodeId": "shadow-collapse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendril0",
+            "port": "end"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-node-target-tip1",
+          "source": {
+            "nodeId": "shadow-collapse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tip1",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-tip1-tendril1",
+          "source": {
+            "nodeId": "shadow-collapse-tip1",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendril1",
+            "port": "start"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-node-target-tendril1",
+          "source": {
+            "nodeId": "shadow-collapse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendril1",
+            "port": "end"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-node-target-tip2",
+          "source": {
+            "nodeId": "shadow-collapse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tip2",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-tip2-tendril2",
+          "source": {
+            "nodeId": "shadow-collapse-tip2",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendril2",
+            "port": "start"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-node-target-tendril2",
+          "source": {
+            "nodeId": "shadow-collapse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendril2",
+            "port": "end"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-node-target-tip3",
+          "source": {
+            "nodeId": "shadow-collapse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tip3",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-tip3-tendril3",
+          "source": {
+            "nodeId": "shadow-collapse-tip3",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendril3",
+            "port": "start"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-node-target-tendril3",
+          "source": {
+            "nodeId": "shadow-collapse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendril3",
+            "port": "end"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-node-target-tip4",
+          "source": {
+            "nodeId": "shadow-collapse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tip4",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-tip4-tendril4",
+          "source": {
+            "nodeId": "shadow-collapse-tip4",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendril4",
+            "port": "start"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-node-target-tendril4",
+          "source": {
+            "nodeId": "shadow-collapse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendril4",
+            "port": "end"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-tendril0-tendrils",
+          "source": {
+            "nodeId": "shadow-collapse-tendril0",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendrils",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-tendril1-tendrils",
+          "source": {
+            "nodeId": "shadow-collapse-tendril1",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendrils",
+            "port": "paths"
+          },
+          "order": 1
+        },
+        {
+          "id": "shadow-collapse-e-tendril2-tendrils",
+          "source": {
+            "nodeId": "shadow-collapse-tendril2",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendrils",
+            "port": "paths"
+          },
+          "order": 2
+        },
+        {
+          "id": "shadow-collapse-e-tendril3-tendrils",
+          "source": {
+            "nodeId": "shadow-collapse-tendril3",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendrils",
+            "port": "paths"
+          },
+          "order": 3
+        },
+        {
+          "id": "shadow-collapse-e-tendril4-tendrils",
+          "source": {
+            "nodeId": "shadow-collapse-tendril4",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendrils",
+            "port": "paths"
+          },
+          "order": 4
+        },
+        {
+          "id": "shadow-collapse-e-tendrils-tendrilrib",
+          "source": {
+            "nodeId": "shadow-collapse-tendrils",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendrilrib",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-active-tendrilrib",
+          "source": {
+            "nodeId": "shadow-collapse-active",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendrilrib",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-tendrilrib-out-visual",
+          "source": {
+            "nodeId": "shadow-collapse-tendrilrib",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-out-visual",
+            "port": "in"
+          },
+          "order": 3
+        },
+        {
+          "id": "shadow-collapse-e-tendrils-tendrilrim",
+          "source": {
+            "nodeId": "shadow-collapse-tendrils",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendrilrim",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-active-tendrilrim",
+          "source": {
+            "nodeId": "shadow-collapse-active",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendrilrim",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-tendrilrim-out-visual",
+          "source": {
+            "nodeId": "shadow-collapse-tendrilrim",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-out-visual",
+            "port": "in"
+          },
+          "order": 4
+        },
+        {
+          "id": "shadow-collapse-e-tendrilmat-tendrilrib",
+          "source": {
+            "nodeId": "shadow-collapse-tendrilmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendrilrib",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-tendrilrimmat-tendrilrim",
+          "source": {
+            "nodeId": "shadow-collapse-tendrilrimmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-tendrilrim",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-node-target-core",
+          "source": {
+            "nodeId": "shadow-collapse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-core",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-coremat-core",
+          "source": {
+            "nodeId": "shadow-collapse-coremat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-core",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-collapse-core",
+          "source": {
+            "nodeId": "shadow-collapse-collapse",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-core",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-core-out-visual",
+          "source": {
+            "nodeId": "shadow-collapse-core",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-out-visual",
+            "port": "in"
+          },
+          "order": 5
+        },
+        {
+          "id": "shadow-collapse-e-node-target-corerim",
+          "source": {
+            "nodeId": "shadow-collapse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-corerim",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-corerimmat-corerim",
+          "source": {
+            "nodeId": "shadow-collapse-corerimmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-corerim",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-collapse-corerim",
+          "source": {
+            "nodeId": "shadow-collapse-collapse",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-corerim",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-corerim-out-visual",
+          "source": {
+            "nodeId": "shadow-collapse-corerim",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-out-visual",
+            "port": "in"
+          },
+          "order": 6
+        },
+        {
+          "id": "shadow-collapse-e-node-target-implode",
+          "source": {
+            "nodeId": "shadow-collapse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-implode",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-collapse-implode",
+          "source": {
+            "nodeId": "shadow-collapse-collapse",
+            "port": "start"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-implode",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-implode-implodeip",
+          "source": {
+            "nodeId": "shadow-collapse-implode",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-implodeip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-implodeip-implodepull",
+          "source": {
+            "nodeId": "shadow-collapse-implodeip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-implodepull",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-node-target-implodepull",
+          "source": {
+            "nodeId": "shadow-collapse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-implodepull",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-implodepull-implodebb",
+          "source": {
+            "nodeId": "shadow-collapse-implodepull",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-implodebb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-wispmat-implodebb",
+          "source": {
+            "nodeId": "shadow-collapse-wispmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-implodebb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-implodebb-out-visual",
+          "source": {
+            "nodeId": "shadow-collapse-implodebb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-out-visual",
+            "port": "in"
+          },
+          "order": 7
+        },
+        {
+          "id": "shadow-collapse-e-node-target-residue",
+          "source": {
+            "nodeId": "shadow-collapse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-residue",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-residuewin-residue",
+          "source": {
+            "nodeId": "shadow-collapse-residuewin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-residue",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-residue-residueip",
+          "source": {
+            "nodeId": "shadow-collapse-residue",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-residueip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-residueip-residuelift",
+          "source": {
+            "nodeId": "shadow-collapse-residueip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-residuelift",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-residuelift-residuebb",
+          "source": {
+            "nodeId": "shadow-collapse-residuelift",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-residuebb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-wispmat-residuebb",
+          "source": {
+            "nodeId": "shadow-collapse-wispmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-residuebb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "shadow-collapse-e-residuebb-out-visual",
+          "source": {
+            "nodeId": "shadow-collapse-residuebb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "shadow-collapse-out-visual",
+            "port": "in"
+          },
+          "order": 8
+        }
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "id": "ctl-shadow-collapse-start-at",
+      "scopeGraphId": "graph-shadow-collapse",
+      "label": "Start at",
+      "type": "integer",
+      "unit": "tick",
+      "value": 0,
+      "default": 0,
+      "min": 0,
+      "max": 432,
+      "step": 1,
+      "section": "Shadow: vortex & collapse",
+      "description": "Delays the whole component (60 ticks = 1 second) so it can play after another one.",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "shadow-collapse-active",
+          "parameter": "startTicks"
+        },
+        {
+          "nodeId": "shadow-collapse-collapse",
+          "parameter": "startTicks",
+          "offset": 138
+        },
+        {
+          "nodeId": "shadow-collapse-residuewin",
+          "parameter": "startTicks",
+          "offset": 168
+        }
+      ]
+    },
+    {
+      "id": "ctl-shadow-collapse-radius",
+      "scopeGraphId": "graph-shadow-collapse",
+      "label": "Vortex radius",
+      "type": "number",
+      "unit": "meter",
+      "value": 1.4,
+      "default": 1.4,
+      "min": 0,
+      "max": 20,
+      "section": "Shadow: vortex & collapse",
+      "description": "Shadow: vortex & collapse: wisps.radius",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "shadow-collapse-wisps",
+          "parameter": "radius"
+        }
+      ]
+    },
+    {
+      "id": "ctl-shadow-collapse-inward",
+      "scopeGraphId": "graph-shadow-collapse",
+      "label": "Inward speed",
+      "type": "number",
+      "unit": "metersPerSecondSquared",
+      "value": 1.8,
+      "default": 1.8,
+      "min": -100,
+      "max": 100,
+      "section": "Shadow: vortex & collapse",
+      "description": "Shadow: vortex & collapse: swirl.inward",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "shadow-collapse-swirl",
+          "parameter": "inward"
+        }
+      ]
+    },
+    {
+      "id": "ctl-shadow-collapse-swirl",
+      "scopeGraphId": "graph-shadow-collapse",
+      "label": "Swirl",
+      "type": "number",
+      "unit": "metersPerSecondSquared",
+      "value": 2.5,
+      "default": 2.5,
+      "min": -100,
+      "max": 100,
+      "section": "Shadow: vortex & collapse",
+      "description": "Shadow: vortex & collapse: swirl.tangential",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "shadow-collapse-swirl",
+          "parameter": "tangential"
+        }
+      ]
+    },
+    {
+      "id": "ctl-shadow-collapse-density",
+      "scopeGraphId": "graph-shadow-collapse",
+      "label": "Body density",
+      "type": "number",
+      "unit": "perSecond",
+      "value": 14,
+      "default": 14,
+      "min": 0,
+      "max": 4096,
+      "section": "Shadow: vortex & collapse",
+      "description": "Shadow: vortex & collapse: body.rate",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "shadow-collapse-body",
+          "parameter": "rate"
+        }
+      ]
+    },
+    {
+      "id": "ctl-shadow-collapse-edge",
+      "scopeGraphId": "graph-shadow-collapse",
+      "label": "Edge visibility",
+      "type": "number",
+      "unit": "normalized",
+      "value": 0.18,
+      "default": 0.18,
+      "min": 0,
+      "max": 1,
+      "section": "Shadow: vortex & collapse",
+      "description": "Shadow: vortex & collapse: accentmat.opacity",
+      "editPolicy": "live",
+      "bindings": [
+        {
+          "nodeId": "shadow-collapse-accentmat",
+          "parameter": "opacity"
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "editor": {
+    "graphs": {
+      "graph-root": {
+        "nodes": {
+          "node-source": {
+            "x": 0,
+            "y": 0
+          },
+          "node-target": {
+            "x": 0,
+            "y": 160
+          },
+          "node-output": {
+            "x": 1040,
+            "y": 0
+          },
+          "shadow-collapse": {
+            "x": -300,
+            "y": 320
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      },
+      "graph-shadow-collapse": {
+        "nodes": {
+          "shadow-collapse-active": {
+            "x": 0,
+            "y": 0
+          },
+          "shadow-collapse-collapse": {
+            "x": 260,
+            "y": 0
+          },
+          "shadow-collapse-body": {
+            "x": 520,
+            "y": 0
+          },
+          "shadow-collapse-bodyip": {
+            "x": 780,
+            "y": 0
+          },
+          "shadow-collapse-bodypull": {
+            "x": 1040,
+            "y": 0
+          },
+          "shadow-collapse-bodymat": {
+            "x": 1300,
+            "y": 0
+          },
+          "shadow-collapse-bodybb": {
+            "x": 0,
+            "y": 170
+          },
+          "shadow-collapse-wisps": {
+            "x": 260,
+            "y": 170
+          },
+          "shadow-collapse-wispip": {
+            "x": 520,
+            "y": 170
+          },
+          "shadow-collapse-swirl": {
+            "x": 780,
+            "y": 170
+          },
+          "shadow-collapse-pull": {
+            "x": 1040,
+            "y": 170
+          },
+          "shadow-collapse-wispdrag": {
+            "x": 1300,
+            "y": 170
+          },
+          "shadow-collapse-wispmat": {
+            "x": 0,
+            "y": 340
+          },
+          "shadow-collapse-wispbb": {
+            "x": 260,
+            "y": 340
+          },
+          "shadow-collapse-accentmat": {
+            "x": 520,
+            "y": 340
+          },
+          "shadow-collapse-accentbb": {
+            "x": 780,
+            "y": 340
+          },
+          "shadow-collapse-tip0": {
+            "x": 1040,
+            "y": 340
+          },
+          "shadow-collapse-tendril0": {
+            "x": 1300,
+            "y": 340
+          },
+          "shadow-collapse-tip1": {
+            "x": 0,
+            "y": 510
+          },
+          "shadow-collapse-tendril1": {
+            "x": 260,
+            "y": 510
+          },
+          "shadow-collapse-tip2": {
+            "x": 520,
+            "y": 510
+          },
+          "shadow-collapse-tendril2": {
+            "x": 780,
+            "y": 510
+          },
+          "shadow-collapse-tip3": {
+            "x": 1040,
+            "y": 510
+          },
+          "shadow-collapse-tendril3": {
+            "x": 1300,
+            "y": 510
+          },
+          "shadow-collapse-tip4": {
+            "x": 0,
+            "y": 680
+          },
+          "shadow-collapse-tendril4": {
+            "x": 260,
+            "y": 680
+          },
+          "shadow-collapse-tendrils": {
+            "x": 520,
+            "y": 680
+          },
+          "shadow-collapse-tendrilmat": {
+            "x": 780,
+            "y": 680
+          },
+          "shadow-collapse-tendrilrib": {
+            "x": 1040,
+            "y": 680
+          },
+          "shadow-collapse-tendrilrimmat": {
+            "x": 1300,
+            "y": 680
+          },
+          "shadow-collapse-tendrilrim": {
+            "x": 0,
+            "y": 850
+          },
+          "shadow-collapse-coremat": {
+            "x": 260,
+            "y": 850
+          },
+          "shadow-collapse-core": {
+            "x": 520,
+            "y": 850
+          },
+          "shadow-collapse-corerimmat": {
+            "x": 780,
+            "y": 850
+          },
+          "shadow-collapse-corerim": {
+            "x": 1040,
+            "y": 850
+          },
+          "shadow-collapse-implode": {
+            "x": 1300,
+            "y": 850
+          },
+          "shadow-collapse-implodeip": {
+            "x": 0,
+            "y": 1020
+          },
+          "shadow-collapse-implodepull": {
+            "x": 260,
+            "y": 1020
+          },
+          "shadow-collapse-implodebb": {
+            "x": 520,
+            "y": 1020
+          },
+          "shadow-collapse-residuewin": {
+            "x": 780,
+            "y": 1020
+          },
+          "shadow-collapse-residue": {
+            "x": 1040,
+            "y": 1020
+          },
+          "shadow-collapse-residueip": {
+            "x": 1300,
+            "y": 1020
+          },
+          "shadow-collapse-residuelift": {
+            "x": 0,
+            "y": 1190
+          },
+          "shadow-collapse-residuebb": {
+            "x": 260,
+            "y": 1190
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      }
+    },
+    "openedGraphId": "graph-root"
+  }
+}

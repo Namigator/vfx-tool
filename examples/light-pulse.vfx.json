@@ -1,0 +1,1936 @@
+{
+  "format": "vfx-studio",
+  "schemaVersion": 2,
+  "runtimeVersion": "2.0.0",
+  "id": "example-light-pulse",
+  "name": "Light pulse",
+  "tags": [],
+  "seed": 42,
+  "rootTransform": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "scale": 1
+  },
+  "anchors": [
+    {
+      "id": "source",
+      "name": "Source",
+      "position": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "id": "target",
+      "name": "Target",
+      "position": [
+        0,
+        1,
+        5
+      ]
+    }
+  ],
+  "durationTicks": 168,
+  "rootGraphId": "graph-root",
+  "graphs": [
+    {
+      "id": "graph-root",
+      "inputs": [],
+      "outputs": [],
+      "nodes": [
+        {
+          "id": "node-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Source",
+          "enabled": true,
+          "randomStreamId": "rs-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "node-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Target",
+          "enabled": true,
+          "randomStreamId": "rs-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "node-output",
+          "type": "EffectOutput",
+          "definitionVersion": 1,
+          "label": "Output",
+          "enabled": true,
+          "randomStreamId": "rs-output",
+          "params": {}
+        },
+        {
+          "id": "light-pulse",
+          "type": "Group",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse",
+          "params": {
+            "graphId": "graph-light-pulse"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "light-pulse-e-group-visual",
+          "source": {
+            "nodeId": "light-pulse",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "node-output",
+            "port": "visual"
+          },
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "graph-light-pulse",
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "visual",
+          "label": "Visual",
+          "type": "visual",
+          "cardinality": "many",
+          "required": false,
+          "direction": "output"
+        }
+      ],
+      "nodes": [
+        {
+          "id": "light-pulse-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "source",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "light-pulse-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "target",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "light-pulse-charge",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: charge",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-charge",
+          "params": {
+            "startTicks": 0,
+            "durationTicks": 36,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "light-pulse-pulse",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: pulse",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-pulse",
+          "params": {
+            "startTicks": 36,
+            "durationTicks": 54,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "light-pulse-gather",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: gather",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-gather",
+          "params": {
+            "shape": "sphere",
+            "radius": 1.6,
+            "burst": 24,
+            "rate": 0,
+            "speedMin": 0,
+            "speedMax": 0.1,
+            "lifetimeMin": 0.6,
+            "lifetimeMax": 0.6
+          }
+        },
+        {
+          "id": "light-pulse-gatherip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: gatherip",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-gatherip",
+          "params": {
+            "sizeMin": 0.04,
+            "sizeMax": 0.07
+          }
+        },
+        {
+          "id": "light-pulse-gatherpull",
+          "type": "Attract",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: gatherpull",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-gatherpull",
+          "params": {
+            "acceleration": 9,
+            "softRadius": 0.15,
+            "killRadius": 0.06
+          }
+        },
+        {
+          "id": "light-pulse-motemat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: motemat",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-motemat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "soft-glow",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#FFF1D0",
+              "alpha": 1
+            },
+            "emission": 0.8
+          }
+        },
+        {
+          "id": "light-pulse-gatherbb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: gatherbb",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-gatherbb",
+          "params": {}
+        },
+        {
+          "id": "light-pulse-chargemat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: chargemat",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-chargemat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "soft-glow",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#FFF4DC",
+              "alpha": 1
+            },
+            "emission": 1
+          }
+        },
+        {
+          "id": "light-pulse-chargecore",
+          "type": "SpriteRenderer",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: chargecore",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-chargecore",
+          "params": {
+            "size": 0.3,
+            "sizeOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.2
+                },
+                {
+                  "x": 1,
+                  "y": 1
+                }
+              ]
+            },
+            "opacityOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.2
+                },
+                {
+                  "x": 1,
+                  "y": 0.9
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "light-pulse-coremat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: coremat",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-coremat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "soft-glow",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#FFFFFF",
+              "alpha": 1
+            },
+            "emission": 1.5
+          }
+        },
+        {
+          "id": "light-pulse-core",
+          "type": "SpriteRenderer",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: core",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-core",
+          "params": {
+            "size": 0.4,
+            "sizeOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 0.06,
+                  "y": 0.8
+                },
+                {
+                  "x": 0.3,
+                  "y": 0.5
+                },
+                {
+                  "x": 1,
+                  "y": 0.3
+                }
+              ]
+            },
+            "opacityOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 0.06,
+                  "y": 0.9
+                },
+                {
+                  "x": 0.5,
+                  "y": 0.4
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "light-pulse-halomat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: halomat",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-halomat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "soft-glow",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#FFD890",
+              "alpha": 1
+            },
+            "opacity": 0.35
+          }
+        },
+        {
+          "id": "light-pulse-halo",
+          "type": "SpriteRenderer",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: halo",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-halo",
+          "params": {
+            "size": 2,
+            "sizeOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.4
+                },
+                {
+                  "x": 0.06,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 1.2
+                }
+              ]
+            },
+            "opacityOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.9
+                },
+                {
+                  "x": 0.2,
+                  "y": 0.5
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "light-pulse-rays",
+          "type": "RadialPath",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: rays",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-rays",
+          "params": {
+            "mode": "sphere",
+            "count": 32,
+            "lengthMin": 0.6,
+            "lengthMax": 2.4,
+            "coneAngle": 0.52
+          }
+        },
+        {
+          "id": "light-pulse-raywin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: raywin",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-raywin",
+          "params": {
+            "startTicks": 36,
+            "durationTicks": 32,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "light-pulse-rayclock",
+          "type": "Time",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: rayclock",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-rayclock",
+          "params": {}
+        },
+        {
+          "id": "light-pulse-rayshoot",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: rayshoot",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-rayshoot",
+          "params": {
+            "operation": "multiply",
+            "b": 8,
+            "inputUnit": "normalized",
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "light-pulse-rayreveal",
+          "type": "RevealPath",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: rayreveal",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-rayreveal",
+          "params": {}
+        },
+        {
+          "id": "light-pulse-raydim",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: raydim",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-raydim",
+          "params": {
+            "operation": "multiply",
+            "b": -0.9,
+            "inputUnit": "normalized",
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "light-pulse-rayfade",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: rayfade",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-rayfade",
+          "params": {
+            "operation": "add",
+            "b": 0.9,
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "light-pulse-raymat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: raymat",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-raymat",
+          "params": {
+            "blend": "additive",
+            "tint": {
+              "srgb": "#FFF0CC",
+              "alpha": 1
+            },
+            "emission": 0.6
+          }
+        },
+        {
+          "id": "light-pulse-raysrib",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: raysrib",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-raysrib",
+          "params": {
+            "width": 0.03,
+            "endFade": 0.25,
+            "widthOverPath": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0.25
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "light-pulse-ringwin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: ringwin",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-ringwin",
+          "params": {
+            "startTicks": 36,
+            "durationTicks": 26,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "light-pulse-ringclock",
+          "type": "Time",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: ringclock",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-ringclock",
+          "params": {}
+        },
+        {
+          "id": "light-pulse-ringsize",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: ringsize",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-ringsize",
+          "params": {
+            "operation": "max",
+            "b": 0.1,
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "light-pulse-ringdim",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: ringdim",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-ringdim",
+          "params": {
+            "operation": "multiply",
+            "b": -0.6,
+            "inputUnit": "normalized",
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "light-pulse-ringfade",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: ringfade",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-ringfade",
+          "params": {
+            "operation": "add",
+            "b": 0.6,
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "light-pulse-ringmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: ringmat",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-ringmat",
+          "params": {
+            "blend": "additive",
+            "tint": {
+              "srgb": "#FFE2A8",
+              "alpha": 1
+            },
+            "emission": 0.2
+          }
+        },
+        {
+          "id": "light-pulse-floor",
+          "type": "OffsetAnchor",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: floor",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-floor",
+          "params": {
+            "offset": [
+              0,
+              -0.97,
+              0
+            ]
+          }
+        },
+        {
+          "id": "light-pulse-haloring",
+          "type": "RingPath",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: haloring",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-haloring",
+          "params": {
+            "radius": 2,
+            "samples": 96,
+            "orientation": [
+              0.7071067811865476,
+              0,
+              0,
+              0.7071067811865476
+            ]
+          }
+        },
+        {
+          "id": "light-pulse-haloringrib",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: haloringrib",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-haloringrib",
+          "params": {
+            "width": 0.02,
+            "endFade": 0
+          }
+        },
+        {
+          "id": "light-pulse-groundring",
+          "type": "RingPath",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: groundring",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-groundring",
+          "params": {
+            "radius": 2,
+            "samples": 96,
+            "orientation": [
+              0,
+              0,
+              0,
+              1
+            ]
+          }
+        },
+        {
+          "id": "light-pulse-groundringrib",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: groundringrib",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-groundringrib",
+          "params": {
+            "width": 0.02,
+            "endFade": 0
+          }
+        },
+        {
+          "id": "light-pulse-motes",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: motes",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-motes",
+          "params": {
+            "shape": "sphere",
+            "radius": 0.2,
+            "burst": 48,
+            "rate": 0,
+            "speedMin": 0.3,
+            "speedMax": 1,
+            "lifetimeMin": 0.6,
+            "lifetimeMax": 1.5
+          }
+        },
+        {
+          "id": "light-pulse-moteip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: moteip",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-moteip",
+          "params": {
+            "sizeMin": 0.03,
+            "sizeMax": 0.06
+          }
+        },
+        {
+          "id": "light-pulse-motedrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: motedrag",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-motedrag",
+          "params": {
+            "coefficient": 0.5
+          }
+        },
+        {
+          "id": "light-pulse-motebb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: motebb",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-motebb",
+          "params": {
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 0.7,
+                  "y": 0.6
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "light-pulse-lightwin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: lightwin",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-lightwin",
+          "params": {
+            "startTicks": 36,
+            "durationTicks": 40,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "light-pulse-lamp",
+          "type": "PointLight",
+          "definitionVersion": 1,
+          "label": "Light: radiant pulse: lamp",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-lamp",
+          "params": {
+            "color": {
+              "srgb": "#FFD9A0",
+              "alpha": 1
+            },
+            "intensity": 30,
+            "range": 6,
+            "intensityOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 0.15,
+                  "y": 0.6
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "light-pulse-out-visual",
+          "type": "GroupOutput",
+          "definitionVersion": 1,
+          "label": "Out: visual",
+          "enabled": true,
+          "randomStreamId": "rs-light-pulse-out-visual",
+          "params": {
+            "portId": "visual"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "light-pulse-e-node-target-gather",
+          "source": {
+            "nodeId": "light-pulse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "light-pulse-gather",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-charge-gather",
+          "source": {
+            "nodeId": "light-pulse-charge",
+            "port": "start"
+          },
+          "target": {
+            "nodeId": "light-pulse-gather",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-gather-gatherip",
+          "source": {
+            "nodeId": "light-pulse-gather",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "light-pulse-gatherip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-gatherip-gatherpull",
+          "source": {
+            "nodeId": "light-pulse-gatherip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "light-pulse-gatherpull",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-node-target-gatherpull",
+          "source": {
+            "nodeId": "light-pulse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "light-pulse-gatherpull",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-gatherpull-gatherbb",
+          "source": {
+            "nodeId": "light-pulse-gatherpull",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "light-pulse-gatherbb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-motemat-gatherbb",
+          "source": {
+            "nodeId": "light-pulse-motemat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "light-pulse-gatherbb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-gatherbb-out-visual",
+          "source": {
+            "nodeId": "light-pulse-gatherbb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "light-pulse-out-visual",
+            "port": "in"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-node-target-chargecore",
+          "source": {
+            "nodeId": "light-pulse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "light-pulse-chargecore",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-chargemat-chargecore",
+          "source": {
+            "nodeId": "light-pulse-chargemat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "light-pulse-chargecore",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-charge-chargecore",
+          "source": {
+            "nodeId": "light-pulse-charge",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "light-pulse-chargecore",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-chargecore-out-visual",
+          "source": {
+            "nodeId": "light-pulse-chargecore",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "light-pulse-out-visual",
+            "port": "in"
+          },
+          "order": 1
+        },
+        {
+          "id": "light-pulse-e-node-target-core",
+          "source": {
+            "nodeId": "light-pulse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "light-pulse-core",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-coremat-core",
+          "source": {
+            "nodeId": "light-pulse-coremat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "light-pulse-core",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-pulse-core",
+          "source": {
+            "nodeId": "light-pulse-pulse",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "light-pulse-core",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-core-out-visual",
+          "source": {
+            "nodeId": "light-pulse-core",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "light-pulse-out-visual",
+            "port": "in"
+          },
+          "order": 2
+        },
+        {
+          "id": "light-pulse-e-node-target-halo",
+          "source": {
+            "nodeId": "light-pulse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "light-pulse-halo",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-halomat-halo",
+          "source": {
+            "nodeId": "light-pulse-halomat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "light-pulse-halo",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-pulse-halo",
+          "source": {
+            "nodeId": "light-pulse-pulse",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "light-pulse-halo",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-halo-out-visual",
+          "source": {
+            "nodeId": "light-pulse-halo",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "light-pulse-out-visual",
+            "port": "in"
+          },
+          "order": 3
+        },
+        {
+          "id": "light-pulse-e-raywin-rayclock",
+          "source": {
+            "nodeId": "light-pulse-raywin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "light-pulse-rayclock",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-node-target-rays",
+          "source": {
+            "nodeId": "light-pulse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "light-pulse-rays",
+            "port": "center"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-rayclock-rayshoot",
+          "source": {
+            "nodeId": "light-pulse-rayclock",
+            "port": "progress"
+          },
+          "target": {
+            "nodeId": "light-pulse-rayshoot",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-rays-rayreveal",
+          "source": {
+            "nodeId": "light-pulse-rays",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "light-pulse-rayreveal",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-rayshoot-rayreveal",
+          "source": {
+            "nodeId": "light-pulse-rayshoot",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "light-pulse-rayreveal",
+            "port": "fraction"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-rayclock-raydim",
+          "source": {
+            "nodeId": "light-pulse-rayclock",
+            "port": "progress"
+          },
+          "target": {
+            "nodeId": "light-pulse-raydim",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-raydim-rayfade",
+          "source": {
+            "nodeId": "light-pulse-raydim",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "light-pulse-rayfade",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-rayfade-raymat",
+          "source": {
+            "nodeId": "light-pulse-rayfade",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "light-pulse-raymat",
+            "port": "opacity"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-rayreveal-raysrib",
+          "source": {
+            "nodeId": "light-pulse-rayreveal",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "light-pulse-raysrib",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-raymat-raysrib",
+          "source": {
+            "nodeId": "light-pulse-raymat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "light-pulse-raysrib",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-raywin-raysrib",
+          "source": {
+            "nodeId": "light-pulse-raywin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "light-pulse-raysrib",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-raysrib-out-visual",
+          "source": {
+            "nodeId": "light-pulse-raysrib",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "light-pulse-out-visual",
+            "port": "in"
+          },
+          "order": 4
+        },
+        {
+          "id": "light-pulse-e-ringwin-ringclock",
+          "source": {
+            "nodeId": "light-pulse-ringwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "light-pulse-ringclock",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-ringclock-ringsize",
+          "source": {
+            "nodeId": "light-pulse-ringclock",
+            "port": "progress"
+          },
+          "target": {
+            "nodeId": "light-pulse-ringsize",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-ringclock-ringdim",
+          "source": {
+            "nodeId": "light-pulse-ringclock",
+            "port": "progress"
+          },
+          "target": {
+            "nodeId": "light-pulse-ringdim",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-ringdim-ringfade",
+          "source": {
+            "nodeId": "light-pulse-ringdim",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "light-pulse-ringfade",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-ringfade-ringmat",
+          "source": {
+            "nodeId": "light-pulse-ringfade",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "light-pulse-ringmat",
+            "port": "opacity"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-node-target-floor",
+          "source": {
+            "nodeId": "light-pulse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "light-pulse-floor",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-node-target-haloring",
+          "source": {
+            "nodeId": "light-pulse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "light-pulse-haloring",
+            "port": "center"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-ringsize-haloring",
+          "source": {
+            "nodeId": "light-pulse-ringsize",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "light-pulse-haloring",
+            "port": "radiusScale"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-haloring-haloringrib",
+          "source": {
+            "nodeId": "light-pulse-haloring",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "light-pulse-haloringrib",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-ringmat-haloringrib",
+          "source": {
+            "nodeId": "light-pulse-ringmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "light-pulse-haloringrib",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-ringwin-haloringrib",
+          "source": {
+            "nodeId": "light-pulse-ringwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "light-pulse-haloringrib",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-haloringrib-out-visual",
+          "source": {
+            "nodeId": "light-pulse-haloringrib",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "light-pulse-out-visual",
+            "port": "in"
+          },
+          "order": 5
+        },
+        {
+          "id": "light-pulse-e-floor-groundring",
+          "source": {
+            "nodeId": "light-pulse-floor",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "light-pulse-groundring",
+            "port": "center"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-ringsize-groundring",
+          "source": {
+            "nodeId": "light-pulse-ringsize",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "light-pulse-groundring",
+            "port": "radiusScale"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-groundring-groundringrib",
+          "source": {
+            "nodeId": "light-pulse-groundring",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "light-pulse-groundringrib",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-ringmat-groundringrib",
+          "source": {
+            "nodeId": "light-pulse-ringmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "light-pulse-groundringrib",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-ringwin-groundringrib",
+          "source": {
+            "nodeId": "light-pulse-ringwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "light-pulse-groundringrib",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-groundringrib-out-visual",
+          "source": {
+            "nodeId": "light-pulse-groundringrib",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "light-pulse-out-visual",
+            "port": "in"
+          },
+          "order": 6
+        },
+        {
+          "id": "light-pulse-e-node-target-motes",
+          "source": {
+            "nodeId": "light-pulse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "light-pulse-motes",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-pulse-motes",
+          "source": {
+            "nodeId": "light-pulse-pulse",
+            "port": "start"
+          },
+          "target": {
+            "nodeId": "light-pulse-motes",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-motes-moteip",
+          "source": {
+            "nodeId": "light-pulse-motes",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "light-pulse-moteip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-moteip-motedrag",
+          "source": {
+            "nodeId": "light-pulse-moteip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "light-pulse-motedrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-motedrag-motebb",
+          "source": {
+            "nodeId": "light-pulse-motedrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "light-pulse-motebb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-motemat-motebb",
+          "source": {
+            "nodeId": "light-pulse-motemat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "light-pulse-motebb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-motebb-out-visual",
+          "source": {
+            "nodeId": "light-pulse-motebb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "light-pulse-out-visual",
+            "port": "in"
+          },
+          "order": 7
+        },
+        {
+          "id": "light-pulse-e-node-target-lamp",
+          "source": {
+            "nodeId": "light-pulse-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "light-pulse-lamp",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-lightwin-lamp",
+          "source": {
+            "nodeId": "light-pulse-lightwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "light-pulse-lamp",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "light-pulse-e-lamp-out-visual",
+          "source": {
+            "nodeId": "light-pulse-lamp",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "light-pulse-out-visual",
+            "port": "in"
+          },
+          "order": 8
+        }
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "id": "ctl-light-pulse-start-at",
+      "scopeGraphId": "graph-light-pulse",
+      "label": "Start at",
+      "type": "integer",
+      "unit": "tick",
+      "value": 0,
+      "default": 0,
+      "min": 0,
+      "max": 564,
+      "step": 1,
+      "section": "Light: radiant pulse",
+      "description": "Delays the whole component (60 ticks = 1 second) so it can play after another one.",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "light-pulse-charge",
+          "parameter": "startTicks"
+        },
+        {
+          "nodeId": "light-pulse-pulse",
+          "parameter": "startTicks",
+          "offset": 36
+        },
+        {
+          "nodeId": "light-pulse-raywin",
+          "parameter": "startTicks",
+          "offset": 36
+        },
+        {
+          "nodeId": "light-pulse-ringwin",
+          "parameter": "startTicks",
+          "offset": 36
+        },
+        {
+          "nodeId": "light-pulse-lightwin",
+          "parameter": "startTicks",
+          "offset": 36
+        }
+      ]
+    },
+    {
+      "id": "ctl-light-pulse-rays",
+      "scopeGraphId": "graph-light-pulse",
+      "label": "Ray count",
+      "type": "integer",
+      "unit": "none",
+      "value": 32,
+      "default": 32,
+      "min": 1,
+      "max": 128,
+      "step": 1,
+      "section": "Light: radiant pulse",
+      "description": "Light: radiant pulse: rays.count",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "light-pulse-rays",
+          "parameter": "count"
+        }
+      ]
+    },
+    {
+      "id": "ctl-light-pulse-length",
+      "scopeGraphId": "graph-light-pulse",
+      "label": "Ray length",
+      "type": "number",
+      "unit": "meter",
+      "value": 2.4,
+      "default": 2.4,
+      "min": 0.004,
+      "max": 50,
+      "section": "Light: radiant pulse",
+      "description": "Light: radiant pulse: rays.lengthMax, rays.lengthMin ×0.25",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "light-pulse-rays",
+          "parameter": "lengthMax"
+        },
+        {
+          "nodeId": "light-pulse-rays",
+          "parameter": "lengthMin",
+          "scale": 0.25
+        }
+      ]
+    },
+    {
+      "id": "ctl-light-pulse-pulse",
+      "scopeGraphId": "graph-light-pulse",
+      "label": "Pulse size",
+      "type": "number",
+      "unit": "meter",
+      "value": 0.4,
+      "default": 0.4,
+      "min": 0.001,
+      "max": 20,
+      "section": "Light: radiant pulse",
+      "description": "Light: radiant pulse: core.size",
+      "editPolicy": "live",
+      "bindings": [
+        {
+          "nodeId": "light-pulse-core",
+          "parameter": "size"
+        }
+      ]
+    },
+    {
+      "id": "ctl-light-pulse-halo",
+      "scopeGraphId": "graph-light-pulse",
+      "label": "Halo softness",
+      "type": "number",
+      "unit": "meter",
+      "value": 2,
+      "default": 2,
+      "min": 0.001,
+      "max": 20,
+      "section": "Light: radiant pulse",
+      "description": "Light: radiant pulse: halo.size",
+      "editPolicy": "live",
+      "bindings": [
+        {
+          "nodeId": "light-pulse-halo",
+          "parameter": "size"
+        }
+      ]
+    },
+    {
+      "id": "ctl-light-pulse-motes",
+      "scopeGraphId": "graph-light-pulse",
+      "label": "Mote amount",
+      "type": "integer",
+      "unit": "none",
+      "value": 48,
+      "default": 48,
+      "min": 0,
+      "max": 4096,
+      "step": 1,
+      "section": "Light: radiant pulse",
+      "description": "Light: radiant pulse: motes.burst",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "light-pulse-motes",
+          "parameter": "burst"
+        }
+      ]
+    },
+    {
+      "id": "ctl-light-pulse-light",
+      "scopeGraphId": "graph-light-pulse",
+      "label": "Brightness",
+      "type": "number",
+      "unit": "linearGain",
+      "value": 30,
+      "default": 30,
+      "min": 0,
+      "max": 100,
+      "section": "Light: radiant pulse",
+      "description": "Light: radiant pulse: lamp.intensity",
+      "editPolicy": "live",
+      "bindings": [
+        {
+          "nodeId": "light-pulse-lamp",
+          "parameter": "intensity"
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "editor": {
+    "graphs": {
+      "graph-root": {
+        "nodes": {
+          "node-source": {
+            "x": 0,
+            "y": 0
+          },
+          "node-target": {
+            "x": 0,
+            "y": 160
+          },
+          "node-output": {
+            "x": 1040,
+            "y": 0
+          },
+          "light-pulse": {
+            "x": -300,
+            "y": 320
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      },
+      "graph-light-pulse": {
+        "nodes": {
+          "light-pulse-charge": {
+            "x": 0,
+            "y": 0
+          },
+          "light-pulse-pulse": {
+            "x": 260,
+            "y": 0
+          },
+          "light-pulse-gather": {
+            "x": 520,
+            "y": 0
+          },
+          "light-pulse-gatherip": {
+            "x": 780,
+            "y": 0
+          },
+          "light-pulse-gatherpull": {
+            "x": 1040,
+            "y": 0
+          },
+          "light-pulse-motemat": {
+            "x": 1300,
+            "y": 0
+          },
+          "light-pulse-gatherbb": {
+            "x": 0,
+            "y": 170
+          },
+          "light-pulse-chargemat": {
+            "x": 260,
+            "y": 170
+          },
+          "light-pulse-chargecore": {
+            "x": 520,
+            "y": 170
+          },
+          "light-pulse-coremat": {
+            "x": 780,
+            "y": 170
+          },
+          "light-pulse-core": {
+            "x": 1040,
+            "y": 170
+          },
+          "light-pulse-halomat": {
+            "x": 1300,
+            "y": 170
+          },
+          "light-pulse-halo": {
+            "x": 0,
+            "y": 340
+          },
+          "light-pulse-rays": {
+            "x": 260,
+            "y": 340
+          },
+          "light-pulse-raywin": {
+            "x": 520,
+            "y": 340
+          },
+          "light-pulse-rayclock": {
+            "x": 780,
+            "y": 340
+          },
+          "light-pulse-rayshoot": {
+            "x": 1040,
+            "y": 340
+          },
+          "light-pulse-rayreveal": {
+            "x": 1300,
+            "y": 340
+          },
+          "light-pulse-raydim": {
+            "x": 0,
+            "y": 510
+          },
+          "light-pulse-rayfade": {
+            "x": 260,
+            "y": 510
+          },
+          "light-pulse-raymat": {
+            "x": 520,
+            "y": 510
+          },
+          "light-pulse-raysrib": {
+            "x": 780,
+            "y": 510
+          },
+          "light-pulse-ringwin": {
+            "x": 1040,
+            "y": 510
+          },
+          "light-pulse-ringclock": {
+            "x": 1300,
+            "y": 510
+          },
+          "light-pulse-ringsize": {
+            "x": 0,
+            "y": 680
+          },
+          "light-pulse-ringdim": {
+            "x": 260,
+            "y": 680
+          },
+          "light-pulse-ringfade": {
+            "x": 520,
+            "y": 680
+          },
+          "light-pulse-ringmat": {
+            "x": 780,
+            "y": 680
+          },
+          "light-pulse-floor": {
+            "x": 1040,
+            "y": 680
+          },
+          "light-pulse-haloring": {
+            "x": 1300,
+            "y": 680
+          },
+          "light-pulse-haloringrib": {
+            "x": 0,
+            "y": 850
+          },
+          "light-pulse-groundring": {
+            "x": 260,
+            "y": 850
+          },
+          "light-pulse-groundringrib": {
+            "x": 520,
+            "y": 850
+          },
+          "light-pulse-motes": {
+            "x": 780,
+            "y": 850
+          },
+          "light-pulse-moteip": {
+            "x": 1040,
+            "y": 850
+          },
+          "light-pulse-motedrag": {
+            "x": 1300,
+            "y": 850
+          },
+          "light-pulse-motebb": {
+            "x": 0,
+            "y": 1020
+          },
+          "light-pulse-lightwin": {
+            "x": 260,
+            "y": 1020
+          },
+          "light-pulse-lamp": {
+            "x": 520,
+            "y": 1020
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      }
+    },
+    "openedGraphId": "graph-root"
+  }
+}

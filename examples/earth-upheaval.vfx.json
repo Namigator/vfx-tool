@@ -1,0 +1,2217 @@
+{
+  "format": "vfx-studio",
+  "schemaVersion": 2,
+  "runtimeVersion": "2.0.0",
+  "id": "example-earth-upheaval",
+  "name": "Earth upheaval",
+  "tags": [],
+  "seed": 42,
+  "rootTransform": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "scale": 1
+  },
+  "anchors": [
+    {
+      "id": "source",
+      "name": "Source",
+      "position": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "id": "target",
+      "name": "Target",
+      "position": [
+        0,
+        1,
+        5
+      ]
+    }
+  ],
+  "durationTicks": 216,
+  "rootGraphId": "graph-root",
+  "graphs": [
+    {
+      "id": "graph-root",
+      "inputs": [],
+      "outputs": [],
+      "nodes": [
+        {
+          "id": "node-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Source",
+          "enabled": true,
+          "randomStreamId": "rs-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "node-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Target",
+          "enabled": true,
+          "randomStreamId": "rs-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "node-output",
+          "type": "EffectOutput",
+          "definitionVersion": 1,
+          "label": "Output",
+          "enabled": true,
+          "randomStreamId": "rs-output",
+          "params": {}
+        },
+        {
+          "id": "earth-upheaval",
+          "type": "Group",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval",
+          "params": {
+            "graphId": "graph-earth-upheaval"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "earth-upheaval-e-group-visual",
+          "source": {
+            "nodeId": "earth-upheaval",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "node-output",
+            "port": "visual"
+          },
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "graph-earth-upheaval",
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "visual",
+          "label": "Visual",
+          "type": "visual",
+          "cardinality": "many",
+          "required": false,
+          "direction": "output"
+        }
+      ],
+      "nodes": [
+        {
+          "id": "earth-upheaval-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "source",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "earth-upheaval-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "target",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "earth-upheaval-erupt",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: erupt",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-erupt",
+          "params": {
+            "startTicks": 30,
+            "durationTicks": 30,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "earth-upheaval-floor",
+          "type": "OffsetAnchor",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: floor",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-floor",
+          "params": {
+            "offset": [
+              0,
+              0.02,
+              0
+            ]
+          }
+        },
+        {
+          "id": "earth-upheaval-pulsewin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: pulsewin",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-pulsewin",
+          "params": {
+            "startTicks": 12,
+            "durationTicks": 18,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "earth-upheaval-pulsemat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: pulsemat",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-pulsemat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "ripple-ring",
+            "blend": "normal",
+            "tint": {
+              "srgb": "#7A6A58",
+              "alpha": 1
+            },
+            "opacity": 0.7
+          }
+        },
+        {
+          "id": "earth-upheaval-pulse",
+          "type": "SpriteRenderer",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: pulse",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-pulse",
+          "params": {
+            "size": 2.8,
+            "alignment": "worldAxis",
+            "worldAxis": [
+              0,
+              1,
+              0
+            ],
+            "sizeOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.14
+                },
+                {
+                  "x": 1,
+                  "y": 1
+                }
+              ]
+            },
+            "opacityOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.8
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "earth-upheaval-rockmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: rockmat",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-rockmat",
+          "params": {
+            "blend": "normal",
+            "tint": {
+              "srgb": "#857566",
+              "alpha": 1
+            },
+            "roughness": 0.85,
+            "metalness": 0,
+            "emission": 0
+          }
+        },
+        {
+          "id": "earth-upheaval-lightwin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: lightwin",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-lightwin",
+          "params": {
+            "startTicks": 24,
+            "durationTicks": 150,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "earth-upheaval-lamp",
+          "type": "OffsetAnchor",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: lamp",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-lamp",
+          "params": {
+            "offset": [
+              1.8,
+              3.5,
+              2.4
+            ]
+          }
+        },
+        {
+          "id": "earth-upheaval-light",
+          "type": "PointLight",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: light",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-light",
+          "params": {
+            "color": {
+              "srgb": "#FFE6CC",
+              "alpha": 1
+            },
+            "intensity": 14,
+            "range": 10,
+            "intensityOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.05,
+                  "y": 1
+                },
+                {
+                  "x": 0.8,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "earth-upheaval-stonesa",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: stonesa",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-stonesa",
+          "params": {
+            "shape": "cone",
+            "direction": [
+              0,
+              1,
+              0
+            ],
+            "coneAngle": 0.55,
+            "radius": 0.8,
+            "burst": 6,
+            "rate": 0,
+            "speedMin": 2,
+            "speedMax": 5,
+            "lifetimeMin": 2.4,
+            "lifetimeMax": 2.9
+          }
+        },
+        {
+          "id": "earth-upheaval-stonesaip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: stonesaip",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-stonesaip",
+          "params": {
+            "sizeMin": 0.18,
+            "sizeMax": 0.5,
+            "angularVelocityMin": -5,
+            "angularVelocityMax": 5
+          }
+        },
+        {
+          "id": "earth-upheaval-stonesag",
+          "type": "Gravity",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: stonesag",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-stonesag",
+          "params": {
+            "acceleration": [
+              0,
+              -9.81,
+              0
+            ]
+          }
+        },
+        {
+          "id": "earth-upheaval-stonesadrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: stonesadrag",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-stonesadrag",
+          "params": {
+            "coefficient": 0.15
+          }
+        },
+        {
+          "id": "earth-upheaval-stonesafloorhit",
+          "type": "GroundCollision",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: stonesafloorhit",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-stonesafloorhit",
+          "params": {
+            "mode": "bounce",
+            "restitution": 0.15,
+            "friction": 0.7,
+            "maxBounces": 2
+          }
+        },
+        {
+          "id": "earth-upheaval-stonesamesh",
+          "type": "MeshRenderer",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: stonesamesh",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-stonesamesh",
+          "params": {
+            "mesh": "rock-a",
+            "orientation": "tumble",
+            "lit": true,
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 0.85,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "earth-upheaval-stonesb",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: stonesb",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-stonesb",
+          "params": {
+            "shape": "cone",
+            "direction": [
+              0,
+              1,
+              0
+            ],
+            "coneAngle": 0.55,
+            "radius": 0.8,
+            "burst": 6,
+            "rate": 0,
+            "speedMin": 2,
+            "speedMax": 5,
+            "lifetimeMin": 2.4,
+            "lifetimeMax": 2.9
+          }
+        },
+        {
+          "id": "earth-upheaval-stonesbip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: stonesbip",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-stonesbip",
+          "params": {
+            "sizeMin": 0.18,
+            "sizeMax": 0.5,
+            "angularVelocityMin": -5,
+            "angularVelocityMax": 5
+          }
+        },
+        {
+          "id": "earth-upheaval-stonesbg",
+          "type": "Gravity",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: stonesbg",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-stonesbg",
+          "params": {
+            "acceleration": [
+              0,
+              -9.81,
+              0
+            ]
+          }
+        },
+        {
+          "id": "earth-upheaval-stonesbdrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: stonesbdrag",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-stonesbdrag",
+          "params": {
+            "coefficient": 0.15
+          }
+        },
+        {
+          "id": "earth-upheaval-stonesbfloorhit",
+          "type": "GroundCollision",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: stonesbfloorhit",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-stonesbfloorhit",
+          "params": {
+            "mode": "bounce",
+            "restitution": 0.15,
+            "friction": 0.7,
+            "maxBounces": 2
+          }
+        },
+        {
+          "id": "earth-upheaval-stonesbmesh",
+          "type": "MeshRenderer",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: stonesbmesh",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-stonesbmesh",
+          "params": {
+            "mesh": "rock-b",
+            "orientation": "tumble",
+            "lit": true,
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 0.85,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "earth-upheaval-stonesc",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: stonesc",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-stonesc",
+          "params": {
+            "shape": "cone",
+            "direction": [
+              0,
+              1,
+              0
+            ],
+            "coneAngle": 0.55,
+            "radius": 0.8,
+            "burst": 6,
+            "rate": 0,
+            "speedMin": 2,
+            "speedMax": 5,
+            "lifetimeMin": 2.4,
+            "lifetimeMax": 2.9
+          }
+        },
+        {
+          "id": "earth-upheaval-stonescip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: stonescip",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-stonescip",
+          "params": {
+            "sizeMin": 0.18,
+            "sizeMax": 0.5,
+            "angularVelocityMin": -5,
+            "angularVelocityMax": 5
+          }
+        },
+        {
+          "id": "earth-upheaval-stonescg",
+          "type": "Gravity",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: stonescg",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-stonescg",
+          "params": {
+            "acceleration": [
+              0,
+              -9.81,
+              0
+            ]
+          }
+        },
+        {
+          "id": "earth-upheaval-stonescdrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: stonescdrag",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-stonescdrag",
+          "params": {
+            "coefficient": 0.15
+          }
+        },
+        {
+          "id": "earth-upheaval-stonescfloorhit",
+          "type": "GroundCollision",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: stonescfloorhit",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-stonescfloorhit",
+          "params": {
+            "mode": "bounce",
+            "restitution": 0.15,
+            "friction": 0.7,
+            "maxBounces": 2
+          }
+        },
+        {
+          "id": "earth-upheaval-stonescmesh",
+          "type": "MeshRenderer",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: stonescmesh",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-stonescmesh",
+          "params": {
+            "mesh": "rock-c",
+            "orientation": "tumble",
+            "lit": true,
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 0.85,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "earth-upheaval-chips",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: chips",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-chips",
+          "params": {
+            "shape": "cone",
+            "direction": [
+              0,
+              1,
+              0
+            ],
+            "coneAngle": 0.8,
+            "radius": 0.6400000000000001,
+            "burst": 48,
+            "rate": 0,
+            "speedMin": 2,
+            "speedMax": 6,
+            "lifetimeMin": 0.5,
+            "lifetimeMax": 1.5
+          }
+        },
+        {
+          "id": "earth-upheaval-chipip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: chipip",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-chipip",
+          "params": {
+            "sizeMin": 0.025,
+            "sizeMax": 0.1,
+            "angularVelocityMin": -9,
+            "angularVelocityMax": 9
+          }
+        },
+        {
+          "id": "earth-upheaval-chipsg",
+          "type": "Gravity",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: chipsg",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-chipsg",
+          "params": {
+            "acceleration": [
+              0,
+              -9.81,
+              0
+            ]
+          }
+        },
+        {
+          "id": "earth-upheaval-chipsdrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: chipsdrag",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-chipsdrag",
+          "params": {
+            "coefficient": 0.15
+          }
+        },
+        {
+          "id": "earth-upheaval-chipsfloorhit",
+          "type": "GroundCollision",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: chipsfloorhit",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-chipsfloorhit",
+          "params": {
+            "mode": "bounce",
+            "restitution": 0.15,
+            "friction": 0.7,
+            "maxBounces": 2
+          }
+        },
+        {
+          "id": "earth-upheaval-chipmesh",
+          "type": "MeshRenderer",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: chipmesh",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-chipmesh",
+          "params": {
+            "mesh": "rock-c",
+            "orientation": "tumble",
+            "lit": true,
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 0.8,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "earth-upheaval-dust",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: dust",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-dust",
+          "params": {
+            "shape": "disc",
+            "direction": [
+              0,
+              1,
+              0
+            ],
+            "radius": 0.8,
+            "burst": 35,
+            "rate": 20,
+            "speedMin": 0.3,
+            "speedMax": 1.2,
+            "lifetimeMin": 1,
+            "lifetimeMax": 2.5
+          }
+        },
+        {
+          "id": "earth-upheaval-dustip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: dustip",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-dustip",
+          "params": {
+            "sizeMin": 0.3,
+            "sizeMax": 0.5,
+            "randomFrameStart": true,
+            "rotationMin": 0,
+            "rotationMax": 6.283,
+            "angularVelocityMin": -0.3,
+            "angularVelocityMax": 0.3
+          }
+        },
+        {
+          "id": "earth-upheaval-dustdrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: dustdrag",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-dustdrag",
+          "params": {
+            "coefficient": 1.4
+          }
+        },
+        {
+          "id": "earth-upheaval-dustlift",
+          "type": "Gravity",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: dustlift",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-dustlift",
+          "params": {
+            "acceleration": [
+              0,
+              0.35,
+              0
+            ]
+          }
+        },
+        {
+          "id": "earth-upheaval-dustnoise",
+          "type": "NoiseForce",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: dustnoise",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-dustnoise",
+          "params": {
+            "mode": "curl",
+            "amplitude": 0.6,
+            "frequency": 0.6,
+            "evolution": 0.4
+          }
+        },
+        {
+          "id": "earth-upheaval-dustmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: dustmat",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-dustmat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "smoke-puff",
+            "blend": "normal",
+            "tint": {
+              "srgb": "#A89A86",
+              "alpha": 1
+            },
+            "opacity": 1,
+            "groundFade": 0.25
+          }
+        },
+        {
+          "id": "earth-upheaval-dustbb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: dustbb",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-dustbb",
+          "params": {
+            "flipbookMode": "overLife",
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.5
+                },
+                {
+                  "x": 1,
+                  "y": 2.6
+                }
+              ]
+            },
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.12,
+                  "y": 0.55
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "earth-upheaval-puffs",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: puffs",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-puffs",
+          "params": {
+            "shape": "sphere",
+            "radius": 0.05,
+            "burst": 2,
+            "rate": 0,
+            "speedMin": 0.2,
+            "speedMax": 0.6,
+            "lifetimeMin": 0.6,
+            "lifetimeMax": 1.1,
+            "useEventPosition": true
+          }
+        },
+        {
+          "id": "earth-upheaval-puffip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: puffip",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-puffip",
+          "params": {
+            "sizeMin": 0.2,
+            "sizeMax": 0.35,
+            "randomFrameStart": true
+          }
+        },
+        {
+          "id": "earth-upheaval-puffdrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: puffdrag",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-puffdrag",
+          "params": {
+            "coefficient": 1.6
+          }
+        },
+        {
+          "id": "earth-upheaval-puffbb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Earth: stone upheaval: puffbb",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-puffbb",
+          "params": {
+            "flipbookMode": "overLife",
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.6
+                },
+                {
+                  "x": 1,
+                  "y": 1.8
+                }
+              ]
+            },
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.5
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "earth-upheaval-out-visual",
+          "type": "GroupOutput",
+          "definitionVersion": 1,
+          "label": "Out: visual",
+          "enabled": true,
+          "randomStreamId": "rs-earth-upheaval-out-visual",
+          "params": {
+            "portId": "visual"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "earth-upheaval-e-node-target-floor",
+          "source": {
+            "nodeId": "earth-upheaval-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-floor",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-floor-pulse",
+          "source": {
+            "nodeId": "earth-upheaval-floor",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-pulse",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-pulsemat-pulse",
+          "source": {
+            "nodeId": "earth-upheaval-pulsemat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-pulse",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-pulsewin-pulse",
+          "source": {
+            "nodeId": "earth-upheaval-pulsewin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-pulse",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-pulse-out-visual",
+          "source": {
+            "nodeId": "earth-upheaval-pulse",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-out-visual",
+            "port": "in"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-node-target-lamp",
+          "source": {
+            "nodeId": "earth-upheaval-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-lamp",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-lamp-light",
+          "source": {
+            "nodeId": "earth-upheaval-lamp",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-light",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-lightwin-light",
+          "source": {
+            "nodeId": "earth-upheaval-lightwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-light",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-light-out-visual",
+          "source": {
+            "nodeId": "earth-upheaval-light",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-out-visual",
+            "port": "in"
+          },
+          "order": 1
+        },
+        {
+          "id": "earth-upheaval-e-node-target-stonesa",
+          "source": {
+            "nodeId": "earth-upheaval-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonesa",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-erupt-stonesa",
+          "source": {
+            "nodeId": "earth-upheaval-erupt",
+            "port": "start"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonesa",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-stonesa-stonesaip",
+          "source": {
+            "nodeId": "earth-upheaval-stonesa",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonesaip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-stonesaip-stonesag",
+          "source": {
+            "nodeId": "earth-upheaval-stonesaip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonesag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-stonesag-stonesadrag",
+          "source": {
+            "nodeId": "earth-upheaval-stonesag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonesadrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-stonesadrag-stonesafloorhit",
+          "source": {
+            "nodeId": "earth-upheaval-stonesadrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonesafloorhit",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-stonesafloorhit-stonesamesh",
+          "source": {
+            "nodeId": "earth-upheaval-stonesafloorhit",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonesamesh",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-rockmat-stonesamesh",
+          "source": {
+            "nodeId": "earth-upheaval-rockmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonesamesh",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-stonesamesh-out-visual",
+          "source": {
+            "nodeId": "earth-upheaval-stonesamesh",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-out-visual",
+            "port": "in"
+          },
+          "order": 2
+        },
+        {
+          "id": "earth-upheaval-e-node-target-stonesb",
+          "source": {
+            "nodeId": "earth-upheaval-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonesb",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-erupt-stonesb",
+          "source": {
+            "nodeId": "earth-upheaval-erupt",
+            "port": "start"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonesb",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-stonesb-stonesbip",
+          "source": {
+            "nodeId": "earth-upheaval-stonesb",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonesbip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-stonesbip-stonesbg",
+          "source": {
+            "nodeId": "earth-upheaval-stonesbip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonesbg",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-stonesbg-stonesbdrag",
+          "source": {
+            "nodeId": "earth-upheaval-stonesbg",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonesbdrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-stonesbdrag-stonesbfloorhit",
+          "source": {
+            "nodeId": "earth-upheaval-stonesbdrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonesbfloorhit",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-stonesbfloorhit-stonesbmesh",
+          "source": {
+            "nodeId": "earth-upheaval-stonesbfloorhit",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonesbmesh",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-rockmat-stonesbmesh",
+          "source": {
+            "nodeId": "earth-upheaval-rockmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonesbmesh",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-stonesbmesh-out-visual",
+          "source": {
+            "nodeId": "earth-upheaval-stonesbmesh",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-out-visual",
+            "port": "in"
+          },
+          "order": 3
+        },
+        {
+          "id": "earth-upheaval-e-node-target-stonesc",
+          "source": {
+            "nodeId": "earth-upheaval-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonesc",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-erupt-stonesc",
+          "source": {
+            "nodeId": "earth-upheaval-erupt",
+            "port": "start"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonesc",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-stonesc-stonescip",
+          "source": {
+            "nodeId": "earth-upheaval-stonesc",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonescip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-stonescip-stonescg",
+          "source": {
+            "nodeId": "earth-upheaval-stonescip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonescg",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-stonescg-stonescdrag",
+          "source": {
+            "nodeId": "earth-upheaval-stonescg",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonescdrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-stonescdrag-stonescfloorhit",
+          "source": {
+            "nodeId": "earth-upheaval-stonescdrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonescfloorhit",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-stonescfloorhit-stonescmesh",
+          "source": {
+            "nodeId": "earth-upheaval-stonescfloorhit",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonescmesh",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-rockmat-stonescmesh",
+          "source": {
+            "nodeId": "earth-upheaval-rockmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-stonescmesh",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-stonescmesh-out-visual",
+          "source": {
+            "nodeId": "earth-upheaval-stonescmesh",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-out-visual",
+            "port": "in"
+          },
+          "order": 4
+        },
+        {
+          "id": "earth-upheaval-e-node-target-chips",
+          "source": {
+            "nodeId": "earth-upheaval-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-chips",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-erupt-chips",
+          "source": {
+            "nodeId": "earth-upheaval-erupt",
+            "port": "start"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-chips",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-chips-chipip",
+          "source": {
+            "nodeId": "earth-upheaval-chips",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-chipip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-chipip-chipsg",
+          "source": {
+            "nodeId": "earth-upheaval-chipip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-chipsg",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-chipsg-chipsdrag",
+          "source": {
+            "nodeId": "earth-upheaval-chipsg",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-chipsdrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-chipsdrag-chipsfloorhit",
+          "source": {
+            "nodeId": "earth-upheaval-chipsdrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-chipsfloorhit",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-chipsfloorhit-chipmesh",
+          "source": {
+            "nodeId": "earth-upheaval-chipsfloorhit",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-chipmesh",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-rockmat-chipmesh",
+          "source": {
+            "nodeId": "earth-upheaval-rockmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-chipmesh",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-chipmesh-out-visual",
+          "source": {
+            "nodeId": "earth-upheaval-chipmesh",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-out-visual",
+            "port": "in"
+          },
+          "order": 5
+        },
+        {
+          "id": "earth-upheaval-e-floor-dust",
+          "source": {
+            "nodeId": "earth-upheaval-floor",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-dust",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-erupt-dust",
+          "source": {
+            "nodeId": "earth-upheaval-erupt",
+            "port": "start"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-dust",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-erupt-dust-2",
+          "source": {
+            "nodeId": "earth-upheaval-erupt",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-dust",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-dust-dustip",
+          "source": {
+            "nodeId": "earth-upheaval-dust",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-dustip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-dustip-dustdrag",
+          "source": {
+            "nodeId": "earth-upheaval-dustip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-dustdrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-dustdrag-dustlift",
+          "source": {
+            "nodeId": "earth-upheaval-dustdrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-dustlift",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-dustlift-dustnoise",
+          "source": {
+            "nodeId": "earth-upheaval-dustlift",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-dustnoise",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-dustnoise-dustbb",
+          "source": {
+            "nodeId": "earth-upheaval-dustnoise",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-dustbb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-dustmat-dustbb",
+          "source": {
+            "nodeId": "earth-upheaval-dustmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-dustbb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-dustbb-out-visual",
+          "source": {
+            "nodeId": "earth-upheaval-dustbb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-out-visual",
+            "port": "in"
+          },
+          "order": 6
+        },
+        {
+          "id": "earth-upheaval-e-stonesafloorhit-puffs",
+          "source": {
+            "nodeId": "earth-upheaval-stonesafloorhit",
+            "port": "collision"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-puffs",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-stonesbfloorhit-puffs",
+          "source": {
+            "nodeId": "earth-upheaval-stonesbfloorhit",
+            "port": "collision"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-puffs",
+            "port": "trigger"
+          },
+          "order": 1
+        },
+        {
+          "id": "earth-upheaval-e-stonescfloorhit-puffs",
+          "source": {
+            "nodeId": "earth-upheaval-stonescfloorhit",
+            "port": "collision"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-puffs",
+            "port": "trigger"
+          },
+          "order": 2
+        },
+        {
+          "id": "earth-upheaval-e-puffs-puffip",
+          "source": {
+            "nodeId": "earth-upheaval-puffs",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-puffip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-puffip-puffdrag",
+          "source": {
+            "nodeId": "earth-upheaval-puffip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-puffdrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-puffdrag-puffbb",
+          "source": {
+            "nodeId": "earth-upheaval-puffdrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-puffbb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-dustmat-puffbb",
+          "source": {
+            "nodeId": "earth-upheaval-dustmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-puffbb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "earth-upheaval-e-puffbb-out-visual",
+          "source": {
+            "nodeId": "earth-upheaval-puffbb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "earth-upheaval-out-visual",
+            "port": "in"
+          },
+          "order": 7
+        }
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "id": "ctl-earth-upheaval-start-at",
+      "scopeGraphId": "graph-earth-upheaval",
+      "label": "Start at",
+      "type": "integer",
+      "unit": "tick",
+      "value": 0,
+      "default": 0,
+      "min": 0,
+      "max": 570,
+      "step": 1,
+      "section": "Earth: stone upheaval",
+      "description": "Delays the whole component (60 ticks = 1 second) so it can play after another one.",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "earth-upheaval-erupt",
+          "parameter": "startTicks",
+          "offset": 30
+        },
+        {
+          "nodeId": "earth-upheaval-pulsewin",
+          "parameter": "startTicks",
+          "offset": 12
+        },
+        {
+          "nodeId": "earth-upheaval-lightwin",
+          "parameter": "startTicks",
+          "offset": 24
+        }
+      ]
+    },
+    {
+      "id": "ctl-earth-upheaval-stones",
+      "scopeGraphId": "graph-earth-upheaval",
+      "label": "Stones per shape",
+      "type": "integer",
+      "unit": "none",
+      "value": 6,
+      "default": 6,
+      "min": 0,
+      "max": 4096,
+      "step": 1,
+      "section": "Earth: stone upheaval",
+      "description": "Earth: stone upheaval: stonesa.burst, stonesb.burst, stonesc.burst",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "earth-upheaval-stonesa",
+          "parameter": "burst"
+        },
+        {
+          "nodeId": "earth-upheaval-stonesb",
+          "parameter": "burst"
+        },
+        {
+          "nodeId": "earth-upheaval-stonesc",
+          "parameter": "burst"
+        }
+      ]
+    },
+    {
+      "id": "ctl-earth-upheaval-size",
+      "scopeGraphId": "graph-earth-upheaval",
+      "label": "Stone size",
+      "type": "number",
+      "unit": "meter",
+      "value": 0.5,
+      "default": 0.5,
+      "min": 0.002777777777777778,
+      "max": 20,
+      "section": "Earth: stone upheaval",
+      "description": "Earth: stone upheaval: stonesaip.sizeMax, stonesbip.sizeMax, stonescip.sizeMax, stonesaip.sizeMin ×0.36, stonesbip.sizeMin ×0.36, stonescip.sizeMin ×0.36",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "earth-upheaval-stonesaip",
+          "parameter": "sizeMax"
+        },
+        {
+          "nodeId": "earth-upheaval-stonesbip",
+          "parameter": "sizeMax"
+        },
+        {
+          "nodeId": "earth-upheaval-stonescip",
+          "parameter": "sizeMax"
+        },
+        {
+          "nodeId": "earth-upheaval-stonesaip",
+          "parameter": "sizeMin",
+          "scale": 0.36
+        },
+        {
+          "nodeId": "earth-upheaval-stonesbip",
+          "parameter": "sizeMin",
+          "scale": 0.36
+        },
+        {
+          "nodeId": "earth-upheaval-stonescip",
+          "parameter": "sizeMin",
+          "scale": 0.36
+        }
+      ]
+    },
+    {
+      "id": "ctl-earth-upheaval-force",
+      "scopeGraphId": "graph-earth-upheaval",
+      "label": "Eruption force",
+      "type": "number",
+      "unit": "metersPerSecond",
+      "value": 5,
+      "default": 5,
+      "min": 0,
+      "max": 83.33333333333334,
+      "section": "Earth: stone upheaval",
+      "description": "Earth: stone upheaval: stonesa.speedMax, stonesb.speedMax, stonesc.speedMax, chips.speedMax ×1.2, stonesa.speedMin ×0.4, stonesb.speedMin ×0.4, stonesc.speedMin ×0.4, chips.speedMin ×0.4",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "earth-upheaval-stonesa",
+          "parameter": "speedMax"
+        },
+        {
+          "nodeId": "earth-upheaval-stonesb",
+          "parameter": "speedMax"
+        },
+        {
+          "nodeId": "earth-upheaval-stonesc",
+          "parameter": "speedMax"
+        },
+        {
+          "nodeId": "earth-upheaval-chips",
+          "parameter": "speedMax",
+          "scale": 1.2
+        },
+        {
+          "nodeId": "earth-upheaval-stonesa",
+          "parameter": "speedMin",
+          "scale": 0.4
+        },
+        {
+          "nodeId": "earth-upheaval-stonesb",
+          "parameter": "speedMin",
+          "scale": 0.4
+        },
+        {
+          "nodeId": "earth-upheaval-stonesc",
+          "parameter": "speedMin",
+          "scale": 0.4
+        },
+        {
+          "nodeId": "earth-upheaval-chips",
+          "parameter": "speedMin",
+          "scale": 0.4
+        }
+      ]
+    },
+    {
+      "id": "ctl-earth-upheaval-spread",
+      "scopeGraphId": "graph-earth-upheaval",
+      "label": "Spread",
+      "type": "number",
+      "unit": "meter",
+      "value": 0.8,
+      "default": 0.8,
+      "min": 0,
+      "max": 20,
+      "section": "Earth: stone upheaval",
+      "description": "Earth: stone upheaval: stonesa.radius, stonesb.radius, stonesc.radius",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "earth-upheaval-stonesa",
+          "parameter": "radius"
+        },
+        {
+          "nodeId": "earth-upheaval-stonesb",
+          "parameter": "radius"
+        },
+        {
+          "nodeId": "earth-upheaval-stonesc",
+          "parameter": "radius"
+        }
+      ]
+    },
+    {
+      "id": "ctl-earth-upheaval-bounce",
+      "scopeGraphId": "graph-earth-upheaval",
+      "label": "Bounce",
+      "type": "number",
+      "unit": "normalized",
+      "value": 0.15,
+      "default": 0.15,
+      "min": 0,
+      "max": 1,
+      "section": "Earth: stone upheaval",
+      "description": "Earth: stone upheaval: stonesafloorhit.restitution, stonesbfloorhit.restitution, stonescfloorhit.restitution",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "earth-upheaval-stonesafloorhit",
+          "parameter": "restitution"
+        },
+        {
+          "nodeId": "earth-upheaval-stonesbfloorhit",
+          "parameter": "restitution"
+        },
+        {
+          "nodeId": "earth-upheaval-stonescfloorhit",
+          "parameter": "restitution"
+        }
+      ]
+    },
+    {
+      "id": "ctl-earth-upheaval-dust",
+      "scopeGraphId": "graph-earth-upheaval",
+      "label": "Dust density",
+      "type": "integer",
+      "unit": "none",
+      "value": 35,
+      "default": 35,
+      "min": 0,
+      "max": 4096,
+      "step": 1,
+      "section": "Earth: stone upheaval",
+      "description": "Earth: stone upheaval: dust.burst",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "earth-upheaval-dust",
+          "parameter": "burst"
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "editor": {
+    "graphs": {
+      "graph-root": {
+        "nodes": {
+          "node-source": {
+            "x": 0,
+            "y": 0
+          },
+          "node-target": {
+            "x": 0,
+            "y": 160
+          },
+          "node-output": {
+            "x": 1040,
+            "y": 0
+          },
+          "earth-upheaval": {
+            "x": -300,
+            "y": 320
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      },
+      "graph-earth-upheaval": {
+        "nodes": {
+          "earth-upheaval-erupt": {
+            "x": 0,
+            "y": 0
+          },
+          "earth-upheaval-floor": {
+            "x": 260,
+            "y": 0
+          },
+          "earth-upheaval-pulsewin": {
+            "x": 520,
+            "y": 0
+          },
+          "earth-upheaval-pulsemat": {
+            "x": 780,
+            "y": 0
+          },
+          "earth-upheaval-pulse": {
+            "x": 1040,
+            "y": 0
+          },
+          "earth-upheaval-rockmat": {
+            "x": 1300,
+            "y": 0
+          },
+          "earth-upheaval-lightwin": {
+            "x": 0,
+            "y": 170
+          },
+          "earth-upheaval-lamp": {
+            "x": 260,
+            "y": 170
+          },
+          "earth-upheaval-light": {
+            "x": 520,
+            "y": 170
+          },
+          "earth-upheaval-stonesa": {
+            "x": 780,
+            "y": 170
+          },
+          "earth-upheaval-stonesaip": {
+            "x": 1040,
+            "y": 170
+          },
+          "earth-upheaval-stonesag": {
+            "x": 1300,
+            "y": 170
+          },
+          "earth-upheaval-stonesadrag": {
+            "x": 0,
+            "y": 340
+          },
+          "earth-upheaval-stonesafloorhit": {
+            "x": 260,
+            "y": 340
+          },
+          "earth-upheaval-stonesamesh": {
+            "x": 520,
+            "y": 340
+          },
+          "earth-upheaval-stonesb": {
+            "x": 780,
+            "y": 340
+          },
+          "earth-upheaval-stonesbip": {
+            "x": 1040,
+            "y": 340
+          },
+          "earth-upheaval-stonesbg": {
+            "x": 1300,
+            "y": 340
+          },
+          "earth-upheaval-stonesbdrag": {
+            "x": 0,
+            "y": 510
+          },
+          "earth-upheaval-stonesbfloorhit": {
+            "x": 260,
+            "y": 510
+          },
+          "earth-upheaval-stonesbmesh": {
+            "x": 520,
+            "y": 510
+          },
+          "earth-upheaval-stonesc": {
+            "x": 780,
+            "y": 510
+          },
+          "earth-upheaval-stonescip": {
+            "x": 1040,
+            "y": 510
+          },
+          "earth-upheaval-stonescg": {
+            "x": 1300,
+            "y": 510
+          },
+          "earth-upheaval-stonescdrag": {
+            "x": 0,
+            "y": 680
+          },
+          "earth-upheaval-stonescfloorhit": {
+            "x": 260,
+            "y": 680
+          },
+          "earth-upheaval-stonescmesh": {
+            "x": 520,
+            "y": 680
+          },
+          "earth-upheaval-chips": {
+            "x": 780,
+            "y": 680
+          },
+          "earth-upheaval-chipip": {
+            "x": 1040,
+            "y": 680
+          },
+          "earth-upheaval-chipsg": {
+            "x": 1300,
+            "y": 680
+          },
+          "earth-upheaval-chipsdrag": {
+            "x": 0,
+            "y": 850
+          },
+          "earth-upheaval-chipsfloorhit": {
+            "x": 260,
+            "y": 850
+          },
+          "earth-upheaval-chipmesh": {
+            "x": 520,
+            "y": 850
+          },
+          "earth-upheaval-dust": {
+            "x": 780,
+            "y": 850
+          },
+          "earth-upheaval-dustip": {
+            "x": 1040,
+            "y": 850
+          },
+          "earth-upheaval-dustdrag": {
+            "x": 1300,
+            "y": 850
+          },
+          "earth-upheaval-dustlift": {
+            "x": 0,
+            "y": 1020
+          },
+          "earth-upheaval-dustnoise": {
+            "x": 260,
+            "y": 1020
+          },
+          "earth-upheaval-dustmat": {
+            "x": 520,
+            "y": 1020
+          },
+          "earth-upheaval-dustbb": {
+            "x": 780,
+            "y": 1020
+          },
+          "earth-upheaval-puffs": {
+            "x": 1040,
+            "y": 1020
+          },
+          "earth-upheaval-puffip": {
+            "x": 1300,
+            "y": 1020
+          },
+          "earth-upheaval-puffdrag": {
+            "x": 0,
+            "y": 1190
+          },
+          "earth-upheaval-puffbb": {
+            "x": 260,
+            "y": 1190
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      }
+    },
+    "openedGraphId": "graph-root"
+  }
+}

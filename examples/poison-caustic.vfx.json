@@ -1,0 +1,1586 @@
+{
+  "format": "vfx-studio",
+  "schemaVersion": 2,
+  "runtimeVersion": "2.0.0",
+  "id": "example-poison-caustic",
+  "name": "Poison cloud",
+  "tags": [],
+  "seed": 42,
+  "rootTransform": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "scale": 1
+  },
+  "anchors": [
+    {
+      "id": "source",
+      "name": "Source",
+      "position": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "id": "target",
+      "name": "Target",
+      "position": [
+        0,
+        1,
+        5
+      ]
+    }
+  ],
+  "durationTicks": 276,
+  "rootGraphId": "graph-root",
+  "graphs": [
+    {
+      "id": "graph-root",
+      "inputs": [],
+      "outputs": [],
+      "nodes": [
+        {
+          "id": "node-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Source",
+          "enabled": true,
+          "randomStreamId": "rs-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "node-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Target",
+          "enabled": true,
+          "randomStreamId": "rs-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "node-output",
+          "type": "EffectOutput",
+          "definitionVersion": 1,
+          "label": "Output",
+          "enabled": true,
+          "randomStreamId": "rs-output",
+          "params": {}
+        },
+        {
+          "id": "poison-caustic",
+          "type": "Group",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic",
+          "params": {
+            "graphId": "graph-poison-caustic"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "poison-caustic-e-group-visual",
+          "source": {
+            "nodeId": "poison-caustic",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "node-output",
+            "port": "visual"
+          },
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "graph-poison-caustic",
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "visual",
+          "label": "Visual",
+          "type": "visual",
+          "cardinality": "many",
+          "required": false,
+          "direction": "output"
+        }
+      ],
+      "nodes": [
+        {
+          "id": "poison-caustic-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "source",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "poison-caustic-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "target",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "poison-caustic-active",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: active",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-active",
+          "params": {
+            "startTicks": 0,
+            "durationTicks": 138,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "poison-caustic-cloud",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: cloud",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-cloud",
+          "params": {
+            "shape": "disc",
+            "direction": [
+              0,
+              1,
+              0
+            ],
+            "radius": 0.65,
+            "rate": 24,
+            "burst": 8,
+            "speedMin": 0.25,
+            "speedMax": 0.7,
+            "lifetimeMin": 1.2,
+            "lifetimeMax": 2.3,
+            "rateOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.3
+                },
+                {
+                  "x": 0.13043478260869565,
+                  "y": 1
+                },
+                {
+                  "x": 0.85,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0.2
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "poison-caustic-cloudip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: cloudip",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-cloudip",
+          "params": {
+            "sizeMin": 0.25,
+            "sizeMax": 0.35,
+            "randomFrameStart": true,
+            "rotationMin": 0,
+            "rotationMax": 6.283,
+            "angularVelocityMin": -0.4,
+            "angularVelocityMax": 0.4
+          }
+        },
+        {
+          "id": "poison-caustic-clouddrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: clouddrag",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-clouddrag",
+          "params": {
+            "coefficient": 0.6
+          }
+        },
+        {
+          "id": "poison-caustic-clouddrift",
+          "type": "NoiseForce",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: clouddrift",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-clouddrift",
+          "params": {
+            "mode": "curl",
+            "amplitude": 0.25,
+            "frequency": 0.5,
+            "evolution": 0.35
+          }
+        },
+        {
+          "id": "poison-caustic-cloudlift",
+          "type": "Gravity",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: cloudlift",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-cloudlift",
+          "params": {
+            "acceleration": [
+              0,
+              0.12,
+              0
+            ]
+          }
+        },
+        {
+          "id": "poison-caustic-cloudmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: cloudmat",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-cloudmat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "smoke-puff",
+            "blend": "normal",
+            "opacity": 1,
+            "emission": 0.08,
+            "groundFade": 0.2
+          }
+        },
+        {
+          "id": "poison-caustic-cloudbb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: cloudbb",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-cloudbb",
+          "params": {
+            "flipbookMode": "overLife",
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 3.3
+                }
+              ]
+            },
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.15,
+                  "y": 0.6
+                },
+                {
+                  "x": 0.7,
+                  "y": 0.42
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            },
+            "colorOverLife": {
+              "stops": [
+                {
+                  "position": 0,
+                  "color": {
+                    "srgb": "#A6C832",
+                    "alpha": 1
+                  }
+                },
+                {
+                  "position": 0.35,
+                  "color": {
+                    "srgb": "#6F9A22",
+                    "alpha": 1
+                  }
+                },
+                {
+                  "position": 1,
+                  "color": {
+                    "srgb": "#2E4712",
+                    "alpha": 1
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "poison-caustic-bubblewin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: bubblewin",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-bubblewin",
+          "params": {
+            "startTicks": 18,
+            "durationTicks": 120,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "poison-caustic-bubbles",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: bubbles",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-bubbles",
+          "params": {
+            "shape": "disc",
+            "direction": [
+              0,
+              1,
+              0
+            ],
+            "radius": 0.52,
+            "rate": 10,
+            "burst": 0,
+            "speedMin": 0.4,
+            "speedMax": 1,
+            "lifetimeMin": 0.6,
+            "lifetimeMax": 1.3
+          }
+        },
+        {
+          "id": "poison-caustic-bubbleip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: bubbleip",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-bubbleip",
+          "params": {
+            "sizeMin": 0.08,
+            "sizeMax": 0.28
+          }
+        },
+        {
+          "id": "poison-caustic-bubblewobble",
+          "type": "NoiseForce",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: bubblewobble",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-bubblewobble",
+          "params": {
+            "mode": "vector",
+            "amplitude": 0.4,
+            "frequency": 1.5,
+            "evolution": 1
+          }
+        },
+        {
+          "id": "poison-caustic-bubblemat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: bubblemat",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-bubblemat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "ripple-ring",
+            "blend": "normal",
+            "tint": {
+              "srgb": "#B4DA4A",
+              "alpha": 1
+            },
+            "opacity": 0.9,
+            "emission": 0.12
+          }
+        },
+        {
+          "id": "poison-caustic-bubblebb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: bubblebb",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-bubblebb",
+          "params": {
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.5
+                },
+                {
+                  "x": 0.9,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 1.2
+                }
+              ]
+            },
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.1,
+                  "y": 1
+                },
+                {
+                  "x": 0.95,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "poison-caustic-pops",
+          "type": "ParticleEvents",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: pops",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-pops",
+          "params": {
+            "probability": 1,
+            "maxEvents": 256
+          }
+        },
+        {
+          "id": "poison-caustic-popdrops",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: popdrops",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-popdrops",
+          "params": {
+            "shape": "sphere",
+            "radius": 0.02,
+            "burst": 4,
+            "rate": 0,
+            "speedMin": 0.3,
+            "speedMax": 1.2,
+            "lifetimeMin": 0.15,
+            "lifetimeMax": 0.35,
+            "useEventPosition": true
+          }
+        },
+        {
+          "id": "poison-caustic-popip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: popip",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-popip",
+          "params": {
+            "sizeMin": 0.015,
+            "sizeMax": 0.03
+          }
+        },
+        {
+          "id": "poison-caustic-popg",
+          "type": "Gravity",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: popg",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-popg",
+          "params": {
+            "acceleration": [
+              0,
+              -4,
+              0
+            ]
+          }
+        },
+        {
+          "id": "poison-caustic-popmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: popmat",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-popmat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "droplet",
+            "blend": "normal",
+            "tint": {
+              "srgb": "#B8DA50",
+              "alpha": 1
+            },
+            "opacity": 0.9
+          }
+        },
+        {
+          "id": "poison-caustic-popbb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: popbb",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-popbb",
+          "params": {
+            "alignment": "velocity",
+            "stretchRatio": 1.6,
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "poison-caustic-cloudbelly",
+          "type": "OffsetAnchor",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: cloudbelly",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-cloudbelly",
+          "params": {
+            "offset": [
+              0,
+              0.9,
+              0
+            ]
+          }
+        },
+        {
+          "id": "poison-caustic-drips",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: drips",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-drips",
+          "params": {
+            "shape": "disc",
+            "direction": [
+              0,
+              1,
+              0
+            ],
+            "radius": 0.45499999999999996,
+            "rate": 3,
+            "burst": 0,
+            "speedMin": 0,
+            "speedMax": 0.1,
+            "lifetimeMin": 0.6,
+            "lifetimeMax": 1
+          }
+        },
+        {
+          "id": "poison-caustic-dripip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: dripip",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-dripip",
+          "params": {
+            "sizeMin": 0.03,
+            "sizeMax": 0.05
+          }
+        },
+        {
+          "id": "poison-caustic-dripg",
+          "type": "Gravity",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: dripg",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-dripg",
+          "params": {
+            "acceleration": [
+              0,
+              -9.81,
+              0
+            ]
+          }
+        },
+        {
+          "id": "poison-caustic-dripfloor",
+          "type": "GroundCollision",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: dripfloor",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-dripfloor",
+          "params": {
+            "mode": "kill"
+          }
+        },
+        {
+          "id": "poison-caustic-dripmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: dripmat",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-dripmat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "droplet",
+            "blend": "normal",
+            "tint": {
+              "srgb": "#4A6A1C",
+              "alpha": 1
+            },
+            "opacity": 0.95
+          }
+        },
+        {
+          "id": "poison-caustic-dripbb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: dripbb",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-dripbb",
+          "params": {
+            "alignment": "velocity",
+            "stretchRatio": 2
+          }
+        },
+        {
+          "id": "poison-caustic-residuewin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: residuewin",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-residuewin",
+          "params": {
+            "startTicks": 6,
+            "durationTicks": 232,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "poison-caustic-floor",
+          "type": "OffsetAnchor",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: floor",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-floor",
+          "params": {
+            "offset": [
+              0,
+              -0.08,
+              0
+            ]
+          }
+        },
+        {
+          "id": "poison-caustic-residuemat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: residuemat",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-residuemat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "smoke-puff",
+            "variant": 5,
+            "blend": "normal",
+            "tint": {
+              "srgb": "#4E6E1E",
+              "alpha": 1
+            },
+            "opacity": 1
+          }
+        },
+        {
+          "id": "poison-caustic-residue",
+          "type": "SpriteRenderer",
+          "definitionVersion": 1,
+          "label": "Poison: caustic cloud: residue",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-residue",
+          "params": {
+            "size": 1.4,
+            "alignment": "worldAxis",
+            "worldAxis": [
+              0,
+              1,
+              0
+            ],
+            "sizeOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.45
+                },
+                {
+                  "x": 0.2,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 1.1
+                }
+              ]
+            },
+            "opacityOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.1,
+                  "y": 0.25
+                },
+                {
+                  "x": 0.6,
+                  "y": 0.2
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "poison-caustic-out-visual",
+          "type": "GroupOutput",
+          "definitionVersion": 1,
+          "label": "Out: visual",
+          "enabled": true,
+          "randomStreamId": "rs-poison-caustic-out-visual",
+          "params": {
+            "portId": "visual"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "poison-caustic-e-node-target-cloud",
+          "source": {
+            "nodeId": "poison-caustic-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "poison-caustic-cloud",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-active-cloud",
+          "source": {
+            "nodeId": "poison-caustic-active",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "poison-caustic-cloud",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-active-cloud-2",
+          "source": {
+            "nodeId": "poison-caustic-active",
+            "port": "start"
+          },
+          "target": {
+            "nodeId": "poison-caustic-cloud",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-cloud-cloudip",
+          "source": {
+            "nodeId": "poison-caustic-cloud",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "poison-caustic-cloudip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-cloudip-clouddrag",
+          "source": {
+            "nodeId": "poison-caustic-cloudip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "poison-caustic-clouddrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-clouddrag-clouddrift",
+          "source": {
+            "nodeId": "poison-caustic-clouddrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "poison-caustic-clouddrift",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-clouddrift-cloudlift",
+          "source": {
+            "nodeId": "poison-caustic-clouddrift",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "poison-caustic-cloudlift",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-cloudlift-cloudbb",
+          "source": {
+            "nodeId": "poison-caustic-cloudlift",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "poison-caustic-cloudbb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-cloudmat-cloudbb",
+          "source": {
+            "nodeId": "poison-caustic-cloudmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "poison-caustic-cloudbb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-cloudbb-out-visual",
+          "source": {
+            "nodeId": "poison-caustic-cloudbb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "poison-caustic-out-visual",
+            "port": "in"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-node-target-bubbles",
+          "source": {
+            "nodeId": "poison-caustic-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "poison-caustic-bubbles",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-bubblewin-bubbles",
+          "source": {
+            "nodeId": "poison-caustic-bubblewin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "poison-caustic-bubbles",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-bubbles-bubbleip",
+          "source": {
+            "nodeId": "poison-caustic-bubbles",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "poison-caustic-bubbleip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-bubbleip-bubblewobble",
+          "source": {
+            "nodeId": "poison-caustic-bubbleip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "poison-caustic-bubblewobble",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-bubblewobble-bubblebb",
+          "source": {
+            "nodeId": "poison-caustic-bubblewobble",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "poison-caustic-bubblebb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-bubblemat-bubblebb",
+          "source": {
+            "nodeId": "poison-caustic-bubblemat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "poison-caustic-bubblebb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-bubblebb-out-visual",
+          "source": {
+            "nodeId": "poison-caustic-bubblebb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "poison-caustic-out-visual",
+            "port": "in"
+          },
+          "order": 1
+        },
+        {
+          "id": "poison-caustic-e-bubblewobble-pops",
+          "source": {
+            "nodeId": "poison-caustic-bubblewobble",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "poison-caustic-pops",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-pops-popdrops",
+          "source": {
+            "nodeId": "poison-caustic-pops",
+            "port": "death"
+          },
+          "target": {
+            "nodeId": "poison-caustic-popdrops",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-popdrops-popip",
+          "source": {
+            "nodeId": "poison-caustic-popdrops",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "poison-caustic-popip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-popip-popg",
+          "source": {
+            "nodeId": "poison-caustic-popip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "poison-caustic-popg",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-popg-popbb",
+          "source": {
+            "nodeId": "poison-caustic-popg",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "poison-caustic-popbb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-popmat-popbb",
+          "source": {
+            "nodeId": "poison-caustic-popmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "poison-caustic-popbb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-popbb-out-visual",
+          "source": {
+            "nodeId": "poison-caustic-popbb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "poison-caustic-out-visual",
+            "port": "in"
+          },
+          "order": 2
+        },
+        {
+          "id": "poison-caustic-e-node-target-cloudbelly",
+          "source": {
+            "nodeId": "poison-caustic-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "poison-caustic-cloudbelly",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-cloudbelly-drips",
+          "source": {
+            "nodeId": "poison-caustic-cloudbelly",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "poison-caustic-drips",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-bubblewin-drips",
+          "source": {
+            "nodeId": "poison-caustic-bubblewin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "poison-caustic-drips",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-drips-dripip",
+          "source": {
+            "nodeId": "poison-caustic-drips",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "poison-caustic-dripip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-dripip-dripg",
+          "source": {
+            "nodeId": "poison-caustic-dripip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "poison-caustic-dripg",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-dripg-dripfloor",
+          "source": {
+            "nodeId": "poison-caustic-dripg",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "poison-caustic-dripfloor",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-dripfloor-dripbb",
+          "source": {
+            "nodeId": "poison-caustic-dripfloor",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "poison-caustic-dripbb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-dripmat-dripbb",
+          "source": {
+            "nodeId": "poison-caustic-dripmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "poison-caustic-dripbb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-dripbb-out-visual",
+          "source": {
+            "nodeId": "poison-caustic-dripbb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "poison-caustic-out-visual",
+            "port": "in"
+          },
+          "order": 3
+        },
+        {
+          "id": "poison-caustic-e-node-target-floor",
+          "source": {
+            "nodeId": "poison-caustic-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "poison-caustic-floor",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-floor-residue",
+          "source": {
+            "nodeId": "poison-caustic-floor",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "poison-caustic-residue",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-residuemat-residue",
+          "source": {
+            "nodeId": "poison-caustic-residuemat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "poison-caustic-residue",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-residuewin-residue",
+          "source": {
+            "nodeId": "poison-caustic-residuewin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "poison-caustic-residue",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "poison-caustic-e-residue-out-visual",
+          "source": {
+            "nodeId": "poison-caustic-residue",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "poison-caustic-out-visual",
+            "port": "in"
+          },
+          "order": 4
+        }
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "id": "ctl-poison-caustic-start-at",
+      "scopeGraphId": "graph-poison-caustic",
+      "label": "Start at",
+      "type": "integer",
+      "unit": "tick",
+      "value": 0,
+      "default": 0,
+      "min": 0,
+      "max": 582,
+      "step": 1,
+      "section": "Poison: caustic cloud",
+      "description": "Delays the whole component (60 ticks = 1 second) so it can play after another one.",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "poison-caustic-active",
+          "parameter": "startTicks"
+        },
+        {
+          "nodeId": "poison-caustic-bubblewin",
+          "parameter": "startTicks",
+          "offset": 18
+        },
+        {
+          "nodeId": "poison-caustic-residuewin",
+          "parameter": "startTicks",
+          "offset": 6
+        }
+      ]
+    },
+    {
+      "id": "ctl-poison-caustic-radius",
+      "scopeGraphId": "graph-poison-caustic",
+      "label": "Cloud radius",
+      "type": "number",
+      "unit": "meter",
+      "value": 0.65,
+      "default": 0.65,
+      "min": 0,
+      "max": 20,
+      "section": "Poison: caustic cloud",
+      "description": "Poison: caustic cloud: cloud.radius",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "poison-caustic-cloud",
+          "parameter": "radius"
+        }
+      ]
+    },
+    {
+      "id": "ctl-poison-caustic-density",
+      "scopeGraphId": "graph-poison-caustic",
+      "label": "Cloud density",
+      "type": "number",
+      "unit": "perSecond",
+      "value": 24,
+      "default": 24,
+      "min": 0,
+      "max": 4096,
+      "section": "Poison: caustic cloud",
+      "description": "Poison: caustic cloud: cloud.rate",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "poison-caustic-cloud",
+          "parameter": "rate"
+        }
+      ]
+    },
+    {
+      "id": "ctl-poison-caustic-rise",
+      "scopeGraphId": "graph-poison-caustic",
+      "label": "Rise speed",
+      "type": "number",
+      "unit": "metersPerSecond",
+      "value": 0.7,
+      "default": 0.7,
+      "min": 0,
+      "max": 100,
+      "section": "Poison: caustic cloud",
+      "description": "Poison: caustic cloud: cloud.speedMax, cloud.speedMin ×0.36",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "poison-caustic-cloud",
+          "parameter": "speedMax"
+        },
+        {
+          "nodeId": "poison-caustic-cloud",
+          "parameter": "speedMin",
+          "scale": 0.36
+        }
+      ]
+    },
+    {
+      "id": "ctl-poison-caustic-drift",
+      "scopeGraphId": "graph-poison-caustic",
+      "label": "Drift",
+      "type": "number",
+      "unit": "metersPerSecondSquared",
+      "value": 0.25,
+      "default": 0.25,
+      "min": 0,
+      "max": 100,
+      "section": "Poison: caustic cloud",
+      "description": "Poison: caustic cloud: clouddrift.amplitude",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "poison-caustic-clouddrift",
+          "parameter": "amplitude"
+        }
+      ]
+    },
+    {
+      "id": "ctl-poison-caustic-bubbles",
+      "scopeGraphId": "graph-poison-caustic",
+      "label": "Bubble rate",
+      "type": "number",
+      "unit": "perSecond",
+      "value": 10,
+      "default": 10,
+      "min": 0,
+      "max": 4096,
+      "section": "Poison: caustic cloud",
+      "description": "Poison: caustic cloud: bubbles.rate",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "poison-caustic-bubbles",
+          "parameter": "rate"
+        }
+      ]
+    },
+    {
+      "id": "ctl-poison-caustic-pops",
+      "scopeGraphId": "graph-poison-caustic",
+      "label": "Popping amount",
+      "type": "integer",
+      "unit": "none",
+      "value": 4,
+      "default": 4,
+      "min": 0,
+      "max": 4096,
+      "step": 1,
+      "section": "Poison: caustic cloud",
+      "description": "Poison: caustic cloud: popdrops.burst",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "poison-caustic-popdrops",
+          "parameter": "burst"
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "editor": {
+    "graphs": {
+      "graph-root": {
+        "nodes": {
+          "node-source": {
+            "x": 0,
+            "y": 0
+          },
+          "node-target": {
+            "x": 0,
+            "y": 160
+          },
+          "node-output": {
+            "x": 1040,
+            "y": 0
+          },
+          "poison-caustic": {
+            "x": -300,
+            "y": 320
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      },
+      "graph-poison-caustic": {
+        "nodes": {
+          "poison-caustic-active": {
+            "x": 0,
+            "y": 0
+          },
+          "poison-caustic-cloud": {
+            "x": 260,
+            "y": 0
+          },
+          "poison-caustic-cloudip": {
+            "x": 520,
+            "y": 0
+          },
+          "poison-caustic-clouddrag": {
+            "x": 780,
+            "y": 0
+          },
+          "poison-caustic-clouddrift": {
+            "x": 1040,
+            "y": 0
+          },
+          "poison-caustic-cloudlift": {
+            "x": 1300,
+            "y": 0
+          },
+          "poison-caustic-cloudmat": {
+            "x": 0,
+            "y": 170
+          },
+          "poison-caustic-cloudbb": {
+            "x": 260,
+            "y": 170
+          },
+          "poison-caustic-bubblewin": {
+            "x": 520,
+            "y": 170
+          },
+          "poison-caustic-bubbles": {
+            "x": 780,
+            "y": 170
+          },
+          "poison-caustic-bubbleip": {
+            "x": 1040,
+            "y": 170
+          },
+          "poison-caustic-bubblewobble": {
+            "x": 1300,
+            "y": 170
+          },
+          "poison-caustic-bubblemat": {
+            "x": 0,
+            "y": 340
+          },
+          "poison-caustic-bubblebb": {
+            "x": 260,
+            "y": 340
+          },
+          "poison-caustic-pops": {
+            "x": 520,
+            "y": 340
+          },
+          "poison-caustic-popdrops": {
+            "x": 780,
+            "y": 340
+          },
+          "poison-caustic-popip": {
+            "x": 1040,
+            "y": 340
+          },
+          "poison-caustic-popg": {
+            "x": 1300,
+            "y": 340
+          },
+          "poison-caustic-popmat": {
+            "x": 0,
+            "y": 510
+          },
+          "poison-caustic-popbb": {
+            "x": 260,
+            "y": 510
+          },
+          "poison-caustic-cloudbelly": {
+            "x": 520,
+            "y": 510
+          },
+          "poison-caustic-drips": {
+            "x": 780,
+            "y": 510
+          },
+          "poison-caustic-dripip": {
+            "x": 1040,
+            "y": 510
+          },
+          "poison-caustic-dripg": {
+            "x": 1300,
+            "y": 510
+          },
+          "poison-caustic-dripfloor": {
+            "x": 0,
+            "y": 680
+          },
+          "poison-caustic-dripmat": {
+            "x": 260,
+            "y": 680
+          },
+          "poison-caustic-dripbb": {
+            "x": 520,
+            "y": 680
+          },
+          "poison-caustic-residuewin": {
+            "x": 780,
+            "y": 680
+          },
+          "poison-caustic-floor": {
+            "x": 1040,
+            "y": 680
+          },
+          "poison-caustic-residuemat": {
+            "x": 1300,
+            "y": 680
+          },
+          "poison-caustic-residue": {
+            "x": 0,
+            "y": 850
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      }
+    },
+    "openedGraphId": "graph-root"
+  }
+}

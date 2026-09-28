@@ -1,0 +1,2095 @@
+{
+  "format": "vfx-studio",
+  "schemaVersion": 2,
+  "runtimeVersion": "2.0.0",
+  "id": "example-ice-eruption",
+  "name": "Ice eruption",
+  "tags": [],
+  "seed": 42,
+  "rootTransform": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "scale": 1
+  },
+  "anchors": [
+    {
+      "id": "source",
+      "name": "Source",
+      "position": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "id": "target",
+      "name": "Target",
+      "position": [
+        0,
+        1,
+        5
+      ]
+    }
+  ],
+  "durationTicks": 192,
+  "rootGraphId": "graph-root",
+  "graphs": [
+    {
+      "id": "graph-root",
+      "inputs": [],
+      "outputs": [],
+      "nodes": [
+        {
+          "id": "node-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Source",
+          "enabled": true,
+          "randomStreamId": "rs-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "node-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Target",
+          "enabled": true,
+          "randomStreamId": "rs-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "node-output",
+          "type": "EffectOutput",
+          "definitionVersion": 1,
+          "label": "Output",
+          "enabled": true,
+          "randomStreamId": "rs-output",
+          "params": {}
+        },
+        {
+          "id": "ice-eruption",
+          "type": "Group",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption",
+          "params": {
+            "graphId": "graph-ice-eruption"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "ice-eruption-e-group-visual",
+          "source": {
+            "nodeId": "ice-eruption",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "node-output",
+            "port": "visual"
+          },
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "graph-ice-eruption",
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "visual",
+          "label": "Visual",
+          "type": "visual",
+          "cardinality": "many",
+          "required": false,
+          "direction": "output"
+        }
+      ],
+      "nodes": [
+        {
+          "id": "ice-eruption-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "source",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "ice-eruption-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "target",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "ice-eruption-charge",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: charge",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-charge",
+          "params": {
+            "startTicks": 0,
+            "durationTicks": 24,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "ice-eruption-erupt",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: erupt",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-erupt",
+          "params": {
+            "startTicks": 24,
+            "durationTicks": 66,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "ice-eruption-fracture",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: fracture",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-fracture",
+          "params": {
+            "startTicks": 90,
+            "durationTicks": 60,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "ice-eruption-chest",
+          "type": "OffsetAnchor",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: chest",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-chest",
+          "params": {
+            "offset": [
+              0,
+              0.4,
+              0
+            ]
+          }
+        },
+        {
+          "id": "ice-eruption-motes",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: motes",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-motes",
+          "params": {
+            "shape": "sphere",
+            "radius": 1.5,
+            "burst": 20,
+            "rate": 0,
+            "speedMin": 0,
+            "speedMax": 0.1,
+            "lifetimeMin": 0.4,
+            "lifetimeMax": 0.4
+          }
+        },
+        {
+          "id": "ice-eruption-moteip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: moteip",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-moteip",
+          "params": {
+            "sizeMin": 0.04,
+            "sizeMax": 0.07
+          }
+        },
+        {
+          "id": "ice-eruption-motepull",
+          "type": "Attract",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: motepull",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-motepull",
+          "params": {
+            "acceleration": 20,
+            "softRadius": 0.15,
+            "killRadius": 0.06
+          }
+        },
+        {
+          "id": "ice-eruption-motemat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: motemat",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-motemat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "soft-glow",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#BFEAFF",
+              "alpha": 1
+            },
+            "emission": 0.6
+          }
+        },
+        {
+          "id": "ice-eruption-motebb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: motebb",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-motebb",
+          "params": {}
+        },
+        {
+          "id": "ice-eruption-icemat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: icemat",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-icemat",
+          "params": {
+            "blend": "normal",
+            "tint": {
+              "srgb": "#8FCBE6",
+              "alpha": 1
+            },
+            "roughness": 0.18,
+            "metalness": 0.05,
+            "emission": 0,
+            "opacity": 0.94
+          }
+        },
+        {
+          "id": "ice-eruption-shardsa",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: shardsa",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-shardsa",
+          "params": {
+            "shape": "disc",
+            "direction": [
+              0,
+              1,
+              0
+            ],
+            "radius": 1.1,
+            "burst": 10,
+            "rate": 0,
+            "speedMin": 0,
+            "speedMax": 0,
+            "lifetimeMin": 1.1,
+            "lifetimeMax": 1.1
+          }
+        },
+        {
+          "id": "ice-eruption-shardsaip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: shardsaip",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-shardsaip",
+          "params": {
+            "sizeMin": 0.15,
+            "sizeMax": 0.35
+          }
+        },
+        {
+          "id": "ice-eruption-shardsamesh",
+          "type": "MeshRenderer",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: shardsamesh",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-shardsamesh",
+          "params": {
+            "mesh": "crystal",
+            "orientation": "upright",
+            "pivot": "base",
+            "tilt": 0.28,
+            "scaleY": 4,
+            "lit": true,
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.36363636363636365,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 1
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "ice-eruption-shardsb",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: shardsb",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-shardsb",
+          "params": {
+            "shape": "disc",
+            "direction": [
+              0,
+              1,
+              0
+            ],
+            "radius": 1.1,
+            "burst": 9,
+            "rate": 0,
+            "speedMin": 0,
+            "speedMax": 0,
+            "lifetimeMin": 1.1,
+            "lifetimeMax": 1.1
+          }
+        },
+        {
+          "id": "ice-eruption-shardsbip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: shardsbip",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-shardsbip",
+          "params": {
+            "sizeMin": 0.15,
+            "sizeMax": 0.35
+          }
+        },
+        {
+          "id": "ice-eruption-shardsbmesh",
+          "type": "MeshRenderer",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: shardsbmesh",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-shardsbmesh",
+          "params": {
+            "mesh": "crystal-b",
+            "orientation": "upright",
+            "pivot": "base",
+            "tilt": 0.28,
+            "scaleY": 3.2,
+            "lit": true,
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.36363636363636365,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 1
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "ice-eruption-shardsc",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: shardsc",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-shardsc",
+          "params": {
+            "shape": "disc",
+            "direction": [
+              0,
+              1,
+              0
+            ],
+            "radius": 1.1,
+            "burst": 9,
+            "rate": 0,
+            "speedMin": 0,
+            "speedMax": 0,
+            "lifetimeMin": 1.1,
+            "lifetimeMax": 1.1
+          }
+        },
+        {
+          "id": "ice-eruption-shardscip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: shardscip",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-shardscip",
+          "params": {
+            "sizeMin": 0.15,
+            "sizeMax": 0.35
+          }
+        },
+        {
+          "id": "ice-eruption-shardscmesh",
+          "type": "MeshRenderer",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: shardscmesh",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-shardscmesh",
+          "params": {
+            "mesh": "shard",
+            "orientation": "upright",
+            "pivot": "base",
+            "tilt": 0.28,
+            "scaleY": 2.4,
+            "lit": true,
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.36363636363636365,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 1
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "ice-eruption-lightwin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: lightwin",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-lightwin",
+          "params": {
+            "startTicks": 24,
+            "durationTicks": 96,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "ice-eruption-lamp",
+          "type": "OffsetAnchor",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: lamp",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-lamp",
+          "params": {
+            "offset": [
+              1.6,
+              3.6,
+              2.6
+            ]
+          }
+        },
+        {
+          "id": "ice-eruption-light",
+          "type": "PointLight",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: light",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-light",
+          "params": {
+            "color": {
+              "srgb": "#CFEFFF",
+              "alpha": 1
+            },
+            "intensity": 16,
+            "range": 9,
+            "intensityOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.1,
+                  "y": 1
+                },
+                {
+                  "x": 0.7,
+                  "y": 0.9
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "ice-eruption-ringwin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: ringwin",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-ringwin",
+          "params": {
+            "startTicks": 24,
+            "durationTicks": 40,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "ice-eruption-ringclock",
+          "type": "Time",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: ringclock",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-ringclock",
+          "params": {}
+        },
+        {
+          "id": "ice-eruption-ring",
+          "type": "RingPath",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: ring",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-ring",
+          "params": {
+            "radius": 1.5,
+            "samples": 96
+          }
+        },
+        {
+          "id": "ice-eruption-ringsize",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: ringsize",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-ringsize",
+          "params": {
+            "operation": "max",
+            "b": 0.13,
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "ice-eruption-ringdim",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: ringdim",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-ringdim",
+          "params": {
+            "operation": "multiply",
+            "b": -0.5,
+            "inputUnit": "normalized",
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "ice-eruption-ringfade",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: ringfade",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-ringfade",
+          "params": {
+            "operation": "add",
+            "b": 0.5,
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "ice-eruption-floor",
+          "type": "OffsetAnchor",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: floor",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-floor",
+          "params": {
+            "offset": [
+              0,
+              0.02,
+              0
+            ]
+          }
+        },
+        {
+          "id": "ice-eruption-ringmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: ringmat",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-ringmat",
+          "params": {
+            "blend": "normal",
+            "tint": {
+              "srgb": "#DDF4FF",
+              "alpha": 1
+            }
+          }
+        },
+        {
+          "id": "ice-eruption-ringrib",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: ringrib",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-ringrib",
+          "params": {
+            "width": 0.03,
+            "endFade": 0
+          }
+        },
+        {
+          "id": "ice-eruption-frags",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: frags",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-frags",
+          "params": {
+            "shape": "sphere",
+            "radius": 0.66,
+            "burst": 36,
+            "rate": 0,
+            "speedMin": 1,
+            "speedMax": 3,
+            "lifetimeMin": 0.75,
+            "lifetimeMax": 1.2
+          }
+        },
+        {
+          "id": "ice-eruption-fragip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: fragip",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-fragip",
+          "params": {
+            "sizeMin": 0.05,
+            "sizeMax": 0.12,
+            "angularVelocityMin": -6,
+            "angularVelocityMax": 6
+          }
+        },
+        {
+          "id": "ice-eruption-fragg",
+          "type": "Gravity",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: fragg",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-fragg",
+          "params": {
+            "acceleration": [
+              0,
+              -9.81,
+              0
+            ]
+          }
+        },
+        {
+          "id": "ice-eruption-fragfloor",
+          "type": "GroundCollision",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: fragfloor",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-fragfloor",
+          "params": {
+            "mode": "bounce",
+            "restitution": 0.3,
+            "friction": 0.4,
+            "maxBounces": 2
+          }
+        },
+        {
+          "id": "ice-eruption-fragmesh",
+          "type": "MeshRenderer",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: fragmesh",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-fragmesh",
+          "params": {
+            "mesh": "shard",
+            "orientation": "tumble",
+            "lit": true,
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 0.7,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "ice-eruption-frost",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: frost",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-frost",
+          "params": {
+            "shape": "sphere",
+            "radius": 0.8,
+            "burst": 30,
+            "rate": 0,
+            "speedMin": 0.3,
+            "speedMax": 0.8,
+            "lifetimeMin": 0.8,
+            "lifetimeMax": 1.4
+          }
+        },
+        {
+          "id": "ice-eruption-frostip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: frostip",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-frostip",
+          "params": {
+            "sizeMin": 0.4,
+            "sizeMax": 0.7,
+            "randomFrameStart": true,
+            "rotationMin": 0,
+            "rotationMax": 6.283
+          }
+        },
+        {
+          "id": "ice-eruption-frostlift",
+          "type": "Gravity",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: frostlift",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-frostlift",
+          "params": {
+            "acceleration": [
+              0,
+              0.5,
+              0
+            ]
+          }
+        },
+        {
+          "id": "ice-eruption-frostdrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: frostdrag",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-frostdrag",
+          "params": {
+            "coefficient": 1.2
+          }
+        },
+        {
+          "id": "ice-eruption-frostmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: frostmat",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-frostmat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "smoke-puff",
+            "blend": "normal",
+            "tint": {
+              "srgb": "#DDEFF8",
+              "alpha": 1
+            },
+            "opacity": 1,
+            "groundFade": 0.3
+          }
+        },
+        {
+          "id": "ice-eruption-frostbb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: frostbb",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-frostbb",
+          "params": {
+            "flipbookMode": "overLife",
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.7
+                },
+                {
+                  "x": 1,
+                  "y": 1.6
+                }
+              ]
+            },
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.2,
+                  "y": 0.35
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "ice-eruption-glintmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: glintmat",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-glintmat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "spark-streak",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#E8F8FF",
+              "alpha": 1
+            },
+            "emission": 0.6
+          }
+        },
+        {
+          "id": "ice-eruption-glintbb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Ice: shard eruption: glintbb",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-glintbb",
+          "params": {
+            "alignment": "velocity",
+            "stretchRatio": 2,
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.5
+                },
+                {
+                  "x": 1,
+                  "y": 0.3
+                }
+              ]
+            },
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.6
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "ice-eruption-out-visual",
+          "type": "GroupOutput",
+          "definitionVersion": 1,
+          "label": "Out: visual",
+          "enabled": true,
+          "randomStreamId": "rs-ice-eruption-out-visual",
+          "params": {
+            "portId": "visual"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "ice-eruption-e-node-target-chest",
+          "source": {
+            "nodeId": "ice-eruption-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "ice-eruption-chest",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-chest-motes",
+          "source": {
+            "nodeId": "ice-eruption-chest",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "ice-eruption-motes",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-charge-motes",
+          "source": {
+            "nodeId": "ice-eruption-charge",
+            "port": "start"
+          },
+          "target": {
+            "nodeId": "ice-eruption-motes",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-motes-moteip",
+          "source": {
+            "nodeId": "ice-eruption-motes",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ice-eruption-moteip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-moteip-motepull",
+          "source": {
+            "nodeId": "ice-eruption-moteip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ice-eruption-motepull",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-chest-motepull",
+          "source": {
+            "nodeId": "ice-eruption-chest",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "ice-eruption-motepull",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-motepull-motebb",
+          "source": {
+            "nodeId": "ice-eruption-motepull",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ice-eruption-motebb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-motemat-motebb",
+          "source": {
+            "nodeId": "ice-eruption-motemat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "ice-eruption-motebb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-motebb-out-visual",
+          "source": {
+            "nodeId": "ice-eruption-motebb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "ice-eruption-out-visual",
+            "port": "in"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-node-target-shardsa",
+          "source": {
+            "nodeId": "ice-eruption-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "ice-eruption-shardsa",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-erupt-shardsa",
+          "source": {
+            "nodeId": "ice-eruption-erupt",
+            "port": "start"
+          },
+          "target": {
+            "nodeId": "ice-eruption-shardsa",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-shardsa-shardsaip",
+          "source": {
+            "nodeId": "ice-eruption-shardsa",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ice-eruption-shardsaip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-shardsaip-shardsamesh",
+          "source": {
+            "nodeId": "ice-eruption-shardsaip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ice-eruption-shardsamesh",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-icemat-shardsamesh",
+          "source": {
+            "nodeId": "ice-eruption-icemat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "ice-eruption-shardsamesh",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-shardsamesh-out-visual",
+          "source": {
+            "nodeId": "ice-eruption-shardsamesh",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "ice-eruption-out-visual",
+            "port": "in"
+          },
+          "order": 1
+        },
+        {
+          "id": "ice-eruption-e-node-target-shardsb",
+          "source": {
+            "nodeId": "ice-eruption-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "ice-eruption-shardsb",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-erupt-shardsb",
+          "source": {
+            "nodeId": "ice-eruption-erupt",
+            "port": "start"
+          },
+          "target": {
+            "nodeId": "ice-eruption-shardsb",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-shardsb-shardsbip",
+          "source": {
+            "nodeId": "ice-eruption-shardsb",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ice-eruption-shardsbip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-shardsbip-shardsbmesh",
+          "source": {
+            "nodeId": "ice-eruption-shardsbip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ice-eruption-shardsbmesh",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-icemat-shardsbmesh",
+          "source": {
+            "nodeId": "ice-eruption-icemat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "ice-eruption-shardsbmesh",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-shardsbmesh-out-visual",
+          "source": {
+            "nodeId": "ice-eruption-shardsbmesh",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "ice-eruption-out-visual",
+            "port": "in"
+          },
+          "order": 2
+        },
+        {
+          "id": "ice-eruption-e-node-target-shardsc",
+          "source": {
+            "nodeId": "ice-eruption-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "ice-eruption-shardsc",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-erupt-shardsc",
+          "source": {
+            "nodeId": "ice-eruption-erupt",
+            "port": "start"
+          },
+          "target": {
+            "nodeId": "ice-eruption-shardsc",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-shardsc-shardscip",
+          "source": {
+            "nodeId": "ice-eruption-shardsc",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ice-eruption-shardscip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-shardscip-shardscmesh",
+          "source": {
+            "nodeId": "ice-eruption-shardscip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ice-eruption-shardscmesh",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-icemat-shardscmesh",
+          "source": {
+            "nodeId": "ice-eruption-icemat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "ice-eruption-shardscmesh",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-shardscmesh-out-visual",
+          "source": {
+            "nodeId": "ice-eruption-shardscmesh",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "ice-eruption-out-visual",
+            "port": "in"
+          },
+          "order": 3
+        },
+        {
+          "id": "ice-eruption-e-node-target-lamp",
+          "source": {
+            "nodeId": "ice-eruption-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "ice-eruption-lamp",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-lamp-light",
+          "source": {
+            "nodeId": "ice-eruption-lamp",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "ice-eruption-light",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-lightwin-light",
+          "source": {
+            "nodeId": "ice-eruption-lightwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "ice-eruption-light",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-light-out-visual",
+          "source": {
+            "nodeId": "ice-eruption-light",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "ice-eruption-out-visual",
+            "port": "in"
+          },
+          "order": 4
+        },
+        {
+          "id": "ice-eruption-e-ringwin-ringclock",
+          "source": {
+            "nodeId": "ice-eruption-ringwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "ice-eruption-ringclock",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-ringclock-ringsize",
+          "source": {
+            "nodeId": "ice-eruption-ringclock",
+            "port": "progress"
+          },
+          "target": {
+            "nodeId": "ice-eruption-ringsize",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-ringclock-ringdim",
+          "source": {
+            "nodeId": "ice-eruption-ringclock",
+            "port": "progress"
+          },
+          "target": {
+            "nodeId": "ice-eruption-ringdim",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-ringdim-ringfade",
+          "source": {
+            "nodeId": "ice-eruption-ringdim",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "ice-eruption-ringfade",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-node-target-floor",
+          "source": {
+            "nodeId": "ice-eruption-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "ice-eruption-floor",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-floor-ring",
+          "source": {
+            "nodeId": "ice-eruption-floor",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "ice-eruption-ring",
+            "port": "center"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-ringsize-ring",
+          "source": {
+            "nodeId": "ice-eruption-ringsize",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "ice-eruption-ring",
+            "port": "radiusScale"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-ringfade-ringmat",
+          "source": {
+            "nodeId": "ice-eruption-ringfade",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "ice-eruption-ringmat",
+            "port": "opacity"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-ring-ringrib",
+          "source": {
+            "nodeId": "ice-eruption-ring",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "ice-eruption-ringrib",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-ringmat-ringrib",
+          "source": {
+            "nodeId": "ice-eruption-ringmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "ice-eruption-ringrib",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-ringwin-ringrib",
+          "source": {
+            "nodeId": "ice-eruption-ringwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "ice-eruption-ringrib",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-ringrib-out-visual",
+          "source": {
+            "nodeId": "ice-eruption-ringrib",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "ice-eruption-out-visual",
+            "port": "in"
+          },
+          "order": 5
+        },
+        {
+          "id": "ice-eruption-e-chest-frags",
+          "source": {
+            "nodeId": "ice-eruption-chest",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "ice-eruption-frags",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-fracture-frags",
+          "source": {
+            "nodeId": "ice-eruption-fracture",
+            "port": "start"
+          },
+          "target": {
+            "nodeId": "ice-eruption-frags",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-frags-fragip",
+          "source": {
+            "nodeId": "ice-eruption-frags",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ice-eruption-fragip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-fragip-fragg",
+          "source": {
+            "nodeId": "ice-eruption-fragip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ice-eruption-fragg",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-fragg-fragfloor",
+          "source": {
+            "nodeId": "ice-eruption-fragg",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ice-eruption-fragfloor",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-fragfloor-fragmesh",
+          "source": {
+            "nodeId": "ice-eruption-fragfloor",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ice-eruption-fragmesh",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-icemat-fragmesh",
+          "source": {
+            "nodeId": "ice-eruption-icemat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "ice-eruption-fragmesh",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-fragmesh-out-visual",
+          "source": {
+            "nodeId": "ice-eruption-fragmesh",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "ice-eruption-out-visual",
+            "port": "in"
+          },
+          "order": 6
+        },
+        {
+          "id": "ice-eruption-e-chest-frost",
+          "source": {
+            "nodeId": "ice-eruption-chest",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "ice-eruption-frost",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-fracture-frost",
+          "source": {
+            "nodeId": "ice-eruption-fracture",
+            "port": "start"
+          },
+          "target": {
+            "nodeId": "ice-eruption-frost",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-frost-frostip",
+          "source": {
+            "nodeId": "ice-eruption-frost",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ice-eruption-frostip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-frostip-frostlift",
+          "source": {
+            "nodeId": "ice-eruption-frostip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ice-eruption-frostlift",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-frostlift-frostdrag",
+          "source": {
+            "nodeId": "ice-eruption-frostlift",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ice-eruption-frostdrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-frostdrag-frostbb",
+          "source": {
+            "nodeId": "ice-eruption-frostdrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ice-eruption-frostbb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-frostmat-frostbb",
+          "source": {
+            "nodeId": "ice-eruption-frostmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "ice-eruption-frostbb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-frostbb-out-visual",
+          "source": {
+            "nodeId": "ice-eruption-frostbb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "ice-eruption-out-visual",
+            "port": "in"
+          },
+          "order": 7
+        },
+        {
+          "id": "ice-eruption-e-fragfloor-glintbb",
+          "source": {
+            "nodeId": "ice-eruption-fragfloor",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ice-eruption-glintbb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-glintmat-glintbb",
+          "source": {
+            "nodeId": "ice-eruption-glintmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "ice-eruption-glintbb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "ice-eruption-e-glintbb-out-visual",
+          "source": {
+            "nodeId": "ice-eruption-glintbb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "ice-eruption-out-visual",
+            "port": "in"
+          },
+          "order": 8
+        }
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "id": "ctl-ice-eruption-start-at",
+      "scopeGraphId": "graph-ice-eruption",
+      "label": "Start at",
+      "type": "integer",
+      "unit": "tick",
+      "value": 0,
+      "default": 0,
+      "min": 0,
+      "max": 510,
+      "step": 1,
+      "section": "Ice: shard eruption",
+      "description": "Delays the whole component (60 ticks = 1 second) so it can play after another one.",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "ice-eruption-charge",
+          "parameter": "startTicks"
+        },
+        {
+          "nodeId": "ice-eruption-erupt",
+          "parameter": "startTicks",
+          "offset": 24
+        },
+        {
+          "nodeId": "ice-eruption-fracture",
+          "parameter": "startTicks",
+          "offset": 90
+        },
+        {
+          "nodeId": "ice-eruption-lightwin",
+          "parameter": "startTicks",
+          "offset": 24
+        },
+        {
+          "nodeId": "ice-eruption-ringwin",
+          "parameter": "startTicks",
+          "offset": 24
+        }
+      ]
+    },
+    {
+      "id": "ctl-ice-eruption-count",
+      "scopeGraphId": "graph-ice-eruption",
+      "label": "Shards per shape",
+      "type": "integer",
+      "unit": "none",
+      "value": 10,
+      "default": 10,
+      "min": 0,
+      "max": 4096,
+      "step": 1,
+      "section": "Ice: shard eruption",
+      "description": "Ice: shard eruption: shardsa.burst, shardsb.burst, shardsc.burst",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "ice-eruption-shardsa",
+          "parameter": "burst"
+        },
+        {
+          "nodeId": "ice-eruption-shardsb",
+          "parameter": "burst"
+        },
+        {
+          "nodeId": "ice-eruption-shardsc",
+          "parameter": "burst"
+        }
+      ]
+    },
+    {
+      "id": "ctl-ice-eruption-height",
+      "scopeGraphId": "graph-ice-eruption",
+      "label": "Shard height",
+      "type": "number",
+      "unit": "none",
+      "value": 4,
+      "default": 4,
+      "min": 0.08333333333333334,
+      "max": 20,
+      "section": "Ice: shard eruption",
+      "description": "Ice: shard eruption: shardsamesh.scaleY, shardsbmesh.scaleY ×0.8, shardscmesh.scaleY ×0.6",
+      "editPolicy": "live",
+      "bindings": [
+        {
+          "nodeId": "ice-eruption-shardsamesh",
+          "parameter": "scaleY"
+        },
+        {
+          "nodeId": "ice-eruption-shardsbmesh",
+          "parameter": "scaleY",
+          "scale": 0.8
+        },
+        {
+          "nodeId": "ice-eruption-shardscmesh",
+          "parameter": "scaleY",
+          "scale": 0.6
+        }
+      ]
+    },
+    {
+      "id": "ctl-ice-eruption-spread",
+      "scopeGraphId": "graph-ice-eruption",
+      "label": "Spread",
+      "type": "number",
+      "unit": "meter",
+      "value": 1.1,
+      "default": 1.1,
+      "min": 0,
+      "max": 20,
+      "section": "Ice: shard eruption",
+      "description": "Ice: shard eruption: shardsa.radius, shardsb.radius, shardsc.radius",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "ice-eruption-shardsa",
+          "parameter": "radius"
+        },
+        {
+          "nodeId": "ice-eruption-shardsb",
+          "parameter": "radius"
+        },
+        {
+          "nodeId": "ice-eruption-shardsc",
+          "parameter": "radius"
+        }
+      ]
+    },
+    {
+      "id": "ctl-ice-eruption-frost",
+      "scopeGraphId": "graph-ice-eruption",
+      "label": "Frost density",
+      "type": "integer",
+      "unit": "none",
+      "value": 30,
+      "default": 30,
+      "min": 0,
+      "max": 4096,
+      "step": 1,
+      "section": "Ice: shard eruption",
+      "description": "Ice: shard eruption: frost.burst",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "ice-eruption-frost",
+          "parameter": "burst"
+        }
+      ]
+    },
+    {
+      "id": "ctl-ice-eruption-edge",
+      "scopeGraphId": "graph-ice-eruption",
+      "label": "Edge brightness",
+      "type": "number",
+      "unit": "linearGain",
+      "value": 0,
+      "default": 0,
+      "min": 0,
+      "max": 20,
+      "section": "Ice: shard eruption",
+      "description": "Ice: shard eruption: icemat.emission",
+      "editPolicy": "live",
+      "bindings": [
+        {
+          "nodeId": "ice-eruption-icemat",
+          "parameter": "emission"
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "editor": {
+    "graphs": {
+      "graph-root": {
+        "nodes": {
+          "node-source": {
+            "x": 0,
+            "y": 0
+          },
+          "node-target": {
+            "x": 0,
+            "y": 160
+          },
+          "node-output": {
+            "x": 1040,
+            "y": 0
+          },
+          "ice-eruption": {
+            "x": -300,
+            "y": 320
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      },
+      "graph-ice-eruption": {
+        "nodes": {
+          "ice-eruption-charge": {
+            "x": 0,
+            "y": 0
+          },
+          "ice-eruption-erupt": {
+            "x": 260,
+            "y": 0
+          },
+          "ice-eruption-fracture": {
+            "x": 520,
+            "y": 0
+          },
+          "ice-eruption-chest": {
+            "x": 780,
+            "y": 0
+          },
+          "ice-eruption-motes": {
+            "x": 1040,
+            "y": 0
+          },
+          "ice-eruption-moteip": {
+            "x": 1300,
+            "y": 0
+          },
+          "ice-eruption-motepull": {
+            "x": 0,
+            "y": 170
+          },
+          "ice-eruption-motemat": {
+            "x": 260,
+            "y": 170
+          },
+          "ice-eruption-motebb": {
+            "x": 520,
+            "y": 170
+          },
+          "ice-eruption-icemat": {
+            "x": 780,
+            "y": 170
+          },
+          "ice-eruption-shardsa": {
+            "x": 1040,
+            "y": 170
+          },
+          "ice-eruption-shardsaip": {
+            "x": 1300,
+            "y": 170
+          },
+          "ice-eruption-shardsamesh": {
+            "x": 0,
+            "y": 340
+          },
+          "ice-eruption-shardsb": {
+            "x": 260,
+            "y": 340
+          },
+          "ice-eruption-shardsbip": {
+            "x": 520,
+            "y": 340
+          },
+          "ice-eruption-shardsbmesh": {
+            "x": 780,
+            "y": 340
+          },
+          "ice-eruption-shardsc": {
+            "x": 1040,
+            "y": 340
+          },
+          "ice-eruption-shardscip": {
+            "x": 1300,
+            "y": 340
+          },
+          "ice-eruption-shardscmesh": {
+            "x": 0,
+            "y": 510
+          },
+          "ice-eruption-lightwin": {
+            "x": 260,
+            "y": 510
+          },
+          "ice-eruption-lamp": {
+            "x": 520,
+            "y": 510
+          },
+          "ice-eruption-light": {
+            "x": 780,
+            "y": 510
+          },
+          "ice-eruption-ringwin": {
+            "x": 1040,
+            "y": 510
+          },
+          "ice-eruption-ringclock": {
+            "x": 1300,
+            "y": 510
+          },
+          "ice-eruption-ring": {
+            "x": 0,
+            "y": 680
+          },
+          "ice-eruption-ringsize": {
+            "x": 260,
+            "y": 680
+          },
+          "ice-eruption-ringdim": {
+            "x": 520,
+            "y": 680
+          },
+          "ice-eruption-ringfade": {
+            "x": 780,
+            "y": 680
+          },
+          "ice-eruption-floor": {
+            "x": 1040,
+            "y": 680
+          },
+          "ice-eruption-ringmat": {
+            "x": 1300,
+            "y": 680
+          },
+          "ice-eruption-ringrib": {
+            "x": 0,
+            "y": 850
+          },
+          "ice-eruption-frags": {
+            "x": 260,
+            "y": 850
+          },
+          "ice-eruption-fragip": {
+            "x": 520,
+            "y": 850
+          },
+          "ice-eruption-fragg": {
+            "x": 780,
+            "y": 850
+          },
+          "ice-eruption-fragfloor": {
+            "x": 1040,
+            "y": 850
+          },
+          "ice-eruption-fragmesh": {
+            "x": 1300,
+            "y": 850
+          },
+          "ice-eruption-frost": {
+            "x": 0,
+            "y": 1020
+          },
+          "ice-eruption-frostip": {
+            "x": 260,
+            "y": 1020
+          },
+          "ice-eruption-frostlift": {
+            "x": 520,
+            "y": 1020
+          },
+          "ice-eruption-frostdrag": {
+            "x": 780,
+            "y": 1020
+          },
+          "ice-eruption-frostmat": {
+            "x": 1040,
+            "y": 1020
+          },
+          "ice-eruption-frostbb": {
+            "x": 1300,
+            "y": 1020
+          },
+          "ice-eruption-glintmat": {
+            "x": 0,
+            "y": 1190
+          },
+          "ice-eruption-glintbb": {
+            "x": 260,
+            "y": 1190
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      }
+    },
+    "openedGraphId": "graph-root"
+  }
+}

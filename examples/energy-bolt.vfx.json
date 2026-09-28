@@ -1,0 +1,2589 @@
+{
+  "format": "vfx-studio",
+  "schemaVersion": 2,
+  "runtimeVersion": "2.0.0",
+  "id": "example-energy-bolt",
+  "name": "Energy bolt",
+  "tags": [],
+  "seed": 42,
+  "rootTransform": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "scale": 1
+  },
+  "anchors": [
+    {
+      "id": "source",
+      "name": "Source",
+      "position": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "id": "target",
+      "name": "Target",
+      "position": [
+        0,
+        1,
+        5
+      ]
+    }
+  ],
+  "durationTicks": 199,
+  "rootGraphId": "graph-root",
+  "graphs": [
+    {
+      "id": "graph-root",
+      "inputs": [],
+      "outputs": [],
+      "nodes": [
+        {
+          "id": "node-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Source",
+          "enabled": true,
+          "randomStreamId": "rs-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "node-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Target",
+          "enabled": true,
+          "randomStreamId": "rs-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "node-output",
+          "type": "EffectOutput",
+          "definitionVersion": 1,
+          "label": "Output",
+          "enabled": true,
+          "randomStreamId": "rs-output",
+          "params": {}
+        },
+        {
+          "id": "energy-bolt",
+          "type": "Group",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt",
+          "params": {
+            "graphId": "graph-energy-bolt"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "energy-bolt-e-group-visual",
+          "source": {
+            "nodeId": "energy-bolt",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "node-output",
+            "port": "visual"
+          },
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "graph-energy-bolt",
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "visual",
+          "label": "Visual",
+          "type": "visual",
+          "cardinality": "many",
+          "required": false,
+          "direction": "output"
+        }
+      ],
+      "nodes": [
+        {
+          "id": "energy-bolt-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "source",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "energy-bolt-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "target",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "energy-bolt-charge",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: charge",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-charge",
+          "params": {
+            "startTicks": 0,
+            "durationTicks": 30,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "energy-bolt-gather",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: gather",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-gather",
+          "params": {
+            "shape": "sphere",
+            "radius": 1.2,
+            "burst": 24,
+            "rate": 0,
+            "speedMin": 0,
+            "speedMax": 0.1,
+            "lifetimeMin": 0.5,
+            "lifetimeMax": 0.5
+          }
+        },
+        {
+          "id": "energy-bolt-gatherip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: gatherip",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-gatherip",
+          "params": {
+            "sizeMin": 0.03,
+            "sizeMax": 0.06
+          }
+        },
+        {
+          "id": "energy-bolt-gatherpull",
+          "type": "Attract",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: gatherpull",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-gatherpull",
+          "params": {
+            "acceleration": 12,
+            "softRadius": 0.12,
+            "killRadius": 0.05
+          }
+        },
+        {
+          "id": "energy-bolt-motemat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: motemat",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-motemat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "soft-glow",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#F2F0F6",
+              "alpha": 1
+            },
+            "emission": 0.8
+          }
+        },
+        {
+          "id": "energy-bolt-gatherbb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: gatherbb",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-gatherbb",
+          "params": {}
+        },
+        {
+          "id": "energy-bolt-coremat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: coremat",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-coremat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "soft-glow",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#FFFFFF",
+              "alpha": 1
+            },
+            "emission": 1.4
+          }
+        },
+        {
+          "id": "energy-bolt-halomat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: halomat",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-halomat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "soft-glow",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#9B6BFF",
+              "alpha": 1
+            },
+            "opacity": 0.35,
+            "emission": 0.4
+          }
+        },
+        {
+          "id": "energy-bolt-chargecore",
+          "type": "SpriteRenderer",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: chargecore",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-chargecore",
+          "params": {
+            "size": 0.3,
+            "sizeOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.27
+                },
+                {
+                  "x": 1,
+                  "y": 1
+                }
+              ]
+            },
+            "opacityOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.3
+                },
+                {
+                  "x": 1,
+                  "y": 1
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "energy-bolt-chargehalo",
+          "type": "SpriteRenderer",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: chargehalo",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-chargehalo",
+          "params": {
+            "size": 0.9,
+            "sizeOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.2
+                },
+                {
+                  "x": 1,
+                  "y": 1
+                }
+              ]
+            },
+            "opacityOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 1,
+                  "y": 0.8
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "energy-bolt-arc",
+          "type": "BezierPath",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: arc",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-arc",
+          "params": {
+            "startHandle": [
+              2.6,
+              0.5333333333333333,
+              0
+            ],
+            "endHandle": [
+              -2.6,
+              0.5333333333333333,
+              0
+            ],
+            "samples": 64
+          }
+        },
+        {
+          "id": "energy-bolt-flight",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: flight",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-flight",
+          "params": {
+            "startTicks": 30,
+            "durationTicks": 150,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "energy-bolt-ball",
+          "type": "PathFollower",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: ball",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-ball",
+          "params": {
+            "durationTicks": 36,
+            "easing": "linear",
+            "speed": 0
+          }
+        },
+        {
+          "id": "energy-bolt-corewin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: corewin",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-corewin",
+          "params": {
+            "startTicks": 30,
+            "durationTicks": 38,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "energy-bolt-core",
+          "type": "SpriteRenderer",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: core",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-core",
+          "params": {
+            "size": 0.22
+          }
+        },
+        {
+          "id": "energy-bolt-halo",
+          "type": "SpriteRenderer",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: halo",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-halo",
+          "params": {
+            "size": 0.6,
+            "opacityOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.8
+                },
+                {
+                  "x": 1,
+                  "y": 0.8
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "energy-bolt-balllight",
+          "type": "PointLight",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: balllight",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-balllight",
+          "params": {
+            "color": {
+              "srgb": "#9B6BFF",
+              "alpha": 1
+            },
+            "intensity": 18,
+            "range": 4
+          }
+        },
+        {
+          "id": "energy-bolt-trailmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: trailmat",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-trailmat",
+          "params": {
+            "blend": "additive",
+            "tint": {
+              "srgb": "#F0EEF4",
+              "alpha": 1
+            },
+            "emission": 0.5,
+            "opacity": 0.55
+          }
+        },
+        {
+          "id": "energy-bolt-trail",
+          "type": "MotionTrail",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: trail",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-trail",
+          "params": {
+            "history": 0.3,
+            "maxPoints": 64,
+            "width": 0.08,
+            "endFade": 0.5
+          }
+        },
+        {
+          "id": "energy-bolt-sheathmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: sheathmat",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-sheathmat",
+          "params": {
+            "blend": "additive",
+            "tint": {
+              "srgb": "#9B6BFF",
+              "alpha": 1
+            },
+            "emission": 0.4,
+            "opacity": 0.45
+          }
+        },
+        {
+          "id": "energy-bolt-sheath",
+          "type": "MotionTrail",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: sheath",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-sheath",
+          "params": {
+            "history": 0.24,
+            "maxPoints": 64,
+            "width": 0.208,
+            "endFade": 0.5
+          }
+        },
+        {
+          "id": "energy-bolt-accents",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: accents",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-accents",
+          "params": {
+            "shape": "sphere",
+            "radius": 0.264,
+            "rate": 40,
+            "burst": 0,
+            "speedMin": 0.1,
+            "speedMax": 0.4,
+            "lifetimeMin": 0.08,
+            "lifetimeMax": 0.2
+          }
+        },
+        {
+          "id": "energy-bolt-accentip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: accentip",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-accentip",
+          "params": {
+            "sizeMin": 0.025,
+            "sizeMax": 0.05
+          }
+        },
+        {
+          "id": "energy-bolt-accentbb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: accentbb",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-accentbb",
+          "params": {
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "energy-bolt-shed",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: shed",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-shed",
+          "params": {
+            "shape": "sphere",
+            "radius": 0.05,
+            "rate": 60,
+            "burst": 0,
+            "speedMin": 0.2,
+            "speedMax": 0.8,
+            "lifetimeMin": 0.3,
+            "lifetimeMax": 0.7
+          }
+        },
+        {
+          "id": "energy-bolt-shedip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: shedip",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-shedip",
+          "params": {
+            "sizeMin": 0.02,
+            "sizeMax": 0.035
+          }
+        },
+        {
+          "id": "energy-bolt-shednoise",
+          "type": "NoiseForce",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: shednoise",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-shednoise",
+          "params": {
+            "mode": "curl",
+            "amplitude": 0.8,
+            "frequency": 1.2,
+            "evolution": 1
+          }
+        },
+        {
+          "id": "energy-bolt-sheddrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: sheddrag",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-sheddrag",
+          "params": {
+            "coefficient": 1
+          }
+        },
+        {
+          "id": "energy-bolt-shedmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: shedmat",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-shedmat",
+          "params": {
+            "blend": "additive",
+            "tint": {
+              "srgb": "#9B6BFF",
+              "alpha": 1
+            },
+            "emission": 0.8
+          }
+        },
+        {
+          "id": "energy-bolt-shedtrail",
+          "type": "ParticleTrail",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: shedtrail",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-shedtrail",
+          "params": {
+            "history": 0.15,
+            "maxPoints": 10,
+            "width": 0.015,
+            "endFade": 0.5
+          }
+        },
+        {
+          "id": "energy-bolt-flashwin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: flashwin",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-flashwin",
+          "params": {
+            "startTicks": 0,
+            "durationTicks": 18,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "energy-bolt-ringwin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: ringwin",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-ringwin",
+          "params": {
+            "startTicks": 0,
+            "durationTicks": 36,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "energy-bolt-lightwin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: lightwin",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-lightwin",
+          "params": {
+            "startTicks": 0,
+            "durationTicks": 30,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "energy-bolt-flash",
+          "type": "SpriteRenderer",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: flash",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-flash",
+          "params": {
+            "size": 1.6,
+            "sizeOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.4
+                },
+                {
+                  "x": 0.15,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 1.2
+                }
+              ]
+            },
+            "opacityOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 0.3,
+                  "y": 0.6
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            },
+            "colorOverWindow": {
+              "stops": [
+                {
+                  "position": 0,
+                  "color": {
+                    "srgb": "#FFFFFF",
+                    "alpha": 1
+                  }
+                },
+                {
+                  "position": 1,
+                  "color": {
+                    "srgb": "#8C8C8C",
+                    "alpha": 1
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "energy-bolt-flashglow",
+          "type": "SpriteRenderer",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: flashglow",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-flashglow",
+          "params": {
+            "size": 2.88,
+            "sizeOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.5
+                },
+                {
+                  "x": 0.2,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 1.3
+                }
+              ]
+            },
+            "opacityOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "energy-bolt-impactlight",
+          "type": "PointLight",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: impactlight",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-impactlight",
+          "params": {
+            "color": {
+              "srgb": "#9B6BFF",
+              "alpha": 1
+            },
+            "intensity": 50,
+            "range": 6,
+            "intensityOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "energy-bolt-ringclock",
+          "type": "Time",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: ringclock",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-ringclock",
+          "params": {}
+        },
+        {
+          "id": "energy-bolt-ringsize",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: ringsize",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-ringsize",
+          "params": {
+            "operation": "max",
+            "b": 0.0714,
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "energy-bolt-ringdim",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: ringdim",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-ringdim",
+          "params": {
+            "operation": "multiply",
+            "b": -0.8,
+            "inputUnit": "normalized",
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "energy-bolt-ringfade",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: ringfade",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-ringfade",
+          "params": {
+            "operation": "add",
+            "b": 0.8,
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "energy-bolt-ring",
+          "type": "RingPath",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: ring",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-ring",
+          "params": {
+            "radius": 2.8,
+            "samples": 96
+          }
+        },
+        {
+          "id": "energy-bolt-ringmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: ringmat",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-ringmat",
+          "params": {
+            "blend": "additive",
+            "tint": {
+              "srgb": "#9B6BFF",
+              "alpha": 1
+            },
+            "emission": 0.5
+          }
+        },
+        {
+          "id": "energy-bolt-ringrib",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: ringrib",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-ringrib",
+          "params": {
+            "width": 0.03,
+            "endFade": 0
+          }
+        },
+        {
+          "id": "energy-bolt-burst",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: burst",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-burst",
+          "params": {
+            "shape": "sphere",
+            "radius": 0.08,
+            "burst": 90,
+            "rate": 0,
+            "speedMin": 2,
+            "speedMax": 6,
+            "lifetimeMin": 0.3,
+            "lifetimeMax": 0.8
+          }
+        },
+        {
+          "id": "energy-bolt-burstip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: burstip",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-burstip",
+          "params": {
+            "sizeMin": 0.02,
+            "sizeMax": 0.04
+          }
+        },
+        {
+          "id": "energy-bolt-burstdrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: burstdrag",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-burstdrag",
+          "params": {
+            "coefficient": 2
+          }
+        },
+        {
+          "id": "energy-bolt-burstg",
+          "type": "Gravity",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: burstg",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-burstg",
+          "params": {
+            "acceleration": [
+              0,
+              -3,
+              0
+            ]
+          }
+        },
+        {
+          "id": "energy-bolt-burstmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: burstmat",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-burstmat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "spark-streak",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#9B6BFF",
+              "alpha": 1
+            },
+            "emission": 0.8
+          }
+        },
+        {
+          "id": "energy-bolt-burstbb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Energy: charged bolt: burstbb",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-burstbb",
+          "params": {
+            "alignment": "velocity",
+            "stretchRatio": 4,
+            "pivot": 0.8,
+            "colorOverLife": {
+              "stops": [
+                {
+                  "position": 0,
+                  "color": {
+                    "srgb": "#FFFFFF",
+                    "alpha": 1
+                  }
+                },
+                {
+                  "position": 0.4,
+                  "color": {
+                    "srgb": "#D0D0D0",
+                    "alpha": 1
+                  }
+                },
+                {
+                  "position": 1,
+                  "color": {
+                    "srgb": "#707070",
+                    "alpha": 0
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "energy-bolt-out-visual",
+          "type": "GroupOutput",
+          "definitionVersion": 1,
+          "label": "Out: visual",
+          "enabled": true,
+          "randomStreamId": "rs-energy-bolt-out-visual",
+          "params": {
+            "portId": "visual"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "energy-bolt-e-node-source-gather",
+          "source": {
+            "nodeId": "energy-bolt-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "energy-bolt-gather",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-charge-gather",
+          "source": {
+            "nodeId": "energy-bolt-charge",
+            "port": "start"
+          },
+          "target": {
+            "nodeId": "energy-bolt-gather",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-gather-gatherip",
+          "source": {
+            "nodeId": "energy-bolt-gather",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "energy-bolt-gatherip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-gatherip-gatherpull",
+          "source": {
+            "nodeId": "energy-bolt-gatherip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "energy-bolt-gatherpull",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-node-source-gatherpull",
+          "source": {
+            "nodeId": "energy-bolt-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "energy-bolt-gatherpull",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-gatherpull-gatherbb",
+          "source": {
+            "nodeId": "energy-bolt-gatherpull",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "energy-bolt-gatherbb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-motemat-gatherbb",
+          "source": {
+            "nodeId": "energy-bolt-motemat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "energy-bolt-gatherbb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-gatherbb-out-visual",
+          "source": {
+            "nodeId": "energy-bolt-gatherbb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "energy-bolt-out-visual",
+            "port": "in"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-node-source-chargecore",
+          "source": {
+            "nodeId": "energy-bolt-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "energy-bolt-chargecore",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-coremat-chargecore",
+          "source": {
+            "nodeId": "energy-bolt-coremat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "energy-bolt-chargecore",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-charge-chargecore",
+          "source": {
+            "nodeId": "energy-bolt-charge",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "energy-bolt-chargecore",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-chargecore-out-visual",
+          "source": {
+            "nodeId": "energy-bolt-chargecore",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "energy-bolt-out-visual",
+            "port": "in"
+          },
+          "order": 1
+        },
+        {
+          "id": "energy-bolt-e-node-source-chargehalo",
+          "source": {
+            "nodeId": "energy-bolt-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "energy-bolt-chargehalo",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-halomat-chargehalo",
+          "source": {
+            "nodeId": "energy-bolt-halomat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "energy-bolt-chargehalo",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-charge-chargehalo",
+          "source": {
+            "nodeId": "energy-bolt-charge",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "energy-bolt-chargehalo",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-chargehalo-out-visual",
+          "source": {
+            "nodeId": "energy-bolt-chargehalo",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "energy-bolt-out-visual",
+            "port": "in"
+          },
+          "order": 2
+        },
+        {
+          "id": "energy-bolt-e-node-source-arc",
+          "source": {
+            "nodeId": "energy-bolt-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "energy-bolt-arc",
+            "port": "start"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-node-target-arc",
+          "source": {
+            "nodeId": "energy-bolt-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "energy-bolt-arc",
+            "port": "end"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-arc-ball",
+          "source": {
+            "nodeId": "energy-bolt-arc",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "energy-bolt-ball",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-flight-ball",
+          "source": {
+            "nodeId": "energy-bolt-flight",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "energy-bolt-ball",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-ball-core",
+          "source": {
+            "nodeId": "energy-bolt-ball",
+            "port": "anchor"
+          },
+          "target": {
+            "nodeId": "energy-bolt-core",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-coremat-core",
+          "source": {
+            "nodeId": "energy-bolt-coremat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "energy-bolt-core",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-corewin-core",
+          "source": {
+            "nodeId": "energy-bolt-corewin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "energy-bolt-core",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-core-out-visual",
+          "source": {
+            "nodeId": "energy-bolt-core",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "energy-bolt-out-visual",
+            "port": "in"
+          },
+          "order": 3
+        },
+        {
+          "id": "energy-bolt-e-ball-halo",
+          "source": {
+            "nodeId": "energy-bolt-ball",
+            "port": "anchor"
+          },
+          "target": {
+            "nodeId": "energy-bolt-halo",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-halomat-halo",
+          "source": {
+            "nodeId": "energy-bolt-halomat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "energy-bolt-halo",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-corewin-halo",
+          "source": {
+            "nodeId": "energy-bolt-corewin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "energy-bolt-halo",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-halo-out-visual",
+          "source": {
+            "nodeId": "energy-bolt-halo",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "energy-bolt-out-visual",
+            "port": "in"
+          },
+          "order": 4
+        },
+        {
+          "id": "energy-bolt-e-ball-balllight",
+          "source": {
+            "nodeId": "energy-bolt-ball",
+            "port": "anchor"
+          },
+          "target": {
+            "nodeId": "energy-bolt-balllight",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-corewin-balllight",
+          "source": {
+            "nodeId": "energy-bolt-corewin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "energy-bolt-balllight",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-balllight-out-visual",
+          "source": {
+            "nodeId": "energy-bolt-balllight",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "energy-bolt-out-visual",
+            "port": "in"
+          },
+          "order": 5
+        },
+        {
+          "id": "energy-bolt-e-ball-trail",
+          "source": {
+            "nodeId": "energy-bolt-ball",
+            "port": "anchor"
+          },
+          "target": {
+            "nodeId": "energy-bolt-trail",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-trailmat-trail",
+          "source": {
+            "nodeId": "energy-bolt-trailmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "energy-bolt-trail",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-flight-trail",
+          "source": {
+            "nodeId": "energy-bolt-flight",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "energy-bolt-trail",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-trail-out-visual",
+          "source": {
+            "nodeId": "energy-bolt-trail",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "energy-bolt-out-visual",
+            "port": "in"
+          },
+          "order": 6
+        },
+        {
+          "id": "energy-bolt-e-ball-sheath",
+          "source": {
+            "nodeId": "energy-bolt-ball",
+            "port": "anchor"
+          },
+          "target": {
+            "nodeId": "energy-bolt-sheath",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-sheathmat-sheath",
+          "source": {
+            "nodeId": "energy-bolt-sheathmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "energy-bolt-sheath",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-flight-sheath",
+          "source": {
+            "nodeId": "energy-bolt-flight",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "energy-bolt-sheath",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-sheath-out-visual",
+          "source": {
+            "nodeId": "energy-bolt-sheath",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "energy-bolt-out-visual",
+            "port": "in"
+          },
+          "order": 7
+        },
+        {
+          "id": "energy-bolt-e-ball-accents",
+          "source": {
+            "nodeId": "energy-bolt-ball",
+            "port": "anchor"
+          },
+          "target": {
+            "nodeId": "energy-bolt-accents",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-corewin-accents",
+          "source": {
+            "nodeId": "energy-bolt-corewin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "energy-bolt-accents",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-accents-accentip",
+          "source": {
+            "nodeId": "energy-bolt-accents",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "energy-bolt-accentip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-accentip-accentbb",
+          "source": {
+            "nodeId": "energy-bolt-accentip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "energy-bolt-accentbb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-motemat-accentbb",
+          "source": {
+            "nodeId": "energy-bolt-motemat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "energy-bolt-accentbb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-accentbb-out-visual",
+          "source": {
+            "nodeId": "energy-bolt-accentbb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "energy-bolt-out-visual",
+            "port": "in"
+          },
+          "order": 8
+        },
+        {
+          "id": "energy-bolt-e-ball-shed",
+          "source": {
+            "nodeId": "energy-bolt-ball",
+            "port": "anchor"
+          },
+          "target": {
+            "nodeId": "energy-bolt-shed",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-corewin-shed",
+          "source": {
+            "nodeId": "energy-bolt-corewin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "energy-bolt-shed",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-shed-shedip",
+          "source": {
+            "nodeId": "energy-bolt-shed",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "energy-bolt-shedip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-shedip-shednoise",
+          "source": {
+            "nodeId": "energy-bolt-shedip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "energy-bolt-shednoise",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-shednoise-sheddrag",
+          "source": {
+            "nodeId": "energy-bolt-shednoise",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "energy-bolt-sheddrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-sheddrag-shedtrail",
+          "source": {
+            "nodeId": "energy-bolt-sheddrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "energy-bolt-shedtrail",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-shedmat-shedtrail",
+          "source": {
+            "nodeId": "energy-bolt-shedmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "energy-bolt-shedtrail",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-shedtrail-out-visual",
+          "source": {
+            "nodeId": "energy-bolt-shedtrail",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "energy-bolt-out-visual",
+            "port": "in"
+          },
+          "order": 9
+        },
+        {
+          "id": "energy-bolt-e-ball-flashwin",
+          "source": {
+            "nodeId": "energy-bolt-ball",
+            "port": "arrival"
+          },
+          "target": {
+            "nodeId": "energy-bolt-flashwin",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-ball-ringwin",
+          "source": {
+            "nodeId": "energy-bolt-ball",
+            "port": "arrival"
+          },
+          "target": {
+            "nodeId": "energy-bolt-ringwin",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-ball-lightwin",
+          "source": {
+            "nodeId": "energy-bolt-ball",
+            "port": "arrival"
+          },
+          "target": {
+            "nodeId": "energy-bolt-lightwin",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-node-target-flash",
+          "source": {
+            "nodeId": "energy-bolt-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "energy-bolt-flash",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-coremat-flash",
+          "source": {
+            "nodeId": "energy-bolt-coremat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "energy-bolt-flash",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-flashwin-flash",
+          "source": {
+            "nodeId": "energy-bolt-flashwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "energy-bolt-flash",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-flash-out-visual",
+          "source": {
+            "nodeId": "energy-bolt-flash",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "energy-bolt-out-visual",
+            "port": "in"
+          },
+          "order": 10
+        },
+        {
+          "id": "energy-bolt-e-node-target-flashglow",
+          "source": {
+            "nodeId": "energy-bolt-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "energy-bolt-flashglow",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-halomat-flashglow",
+          "source": {
+            "nodeId": "energy-bolt-halomat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "energy-bolt-flashglow",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-flashwin-flashglow",
+          "source": {
+            "nodeId": "energy-bolt-flashwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "energy-bolt-flashglow",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-flashglow-out-visual",
+          "source": {
+            "nodeId": "energy-bolt-flashglow",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "energy-bolt-out-visual",
+            "port": "in"
+          },
+          "order": 11
+        },
+        {
+          "id": "energy-bolt-e-node-target-impactlight",
+          "source": {
+            "nodeId": "energy-bolt-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "energy-bolt-impactlight",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-lightwin-impactlight",
+          "source": {
+            "nodeId": "energy-bolt-lightwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "energy-bolt-impactlight",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-impactlight-out-visual",
+          "source": {
+            "nodeId": "energy-bolt-impactlight",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "energy-bolt-out-visual",
+            "port": "in"
+          },
+          "order": 12
+        },
+        {
+          "id": "energy-bolt-e-ringwin-ringclock",
+          "source": {
+            "nodeId": "energy-bolt-ringwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "energy-bolt-ringclock",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-ringclock-ringsize",
+          "source": {
+            "nodeId": "energy-bolt-ringclock",
+            "port": "progress"
+          },
+          "target": {
+            "nodeId": "energy-bolt-ringsize",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-ringclock-ringdim",
+          "source": {
+            "nodeId": "energy-bolt-ringclock",
+            "port": "progress"
+          },
+          "target": {
+            "nodeId": "energy-bolt-ringdim",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-ringdim-ringfade",
+          "source": {
+            "nodeId": "energy-bolt-ringdim",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "energy-bolt-ringfade",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-node-target-ring",
+          "source": {
+            "nodeId": "energy-bolt-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "energy-bolt-ring",
+            "port": "center"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-ringsize-ring",
+          "source": {
+            "nodeId": "energy-bolt-ringsize",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "energy-bolt-ring",
+            "port": "radiusScale"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-ringfade-ringmat",
+          "source": {
+            "nodeId": "energy-bolt-ringfade",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "energy-bolt-ringmat",
+            "port": "opacity"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-ring-ringrib",
+          "source": {
+            "nodeId": "energy-bolt-ring",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "energy-bolt-ringrib",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-ringmat-ringrib",
+          "source": {
+            "nodeId": "energy-bolt-ringmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "energy-bolt-ringrib",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-ringwin-ringrib",
+          "source": {
+            "nodeId": "energy-bolt-ringwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "energy-bolt-ringrib",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-ringrib-out-visual",
+          "source": {
+            "nodeId": "energy-bolt-ringrib",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "energy-bolt-out-visual",
+            "port": "in"
+          },
+          "order": 13
+        },
+        {
+          "id": "energy-bolt-e-node-target-burst",
+          "source": {
+            "nodeId": "energy-bolt-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "energy-bolt-burst",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-ball-burst",
+          "source": {
+            "nodeId": "energy-bolt-ball",
+            "port": "arrival"
+          },
+          "target": {
+            "nodeId": "energy-bolt-burst",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-burst-burstip",
+          "source": {
+            "nodeId": "energy-bolt-burst",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "energy-bolt-burstip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-burstip-burstdrag",
+          "source": {
+            "nodeId": "energy-bolt-burstip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "energy-bolt-burstdrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-burstdrag-burstg",
+          "source": {
+            "nodeId": "energy-bolt-burstdrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "energy-bolt-burstg",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-burstg-burstbb",
+          "source": {
+            "nodeId": "energy-bolt-burstg",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "energy-bolt-burstbb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-burstmat-burstbb",
+          "source": {
+            "nodeId": "energy-bolt-burstmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "energy-bolt-burstbb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "energy-bolt-e-burstbb-out-visual",
+          "source": {
+            "nodeId": "energy-bolt-burstbb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "energy-bolt-out-visual",
+            "port": "in"
+          },
+          "order": 14
+        }
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "id": "ctl-energy-bolt-start-at",
+      "scopeGraphId": "graph-energy-bolt",
+      "label": "Start at",
+      "type": "integer",
+      "unit": "tick",
+      "value": 0,
+      "default": 0,
+      "min": 0,
+      "max": 570,
+      "step": 1,
+      "section": "Energy: charged bolt",
+      "description": "Delays the whole component (60 ticks = 1 second) so it can play after another one.",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "energy-bolt-charge",
+          "parameter": "startTicks"
+        },
+        {
+          "nodeId": "energy-bolt-flight",
+          "parameter": "startTicks",
+          "offset": 30
+        },
+        {
+          "nodeId": "energy-bolt-corewin",
+          "parameter": "startTicks",
+          "offset": 30
+        }
+      ]
+    },
+    {
+      "id": "ctl-energy-bolt-travel",
+      "scopeGraphId": "graph-energy-bolt",
+      "label": "Travel ticks",
+      "type": "integer",
+      "unit": "tick",
+      "value": 36,
+      "default": 36,
+      "min": 1,
+      "max": 598,
+      "step": 1,
+      "section": "Energy: charged bolt",
+      "description": "Energy: charged bolt: ball.durationTicks, corewin.durationTicks",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "energy-bolt-ball",
+          "parameter": "durationTicks"
+        },
+        {
+          "nodeId": "energy-bolt-corewin",
+          "parameter": "durationTicks",
+          "offset": 2
+        }
+      ]
+    },
+    {
+      "id": "ctl-energy-bolt-core",
+      "scopeGraphId": "graph-energy-bolt",
+      "label": "Core size",
+      "type": "number",
+      "unit": "meter",
+      "value": 0.22,
+      "default": 0.22,
+      "min": 0.001,
+      "max": 7.3332600007333255,
+      "section": "Energy: charged bolt",
+      "description": "Energy: charged bolt: core.size, halo.size ×2.7273",
+      "editPolicy": "live",
+      "bindings": [
+        {
+          "nodeId": "energy-bolt-core",
+          "parameter": "size"
+        },
+        {
+          "nodeId": "energy-bolt-halo",
+          "parameter": "size",
+          "scale": 2.7273
+        }
+      ]
+    },
+    {
+      "id": "ctl-energy-bolt-trail",
+      "scopeGraphId": "graph-energy-bolt",
+      "label": "Trail length",
+      "type": "number",
+      "unit": "second",
+      "value": 0.3,
+      "default": 0.3,
+      "min": 0.020833333333333332,
+      "max": 2,
+      "section": "Energy: charged bolt",
+      "description": "Energy: charged bolt: trail.history, sheath.history ×0.8",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "energy-bolt-trail",
+          "parameter": "history"
+        },
+        {
+          "nodeId": "energy-bolt-sheath",
+          "parameter": "history",
+          "scale": 0.8
+        }
+      ]
+    },
+    {
+      "id": "ctl-energy-bolt-width",
+      "scopeGraphId": "graph-energy-bolt",
+      "label": "Trail width",
+      "type": "number",
+      "unit": "meter",
+      "value": 0.08,
+      "default": 0.08,
+      "min": 0.001,
+      "max": 1.923076923076923,
+      "section": "Energy: charged bolt",
+      "description": "Energy: charged bolt: trail.width, sheath.width ×2.6",
+      "editPolicy": "live",
+      "bindings": [
+        {
+          "nodeId": "energy-bolt-trail",
+          "parameter": "width"
+        },
+        {
+          "nodeId": "energy-bolt-sheath",
+          "parameter": "width",
+          "scale": 2.6
+        }
+      ]
+    },
+    {
+      "id": "ctl-energy-bolt-impact",
+      "scopeGraphId": "graph-energy-bolt",
+      "label": "Impact amount",
+      "type": "integer",
+      "unit": "none",
+      "value": 90,
+      "default": 90,
+      "min": 0,
+      "max": 4096,
+      "step": 1,
+      "section": "Energy: charged bolt",
+      "description": "Energy: charged bolt: burst.burst",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "energy-bolt-burst",
+          "parameter": "burst"
+        }
+      ]
+    },
+    {
+      "id": "ctl-energy-bolt-ring",
+      "scopeGraphId": "graph-energy-bolt",
+      "label": "Ring size",
+      "type": "number",
+      "unit": "meter",
+      "value": 2.8,
+      "default": 2.8,
+      "min": 0.001,
+      "max": 50,
+      "section": "Energy: charged bolt",
+      "description": "Energy: charged bolt: ring.radius",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "energy-bolt-ring",
+          "parameter": "radius"
+        }
+      ]
+    },
+    {
+      "id": "ctl-energy-bolt-bend",
+      "scopeGraphId": "graph-energy-bolt",
+      "label": "Arc bend",
+      "type": "number",
+      "unit": "meter",
+      "value": 0.4,
+      "default": 0.4,
+      "min": 0,
+      "max": 2,
+      "section": "Energy: charged bolt",
+      "description": "Energy: charged bolt: arc.startHandle[y] ×1.3333333333333333, arc.endHandle[y] ×1.3333333333333333",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "energy-bolt-arc",
+          "parameter": "startHandle",
+          "scale": 1.3333333333333333,
+          "axis": 1
+        },
+        {
+          "nodeId": "energy-bolt-arc",
+          "parameter": "endHandle",
+          "scale": 1.3333333333333333,
+          "axis": 1
+        }
+      ]
+    },
+    {
+      "id": "ctl-energy-bolt-speed",
+      "scopeGraphId": "graph-energy-bolt",
+      "label": "Speed (0 = use Travel ticks)",
+      "type": "number",
+      "unit": "metersPerSecond",
+      "value": 0,
+      "default": 0,
+      "min": 0,
+      "max": 60,
+      "section": "Energy: charged bolt",
+      "description": "Energy: charged bolt: ball.speed",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "energy-bolt-ball",
+          "parameter": "speed"
+        }
+      ]
+    },
+    {
+      "id": "ctl-energy-bolt-accent",
+      "scopeGraphId": "graph-energy-bolt",
+      "label": "Accent colour",
+      "type": "color",
+      "unit": "none",
+      "value": {
+        "srgb": "#9B6BFF",
+        "alpha": 1
+      },
+      "default": {
+        "srgb": "#9B6BFF",
+        "alpha": 1
+      },
+      "section": "Energy: charged bolt",
+      "description": "Energy: charged bolt: halomat.tint, sheathmat.tint, shedmat.tint, ringmat.tint, burstmat.tint, balllight.color, impactlight.color",
+      "editPolicy": "live",
+      "bindings": [
+        {
+          "nodeId": "energy-bolt-halomat",
+          "parameter": "tint"
+        },
+        {
+          "nodeId": "energy-bolt-sheathmat",
+          "parameter": "tint"
+        },
+        {
+          "nodeId": "energy-bolt-shedmat",
+          "parameter": "tint"
+        },
+        {
+          "nodeId": "energy-bolt-ringmat",
+          "parameter": "tint"
+        },
+        {
+          "nodeId": "energy-bolt-burstmat",
+          "parameter": "tint"
+        },
+        {
+          "nodeId": "energy-bolt-balllight",
+          "parameter": "color"
+        },
+        {
+          "nodeId": "energy-bolt-impactlight",
+          "parameter": "color"
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "editor": {
+    "graphs": {
+      "graph-root": {
+        "nodes": {
+          "node-source": {
+            "x": 0,
+            "y": 0
+          },
+          "node-target": {
+            "x": 0,
+            "y": 160
+          },
+          "node-output": {
+            "x": 1040,
+            "y": 0
+          },
+          "energy-bolt": {
+            "x": -300,
+            "y": 320
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      },
+      "graph-energy-bolt": {
+        "nodes": {
+          "energy-bolt-charge": {
+            "x": 0,
+            "y": 0
+          },
+          "energy-bolt-gather": {
+            "x": 260,
+            "y": 0
+          },
+          "energy-bolt-gatherip": {
+            "x": 520,
+            "y": 0
+          },
+          "energy-bolt-gatherpull": {
+            "x": 780,
+            "y": 0
+          },
+          "energy-bolt-motemat": {
+            "x": 1040,
+            "y": 0
+          },
+          "energy-bolt-gatherbb": {
+            "x": 1300,
+            "y": 0
+          },
+          "energy-bolt-coremat": {
+            "x": 0,
+            "y": 170
+          },
+          "energy-bolt-halomat": {
+            "x": 260,
+            "y": 170
+          },
+          "energy-bolt-chargecore": {
+            "x": 520,
+            "y": 170
+          },
+          "energy-bolt-chargehalo": {
+            "x": 780,
+            "y": 170
+          },
+          "energy-bolt-arc": {
+            "x": 1040,
+            "y": 170
+          },
+          "energy-bolt-flight": {
+            "x": 1300,
+            "y": 170
+          },
+          "energy-bolt-ball": {
+            "x": 0,
+            "y": 340
+          },
+          "energy-bolt-corewin": {
+            "x": 260,
+            "y": 340
+          },
+          "energy-bolt-core": {
+            "x": 520,
+            "y": 340
+          },
+          "energy-bolt-halo": {
+            "x": 780,
+            "y": 340
+          },
+          "energy-bolt-balllight": {
+            "x": 1040,
+            "y": 340
+          },
+          "energy-bolt-trailmat": {
+            "x": 1300,
+            "y": 340
+          },
+          "energy-bolt-trail": {
+            "x": 0,
+            "y": 510
+          },
+          "energy-bolt-sheathmat": {
+            "x": 260,
+            "y": 510
+          },
+          "energy-bolt-sheath": {
+            "x": 520,
+            "y": 510
+          },
+          "energy-bolt-accents": {
+            "x": 780,
+            "y": 510
+          },
+          "energy-bolt-accentip": {
+            "x": 1040,
+            "y": 510
+          },
+          "energy-bolt-accentbb": {
+            "x": 1300,
+            "y": 510
+          },
+          "energy-bolt-shed": {
+            "x": 0,
+            "y": 680
+          },
+          "energy-bolt-shedip": {
+            "x": 260,
+            "y": 680
+          },
+          "energy-bolt-shednoise": {
+            "x": 520,
+            "y": 680
+          },
+          "energy-bolt-sheddrag": {
+            "x": 780,
+            "y": 680
+          },
+          "energy-bolt-shedmat": {
+            "x": 1040,
+            "y": 680
+          },
+          "energy-bolt-shedtrail": {
+            "x": 1300,
+            "y": 680
+          },
+          "energy-bolt-flashwin": {
+            "x": 0,
+            "y": 850
+          },
+          "energy-bolt-ringwin": {
+            "x": 260,
+            "y": 850
+          },
+          "energy-bolt-lightwin": {
+            "x": 520,
+            "y": 850
+          },
+          "energy-bolt-flash": {
+            "x": 780,
+            "y": 850
+          },
+          "energy-bolt-flashglow": {
+            "x": 1040,
+            "y": 850
+          },
+          "energy-bolt-impactlight": {
+            "x": 1300,
+            "y": 850
+          },
+          "energy-bolt-ringclock": {
+            "x": 0,
+            "y": 1020
+          },
+          "energy-bolt-ringsize": {
+            "x": 260,
+            "y": 1020
+          },
+          "energy-bolt-ringdim": {
+            "x": 520,
+            "y": 1020
+          },
+          "energy-bolt-ringfade": {
+            "x": 780,
+            "y": 1020
+          },
+          "energy-bolt-ring": {
+            "x": 1040,
+            "y": 1020
+          },
+          "energy-bolt-ringmat": {
+            "x": 1300,
+            "y": 1020
+          },
+          "energy-bolt-ringrib": {
+            "x": 0,
+            "y": 1190
+          },
+          "energy-bolt-burst": {
+            "x": 260,
+            "y": 1190
+          },
+          "energy-bolt-burstip": {
+            "x": 520,
+            "y": 1190
+          },
+          "energy-bolt-burstdrag": {
+            "x": 780,
+            "y": 1190
+          },
+          "energy-bolt-burstg": {
+            "x": 1040,
+            "y": 1190
+          },
+          "energy-bolt-burstmat": {
+            "x": 1300,
+            "y": 1190
+          },
+          "energy-bolt-burstbb": {
+            "x": 0,
+            "y": 1360
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      }
+    },
+    "openedGraphId": "graph-root"
+  }
+}
