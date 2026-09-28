@@ -9,6 +9,7 @@ import { compilePathPreview } from './graph/toPaths.ts';
 import { choosePreviewMode, hasRootAudio } from './render/previewMode.ts';
 import { PreviewViewport } from './render/PreviewViewport.ts';
 import { registerAssetUrl } from './assets/assetUrls.ts';
+import { glowSettings } from './graph/glow.ts';
 
 const q = new URLSearchParams(location.search);
 const msg = document.getElementById('msg') as HTMLElement;
@@ -45,6 +46,7 @@ async function main(): Promise<void> {
     vp.setPlan(p.value);
   }
   vp.setGlow(q.get('glow') !== '0');
+  vp.setGlowSettings(glowSettings(d));
   vp.setBackground(q.get('bg') === 'light' ? 'light' : 'dark');
   vp.seek(Math.min(tick, d.durationTicks - 1));
   if (q.get('label') === '1') msg.textContent = `${d.name} — tick ${tick}/${d.durationTicks}`;

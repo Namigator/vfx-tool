@@ -394,6 +394,14 @@ export class PreviewViewport {
       this.#composer = new EffectComposer(renderer, target);
       this.#composer.addPass(new RenderPass(this.#scene, this.#camera));
       this.#bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.8, 0.45, 1.0);
+      // Glow limit (A-05): brightness fed into the glow is capped, so hundreds of stacked additive sprites
+      // glow like one bright surface instead of flooding the frame with a halo. 0 = no cap.
+      const hp = this.#bloom.materialHighPassFilter;
+      hp.uniforms.uGlowLimit = { value: 3 };
+      hp.fragmentShader = hp.fragmentShader
+        .replace('uniform float smoothWidth;', 'uniform float smoothWidth;\nuniform float uGlowLimit;')
+        .replace('float v = luminance( texel.xyz );', 'float v = luminance( texel.xyz );\nif ( uGlowLimit > 0.0 && v > uGlowLimit ) { texel.rgb *= uGlowLimit / v; v = uGlowLimit; }');
+      hp.needsUpdate = true;
       this.#composer.addPass(this.#bloom);
       this.#composer.addPass(new OutputPass());
       renderer.domElement.className = 'pv2-canvas';
@@ -1175,6 +1183,13 @@ export class PreviewViewport {
   }
 
   get glow(): boolean { return this.#bloom?.enabled ?? false; }
+  /** The effect's own glow settings (EffectOutput glowStrength / glowRadius / glowThreshold). */
+  setGlowSettings(s: { strength: number; radius: number; threshold: number; limit: number }): void {
+    if (!this.#bloom) return;
+    this.#bloom.strength = s.strength; this.#bloom.radius = s.radius; this.#bloom.threshold = s.threshold;
+    this.#bloom.materialHighPassFilter.uniforms.uGlowLimit.value = s.limit;
+    this.#emitFrame(true);
+  }
 
   #resize(): void {
     if (this.#disposed) return;

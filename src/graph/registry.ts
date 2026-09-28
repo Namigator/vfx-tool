@@ -904,7 +904,14 @@ function effectOutput(): NodeSpec {
       port({ id: 'presentation', label: 'Presentation', type: 'presentation', cardinality: 'many' }),
     ],
     outputs: [],
-    parameters: [],
+    // 08 glow (bloom) of this effect: A-05 gap — many overlapping additive layers bloomed into a halo that
+    // hid the flame shapes and nothing could tame it. Defaults are the 08 values.
+    parameters: [
+      param({ id: 'glowStrength', label: 'Glow strength', type: 'number', unit: 'none', default: 0.8, min: 0, max: 3, editPolicy: 'live', description: 'How strong the bloom halo around bright parts is (0 = no glow).' }),
+      param({ id: 'glowRadius', label: 'Glow radius', type: 'number', unit: 'normalized', default: 0.45, min: 0, max: 1, editPolicy: 'live', description: 'How far the halo spreads (lower = tighter glow hugging the shapes).' }),
+      param({ id: 'glowThreshold', label: 'Glow threshold', type: 'number', unit: 'none', default: 1, min: 0, max: 8, editPolicy: 'live', description: 'Brightness above which things glow.' }),
+      param({ id: 'glowLimit', label: 'Glow limit', type: 'number', unit: 'none', default: 3, min: 0, max: 50, editPolicy: 'live', description: 'Caps how bright any spot counts for the glow, so many overlapping additive sprites do not flood the frame with a halo (0 = no cap; lower = tighter).' }),
+    ],
     disabledBehavior: 'protected',
   });
 }

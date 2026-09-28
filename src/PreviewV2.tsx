@@ -8,6 +8,7 @@ import { validateDocument } from './model/document.ts';
 import { createRegistry } from './graph/registry.ts';
 import { compileParticlePreview, type FollowerTravel } from './graph/toParticles.ts';
 import { truncationWarning } from './graph/truncation.ts';
+import { glowSettings } from './graph/glow.ts';
 import { compilePathPreview } from './graph/toPaths.ts';
 import { createBlankDocument, createF01Document, createForcesDemoDocument } from './graph/fixtures.ts';
 import { TexturePanel } from './editor/TexturePanel.tsx';
@@ -197,6 +198,7 @@ export default function PreviewV2() {
       audioWarnings = a.warnings;
       visualOptions.audioHandled = true;
     }
+    vp?.setGlowSettings(glowSettings(d));
     const choice = choosePreviewMode(d);
     setMode(choice.mode);
     if (choice.mode === 'mixed') {
