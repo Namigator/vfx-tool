@@ -54,7 +54,11 @@ size/triangles/validation directly). MCP user components live in work/mcp/user-c
 - Also done: GLB preview before import (picture, size in metres, triangle count).
 - Also done: Save group as my component (A-05 part 2 [RAN]: insert twice, edit one, other unchanged); MCP parity tools
   (group nodes, user components, undo/redo, list documents, move node, travel + tail warning in compile). 530 tests.
-- Left: sound (parked); user visual review of all families; A-05 model-build test; merge to main after visual OK.
+- A-05 part 1 RUNNING (2026-09-28, user chose option 1): a fresh agent limited to mcp__vfx__* tools (no source, no
+  components) builds the flamethrower from blank; reference frames in work/a05/ref-t*.png (captured from the in-app
+  browser: headless Chrome can't draw that canvas). Output: work/a05/a05.vfx.json + a gap log → each gap becomes a
+  generic node/control, then rerun. Passing needs the user's visual OK.
+- Left: sound (parked); user visual review of all families; merge to main after visual OK.
 - User visual review still pending for every family (they could not test today).
 
 ## Next (as of 2026-09-27 night)
