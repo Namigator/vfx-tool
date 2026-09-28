@@ -795,7 +795,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         let dir: Vec3 = rotate(transform.rotation, pl > 1e-9 ? [pd[0] / pl, pd[1] / pl, pd[2] / pl] : [0, 1, 0]);
         if (aim) { const t = toWorld(aim), v: Vec3 = [t[0] - at[0], t[1] - at[1], t[2] - at[2]], l = Math.hypot(v[0], v[1], v[2]); if (l > 1e-9) dir = [v[0] / l, v[1] / l, v[2] / l]; }
         const width = num(b, 'size') * scale, length = num(b, 'length') * scale;
-        const back = param(b, 'pivot') === 'end' ? length / 2 : 0;
+        const pv = param(b, 'pivot'), back = pv === 'end' ? length / 2 : pv === 'start' ? -length / 2 : 0;
         const d: ParticleEmitterDescriptor = {
           documentSeed: doc.seed, durationTicks: doc.durationTicks, emitterId: pid, randomStreamId: b.node.randomStreamId, shape: 'point',
           sourcePosition: [at[0] - dir[0] * back, at[1] - dir[1] * back, at[2] - dir[2] * back], initialVelocity: { kind: 'vector', value: [0, 0, 0] },

@@ -666,3 +666,13 @@ test('PropMesh without Aim points its length along the Direction parameter', () 
   }));
   assert.deepEqual(p.meshes.find(m => m.nodeId === 'node-bar')!.direction, [0, 0, 1]);
 });
+
+test('PropMesh pivot start: the mesh begins at the anchor and extends along its direction', () => {
+  const p = plan(f01(d => {
+    const g = root(d);
+    g.nodes.push(node('node-pw', 'Schedule', { startTicks: 0, durationTicks: 60, mode: 'window' }), node('node-leg', 'PropMesh', { mesh: 'box', direction: [0, -1, 0], pivot: 'start', length: 1, size: 0.1 }));
+    g.edges.push(edge('e-pa', 'node-source', 'out', 'node-leg', 'anchor'), edge('e-pm', 'node-material', 'material', 'node-leg', 'material'),
+      edge('e-pw', 'node-pw', 'window', 'node-leg', 'window'), edge('e-pv', 'node-leg', 'visual', 'node-output', 'visual', 1));
+  }));
+  assert.deepEqual(p.systems.find(s => s.id === 'node-leg')!.descriptor.sourcePosition.map(v => +v.toFixed(6)), [0, 0.5, 0], 'centre half a metre below the anchor at y 1');
+});

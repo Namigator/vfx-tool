@@ -21,12 +21,12 @@ export const GUIDE: Record<string, string> = {
 - InitialProperties size 0.10-0.16 m (SMALL) + randomFrameStart. Forces: Drag 0.9, NoiseForce curl amplitude ~3.5 freq 0.7, Gravity [0,1.6,0] (heat rises).
 - BillboardRenderer alignment "velocity", stretchRatio ~1.5, pivot 0.3, flipbookMode "overLife"; sizeOverLife [0:1, 0.45:2.6, 1:1.5] (they GROW into each other - that is what makes one continuous mass); opacityOverLife [0:0, 0.06:1, 0.6:0.75, 1:0].
 - Material SpriteTextured, blend additive, opacity ~0.11, emission 0, dissolve 0.85 (dissolveStart 0.45, softness 0.1, edge 0.04, edgeColor #FFB040) so tongues burn away instead of popping.
-- Hot core: a third emitter, cone 0.06, rate ~140/s, speed 9-12, life 0.3-0.5, size 0.10-0.14 growing x4 early, tint #FFF1C8, opacity ~0.3.
+- Hot core: a third emitter, cone 0.06, rate ~140/s, speed 9-12, life 0.3-0.5, size 0.10-0.14 growing x2.5 early, tint #FFF1C8, opacity ~0.15, emission ~0.5. Stacked with the tongues this is already bright: if vfx_render_frames warns about glow flooding, cut core opacity first, then EffectOutput glowLimit ~1.6 / glowThreshold ~1.4 / glowRadius ~0.3.
 - Decay / billows: sprite fire-puff (a fire blob that cools and tears apart over its 16 frames), flipbook overLife.
-- Embers: spark-streak, additive, emission ~1.2, size 0.015-0.035, cone 0.35, speed 3-6, Gravity up [0,1.8,0], NoiseForce curl, optional ParticleTrail (history 0.08 s, width 0.01).
+- Embers: spark-streak, additive, emission ~1.2, size 0.015-0.035, cone 0.35, speed 3-6, Gravity up [0,1.8,0], NoiseForce curl, optional ParticleTrail (history 0.08 s, width 0.01) with its OWN Material, template SpriteUnlit (trails are untextured).
 - Smoke: smoke-puff normal blend, grey #8A8078, rate ~18/s, size 0.2-0.3 growing x4, opacity peak ~0.25, Drag 1.6, Gravity up [0,1.4,0]; keep it going ~1 s after the flame so it lingers.
 - Light: PointLight #FF8A3A intensity ~35 range 6 with flicker 0.3 over the emit window. Ignition: a SpriteRenderer soft-glow flash (6 ticks) + optional ScreenFlash / CameraImpulse.
-- Nozzle: PropMesh cylinder at Source aimed at Target (pivot end) + a second PropMesh for the stand (Direction [0,1,0], pivot end hangs it below).`,
+- Nozzle: PropMesh cylinder at Source aimed at Target (pivot end: the muzzle is at Source, the barrel behind it) + a stand: PropMesh box, Direction [0,-1,0], pivot start (hangs down from the anchor), placed with an OffsetAnchor a little behind the muzzle.`,
 
   smoke: `SMOKE / DUST / CLOUDS
 - smoke-puff flipbook (overLife), blend normal, tint greys/browns, randomFrameStart + random rotation + slow spin (angular velocity +-0.4).
@@ -36,7 +36,7 @@ export const GUIDE: Record<string, string> = {
   sparks: `SPARKS / EMBERS / DEBRIS
 - spark-streak sprite, additive, alignment velocity, stretchRatio 3-6, pivot 0.7-0.8, size 0.015-0.04, emission 0.8-1.5.
 - Burst on an event (impact) or a low rate (20-60/s) during a window; Gravity down for sparks, up for embers; Drag 1-2; GroundCollision bounce restitution 0.3 for impacts.
-- colorOverLife white -> orange -> dark red with alpha 0 at the end. ParticleTrail adds tapered streaks (history 0.08-0.15 s).
+- colorOverLife white -> orange -> dark red with alpha 0 at the end. ParticleTrail adds tapered streaks (history 0.08-0.15 s); it needs a separate SpriteUnlit Material (additive, tinted).
 - Stones/debris: MeshRenderer rock-a/b/c, orientation tumble, lit, rough Material (roughness 0.85).`,
 
   beams: `BEAMS, BOLTS, RINGS (ribbons)
@@ -50,7 +50,7 @@ export const GUIDE: Record<string, string> = {
 - Charge-up before launch: Attract pulls motes inward to an anchor; a SpriteRenderer core grows with sizeOverWindow.`,
 
   props: `PROPS AND MESHES
-- PropMesh: one static mesh (cylinder, box, cone, orb, shard, rock-*, crystal*, or an imported GLB) at an anchor, pointing at Aim (another anchor) or along Direction. Width = size, Length = along the pointing direction. pivot end: the tip sits on the anchor, the body lies behind it.
+- PropMesh: one static mesh (cylinder, box, cone, orb, shard, rock-*, crystal*, or an imported GLB) at an anchor, pointing at Aim (another anchor) or along Direction. Width = size, Length = along the pointing direction. pivot start: the mesh begins at the anchor and extends along the pointing direction (legs, posts); pivot end: it ends at the anchor, body behind (nozzles, barrels); center: centred.
 - OffsetAnchor moves an anchor by a fixed offset (a floor point under the target, a point above a hand...).
 - Lit meshes need light: a PointLight near them; Material roughness/metalness shape the look; rim adds an edge glow.`,
 };
