@@ -99,12 +99,13 @@ export type PointLightLayer = {
 };
 /** 05 MeshRenderer: instanced built-in mesh per particle. */
 export type MeshLayer = {
-  nodeId: string; systemId: string; mesh: 'shard' | 'rock-a' | 'rock-b' | 'rock-c' | 'orb' | 'cone' | 'crystal' | 'crystal-b'; scale: number;
+  nodeId: string; systemId: string; mesh: 'shard' | 'rock-a' | 'rock-b' | 'rock-c' | 'orb' | 'cone' | 'crystal' | 'crystal-b' | 'cylinder' | 'box'; scale: number;
   /** Imported GLB (byte SHA-256) replacing `mesh` when present. */
   meshAsset?: string;
   /** Imported GLB sizing: fitted to ≈1 m, or its real size = file units × importScale meters. */
   meshAssetSize?: { mode: 'fit' | 'real'; importScale: number };
-  orientation: 'tumble' | 'velocity' | 'upright'; lit: boolean;
+  /** fixed: every instance points +Y along `direction` (PropMesh). */
+  orientation: 'tumble' | 'velocity' | 'upright' | 'fixed'; direction?: Vec3; lit: boolean;
   /** Height stretch, pivot and upright lean; lit-material roughness/metalness. */
   scaleY?: number; pivot?: 'center' | 'base'; tilt?: number; roughness?: number; metalness?: number;
   /** 09 rim: fresnel edge emission (strength 0 = off). */
@@ -764,6 +765,56 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
           intensity: num(b, 'intensity'), range: num(b, 'range') * scale, startTick: start, endTick: Math.min(doc.durationTicks, start + num(s, 'durationTicks')),
           intensityOverWindow: structuredClone(curve), flicker: num(b, 'flicker'), flickerRate: num(b, 'flickerRate'),
           seed: sampleUnit({ documentSeed: doc.seed, randomStreamId: b.node.randomStreamId, eventRandomKey: 'light', entityOrdinal: 0, propertyKey: 'flicker', sampleOrdinal: 0 }) * 4294967296 >>> 0,
+        });
+        continue;
+      }
+      if (b.node.type === 'PropMesh') {
+        // A prop is a one-particle system (like a sprite) drawn as one fixed-direction mesh instance.
+        done.add(b.node.id);
+        const pid = b.node.id;
+        noDrivenParams(b, ['anchor', 'aim', 'material', 'window']);
+        const mats = into(pid, 'material');
+        const mat = mats.length === 1 ? sourceNode(mats[0].source, pid, 'material') : undefined;
+        if (!mat || mat.node.type !== 'Material' || !mat.effectiveEnabled) { fail('MISSING_REFERENCE', `Required input "material" of "${pid}" needs an enabled Material.`, pid); }
+        const m = mat as ExpandedNode;
+        const an = into(pid, 'anchor'), anchorNode = an.length === 1 ? sourceNode(an[0].source, pid, 'anchor') : undefined;
+        const ap = anchorNode ? staticAnchor(anchorNode) : undefined;
+        if (!ap) { fail('MISSING_REFERENCE', `PropMesh "${pid}" needs an enabled Anchor referencing an existing document anchor.`, pid); }
+        const am = into(pid, 'aim'), aimNode = am.length === 1 ? sourceNode(am[0].source, pid, 'aim') : undefined;
+        const aim = aimNode ? staticAnchor(aimNode) : undefined;
+        const ws = into(pid, 'window');
+        if (ws.length !== 1) { fail('MISSING_REFERENCE', `PropMesh "${pid}" needs a Schedule window.`, pid); }
+        const s = scheduleOf(ws[0], pid, 'window');
+        if (!s) continue;
+        const start = num(s, 'startTicks'), len = Math.max(1, Math.min(num(s, 'durationTicks'), doc.durationTicks - start));
+        if (start >= doc.durationTicks) continue;
+        const scale = transform.scale, a = ap as Vec3, off = param(b, 'offset') as Vec3;
+        const toWorld = (v: Vec3): Vec3 => { const r = rotate(transform.rotation, [v[0] * scale, v[1] * scale, v[2] * scale]); return [r[0] + transform.position[0], r[1] + transform.position[1], r[2] + transform.position[2]]; };
+        const at = toWorld([a[0] + off[0], a[1] + off[1], a[2] + off[2]]);
+        let dir: Vec3 = rotate(transform.rotation, [0, 1, 0]);
+        if (aim) { const t = toWorld(aim), v: Vec3 = [t[0] - at[0], t[1] - at[1], t[2] - at[2]], l = Math.hypot(v[0], v[1], v[2]); if (l > 1e-9) dir = [v[0] / l, v[1] / l, v[2] / l]; }
+        const width = num(b, 'size') * scale, length = num(b, 'length') * scale;
+        const back = param(b, 'pivot') === 'end' ? length / 2 : 0;
+        const d: ParticleEmitterDescriptor = {
+          documentSeed: doc.seed, durationTicks: doc.durationTicks, emitterId: pid, randomStreamId: b.node.randomStreamId, shape: 'point',
+          sourcePosition: [at[0] - dir[0] * back, at[1] - dir[1] * back, at[2] - dir[2] * back], initialVelocity: { kind: 'vector', value: [0, 0, 0] },
+          bursts: [{ tick: start, eventRandomKey: scheduleEventRandomKey(s.node.randomStreamId, start, 0), count: 1 }],
+          lifetimeTicks: { min: len, max: len }, size: { min: width, max: width }, operators: [],
+        };
+        const v = validateParticleDescriptor(d);
+        if (!v.ok) { errors.push(...v.errors.map(e => ({ ...e, nodeId: pid }))); continue; }
+        systems.push({ id: pid, descriptor: v.value });
+        const ma = param(b, 'meshAsset') as string;
+        const imported = ma ? doc.assets.find(x => x.id === ma) : undefined;
+        if (ma && (!imported || imported.kind !== 'mesh')) report('MISSING_REFERENCE', `Mesh asset "${ma}" is not an imported mesh of this document.`, pid, 'meshAsset');
+        const flat = { domain: 'normalized' as const, interpolation: 'linear' as const, keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] };
+        meshes.push({
+          ...(imported?.kind === 'mesh' ? { meshAsset: imported.sha256, meshAssetSize: { mode: param(b, 'importedSize') as 'fit' | 'real', importScale: imported.interpretation.mesh?.importScale ?? 1 } } : {}),
+          nodeId: pid, systemId: pid, mesh: param(b, 'mesh') as MeshLayer['mesh'], scale: 1, orientation: 'fixed', direction: dir,
+          scaleY: length / width, pivot: 'center', tilt: 0, roughness: num(m, 'roughness'), metalness: num(m, 'metalness'),
+          ...(num(m, 'rim') > 0 ? { rim: { strength: num(m, 'rim'), color: structuredClone(param(m, 'rimColor') as ColorValue), power: num(m, 'rimPower') } } : {}),
+          lit: param(b, 'lit') === true, color: param(m, 'tint') as ColorValue, opacity: num(m, 'opacity'), emission: num(m, 'emission'), blend: param(m, 'blend') as MeshLayer['blend'],
+          sizeOverLife: flat, colorOverLife: { stops: [{ position: 0, color: { srgb: '#FFFFFF', alpha: 1 } }, { position: 1, color: { srgb: '#FFFFFF', alpha: 1 } }] }, renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
         });
         continue;
       }

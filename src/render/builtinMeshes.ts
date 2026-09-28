@@ -3,7 +3,7 @@
 // velocity orientation. Created once per viewport and shared by every MeshRenderer layer.
 import * as THREE from 'three';
 
-export const BUILTIN_MESHES = ['shard', 'rock-a', 'rock-b', 'rock-c', 'orb', 'cone', 'crystal', 'crystal-b'] as const;
+export const BUILTIN_MESHES = ['shard', 'rock-a', 'rock-b', 'rock-c', 'orb', 'cone', 'crystal', 'crystal-b', 'cylinder', 'box'] as const;
 export type BuiltinMesh = typeof BUILTIN_MESHES[number];
 
 function rng(seed: number): () => number {
@@ -31,6 +31,8 @@ export function createBuiltinMesh(kind: BuiltinMesh): THREE.BufferGeometry {
     case 'rock-b': return jitter(new THREE.DodecahedronGeometry(0.5, 0).toNonIndexed(), 31, 0.2, new THREE.Vector3(1.1, 0.7, 0.85));
     case 'rock-c': return jitter(new THREE.IcosahedronGeometry(0.5, 0).toNonIndexed(), 41, 0.3, new THREE.Vector3(0.9, 0.8, 1.1));
     case 'orb': return new THREE.SphereGeometry(0.5, 24, 16);
+    case 'cylinder': return new THREE.CylinderGeometry(0.5, 0.5, 1, 20);
+    case 'box': return new THREE.BoxGeometry(1, 1, 1);
     case 'cone': return new THREE.ConeGeometry(0.35, 1, 16);
     // Faceted ice crystals: a column with a pointed tip (hexagonal / square), jittered so no two faces match.
     case 'crystal': return jitter(new THREE.LatheGeometry([new THREE.Vector2(0.26, -0.5), new THREE.Vector2(0.3, 0.12), new THREE.Vector2(0.001, 0.5)], 6).toNonIndexed(), 51, 0.12, new THREE.Vector3(1, 1, 0.85));

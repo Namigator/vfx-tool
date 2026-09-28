@@ -640,3 +640,19 @@ test('PublicParameter reads a root numeric control as a value; unit and scope ar
   assert.ok(errorsOf(compileParticlePreview(withPP('missing'))).some(e => e.code === 'MISSING_REFERENCE'));
   assert.ok(errorsOf(compileParticlePreview(withPP('ctl-count', 'meter'))).some(e => e.code === 'TYPE_MISMATCH'), 'meter control into unitless burst');
 });
+
+test('PropMesh: one fixed mesh at its anchor, +Y aimed at the aim anchor, ending at the anchor (pivot end)', () => {
+  const p = plan(f01(d => {
+    const g = root(d);
+    d.anchors.find(a => a.id === 'target')!.position = [4, 1, 0];
+    g.nodes.push(node('node-pw', 'Schedule', { startTicks: 0, durationTicks: 60, mode: 'window' }), node('node-prop', 'PropMesh', { mesh: 'cylinder', size: 0.1, length: 0.8 }));
+    g.edges.push(edge('e-pa', 'node-source', 'out', 'node-prop', 'anchor'), edge('e-pt', 'node-target', 'out', 'node-prop', 'aim'), edge('e-pm', 'node-material', 'material', 'node-prop', 'material'),
+      edge('e-pw', 'node-pw', 'window', 'node-prop', 'window'), edge('e-pv', 'node-prop', 'visual', 'node-output', 'visual', 1));
+  }));
+  const layer = p.meshes.find(m => m.nodeId === 'node-prop')!;
+  assert.equal(layer.orientation, 'fixed');
+  assert.deepEqual(layer.direction!.map(v => +v.toFixed(6)), [1, 0, 0]);
+  assert.equal(layer.scaleY, 8);
+  const sys = p.systems.find(s => s.id === 'node-prop')!.descriptor;
+  assert.deepEqual(sys.sourcePosition.map(v => +v.toFixed(6)), [-0.4, 1, 0], 'centre sits half a length behind the anchor');
+});

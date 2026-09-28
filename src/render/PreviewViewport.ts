@@ -976,7 +976,10 @@ export class PreviewViewport {
       for (let i = 0; i < n; i++) {
         const pt = ps[i], u = lifeFraction(pt.ageTicks, pt.lifetimeTicks, alpha), h = fnv1a32Utf8(pt.parentRandomKey);
         p.set(pt.position[0] + pt.velocity[0] * step, pt.position[1] + pt.velocity[1] * step, pt.position[2] + pt.velocity[2] * step);
-        if (m.layer.orientation === 'upright') {
+        if (m.layer.orientation === 'fixed') {
+          const dv = m.layer.direction ?? [0, 1, 0];
+          q.setFromUnitVectors(up, axis.set(dv[0], dv[1], dv[2]));
+        } else if (m.layer.orientation === 'upright') {
           // +Y up with a deterministic random yaw and a lean of up to `tilt` toward a random horizontal direction.
           const yaw = (h & 1023) / 1023 * Math.PI * 2, lean = ((h >>> 10) & 1023) / 1023 * (m.layer.tilt ?? 0.2), dir = ((h >>> 20) & 1023) / 1023 * Math.PI * 2;
           q.setFromAxisAngle(axis.set(Math.cos(dir), 0, Math.sin(dir)), lean).multiply(qYaw.setFromAxisAngle(up, yaw));

@@ -326,6 +326,34 @@ function groundCollision(): NodeSpec {
   });
 }
 
+/**
+ * PropMesh (A-05 gap: "no nozzle/prop"): one static mesh at an anchor over a window — a nozzle, staff, pedestal.
+ * Its +Y axis points at `aim` when connected (the mesh's length runs along Y), otherwise stays upright.
+ */
+function propMesh(): NodeSpec {
+  return node('PropMesh', {
+    inputs: [
+      port({ id: 'anchor', label: 'Anchor', type: 'anchor', required: true }),
+      port({ id: 'aim', label: 'Aim at', type: 'anchor' }),
+      port({ id: 'material', label: 'Material', type: 'material', required: true }),
+      port({ id: 'window', label: 'Window', type: 'timeWindow', required: true }),
+    ],
+    outputs: [port({ id: 'visual', label: 'Visual', type: 'visual' })],
+    parameters: [
+      param({ id: 'mesh', label: 'Mesh', type: 'enum', unit: 'none', default: 'cylinder', choices: ['shard', 'rock-a', 'rock-b', 'rock-c', 'orb', 'cone', 'crystal', 'crystal-b', 'cylinder', 'box'], description: 'Included mesh, ≈1 m, length along its +Y axis.' }),
+      param({ id: 'meshAsset', label: 'Mesh asset', type: 'string', unit: 'none', default: '', description: 'Imported GLB asset ID; replaces Mesh.' }),
+      param({ id: 'importedSize', label: 'Imported size', type: 'enum', unit: 'none', default: 'fit', choices: ['fit', 'real'] }),
+      param({ id: 'size', label: 'Width', type: 'number', unit: 'meter', default: 0.12, min: 0.001, max: 20, editPolicy: 'live' }),
+      param({ id: 'length', label: 'Length', type: 'number', unit: 'meter', default: 0.6, min: 0.001, max: 50, editPolicy: 'live', description: 'Size along the aim direction (+Y).' }),
+      param({ id: 'offset', label: 'Offset', type: 'vec3', unit: 'meter', default: [0, 0, 0], min: -50, max: 50, editPolicy: 'live', description: 'Shift from the anchor in world meters (e.g. put the nozzle behind the flame start).' }),
+      param({ id: 'pivot', label: 'Pivot', type: 'enum', unit: 'none', default: 'end', choices: ['center', 'end'], description: 'end: the mesh ends at the anchor and extends backwards from the aim direction (a nozzle behind its muzzle); center: centred on the anchor.' }),
+      param({ id: 'lit', label: 'Lit', type: 'boolean', unit: 'none', default: true }),
+      param({ id: 'renderOrderOffset', label: 'Render order offset', type: 'integer', unit: 'none', default: 0, min: -32, max: 32, step: 1, editPolicy: 'live' }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
 function spriteRenderer(): NodeSpec {
   const flat = () => ({ domain: 'normalized' as const, interpolation: 'linear' as const, keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] });
   return node('SpriteRenderer', {
@@ -396,7 +424,7 @@ function meshRenderer(): NodeSpec {
     parameters: [
       param({ id: 'meshAsset', label: 'Mesh asset', type: 'string', unit: 'none', default: '', description: 'Imported GLB asset ID (Import 3D model…); when set it replaces Mesh. See Imported size.' }),
       param({ id: 'importedSize', label: 'Imported size', type: 'enum', unit: 'none', default: 'fit', choices: ['fit', 'real'], description: 'fit: the imported model is fitted to ≈1 m like the included meshes. real: its true size (file units × the import scale chosen at import) in meters. Particle size × Scale multiplies either.' }),
-      param({ id: 'mesh', label: 'Mesh', type: 'enum', unit: 'none', default: 'rock-a', choices: ['shard', 'rock-a', 'rock-b', 'rock-c', 'orb', 'cone', 'crystal', 'crystal-b'], description: 'Included procedural mesh (≈1 m across, scaled by particle size × Scale).' }),
+      param({ id: 'mesh', label: 'Mesh', type: 'enum', unit: 'none', default: 'rock-a', choices: ['shard', 'rock-a', 'rock-b', 'rock-c', 'orb', 'cone', 'crystal', 'crystal-b', 'cylinder', 'box'], description: 'Included procedural mesh (≈1 m across, scaled by particle size × Scale).' }),
       param({ id: 'scale', label: 'Scale', type: 'number', unit: 'none', default: 1, min: 0.01, max: 20, editPolicy: 'live' }),
       param({ id: 'scaleY', label: 'Height scale', type: 'number', unit: 'none', default: 1, min: 0.05, max: 20, editPolicy: 'live', description: 'Extra stretch along the mesh +Y (tall shards: height independent of width).' }),
       param({ id: 'pivot', label: 'Pivot', type: 'enum', unit: 'none', default: 'center', choices: ['center', 'base'], editPolicy: 'live', description: 'base: the mesh grows up from the particle position (grounded shards).' }),
@@ -939,7 +967,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 /** Fresh, independent registry each call. */
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
-    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), constantNode(), scalarMath(), publicParameter(), offsetAnchor(), eventDelay(), mergeEvents(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
+    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), constantNode(), scalarMath(), publicParameter(), offsetAnchor(), eventDelay(), mergeEvents(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), propMesh(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
     linePath(), bezierPath(), helixPathNode(), pathTransformNode(), mergePathsNode(), particlePathsNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(), oscillator(), timeNode(),
     audioSource(), audioEnvelope(), audioFilter(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),
