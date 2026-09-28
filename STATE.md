@@ -85,6 +85,10 @@ size/triangles/validation directly). MCP user components live in work/mcp/user-c
 - 2026-09-29: "Fire: flamethrower" component (49 components; knobs jet length, width, density, smoke, embers, burn
   time), tuned to look right under DEFAULT glow (components cannot carry EffectOutput glow). A-05 run 6 launched
   (doc a05f, reference camera, updated fire guide). Codex desktop app is running again (not ours) - watch for edits.
+- A-05 run 6 [SAW]: burn matches the reference and my hand build (continuous, cooling, billowing); decay smoke faint,
+  nozzle too bright. Guide fixed (Drag for event-born particles, nozzle material). Agent noted the fire guide makes
+  flamethrower a transcription -> the free-form test must use a DIFFERENT reference next (no guide recipe for it).
+  Awaiting user's visual verdict on run 6.
 - Commit gate is now `bash tools/gate.sh && git commit ...` (tsc + fresh test log; a stale-log slip committed a broken
   file once, fixed in 03fcb35).
 - Left: sound (parked); user visual review of all families; merge to main after visual OK.
