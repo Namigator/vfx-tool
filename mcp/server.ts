@@ -18,6 +18,9 @@ import { insertUserComponent, saveGroupAsComponent, type UserComponent } from '.
 import { truncationWarning } from '../src/graph/truncation.ts';
 import { describeFrameStats, pngFrameStats } from './frameStats.ts';
 import { guideText } from './guide.ts';
+import { convertLegacyRecipe, formatMigrationReport } from '../src/model/migrate.ts';
+import { createRecipe, parseRecipe } from '../src/core/recipe.ts';
+import { FAMILIES } from '../src/core/types.ts';
 import { createL01AudioDocument } from '../src/graph/audioFixtures.ts';
 import { compileParticlePreview } from '../src/graph/toParticles.ts';
 import { compilePathPreview } from '../src/graph/toPaths.ts';
@@ -100,6 +103,21 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
   });
 
   tool('vfx_guide', 'Authoring know-how per topic (basics, glow, fire, smoke, sparks, beams, projectile, props): proven parameter ranges and layer recipes from the built-in effects. Read "basics" and "glow" before building; read the element topic you are making.', { topic: z.string().optional() }, ({ topic }) => ok(guideText(topic)));
+
+  tool('vfx_convert_legacy', 'Convert an old (v1) effect into a NEW editable graph document (the v1 file is never changed), like the editor Legacy v1 > Convert a copy. Give a v1 recipe/bundle JSON path, or a family name for its v1 default. Returns the conversion report.', {
+    path: z.string().optional(), family: z.enum(FAMILIES).optional(), docId: z.string().regex(ID).optional(),
+  }, ({ path, family, docId }) => {
+    if (!path === !family) return bad('Give exactly one of path or family.');
+    const recipe = path ? parseRecipe(readFileSync(safeProjectPath(path), 'utf8')) : createRecipe(family!);
+    const { doc, report } = convertLegacyRecipe(recipe);
+    if (docId) doc.id = docId;
+    const v = validateDocument(doc, { registry });
+    if (!v.ok) return bad(`Conversion produced an invalid document:
+${fmtErrors(v.errors)}`);
+    docs.set(v.value.id, v.value); persist(v.value);
+    return ok(`Created "${v.value.id}". Mirror: work/mcp/${v.value.id}.json
+${formatMigrationReport(report)}`);
+  });
 
   // ---------- documents ----------
   tool('vfx_new_document', `Create an in-memory document from a template (${TEMPLATES.join(', ')}). "blank" has Source/Target anchors and an EffectOutput only.`,

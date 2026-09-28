@@ -2,13 +2,16 @@
 // graph document with a controlled graph canvas below it. DocumentHistory owns the authoritative document;
 // React holds an owned snapshot of it plus diagnostics and tick. Particle state lives in the viewport, never
 // in React state. Only semantic changes recompile, so moving nodes does not reset the simulation.
-import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import type { Diagnostic, EffectDocumentV2 } from './model/types.ts';
 import { validateDocument } from './model/document.ts';
 import { createRegistry } from './graph/registry.ts';
 import { compileParticlePreview, type FollowerTravel } from './graph/toParticles.ts';
 import { truncationWarning } from './graph/truncation.ts';
 import { glowSettings } from './graph/glow.ts';
+import { convertLegacyRecipe, formatMigrationReport } from './model/migrate.ts';
+import { createRecipe, parseRecipe, validateRecipe } from './core/recipe.ts';
+import { FAMILIES, type Recipe } from './core/types.ts';
 import { compilePathPreview } from './graph/toPaths.ts';
 import { createBlankDocument, createF01Document, createForcesDemoDocument } from './graph/fixtures.ts';
 import { TexturePanel } from './editor/TexturePanel.tsx';
@@ -376,6 +379,14 @@ export default function PreviewV2() {
   const [shelfPick, setShelfPick] = useState('');
   const [trash, setTrash] = useState<TrashEntry[]>(() => readTrash(typeof localStorage === 'undefined' ? undefined : localStorage));
   const [trashPick, setTrashPick] = useState('');
+  // 14-MIGRATION: v1 presets (read-only, never modified) and the ten v1 defaults can be converted into a NEW graph copy.
+  const legacy = useMemo<Recipe[]>(() => {
+    const own: Recipe[] = [];
+    try { const raw = JSON.parse(localStorage.getItem('vfx-studio-presets-v1') ?? '[]'); if (Array.isArray(raw)) for (const x of raw.slice(0, 50)) { try { own.push(validateRecipe(x)); } catch { /* skip unreadable */ } } } catch { /* none */ }
+    return [...own, ...FAMILIES.map(f => createRecipe(f))];
+  }, []);
+  const [legacyPick, setLegacyPick] = useState('');
+  const [migrationReport, setMigrationReport] = useState('');
   // Projects and trash live in IndexedDB once it opens (localStorage until then, and as the fallback).
   const projectsRef = useRef<DraftStorage>(typeof localStorage === 'undefined' ? { getItem: () => null, setItem: () => {} } : localStorage);
   useEffect(() => {
@@ -493,6 +504,14 @@ export default function PreviewV2() {
     publish(true);
     return true;
   }, [publish]);
+  /** 14-MIGRATION "Convert to editable graph": a new document from a v1 recipe plus a visible conversion report. */
+  const convertLegacy = useCallback((recipe: Recipe) => {
+    const { doc: converted, report } = convertLegacyRecipe(recipe);
+    if (replace(toText(converted), `Convert v1 "${recipe.name}"`)) {
+      setMigrationReport(formatMigrationReport(report));
+      setFileNote(`Converted a copy of v1 "${recipe.name}" (the original is unchanged)`);
+    }
+  }, [replace]);
   replaceRef.current = replace;
 
   // Viewport lifetime; dispose is idempotent so StrictMode double-mount is safe.
@@ -630,7 +649,13 @@ export default function PreviewV2() {
         <div className="pv2-history" role="group" aria-label="File">
           <button type="button" onClick={() => { setShelfPick(''); replace(toText(createBlankDocument()), 'New blank effect'); }} title="Start a new blank effect (clears undo history — Keep or Save first)">New</button>
           <button type="button" onClick={() => openInputRef.current?.click()} title="Open a .vfx.json document or a .vfxpack">Open…</button>
-          <input ref={openInputRef} type="file" accept=".json,application/json,.vfxpack" hidden onChange={e => { const f = e.currentTarget.files?.[0]; e.currentTarget.value = ''; if (!f) return; if (f.name.endsWith('.vfxpack')) void openPack(f); else void f.text().then(t => replace(t, `Open ${f.name}`)); }} />
+          <input ref={openInputRef} type="file" accept=".json,application/json,.vfxpack" hidden onChange={e => { const f = e.currentTarget.files?.[0]; e.currentTarget.value = ''; if (!f) return; if (f.name.endsWith('.vfxpack')) void openPack(f); else void f.text().then(t => {
+            // A v1 recipe or v1 bundle is never opened as v2: offer an explicit converted copy instead.
+            let legacyRecipe: Recipe | null = null;
+            try { const j = JSON.parse(t); if (j && (j.schemaVersion === 1 || j.format === 'vfx-studio-bundle')) legacyRecipe = parseRecipe(t); } catch { /* not v1 */ }
+            if (legacyRecipe) { if (window.confirm(`"${f.name}" is a v1 effect. Convert a copy into an editable graph? The file is not changed.`)) convertLegacy(legacyRecipe); return; }
+            replace(t, `Open ${f.name}`);
+          }); }} />
           <button type="button" onClick={downloadDocument} title="Download this effect as a .vfx.json file (recipe only; imported asset bytes not included)">Save .json</button>
           <button type="button" onClick={() => void downloadPack()} title="Download a portable .vfxpack: the effect plus its imported asset bytes and checksums">Export pack</button>
           <button type="button" onClick={keepProject} title="Keep a copy of this effect in the local project shelf (same name replaces)">Keep</button>
@@ -647,6 +672,11 @@ export default function PreviewV2() {
             <button type="button" disabled={!trashPick} onClick={() => { const r = restoreFromTrash(projectsRef.current, trashPick); if (r.ok) { setShelf(r.shelf); setTrash(r.trash); setFileNote(`Restored "${trashPick}" to projects`); setTrashPick(''); } else setFileNote(r.message); }} title="Put the chosen project back in Projects">Restore</button>
             <button type="button" onClick={() => { if (window.confirm(`Permanently delete ${trash.length} project(s) in the trash?`)) { emptyTrash(projectsRef.current); setTrash([]); setTrashPick(''); setFileNote('Trash emptied'); } }} title="Permanently delete everything in the trash">Empty trash</button>
           </>}
+          <select aria-label="Legacy v1 effects" value={legacyPick} onChange={e => setLegacyPick(e.currentTarget.value)} title="Effects from the old (v1) editor: your saved presets and the ten originals. Converting makes a new graph copy; the original is never changed.">
+            <option value="">Legacy v1 ({legacy.length})…</option>
+            {legacy.map((r, i) => <option key={i} value={String(i)}>{r.name}</option>)}
+          </select>
+          <button type="button" disabled={legacyPick === ''} onClick={() => { const r = legacy[Number(legacyPick)]; if (r) convertLegacy(r); setLegacyPick(''); }} title="Build an editable graph copy of the chosen v1 effect and show what was converted">Convert a copy</button>
           <span className="pv2-note" role="status" aria-live="polite">{saveStatus}</span>
           {stale && (
             <span className="pv2-stale" role="alert">
@@ -656,6 +686,13 @@ export default function PreviewV2() {
             </span>
           )}
           {fileNote && <span className="pv2-note" role="status" aria-live="polite">{fileNote}</span>}
+          {migrationReport && (
+            <details className="pv2-report" open>
+              <summary>Conversion report</summary>
+              <pre>{migrationReport}</pre>
+              <button type="button" onClick={() => setMigrationReport('')}>Close</button>
+            </details>
+          )}
         </div>
         <div className="pv2-history" role="group" aria-label="History">
           <button type="button" disabled={!historyFlags.canUndo} onClick={undo} title="Undo (Ctrl/Cmd+Z)">Undo</button>

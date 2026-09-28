@@ -25281,6 +25281,21 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      {
       "node": "stonescip",
       "parameter": "sizeMax"
+     },
+     {
+      "node": "stonesaip",
+      "parameter": "sizeMin",
+      "scale": 0.36
+     },
+     {
+      "node": "stonesbip",
+      "parameter": "sizeMin",
+      "scale": 0.36
+     },
+     {
+      "node": "stonescip",
+      "parameter": "sizeMin",
+      "scale": 0.36
      }
     ]
    },
@@ -25305,6 +25320,26 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       "node": "chips",
       "parameter": "speedMax",
       "scale": 1.2
+     },
+     {
+      "node": "stonesa",
+      "parameter": "speedMin",
+      "scale": 0.4
+     },
+     {
+      "node": "stonesb",
+      "parameter": "speedMin",
+      "scale": 0.4
+     },
+     {
+      "node": "stonesc",
+      "parameter": "speedMin",
+      "scale": 0.4
+     },
+     {
+      "node": "chips",
+      "parameter": "speedMin",
+      "scale": 0.4
      }
     ]
    },
@@ -26329,6 +26364,21 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      {
       "node": "stonescip",
       "parameter": "sizeMax"
+     },
+     {
+      "node": "stonesaip",
+      "parameter": "sizeMin",
+      "scale": 0.5
+     },
+     {
+      "node": "stonesbip",
+      "parameter": "sizeMin",
+      "scale": 0.5
+     },
+     {
+      "node": "stonescip",
+      "parameter": "sizeMin",
+      "scale": 0.5
      }
     ]
    },
@@ -26353,6 +26403,26 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       "node": "chips",
       "parameter": "speedMax",
       "scale": 1.2
+     },
+     {
+      "node": "stonesa",
+      "parameter": "speedMin",
+      "scale": 0.4688
+     },
+     {
+      "node": "stonesb",
+      "parameter": "speedMin",
+      "scale": 0.4688
+     },
+     {
+      "node": "stonesc",
+      "parameter": "speedMin",
+      "scale": 0.4688
+     },
+     {
+      "node": "chips",
+      "parameter": "speedMin",
+      "scale": 0.4688
      }
     ]
    },
@@ -27377,6 +27447,21 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      {
       "node": "stonescip",
       "parameter": "sizeMax"
+     },
+     {
+      "node": "stonesaip",
+      "parameter": "sizeMin",
+      "scale": 0.48
+     },
+     {
+      "node": "stonesbip",
+      "parameter": "sizeMin",
+      "scale": 0.48
+     },
+     {
+      "node": "stonescip",
+      "parameter": "sizeMin",
+      "scale": 0.48
      }
     ]
    },
@@ -27401,6 +27486,26 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       "node": "chips",
       "parameter": "speedMax",
       "scale": 1.2
+     },
+     {
+      "node": "stonesa",
+      "parameter": "speedMin",
+      "scale": 0.5
+     },
+     {
+      "node": "stonesb",
+      "parameter": "speedMin",
+      "scale": 0.5
+     },
+     {
+      "node": "stonesc",
+      "parameter": "speedMin",
+      "scale": 0.5
+     },
+     {
+      "node": "chips",
+      "parameter": "speedMin",
+      "scale": 0.5
      }
     ]
    },

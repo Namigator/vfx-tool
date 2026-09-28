@@ -169,3 +169,20 @@ test('MCP: vfx_guide lists topics and returns a recipe', async () => {
   assert.match((await call('vfx_guide', { topic: 'fire' })).text, /flame-tongue-a/);
   assert.match((await call('vfx_guide', { topic: 'nope' })).text, /Unknown topic/);
 });
+
+test('MCP: vfx_convert_legacy converts a v1 default or a v1 file into a new graph document with a report', async () => {
+  const { root, call } = await connect();
+  const { mkdirSync, writeFileSync } = await import('node:fs');
+  const { createRecipe } = await import('../src/core/recipe.ts');
+  const r = await call('vfx_convert_legacy', { family: 'energy', docId: 'legacyenergy' });
+  assert.equal(r.error, false, r.text);
+  assert.match(r.text, /Converted v1 energy/);
+  assert.match((await call('vfx_compile', { docId: 'legacyenergy' })).text, /particles OK/);
+  mkdirSync(join(root, 'in'), { recursive: true });
+  const recipe = createRecipe('ice'); recipe.parameters.count = 14;
+  writeFileSync(join(root, 'in/old.json'), JSON.stringify(recipe));
+  const f = await call('vfx_convert_legacy', { path: 'in/old.json' });
+  assert.equal(f.error, false, f.text);
+  assert.match(f.text, /count: 14 → mapped/);
+  assert.equal((await call('vfx_convert_legacy', {})).error, true);
+});
