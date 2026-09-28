@@ -5,7 +5,8 @@
 // and only added on confirm.
 import { useRef, useState } from 'react';
 import { createTextureAsset } from '../assets/importTexture.ts';
-import { createMeshAsset } from '../assets/importMesh.ts';
+import { createMeshAsset, inspectGlb, type GlbSummary } from '../assets/importMesh.ts';
+import { previewGlb, type ModelPreview } from './modelPreview.ts';
 import { registerAssetUrl } from '../assets/assetUrls.ts';
 import { putAssetBytes } from '../model/assetStore.ts';
 import type { EffectDocumentV2 } from '../model/types.ts';
@@ -29,6 +30,17 @@ export function TexturePanel({ document: doc, graphId, selectedNodeId, onEdit }:
   /** Image chosen but not yet added: previewed with the cell grid so role/grid can be checked first. */
   const [pending, setPending] = useState<{ file: File; url: string; size?: [number, number] } | null>(null);
   const clearPending = () => { if (pending) URL.revokeObjectURL(pending.url); setPending(null); };
+  /** GLB chosen but not yet added: checked against the import rules, measured and pictured first. */
+  const [pendingModel, setPendingModel] = useState<{ file: File; summary: GlbSummary; preview?: ModelPreview; error?: string } | null>(null);
+  const chooseModel = async (f: File) => {
+    const bytes = new Uint8Array(await f.arrayBuffer());
+    const v = inspectGlb(bytes);
+    if (!v.ok) { setPendingModel(null); setStatus(`Import failed: ${v.message}`); return; }
+    setStatus('');
+    setPendingModel({ file: f, summary: v.value });
+    try { const preview = await previewGlb(bytes); setPendingModel(p => p && p.file === f ? { ...p, preview } : p); }
+    catch (e) { setPendingModel(p => p && p.file === f ? { ...p, error: e instanceof Error ? e.message : String(e) } : p); }
+  };
   const textures = doc.assets.filter(a => a.kind === 'texture' || a.kind === 'flipbook');
   const gi = doc.graphs.findIndex(g => g.id === graphId);
   const ni = gi < 0 || !selectedNodeId ? -1 : doc.graphs[gi].nodes.findIndex(n => n.id === selectedNodeId);
@@ -88,7 +100,7 @@ export function TexturePanel({ document: doc, graphId, selectedNodeId, onEdit }:
         <label title="File units → meters, used when a MeshRenderer's Imported size is 'real' (0.01 for a model made in centimetres)">Model scale <input type="number" min={0.001} max={1000} step="any" value={meshScale} aria-label="Model import scale"
           onChange={e => { const v = Number(e.currentTarget.value); if (v > 0 && v <= 1000) setMeshScale(v); }} /></label>
         <button type="button" onClick={() => meshRef.current?.click()} title="Self-contained .glb (glTF 2.0), up to 20 MiB and 50k triangles; no animation">Import 3D model…</button>
-        <input ref={meshRef} type="file" accept=".glb,model/gltf-binary" hidden onChange={e => { const f = e.currentTarget.files?.[0]; e.currentTarget.value = ''; if (f) void importModel(f); }} />
+        <input ref={meshRef} type="file" accept=".glb,model/gltf-binary" hidden onChange={e => { const f = e.currentTarget.files?.[0]; e.currentTarget.value = ''; if (f) void chooseModel(f); }} />
       </div>
       {pending && (
         <div className="tp-preview" aria-label="Texture preview">
@@ -107,6 +119,22 @@ export function TexturePanel({ document: doc, graphId, selectedNodeId, onEdit }:
             <span>
               <button type="button" onClick={() => { const f = pending.file; clearPending(); void importFile(f); }}>Add texture</button>
               <button type="button" onClick={clearPending}>Cancel</button>
+            </span>
+          </div>
+        </div>
+      )}
+      {pendingModel && (
+        <div className="tp-preview" aria-label="Model preview">
+          <div className="tp-frame">{pendingModel.preview ? <img src={pendingModel.preview.thumbnail} alt={`Preview of ${pendingModel.file.name}`} /> : <span className="pv2-muted">{pendingModel.error ? 'No picture' : 'Rendering…'}</span>}</div>
+          <div className="tp-preview-info">
+            <strong>{pendingModel.file.name}</strong>
+            <span>{pendingModel.summary.triangles} triangles · {pendingModel.summary.meshes} mesh(es) · {pendingModel.summary.materials} material(s)</span>
+            {pendingModel.preview && (() => { const [x, y, z] = pendingModel.preview.size, m = (v: number) => (v * meshScale).toFixed(v * meshScale < 1 ? 3 : 2);
+              return <span>Size {x.toFixed(2)} × {y.toFixed(2)} × {z.toFixed(2)} file units = {m(x)} × {m(y)} × {m(z)} m at Model scale {meshScale} (used when a MeshRenderer's Imported size is "real"; "fit" makes it ≈1 m).</span>; })()}
+            {pendingModel.error && <span className="pv2-muted">Could not picture it ({pendingModel.error}); it passed the import checks.</span>}
+            <span>
+              <button type="button" onClick={() => { const f = pendingModel.file; setPendingModel(null); void importModel(f); }}>Add model</button>
+              <button type="button" onClick={() => setPendingModel(null)}>Cancel</button>
             </span>
           </div>
         </div>

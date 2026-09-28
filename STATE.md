@@ -39,7 +39,8 @@
 - Also done: duration tails (components include their tails; warning when the effect is too short); texture import
   preview with flipbook grid (+ fixed a crash typing in Grid); projects/trash in IndexedDB (migrated, merged).
 - Decided: worker simulation stays deferred (measured < 1 ms/tick avg, ≤ 4.5 ms worst vs 16 ms frame).
-- Left: GLB 3D preview before import; sound (parked); user visual review of all families; A-05 model-build test.
+- Also done: GLB preview before import (picture, size in metres, triangle count).
+- Left: sound (parked); user visual review of all families; A-05 model-build test; merge to main after visual OK.
 - User visual review still pending for every family (they could not test today).
 
 ## Next (as of 2026-09-27 night)
