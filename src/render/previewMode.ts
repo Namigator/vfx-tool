@@ -72,14 +72,14 @@ function nodeFieldPath(doc: EffectDocumentV2, nodeId: string): string | undefine
   return undefined;
 }
 
-/** A widthOverPath curve whose every key is 1 has no effect; anything else is unsupported for now. */
+/** A widthOverPath curve whose every key is 1 has no effect (the ribbon keeps its plain end taper). */
 export function isTrivialWidthCurve(curve: PathPreviewLayer['widthOverPath']): boolean {
   return curve.keys.every(k => k.y === 1);
 }
 
 /**
  * Addressed diagnostics for authored ribbon style values the preview cannot honour. Errors block the
- * preview (widthOverPath shaping, parallel-transport orientation); UV settings are warnings because the
+ * preview (parallel-transport orientation); widthOverPath is drawn (RibbonGeometry widthAt); UV settings are warnings because the
  * preview draws untextured ribbons, so UV mapping has no visible effect.
  */
 export function ribbonStyleDiagnostics(doc: EffectDocumentV2, layers: readonly PathPreviewLayer[]): Diagnostic[] {
@@ -89,9 +89,6 @@ export function ribbonStyleDiagnostics(doc: EffectDocumentV2, layers: readonly P
     return p === undefined ? {} : { fieldPath: `${p}.params.${param}` };
   };
   for (const l of layers) {
-    if (!isTrivialWidthCurve(l.widthOverPath)) {
-      out.push({ code: 'INVALID_VALUE', severity: 'error', nodeId: l.nodeId, ...at(l.nodeId, 'widthOverPath'), message: `RibbonRenderer "${l.nodeId}" widthOverPath varies along the path; width shaping is not supported by the preview yet. Set every key to 1.` });
-    }
     if (l.orientation !== 'camera') {
       out.push({ code: 'INVALID_VALUE', severity: 'error', nodeId: l.nodeId, ...at(l.nodeId, 'orientation'), message: `RibbonRenderer "${l.nodeId}" orientation "${l.orientation}" is not supported by the preview; use "camera".` });
     }

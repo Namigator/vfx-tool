@@ -315,8 +315,10 @@ export default function PreviewV2() {
   const tabIdRef = useRef(Math.random().toString(36).slice(2));
   const baseRevisionRef = useRef(readDraftMeta(typeof localStorage === 'undefined' ? undefined : localStorage).revision);
   const [stale, setStale] = useState(false);
+  // ?view=1 (review links): watch a served document without autosaving over the user's own draft.
+  const viewOnly = useRef(new URLSearchParams(window.location.search).get('view') === '1').current;
   useEffect(() => {
-    if (stale) return;
+    if (stale || viewOnly) return;
     const t = setTimeout(() => {
       const r = saveDraft(localStorage, doc, new Date(), { tabId: tabIdRef.current, baseRevision: baseRevisionRef.current });
       if (r.ok) baseRevisionRef.current = r.revision;
@@ -324,7 +326,7 @@ export default function PreviewV2() {
       setSaveStatus(r.ok ? 'Saved locally' : r.conflict ? 'Not saved: changed in another tab' : `Save failed: ${r.message}`);
     }, 400);
     return () => clearTimeout(t);
-  }, [doc, stale]);
+  }, [doc, stale, viewOnly]);
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key !== DRAFT_META_KEY) return;
@@ -628,7 +630,8 @@ export default function PreviewV2() {
       .then(t => {
         // Bundle assets of a served document sit beside it (e.g. work/mcp/assets/ for MCP documents).
         try { const d = JSON.parse(t) as { assets?: { sha256: string; source: { kind: string; path?: string } }[] }; const base = new URL(url, location.href); for (const x of d.assets ?? []) if (x.source.kind === 'bundle' && x.source.path && !hasAssetUrl(x.sha256)) registerAssetUrl(x.sha256, new URL(x.source.path, base).href); } catch { /* replace() reports invalid JSON */ }
-        replace(t, `Load ${url}`);
+        // ?autoplay=1 (review links): start playing on loop as soon as the document is in.
+        if (replace(t, `Load ${url}`) && new URLSearchParams(window.location.search).get('autoplay') === '1') setTimeout(() => { const v = viewportRef.current; if (!v) return; v.setLoop(true); setLooping(true); v.play(); }, 0);
       })
       .catch(e => { setJsonErrors([{ code: 'MISSING_REFERENCE', severity: 'error', message: `Could not load ${url}: ${e instanceof Error ? e.message : String(e)}` }]); });
   }, [replace]);

@@ -20,15 +20,20 @@
   textarea { width: 100%; min-height: 44px; background: #0f131b; color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 6px; font: inherit; }
   button { background: #1d2433; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; font: inherit; cursor: pointer; }
   .count { color: var(--accent); }
+  a.play { color: var(--accent); font-weight: 600; text-decoration: none; }
+  img { cursor: zoom-in; }
+  #zoom { position: fixed; inset: 0; background: rgba(0,0,0,.92); z-index: 2; overflow: auto; cursor: zoom-out; display: none; }
+  #zoom img { width: auto; max-width: none; height: min(60vh, 540px); margin: 20vh 16px 0; cursor: zoom-out; }
   @media (max-width: 700px) { header, main { padding-left: 16px; padding-right: 16px; } }
 </style>
 </head>
 <body>
 <header>
   <h1>VFX review <span class="count" id="count"></span></h1>
-  <p>Each strip shows one effect from start (left) to end (right). Mark it and jot what looks wrong; your notes stay in this browser. When done, press <b>Copy all notes</b> and paste them to Claude.</p>
+  <p>Each strip shows one effect from start (left) to end (right). Click a strip to enlarge it, or press <b>Watch it play</b> to see the real animation (opens in a new tab, loops; your own work is not touched). Mark it and jot what looks wrong; your notes stay in this browser. When done, press <b>Copy all notes</b> and paste them to Claude.</p>
   <div class="row"><button id="copy">Copy all notes</button><span id="copied" class="desc"></span></div>
 </header>
+<div id="zoom" title="Click to close"><img alt=""></div>
 <main id="list"><p class="desc">Loading…</p></main>
 <script type="module">
   const key = id => `vfx-review:${id}`;
@@ -41,16 +46,21 @@
   for (const it of items) {
     const s = read(it.id), sec = document.createElement('section');
     sec.innerHTML = `<h2></h2><p class="desc"></p><img loading="lazy" alt=""><div class="row">
+      <a class="play" target="_blank" rel="noopener" href="/?workspace=v2&view=1&autoplay=1&expand=1&doc=${encodeURIComponent(`/work/mcp/rv-${it.id}.json`)}">&#9654; Watch it play</a>
       <label><input type="radio" name="${it.id}" value="good"> Looks good</label>
       <label><input type="radio" name="${it.id}" value="ok"> OK, could be better</label>
       <label><input type="radio" name="${it.id}" value="bad"> Needs work</label></div><textarea placeholder="What looks wrong or what you would change?"></textarea>`;
     sec.querySelector('h2').textContent = it.label;
     sec.querySelector('.desc').textContent = it.description;
     const img = sec.querySelector('img'); img.src = `/${it.sheet}`; img.alt = `${it.label}: frames from start to end`;
+    img.addEventListener('click', () => { const z = document.getElementById('zoom'); z.querySelector('img').src = img.src; z.style.display = 'block'; });
     for (const r of sec.querySelectorAll('input[type=radio]')) { r.checked = s.mark === r.value; r.addEventListener('change', () => write(it.id, { ...read(it.id), mark: r.value })); }
     const ta = sec.querySelector('textarea'); ta.value = s.note ?? ''; ta.addEventListener('input', () => write(it.id, { ...read(it.id), note: ta.value }));
     list.appendChild(sec);
   }
+  const zoom = document.getElementById('zoom');
+  zoom.addEventListener('click', () => { zoom.style.display = 'none'; });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') zoom.style.display = 'none'; });
   document.getElementById('copy').addEventListener('click', async () => {
     const text = items.map(it => { const s = read(it.id); return s.mark || s.note ? `${it.label}: ${s.mark ?? '-'}${s.note ? ` — ${s.note}` : ''}` : null; }).filter(Boolean).join('\n') || 'No notes yet.';
     try { await navigator.clipboard.writeText(text); document.getElementById('copied').textContent = 'Copied. Paste it to Claude.'; } catch { document.getElementById('copied').textContent = text; }

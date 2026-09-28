@@ -32,7 +32,7 @@ import { compileLifeCurve, compileLifeGradient, lifeFraction, sampleLifeCurve, s
 import { MAX_PREVIEW_POINTS, type PathPreviewLayer, type PathPreviewPlan } from '../graph/toPaths.ts';
 import { DEFAULT_MAX_LIVE_PARTICLES, PARTICLE_DT, ParticleSimulation, type ParticleState } from '../runtime/particles.ts';
 import { PlaybackClock } from '../runtime/clock.ts';
-import { DEFAULT_RIBBON_END_FADE, framePoints, RibbonGeometry, ribbonSoftness, type FramePointSet } from './RibbonGeometry.ts';
+import { DEFAULT_RIBBON_END_FADE, framePoints, RibbonGeometry, ribbonSoftness, ribbonWidthShape, type FramePointSet } from './RibbonGeometry.ts';
 import { pathViewDirection } from './pathView.ts';
 import { collectTimelineFrameSets, particleFrameSets } from './pathFraming.ts';
 import { layerRenderOrder } from './layerOrder.ts';
@@ -917,7 +917,7 @@ export class PreviewViewport {
       for (; i < plan.layers.length; i++) {
         const layer = plan.layers[i];
         // Inactive (outside window) layers carry no paths and draw nothing.
-        drawn += this.#ribbons[i].ribbon.update(layer.active ? layer.paths : [], { cameraPosition, width: layer.width, endFade: layer.endFade }).drawnPaths;
+        drawn += this.#ribbons[i].ribbon.update(layer.active ? layer.paths : [], { cameraPosition, width: layer.width, endFade: layer.endFade, ...ribbonWidthShape(layer.widthOverPath) }).drawnPaths;
       }
     } catch (e) {
       const nodeId = plan.layers[i]?.nodeId;

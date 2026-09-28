@@ -7,7 +7,7 @@ import { compileParticlePreview } from '../src/graph/toParticles.ts';
 import { createL01AudioDocument } from '../src/graph/audioFixtures.ts';
 import { compileAudio } from '../src/graph/toAudio.ts';
 import { choosePreviewMode, createLightningAudioDemoDocument, createLightningDemoDocument, hasRootAudio, ribbonStyleDiagnostics } from '../src/render/previewMode.ts';
-import { RibbonGeometry } from '../src/render/RibbonGeometry.ts';
+import { RibbonGeometry, ribbonWidthShape } from '../src/render/RibbonGeometry.ts';
 import { layerRenderOrder, mergeDiagnostics, VISUAL_ORDER_STRIDE } from '../src/render/layerOrder.ts';
 import type { Diagnostic } from '../src/model/types.ts';
 
@@ -137,11 +137,24 @@ test('unsupported ribbon style values are surfaced, never ignored', () => {
   if (!r.ok) assert.fail(JSON.stringify(r.errors));
   const diags = ribbonStyleDiagnostics(d, r.value.layers);
   const idx = d.graphs[0].nodes.indexOf(rib);
+  // widthOverPath is drawn now (RibbonGeometry widthAt), so it no longer blocks the preview.
   assert.deepEqual(diags.map(x => [x.severity, x.nodeId, x.fieldPath]), [
-    ['error', 'node-rib-core', `graphs[0].nodes[${idx}].params.widthOverPath`],
     ['error', 'node-rib-core', `graphs[0].nodes[${idx}].params.orientation`],
     ['warning', 'node-rib-core', `graphs[0].nodes[${idx}].params.uvMode`],
   ]);
+});
+
+test('widthOverPath shapes the ribbon: a 1 -> 0.25 curve narrows the end to a quarter', () => {
+  const g = new RibbonGeometry();
+  const curve = { domain: 'normalized' as const, interpolation: 'linear' as const, keys: [{ x: 0, y: 1 }, { x: 1, y: 0.25 }] };
+  const path = { id: 'p', points: [[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0], [4, 0, 0]] as [number, number, number][], widthScale: 1, opacityScale: 1 };
+  g.update([path as never], { cameraPosition: [2, 0, 10], width: 2, endFade: 0, ...ribbonWidthShape(curve) });
+  const pos = g.geometry.getAttribute('position');
+  const halfAt = (x: number) => Math.max(...Array.from({ length: pos.count }, (_, i) => i).filter(i => Math.abs(pos.getX(i) - x) < 1e-6).map(i => Math.abs(pos.getY(i))));
+  assert.ok(Math.abs(halfAt(0) - 1) < 1e-6, `start half-width ${halfAt(0)}`);
+  assert.ok(Math.abs(halfAt(2) - 0.625) < 1e-6, `middle half-width ${halfAt(2)}`);
+  assert.ok(Math.abs(halfAt(4) - 0.25) < 1e-6, `end half-width ${halfAt(4)}`);
+  assert.deepEqual(ribbonWidthShape({ ...curve, keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] }), {});
 });
 
 test('inactive window layers carry no paths and draw nothing', () => {

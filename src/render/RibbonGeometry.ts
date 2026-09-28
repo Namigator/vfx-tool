@@ -4,6 +4,8 @@ import * as THREE from 'three';
 import type { Vec3 } from '../model/types.ts';
 import type { PathData } from '../runtime/paths.ts';
 import { fnv1a32Utf8 } from '../runtime/random.ts';
+import { evaluateCurve } from '../runtime/curves.ts';
+import type { CurveValue } from '../model/types.ts';
 
 export interface RibbonUpdateOptions {
   /** World-space camera position used for billboarding. */
@@ -19,6 +21,13 @@ export interface RibbonUpdateOptions {
   fadeHead?: boolean;
   /** Width multiplier (0..1) reached at the very ends of a tapered path. Defaults to DEFAULT_RIBBON_END_WIDTH. */
   endWidth?: number;
+  /**
+   * Width multiplier along each path (u = arc / total length, 0 at the start, 1 at the end); e.g. a
+   * RibbonRenderer widthOverPath curve. Segments are split at `widthKeys` so interior curve keys show.
+   */
+  widthAt?: (u: number) => number;
+  /** Positions (0..1) where widthAt changes slope; at most 4 interior ones are used. */
+  widthKeys?: readonly number[];
 }
 
 export interface RibbonUpdateStats {
@@ -35,6 +44,12 @@ export interface RibbonGeometryOptions {
   maxPoints?: number;
   /** Initial allocated point capacity; grows (up to maxPoints) when exceeded. */
   initialPoints?: number;
+}
+
+/** RibbonUpdateOptions width shaping from a normalized widthOverPath curve; empty when every key is 1. */
+export function ribbonWidthShape(curve: CurveValue | undefined): Pick<RibbonUpdateOptions, 'widthAt' | 'widthKeys'> {
+  if (!curve || curve.keys.every(k => k.y === 1)) return {};
+  return { widthAt: u => evaluateCurve(curve, u), widthKeys: curve.keys.map(k => k.x) };
 }
 
 export const DEFAULT_RIBBON_MAX_POINTS = 65536;
@@ -141,6 +156,8 @@ export class RibbonGeometry {
     const endFade = options.endFade ?? DEFAULT_RIBBON_END_FADE;
     const endWidth = options.endWidth ?? DEFAULT_RIBBON_END_WIDTH;
     const fadeHead = options.fadeHead ?? true;
+    const widthAt = options.widthAt;
+    const widthKeys = (options.widthKeys ?? []).filter(k => k > 0 && k < 1).slice(0, 4);
     assertFiniteNonNegative(endFade, 'endFade');
     assertFiniteNonNegative(endWidth, 'endWidth');
     if (endFade > 0.5) throw new RangeError('endFade must be at most 0.5.');
@@ -254,14 +271,14 @@ export class RibbonGeometry {
         const arc0 = arc;
         arc += len;
         const cuts: number[] = [];
-        if (fadeLength > EPSILON) {
-          for (const c of [fadeLength, totalLength - fadeLength]) {
-            if (c > arc0 + EPSILON && c < arc - EPSILON && (cuts.length === 0 || Math.abs(c - cuts[0]) > EPSILON)) cuts.push(c);
-          }
+        const candidates = [...(fadeLength > EPSILON ? [fadeLength, totalLength - fadeLength] : []), ...(widthAt ? widthKeys.map(k => k * totalLength) : [])];
+        for (const c of candidates.sort((x, y) => x - y)) {
+          if (c > arc0 + EPSILON && c < arc - EPSILON && cuts.every(x => Math.abs(c - x) > EPSILON)) cuts.push(c);
         }
         cuts.push(arc);
+        const shape = (at: number): number => (widthAt ? Math.max(0, widthAt(totalLength > EPSILON ? at / totalLength : 0)) : 1);
         const f0 = fadeAt(arc0);
-        const w0 = half * (endWidth + (1 - endWidth) * f0);
+        const w0 = half * (endWidth + (1 - endWidth) * f0) * shape(arc0);
         const o0 = path.opacityScale;
         const l0 = put(a, side, w0, 1, o0, arc0);
         let lPrev = l0;
@@ -273,7 +290,7 @@ export class RibbonGeometry {
           // Exact endpoint for the final sub-quad; interpolated arc-length samples otherwise.
           const q: Vec3 = last ? b : [a[0] + (b[0] - a[0]) * s, a[1] + (b[1] - a[1]) * s, a[2] + (b[2] - a[2]) * s];
           const f1 = fadeAt(last ? arc : cuts[k]);
-          const w1 = half * (endWidth + (1 - endWidth) * f1);
+          const w1 = half * (endWidth + (1 - endWidth) * f1) * shape(last ? arc : cuts[k]);
           const o1 = path.opacityScale;
           const arcQ = last ? arc : cuts[k];
           l1 = put(q, side, w1, 1, o1, arcQ);
