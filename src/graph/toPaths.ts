@@ -50,6 +50,18 @@ import { fnv1a32Utf8 } from '../runtime/random.ts';
  */
 const particleCheckpoints = new Map<string, ParticleSimulation[]>();
 let particleProbeDepth = 0;
+/** The ParticlePaths source compile is tick-independent: cached per input object (while its JSON is unchanged) and probed node. */
+const particleProbeCache = new WeakMap<object, { text: string; byNode: Map<string, ReturnType<typeof compileParticlePreview>> }>();
+function probeParticleSystem(input: unknown, nodeId: string): ReturnType<typeof compileParticlePreview> {
+  const compile = () => compileParticlePreview(input, { audioHandled: true, ribbonsHandled: true, probeParticles: nodeId });
+  const text = typeof input === 'object' && input !== null ? sameInputText(input) : undefined;
+  if (text === undefined) return compile();
+  let entry = particleProbeCache.get(input as object);
+  if (!entry || entry.text !== text) particleProbeCache.set(input as object, entry = { text, byNode: new Map() });
+  let r = entry.byNode.get(nodeId);
+  if (!r) entry.byNode.set(nodeId, r = compile());
+  return r;
+}
 function particlesAtTick(desc: ParticleEmitterDescriptor, tick: number): ParticleState[] | string {
   const key = JSON.stringify(desc);
   let cps = particleCheckpoints.get(key);
@@ -157,14 +169,37 @@ export function probePathLength(input: unknown, nodeId: string, port: string, ti
   } finally { lengthProbeDepth--; }
 }
 
+/**
+ * Validation, analysis and group expansion do not depend on the tick, but the preview recompiles every
+ * tick (~80 of a lightning strike's 86 ms per frame was this). Cached per input object; a hit is reused
+ * only while the object's JSON text is unchanged, so an in-place edit can never serve a stale plan.
+ */
+type PreparedPaths = { registry: ReturnType<typeof createRegistry>; analysis: ReturnType<typeof analyzeGraph>; expansion?: ReturnType<typeof expandGroups> };
+const preparedCache = new WeakMap<object, { text: string; prepared: PreparedPaths }>();
+/** Same-content check shared by the tick-independent caches below. */
+function sameInputText(input: unknown): string | undefined {
+  try { return JSON.stringify(input); } catch { return undefined; }
+}
+function preparePathDocument(input: unknown): PreparedPaths {
+  const key = typeof input === 'object' && input !== null ? input : undefined;
+  const text = key ? sameInputText(input) : undefined;
+  const cached = key ? preparedCache.get(key) : undefined;
+  if (cached && text !== undefined && cached.text === text) return cached.prepared;
+  const registry = createRegistry();
+  const analysis = analyzeGraph(input, { registry });
+  const prepared: PreparedPaths = { registry, analysis, expansion: analysis.ok ? expandGroups(analysis.value) : undefined };
+  if (key && text !== undefined) preparedCache.set(key, { text, prepared });
+  return prepared;
+}
+
 export function compilePathPreview(input: unknown, effectTick: number, options: PathPreviewOptions = {}): ValidationResult<PathPreviewPlan> {
   if (typeof effectTick !== 'number' || !Number.isInteger(effectTick) || effectTick < 0) {
     return { ok: false, errors: [{ code: 'INVALID_VALUE', severity: 'error', message: `effectTick must be a nonnegative integer; got ${String(effectTick)}.` }] };
   }
-  const registry = createRegistry();
-  const analysis = analyzeGraph(input, { registry });
+  const prepared = preparePathDocument(input);
+  const { registry, analysis } = prepared;
   if (!analysis.ok) return analysis;
-  const expansion = expandGroups(analysis.value);
+  const expansion = prepared.expansion!;
   if (!expansion.ok) return expansion;
   const warnings = [...analysis.warnings, ...expansion.warnings];
   const doc = analysis.value.document;
@@ -405,7 +440,7 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
         if (particleProbeDepth > 2) fail('GRAPH_CYCLE', `ParticlePaths "${id}" feeds the motion of its own particle source.`, id);
         particleProbeDepth++;
         let sys;
-        try { sys = compileParticlePreview(input, { audioHandled: true, ribbonsHandled: true, probeParticles: (cs[0].source as { nodeId: string }).nodeId }); } finally { particleProbeDepth--; }
+        try { sys = probeParticleSystem(input, (cs[0].source as { nodeId: string }).nodeId); } finally { particleProbeDepth--; }
         if (!sys.ok) { errors.push(...sys.errors); throw new Fail('particle source'); }
         const desc = sys.value.systems[0]?.descriptor;
         const alive = desc ? particlesAtTick(desc, effectTick) : [];
