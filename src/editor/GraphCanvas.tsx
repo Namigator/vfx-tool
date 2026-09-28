@@ -3,6 +3,7 @@
 // events never mutate it. Only the in-progress drag preview and edge selection are local state.
 // Deferred here: Group authoring, multi-node selection, viewport persistence, parameter editing.
 import { COMPONENT_TEMPLATES, componentPlacement, getComponent, insertComponent } from '../graph/components.ts';
+import { groupSelection } from '../graph/groupSelection.ts';
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import {
   Handle, Panel, Position, ReactFlow, ReactFlowProvider, useNodesInitialized, useReactFlow,
@@ -122,6 +123,8 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
   const wrapper = useRef<HTMLDivElement>(null);
   const [dragPreview, setDragPreview] = useState<Record<string, { x: number; y: number }>>({});
   const [selectedEdges, setSelectedEdges] = useState<ReadonlySet<string>>(new Set());
+  /** Extra nodes picked with Shift+click (for Group selection); the inspector keeps showing the primary node. */
+  const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
   const [notice, setNotice] = useState<{ kind: 'error' | 'info'; lines: string[] } | null>(null);
   const [addType, setAddType] = useState('');
   const [advancedNodes, setAdvancedNodes] = useState<ReadonlySet<string>>(new Set());
@@ -192,7 +195,7 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
       const sig = spec ? resolveSignature(n, spec, { doc, graphId }) : null;
       const position = dragPreview[n.id] ?? layout?.nodes[n.id] ?? { x: (i % 4) * 260, y: Math.floor(i / 4) * 220 };
       return {
-        id: n.id, type: 'card' as const, position, selected: n.id === selectedNodeId, measured: measured[n.id],
+        id: n.id, type: 'card' as const, position, selected: n.id === selectedNodeId || picked.has(n.id), measured: measured[n.id],
         deletable: false,
         data: {
           node: n,
@@ -205,7 +208,7 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
         },
       };
     });
-  }, [graph, doc, graphId, layout, dragPreview, measured, selectedNodeId, issuesByNode, toggleEnabled, advancedNodes, toggleAdvanced]);
+  }, [graph, doc, graphId, layout, dragPreview, measured, selectedNodeId, picked, issuesByNode, toggleEnabled, advancedNodes, toggleAdvanced]);
 
   const edges: Edge[] = useMemo(() => (graph?.edges ?? []).map(e => ({
     id: e.id, source: e.source.nodeId, sourceHandle: e.source.port, target: e.target.nodeId, targetHandle: e.target.port,
@@ -391,6 +394,20 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
     setComponentId('');
   };
   const canDelete = (selectedNode !== undefined && !isLocked(selectedNode)) || selectedEdges.size > 0;
+  /** Nodes Group selection would wrap: the Shift+click picks plus the primary selected node. */
+  const groupIds = [...new Set([...picked, ...(selectedNodeId ? [selectedNodeId] : [])])].filter(id => graph?.nodes.some(n => n.id === id));
+  const groupPicked = () => {
+    const r = groupSelection(doc, graphId, groupIds);
+    if (!r.ok) { setNotice({ kind: 'error', lines: [r.message] }); return; }
+    onEdit(`Group ${groupIds.length} node(s)`, [
+      { op: 'set', path: ['graphs'], value: r.doc.graphs },
+      { op: 'set', path: ['controls'], value: r.doc.controls },
+      { op: 'set', path: ['editor', 'graphs'], value: r.doc.editor.graphs },
+    ]);
+    setPicked(new Set());
+    setNotice({ kind: 'info', lines: [`Grouped ${groupIds.length} node(s). Double-click the group (or Open internals) to see them.`] });
+    onSelectNode(r.groupNodeId);
+  };
   /** Opens a Group's internals in this canvas (06: double-click or Open internals; breadcrumb returns). */
   const openGraph = (id: string, label: string) => { onSelectNode(null); onEdit(label, [{ op: 'set', path: ['editor', 'openedGraphId'], value: id }]); };
   const parentOf = (id: string) => doc.graphs.find(g => g.nodes.some(n => n.type === GROUP_NODE_TYPE && n.params.graphId === id));
@@ -409,6 +426,8 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
           <button type="button" onClick={() => flow.fitView({ padding: 0.2 })}>Fit view</button>
           <button type="button" onClick={deleteSelection} disabled={!canDelete}
             title="Deletes the selected node with its connections, and any selected connections.">Delete selection</button>
+          <button type="button" onClick={groupPicked} disabled={groupIds.length === 0}
+            title="Wraps the selected nodes into one Group. Shift+click nodes to select several.">Group selection{groupIds.length > 1 ? ` (${groupIds.length})` : ''}</button>
           <label className="gc-add">
             <span>Add node</span>
             <select value={addType} onChange={e => setAddType(e.target.value)}>
@@ -442,7 +461,14 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
         onNodeDragStop={onNodeDragStop} onConnect={onConnect}
         onNodeDoubleClick={(_, n) => { const def = graph.nodes.find(x => x.id === n.id); if (def?.type === GROUP_NODE_TYPE) openGraph(def.params.graphId as string, `Open ${def.label}`); }}
-        onPaneClick={() => { onSelectNode(null); setSelectedEdges(new Set()); }}
+        onPaneClick={() => { onSelectNode(null); setSelectedEdges(new Set()); setPicked(new Set()); }}
+        onNodeClick={(e, n) => setPicked(prev => {
+          if (!e.shiftKey) return new Set();
+          const next = new Set(prev);
+          if (selectedNodeId && selectedNodeId !== n.id) next.add(selectedNodeId); // The node selected before the Shift+click stays picked.
+          if (next.has(n.id) && prev.has(n.id)) next.delete(n.id); else next.add(n.id);
+          return next;
+        })}
         deleteKeyCode={null} multiSelectionKeyCode={null} selectionKeyCode={null}
         viewport={camera.viewport} onViewportChange={onViewportChange} minZoom={0.1}
       >
