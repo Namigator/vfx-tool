@@ -51,7 +51,7 @@ for (const [file, V] of Object.entries(VARIANTS)) {
   add('BezierPath', 'arc', { startHandle: [2.6, h, 0], endHandle: [-2.6, h, 0], samples: 64 });
   wire('node-source.out', 'arc.start'); wire('node-target.out', 'arc.end');
   add('Schedule', 'flight', { startTicks: CHARGE, durationTicks: END - CHARGE, mode: 'window' });
-  add('PathFollower', 'ball', { durationTicks: V.travel, easing: 'linear' });
+  add('PathFollower', 'ball', { durationTicks: V.travel, easing: 'linear', speed: 0 }); // Speed 0 = duration mode (Travel ticks); the Speed knob switches to speed mode.
   wire('arc.paths', 'ball.paths'); wire('flight.window', 'ball.window');
   // Moving core + low-alpha halo live only while travelling (plus 2 ticks of overlap with the flash).
   add('Schedule', 'corewin', { startTicks: CHARGE, durationTicks: V.travel + 2, mode: 'window' });

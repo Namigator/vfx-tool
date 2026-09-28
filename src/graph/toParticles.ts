@@ -32,11 +32,11 @@ import {
 import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { createRegistry } from './registry.ts';
-import { scheduleStart, TimingError, type TimingContext } from './eventTiming.ts';
+import { followerTravel, scheduleStart, TimingError, type TimingContext } from './eventTiming.ts';
 import { materialSheet } from './materialSprite.ts';
 import { lifeCurveError, OPACITY_OVER_LIFE_BOUNDS, SIZE_OVER_LIFE_BOUNDS } from '../render/billboardLife.ts';
 import { BUILTIN_SPRITES } from '../assets/builtinSprites.generated.ts';
-import { compilePathPreview } from './toPaths.ts';
+import { compilePathPreview, probePathLength } from './toPaths.ts';
 import { ease, pointAtArcFraction, type Easing } from '../runtime/paths.ts';
 import type { FlipbookMode, SpriteSheet } from '../assets/spriteLibrary.ts';
 
@@ -119,7 +119,11 @@ export type ParticlePreviewPlan = {
   lights: PointLightLayer[];
   meshes: MeshLayer[];
   presentation: PresentationPlan;
+  /** Every enabled PathFollower's resolved travel (shown next to the knobs: distance, ticks, actual speed). */
+  followers: FollowerTravel[];
 };
+
+export type FollowerTravel = { nodeId: string; startTick: number; travelTicks: number; lengthMeters: number; speedMode: boolean };
 
 export const DEFAULT_PREVIEW_SIZE = { min: 0.08, max: 0.16 } as const;
 
@@ -192,6 +196,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     type: id => nodes.get(id)?.node.type,
     raw: (id, p) => { const x = nodes.get(id); return x ? rawParam(x, p) as number : fail('MISSING_REFERENCE', `Node "${id}" is not in the expanded graph.`, id); },
     source: (nodeId, port) => { const c = into(nodeId, port)[0]; return c && c.source.kind === 'node' ? { nodeId: c.source.nodeId, port: c.source.port } : undefined; },
+    pathLength: (nodeId, port, tick) => probePathLength(input, nodeId, port, tick),
   };
   const rawParam = (n: ExpandedNode, id: string): ParameterValue => {
     const dv = drivenValue(n, id);
@@ -349,7 +354,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
    * 05 PathFollower: position along the first path of its input set, sampled per tick from the window start
    * (probe compiles of the path graph), eased over durationTicks, held at the end until the window closes.
    */
-  type Track = { startTick: number; positions: Vec3[]; arrivalTick: number; arrivalPos: Vec3 };
+  type Track = { startTick: number; positions: Vec3[]; arrivalTick: number; arrivalPos: Vec3; lengthMeters: number; speedMode: boolean };
   const tracks = new Map<string, Track | null>();
   const followerTrack = (f: ExpandedNode): Track | undefined => {
     const fid = f.node.id;
@@ -364,7 +369,12 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     const start = num(s, 'startTicks'), end = Math.min(doc.durationTicks, start + num(s, 'durationTicks'));
     const ps = into(fid, 'paths');
     if (ps.length !== 1 || ps[0].source.kind !== 'node') return fail('MISSING_REFERENCE', `PathFollower "${fid}" needs one connected path source.`, fid);
-    const src = ps[0].source, travel = num(f, 'durationTicks'), easing = param(f, 'easing') as Easing;
+    let travel: number;
+    try { travel = followerTravel(timing, fid, start); } catch (e) {
+      if (e instanceof TimingError) return fail('INVALID_VALUE', e.message, e.nodeId);
+      throw e;
+    }
+    const src = ps[0].source, easing = param(f, 'easing') as Easing;
     const positions: Vec3[] = [];
     let last: Vec3 | undefined;
     for (let tk = start; tk < end; tk++) {
@@ -379,7 +389,9 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       positions.push([last[0], last[1], last[2]]);
     }
     if (!positions.length) return undefined;
-    const t: Track = { startTick: start, positions, arrivalTick: start + travel, arrivalPos: positions[Math.min(travel, positions.length - 1)] };
+    let lengthMeters = 0;
+    try { lengthMeters = probePathLength(input, src.nodeId, src.port, start); } catch (e) { if (!(e instanceof TimingError)) throw e; }
+    const t: Track = { startTick: start, positions, arrivalTick: start + travel, arrivalPos: positions[Math.min(travel, positions.length - 1)], lengthMeters, speedMode: num(f, 'speed') > 0 };
     tracks.set(fid, t);
     return t;
   };
@@ -609,7 +621,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
   };
 
   if (options.probeParticles !== undefined) {
-    const empty = { durationTicks: doc.durationTicks, layers: [], trails: [], lights: [], meshes: [], presentation: { flashes: [], impulses: [] } };
+    const empty = { durationTicks: doc.durationTicks, layers: [], trails: [], lights: [], meshes: [], presentation: { flashes: [], impulses: [] }, followers: [] };
     try {
       const n = nodes.get(options.probeParticles);
       if (!n) return fail('MISSING_REFERENCE', `Probe node "${options.probeParticles}" is not in the expanded graph.`, options.probeParticles);
@@ -922,7 +934,14 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     if (budget) errors.push(budget);
   }
   if (errors.length) return { ok: false, errors };
-  return { ok: true, value: { durationTicks: doc.durationTicks, systems, layers, trails, lights, meshes, presentation }, warnings };
+  const followers: FollowerTravel[] = [];
+  for (const n of nodes.values()) {
+    if (n.node.type !== 'PathFollower' || !n.effectiveEnabled) continue;
+    const t = followerTrack(n);
+    if (t) followers.push({ nodeId: n.node.id, startTick: t.startTick, travelTicks: t.arrivalTick - t.startTick, lengthMeters: t.lengthMeters, speedMode: t.speedMode });
+  }
+  if (errors.length) return { ok: false, errors };
+  return { ok: true, value: { durationTicks: doc.durationTicks, systems, layers, trails, lights, meshes, presentation, followers }, warnings };
 }
 
 /** Aggregate worst case over all systems: total births and live particles at any tick (plan15 caps). */

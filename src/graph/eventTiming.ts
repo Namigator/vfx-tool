@@ -7,7 +7,26 @@ export type TimingContext = {
   /** Authored (control-resolved) numeric parameter, WITHOUT trigger resolution for Schedule.startTicks. */
   raw(nodeId: string, parameter: string): number;
   source(nodeId: string, port: string): { nodeId: string; port: string } | undefined;
+  /** World-space arc length of the first path of `nodeId.port` at `tick` (PathFollower speed mode). */
+  pathLength?(nodeId: string, port: string, tick: number): number;
 };
+
+/** Longest travel a PathFollower may resolve to (matches its Travel ticks maximum). */
+export const MAX_TRAVEL_TICKS = 600;
+
+/**
+ * PathFollower travel ticks. Duration mode (speed 0): the authored Travel ticks. Speed mode (speed > 0 m/s):
+ * the first path's length at the window start ÷ speed, rounded to whole ticks (1..600), so moving the Target
+ * keeps the speed and the arrival (and everything it triggers) moves with it.
+ */
+export function followerTravel(ctx: TimingContext, followerId: string, startTick: number): number {
+  const speed = ctx.raw(followerId, 'speed');
+  if (!(speed > 0)) return ctx.raw(followerId, 'durationTicks');
+  const p = ctx.source(followerId, 'paths');
+  if (!p || !ctx.pathLength) throw new TimingError(`PathFollower "${followerId}" needs a connected path to travel at a speed.`, followerId);
+  const len = ctx.pathLength(p.nodeId, p.port, startTick);
+  return Math.max(1, Math.min(MAX_TRAVEL_TICKS, Math.round((len / speed) * 60)));
+}
 
 export class TimingError extends Error {
   readonly nodeId: string;
@@ -32,7 +51,8 @@ export function eventTick(ctx: TimingContext, nodeId: string, port: string, dept
   if (type === 'PathFollower' && port === 'arrival') {
     const w = ctx.source(nodeId, 'window');
     if (!w || ctx.type(w.nodeId) !== 'Schedule') throw new TimingError(`PathFollower "${nodeId}" needs a Schedule window to time its arrival.`, nodeId);
-    return scheduleStart(ctx, w.nodeId, depth + 1) + ctx.raw(nodeId, 'durationTicks');
+    const start = scheduleStart(ctx, w.nodeId, depth + 1);
+    return start + followerTravel(ctx, nodeId, start);
   }
   if (type === 'EventDelay') {
     const s = ctx.source(nodeId, 'events');

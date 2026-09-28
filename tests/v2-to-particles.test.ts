@@ -495,6 +495,20 @@ test('PathFollower arrival triggers a burst at the path end', () => {
   assert.deepEqual([b[0].tick, b[0].count, b[0].position], [30, 12, [0, 1, 5]]);
 });
 
+test('PathFollower speed mode: travel = path length ÷ speed (rounded ticks), so the arrival burst follows the distance', () => {
+  const arrivalTick = (speed: number, target?: [number, number, number]) => plan(followerDoc(d => {
+    const g = root(d);
+    g.edges = g.edges.filter(e => e.id !== 'edge-anchor' && e.id !== 'edge-trigger');
+    g.edges.push(edge('e-arr', 'node-follow', 'arrival', 'node-emitter', 'trigger'));
+    set('node-follow', { speed })(d);
+    if (target) d.anchors.find(a => a.id === 'target')!.position = target;
+  })).systems[0].descriptor.bursts[0].tick;
+  assert.equal(arrivalTick(0), 30, 'speed 0 keeps Travel ticks (20)');
+  assert.equal(arrivalTick(10), 10 + 30, '5 m at 10 m/s = 30 ticks');
+  assert.equal(arrivalTick(10, [0, 1, 10]), 10 + 60, 'twice the distance, same speed: twice the travel');
+  assert.equal(arrivalTick(7), 10 + 43, '5/7 s = 42.86 ticks, rounded');
+});
+
 test('Emitter rateOverWindow compiles to a rate curve (flat curves stay plain)', () => {
   const win = (d: EffectDocumentV2) => { set('node-emitter', { burst: 0, rate: 30 })(d); set('node-schedule', { mode: 'window', durationTicks: 60 })(d); const t = root(d).edges.find(e => e.id === 'edge-trigger')!; t.source.port = 'window'; t.target.port = 'window'; };
   const p = plan(f01(d => { win(d); set('node-emitter', { rateOverWindow: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 0 }, { x: 1, y: 2 }] } })(d); }));

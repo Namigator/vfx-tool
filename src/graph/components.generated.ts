@@ -34787,7 +34787,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "PathFollower",
     "params": {
      "durationTicks": 36,
-     "easing": "linear"
+     "easing": "linear",
+     "speed": 0
     }
    },
    {
@@ -35745,6 +35746,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     ]
    },
    {
+    "id": "speed",
+    "label": "Speed (0 = use Travel ticks)",
+    "value": 0,
+    "min": 0,
+    "max": 60,
+    "bindings": [
+     {
+      "node": "ball",
+      "parameter": "speed"
+     }
+    ]
+   },
+   {
     "id": "accent",
     "label": "Accent colour",
     "value": {
@@ -35979,7 +35993,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "PathFollower",
     "params": {
      "durationTicks": 20,
-     "easing": "linear"
+     "easing": "linear",
+     "speed": 0
     }
    },
    {
@@ -36937,6 +36952,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     ]
    },
    {
+    "id": "speed",
+    "label": "Speed (0 = use Travel ticks)",
+    "value": 0,
+    "min": 0,
+    "max": 60,
+    "bindings": [
+     {
+      "node": "ball",
+      "parameter": "speed"
+     }
+    ]
+   },
+   {
     "id": "accent",
     "label": "Accent colour",
     "value": {
@@ -37171,7 +37199,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "PathFollower",
     "params": {
      "durationTicks": 56,
-     "easing": "linear"
+     "easing": "linear",
+     "speed": 0
     }
    },
    {
@@ -38125,6 +38154,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       "parameter": "endHandle",
       "scale": 1.3333333333333333,
       "axis": 1
+     }
+    ]
+   },
+   {
+    "id": "speed",
+    "label": "Speed (0 = use Travel ticks)",
+    "value": 0,
+    "min": 0,
+    "max": 60,
+    "bindings": [
+     {
+      "node": "ball",
+      "parameter": "speed"
      }
     ]
    },

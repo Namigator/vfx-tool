@@ -421,7 +421,8 @@
    "id": "ball",
    "params": {
     "durationTicks": 56,
-    "easing": "linear"
+    "easing": "linear",
+    "speed": 0
    }
   }
  ],

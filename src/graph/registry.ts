@@ -379,6 +379,7 @@ function pathFollower(): NodeSpec {
     parameters: [
       param({ id: 'durationTicks', label: 'Travel ticks', type: 'integer', unit: 'tick', default: 30, min: 1, max: 600, step: 1, description: 'Ticks to travel the first path of the set from start to end; arrival fires then. Holds at the end until the window closes.' }),
       param({ id: 'easing', label: 'Easing', type: 'enum', unit: 'none', default: 'linear', choices: ['linear', 'easeIn', 'easeOut', 'easeInOut'] }),
+      param({ id: 'speed', label: 'Speed', type: 'number', unit: 'metersPerSecond', default: 0, min: 0, max: 200, description: '0 = travel for Travel ticks. Above 0: travel ticks = path length ÷ speed (rounded to ticks), so a farther Target takes longer at the same speed.' }),
     ],
     disabledBehavior: 'empty',
   });

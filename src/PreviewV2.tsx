@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'reac
 import type { Diagnostic, EffectDocumentV2 } from './model/types.ts';
 import { validateDocument } from './model/document.ts';
 import { createRegistry } from './graph/registry.ts';
-import { compileParticlePreview } from './graph/toParticles.ts';
+import { compileParticlePreview, type FollowerTravel } from './graph/toParticles.ts';
 import { compilePathPreview } from './graph/toPaths.ts';
 import { createBlankDocument, createF01Document, createForcesDemoDocument } from './graph/fixtures.ts';
 import { TexturePanel } from './editor/TexturePanel.tsx';
@@ -133,6 +133,7 @@ export default function PreviewV2() {
   const [fatal, setFatal] = useState('');
   const [frame, setFrame] = useState<PreviewFrameInfo>(EMPTY_FRAME);
   const [compiled, setCompiled] = useState(false);
+  const [followers, setFollowers] = useState<FollowerTravel[]>([]);
   const [mode, setMode] = useState<PreviewModeChoice['mode']>('points');
   const [glow, setGlow] = useState(true);
   const [syncSound, setSyncSound] = useState(true);
@@ -213,6 +214,7 @@ export default function PreviewV2() {
         return;
       }
       setCompiled(true);
+      setFollowers(points.value.followers);
       const snapshot = structuredClone(d);
       vp?.setMixedSource(points.value, first.value, tick => compilePathPreview(snapshot, tick, visualOptions));
       return;
@@ -244,6 +246,7 @@ export default function PreviewV2() {
     }
     setDiagnostics([...audioWarnings, ...result.warnings]);
     setCompiled(true);
+    setFollowers(result.value.followers);
     vp?.setPlan(result.value); // Starts paused at tick 0.
   }, [stopSound]);
 
@@ -660,7 +663,7 @@ export default function PreviewV2() {
         <aside className="pv2-side">
           <section className="pv2-panel" aria-label="Controls">
             <h2 className="pv2-heading">Controls</h2>
-            <ControlsPanel document={doc} onEdit={onEdit} />
+            <ControlsPanel document={doc} onEdit={onEdit} followers={followers} />
           </section>
           <section className="pv2-panel" aria-label="Selected node">
             <h2 className="pv2-heading">Selected node</h2>

@@ -139,6 +139,24 @@ export type PathPreviewOptions = {
   probe?: { nodeId: string; port: string };
 };
 
+let lengthProbeDepth = 0;
+/**
+ * World-space arc length of the first path of `nodeId.port` at `tick` (PathFollower speed mode). Throws
+ * TimingError when the path cannot be evaluated or depends on its own follower (probe nesting > 4).
+ */
+export function probePathLength(input: unknown, nodeId: string, port: string, tick: number): number {
+  if (lengthProbeDepth > 4) throw new TimingError(`Path "${nodeId}" depends on its own follower's timing.`, nodeId);
+  lengthProbeDepth++;
+  try {
+    const r = compilePathPreview(input, tick, { audioHandled: true, probe: { nodeId, port } });
+    if (!r.ok) throw new TimingError(r.errors[0]?.message ?? `Path "${nodeId}" could not be evaluated.`, r.errors[0]?.nodeId ?? nodeId);
+    const pts = r.value.probe?.[0]?.points ?? [];
+    let len = 0;
+    for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1], pts[i][2] - pts[i - 1][2]);
+    return len;
+  } finally { lengthProbeDepth--; }
+}
+
 export function compilePathPreview(input: unknown, effectTick: number, options: PathPreviewOptions = {}): ValidationResult<PathPreviewPlan> {
   if (typeof effectTick !== 'number' || !Number.isInteger(effectTick) || effectTick < 0) {
     return { ok: false, errors: [{ code: 'INVALID_VALUE', severity: 'error', message: `effectTick must be a nonnegative integer; got ${String(effectTick)}.` }] };
@@ -187,6 +205,7 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
     type: id => nodes.get(id)?.node.type,
     raw: (id, p) => { const x = nodes.get(id); return x ? rawParam(x, p) as number : fail('MISSING_REFERENCE', `Node "${id}" is not in the expanded graph.`, id); },
     source: (nodeId, port) => { const c = into(nodeId, port)[0]; return c && c.source.kind === 'node' ? { nodeId: c.source.nodeId, port: c.source.port } : undefined; },
+    pathLength: (nodeId, port, tick) => probePathLength(input, nodeId, port, tick),
   };
   const rawParam = (n: ExpandedNode, id: string): ParameterValue => {
     const v = params.get(`${n.node.id}\u0000${id}`);

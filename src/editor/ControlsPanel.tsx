@@ -5,10 +5,11 @@
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import type { EffectDocumentV2, PublicControl } from '../model/types.ts';
 import type { Patch as HistoryPatch } from './history.ts';
+import type { FollowerTravel } from '../graph/toParticles.ts';
 
 const UNIT_LABEL: Record<string, string> = { meter: 'm', second: 's', tick: 'ticks', radian: 'rad', metersPerSecond: 'm/s', metersPerSecondSquared: 'm/s²', hertz: 'Hz', perSecond: '/s', linearGain: '×', normalized: '', none: '' };
 
-type Props = { document: EffectDocumentV2; onEdit: (label: string, patches: HistoryPatch[]) => void };
+type Props = { document: EffectDocumentV2; onEdit: (label: string, patches: HistoryPatch[]) => void; followers?: FollowerTravel[] };
 
 function ControlRow({ c, index, onEdit, durationTicks }: { c: PublicControl; index: number; onEdit: Props['onEdit']; durationTicks: number }) {
   const [draft, setDraft] = useState<string | null>(null);
@@ -85,21 +86,39 @@ function ValueRow({ c, index, onEdit }: { c: PublicControl; index: number; onEdi
 
 const isNumber = (c: PublicControl) => c.type === 'number' || c.type === 'integer';
 
-export function ControlsPanel({ document: doc, onEdit }: Props) {
-  const numeric = doc.controls.map((c, i) => [c, i] as const);
-  if (!numeric.length) return <p className="pv2-muted">No published controls. Insert a component (Add component) to get its knobs.</p>;
-  const sections = [...new Set(numeric.map(([c]) => c.section))];
+/** 10 "resolved duration shown": each projectile's distance, travel ticks and actual speed. */
+function TravelReadout({ doc, followers }: { doc: EffectDocumentV2; followers: FollowerTravel[] }) {
+  if (!followers.length) return null;
+  const label = (id: string) => doc.graphs.flatMap(g => g.nodes).find(n => n.id === id)?.label || id;
+  return (
+    <fieldset className="cp-section">
+      <legend>Projectile travel</legend>
+      {followers.map(f => (
+        <div key={f.nodeId} className="cp-travel">
+          {label(f.nodeId)}: {f.lengthMeters.toFixed(2)} m in {f.travelTicks} ticks ({(f.travelTicks / 60).toFixed(2)} s) = {(f.lengthMeters / (f.travelTicks / 60)).toFixed(1)} m/s
+          {f.speedMode ? ' (speed mode: moving the Target keeps this speed)' : ' (duration mode: moving the Target changes the speed)'}
+        </div>
+      ))}
+    </fieldset>
+  );
+}
+
+export function ControlsPanel({ document: doc, onEdit, followers = [] }: Props) {
+  const all = doc.controls.map((c, i) => [c, i] as const);
+  if (!all.length) return <p className="pv2-muted">No published controls. Insert a component (Add component) to get its knobs.</p>;
+  const sections = [...new Set(all.map(([c]) => c.section))];
   return (
     <div className="cp-root">
       {sections.map(s => (
         <fieldset key={s} className="cp-section">
           <legend>{s}</legend>
-          {numeric.filter(([c]) => c.section === s).map(([c, i]) => isNumber(c)
+          {all.filter(([c]) => c.section === s).map(([c, i]) => isNumber(c)
             ? <ControlRow key={c.id} c={c} index={i} onEdit={onEdit} durationTicks={doc.durationTicks} />
             : <ValueRow key={`${c.id}-${JSON.stringify(c.value)}`} c={c} index={i} onEdit={onEdit} />)}
         </fieldset>
       ))}
-      <style>{`.cp-root{display:flex;flex-direction:column;gap:10px}.cp-section{border:1px solid #2a3140;border-radius:6px;padding:6px 8px 8px;margin:0}.cp-section legend{font-size:13px;font-weight:600;padding:0 4px}.cp-row{display:grid;grid-template-columns:minmax(90px,1fr) 2fr 72px auto;gap:6px;align-items:center;font-size:13px;margin-top:4px}.cp-num{width:72px}.cp-row-value{grid-template-columns:minmax(90px,1fr) 3fr}.cp-vec{display:flex;gap:4px}.cp-unit{font-size:11px;opacity:.7}`}</style>
+      <TravelReadout doc={doc} followers={followers} />
+      <style>{`.cp-root{display:flex;flex-direction:column;gap:10px}.cp-section{border:1px solid #2a3140;border-radius:6px;padding:6px 8px 8px;margin:0}.cp-section legend{font-size:13px;font-weight:600;padding:0 4px}.cp-row{display:grid;grid-template-columns:minmax(90px,1fr) 2fr 72px auto;gap:6px;align-items:center;font-size:13px;margin-top:4px}.cp-num{width:72px}.cp-row-value{grid-template-columns:minmax(90px,1fr) 3fr}.cp-vec{display:flex;gap:4px}.cp-travel{font-size:12px;opacity:.85;margin-top:4px}.cp-unit{font-size:11px;opacity:.7}`}</style>
     </div>
   );
 }
