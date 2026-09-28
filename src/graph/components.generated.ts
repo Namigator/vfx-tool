@@ -930,7 +930,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -2,
+    1,
+    0
+   ],
+   "target": [
+    2,
+    1.1,
+    0
+   ]
+  }
  },
  {
   "id": "smoke-plume",
@@ -2634,7 +2646,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -2.5,
+    1.2,
+    0
+   ],
+   "target": [
+    2.5,
+    1.2,
+    0
+   ]
+  }
  },
  {
   "id": "rock-burst",
@@ -6199,7 +6223,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -2.5,
+    1.2,
+    0
+   ],
+   "target": [
+    2.5,
+    1.2,
+    0
+   ]
+  }
  },
  {
   "id": "charge-tethers",
@@ -8287,7 +8323,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -5.1,
+    1.65,
+    0
+   ],
+   "target": [
+    4.5,
+    0.1,
+    0
+   ]
+  }
  },
  {
   "id": "lightning-thin-fork",
@@ -9844,7 +9892,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -5.1,
+    1.65,
+    0
+   ],
+   "target": [
+    4.5,
+    0.1,
+    0
+   ]
+  }
  },
  {
   "id": "lightning-heavy-strike",
@@ -11401,7 +11461,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -5.1,
+    1.65,
+    0
+   ],
+   "target": [
+    4.5,
+    0.1,
+    0
+   ]
+  }
  },
  {
   "id": "fire-jet",
@@ -12649,7 +12721,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.2,
+    0
+   ],
+   "target": [
+    3,
+    1.1,
+    0
+   ]
+  }
  },
  {
   "id": "fire-torch",
@@ -13897,7 +13981,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.2,
+    0
+   ],
+   "target": [
+    3,
+    1.1,
+    0
+   ]
+  }
  },
  {
   "id": "fire-burst",
@@ -15145,7 +15241,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.2,
+    0
+   ],
+   "target": [
+    3,
+    1.1,
+    0
+   ]
+  }
  },
  {
   "id": "water-stream",
@@ -16299,7 +16407,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.5,
+    0
+   ],
+   "target": [
+    3,
+    0.05,
+    0
+   ]
+  }
  },
  {
   "id": "water-narrow",
@@ -17453,7 +17573,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.5,
+    0
+   ],
+   "target": [
+    3,
+    0.05,
+    0
+   ]
+  }
  },
  {
   "id": "water-broad",
@@ -18607,7 +18739,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.5,
+    0
+   ],
+   "target": [
+    3,
+    0.05,
+    0
+   ]
+  }
  },
  {
   "id": "shadow-collapse",
@@ -19666,7 +19810,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.4,
+    0
+   ],
+   "target": [
+    0,
+    0.75,
+    0
+   ]
+  }
  },
  {
   "id": "shadow-puff",
@@ -20417,7 +20573,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.4,
+    0
+   ],
+   "target": [
+    0,
+    0.75,
+    0
+   ]
+  }
  },
  {
   "id": "shadow-tendril",
@@ -21408,7 +21576,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.4,
+    0
+   ],
+   "target": [
+    0,
+    0.75,
+    0
+   ]
+  }
  },
  {
   "id": "ice-eruption",
@@ -22375,7 +22555,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.3,
+    0
+   ],
+   "target": [
+    0,
+    0,
+    0
+   ]
+  }
  },
  {
   "id": "ice-fan",
@@ -23342,7 +23534,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.3,
+    0
+   ],
+   "target": [
+    0,
+    0,
+    0
+   ]
+  }
  },
  {
   "id": "ice-cluster",
@@ -24309,7 +24513,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.3,
+    0
+   ],
+   "target": [
+    0,
+    0,
+    0
+   ]
+  }
  },
  {
   "id": "earth-upheaval",
@@ -25392,7 +25608,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.3,
+    0
+   ],
+   "target": [
+    0,
+    0,
+    0
+   ]
+  }
  },
  {
   "id": "earth-heavy",
@@ -26475,7 +26703,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.3,
+    0
+   ],
+   "target": [
+    0,
+    0,
+    0
+   ]
+  }
  },
  {
   "id": "earth-gravel",
@@ -27558,7 +27798,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.3,
+    0
+   ],
+   "target": [
+    0,
+    0,
+    0
+   ]
+  }
  },
  {
   "id": "wind-gust",
@@ -28321,7 +28573,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.1,
+    0
+   ],
+   "target": [
+    3,
+    1.1,
+    0
+   ]
+  }
  },
  {
   "id": "wind-cut",
@@ -28992,7 +29256,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.1,
+    0
+   ],
+   "target": [
+    3,
+    1.1,
+    0
+   ]
+  }
  },
  {
   "id": "wind-whirl",
@@ -29862,7 +30138,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.1,
+    0
+   ],
+   "target": [
+    3,
+    1.1,
+    0
+   ]
+  }
  },
  {
   "id": "poison-caustic",
@@ -30620,7 +30908,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.2,
+    0
+   ],
+   "target": [
+    0,
+    0.1,
+    0
+   ]
+  }
  },
  {
   "id": "poison-pool",
@@ -31378,7 +31678,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.2,
+    0
+   ],
+   "target": [
+    0,
+    0.1,
+    0
+   ]
+  }
  },
  {
   "id": "poison-plume",
@@ -32136,7 +32448,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.2,
+    0
+   ],
+   "target": [
+    0,
+    0.1,
+    0
+   ]
+  }
  },
  {
   "id": "light-pulse",
@@ -32989,7 +33313,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.3,
+    0
+   ],
+   "target": [
+    0,
+    1,
+    0
+   ]
+  }
  },
  {
   "id": "light-cone",
@@ -33842,7 +34178,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.3,
+    0
+   ],
+   "target": [
+    0,
+    1,
+    0
+   ]
+  }
  },
  {
   "id": "light-blessing",
@@ -34695,7 +35043,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.3,
+    0
+   ],
+   "target": [
+    0,
+    1,
+    0
+   ]
+  }
  },
  {
   "id": "energy-bolt",
@@ -35901,7 +36261,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -4,
+    1.4,
+    0
+   ],
+   "target": [
+    4,
+    0.3,
+    0
+   ]
+  }
  },
  {
   "id": "energy-needle",
@@ -37107,7 +37479,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -4,
+    1.4,
+    0
+   ],
+   "target": [
+    4,
+    0.3,
+    0
+   ]
+  }
  },
  {
   "id": "energy-orb",
@@ -38313,7 +38697,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -4,
+    1.4,
+    0
+   ],
+   "target": [
+    4,
+    0.3,
+    0
+   ]
+  }
  },
  {
   "id": "flamethrower",
@@ -39839,7 +40235,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.2,
+    0
+   ],
+   "target": [
+    3,
+    1.1,
+    0
+   ]
+  }
  },
  {
   "id": "fireball",
@@ -40677,6 +41085,18 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      }
     ]
    }
-  ]
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.2,
+    0
+   ],
+   "target": [
+    3,
+    0.3,
+    0
+   ]
+  }
  }
 ];

@@ -1,7 +1,7 @@
 // F01 minimum graph (22-CONFORMANCE-FIXTURES.md, WP01C-WORKER-CONTRACT.md). Structurally executable
 // against createRegistry(); this is not simulation acceptance. Duration is 120 ticks so the particle's
 // death at tick 60 (lifetime 1 s) is observable before the document ends.
-import type { EffectDocumentV2 } from '../model/types.ts';
+import type { EffectDocumentV2, Vec3 } from '../model/types.ts';
 
 const edge = (id: string, sourceNode: string, sourcePort: string, targetNode: string, targetPort: string) =>
   ({ id, source: { nodeId: sourceNode, port: sourcePort }, target: { nodeId: targetNode, port: targetPort }, order: 0 });
@@ -338,6 +338,8 @@ export function createForcesDemoDocument(): EffectDocumentV2 {
 }
 
 /** New Blank (01 R01): Source/Target anchors and one EffectOutput, nothing else. */
+export const BLANK_SOURCE: Vec3 = [-3, 1.2, 0], BLANK_TARGET: Vec3 = [3, 1, 0];
+
 export function createBlankDocument(id = 'doc-blank', name = 'Untitled effect'): EffectDocumentV2 {
   const d = createF01Document();
   d.id = id; d.name = name; d.tags = [];
@@ -345,5 +347,7 @@ export function createBlankDocument(id = 'doc-blank', name = 'Untitled effect'):
   g.nodes = g.nodes.filter(n => ['node-source', 'node-target', 'node-output'].includes(n.id));
   g.edges = [];
   d.editor.graphs[g.id].nodes = { 'node-source': { x: 0, y: 0 }, 'node-target': { x: 0, y: 160 }, 'node-output': { x: 1040, y: 0 } };
+  // Left-to-right stage like every component was designed for (was Source/Target into the screen).
+  d.anchors = d.anchors.map(a => a.id === 'source' ? { ...a, position: [...BLANK_SOURCE] } : a.id === 'target' ? { ...a, position: [...BLANK_TARGET] } : a);
   return d;
 }

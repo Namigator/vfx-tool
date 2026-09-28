@@ -169,3 +169,12 @@ test('component lengths include their tails; shortening the effect afterwards is
     assert.match(truncationWarning(short)!.message, /cut off/);
   }
 });
+
+test('a fresh New effect adopts the first component designed layout; later inserts keep the anchors', () => {
+  const water = COMPONENT_TEMPLATES.find(c => c.id === 'water-stream')!;
+  assert.ok(water.layout);
+  const first = insertComponent(createBlankDocument(), 'water-stream', undefined, { group: true }).doc;
+  assert.deepEqual(first.anchors.find(a => a.id === 'target')!.position, water.layout!.target);
+  const second = insertComponent(first, 'energy-bolt', undefined, { group: true }).doc;
+  assert.deepEqual(second.anchors.find(a => a.id === 'target')!.position, water.layout!.target, 'second component does not move the stage');
+});

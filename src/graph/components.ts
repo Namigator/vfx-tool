@@ -5,6 +5,7 @@
 import type { EffectDocumentV2, GraphDefinition, NodeDefinition, ParameterValue, Vec3 } from '../model/types.ts';
 import { createRegistry } from './registry.ts';
 import { COMPONENT_TEMPLATES } from './components.generated.ts';
+import { BLANK_SOURCE, BLANK_TARGET } from './fixtures.ts';
 
 export type ComponentTemplate = {
   id: string; label: string; description: string;
@@ -17,6 +18,8 @@ export type ComponentTemplate = {
   edges: [string, string][];
   /** Published big knobs (01 "4–8 primary controls"): document controls bound to component node params. */
   knobs: ComponentKnob[];
+  /** Source/Target positions the component was designed with (adopted when inserted into a fresh effect). */
+  layout?: { source: Vec3; target: Vec3 };
 };
 /**
  * A knob is a number (affine scale/offset per binding; `axis` drives one component of a vec2/vec3 parameter,
@@ -52,9 +55,24 @@ const isAudioType = (type: string) => type.startsWith('Audio');
  * every link from inside the group to the root — EffectOutput ports, Schedule cues for sounds — becomes an
  * interface output through a GroupOutput bridge. Returns the new document, the prefix and the Group node id.
  */
+/**
+ * A fresh effect (only Source, Target and Output, anchors still at the New defaults) adopts the component's designed
+ * Source/Target layout, so the first component looks as designed; any other document keeps the user's anchors.
+ */
+function adoptLayout(d: EffectDocumentV2, c: ComponentTemplate): void {
+  if (!c.layout || d.graphs.length !== 1) return;
+  const root = d.graphs[0];
+  if (root.nodes.some(n => !['Anchor', 'EffectOutput'].includes(n.type)) || root.nodes.length > 3) return;
+  const at = (id: string) => d.anchors.find(a => a.id === id)?.position;
+  const same = (p: Vec3 | undefined, q: Vec3) => !!p && p.every((v, i) => Math.abs(v - q[i]) < 1e-9);
+  if (!same(at('source'), BLANK_SOURCE) || !same(at('target'), BLANK_TARGET)) return;
+  d.anchors = d.anchors.map(a => a.id === 'source' ? { ...a, position: [...c.layout!.source] as Vec3 } : a.id === 'target' ? { ...a, position: [...c.layout!.target] as Vec3 } : a);
+}
+
 export function insertComponent(doc: EffectDocumentV2, componentId: string, prefix?: string, opts: { group?: boolean } = {}): { doc: EffectDocumentV2; prefix: string; groupNodeId?: string } {
   const c = getComponent(componentId);
   const d = structuredClone(doc);
+  adoptLayout(d, c);
   const root = d.graphs.find(x => x.id === d.rootGraphId);
   if (!root) throw new Error('Document has no root graph.');
   const grouped = opts.group === true;
