@@ -68,6 +68,10 @@ size/triangles/validation directly). MCP user components live in work/mcp/user-c
   the agent re-reported fixed gaps. Fix: .mcp.json now runs mcp/vfx-mcp-reload.mjs (restarts the server on src/mcp
   changes, replays the handshake, documents reopen from work/mcp mirrors) — needs ONE user reconnect of "vfx" to take
   effect, then rerun A-05 (run 3). Also documented Emitter coneAngle/space.
+- A-05 run 3 (fresh server, 2026-09-28): [SAW] nozzle prop, controlled glow, jagged turbulent flame, embers; still redder,
+  shorter jet, faint smoke vs reference. Gaps fixed: PropMesh Direction; Emitter burst/rate guidance; render_frames
+  now reports lit/bright coverage + glow-flood warning. Run 4 launched (doc a05d). Frames sent to user for a look.
+- Rule learned: commit only when the gate shows `fail 0` (two slips today).
 - Left: sound (parked); user visual review of all families; merge to main after visual OK.
 - User visual review still pending for every family (they could not test today).
 
