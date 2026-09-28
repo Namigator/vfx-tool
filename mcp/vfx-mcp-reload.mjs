@@ -35,7 +35,16 @@ function start(replay) {
       send(line);
     }
   });
-  child.on('exit', code => { if (!restarting) { log(`server exited (${code}); restarting`); restart(); } });
+  // A crash (e.g. a syntax error mid-edit) restarts after a back-off, not in a tight loop; the next file change
+  // restarts it at once anyway.
+  const startedAt = Date.now();
+  child.on('exit', code => {
+    if (restarting) return;
+    const wait = Date.now() - startedAt < 3000 ? 3000 : 0;
+    log(`server exited (${code}); restarting${wait ? ' in 3 s' : ''}`);
+    clearTimeout(timer);
+    timer = setTimeout(restart, wait);
+  });
   if (replay && init) { const m = JSON.parse(init); m.id = REPLAY_ID; child.stdin.write(JSON.stringify(m) + '\n'); }
 }
 
