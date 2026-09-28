@@ -22,7 +22,7 @@ S.push(['vfx_new_document', { template: 'blank', id: D }]);
 doc('vfx_set_document', { durationTicks: END + 2, seed: 42, name: 'Flamethrower (hand-built)' });
 doc('vfx_set_anchor', { anchorId: 'source', position: [-3, 1.2, 0] });
 doc('vfx_set_anchor', { anchorId: 'target', position: [3, 1.1, 0] });
-doc('vfx_set_params', { nodeId: 'node-output', params: { glowStrength: 0.55, glowRadius: 0.3, glowThreshold: 1.2, glowLimit: 2 } });
+// No effect-wide glow overrides: as a component it must look right under the default EffectOutput glow.
 add('Schedule', 'emit', { startTicks: IGNITE, durationTicks: EMIT_END - IGNITE, mode: 'window' });
 
 // ---- Tongue body: normal blend, cooling white-yellow -> orange -> deep red over life, dissolving silhouettes.
@@ -44,7 +44,7 @@ const tongue = (id, sprite) => {
 const tA = tongue('tonguea', 'flame-tongue-a'), tB = tongue('tongueb', 'flame-tongue-b');
 
 // ---- Additive accent on young tongues (same particles, a second faint hot layer early in life).
-add('Material', 'accentmat', { template: 'SpriteTextured', sprite: 'flame-tongue-a', blend: 'additive', tint: col('#FFF2D0'), opacity: 0.09 });
+add('Material', 'accentmat', { template: 'SpriteTextured', sprite: 'flame-tongue-a', blend: 'additive', tint: col('#FFF2D0'), opacity: 0.05 });
 add('BillboardRenderer', 'accentbb', { alignment: 'velocity', stretchRatio: 1.6, pivot: 0.38, flipbookMode: 'overLife',
   sizeOverLife: lin([[0, 0.8], [0.45, 2.2], [0.46, 0], [1, 0]]), opacityOverLife: lin([[0, 0], [0.05, 1], [0.45, 0], [1, 0]]) });
 wire(`${tA}.particles`, 'accentbb.particles'); wire('accentmat.material', 'accentbb.material'); out('accentbb');
@@ -54,7 +54,7 @@ add('Emitter', 'core', { shape: 'cone', coneAngle: deg(3), radius: 0.015, rate: 
 add('InitialProperties', 'coreip', { sizeMin: 0.15, sizeMax: 0.18 });
 add('Drag', 'coredrag', { coefficient: 0.12 });
 add('NoiseForce', 'corenoise', { mode: 'vector', amplitude: 1, frequency: 0.55, evolution: 0.8 });
-add('Material', 'coremat', { template: 'SpriteTextured', sprite: 'flame-tongue-b', blend: 'additive', tint: col('#FFF6E0'), opacity: 0.24 });
+add('Material', 'coremat', { template: 'SpriteTextured', sprite: 'flame-tongue-b', blend: 'additive', tint: col('#FFF6E0'), opacity: 0.13 });
 add('BillboardRenderer', 'corebb', { alignment: 'velocity', stretchRatio: 1.9, pivot: 0.38, flipbookMode: 'overLife',
   sizeOverLife: lin([[0, 1], [0.4, 3.4], [1, 2]]), opacityOverLife: lin([[0, 1], [0.6, 1], [1, 0]]) });
 wire('node-source.out', 'core.anchor'); wire('node-target.out', 'core.aim'); wire('emit.window', 'core.window');

@@ -40,19 +40,6 @@
   }
  ],
  [
-  "vfx_set_params",
-  {
-   "docId": "flamethrower",
-   "nodeId": "node-output",
-   "params": {
-    "glowStrength": 0.55,
-    "glowRadius": 0.3,
-    "glowThreshold": 1.2,
-    "glowLimit": 2
-   }
-  }
- ],
- [
   "vfx_add_node",
   {
    "docId": "flamethrower",
@@ -647,7 +634,7 @@
      "srgb": "#FFF2D0",
      "alpha": 1
     },
-    "opacity": 0.09
+    "opacity": 0.05
    }
   }
  ],
@@ -825,7 +812,7 @@
      "srgb": "#FFF6E0",
      "alpha": 1
     },
-    "opacity": 0.24
+    "opacity": 0.13
    }
   }
  ],

@@ -22,10 +22,10 @@ export const GUIDE: Record<string, string> = {
 - Forces: Drag 0.18, NoiseForce vector amplitude ~3 frequency 0.55, Gravity [0,0.9,0] (the far end billows up).
 - BillboardRenderer: alignment velocity, stretchRatio ~1.6, pivot 0.38, flipbookMode overLife; sizeOverLife [0:1, 0.7:3.7, 1:2.2]; opacityOverLife [0:0, 0.07:1, 0.55:1, 1:0]; colorOverLife white -> #FFE0A0 -> #FFA050 -> #C8501E -> #5A1E0A (the flame COOLS as it ages - this is what gives the white root, orange body and dark red tips).
 - Material: blend NORMAL (not additive), opacity ~0.62, dissolve 0.6 from 0.5 of life. Normal blend keeps the body readable and never floods the glow.
-- Faint additive accent: a second BillboardRenderer on the same particles (flame-tongue-a, additive, opacity ~0.09, tint #FFF2D0), visible only while young (opacityOverLife [0:0, 0.05:1, 0.45:0]).
-- Hot core: cone 3 deg (0.052), rate ~130/s, speed 10-13, life 0.23-0.43 s, size 0.15-0.18, additive, opacity ~0.24, tint #FFF6E0, stretchRatio ~1.9.
+- Faint additive accent: a second BillboardRenderer on the same particles (flame-tongue-a, additive, opacity ~0.05, tint #FFF2D0), visible only while young (opacityOverLife [0:0, 0.05:1, 0.45:0]).
+- Hot core: cone 3 deg (0.052), rate ~130/s, speed 10-13, life 0.23-0.43 s, size 0.15-0.18, additive, opacity ~0.13, tint #FFF6E0, stretchRatio ~1.9.
 - Smoke and embers are born WHERE TONGUES DIE: ParticleEvents(death) on each tongue chain -> Emitter with Burst 1, useEventPosition, inheritVelocity 0.35-0.45. Smoke probability ~0.08 (smoke-puff, normal, #6A625A, opacity peak ~0.32, size 0.35-0.5 growing x2.4, Gravity up 1.6, life 1-1.9 s). Embers probability ~0.1 (spark-streak additive + a SpriteUnlit ParticleTrail, Gravity down ~3.5, life 0.5-1.2 s).
-- Glow: EffectOutput glowStrength ~0.55, glowRadius ~0.3, glowThreshold ~1.2, glowLimit ~2.
+- Glow: the default EffectOutput glow works with these values (core opacity ~0.13, accent ~0.05); only touch glow settings if vfx_render_frames warns about flooding.
 - Light: two PointLights along the jet (OffsetAnchor 1.2 m and 3 m from Source, 0.3 m up), #FF7A28, intensity ~16, range ~3.5, flicker 0.25.
 - Ignition: SpriteRenderer soft-glow variant 1 at the muzzle (11 ticks) + CameraImpulse (translation 0.03). Nozzle: PropMesh cylinder at Source aimed at Target (pivot end), leg PropMesh Direction [0,-1,0] pivot start.
 - Decay / billows elsewhere: sprite fire-puff (a fire blob that cools and tears apart).`,
