@@ -74,6 +74,11 @@
   lightning bolt reaches 69-stud target. SpellForge branch vfx-studio-test 805f1c9: fire+lightning play from cast time
   at predicted hit, projectile speed; 27/27 headless. Remaining SpellForge gaps: hit is predicted (moving mobs miss),
   only waypoint/velocity trajectories, flat ground rings still camera-facing, ~1150 lightning beams.
+- 2026-09-30 player setTarget/hit (ee49d4e). SpellForge vfx-studio-test 6c789f4: fire/lightning from cast time,
+  hit(realPos) on the real projectile end (disposeBody), setTarget per frame for homing/arc/boomerang/formula;
+  35/35 headless. SpellForge-side gaps left: poison only via impactFx (live projectiles never call it), orbit/static
+  trajectories keep old orb, scale unused, stand-in textures, no real playtest. Mesh particle export in progress
+  (Sonnet implementer).
 - TOOL BROKEN 2026-09-29: ~/.claude/tools/shot.ps1 url returns "chrome produced no file" even for docs that captured
   earlier (doctor clean, page reports READY via cdp-eval). Use the in-app browser pane or cdp-eval meanwhile.
 - USER REPORT 2026-09-29 (open): viewed from behind/in front of the fire (along the jet), the sprites move
