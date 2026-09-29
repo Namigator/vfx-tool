@@ -212,6 +212,16 @@ void main() {
 }`;
 
 const FRAGMENT = /* glsl */ `
+uniform float uHue;
+// Colour shift: CSS hue-rotate matrix (same as hueRotate in toParticles), luminance-preserving.
+vec3 vfxHue(vec3 c, float r) {
+  if (r == 0.0) return c;
+  float a = cos(r), b = sin(r);
+  return max(vec3(0.0), vec3(
+    dot(c, vec3(0.213 + 0.787 * a - 0.213 * b, 0.715 - 0.715 * a - 0.715 * b, 0.072 - 0.072 * a + 0.928 * b)),
+    dot(c, vec3(0.213 - 0.213 * a + 0.143 * b, 0.715 + 0.285 * a + 0.140 * b, 0.072 - 0.072 * a - 0.283 * b)),
+    dot(c, vec3(0.213 - 0.213 * a - 0.787 * b, 0.715 - 0.715 * a + 0.715 * b, 0.072 + 0.928 * a + 0.072 * b))));
+}
 uniform vec3 uColor;
 uniform float uAlpha;
 uniform float uEmission;
@@ -275,7 +285,7 @@ void main() {
   else if (a <= 0.0) discard;
   // 09 sprite rim: radial (a camera-facing quad has no useful fresnel normal).
   vec3 rimRgb = uRim.x > 0.0 ? uRimColor * uRim.x * pow(clamp(length(vUv - 0.5) * 2.0, 0.0, 1.0), uRim.y) : vec3(0.0);
-  gl_FragColor = vec4(t.rgb * uColor * vLifeColor * (1.0 + uEmission) + edgeRgb + rimRgb, a);
+  gl_FragColor = vec4(vfxHue(t.rgb * uColor * vLifeColor * (1.0 + uEmission) + edgeRgb + rimRgb, uHue), a);
   #include <colorspace_fragment>
 }`;
 
@@ -294,6 +304,16 @@ void main() {
 }`;
 
 const RIBBON_FRAGMENT = /* glsl */ `
+uniform float uHue;
+// Colour shift: CSS hue-rotate matrix (same as hueRotate in toParticles), luminance-preserving.
+vec3 vfxHue(vec3 c, float r) {
+  if (r == 0.0) return c;
+  float a = cos(r), b = sin(r);
+  return max(vec3(0.0), vec3(
+    dot(c, vec3(0.213 + 0.787 * a - 0.213 * b, 0.715 - 0.715 * a - 0.715 * b, 0.072 - 0.072 * a + 0.928 * b)),
+    dot(c, vec3(0.213 - 0.213 * a + 0.143 * b, 0.715 + 0.285 * a + 0.140 * b, 0.072 - 0.072 * a - 0.283 * b)),
+    dot(c, vec3(0.213 - 0.213 * a - 0.787 * b, 0.715 - 0.715 * a + 0.715 * b, 0.072 + 0.928 * a + 0.072 * b))));
+}
 uniform vec3 uColor;
 uniform float uAlpha;
 uniform float uEmission;
@@ -360,7 +380,7 @@ void main() {
   }
   if (uCutout > 0.5) { if (a < uCutoff) discard; a = 1.0; }
   else if (a <= 0.0) discard;
-  gl_FragColor = vec4(rgb * (1.0 + uEmission), a);
+  gl_FragColor = vec4(vfxHue(rgb * (1.0 + uEmission), uHue), a);
   #include <colorspace_fragment>
 }`;
 
@@ -374,7 +394,7 @@ export type PathCompile = (tick: number) => ValidationResult<PathPreviewPlan>;
 /** Blend/colour/opacity/emission uniforms and state shared by point and ribbon materials. */
 function materialFor(
   vertexShader: string, fragmentShader: string,
-  m: { color: { srgb: string; alpha: number }; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout'; alphaCutoff: number },
+  m: { color: { srgb: string; alpha: number }; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout'; alphaCutoff: number; hueShift?: number },
 ): THREE.ShaderMaterial {
   const cutout = m.blend === 'cutout';
   return new THREE.ShaderMaterial({
@@ -386,6 +406,7 @@ function materialFor(
       uEmission: { value: m.emission },
       uCutoff: { value: m.alphaCutoff },
       uCutout: { value: cutout ? 1 : 0 },
+      uHue: { value: ((m.hueShift ?? 0) * Math.PI) / 180 },
     },
     transparent: !cutout,
     depthWrite: cutout,
@@ -395,7 +416,7 @@ function materialFor(
 
 /** Layer set identity: meshes are rebuilt only when these change between ticks. */
 function ribbonKey(layers: readonly PathPreviewLayer[]): string {
-  return JSON.stringify(layers.map(l => [l.nodeId, l.color, l.opacity, l.emission, l.blend, l.alphaCutoff, l.liquid, l.renderOrderOffset, l.visualOrder]));
+  return JSON.stringify(layers.map(l => [l.nodeId, l.color, l.opacity, l.emission, l.blend, l.alphaCutoff, l.liquid, l.hueShift, l.renderOrderOffset, l.visualOrder]));
 }
 
 export class PreviewViewport {

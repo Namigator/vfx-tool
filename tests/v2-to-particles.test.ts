@@ -48,7 +48,7 @@ test('F01 graph compiles to one point system and one billboard layer with exact 
     lifetimeTicks: { min: 60, max: 60 }, size: { min: 0.1, max: 0.1 }, operators: [],
   });
   assert.deepEqual(p.layers, [{
-    nodeId: 'node-billboard', systemId: 'node-initial', color: { srgb: '#FFFFFF', alpha: 1 },
+    nodeId: 'node-billboard', systemId: 'node-initial', color: { srgb: '#FFFFFF', alpha: 1 }, hueShift: 0,
     opacity: 1, emission: 0, blend: 'additive', alphaCutoff: 0.5, groundFade: 0, renderOrderOffset: 0, visualOrder: 0,
     sizeOverLife: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] },
     opacityOverLife: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] },

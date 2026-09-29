@@ -115,6 +115,8 @@ export type PathPreviewLayer = {
   alphaCutoff: number;
   /** 09 liquid (0..1): clear core, lit edges and flowing highlights; 0 = solid. */
   liquid: number;
+  /** Material Colour shift in degrees (0 = unchanged). */
+  hueShift: number;
 };
 export type PathPreviewPlan = {
   durationTicks: number;
@@ -618,6 +620,7 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
         blend: param(mat, 'blend') as PathPreviewLayer['blend'],
         alphaCutoff: num(mat, 'alphaCutoff'),
         liquid: num(mat, 'liquid'),
+        hueShift: num(mat, 'hueShift'),
         ...(sprite ? { sprite } : {}),
         ...((): Pick<PathPreviewLayer, 'uvAnim'> => {
           const sc = param(mat, 'uvScroll') as [number, number], dist = num(mat, 'uvDistort');

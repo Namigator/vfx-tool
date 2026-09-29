@@ -169,6 +169,17 @@ export function insertComponent(doc: EffectDocumentV2, componentId: string, pref
       bindings: scheds.map((n, i) => ({ nodeId: nodeId(n.id), parameter: 'startTicks', ...(offs[i] ? { offset: offs[i] } : {}) })),
     });
   }
+  // Colour shift (user 2026-09-29: "why can't I change the colour of the flamethrower?"): one knob rotates every
+  // colour of the component — materials (tint, colour over life, texture colours) and lights — around the colour wheel.
+  const tinted = c.nodes.filter(n => n.type === 'Material' || n.type === 'PointLight');
+  if (tinted.length) {
+    const scope = graphOfTemplate(tinted[0].id), inScope = tinted.filter(n => graphOfTemplate(n.id) === scope);
+    d.controls.push({
+      id: `ctl-${p}-colour-shift`, scopeGraphId: scope.id, label: 'Colour shift', type: 'number', unit: 'none', value: 0, default: 0, min: -180, max: 180, step: 1,
+      section: p === c.id ? c.label : `${c.label} (${p})`, description: 'Turns all colours of this component around the colour wheel: 180 makes orange fire blue, 120 green, -60 pink. Brightness stays the same.', editPolicy: 'live',
+      bindings: inScope.map(n => ({ nodeId: nodeId(n.id), parameter: 'hueShift' })),
+    });
+  }
   // Knobs become document controls bound to the component's (prefixed) nodes; type/unit/bounds come from
   // the first binding's parameter spec, bounds widened so every scaled binding stays inside its own range.
   for (const k of c.knobs) {

@@ -50,6 +50,8 @@ export type ParticlePreviewSystem = { id: string; descriptor: ParticleEmitterDes
 export type ParticlePreviewLayer = {
   /** BillboardRenderer node ID. */
   nodeId: string;
+  /** Material Colour shift in degrees (0 = unchanged); the shader rotates the final colour. */
+  hueShift?: number;
   /** Material ground fade height in world meters (0 = off). */
   groundFade?: number;
   /** 09 dissolve over life (amount 0 = off). */
@@ -87,7 +89,7 @@ export type ParticlePreviewLayer = {
 /** 05 ParticleTrail sink: ribbon trails behind one particle system's particles. */
 export type ParticleTrailLayer = {
   nodeId: string; systemId: string; historyTicks: number; maxPoints: number; width: number; endFade: number;
-  color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout'; alphaCutoff: number;
+  color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout'; alphaCutoff: number; hueShift?: number;
   renderOrderOffset: number; visualOrder: number;
 };
 /** 05 PointLight: lights the preview ground over its window. */
@@ -705,7 +707,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         systems.push({ id: tid, descriptor: v.value });
         trails.push({
           nodeId: tid, systemId: tid, historyTicks: Math.max(1, Math.round(num(b, 'history') * TICKS_PER_SECOND)), maxPoints: num(b, 'maxPoints'),
-          width: num(b, 'width') * scale, endFade: num(b, 'endFade'), color: param(m, 'tint') as ColorValue, opacity: num(m, 'opacity'), emission: num(m, 'emission'),
+          width: num(b, 'width') * scale, endFade: num(b, 'endFade'), color: param(m, 'tint') as ColorValue, hueShift: num(m, 'hueShift'), opacity: num(m, 'opacity'), emission: num(m, 'emission'),
           blend: param(m, 'blend') as ParticleTrailLayer['blend'], alphaCutoff: num(m, 'alphaCutoff'), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
         });
         continue;
@@ -740,8 +742,8 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
           nodeId: mid, systemId: chain.terminalId, mesh: param(b, 'mesh') as MeshLayer['mesh'], scale: num(b, 'scale'), orientation: param(b, 'orientation') as MeshLayer['orientation'],
           scaleY: num(b, 'scaleY'), pivot: param(b, 'pivot') as 'center' | 'base', tilt: num(b, 'tilt'), roughness: num(m, 'roughness'), metalness: num(m, 'metalness'), surface: { reflection: num(m, 'reflection'), detail: num(m, 'surfaceDetail'), detailScale: num(m, 'detailScale'), variation: num(m, 'colorVariation') },
           ...(num(m, 'rim') > 0 ? { rim: { strength: num(m, 'rim'), color: structuredClone(param(m, 'rimColor') as ColorValue), power: num(m, 'rimPower') } } : {}),
-          lit: param(b, 'lit') === true, color: multiplyColors(base, param(m, 'tint') as ColorValue), opacity: num(m, 'opacity'), emission: num(m, 'emission'), blend: param(m, 'blend') as MeshLayer['blend'],
-          sizeOverLife: structuredClone(sc), colorOverLife: structuredClone(param(b, 'colorOverLife') as GradientValue), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
+          lit: param(b, 'lit') === true, color: hueRotate(multiplyColors(base, param(m, 'tint') as ColorValue), num(m, 'hueShift')), opacity: num(m, 'opacity'), emission: num(m, 'emission'), blend: param(m, 'blend') as MeshLayer['blend'],
+          sizeOverLife: structuredClone(sc), colorOverLife: hueGradient(structuredClone(param(b, 'colorOverLife') as GradientValue), num(m, 'hueShift')), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
         });
         continue;
       }
@@ -764,7 +766,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         const scale = transform.scale, a = (ap ?? [0, 0, 0]) as Vec3, q = rotate(transform.rotation, [a[0] * scale, a[1] * scale, a[2] * scale]);
         lights.push({
           ...(ltrack ? { track: { startTick: ltrack.startTick, positions: ltrack.positions.map(p => [...p] as Vec3) } } : {}),
-          nodeId: lid, position: [q[0] + transform.position[0], q[1] + transform.position[1], q[2] + transform.position[2]], color: param(b, 'color') as ColorValue,
+          nodeId: lid, position: [q[0] + transform.position[0], q[1] + transform.position[1], q[2] + transform.position[2]], color: hueRotate(param(b, 'color') as ColorValue, num(b, 'hueShift')),
           intensity: num(b, 'intensity'), range: num(b, 'range') * scale, startTick: start, endTick: Math.min(doc.durationTicks, start + num(s, 'durationTicks')),
           intensityOverWindow: structuredClone(curve), flicker: num(b, 'flicker'), flickerRate: num(b, 'flickerRate'),
           seed: sampleUnit({ documentSeed: doc.seed, randomStreamId: b.node.randomStreamId, eventRandomKey: 'light', entityOrdinal: 0, propertyKey: 'flicker', sampleOrdinal: 0 }) * 4294967296 >>> 0,
@@ -817,7 +819,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
           nodeId: pid, systemId: pid, mesh: param(b, 'mesh') as MeshLayer['mesh'], scale: 1, orientation: 'fixed', direction: dir,
           scaleY: length / width, pivot: 'center', tilt: 0, roughness: num(m, 'roughness'), metalness: num(m, 'metalness'), surface: { reflection: num(m, 'reflection'), detail: num(m, 'surfaceDetail'), detailScale: num(m, 'detailScale'), variation: num(m, 'colorVariation') },
           ...(num(m, 'rim') > 0 ? { rim: { strength: num(m, 'rim'), color: structuredClone(param(m, 'rimColor') as ColorValue), power: num(m, 'rimPower') } } : {}),
-          lit: param(b, 'lit') === true, color: param(m, 'tint') as ColorValue, opacity: num(m, 'opacity'), emission: num(m, 'emission'), blend: param(m, 'blend') as MeshLayer['blend'],
+          lit: param(b, 'lit') === true, color: hueRotate(param(m, 'tint') as ColorValue, num(m, 'hueShift')), opacity: num(m, 'opacity'), emission: num(m, 'emission'), blend: param(m, 'blend') as MeshLayer['blend'],
           sizeOverLife: flat, colorOverLife: { stops: [{ position: 0, color: { srgb: '#FFFFFF', alpha: 1 } }, { position: 1, color: { srgb: '#FFFFFF', alpha: 1 } }] }, renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
         });
         continue;
@@ -867,7 +869,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
           else sprite = { sheet: r.sheet, mode: 'overLife', fps: 24, randomStart: false, variant: num(m, 'variant') };
         }
         layers.push({
-          nodeId: sid, systemId: sid, color: param(m, 'tint') as ColorValue, opacity: num(m, 'opacity'), emission: num(m, 'emission'),
+          nodeId: sid, systemId: sid, color: param(m, 'tint') as ColorValue, hueShift: num(m, 'hueShift'), opacity: num(m, 'opacity'), emission: num(m, 'emission'),
           blend: param(m, 'blend') as ParticlePreviewLayer['blend'], alphaCutoff: num(m, 'alphaCutoff'), groundFade: num(m, 'groundFade') * transform.scale, ...dissolveOf(m), ...spriteOpsOf(m), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
           sizeOverLife: curve('sizeOverWindow', SIZE_OVER_LIFE_BOUNDS), opacityOverLife: curve('opacityOverWindow', OPACITY_OVER_LIFE_BOUNDS),
           colorOverLife: structuredClone(param(b, 'colorOverWindow') as GradientValue), stretchRatio: 1, pivot: 0.5,
@@ -898,7 +900,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         const base = chain.initial ? param(chain.initial, 'color') as ColorValue : { srgb: '#FFFFFF', alpha: 1 };
         trails.push({
           nodeId: tid, systemId: chain.terminalId, historyTicks: Math.max(1, Math.round(num(b, 'history') * TICKS_PER_SECOND)), maxPoints: num(b, 'maxPoints'),
-          width: num(b, 'width') * transform.scale, endFade: num(b, 'endFade'), color: multiplyColors(base, param(m, 'tint') as ColorValue), opacity: num(m, 'opacity'),
+          width: num(b, 'width') * transform.scale, endFade: num(b, 'endFade'), color: multiplyColors(base, param(m, 'tint') as ColorValue), hueShift: num(m, 'hueShift'), opacity: num(m, 'opacity'),
           emission: num(m, 'emission'), blend: param(m, 'blend') as ParticleTrailLayer['blend'], alphaCutoff: num(m, 'alphaCutoff'), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
         });
         continue;
@@ -951,7 +953,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       layers.push({
         nodeId: bid,
         systemId: chain.terminalId,
-        color: multiplyColors(base, param(mat, 'tint') as ColorValue),
+        color: multiplyColors(base, param(mat, 'tint') as ColorValue), hueShift: num(mat, 'hueShift'),
         opacity: num(mat, 'opacity'),
         emission: num(mat, 'emission'),
         blend: param(mat, 'blend') as ParticlePreviewLayer['blend'],
@@ -1068,6 +1070,22 @@ const toLinear = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055
 const toSrgb = (l: number) => (l <= 0.0031308 ? l * 12.92 : 1.055 * l ** (1 / 2.4) - 0.055);
 
 /** Multiplies two sRGB colors in linear RGB and re-encodes; alphas multiply. */
+/**
+ * Colour shift (Material/PointLight hueShift): the CSS hue-rotate matrix on sRGB values, luminance-preserving and
+ * clamped; the preview shaders apply the same matrix (vfxHue) so textured colours shift identically.
+ */
+export function hueRotate(c: ColorValue, degrees: number): ColorValue {
+  if (!degrees) return c;
+  const r = degrees * Math.PI / 180, a = Math.cos(r), b = Math.sin(r);
+  const v = [0, 1, 2].map(i => parseInt(c.srgb.slice(1 + 2 * i, 3 + 2 * i), 16) / 255);
+  const m = [[0.213 + 0.787 * a - 0.213 * b, 0.715 - 0.715 * a - 0.715 * b, 0.072 - 0.072 * a + 0.928 * b],
+    [0.213 - 0.213 * a + 0.143 * b, 0.715 + 0.285 * a + 0.140 * b, 0.072 - 0.072 * a - 0.283 * b],
+    [0.213 - 0.213 * a - 0.787 * b, 0.715 - 0.715 * a + 0.715 * b, 0.072 + 0.928 * a + 0.072 * b]];
+  const hex = (x: number) => Math.round(Math.min(1, Math.max(0, x)) * 255).toString(16).toUpperCase().padStart(2, '0');
+  return { srgb: `#${m.map(row => hex(row[0] * v[0] + row[1] * v[1] + row[2] * v[2])).join('')}`, alpha: c.alpha };
+}
+const hueGradient = (g: GradientValue, degrees: number): GradientValue => (degrees ? { ...g, stops: g.stops.map(s => ({ ...s, color: hueRotate(s.color, degrees) })) } : g);
+
 export function multiplyColors(a: ColorValue, b: ColorValue): ColorValue {
   const channel = (i: number) => {
     const l = toLinear(parseInt(a.srgb.slice(1 + 2 * i, 3 + 2 * i), 16) / 255) * toLinear(parseInt(b.srgb.slice(1 + 2 * i, 3 + 2 * i), 16) / 255);

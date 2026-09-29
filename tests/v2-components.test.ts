@@ -210,3 +210,20 @@ test('a slower fireball (Travel ticks 120) keeps flying to the target, impacts o
   // Unchanged knob or a shorter travel never lengthens the effect.
   assert.equal(grownDuration(before, structuredClone(before)), undefined);
 });
+
+test('Colour shift: every component gets one knob that rotates all its material and light colours', async () => {
+  const { hueRotate } = await import('../src/graph/toParticles.ts');
+  assert.deepEqual(hueRotate({ srgb: '#FF8000', alpha: 1 }, 0), { srgb: '#FF8000', alpha: 1 });
+  const blue = hueRotate({ srgb: '#FF8000', alpha: 0.5 }, 180);
+  assert.ok(parseInt(blue.srgb.slice(5, 7), 16) > parseInt(blue.srgb.slice(1, 3), 16) && blue.alpha === 0.5, `orange turned bluish: ${blue.srgb}`);
+  for (const c of COMPONENT_TEMPLATES) {
+    const { doc } = insertComponent(createBlankDocument(), c.id);
+    const k = doc.controls.find(x => x.label === 'Colour shift');
+    assert.ok(k && k.bindings.length > 0 && k.bindings.every(b => b.parameter === 'hueShift'), c.id);
+  }
+  const { doc } = insertComponent(createBlankDocument(), 'flamethrower');
+  doc.controls.find(x => x.label === 'Colour shift')!.value = 180;
+  const plan = compiles(valid(doc));
+  assert.ok(plan.layers.length > 0 && plan.layers.every(l => l.hueShift === 180), 'every sprite layer carries the shift');
+  assert.ok(plan.lights.length > 0 && plan.lights.every(l => l.color.srgb !== '#FFFFFF'));
+});
