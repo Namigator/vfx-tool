@@ -1209,7 +1209,7 @@ export class PreviewViewport {
         // Mixed clocks may outlast a system; stop at its own duration as #advanceSims does.
         if (end - sim.tick <= reach) this.#feedTrails(id, sim);
         while (sim.tick < end) {
-          const r = sim.advance();
+          const r = sim.step();
           if (!r.ok) return this.#fail(r.errors.map(e => ({ ...e, nodeId: e.nodeId ?? id })));
           this.#checkpoint(id, sim);
           if (end - sim.tick <= reach) this.#feedTrails(id, sim);
@@ -1226,7 +1226,7 @@ export class PreviewViewport {
     for (let i = 0; i < ticks; i++) {
       for (const [id, sim] of this.#sims) {
         if (sim.tick >= sim.descriptor.durationTicks) continue;
-        const r = sim.advance();
+        const r = sim.step();
         if (!r.ok) return this.#fail(r.errors.map(e => ({ ...e, nodeId: e.nodeId ?? id })));
         this.#checkpoint(id, sim);
         this.#feedTrails(id, sim);

@@ -351,7 +351,8 @@ export function analyzeGraph(input: unknown, options: AnalyzeOptions): Validatio
   });
   return {
     ok: true,
-    value: { document: structuredClone(doc), graphs, parameters: structuredClone(resolved.value), rootGraphId: doc.rootGraphId },
+    // doc is already a private clone (above); results are shared read-only by the compilers (graph/prepare.ts).
+    value: { document: doc, graphs, parameters: structuredClone(resolved.value), rootGraphId: doc.rootGraphId },
     warnings,
   };
 }

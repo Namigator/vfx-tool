@@ -25,7 +25,7 @@ for (const c of COMPONENT_TEMPLATES) {
     for (let t = 0; t < doc.durationTicks; t++) {
       let now = 0, meshNow = 0, trailNow = 0;
       for (const s of sims) {
-        if (s.sim.tick < s.sim.descriptor.durationTicks) s.sim.advance();
+        if (s.sim.tick < s.sim.descriptor.durationTicks) s.sim.step();
         const n = s.sim.snapshot().particles.length;
         now += n; if (meshSystems.has(s.id)) meshNow += n;
         for (const tr of trailByLayer) if (tr.sys === s.id) trailNow += n * tr.per;

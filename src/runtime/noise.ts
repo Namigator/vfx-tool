@@ -40,6 +40,37 @@ export function valueNoise4(seed: number, x: number, y: number, z: number, t: nu
 
 export type NoiseFieldSeeds = [number, number, number];
 
+/** Corner values of lattice cell (i,j,k) for slices w and w+1: 16 numbers per field, reused across samples. */
+const cornerBuf = [new Float64Array(16), new Float64Array(16), new Float64Array(16)];
+
+/**
+ * valueNoise4(seed, ·, ·, ·, t) specialised to samples near (x,y,z) with floor(t) = w: the base cell's corners are
+ * hashed once; a sample in another cell (rare: within 0.01 of a cell face) falls back to valueNoise4. Results are
+ * bit-identical to valueNoise4 (same operations in the same order).
+ */
+function fieldAt(seed: number, x: number, y: number, z: number, w: number, slot: number): (px: number, py: number, pz: number, t: number) => number {
+  const i = Math.floor(x), j = Math.floor(y), k = Math.floor(z), c = cornerBuf[slot];
+  for (let q = 0; q < 2; q++) {
+    const o = q * 8, ww = w + q;
+    c[o] = latticeValue(seed, i, j, k, ww); c[o + 1] = latticeValue(seed, i + 1, j, k, ww);
+    c[o + 2] = latticeValue(seed, i, j + 1, k, ww); c[o + 3] = latticeValue(seed, i + 1, j + 1, k, ww);
+    c[o + 4] = latticeValue(seed, i, j, k + 1, ww); c[o + 5] = latticeValue(seed, i + 1, j, k + 1, ww);
+    c[o + 6] = latticeValue(seed, i, j + 1, k + 1, ww); c[o + 7] = latticeValue(seed, i + 1, j + 1, k + 1, ww);
+  }
+  const cell = (o: number, px: number, py: number, pz: number) => {
+    const u = smooth(px - i), v = smooth(py - j), s = smooth(pz - k);
+    return mix(
+      mix(mix(c[o], c[o + 1], u), mix(c[o + 2], c[o + 3], u), v),
+      mix(mix(c[o + 4], c[o + 5], u), mix(c[o + 6], c[o + 7], u), v),
+      s,
+    );
+  };
+  return (px, py, pz, t) => {
+    if (Math.floor(px) !== i || Math.floor(py) !== j || Math.floor(pz) !== k || Math.floor(t) !== w) return valueNoise4(seed, px, py, pz, t);
+    return mix(cell(0, px, py, pz), cell(8, px, py, pz), smooth(t - w));
+  };
+}
+
 /**
  * Acceleration from three scalar fields at world point p. vector: (n0,n1,n2)·amplitude.
  * curl: normalized curl of (n0,n1,n2)·amplitude (divergence-free swirl), zero when the curl vanishes.
@@ -54,12 +85,15 @@ export function noiseAcceleration(seeds: NoiseFieldSeeds, mode: 'vector' | 'curl
     return out;
   }
   const e = CURL_EPSILON, d = 2 * e;
-  const dzdy = (valueNoise4(c, x, y + e, z, time) - valueNoise4(c, x, y - e, z, time)) / d;
-  const dydz = (valueNoise4(b, x, y, z + e, time) - valueNoise4(b, x, y, z - e, time)) / d;
-  const dxdz = (valueNoise4(a, x, y, z + e, time) - valueNoise4(a, x, y, z - e, time)) / d;
-  const dzdx = (valueNoise4(c, x + e, y, z, time) - valueNoise4(c, x - e, y, z, time)) / d;
-  const dydx = (valueNoise4(b, x + e, y, z, time) - valueNoise4(b, x - e, y, z, time)) / d;
-  const dxdy = (valueNoise4(a, x, y + e, z, time) - valueNoise4(a, x, y - e, z, time)) / d;
+  // The twelve samples sit ±0.01 around one point, so nearly all share that point's lattice cell: its corner values
+  // are hashed once per field and time slice (fieldAt), and every sample evaluates exactly what valueNoise4 would.
+  const w = Math.floor(time), fa = fieldAt(a, x, y, z, w, 0), fb = fieldAt(b, x, y, z, w, 1), fc = fieldAt(c, x, y, z, w, 2);
+  const dzdy = (fc(x, y + e, z, time) - fc(x, y - e, z, time)) / d;
+  const dydz = (fb(x, y, z + e, time) - fb(x, y, z - e, time)) / d;
+  const dxdz = (fa(x, y, z + e, time) - fa(x, y, z - e, time)) / d;
+  const dzdx = (fc(x + e, y, z, time) - fc(x - e, y, z, time)) / d;
+  const dydx = (fb(x + e, y, z, time) - fb(x - e, y, z, time)) / d;
+  const dxdy = (fa(x, y + e, z, time) - fa(x, y - e, z, time)) / d;
   const cx = dzdy - dydz, cy = dxdz - dzdx, cz = dydx - dxdy, l = Math.hypot(cx, cy, cz);
   if (!(l > 1e-12)) { out[0] = 0; out[1] = 0; out[2] = 0; return out; }
   out[0] = cx / l * amplitude; out[1] = cy / l * amplitude; out[2] = cz / l * amplitude;

@@ -541,7 +541,8 @@ export class ParticleSimulation {
   }
 
   /** Advance exactly one tick: expire, integrate survivors, then births. */
-  advance(): ValidationResult<ParticleTickSnapshot> {
+  /** One tick without building a snapshot (15 performance: replays and compile-time runs discard it). */
+  step(): { ok: true } | { ok: false; errors: Diagnostic[] } {
     if (this.#failure) return { ok: false, errors: this.#failure.map((d) => ({ ...d })) };
     const d = this.descriptor;
     if (this.#tick >= d.durationTicks) {
@@ -554,7 +555,7 @@ export class ParticleSimulation {
     if (n >= d.durationTicks) {
       // Document end forcibly empties all outputs; this is not a lifetime death event.
       this.#particles = [];
-      return { ok: true, value: this.snapshot(), warnings: [] };
+      return { ok: true };
     }
     const survivors: ParticleState[] = [];
     for (const p of this.#particles) {
@@ -642,7 +643,13 @@ export class ParticleSimulation {
     }
     this.#spawn(n);
     if (this.#failure) return { ok: false, errors: (this.#failure as Diagnostic[]).map((q) => ({ ...q })) };
-    return { ok: true, value: this.snapshot(), warnings: [] };
+    return { ok: true };
+  }
+
+  /** One tick, returning the resulting snapshot (a copy of every live particle). */
+  advance(): ValidationResult<ParticleTickSnapshot> {
+    const r = this.step();
+    return r.ok ? { ok: true, value: this.snapshot(), warnings: [] } : r;
   }
 
   /** Source position at tick n: the track (clamped) or the fixed sourcePosition. */
@@ -796,7 +803,7 @@ export function sampleParticlesAtTick(input: unknown, tick: number, options?: Pa
     return { ok: false, errors: [err('INVALID_VALUE', `tick must be an integer 0..${sim.descriptor.durationTicks}.`, 'tick')] };
   }
   while (sim.tick < tick) {
-    const r = sim.advance();
+    const r = sim.step();
     if (!r.ok) return r;
   }
   return { ok: true, value: sim.snapshot(), warnings: [] };
@@ -831,7 +838,7 @@ function runParticleEvents(input: unknown, options?: Partial<ParticleLimits>): V
   if (!created.ok) return created;
   const sim = created.value;
   while (sim.tick < sim.descriptor.durationTicks) {
-    const r = sim.advance();
+    const r = sim.step();
     if (!r.ok) return r;
   }
   return { ok: true, value: sim.events.map(e => ({ ...e, position: cloneVec(e.position), velocity: cloneVec(e.velocity) })), warnings: [] };

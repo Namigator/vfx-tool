@@ -275,7 +275,9 @@ function expand(analysis: GraphAnalysis): ValidationResult<ExpandedGraph> {
   const groupControls = analysis.parameters.filter(p => groupIds.has(p.nodeId));
   return {
     ok: true,
-    value: structuredClone({ nodes, connections, controlDrivers, parameters, groupControls, rootOutputNodeId: outputs[0] }),
+    // Nodes and literal leaves are cloned where they are built; the rest refers into the analysis, which is shared
+    // read-only with the compilers (graph/prepare.ts), so a second whole-graph clone is not needed.
+    value: { nodes, connections, controlDrivers, parameters, groupControls, rootOutputNodeId: outputs[0] },
     warnings,
   };
 }

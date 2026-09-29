@@ -1,7 +1,7 @@
 // Pure helpers for fixed path-preview framing across the whole effect timeline (no DOM/Three).
 import type { PathPreviewPlan } from '../graph/toPaths.ts';
 import type { ParticlePreviewPlan } from '../graph/toParticles.ts';
-import { sampleParticlesAtTick } from '../runtime/particles.ts';
+import { ParticleSimulation } from '../runtime/particles.ts';
 import type { Vec3 } from '../model/types.ts';
 import type { FramePointSet } from './RibbonGeometry.ts';
 
@@ -63,11 +63,16 @@ export function particleFrameSets(plan: ParticlePreviewPlan): FramePointSet[] {
     if (!layers.length && !trails.length && !meshes.length) continue;
     const grow = Math.max(1, ...layers.map(l => Math.max(...l.sizeOverLife.keys.map(k => k.y)) * Math.max(1, l.stretchRatio)));
     const pad = Math.max(sys.descriptor.size.max * grow, ...trails.map(t => t.width), ...meshes.map(m => sys.descriptor.size.max * m.scale * Math.max(...m.sizeOverLife.keys.map(k => k.y)))) / 2;
-    for (const tick of framingSampleTicks(sys.descriptor.durationTicks)) {
-      let snap;
-      try { snap = sampleParticlesAtTick(sys.descriptor, tick); } catch { continue; }
-      if (!snap.ok) continue;
-      const ps = snap.value.particles, stride = Math.max(1, Math.ceil(ps.length / MAX_FRAMED_PARTICLES_PER_SAMPLE));
+    // One forward replay per system, snapshotting at each sample tick (15 performance: replaying from tick 0 for every
+    // sample cost ~200 ms per edit on a flamethrower).
+    let sim: ParticleSimulation | undefined;
+    try { const c = ParticleSimulation.create(sys.descriptor); if (c.ok) sim = c.value; } catch { sim = undefined; }
+    if (!sim) continue;
+    for (const tick of [...framingSampleTicks(sys.descriptor.durationTicks)].sort((a, b) => a - b)) {
+      let failed = false;
+      while (sim.tick < tick) { let r; try { r = sim.step(); } catch { r = { ok: false }; } if (!r.ok) { failed = true; break; } }
+      if (failed) break;
+      const ps = sim.snapshot().particles, stride = Math.max(1, Math.ceil(ps.length / MAX_FRAMED_PARTICLES_PER_SAMPLE));
       const points: Vec3[] = [];
       for (let i = 0; i < ps.length; i += stride) if (finitePoint(ps[i].position)) points.push(ps[i].position);
       if (points.length) out.push({ points, pad: Number.isFinite(pad) ? pad : 0 });

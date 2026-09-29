@@ -78,7 +78,7 @@ function particlesAtTick(desc: ParticleEmitterDescriptor, tick: number): Particl
   for (const c of cps) if (c.tick <= end && c.tick > base.tick) base = c;
   const sim = base.clone();
   while (sim.tick < end) {
-    const r = sim.advance();
+    const r = sim.step();
     if (!r.ok) return r.errors.map(e => e.message).join(' ');
     if (sim.tick % 30 === 0 && !cps.some(c => c.tick === sim.tick)) cps.push(sim.clone());
   }

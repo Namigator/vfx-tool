@@ -76,3 +76,39 @@ Before: edit+compile p95 128 ms (lightning ~150 ms). Two changes brought it down
   cached by the parent's settings (runtime collectParticleEvents).
 
 After: p95 52 ms, with each benchmark edit a unique value so the caches cannot help.
+
+## In-editor knob edit → rebuilt preview (real editor, headless Chrome, real GPU)
+
+Method: `node tools/perf-knob.mjs`, which runs 15 edits of +5 % on one knob per component and times the slider release
+until the rebuilt preview. No-op edits (rounded to the same value) are excluded. This is the delay the user felt; it
+includes React, compile, the duration check and preview rebuild, not just the compile.
+
+Before this pass: roughly 300–500 ms per edit on fire/lightning/energy, and multiple seconds on Smoke plume under a
+stress rate.
+
+Fixes in this pass:
+- The simulation has a step without a copy (`step()`); replays no longer copy every particle every tick.
+- Camera framing replays each system once instead of once per sample tick.
+- Curl noise hashes a cell's corners once per field; results stay bit-identical (a test compares 5,000 points).
+- The effect-end measurement is cached by content.
+- Two redundant deep copies are removed from analysis and expansion.
+
+After ([RAN] all 49 components):
+
+```
+components with real edits: 49 of 49
+median of medians 99 | worst median 227 | worst single edit 390
+over 250 ms median: []
+flamethrower                 median  227 max  390 (15 edits, knob Jet length (speed)m/s)
+fireball                     median  184 max  247 (15 edits, knob Travel ticksticks)
+lightning-strike             median  176 max  287 (15 edits, knob Core widthm)
+lightning-thin-fork          median  176 max  288 (15 edits, knob Core widthm)
+lightning-heavy-strike       median  175 max  276 (15 edits, knob Core widthm)
+energy-orb                   median  169 max  252 (15 edits, knob Travel ticksticks)
+rain-splash                  median  163 max  224 (15 edits, knob Rain rate/s)
+water-broad                  median  161 max  232 (15 edits, knob Body widthm)
+no real edits: []
+```
+
+The median is under the 250 ms target for every component. Single worst edits still reach ~390 ms (flamethrower, the first
+edit including JIT warm-up) and ~290 ms (lightning).

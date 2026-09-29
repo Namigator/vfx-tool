@@ -6,8 +6,25 @@ import { MAX_DURATION_TICKS, type Diagnostic, type EffectDocumentV2 } from '../m
 import { compileParticlePreview } from './toParticles.ts';
 import { compilePathPreview } from './toPaths.ts';
 
+/**
+ * 15 performance: one edit asked this three times (grownDuration before/after, then truncationWarning), each a full
+ * compile at the maximum duration. The answer depends only on the document content, so recent answers are cached by
+ * its JSON text (the duration field excluded: the measurement always uses the maximum).
+ */
+const endCache = new Map<string, number | undefined>();
+const END_CACHE_SIZE = 8;
+
 /** Last tick (exclusive) at which the effect still shows something, or undefined when it cannot be measured. */
 export function effectEndTick(doc: EffectDocumentV2): number | undefined {
+  let key: string | undefined;
+  try { key = JSON.stringify({ ...doc, durationTicks: 0 }); } catch { key = undefined; }
+  if (key !== undefined && endCache.has(key)) { const v = endCache.get(key); endCache.delete(key); endCache.set(key, v); return v; }
+  const v = measureEnd(doc);
+  if (key !== undefined) { endCache.set(key, v); if (endCache.size > END_CACHE_SIZE) endCache.delete(endCache.keys().next().value as string); }
+  return v;
+}
+
+function measureEnd(doc: EffectDocumentV2): number | undefined {
   const full = { ...doc, durationTicks: MAX_DURATION_TICKS };
   const p = compileParticlePreview(full, { ribbonsHandled: true, audioHandled: true });
   if (!p.ok) return undefined;

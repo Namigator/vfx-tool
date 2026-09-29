@@ -34,3 +34,29 @@ test('noise operator makes identical particles diverge deterministically', () =>
   assert.ok(Math.max(...dirs) - Math.min(...dirs) > 1, 'different places get different directions (coherent field, not uniform push)');
   assert.deepEqual(moved.value, again.value, 'deterministic');
 });
+
+test('15 performance: curl noise with shared lattice corners is bit-identical to the plain 12-sample definition', async () => {
+  const { noiseAcceleration, valueNoise4, CURL_EPSILON } = await import('../src/runtime/noise.ts');
+  const reference = (seeds: [number, number, number], amp: number, freq: number, time: number, p: [number, number, number]) => {
+    const x = p[0] * freq, y = p[1] * freq, z = p[2] * freq, [a, b, c] = seeds, e = CURL_EPSILON, d = 2 * e;
+    const dzdy = (valueNoise4(c, x, y + e, z, time) - valueNoise4(c, x, y - e, z, time)) / d;
+    const dydz = (valueNoise4(b, x, y, z + e, time) - valueNoise4(b, x, y, z - e, time)) / d;
+    const dxdz = (valueNoise4(a, x, y, z + e, time) - valueNoise4(a, x, y, z - e, time)) / d;
+    const dzdx = (valueNoise4(c, x + e, y, z, time) - valueNoise4(c, x - e, y, z, time)) / d;
+    const dydx = (valueNoise4(b, x + e, y, z, time) - valueNoise4(b, x - e, y, z, time)) / d;
+    const dxdy = (valueNoise4(a, x, y + e, z, time) - valueNoise4(a, x, y - e, z, time)) / d;
+    const cx = dzdy - dydz, cy = dxdz - dzdx, cz = dydx - dxdy, l = Math.hypot(cx, cy, cz);
+    return l > 1e-12 ? [cx / l * amp, cy / l * amp, cz / l * amp] : [0, 0, 0];
+  };
+  let s = 12345;
+  const r = () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; };
+  for (let n = 0; n < 5000; n++) {
+    // Include points right at cell faces (integers ± tiny) so the fallback path is exercised too.
+    const edge = n % 5 === 0;
+    const p: [number, number, number] = [edge ? Math.round(r() * 8) - 0.004 : (r() - 0.5) * 20, (r() - 0.5) * 20, edge ? Math.round(r() * 8) + 0.003 : (r() - 0.5) * 20];
+    const seeds: [number, number, number] = [(r() * 2 ** 32) >>> 0, (r() * 2 ** 32) >>> 0, (r() * 2 ** 32) >>> 0];
+    const t = n % 7 === 0 ? Math.round(r() * 5) - 1e-9 : r() * 5;
+    const got = noiseAcceleration(seeds, 'curl', 2.2, 1, t, p, [0, 0, 0]);
+    assert.deepEqual(got, reference(seeds, 2.2, 1, t, p));
+  }
+});

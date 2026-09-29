@@ -49,7 +49,7 @@ for (const t of COMPONENT_TEMPLATES) {
       const end = Math.min(tick, d.durationTicks);
       // From a checkpoint: only the ticks after it are simulated (the clone itself is ~free next to a tick).
       const start = Math.min(from, end);
-      for (let k = 0; k < end - start; k++) r.value.advance();
+      for (let k = 0; k < end - start; k++) r.value.step();
     }
     if (mode !== 'points') compilePathPreview(doc, tick, { audioHandled: true });
     return performance.now() - t0;
