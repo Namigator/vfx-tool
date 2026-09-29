@@ -88,7 +88,7 @@ export type ParticlePreviewLayer = {
   /** Particle position along the stretch axis: 0 trailing end, 1 leading tip. */
   pivot: number;
   /** Present for SpriteTextured materials: the library sheet and how cells are chosen. */
-  sprite?: { sheet: SpriteSheet; mode: FlipbookMode; fps: number; randomStart: boolean; variant: number };
+  sprite?: { sheet: SpriteSheet; mode: FlipbookMode; fps: number; randomStart: boolean; variant: number; loop?: false; crossfade?: true };
 };
 /** 05 ParticleTrail sink: ribbon trails behind one particle system's particles. */
 export type ParticleTrailLayer = {
@@ -1000,7 +1000,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       if (isTexturedTemplate(template, mat.node.params)) {
         const r = materialSheet(doc, param(mat, 'sprite'), param(mat, 'textureAsset'));
         if ('error' in r) report('MISSING_REFERENCE', r.error, mat.node.id, r.field);
-        else sprite = { sheet: r.sheet, mode: param(b, 'flipbookMode') as FlipbookMode, fps: num(b, 'flipbookFps'), randomStart: false, variant: num(mat, 'variant') };
+        else sprite = { sheet: r.sheet, mode: param(b, 'flipbookMode') as FlipbookMode, fps: num(b, 'flipbookFps'), randomStart: false, variant: num(mat, 'variant'), ...(param(b, 'flipbookLoop') === false ? { loop: false as const } : {}), ...(param(b, 'flipbookCrossfade') === true ? { crossfade: true as const } : {}) };
       } else if (!(MATERIAL_TEMPLATE_IDS as readonly unknown[]).includes(template)) report('INVALID_VALUE', `Material template "${String(template)}" is not supported.`, mat.node.id, 'template');
 
       const chain = traceChain(bid);

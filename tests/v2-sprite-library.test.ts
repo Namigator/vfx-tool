@@ -78,3 +78,12 @@ test('spriteCell: overLife plays once, fps loops from a random start, variants p
   assert.equal(spriteCell(glow, 'overLife', 24, 0.9, 1, 0.8, false), 3, 'variants ignore life and use the random pick');
   assert.equal(spriteCell(glow, 'overLife', 24, 0.9, 1, 0.8, false, 1), 1, 'fixed variant');
 });
+
+test('09 flipbook crossfade and loop: blend toward the next cell; over life never wraps; fps holds the last frame when loop is off', async () => {
+  const { spriteCellBlend } = await import('../src/assets/spriteLibrary.ts');
+  const sheet = { id: 'x', file: 'x.png', kind: 'flipbook' as const, cell: [64, 64] as [number, number], columns: 4, rows: 1, blend: 'normal' };
+  assert.deepEqual(spriteCellBlend(sheet, 'overLife', 0, 0.3, 0, 0, false), { cell: 1, next: 2, t: 0.19999999999999996 });
+  assert.deepEqual(spriteCellBlend(sheet, 'overLife', 0, 1, 0, 0, false), { cell: 3, next: 3, t: 0 }, 'age 1 = last frame, no wrap');
+  assert.deepEqual(spriteCellBlend(sheet, 'fps', 10, 0, 0.35, 0, false), { cell: 3, next: 0, t: 0.5 }, 'fps loops 3 → 0');
+  assert.deepEqual(spriteCellBlend(sheet, 'fps', 10, 0, 0.95, 0, false, -1, false), { cell: 3, next: 3, t: 0 }, 'loop off holds the last frame');
+});

@@ -696,6 +696,8 @@ function billboardRenderer(): NodeSpec {
       }),
       param({ id: 'worldAxis', label: 'World axis', type: 'vec3', unit: 'none', default: [0, 1, 0], min: -1, max: 1, editPolicy: 'live', description: 'worldAxis alignment: the quad faces this direction (default +Y = flat on the ground).' }),
       param({ id: 'flipbookMode', label: 'Flipbook', type: 'enum', unit: 'none', default: 'overLife', choices: ['overLife', 'fps', 'first'], editPolicy: 'live', description: 'overLife: play once over each particle life; fps: loop at Flipbook FPS; first: hold frame 0.' }),
+      param({ id: 'flipbookLoop', label: 'Flipbook loop', type: 'boolean', unit: 'none', default: true, editPolicy: 'live', description: 'Frames-per-second mode: loop the sequence while the particle lives (off: hold the last frame).' }),
+      param({ id: 'flipbookCrossfade', label: 'Flipbook crossfade', type: 'boolean', unit: 'none', default: false, editPolicy: 'live', description: 'Blend each frame into the next for smoother slow flipbooks (never samples outside the cell).' }),
       param({ id: 'flipbookFps', label: 'Flipbook FPS', type: 'number', unit: 'hertz', default: 24, min: 0, max: 60, editPolicy: 'live', description: 'Frames per second in fps mode.' }),
       param({ id: 'pivot', label: 'Pivot', type: 'number', unit: 'normalized', default: 0.5, min: 0, max: 1, editPolicy: 'live', description: 'Where the particle sits along the stretch axis: 0 = trailing end, 1 = leading tip.' }),
     ],

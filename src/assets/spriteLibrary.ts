@@ -73,11 +73,30 @@ export type FlipbookMode = 'overLife' | 'fps' | 'first';
  * age 1), fps loops at a fixed rate from frame 0 or a per-particle random start, first holds frame 0.
  * variants/texture sheets: a per-particle random cell, fixed for its whole life. randomUnit in [0,1).
  */
-export function spriteCell(sheet: SpriteSheet, mode: FlipbookMode, fps: number, lifeFraction: number, ageSeconds: number, randomUnit: number, randomStart: boolean, fixedVariant = -1): number {
+/**
+ * 09 flipbook with optional crossfade: the current cell, the next one and the blend (0..1) between them. Over life the
+ * sequence plays once (normalized age 1 = last frame, never wrapping); fps loops unless `loop` is false (then it holds
+ * the last frame). Variant sheets never blend.
+ */
+export function spriteCellBlend(sheet: SpriteSheet, mode: FlipbookMode, fps: number, lifeFraction: number, ageSeconds: number, randomUnit: number, randomStart: boolean, fixedVariant = -1, loop = true): { cell: number; next: number; t: number } {
+  const n = sheet.columns * sheet.rows;
+  if (sheet.kind !== 'flipbook' || mode === 'first') { const c = spriteCell(sheet, mode, fps, lifeFraction, ageSeconds, randomUnit, randomStart, fixedVariant, loop); return { cell: c, next: c, t: 0 }; }
+  if (mode === 'overLife') {
+    const pos = Math.min(n - 1, Math.max(0, lifeFraction) * n), cell = Math.min(n - 1, Math.floor(pos));
+    return { cell, next: Math.min(n - 1, cell + 1), t: cell === n - 1 ? 0 : pos - cell };
+  }
+  const start = randomStart ? Math.min(n - 1, Math.floor(randomUnit * n)) : 0, pos = start + Math.max(0, ageSeconds) * fps;
+  if (!loop) { const cell = Math.min(n - 1, Math.floor(pos)); return { cell, next: Math.min(n - 1, cell + 1), t: cell === n - 1 ? 0 : pos - Math.floor(pos) }; }
+  const cell = Math.floor(pos) % n;
+  return { cell, next: (cell + 1) % n, t: pos - Math.floor(pos) };
+}
+
+export function spriteCell(sheet: SpriteSheet, mode: FlipbookMode, fps: number, lifeFraction: number, ageSeconds: number, randomUnit: number, randomStart: boolean, fixedVariant = -1, loop = true): number {
   const n = sheet.columns * sheet.rows;
   const pick = Math.min(n - 1, Math.floor(randomUnit * n));
   if (sheet.kind !== 'flipbook') return fixedVariant >= 0 ? Math.min(n - 1, fixedVariant) : pick;
   if (mode === 'first') return 0;
   if (mode === 'overLife') return frameOverLife(sheet, lifeFraction);
-  return ((randomStart ? pick : 0) + Math.floor(Math.max(0, ageSeconds) * fps)) % n;
+  const frame = (randomStart ? pick : 0) + Math.floor(Math.max(0, ageSeconds) * fps);
+  return loop ? frame % n : Math.min(n - 1, frame);
 }

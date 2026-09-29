@@ -26,7 +26,7 @@ import type { Diagnostic, ValidationResult, Vec3 } from '../model/types.ts';
 import type { MeshLayer, ParticlePreviewLayer, ParticlePreviewPlan, ParticleTrailLayer, PointLightLayer } from '../graph/toParticles.ts';
 import { createBuiltinMesh, type BuiltinMesh } from './builtinMeshes.ts';
 import { valueNoise4 } from '../runtime/noise.ts';
-import { spriteCell } from '../assets/spriteLibrary.ts';
+import { spriteCellBlend } from '../assets/spriteLibrary.ts';
 import { TrailHistory } from './particleTrails.ts';
 import { fnv1a32Utf8 } from '../runtime/random.ts';
 import { compileLifeCurve, compileLifeGradient, lifeFraction, sampleLifeCurve, sampleLifeGradient, type LifeCurveSampler, type LifeGradientSampler } from './billboardLife.ts';
@@ -189,7 +189,10 @@ attribute vec3 lifeColor;
 attribute float spinAngle;
 attribute vec3 worldVelocity;
 attribute float cell;
+attribute vec2 cellMix;
 attribute vec2 lifeSeed;
+varying vec2 vCellNext;
+varying float vCellBlend;
 varying vec2 vLifeSeed;
 uniform vec2 uGrid;
 uniform vec2 uInset;
@@ -211,6 +214,10 @@ void main() {
   // Atlas cell (row 0 = top of the image; textures are flipY) with a half-texel inset against bleeding.
   float col = mod(cell, uGrid.x), row = floor(cell / uGrid.x);
   vCell = vec2(col, uGrid.y - 1.0 - row); // Atlas cell origin in cells; the fragment adds the (UV-op) position inside it.
+  // 09 flipbook crossfade: the next cell and the blend toward it (blend 0 = no crossfade).
+  float ncol = mod(cellMix.x, uGrid.x), nrow = floor(cellMix.x / uGrid.x);
+  vCellNext = vec2(ncol, uGrid.y - 1.0 - nrow);
+  vCellBlend = cellMix.y;
   // Instance matrix carries translation (column 3) and uniform size (column 0.x); quad faces the camera.
   vec4 mv = modelViewMatrix * vec4(instanceMatrix[3].xyz, 1.0);
   // Local quad: pivot shifts the particle along +Y (0 trailing end, 1 leading tip), then stretch along +Y.
@@ -248,6 +255,8 @@ varying vec2 vUv;
 varying float vLifeOpacity;
 varying vec3 vLifeColor;
 varying vec2 vCell;
+varying vec2 vCellNext;
+varying float vCellBlend;
 uniform vec2 uGrid;
 uniform vec2 uInset;
 uniform sampler2D uTex;
@@ -277,8 +286,11 @@ void main() {
       vec2 g = vec2(c * q.x - s * q.y, s * q.x + c * q.y) * uUvTileOffset.xy + 0.5 + uUvTileOffset.zw + uUvRotScroll.yz * uTime;
       vec2 cu = clamp(fract(g), uInset, 1.0 - uInset);
       t = textureGrad(uTex, (vCell + cu) / uGrid, dFdx(g) / uGrid, dFdy(g) / uGrid);
+      if (vCellBlend > 0.0) t = mix(t, textureGrad(uTex, (vCellNext + cu) / uGrid, dFdx(g) / uGrid, dFdy(g) / uGrid), vCellBlend);
     } else {
-      t = texture2D(uTex, (vCell + clamp(vUv, uInset, 1.0 - uInset)) / uGrid);
+      vec2 cu = clamp(vUv, uInset, 1.0 - uInset);
+      t = texture2D(uTex, (vCell + cu) / uGrid);
+      if (vCellBlend > 0.0) t = mix(t, texture2D(uTex, (vCellNext + cu) / uGrid), vCellBlend);
     }
     mask = t.a;
   }
@@ -694,7 +706,7 @@ export class PreviewViewport {
       const lifeOpacity = new THREE.InstancedBufferAttribute(new Float32Array(PREVIEW_POOL_SIZE).fill(1), 1);
       lifeOpacity.setUsage(THREE.DynamicDrawUsage);
       geometry.setAttribute('lifeOpacity', lifeOpacity);
-      for (const [name, size, fill] of [['lifeColor', 3, 1], ['spinAngle', 1, 0], ['worldVelocity', 3, 0], ['cell', 1, 0], ['lifeSeed', 2, 0]] as const) {
+      for (const [name, size, fill] of [['lifeColor', 3, 1], ['spinAngle', 1, 0], ['worldVelocity', 3, 0], ['cell', 1, 0], ['cellMix', 2, 0], ['lifeSeed', 2, 0]] as const) {
         const attr = new THREE.InstancedBufferAttribute(new Float32Array(PREVIEW_POOL_SIZE * size).fill(fill), size);
         attr.setUsage(THREE.DynamicDrawUsage);
         geometry.setAttribute(name, attr);
@@ -1246,6 +1258,7 @@ export class PreviewViewport {
       const colAttr = g.getAttribute('lifeColor') as THREE.InstancedBufferAttribute, spinAttr = g.getAttribute('spinAngle') as THREE.InstancedBufferAttribute, velAttr = g.getAttribute('worldVelocity') as THREE.InstancedBufferAttribute;
       const col = colAttr.array as Float32Array, spin = spinAttr.array as Float32Array, vel = velAttr.array as Float32Array;
       const cellAttr = g.getAttribute('cell') as THREE.InstancedBufferAttribute, cells = cellAttr.array as Float32Array, sprite = l.layer.sprite;
+      const mixAttr = g.getAttribute('cellMix') as THREE.InstancedBufferAttribute, mix = mixAttr.array as Float32Array;
       const seedAttr = g.getAttribute('lifeSeed') as THREE.InstancedBufferAttribute, seeds = seedAttr.array as Float32Array;
       // Normal blending needs back-to-front order; additive does not.
       let order: ParticleState[] = particles ? (particles as ParticleState[]).slice(0, n) : [];
@@ -1255,7 +1268,10 @@ export class PreviewViewport {
       }
       for (let i = 0; i < n; i++) {
         const p = order[i];
-        if (sprite) cells[i] = spriteCell(sprite.sheet, sprite.mode, sprite.fps, lifeFraction(p.ageTicks, p.lifetimeTicks, alpha), (p.ageTicks + alpha) * PARTICLE_DT, fnv1a32Utf8(p.parentRandomKey) / 4294967296, sprite.randomStart, sprite.variant);
+        if (sprite) {
+          const b = spriteCellBlend(sprite.sheet, sprite.mode, sprite.fps, lifeFraction(p.ageTicks, p.lifetimeTicks, alpha), (p.ageTicks + alpha) * PARTICLE_DT, fnv1a32Utf8(p.parentRandomKey) / 4294967296, sprite.randomStart, sprite.variant, sprite.loop !== false);
+          cells[i] = b.cell; mix[i * 2] = b.next; mix[i * 2 + 1] = sprite.crossfade ? b.t : 0;
+        }
         const u = lifeFraction(p.ageTicks, p.lifetimeTicks, alpha);
         seeds[i * 2] = u; seeds[i * 2 + 1] = (fnv1a32Utf8(p.id) % 4096) / 4096;
         const o = i * 16, s = p.size * sampleLifeCurve(l.sizeSampler, u);
@@ -1275,7 +1291,7 @@ export class PreviewViewport {
       l.mesh.count = n;
       l.mesh.instanceMatrix.needsUpdate = true;
       opAttr.needsUpdate = true;
-      colAttr.needsUpdate = true; spinAttr.needsUpdate = true; velAttr.needsUpdate = true; cellAttr.needsUpdate = true; seedAttr.needsUpdate = true;
+      colAttr.needsUpdate = true; spinAttr.needsUpdate = true; velAttr.needsUpdate = true; cellAttr.needsUpdate = true; mixAttr.needsUpdate = true; seedAttr.needsUpdate = true;
     }
     this.#updateTrails(alpha);
     this.#updateLights(alpha);
