@@ -61,6 +61,20 @@ export default function NodeInspector({ document: doc, graphId, nodeId, onEdit, 
   const effective = inspectorValues(doc, REGISTRY, graphId, nodeId, controlOverrides);
 
   const title = node.label || node.type;
+  // 12 "Changing a driven field opens its source or offers explicit Disconnect/Unbind" and "Reset block".
+  const disconnect = (param: string, label: string) => {
+    const idx = graph.edges.map((e, i) => ({ e, i })).filter(({ e }) => e.target.nodeId === node.id && e.target.port === param).map(({ i }) => i).sort((a, b) => b - a);
+    if (idx.length) onEdit(`Disconnect ${title} ${label}`, idx.map(i => ({ op: 'splice' as const, path: ['graphs', gi, 'edges'], index: i, deleteCount: 1, insert: [] })));
+  };
+  const unbind = (param: string, label: string) => {
+    const patches: Patch[] = [];
+    doc.controls.forEach((c, ci) => {
+      if (c.bindings.some(b => b.nodeId === node.id && b.parameter === param)) patches.push({ op: 'set', path: ['controls', ci, 'bindings'], value: c.bindings.filter(b => !(b.nodeId === node.id && b.parameter === param)) });
+    });
+    if (patches.length) onEdit(`Unbind ${title} ${label}`, patches);
+  };
+  const resettable = spec ? spec.parameters.filter(p => hasOwn(node.params, p.id) && STRUCTURAL[node.type] !== p.id) : [];
+  const resetBlock = () => onEdit(`Reset all of ${title}`, resettable.map(p => ({ op: 'delete' as const, path: [...base, 'params', p.id] })));
   return (
     <div className="ni" aria-label={`Inspector for ${title}`}>
       <LabelField key={node.id} node={node} onCommit={label => onEdit('Rename node', [{ op: 'set', path: [...base, 'label'], value: label }])} />
@@ -81,6 +95,9 @@ export default function NodeInspector({ document: doc, graphId, nodeId, onEdit, 
         <p className="ni-muted">This node has no parameters.</p>
       ) : (
         <div className="ni-params">
+          {resettable.length > 0 && (
+            <button type="button" className="ni-reset-block" onClick={resetBlock} title="Reset every parameter of this node to its default (one undo step; knobs and connections are kept)">Reset block ({resettable.length})</button>
+          )}
           {spec.parameters.map(p => {
             const stored = hasOwn(node.params, p.id);
             const eff: InspectorValue = effective.get(p.id)
@@ -93,6 +110,7 @@ export default function NodeInspector({ document: doc, graphId, nodeId, onEdit, 
                 structural={STRUCTURAL[node.type] === p.id}
                 onSet={v => onEdit(`Set ${title} ${p.label}`, [{ op: 'set', path, value: v }])}
                 onReset={() => onEdit(`Reset ${title} ${p.label}`, [{ op: 'delete', path }])}
+                onDisconnect={() => disconnect(p.id, p.label)} onUnbind={() => unbind(p.id, p.label)}
               />
             );
           })}
@@ -124,9 +142,10 @@ type RowProps = {
   doc: EffectDocumentV2; node: NodeDefinition; spec: ParameterSpec; eff: InspectorValue; stored: boolean;
   structural: boolean;
   onSet: (v: ParameterValue) => void; onReset: () => void;
+  onDisconnect: () => void; onUnbind: () => void;
 };
 
-function ParamRow({ doc, node, spec, eff, stored, structural, onSet, onReset }: RowProps) {
+function ParamRow({ doc, node, spec, eff, stored, structural, onSet, onReset, onDisconnect, onUnbind }: RowProps) {
   // Errors are kept per input slot ('' scalar, 0/1/2 vector components, 'alpha') so an unchanged sibling
   // component cannot clear another component's invalid draft.
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -230,9 +249,9 @@ function ParamRow({ doc, node, spec, eff, stored, structural, onSet, onReset }: 
       </div>
       {control}
       <p id={helpId} className="ni-help">
-        {eff.kind === 'connection' && <strong className="ni-driven">Driven by connection from {eff.from}; value is computed at runtime. </strong>}
-        {eff.kind === 'control' && <strong className="ni-driven">Driven by public control “{eff.controlLabel}”; showing its resolved value. </strong>}
-        {eff.kind === 'unavailable' && <strong className="ni-driven">Driven by public control “{eff.controlLabel}”; value unavailable: {eff.reason} </strong>}
+        {eff.kind === 'connection' && <strong className="ni-driven">Driven by connection from {eff.from}; value is computed at runtime. <button type="button" className="ni-unlink" onClick={onDisconnect} title="Remove the connection so this field can be edited here">Disconnect</button> </strong>}
+        {eff.kind === 'control' && <strong className="ni-driven">Driven by public control “{eff.controlLabel}”; showing its resolved value. <button type="button" className="ni-unlink" onClick={onUnbind} title="Stop the knob from driving this field (the knob keeps its other targets)">Unbind</button> </strong>}
+        {eff.kind === 'unavailable' && <strong className="ni-driven">Driven by public control “{eff.controlLabel}”; value unavailable: {eff.reason} <button type="button" className="ni-unlink" onClick={onUnbind}>Unbind</button> </strong>}
         {structural && <strong className="ni-driven">Structural reference; not editable here. </strong>}
         {eff.kind === 'default' ? 'Default value. ' : ''}
         {help}

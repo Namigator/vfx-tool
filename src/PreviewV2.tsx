@@ -760,6 +760,14 @@ export default function PreviewV2() {
           <button type="button" onClick={downloadDocument} title="Download this effect as a .vfx.json file (recipe only; imported asset bytes not included)">Save .json</button>
           <button type="button" onClick={() => void downloadPack()} title="Download a portable .vfxpack: the effect plus its imported asset bytes and checksums">Export pack</button>
           <button type="button" onClick={keepProject} title="Keep a copy of this effect in the local project shelf (same name replaces)">Keep</button>
+          <button type="button" onClick={() => {
+            // 12 workflow 1 "Save As": keep the effect under a new name; the open effect continues as that copy.
+            const cur = historyRef.current!.snapshot(), name = window.prompt('Save this effect as (new name):', `${cur.name || 'effect'} copy`)?.trim();
+            if (!name) return;
+            onEdit(`Rename to ${name}`, [{ op: 'set', path: ['name'], value: name }]);
+            const r = saveToShelf(projectsRef.current, { ...historyRef.current!.snapshot(), name });
+            if (r.ok) { setShelf(r.entries); setShelfPick(r.entries[0].name); setFileNote(`Saved as "${name}" in Projects; you are now editing "${name}".`); } else setFileNote(r.message);
+          }} title="Save a copy under a new name and keep working on that copy">Save as…</button>
           <select aria-label="Projects" value={shelfPick} onChange={e => { const name = e.currentTarget.value; setShelfPick(name); const entry = shelf.find(s => s.name === name); if (entry) replace(entry.text, `Open project ${name}`); }}>
             <option value="">Projects ({shelf.length})…</option>
             {shelf.map(s => <option key={s.name} value={s.name}>{s.name} — {new Date(s.savedAt).toLocaleString()}</option>)}
