@@ -226,6 +226,9 @@ export default function PreviewV2() {
     // New seed on cast (preview-only): each loop plays a different random pattern; the document keeps its seed.
     const d = seedOffsetRef.current ? { ...authored, seed: (authored.seed + seedOffsetRef.current * 7919) >>> 0 } : authored;
     const vp = viewportRef.current;
+    // An edit made while paused keeps the playhead where it is (keyframing: move the playhead, change a knob).
+    const keepTick = vp && !vp.isPlaying ? vp.currentTick : 0;
+    const restore = () => { if (keepTick > 0) vp?.seek(Math.min(keepTick, d.durationTicks)); };
     setRuntimeErrors([]);
     stopSound(transportRef.current?.status === 'playing' ? 'Sound stopped: the document changed.' : '');
     audioRef.current = null;
@@ -274,6 +277,7 @@ export default function PreviewV2() {
       setTimeline(timelineInfo(points.value, first.value));
       const snapshot = structuredClone(d);
       vp?.setMixedSource(points.value, first.value, tick => compilePathPreview(snapshot, tick, visualOptions));
+      restore();
       return;
     }
     if (choice.mode === 'paths') {
@@ -296,6 +300,7 @@ export default function PreviewV2() {
       setTimeline(timelineInfo(null, first.value));
       const snapshot = structuredClone(d); // Later edits never leak into the running source.
       vp?.setPathSource(first.value, tick => compilePathPreview(snapshot, tick, visualOptions));
+      restore();
       return;
     }
     const result = compileParticlePreview(d, visualOptions);
@@ -309,6 +314,7 @@ export default function PreviewV2() {
     setFollowers(result.value.followers);
     setTimeline(timelineInfo(result.value, null));
     vp?.setPlan(result.value); // Starts paused at tick 0.
+    restore();
   }, [stopSound]);
 
   /** User gesture only: lazily creates the AudioContext, loads the current mix and plays it from the start. */
@@ -972,7 +978,7 @@ export default function PreviewV2() {
           </details>
           <section className="pv2-panel" aria-label="Controls">
             <h2 className="pv2-heading">Controls</h2>
-            <ControlsPanel document={doc} onEdit={onEdit} followers={followers} />
+            <ControlsPanel document={doc} onEdit={onEdit} followers={followers} tick={frame.tick} />
           </section>
           <section className="pv2-panel" aria-label="Selected node">
             <h2 className="pv2-heading">Selected node</h2>

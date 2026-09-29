@@ -7,14 +7,44 @@ import type { EffectDocumentV2, PublicControl } from '../model/types.ts';
 import type { Patch as HistoryPatch } from './history.ts';
 import type { FollowerTravel } from '../graph/toParticles.ts';
 import { hueRotate, hueShiftToward } from '../graph/recolor.ts';
+import { canKeyframe, controlValueAt, removeKeyAt, setKeyAt } from '../graph/keyframes.ts';
 
 const UNIT_LABEL: Record<string, string> = { meter: 'm', second: 's', tick: 'ticks', radian: 'rad', metersPerSecond: 'm/s', metersPerSecondSquared: 'm/s²', hertz: 'Hz', perSecond: '/s', linearGain: '×', normalized: '', none: '' };
 
-type Props = { document: EffectDocumentV2; onEdit: (label: string, patches: HistoryPatch[]) => void; followers?: FollowerTravel[] };
+type Props = { document: EffectDocumentV2; onEdit: (label: string, patches: HistoryPatch[]) => void; followers?: FollowerTravel[]; tick?: number };
 
-function ControlRow({ c, index, onEdit, durationTicks }: { c: PublicControl; index: number; onEdit: Props['onEdit']; durationTicks: number }) {
+/**
+ * Keyframed knobs (graph/keyframes.ts): with keys, a knob shows its value at the playhead and an edit sets the key
+ * there. The diamond adds a key at the playhead (filled = a key sits here; click again removes it); the cross drops all.
+ */
+function setValuePatch(c: PublicControl, index: number, tick: number, v: number): HistoryPatch {
+  return c.keys?.length ? { op: 'set', path: ['controls', index, 'keys'], value: setKeyAt(c.keys, tick, v) } : { op: 'set', path: ['controls', index, 'value'], value: v };
+}
+function KeyButton({ c, index, tick, onEdit, current }: { c: PublicControl; index: number; tick: number; onEdit: Props['onEdit']; current: number }) {
+  if (!canKeyframe(c)) return null;
+  const keys = c.keys ?? [], here = keys.some(k => k.tick === tick);
+  const toggle = () => {
+    if (here) {
+      const next = removeKeyAt(keys, tick);
+      // Removing the last key leaves the knob at the value it had there.
+      onEdit(`Remove ${c.label} key at tick ${tick}`, next.length ? [{ op: 'set', path: ['controls', index, 'keys'], value: next }] : [{ op: 'delete', path: ['controls', index, 'keys'] }, { op: 'set', path: ['controls', index, 'value'], value: current }]);
+    } else onEdit(`Key ${c.label} = ${current} at tick ${tick}`, [{ op: 'set', path: ['controls', index, 'keys'], value: setKeyAt(keys, tick, current) }]);
+  };
+  const list = keys.map(k => `${k.tick}: ${+k.value.toFixed(3)}`).join(', ');
+  return (
+    <span className="cp-keys">
+      <button type="button" className={`cp-key${here ? ' cp-key-on' : keys.length ? ' cp-key-anim' : ''}`} onClick={toggle}
+        title={here ? `Remove the key at tick ${tick}` : keys.length ? `Add a key at tick ${tick} (animated: ${list})` : `Animate this knob: add a key at tick ${tick}, move the playhead, change the knob - it now changes over time.`}
+        aria-label={here ? `Remove ${c.label} key at tick ${tick}` : `Add ${c.label} key at tick ${tick}`}>{here ? '◆' : '◇'}</button>
+      {keys.length > 0 && <button type="button" className="cp-key-clear" title="Stop animating: remove all keys (keeps the value at the playhead)" aria-label={`Clear ${c.label} keys`}
+        onClick={() => onEdit(`Clear ${c.label} keys`, [{ op: 'delete', path: ['controls', index, 'keys'] }, { op: 'set', path: ['controls', index, 'value'], value: current }])}>×</button>}
+    </span>
+  );
+}
+
+function ControlRow({ c, index, onEdit, durationTicks, tick }: { c: PublicControl; index: number; onEdit: Props['onEdit']; durationTicks: number; tick: number }) {
   const [draft, setDraft] = useState<string | null>(null);
-  const value = typeof c.value === 'number' ? c.value : 0;
+  const raw = controlValueAt(c, tick), value = typeof raw === 'number' ? raw : 0;
   const min = c.min ?? 0, max = c.max ?? Math.max(1, value * 4);
   const step = c.step ?? (c.type === 'integer' ? 1 : (max - min) / 1000);
   const shown = draft ?? String(value);
@@ -25,7 +55,7 @@ function ControlRow({ c, index, onEdit, durationTicks }: { c: PublicControl; ind
     v = Math.min(max, Math.max(min, c.type === 'integer' ? Math.round(v) : v));
     if (v === value) return;
     // The editor lengthens the effect when the new value pushes its end past the duration (grownDuration).
-    onEdit(`Set ${c.label} = ${v}`, [{ op: 'set', path: ['controls', index, 'value'], value: v }]);
+    onEdit(c.keys?.length ? `Key ${c.label} = ${v} at tick ${tick}` : `Set ${c.label} = ${v}`, [setValuePatch(c, index, tick, v)]);
   };
   return (
     <div className="cp-row" title={c.description}>
@@ -36,7 +66,7 @@ function ControlRow({ c, index, onEdit, durationTicks }: { c: PublicControl; ind
       <input className="cp-num" type="number" min={min} max={max} step={c.type === 'integer' ? 1 : 'any'} value={shown} aria-label={`${c.label} value`}
         onChange={e => setDraft(e.currentTarget.value)} onBlur={e => commit(e.currentTarget.value)}
         onKeyDown={e => { if (e.key === 'Enter') commit(e.currentTarget.value); if (e.key === 'Escape') setDraft(null); }} />
-      <span className="cp-unit">{UNIT_LABEL[c.unit] ?? c.unit}</span>
+      <span className="cp-unit">{UNIT_LABEL[c.unit] ?? c.unit}<KeyButton c={c} index={index} tick={tick} onEdit={onEdit} current={value} /></span>
     </div>
   );
 }
@@ -86,10 +116,10 @@ function ValueRow({ c, index, onEdit }: { c: PublicControl; index: number; onEdi
 
 /** A Colour knob (number bound to hueShift with a swatch): a picker showing the shifted swatch; picking sets the
  *  wheel turn that brings the swatch's hue to the picked one. The degrees field stays for exact values. */
-function HueRow({ c, index, onEdit }: { c: PublicControl; index: number; onEdit: Props['onEdit'] }) {
-  const value = typeof c.value === 'number' ? c.value : 0;
+function HueRow({ c, index, onEdit, tick }: { c: PublicControl; index: number; onEdit: Props['onEdit']; tick: number }) {
+  const raw = controlValueAt(c, tick), value = typeof raw === 'number' ? Math.round(raw) : 0;
   const swatch = { srgb: c.swatch!, alpha: 1 };
-  const set = (v: number) => { if (v !== value) onEdit(`Set ${c.label} = ${v}`, [{ op: 'set', path: ['controls', index, 'value'], value: v }]); };
+  const set = (v: number) => { if (v !== value) onEdit(c.keys?.length ? `Key ${c.label} = ${v} at tick ${tick}` : `Set ${c.label} = ${v}`, [setValuePatch(c, index, tick, v)]); };
   const shown = hueRotate(swatch, value).srgb.toLowerCase();
   return (
     <div className="cp-row cp-row-hue" title={c.description}>
@@ -98,7 +128,7 @@ function HueRow({ c, index, onEdit }: { c: PublicControl; index: number; onEdit:
       <input className="cp-num" type="number" min={-180} max={180} step={1} defaultValue={value} key={value} aria-label={`${c.label} degrees`}
         onBlur={e => { const n = Math.round(Number(e.currentTarget.value)); if (Number.isFinite(n)) set(Math.max(-180, Math.min(180, n))); }}
         onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }} />
-      <span className="cp-unit">°{value !== 0 ? <button type="button" className="cp-reset" onClick={() => set(0)} title="Back to the original colours">reset</button> : null}</span>
+      <span className="cp-unit">°{value !== 0 ? <button type="button" className="cp-reset" onClick={() => set(0)} title="Back to the original colours">reset</button> : null}<KeyButton c={c} index={index} tick={tick} onEdit={onEdit} current={value} /></span>
     </div>
   );
 }
@@ -122,7 +152,7 @@ function TravelReadout({ doc, followers }: { doc: EffectDocumentV2; followers: F
   );
 }
 
-export function ControlsPanel({ document: doc, onEdit, followers = [] }: Props) {
+export function ControlsPanel({ document: doc, onEdit, followers = [], tick = 0 }: Props) {
   const all = doc.controls.map((c, i) => [c, i] as const);
   if (!all.length) return <p className="pv2-muted">No published controls. Insert a component (Add component) to get its knobs.</p>;
   const sections = [...new Set(all.map(([c]) => c.section))];
@@ -132,14 +162,14 @@ export function ControlsPanel({ document: doc, onEdit, followers = [] }: Props) 
         <fieldset key={s} className="cp-section">
           <legend>{s}</legend>
           {all.filter(([c]) => c.section === s).map(([c, i]) => c.swatch && isNumber(c)
-            ? <HueRow key={c.id} c={c} index={i} onEdit={onEdit} />
+            ? <HueRow key={c.id} c={c} index={i} onEdit={onEdit} tick={tick} />
             : isNumber(c)
-            ? <ControlRow key={c.id} c={c} index={i} onEdit={onEdit} durationTicks={doc.durationTicks} />
+            ? <ControlRow key={c.id} c={c} index={i} onEdit={onEdit} durationTicks={doc.durationTicks} tick={tick} />
             : <ValueRow key={`${c.id}-${JSON.stringify(c.value)}`} c={c} index={i} onEdit={onEdit} />)}
         </fieldset>
       ))}
       <TravelReadout doc={doc} followers={followers} />
-      <style>{`.cp-root{display:flex;flex-direction:column;gap:10px}.cp-section{border:1px solid #2a3140;border-radius:6px;padding:6px 8px 8px;margin:0}.cp-section legend{font-size:13px;font-weight:600;padding:0 4px}.cp-row{display:grid;grid-template-columns:minmax(90px,1fr) 2fr 72px auto;gap:6px;align-items:center;font-size:13px;margin-top:4px}.cp-num{width:72px}.cp-row-value{grid-template-columns:minmax(90px,1fr) 3fr}.cp-vec{display:flex;gap:4px}.cp-travel{font-size:12px;opacity:.85;margin-top:4px}.cp-unit{font-size:11px;opacity:.7}.cp-row-hue{grid-template-columns:minmax(90px,1fr) 2fr 72px auto}.cp-reset{margin-left:4px;font-size:11px}`}</style>
+      <style>{`.cp-root{display:flex;flex-direction:column;gap:10px}.cp-section{border:1px solid #2a3140;border-radius:6px;padding:6px 8px 8px;margin:0}.cp-section legend{font-size:13px;font-weight:600;padding:0 4px}.cp-row{display:grid;grid-template-columns:minmax(80px,1fr) 2fr 60px auto;gap:6px;align-items:center;font-size:13px;margin-top:4px}.cp-num{width:60px}.cp-row-value{grid-template-columns:minmax(90px,1fr) 3fr}.cp-vec{display:flex;gap:4px}.cp-travel{font-size:12px;opacity:.85;margin-top:4px}.cp-unit{font-size:11px;opacity:.7}.cp-row-hue{grid-template-columns:minmax(80px,1fr) 2fr 60px auto}.pv2 .cp-root button.cp-reset{margin-left:4px;font-size:11px;min-height:24px;padding:0 6px}.cp-keys{display:inline-flex;gap:2px;margin-left:3px;vertical-align:middle}.cp-unit{white-space:nowrap}.pv2 .cp-root button.cp-key,.pv2 .cp-root button.cp-key-clear{padding:0;font-size:12px;line-height:1;height:24px;width:24px;min-width:24px;min-height:24px;border-radius:3px}.cp-key-on{color:#f0b35a}.cp-key-anim{color:#8fb8ff}`}</style>
     </div>
   );
 }

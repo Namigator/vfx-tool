@@ -5,7 +5,7 @@
 // matching, reachability and expanded budgets remain WP02.
 import {
   DOCUMENT_FORMAT, ID_PATTERN, MAX_ANCHORS, MAX_ASSET_REFERENCES, MAX_CONTROL_BINDINGS, MAX_CONTROLS,
-  MAX_DESCRIPTION_CODE_POINTS, MAX_DURATION_TICKS, MAX_GRAPHS, MAX_GROUP_DEPTH,
+  MAX_DESCRIPTION_CODE_POINTS, MAX_DURATION_TICKS, MAX_GRAPHS, MAX_GROUP_DEPTH, MAX_CONTROL_KEYS,
   MAX_INTERFACE_PORTS_PER_DIRECTION, MAX_JSON_BYTES, MAX_JSON_DEPTH, MAX_LABEL_CODE_POINTS,
   MAX_PATH_CODE_POINTS, MAX_STORED_EDGES, MAX_STORED_NODES, MAX_TAG_CODE_POINTS, MAX_TAGS,
   AUDIO_MIX_INPUT_PORT, AUDIO_MIX_NODE_TYPE, MAX_EDGE_MIX_GAIN, MAX_EDGE_MIX_PAN, MIN_EDGE_MIX_GAIN, MIN_EDGE_MIX_PAN,
@@ -683,8 +683,27 @@ function checkGroupStructure(ctx: Ctx) {
 
 // ---------- controls ----------
 
+/** Keyframed knobs: number/integer only, ascending whole ticks in [0, MAX_DURATION_TICKS], values inside the knob's bounds. */
+function checkControlKeys(ctx: Ctx, p: string, c: Record<string, unknown>) {
+  const keys = c.keys;
+  if (!Array.isArray(keys) || keys.length > MAX_CONTROL_KEYS) { err(ctx, 'INVALID_VALUE', p, `Keys must be an array of at most ${MAX_CONTROL_KEYS} {tick, value}.`); return; }
+  if (c.type !== 'number' && c.type !== 'integer') { err(ctx, 'TYPE_MISMATCH', p, 'Only number and integer knobs can have keyframes.'); return; }
+  let last = -1;
+  keys.forEach((k, i) => {
+    const kp = `${p}[${i}]`;
+    if (!k || typeof k !== 'object' || Object.keys(k).some(x => x !== 'tick' && x !== 'value')) { err(ctx, 'INVALID_VALUE', kp, 'A key is {tick, value}.'); return; }
+    const { tick, value } = k as { tick: unknown; value: unknown };
+    if (typeof tick !== 'number' || !Number.isInteger(tick) || tick < 0 || tick > MAX_DURATION_TICKS || tick <= last) err(ctx, 'INVALID_VALUE', `${kp}.tick`, `Key ticks must be whole numbers 0..${MAX_DURATION_TICKS} in increasing order.`);
+    else last = tick;
+    if (typeof value !== 'number' || !Number.isFinite(value)) err(ctx, 'INVALID_VALUE', `${kp}.value`, 'Key value must be a finite number.');
+    else if ((typeof c.min === 'number' && value < c.min) || (typeof c.max === 'number' && value > c.max)) err(ctx, 'INVALID_VALUE', `${kp}.value`, `Key value ${value} is outside the knob's range.`);
+    else if (c.type === 'integer' && !Number.isInteger(value)) err(ctx, 'INVALID_VALUE', `${kp}.value`, 'Integer knob keys must be whole numbers.');
+  });
+}
+
 function checkControl(ctx: Ctx, p: string, c: unknown, targets: Map<string, string>) {
-  if (!shape(ctx, p, c, ['id', 'scopeGraphId', 'label', 'type', 'unit', 'value', 'default', 'section', 'description', 'editPolicy', 'bindings'], ['min', 'max', 'step', 'choices', 'swatch'], 'control')) return;
+  if (!shape(ctx, p, c, ['id', 'scopeGraphId', 'label', 'type', 'unit', 'value', 'default', 'section', 'description', 'editPolicy', 'bindings'], ['min', 'max', 'step', 'choices', 'swatch', 'keys'], 'control')) return;
+  if (c.keys !== undefined) checkControlKeys(ctx, `${p}.keys`, c);
   if (c.swatch !== undefined && (typeof c.swatch !== 'string' || !/^#[0-9A-Fa-f]{6}$/.test(c.swatch))) err(ctx, 'INVALID_VALUE', `${p}.swatch`, 'Control swatch must be a #RRGGBB colour.');
   objectId(ctx, `${p}.id`, c.id);
   let scope: string | undefined;

@@ -48,9 +48,11 @@ export type TimelineLane = {
   startControl?: number; lengthControl?: number;
   /** Root Group node of a grouped component (selecting the bar selects it). */
   groupNodeId?: string;
+  /** Keyframed knobs of this component: tick → knob labels keyed there (drawn as diamonds). */
+  keys?: { tick: number; labels: string[] }[];
 };
 type LaneDoc = {
-  controls: readonly { id: string; label: string; section: string; unit: string; type: string; bindings: readonly { parameter: string }[] }[];
+  controls: readonly { id: string; label: string; section: string; unit: string; type: string; bindings: readonly { parameter: string }[]; keys?: readonly { tick: number }[] }[];
   graphs: readonly { id: string; nodes: readonly { id: string; type: string }[] }[];
   rootGraphId: string;
 };
@@ -69,6 +71,11 @@ export function timelineLanes(doc: LaneDoc, windows: ReadonlyMap<string, readonl
     const p = prefixes.find(x => c.id.startsWith(`ctl-${x}-`));
     if (p && c.unit === 'tick' && c.type === 'integer' && !c.id.endsWith('-start-at') && c.bindings.length > 0 && c.bindings.every(b => b.parameter === 'durationTicks')) {
       lanes.get(p)!.lengthControl ??= i;
+    }
+    if (p && c.keys?.length) {
+      const lane = lanes.get(p)!, keys = lane.keys ??= [];
+      for (const k of c.keys) { const at = keys.find(x => x.tick === k.tick); if (at) at.labels.push(c.label); else keys.push({ tick: k.tick, labels: [c.label] }); }
+      keys.sort((a, b) => a.tick - b.tick);
     }
   });
   for (const [id, w] of windows) {

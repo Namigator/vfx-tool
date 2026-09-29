@@ -3,6 +3,7 @@
 // particle runtime — so there is no MCP-only behaviour. Documents live in memory and are mirrored to
 // work/mcp/<id>.json after every successful change, which the editor opens via ?workspace=v2&doc=...
 import { hueShiftToward } from '../src/graph/recolor.ts';
+import { canKeyframe, controlValueAt } from '../src/graph/keyframes.ts';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -250,7 +251,7 @@ ${formatMigrationReport(report)}`);
     return ok(list.map(e => `${e.nodeId}.${e.port}  (${e.label})`).join('\n') || 'No event outputs in this graph.');
   });
   tool('vfx_list_controls', 'Published knobs (document controls) with value, bounds and what they drive.', { docId: z.string() }, ({ docId }) =>
-    ok(getDoc(docId).controls.map(c => `${c.id} [${c.section}] ${c.label} = ${JSON.stringify(c.value)}${c.swatch ? ` (colour picker, original ${c.swatch})` : ''} (${c.min ?? '-'}..${c.max ?? '-'} ${c.unit}) -> ${c.bindings.map(b => `${b.nodeId}.${b.parameter}${b.scale ? ' x' + b.scale : ''}`).join(', ')}`).join('\n') || 'No controls.'));
+    ok(getDoc(docId).controls.map(c => `${c.id} [${c.section}] ${c.label} = ${JSON.stringify(c.value)}${c.swatch ? ` (colour picker, original ${c.swatch})` : ''} (${c.min ?? '-'}..${c.max ?? '-'} ${c.unit}) -> ${c.bindings.map(b => `${b.nodeId}.${b.parameter}${b.scale ? ' x' + b.scale : ''}`).join(', ')}${c.keys?.length ? ` keys: ${c.keys.map(k => `${k.tick}→${k.value}`).join(', ')}` : ''}`).join('\n') || 'No controls.'));
   tool('vfx_set_control', 'Set a published knob by id or label (document validation enforces its bounds). Colour knobs take {srgb:"#RRGGBB",alpha}; the whole-component Colour knob takes degrees or a "#RRGGBB" colour (turned toward that hue); vector knobs take [x,y,z].', { docId: z.string(), control: z.string(), value: z.union([z.number(), z.boolean(), z.string(), z.array(z.number()), z.object({ srgb: z.string(), alpha: z.number() })]) }, a =>
     mutate(a.docId, d => {
       const c = d.controls.find(x => x.id === a.control) ?? d.controls.filter(x => x.label === a.control).at(-1);
@@ -267,6 +268,16 @@ ${formatMigrationReport(report)}`);
       const grow = grownDuration(before, d);
       if (grow !== undefined) d.durationTicks = grow;
       return `${c.label} = ${JSON.stringify(a.value)}${grow !== undefined ? ` (effect lengthened to ${grow} ticks so nothing is cut off)` : ''}`;
+    }));
+
+  tool('vfx_set_control_keys', 'Animate a number knob over the effect: keys are {tick, value} (ascending whole ticks 0..600, values within the knob bounds); the value between keys is linear, held before the first and after the last. An empty array stops animating (the knob keeps its value at tick 0). Timing knobs (Start at, Burn time, Travel...) cannot be animated.', { docId: z.string(), control: z.string(), keys: z.array(z.object({ tick: z.number().int(), value: z.number() })) }, a =>
+    mutate(a.docId, d => {
+      const c = d.controls.find(x => x.id === a.control) ?? d.controls.filter(x => x.label === a.control).at(-1);
+      if (!c) throw new Error(`No control "${a.control}". Use vfx_list_controls.`);
+      if (!canKeyframe(c)) throw new Error(`"${c.label}" cannot be animated: only number knobs that are not timing knobs (Start at, Burn time, Travel...) take keys.`);
+      if (a.keys.length === 0) { c.value = controlValueAt(c, 0) as never; delete c.keys; return `${c.label}: no longer animated, held at ${JSON.stringify(c.value)}`; }
+      c.keys = a.keys.map(k => ({ tick: k.tick, value: k.value }));
+      return `${c.label} animated: ${c.keys.map(k => `${k.tick}→${k.value}`).join(', ')}`;
     }));
 
   // ---------- graph editing ----------

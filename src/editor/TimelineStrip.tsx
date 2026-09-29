@@ -77,6 +77,8 @@ export function TimelineStrip({ document: doc, lanes, tick, durationTicks, selec
                     onPointerDown={e => begin(e, lane, 'stretch')} onPointerMove={move} onPointerUp={() => end(lane)} />}
                 </div>
               ) : <span className="tl-empty">not visible</span>}
+              {lane.keys?.map(k => <span key={k.tick} className="tl-keyframe" style={{ left: pct(k.tick, dur) }} title={`Tick ${k.tick}: ${k.labels.join(', ')} keyed (click to jump here)`}
+                onPointerDown={e => { e.stopPropagation(); onSeek(k.tick); }} />)}
               <span className="tl-playhead" style={{ left: pct(tick, dur) }} />
             </div>
           </div>
@@ -93,7 +95,8 @@ export function TimelineStrip({ document: doc, lanes, tick, durationTicks, selec
 .tl-handle{position:absolute;right:-1px;top:-1px;bottom:-1px;width:7px;background:#e8eef8;border-radius:0 3px 3px 0;cursor:ew-resize}
 .tl-drag-readout{position:absolute;left:4px;top:-1px;font-size:11px;color:#fff;white-space:nowrap;pointer-events:none}
 .tl-playhead{position:absolute;top:-2px;bottom:-2px;width:2px;margin-left:-1px;background:#ff5a5a;pointer-events:none}
-.tl-empty{position:absolute;left:6px;top:1px;opacity:.5}`}</style>
+.tl-empty{position:absolute;left:6px;top:1px;opacity:.5}
+.tl-keyframe{position:absolute;top:4px;width:8px;height:8px;margin-left:-4px;background:#f0b35a;border:1px solid #1a1a1a;transform:rotate(45deg);cursor:pointer;z-index:2}`}</style>
     </div>
   );
 }

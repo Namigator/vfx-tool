@@ -25,6 +25,7 @@
 //   (or at/after the document end) is inactive and carries no paths.
 import { prepareDocument, sameInputText } from './prepare.ts';
 import { gradeOf, type ColorGrade } from './recolor.ts';
+import { docAtTick } from './keyframes.ts';
 import { BUILTIN_SPRITES } from '../assets/builtinSprites.generated.ts';
 import type { SpriteSheet } from '../assets/spriteLibrary.ts';
 import type { ColorValue, CurveValue, Diagnostic, ErrorCode, ParameterValue, Quaternion, Transform, ValidationResult, Vec3 } from '../model/types.ts';
@@ -183,6 +184,8 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
   if (typeof effectTick !== 'number' || !Number.isInteger(effectTick) || effectTick < 0) {
     return { ok: false, errors: [{ code: 'INVALID_VALUE', severity: 'error', message: `effectTick must be a nonnegative integer; got ${String(effectTick)}.` }] };
   }
+  // Keyframed knobs: paths are compiled per tick, so they read every keyed knob's value at this tick (keyframes.ts).
+  input = docAtTick(input, effectTick);
   const prepared = prepareDocument(input);
   const { registry, analysis } = prepared;
   if (!analysis.ok) return analysis;

@@ -129,7 +129,11 @@ export type PublicControl = {
   bindings: ControlBinding[];
   /** Number knobs bound to hueShift: the unshifted representative colour (#RRGGBB); the editor shows a colour picker. */
   swatch?: string;
+  /** Keyframes (number/integer knobs): the knob animates over effect time, linear between keys, held before/after. */
+  keys?: ControlKey[];
 };
+export type ControlKey = { tick: number; value: number };
+export const MAX_CONTROL_KEYS = 32;
 
 /** Position vec3, rotation quaternion xyzw, positive uniform scale. */
 export type Transform = { position: Vec3; rotation: Quaternion; scale: number };

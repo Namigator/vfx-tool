@@ -42,6 +42,17 @@
   click = select Group, empty track = seek. MCP vfx_list_timeline. [SAW] 3 lanes; [RAN] browser drag 90->12, stretch
   Travel 36->87, click selects. Note: a bar shows the VISIBLE span, so the bolt's bar doesn't grow with Travel (its
   trail tail already ends later). Next: keyframed knobs.
+- Keyframed knobs DONE (user order item 3): PublicControl.keys [{tick,value}] (number knobs, not tick-unit ones).
+  src/graph/keyframes.ts compileKeyframed: compile once per key tick, differing numbers -> DescriptorTrack on
+  descriptors (runtime applies per tick; particles.ts by the Sonnet implementer) and LayerAnimation on layers
+  (viewport #applyAnimation: opacity/emission/hueShift/colour/grade/mesh colour-over-life/light colour+intensity+range);
+  child emission reads keyed ParticleEvents probability / child burst at each event tick (nodeParamTracks from control
+  bindings); paths read keyed values per tick (docAtTick). Structure/timing changes -> one error naming the knob.
+  Editor: diamond button per knob (key at playhead; keyed knob edits the key at the playhead), x clears; lane diamonds;
+  edits while paused keep the playhead. MCP vfx_set_control_keys. [SAW] orange thin t30 -> blue dense t92;
+  [RAN] editor key+edit at t150. Cost: a keyed doc compiles (keys+1)x (~350 ms flamethrower, 2 keyed knobs).
+- TOOL BROKEN 2026-09-29: ~/.claude/tools/shot.ps1 url returns "chrome produced no file" even for docs that captured
+  earlier (doctor clean, page reports READY via cdp-eval). Use the in-app browser pane or cdp-eval meanwhile.
 - USER REPORT 2026-09-29 (open): viewed from behind/in front of the fire (along the jet), the sprites move
   weirdly. Suspect velocity-stretched / velocity-aligned billboards viewed along their velocity (they collapse and
   spin). Needs a capture from those angles first.

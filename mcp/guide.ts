@@ -82,6 +82,7 @@ export const GUIDE: Record<string, string> = {
 - Imported assets: vfx_import_texture role color|mask|normal|noise (materialId applies it), vfx_import_mesh, then vfx_add_asset_component inserts a ready-made component that uses the asset.
 - Editing: vfx_duplicate_nodes (preservePattern keeps the same random pattern), vfx_copy_nodes / vfx_paste_nodes, vfx_remove_node reconnect=true joins the neighbours, vfx_group_nodes, vfx_set_control (a longer Travel grows the effect duration).
 - Timeline: vfx_list_timeline shows each component's active tick span, its Start at knob and its length knob; move a component with vfx_set_control on its Start at, stretch it with its length control.
+- Keyframes: a number knob can change over the effect - the ◇ button in the editor's Controls panel adds a key at the playhead; vfx_set_control_keys sets {tick, value} keys (values in between are linear, held before the first and after the last; empty keys stops animating). Timing knobs (Start at, Burn time, Travel...) cannot be animated.
 - Looking: vfx_render_frames / vfx_contact_sheet accept orbit {yaw, pitch, distance}, camera, solo [node ids] and background "light". Look at the images before claiming anything.`,
 };
 

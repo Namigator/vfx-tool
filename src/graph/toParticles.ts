@@ -22,6 +22,7 @@
 //   one repeat always differ (durationTicks >= 1), so no extra tag is needed. Duplicate keys (the same
 //   Schedule output wired twice) are a DUPLICATE_ID error.
 import { prepareDocument } from './prepare.ts';
+import { compileKeyframed, hasKeyframes, trackValue, type LayerAnimation } from './keyframes.ts';
 import { applyGrade, gradeGradient, gradeOf, hueRotate, type ColorGrade } from './recolor.ts';
 export { hueRotate } from './recolor.ts';
 import type { ColorValue, CurveValue, Diagnostic, ErrorCode, GradientValue, ParameterValue, Quaternion, Transform, ValidationResult, Vec3 } from '../model/types.ts';
@@ -32,6 +33,7 @@ import {
   DEFAULT_MAX_BURST_EVENTS, DEFAULT_MAX_LIVE_PARTICLES, DEFAULT_MAX_TOTAL_BIRTHS, collectParticleEvents, validateParticleDescriptor,
   type ParticleBurst, type ParticleEmitterDescriptor, type ParticleOperator, type ParticleRate,
 } from '../runtime/particles.ts';
+import type { DescriptorTrack } from '../runtime/particles.ts';
 import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { createRegistry } from './registry.ts';
@@ -57,6 +59,8 @@ export type ParticlePreviewLayer = {
   hueShift?: number;
   /** Material per-part colour grade (recolorFrom → recolorTo), applied by the shader before hueShift. */
   grade?: ColorGrade;
+  /** Keyframed knobs: per-tick values of opacity/emission/hueShift/colour (keyframes.ts). */
+  animation?: LayerAnimation;
   /** Material depthTest off: drawn over solid objects. Absent = on. */
   depthTest?: false;
   /** Material ground fade height in world meters (0 = off). */
@@ -100,11 +104,13 @@ export type ParticlePreviewLayer = {
 /** 05 ParticleTrail sink: ribbon trails behind one particle system's particles. */
 export type ParticleTrailLayer = {
   nodeId: string; systemId: string; historyTicks: number; maxPoints: number; width: number; endFade: number;
-  color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout'; alphaCutoff: number; hueShift?: number; grade?: ColorGrade; depthTest?: false;
+  color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout'; alphaCutoff: number; hueShift?: number; grade?: ColorGrade; depthTest?: false; animation?: LayerAnimation;
   renderOrderOffset: number; visualOrder: number;
 };
 /** 05 PointLight: lights the preview ground over its window. */
 export type PointLightLayer = {
+  /** Keyframed knobs: per-tick intensity/range/colour (keyframes.ts). */
+  animation?: LayerAnimation;
   nodeId: string; position: Vec3; color: ColorValue; intensity: number; range: number;
   /** Moving light (PathFollower anchor): world position per tick from startTick, clamped. */
   track?: { startTick: number; positions: Vec3[] };
@@ -112,6 +118,8 @@ export type PointLightLayer = {
 };
 /** 05 MeshRenderer: instanced built-in mesh per particle. */
 export type MeshLayer = {
+  /** Keyframed knobs: per-tick opacity/emission/colour (keyframes.ts). */
+  animation?: LayerAnimation;
   nodeId: string; systemId: string; mesh: 'shard' | 'rock-a' | 'rock-b' | 'rock-c' | 'orb' | 'cone' | 'crystal' | 'crystal-b' | 'cylinder' | 'box' | 'plane'; scale: number;
   /** Imported GLB (byte SHA-256) replacing `mesh` when present. */
   meshAsset?: string;
@@ -179,9 +187,22 @@ export type ParticlePreviewOptions = {
   ribbonsHandled?: boolean;
   /** Compile only the particle chain ending at this node (ParticlePaths input) and return it as the single system; no layers. */
   probeParticles?: string;
+  /** Keyframed knobs (set by keyframes.ts): tracks attached to the descriptor of each emitter id. */
+  descriptorTracks?: ReadonlyMap<string, DescriptorTrack[]>;
+  /** Keyframed knobs: node parameter values over time (`nodeId|param` → keys), read where a value is taken per event (child emission). */
+  nodeParamTracks?: ReadonlyMap<string, [number, number][]>;
 };
 
+/**
+ * Keyframed knobs (keyframes.ts): a document whose knobs carry keys is compiled once per key tick and the differing
+ * numbers become descriptor/layer tracks; otherwise this is the plain compile.
+ */
 export function compileParticlePreview(input: unknown, options: ParticlePreviewOptions = {}): ValidationResult<ParticlePreviewPlan> {
+  if (!options.descriptorTracks && hasKeyframes(input)) return compileKeyframed(input, options, compileStatic);
+  return compileStatic(input, options);
+}
+
+function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): ValidationResult<ParticlePreviewPlan> {
   const prepared = prepareDocument(input); // Shared, read-only (prepare.ts).
   const { registry, analysis } = prepared;
   if (!analysis.ok) return analysis;
@@ -252,6 +273,13 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     return spec.default;
   };
   const num = (n: ExpandedNode, id: string) => param(n, id) as number;
+  /** Keyframed knobs: a node parameter's value at `tick` (per-event reads such as child emission probability/count). */
+  const numAt = (n: ExpandedNode, id: string, tick: number) => { const t = options.nodeParamTracks?.get(`${n.node.id}|${id}`); return t ? trackValue(t, tick) : num(n, id); };
+  /** Keyframed knobs: attach the emitter's tracks (buildDescriptor already did for chain emitters). */
+  const withTracks = (d: ParticleEmitterDescriptor): ParticleEmitterDescriptor => {
+    const t = options.descriptorTracks?.get(d.emitterId);
+    return t?.length && !d.animation ? { ...d, animation: structuredClone(t) } : d;
+  };
   /** Per-part colour (recolorFrom → recolorTo); spread into shader layers, applied directly for meshes/lights. */
   const gradeFor = (n: ExpandedNode) => gradeOf(param(n, 'recolorFrom') as ColorValue, param(n, 'recolorTo') as ColorValue);
   const gradeField = (n: ExpandedNode): { grade?: ColorGrade } => { const g = gradeFor(n); return g ? { grade: g } : {}; };
@@ -511,15 +539,16 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     const kind = src.node.type === 'GroundCollision' ? 'collision' : port;
     let events = ev.value.filter(e => e.kind === kind && e.tick < doc.durationTicks);
     if (src.node.type === 'ParticleEvents') {
-      const p = num(src, 'probability');
-      if (p < 1) events = events.filter(e => sampleUnit({ documentSeed: doc.seed, randomStreamId: src.node.randomStreamId, eventRandomKey: particleEventRandomKey(e.parentRandomKey, e.kind, e.ordinal), entityOrdinal: 0, propertyKey: 'probability', sampleOrdinal: 0 }) < p);
+      const p = num(src, 'probability'), keyed = options.nodeParamTracks?.has(`${src.node.id}|probability`);
+      if (p < 1 || keyed) events = events.filter(e => sampleUnit({ documentSeed: doc.seed, randomStreamId: src.node.randomStreamId, eventRandomKey: particleEventRandomKey(e.parentRandomKey, e.kind, e.ordinal), entityOrdinal: 0, propertyKey: 'probability', sampleOrdinal: 0 }) < (keyed ? numAt(src, 'probability', e.tick) : p));
       events = events.slice(0, num(src, 'maxEvents'));
     } else if (events.length > DEFAULT_MAX_BURST_EVENTS) {
       report('BUDGET_EXCEEDED', `GroundCollision "${src.node.id}" produces ${events.length} collision events; the limit is ${DEFAULT_MAX_BURST_EVENTS}. Route them through ParticleEvents-style thinning (lower rate or kill mode) — nothing is silently dropped.`, src.node.id);
       return [];
     }
-    if (count <= 0) return [];
-    return events.map(e => ({ tick: e.tick, eventRandomKey: particleEventRandomKey(e.parentRandomKey, e.kind, e.ordinal), count, ...(usePosition ? { position: [e.position[0], Math.max(0, e.position[1]), e.position[2]] as Vec3 } : {}), ...(inherit > 0 ? { addVelocity: [e.velocity[0] * inherit, e.velocity[1] * inherit, e.velocity[2] * inherit] as Vec3 } : {}) }));
+    const child = nodes.get(childId), countKeyed = !!child && !!options.nodeParamTracks?.has(`${childId}|burst`);
+    if (count <= 0 && !countKeyed) return [];
+    return events.map(e => ({ tick: e.tick, eventRandomKey: particleEventRandomKey(e.parentRandomKey, e.kind, e.ordinal), count: countKeyed ? Math.max(0, Math.round(numAt(child!, 'burst', e.tick))) : count, ...(usePosition ? { position: [e.position[0], Math.max(0, e.position[1]), e.position[2]] as Vec3 } : {}), ...(inherit > 0 ? { addVelocity: [e.velocity[0] * inherit, e.velocity[1] * inherit, e.velocity[2] * inherit] as Vec3 } : {}) }));
   };
 
   const buildDescriptor = (chain: Chain, depth = 0): ParticleEmitterDescriptor => {
@@ -725,6 +754,8 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         d.emission = { shape: 'path', axis, radius: 0, coneAngle: num(em, 'coneAngle'), speed: { min: speedMin * scale, max: speedMax * scale }, paths };
       }
     }
+    const animated = options.descriptorTracks?.get(id);
+    if (animated?.length) d.animation = structuredClone(animated);
     return d;
   };
 
@@ -737,7 +768,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       if (!chain) return { ok: true, value: { ...empty, systems: [] }, warnings };
       const d = buildDescriptor(chain);
       if (errors.length) return { ok: false, errors };
-      const v = validateParticleDescriptor(d);
+      const v = validateParticleDescriptor(withTracks(d));
       if (!v.ok) return { ok: false, errors: v.errors.map(e => ({ ...e, nodeId: e.nodeId ?? n.node.id })) };
       return { ok: true, value: { ...empty, systems: [{ id: chain.terminalId, descriptor: v.value }] }, warnings };
     } catch (e) {
@@ -786,7 +817,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
           lifetimeTicks: { min: len, max: len }, size: { min: 0, max: 0 }, operators: [],
           ...(track ? { sourceTrack: { startTick: track.startTick, positions: track.positions.map(p => [...p] as Vec3) }, attachToSource: true } : {}),
         };
-        const v = validateParticleDescriptor(d);
+        const v = validateParticleDescriptor(withTracks(d));
         if (!v.ok) { errors.push(...v.errors.map(e => ({ ...e, nodeId: tid }))); continue; }
         systems.push({ id: tid, descriptor: v.value });
         trails.push({
@@ -810,7 +841,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
           const before = errors.length;
           const d = buildDescriptor(chain);
           if (errors.length === before) {
-            const v = validateParticleDescriptor(d);
+            const v = validateParticleDescriptor(withTracks(d));
             if (!v.ok) errors.push(...v.errors.map(e => ({ ...e, nodeId: chain.emitter.node.id })));
             else systems.push({ id: chain.terminalId, descriptor: v.value });
           }
@@ -891,7 +922,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
           bursts: [{ tick: start, eventRandomKey: scheduleEventRandomKey(s.node.randomStreamId, start, 0), count: 1 }],
           lifetimeTicks: { min: len, max: len }, size: { min: width, max: width }, operators: [],
         };
-        const v = validateParticleDescriptor(d);
+        const v = validateParticleDescriptor(withTracks(d));
         if (!v.ok) { errors.push(...v.errors.map(e => ({ ...e, nodeId: pid }))); continue; }
         systems.push({ id: pid, descriptor: v.value });
         const ma = param(b, 'meshAsset') as string;
@@ -938,7 +969,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
           ...(rot !== 0 || spin !== 0 ? { spin: { rotation: { min: rot, max: rot }, angularVelocity: { min: spin, max: spin } } } : {}),
         };
         if (strack) { d.sourcePosition = [...strack.positions[0]] as Vec3; d.sourceTrack = { startTick: strack.startTick, positions: strack.positions.map(p => [...p] as Vec3) }; d.attachToSource = true; }
-        const v = validateParticleDescriptor(d);
+        const v = validateParticleDescriptor(withTracks(d));
         if (!v.ok) { errors.push(...v.errors.map(e => ({ ...e, nodeId: sid }))); continue; }
         systems.push({ id: sid, descriptor: v.value });
         const curve = (id: string, bounds: { min: number; max: number }): CurveValue => {
@@ -976,7 +1007,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
           const before = errors.length;
           const d = buildDescriptor(chain);
           if (errors.length === before) {
-            const v = validateParticleDescriptor(d);
+            const v = validateParticleDescriptor(withTracks(d));
             if (!v.ok) errors.push(...v.errors.map(e => ({ ...e, nodeId: chain.emitter.node.id })));
             else systems.push({ id: chain.terminalId, descriptor: v.value });
           }
@@ -1025,7 +1056,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         const before = errors.length;
         const d = buildDescriptor(chain);
         if (errors.length === before) {
-          const v = validateParticleDescriptor(d);
+          const v = validateParticleDescriptor(withTracks(d));
           if (!v.ok) errors.push(...v.errors.map(e => ({ ...e, nodeId: chain.emitter.node.id })));
           else systems.push({ id: chain.terminalId, descriptor: v.value });
         }

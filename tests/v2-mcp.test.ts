@@ -81,6 +81,13 @@ test('components and knobs through MCP: insert, list, set, recompile', async () 
   assert.match((await call('vfx_list_controls', { docId: 'k' })).text, /Sparks = 150/);
   assert.equal((await call('vfx_set_control', { docId: 'k', control: 'Sparks', value: -3 })).error, true, 'out of bounds is rejected');
   assert.match((await call('vfx_compile', { docId: 'k' })).text, /particles OK: 3 system/);
+  const keyed = await call('vfx_set_control_keys', { docId: 'k', control: 'Sparks', keys: [{ tick: 0, value: 20 }, { tick: 60, value: 200 }] });
+  assert.equal(keyed.error, false, keyed.text);
+  assert.match((await call('vfx_list_controls', { docId: 'k' })).text, /Sparks = 150.* keys: 0→20, 60→200/);
+  assert.equal((await call('vfx_set_control_keys', { docId: 'k', control: 'Sparks', keys: [{ tick: 60, value: 1 }, { tick: 0, value: 2 }] })).error, true, 'descending ticks are rejected');
+  assert.equal((await call('vfx_set_control_keys', { docId: 'k', control: 'Start at', keys: [{ tick: 0, value: 1 }] })).error, true, 'timing knobs cannot be animated');
+  assert.equal((await call('vfx_set_control_keys', { docId: 'k', control: 'Sparks', keys: [] })).error, false);
+  assert.doesNotMatch((await call('vfx_list_controls', { docId: 'k' })).text, /keys:/);
   assert.match((await call('vfx_list_timeline', { docId: 'k' })).text, /\[impact-flash\]: ticks \d+-\d+ \| Start at = 0 \(control ctl-impact-flash-start-at\)/);
 });
 

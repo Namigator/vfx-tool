@@ -88,6 +88,12 @@ export type ParticleOperator =
   | { kind: 'vortex'; center: Vec3; axis: Vec3; tangential: number; inward: number; falloff: number; gain?: number[] };
 /** Force `gain` (optional): per-tick strength multiplier in 0..1; index = tick - 1 (start of the step), the last value holds. */
 
+/** Keyframed knobs: one numeric descriptor field that changes over effect time. keys: [tick, value], ascending ticks. */
+export type DescriptorTrack = { path: (string | number)[]; keys: [number, number][] };
+/** Bounds on keyframed tracks per descriptor, and on keys per track (implementation limits). */
+const MAX_TRACKS = 64;
+const MAX_TRACK_KEYS = 64;
+
 export type ParticleEmitterDescriptor = {
   documentSeed: number;
   durationTicks: number;
@@ -110,6 +116,8 @@ export type ParticleEmitterDescriptor = {
   lifetimeTicks: { min: number; max: number };
   size: { min: number; max: number };
   operators: ParticleOperator[];
+  /** Keyframed knobs; paths address the validated descriptor (bursts are in sorted order). Absent or empty = static. */
+  animation?: DescriptorTrack[];
 };
 
 /** 05 ParticleEvents / GroundCollision event: carries position, velocity and stable parent identity. */
@@ -212,6 +220,107 @@ function cloneVec(v: Vec3): Vec3 {
   return [v[0], v[1], v[2]];
 }
 
+/** Resolves a track path on `root`; null when any segment is missing. */
+function resolvePath(root: unknown, path: readonly (string | number)[]): { parent: Record<string, unknown> | unknown[]; key: string | number; value: unknown } | null {
+  let cur: unknown = root;
+  for (let i = 0; i < path.length; i++) {
+    const k = path[i];
+    if (Array.isArray(cur)) { if (typeof k !== 'number' || !Number.isInteger(k) || k < 0 || k >= cur.length) return null; }
+    else if (isObj(cur)) { if (typeof k !== 'string' || !Object.hasOwn(cur, k)) return null; }
+    else return null;
+    const next = (cur as Record<string | number, unknown>)[k];
+    if (i === path.length - 1) return { parent: cur as Record<string, unknown> | unknown[], key: k, value: next };
+    cur = next;
+  }
+  return null;
+}
+
+/** Descriptor fields validated as integers; animated values for them are rounded. */
+function isIntegerTrackPath(p: readonly (string | number)[]): boolean {
+  if (p[0] === 'lifetimeTicks') return p.length === 2;
+  if (p[0] === 'bursts') return p.length === 3 && p[2] === 'count';
+  if (p[0] === 'operators') return p.length === 3 && p[2] === 'maxBounces';
+  if (p[0] === 'sourceTrack') return p.length === 2 && p[1] === 'startTick';
+  return false;
+}
+
+function isForbiddenTrackPath(p: readonly (string | number)[]): boolean {
+  if (p[0] === 'durationTicks' || p[0] === 'documentSeed') return true;
+  if (p[0] === 'bursts' && p[2] === 'tick') return true;
+  return p[0] === 'rate' && (p[1] === 'startTick' || p[1] === 'endTick');
+}
+
+/** Linear interpolation between surrounding keys; clamped outside the key range; rounded for integer fields. */
+function evalTrackKeys(keys: readonly (readonly [number, number])[], tick: number, integer: boolean): number {
+  let v: number;
+  if (tick <= keys[0][0]) v = keys[0][1];
+  else if (tick >= keys[keys.length - 1][0]) v = keys[keys.length - 1][1];
+  else {
+    let i = 1;
+    while (keys[i][0] <= tick) i++;
+    const a = keys[i - 1], b = keys[i];
+    v = a[1] + (b[1] - a[1]) * ((tick - a[0]) / (b[0] - a[0]));
+  }
+  return integer ? Math.round(v) : v;
+}
+
+/** Validates the `animation` block against the already-validated (unfrozen) descriptor `d`. */
+function validateAnimation(input: unknown, d: ParticleEmitterDescriptor, options: Partial<ParticleLimits> | undefined, out: Diagnostic[]): DescriptorTrack[] {
+  const p = 'descriptor.animation';
+  if (!Array.isArray(input)) { out.push(err('INVALID_VALUE', 'animation must be an array of tracks.', p)); return []; }
+  if (input.length > MAX_TRACKS) { out.push(err('BUDGET_EXCEEDED', `animation has ${input.length} tracks; limit is ${MAX_TRACKS}.`, p)); return []; }
+  const tracks: DescriptorTrack[] = [];
+  const seen = new Set<string>();
+  const before = out.length;
+  for (let i = 0; i < input.length; i++) {
+    const tp = `${p}[${i}]`;
+    if (!(i in input)) { out.push(err('INVALID_VALUE', 'animation must not be sparse (hole at this index).', tp)); continue; }
+    const t = input[i] as unknown;
+    if (!isObj(t)) { out.push(err('INVALID_VALUE', 'Track must be an object {path, keys}.', tp)); continue; }
+    checkKeys(t, ['path', 'keys'], tp, out);
+    let ok = true;
+    const path = t.path;
+    if (!Array.isArray(path) || path.length < 1 || path.length > 8 || !path.every((k: unknown) => typeof k === 'string' || (typeof k === 'number' && Number.isInteger(k) && k >= 0))) {
+      ok = false; out.push(err('INVALID_VALUE', 'Track path must be 1..8 segments (strings or non-negative integer indices).', `${tp}.path`));
+    } else {
+      const pth = path as (string | number)[];
+      const r = resolvePath(d, pth);
+      if (isForbiddenTrackPath(pth)) { ok = false; out.push(err('INVALID_VALUE', 'This field cannot be animated (structural).', `${tp}.path`)); }
+      else if (!r) { ok = false; out.push(err('INVALID_VALUE', `Track path "${pth.join('.')}" does not exist on the descriptor.`, `${tp}.path`)); }
+      else if (!isFiniteNum(r.value)) { ok = false; out.push(err('INVALID_VALUE', `Track path "${pth.join('.')}" is not a numeric field.`, `${tp}.path`)); }
+      else {
+        const sig = JSON.stringify(pth);
+        if (seen.has(sig)) { ok = false; out.push(err('DUPLICATE_ID', `Two tracks animate "${pth.join('.')}".`, `${tp}.path`)); }
+        else seen.add(sig);
+      }
+    }
+    const keys = t.keys;
+    if (!Array.isArray(keys) || keys.length < 1 || keys.length > MAX_TRACK_KEYS) { ok = false; out.push(err('INVALID_VALUE', `Track keys must be 1..${MAX_TRACK_KEYS} [tick, value] pairs.`, `${tp}.keys`)); }
+    else {
+      let last = -1;
+      for (let j = 0; j < keys.length && ok; j++) {
+        const k = keys[j] as unknown;
+        if (!Array.isArray(k) || k.length !== 2 || !isTickInt(k[0], 0, d.durationTicks) || !isFiniteNum(k[1])) { ok = false; out.push(err('INVALID_VALUE', `Track key ${j} must be [integer tick in 0..durationTicks, finite value].`, `${tp}.keys`)); }
+        else if (k[0] <= last) { ok = false; out.push(err('INVALID_VALUE', `Track key ticks must be strictly ascending (key ${j}).`, `${tp}.keys`)); }
+        else last = k[0];
+      }
+    }
+    if (ok) tracks.push({ path: [...(path as (string | number)[])], keys: (keys as [number, number][]).map(k => [k[0], k[1]] as [number, number]) });
+  }
+  if (out.length > before) return [];
+  // The descriptor with every track evaluated at each key tick must itself validate (between keys, linear interpolation stays valid by convexity).
+  const firstTrackAt = new Map<number, number>();
+  tracks.forEach((t, i) => { for (const k of t.keys) if (!firstTrackAt.has(k[0])) firstTrackAt.set(k[0], i); });
+  const ints = tracks.map(t => isIntegerTrackPath(t.path));
+  for (const [tick, ti] of [...firstTrackAt].sort((a, b) => a[0] - b[0])) {
+    const copy = structuredClone(d) as ParticleEmitterDescriptor;
+    tracks.forEach((t, i) => { const r = resolvePath(copy, t.path)!; (r.parent as Record<string | number, unknown>)[r.key] = evalTrackKeys(t.keys, tick, ints[i]); });
+    const r = validateParticleDescriptor(copy, options);
+    if (!r.ok) out.push(err('INVALID_VALUE', `Animated descriptor is invalid at tick ${tick}: ${r.errors[0].message}${r.errors[0].fieldPath ? ` (${r.errors[0].fieldPath})` : ''}`, `${p}[${ti}].keys`));
+  }
+  return out.length > before ? [] : tracks;
+}
+
 /** Validates and returns a deep-cloned, frozen descriptor. Bursts are sorted by (tick, eventRandomKey). */
 export function validateParticleDescriptor(input: unknown, options?: Partial<ParticleLimits>): ValidationResult<ParticleEmitterDescriptor> {
   const lim = resolveLimits(options);
@@ -220,7 +329,7 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
   const e: Diagnostic[] = [];
   if (!isObj(input)) return { ok: false, errors: [err('INVALID_VALUE', 'Particle descriptor must be an object.', 'descriptor')] };
   const p = 'descriptor';
-  checkKeys(input, ['documentSeed', 'durationTicks', 'emitterId', 'randomStreamId', 'shape', 'sourcePosition', 'initialVelocity', 'emission', 'spin', 'sourceTrack', 'attachToSource', 'bursts', 'rate', 'lifetimeTicks', 'size', 'operators'], p, e);
+  checkKeys(input, ['documentSeed', 'durationTicks', 'emitterId', 'randomStreamId', 'shape', 'sourcePosition', 'initialVelocity', 'emission', 'spin', 'sourceTrack', 'attachToSource', 'bursts', 'rate', 'lifetimeTicks', 'size', 'operators', 'animation'], p, e);
   if (!isUint32(input.documentSeed)) e.push(err('INVALID_VALUE', 'documentSeed must be uint32.', `${p}.documentSeed`));
   const duration = input.durationTicks;
   const durationOk = isTickInt(duration, 1, MAX_DURATION_TICKS);
@@ -430,6 +539,12 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
   if (spin) d.spin = spin;
   if (sourceTrack) d.sourceTrack = sourceTrack;
   if (input.attachToSource === true) d.attachToSource = true;
+  if (input.animation !== undefined) {
+    const ae: Diagnostic[] = [];
+    const tracks = validateAnimation(input.animation, d, options, ae);
+    if (ae.length) return { ok: false, errors: ae };
+    if (tracks.length) d.animation = tracks;
+  }
   return { ok: true, value: deepFreeze(d), warnings: [] };
 }
 
@@ -460,6 +575,11 @@ function cloneParticle(p: ParticleState): ParticleState {
 export class ParticleSimulation {
   readonly descriptor: ParticleEmitterDescriptor;
   readonly limits: ParticleLimits;
+  /** What every internal read sees: the base descriptor, or (animated) a private copy holding the current tick's values. */
+  #cur: ParticleEmitterDescriptor;
+  #tracks: { parent: Record<string | number, unknown>; key: string | number; keys: [number, number][]; integer: boolean }[] = [];
+  /** A rate field is keyframed: emission integrates per tick like a curved rate. */
+  #rateAnimated = false;
   #tick = 0;
   #particles: ParticleState[] = [];
   #births: string[] = [];
@@ -479,7 +599,24 @@ export class ParticleSimulation {
 
   private constructor(descriptor: ParticleEmitterDescriptor, limits: ParticleLimits) {
     this.descriptor = descriptor;
+    this.#cur = descriptor;
     this.limits = Object.freeze({ ...limits });
+    const anim = descriptor.animation;
+    if (anim && anim.length) {
+      this.#cur = structuredClone(descriptor) as ParticleEmitterDescriptor;
+      delete this.#cur.animation;
+      for (const t of anim) {
+        const r = resolvePath(this.#cur, t.path)!;
+        this.#tracks.push({ parent: r.parent as Record<string | number, unknown>, key: r.key, keys: t.keys, integer: isIntegerTrackPath(t.path) });
+        if (t.path[0] === 'rate') this.#rateAnimated = true;
+      }
+      this.#applyTracks(0);
+    }
+  }
+
+  /** Writes every track's value at `tick` into the working copy (no-op for static descriptors). */
+  #applyTracks(tick: number): void {
+    for (const t of this.#tracks) t.parent[t.key] = evalTrackKeys(t.keys, tick, t.integer);
   }
 
   static create(input: unknown, options?: Partial<ParticleLimits>, recordEvents = false): ValidationResult<ParticleSimulation> {
@@ -501,6 +638,7 @@ export class ParticleSimulation {
   clone(): ParticleSimulation {
     const c = new ParticleSimulation(this.descriptor, this.limits);
     c.#tick = this.#tick;
+    c.#applyTracks(this.#tick);
     c.#particles = this.#particles.map(cloneParticle);
     c.#births = [...this.#births];
     c.#deaths = [...this.#deaths];
@@ -526,8 +664,8 @@ export class ParticleSimulation {
   /** Deep snapshot of the current tick; never aliases internal state. */
   snapshot(): ParticleTickSnapshot {
     const ended = this.#tick >= this.descriptor.durationTicks;
-    const rate = this.descriptor.rate;
-    const remainder = !rate ? 0 : rate.curve ? this.#rateIntegral - this.#rateEmitted : (this.#rateEligibleTicks * rate.perSecond) / TICKS_PER_SECOND - this.#rateEmitted;
+    const rate = this.#cur.rate;
+    const remainder = !rate ? 0 : rate.curve || this.#rateAnimated ? this.#rateIntegral - this.#rateEmitted : (this.#rateEligibleTicks * rate.perSecond) / TICKS_PER_SECOND - this.#rateEmitted;
     return {
       tick: this.#tick,
       ended,
@@ -544,7 +682,7 @@ export class ParticleSimulation {
   /** One tick without building a snapshot (15 performance: replays and compile-time runs discard it). */
   step(): { ok: true } | { ok: false; errors: Diagnostic[] } {
     if (this.#failure) return { ok: false, errors: this.#failure.map((d) => ({ ...d })) };
-    const d = this.descriptor;
+    const d = this.#cur;
     if (this.#tick >= d.durationTicks) {
       return { ok: false, errors: [err('INVALID_VALUE', `Cannot advance past document end tick ${d.durationTicks}.`, 'tick')] };
     }
@@ -557,6 +695,7 @@ export class ParticleSimulation {
       this.#particles = [];
       return { ok: true };
     }
+    this.#applyTracks(n);
     const survivors: ParticleState[] = [];
     for (const p of this.#particles) {
       if (p.birthTick + p.lifetimeTicks <= n) { this.#deaths.push(p.id); this.#totalDeaths++; this.#event('death', n, p, 0); }
@@ -654,30 +793,30 @@ export class ParticleSimulation {
 
   /** Source position at tick n: the track (clamped) or the fixed sourcePosition. */
   #source(n: number): Vec3 {
-    const t = this.descriptor.sourceTrack;
-    if (!t) return this.descriptor.sourcePosition;
+    const t = this.#cur.sourceTrack;
+    if (!t) return this.#cur.sourcePosition;
     return t.positions[Math.max(0, Math.min(t.positions.length - 1, n - t.startTick))];
   }
 
   #noiseSeeds(streamId: string): NoiseFieldSeeds {
-    const d = this.descriptor;
+    const d = this.#cur;
     const s = (i: number) => randomTupleHash({ documentSeed: d.documentSeed, randomStreamId: streamId, eventRandomKey: 'noiseField', entityOrdinal: i, propertyKey: 'noise', sampleOrdinal: 0 });
     return [s(0), s(1), s(2)];
   }
 
   #parentKey(eventRandomKey: string, entityOrdinal: number): string {
-    const d = this.descriptor;
+    const d = this.#cur;
     return emitterParentRandomKey({ documentSeed: d.documentSeed, randomStreamId: d.randomStreamId, eventRandomKey, entityOrdinal });
   }
 
   #sample(eventRandomKey: string, entityOrdinal: number, propertyKey: string): number {
-    const d = this.descriptor;
+    const d = this.#cur;
     return sampleUnit({ documentSeed: d.documentSeed, randomStreamId: d.randomStreamId, eventRandomKey, entityOrdinal, propertyKey, sampleOrdinal: 0 });
   }
 
   /** Shaped birth position/velocity from stable per-particle samples; burst payload velocity wins when given. */
   #kinematics(eventRandomKey: string, entityOrdinal: number, base: Vec3, fixedVelocity: Vec3 | undefined, fallback: Vec3): [Vec3, Vec3] {
-    const em = this.descriptor.emission;
+    const em = this.#cur.emission;
     if (!em) return [base, fixedVelocity ?? fallback];
     const s = (k: string) => this.#sample(eventRandomKey, entityOrdinal, k);
     const K = PARTICLE_PROPERTY_KEYS;
@@ -726,7 +865,7 @@ export class ParticleSimulation {
   }
 
   #birth(n: number, emission: 'burst' | 'rate', burstIndex: number, eventRandomKey: string, entityOrdinal: number, basePosition: Vec3, fixedVelocity: Vec3 | undefined, fallbackVelocity: Vec3, addVelocity?: Vec3): boolean {
-    const d = this.descriptor;
+    const d = this.#cur;
     if (this.#totalBirths >= this.limits.maxTotalBirths) {
       this.#failure = [{ ...err('BUDGET_EXCEEDED', `Emitter exceeded ${this.limits.maxTotalBirths} total births at tick ${n}; emitter stopped (no silent truncation).`), nodeId: d.emitterId }];
       return false;
@@ -761,7 +900,7 @@ export class ParticleSimulation {
   }
 
   #spawn(n: number): void {
-    const d = this.descriptor;
+    const d = this.#cur;
     const iv = d.initialVelocity;
     const baseVelocity: Vec3 = iv.kind === 'vector' ? cloneVec(iv.value) : [iv.speed, 0, 0];
     while (this.#burstCursor < d.bursts.length && d.bursts[this.#burstCursor].tick === n) {
@@ -777,10 +916,11 @@ export class ParticleSimulation {
       this.#rateEligibleTicks++;
       // floor(eligibleTicks*r/60) equals the r/60 accumulator without float drift for integer rates.
       let due: number;
-      if (r.curve) {
+      if (r.curve || this.#rateAnimated) {
         const u = (n - r.startTick) / Math.max(1, r.endTick - r.startTick), c = r.curve;
-        let m = c[0].y;
-        if (u >= c[c.length - 1].x) m = c[c.length - 1].y;
+        let m = c ? c[0].y : 1;
+        if (!c) { /* flat multiplier */ }
+        else if (u >= c[c.length - 1].x) m = c[c.length - 1].y;
         else if (u > c[0].x) { let i = 1; while (c[i].x <= u) i++; m = c[i - 1].y + (c[i].y - c[i - 1].y) * ((u - c[i - 1].x) / (c[i].x - c[i - 1].x)); }
         this.#rateIntegral += (r.perSecond * m) / TICKS_PER_SECOND;
         due = Math.floor(this.#rateIntegral + 1e-9);

@@ -25,6 +25,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import type { Diagnostic, ValidationResult, Vec3 } from '../model/types.ts';
 import type { MeshLayer, ParticlePreviewLayer, ParticlePreviewPlan, ParticleTrailLayer, PointLightLayer } from '../graph/toParticles.ts';
 import type { ColorGrade } from '../graph/recolor.ts';
+import { colorTrackValue, trackValue, type LayerAnimation } from '../graph/keyframes.ts';
 import { createBuiltinMesh, type BuiltinMesh } from './builtinMeshes.ts';
 import { valueNoise4 } from '../runtime/noise.ts';
 import { spriteCellBlend } from '../assets/spriteLibrary.ts';
@@ -492,6 +493,19 @@ function materialFor(
     depthTest: m.depthTest !== false,
     blending: m.blend === 'additive' ? THREE.AdditiveBlending : THREE.NormalBlending,
   });
+}
+
+/** Keyframed values at `tick`, keyed by dotted path ("opacity", "color.srgb", "grade.hue", "colorOverLife.stops.1.color.srgb"). */
+function animatedValues(a: LayerAnimation, tick: number): Map<string, number | string> {
+  const out = new Map<string, number | string>();
+  for (const t of a.numbers) out.set(t.path.join('.'), trackValue(t.keys, tick));
+  for (const t of a.colors) out.set(t.path.join('.'), colorTrackValue(t.keys, tick));
+  return out;
+}
+function setPath(obj: unknown, path: string[], value: unknown): void {
+  let o = obj as Record<string, unknown>;
+  for (let i = 0; i < path.length - 1; i++) { o = o?.[path[i]] as Record<string, unknown>; if (!o) return; }
+  if (o) o[path[path.length - 1]] = value;
 }
 
 /** Layer set identity: meshes are rebuilt only when these change between ticks. */
@@ -1063,6 +1077,10 @@ export class PreviewViewport {
     this.#emitFrame(true);
   }
 
+  /** Current effect tick and whether the transport is playing (the editor keeps a paused playhead across recompiles). */
+  get currentTick(): number { return this.#clock?.tick ?? 0; }
+  get isPlaying(): boolean { return this.#clock?.playing ?? false; }
+
   /** Deterministic scrub: pauses, then replays every simulation from tick 0 to the target tick. */
   seek(tick: number): void {
     if (this.#disposed || !this.#clock || !Number.isFinite(tick)) return;
@@ -1323,10 +1341,52 @@ export class PreviewViewport {
     }
   }
 
+  /**
+   * Keyframed knobs (graph/keyframes.ts): layer values that change over effect time — material opacity, emission,
+   * colour shift, colour and part grade; mesh colour over life; light colour, intensity and range.
+   */
+  #applyAnimation(alpha: number): void {
+    const tick = (this.#clock ? this.#clock.tick : 0) + alpha;
+    const shader = (m: THREE.ShaderMaterial, base: { color: { srgb: string; alpha: number }; opacity: number; emission: number; hueShift?: number; grade?: ColorGrade }, a: LayerAnimation) => {
+      const v = animatedValues(a, tick), u = m.uniforms;
+      if (v.has('color.srgb')) u.uColor.value.setStyle(v.get('color.srgb') as string);
+      if (v.has('opacity') || v.has('color.alpha')) u.uAlpha.value = (v.get('color.alpha') as number ?? base.color.alpha) * (v.get('opacity') as number ?? base.opacity);
+      if (v.has('emission')) u.uEmission.value = v.get('emission') as number;
+      if (v.has('hueShift')) u.uHue.value = ((v.get('hueShift') as number) * Math.PI) / 180;
+      if (base.grade && [...v.keys()].some(k => k.startsWith('grade.'))) {
+        const g = { ...base.grade, ...Object.fromEntries([...v].filter(([k]) => k.startsWith('grade.')).map(([k, x]) => [k.slice(6), x])) } as ColorGrade;
+        u.uGrade.value.set((((g.hue / 360) % 1) + 1) % 1, g.sGain, g.sAdd, g.vGain);
+      }
+    };
+    for (const l of this.#layers) if (l.layer.animation) shader(l.material, l.layer, l.layer.animation);
+    for (const t of this.#trails) if (t.layer.animation) shader(t.material, t.layer, t.layer.animation);
+    for (const m of this.#meshes) {
+      const a = m.layer.animation;
+      if (!a) continue;
+      const v = animatedValues(a, tick), mat = m.material as THREE.MeshBasicMaterial & { emissive?: THREE.Color };
+      const colour = new THREE.Color().setStyle((v.get('color.srgb') as string | undefined) ?? m.layer.color.srgb), emission = (v.get('emission') as number | undefined) ?? m.layer.emission;
+      if (mat.emissive) { mat.color.copy(colour); mat.emissive.copy(colour).multiplyScalar(emission); } else mat.color.copy(colour).multiplyScalar(1 + emission);
+      if (v.has('opacity')) mat.opacity = v.get('opacity') as number;
+      const stops = [...v].filter(([k]) => k.startsWith('colorOverLife.'));
+      if (stops.length) {
+        const g = structuredClone(m.layer.colorOverLife);
+        for (const [k, x] of stops) setPath(g, k.split('.').slice(1), x);
+        m.color = compileLifeGradient(g);
+      }
+    }
+  }
+
   /** Light intensity = peak × window curve × (1 − flicker·noise), zero outside the window. */
   #updateLights(alpha: number): void {
     const tick = (this.#clock ? this.#clock.tick : 0) + alpha;
-    for (const { layer: l, light, curve } of this.#lights) {
+    for (const { layer: l0, light, curve } of this.#lights) {
+      let l = l0;
+      if (l0.animation) {
+        const v = animatedValues(l0.animation, tick);
+        l = { ...l0, intensity: (v.get('intensity') as number | undefined) ?? l0.intensity, range: (v.get('range') as number | undefined) ?? l0.range };
+        if (v.has('color.srgb')) light.color.setStyle(v.get('color.srgb') as string);
+        light.distance = l.range;
+      }
       const inside = tick >= l.startTick && tick < l.endTick;
       const u = (tick - l.startTick) / Math.max(1, l.endTick - l.startTick);
       const f = l.flicker > 0 ? 1 - l.flicker * (0.5 + 0.5 * valueNoise4(l.seed, (tick * PARTICLE_DT) * l.flickerRate, 0.5, 0.5, 0)) : 1;
@@ -1417,6 +1477,7 @@ export class PreviewViewport {
       colAttr.needsUpdate = true; spinAttr.needsUpdate = true; velAttr.needsUpdate = true; cellAttr.needsUpdate = true; mixAttr.needsUpdate = true; seedAttr.needsUpdate = true;
     }
     this.#updateTrails(alpha);
+    this.#applyAnimation(alpha);
     this.#updateLights(alpha);
     this.#updateMeshes(alpha);
   }
