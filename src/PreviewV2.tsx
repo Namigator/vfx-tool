@@ -16,6 +16,7 @@ import { FAMILIES, type Recipe } from './core/types.ts';
 import { compilePathPreview } from './graph/toPaths.ts';
 import { createBlankDocument, createF01Document, createForcesDemoDocument } from './graph/fixtures.ts';
 import { TexturePanel } from './editor/TexturePanel.tsx';
+import { LibraryPanel } from './editor/LibraryPanel.tsx';
 import { userComponentsText } from './editor/userComponentStore.ts';
 import { deleteAssetBytes, listAssetBytes, unusedAssetHashes, getAssetBytes, openProjectStorage, putAssetBytes } from './model/assetStore.ts';
 import { buildPack, readPack, type PackAsset } from './model/vfxpack.ts';
@@ -180,6 +181,11 @@ export default function PreviewV2() {
   const [solo, setSolo] = useState<ReadonlySet<string>>(() => new Set());
   const toggleSolo = useCallback((id: string) => setSolo(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; }), []);
   const [expanded, setExpanded] = useState(() => new URLSearchParams(window.location.search).get('expand') === '1');
+  // 12 "Below 1024 px show a compact preview and 'Desktop authoring recommended'".
+  const [narrow, setNarrow] = useState(() => window.innerWidth < 1024);
+  useEffect(() => { const on = () => setNarrow(window.innerWidth < 1024); window.addEventListener('resize', on); return () => window.removeEventListener('resize', on); }, []);
+  // 12 workspace: the library is a left panel at >= 1280 px and a toggled drawer below (closed in the watch-only ?view=1 page).
+  const [libraryOpen, setLibraryOpen] = useState(() => window.innerWidth >= 1280 && new URLSearchParams(window.location.search).get('view') !== '1');
   // Bumped by every document replacement; async file reads apply only if still the latest request.
   const generationRef = useRef(0);
   const mountedRef = useRef(false);
@@ -804,6 +810,8 @@ export default function PreviewV2() {
               : 'Preview of graph data: particles with textured sprites, trails and lights. No bloom; sound is auditioned separately.'}
         </span>
         <div className="pv2-history" role="group" aria-label="File">
+          {narrow && <span className="pv2-note" role="note">Desktop authoring recommended: this window is under 1024 px wide, so panels stack; previewing works.</span>}
+          <button type="button" aria-pressed={libraryOpen} onClick={() => setLibraryOpen(o => !o)} title="Show or hide the library: presets, components, assets and your saved blocks">Library</button>
           <button type="button" onClick={() => { setShelfPick(''); replace(toText(createBlankDocument()), 'New blank effect'); }} title="Start a new blank effect (clears undo history — Keep or Save first)">New</button>
           <button type="button" onClick={() => openInputRef.current?.click()} title="Open a .vfx.json document or a .vfxpack">Open…</button>
           <input ref={openInputRef} type="file" accept=".json,application/json,.vfxpack" hidden onChange={e => { const f = e.currentTarget.files?.[0]; e.currentTarget.value = ''; if (!f) return; if (f.name.endsWith('.vfxpack')) void openPack(f); else void f.text().then(t => {
@@ -881,6 +889,7 @@ export default function PreviewV2() {
         <a className="pv2-link" href={window.location.pathname}>Back to v1 editor</a>
       </header>
       <main className="pv2-main">
+        {libraryOpen && <LibraryPanel document={doc} graphId={graphId} onEdit={onEdit} onOpenNew={(t, label) => { setShelfPick(''); replace(t, label); }} onClose={() => setLibraryOpen(false)} />}
         <section className={expanded ? 'pv2-stage pv2-expanded' : 'pv2-stage'}>
           <div className="pv2-host" ref={hostRef} />
           {fatal && <div className="pv2-overlay pv2-error" role="alert">{fatal}</div>}
