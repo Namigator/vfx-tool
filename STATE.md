@@ -36,6 +36,9 @@
   Colour. [SAW] flamethrower orange->blue whole; blue flame + green smoke + blue light with orange embers; editor panel.
   Only NEW inserts get the pickers; effects saved before keep the old slider. shot url can return a blank frame
   (virtual-time flake) - retake before debugging.
+- USER REPORT 2026-09-29 (open): viewed from behind/in front of the fire (along the jet), the sprites move
+  weirdly. Suspect velocity-stretched / velocity-aligned billboards viewed along their velocity (they collapse and
+  spin). Needs a capture from those angles first.
 - Post-release (user order): performance pass → timeline strip with component bars, then keyframed knobs →
   engine export → in-editor AI box that runs its own render→look→adjust loop → full AI guide → sound.
 
