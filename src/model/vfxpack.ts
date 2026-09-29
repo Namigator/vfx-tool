@@ -4,6 +4,8 @@
 // before anything is handed to the editor; the caller commits atomically.
 import type { EffectDocumentV2 } from './types.ts';
 import { sha256Hex } from '../assets/importTexture.ts';
+import type { SpriteSheet } from '../assets/spriteLibrary.ts';
+import { packCapabilities, referencedBuiltinSprites, type EmbeddedBuiltin } from './packBuiltins.ts';
 import { deflateSync, inflateSync } from 'fflate';
 
 export const PACK_FORMAT = 'vfx-studio-package';
@@ -97,7 +99,7 @@ export function readZip(b: Uint8Array): { ok: true; entries: ZipEntry[] } | { ok
 
 // ---------- pack ----------
 export type PackAsset = { sha256: string; mime: string; bytes: Uint8Array };
-export type ManifestFile = { path: string; sha256: string; bytes: number; mime: string; role: 'document' | 'asset' | 'metadata' | 'license' };
+export type ManifestFile = { path: string; sha256: string; bytes: number; mime: string; role: 'document' | 'asset' | 'builtin' | 'metadata' | 'license' | 'audio' };
 export type PackManifest = {
   format: typeof PACK_FORMAT; packageVersion: typeof PACK_VERSION; documentPath: 'effect.json'; schemaVersion: number; runtimeVersion: string;
   files: ManifestFile[]; creationTool: string; state: 'validated' | 'draft'; capabilities: string[];
@@ -109,7 +111,7 @@ const extOf = (mime: string) => (mime === 'image/png' ? 'png' : mime === 'image/
  * Builds a pack for `doc`. Every document asset with source kind "bundle" must be present in `bytes`
  * (validated state) unless `draft` is set, which records missing references in the manifest state.
  */
-export async function buildPack(doc: EffectDocumentV2, bytes: Map<string, PackAsset>, opts: { draft?: boolean; tool?: string } = {}): Promise<{ ok: true; value: Uint8Array } | { ok: false; message: string }> {
+export async function buildPack(doc: EffectDocumentV2, bytes: Map<string, PackAsset>, opts: { draft?: boolean; tool?: string; builtins?: readonly EmbeddedBuiltin[]; mixWav?: Uint8Array } = {}): Promise<{ ok: true; value: Uint8Array } | { ok: false; message: string }> {
   const enc = new TextEncoder(), files: ZipEntry[] = [], manifest: ManifestFile[] = [];
   const add = async (path: string, data: Uint8Array, mime: string, role: ManifestFile['role']) => { files.push({ path, bytes: data }); manifest.push({ path, sha256: await sha256Hex(data), bytes: data.length, mime, role }); };
   await add('effect.json', enc.encode(JSON.stringify(doc, null, 2)), 'application/json', 'document');
@@ -123,17 +125,27 @@ export async function buildPack(doc: EffectDocumentV2, bytes: Map<string, PackAs
     if (!written.has(path)) { written.add(path); await add(path, b.bytes, a.mime, 'asset'); }
     await add(`metadata/${a.id}.json`, enc.encode(JSON.stringify(a, null, 2)), 'application/json', 'metadata');
   }
+  // Included-library sprites the effect draws, byte for byte, with their sheet layout (pinned on import if the library changed).
+  const wanted = referencedBuiltinSprites(doc), have = new Map((opts.builtins ?? []).map(b => [b.id, b]));
+  for (const id of wanted) {
+    const b = have.get(id);
+    if (!b) { missing.push(`included sprite ${id}`); continue; }
+    await add(`builtins/${id}.png`, b.bytes, 'image/png', 'builtin');
+    await add(`builtins/${id}.json`, enc.encode(JSON.stringify(b.sheet, null, 2)), 'application/json', 'metadata');
+  }
+  // Rendered mix: a convenience copy made from this exact document at export time (the graph stays authoritative).
+  if (opts.mixWav) await add('rendered/mix.wav', opts.mixWav, 'audio/wav', 'audio');
   if (missing.length && !opts.draft) return { ok: false, message: `Missing asset bytes: ${missing.join(', ')}. Re-import them or export a draft.` };
   const notices = doc.assets.map(a => `${a.provenance.originalFilename} (${a.id}): ${a.license.identifier}${a.license.text ? `\n${a.license.text}` : ''}`).join('\n');
   await add('licenses/NOTICE.txt', enc.encode(notices || 'No imported assets.\n'), 'text/plain', 'license');
   const m: PackManifest = {
     format: PACK_FORMAT, packageVersion: PACK_VERSION, documentPath: 'effect.json', schemaVersion: doc.schemaVersion, runtimeVersion: doc.runtimeVersion,
-    files: manifest, creationTool: opts.tool ?? 'vfx-studio', state: missing.length ? 'draft' : 'validated', capabilities: [],
+    files: manifest, creationTool: opts.tool ?? 'vfx-studio', state: missing.length ? 'draft' : 'validated', capabilities: packCapabilities(doc),
   };
   return { ok: true, value: writeZip([{ path: 'manifest.json', bytes: enc.encode(JSON.stringify(m, null, 2)) }, ...files], { deflate: true }) };
 }
 
-export type ReadPack = { document: unknown; manifest: PackManifest; assets: PackAsset[] };
+export type ReadPack = { document: unknown; manifest: PackManifest; assets: PackAsset[]; builtins: EmbeddedBuiltin[]; mixWav?: Uint8Array; notices: string };
 
 /** Validates archive structure, manifest and every checksum; the document JSON is returned unvalidated (caller runs validateDocument). */
 export async function readPack(b: Uint8Array): Promise<{ ok: true; value: ReadPack } | { ok: false; message: string }> {
@@ -161,5 +173,17 @@ export async function readPack(b: Uint8Array): Promise<{ ok: true; value: ReadPa
   let document: unknown;
   try { document = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(docBytes)); } catch { return { ok: false, message: 'effect.json is not valid UTF-8 JSON.' }; }
   const assets = m.files.filter(f => f.role === 'asset').map(f => ({ sha256: f.sha256, mime: f.mime, bytes: byPath.get(f.path)! }));
-  return { ok: true, value: { document, manifest: m, assets } };
+  const builtins: EmbeddedBuiltin[] = [];
+  for (const f of m.files.filter(x => x.role === 'builtin')) {
+    const id = f.path.replace(/^builtins\//, '').replace(/\.png$/, ''), meta = byPath.get(`builtins/${id}.json`);
+    if (!/^[a-z0-9-]{1,64}$/.test(id) || !meta) return { ok: false, message: `Included sprite "${f.path}" has no layout file.` };
+    let sheet: SpriteSheet;
+    try { sheet = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(meta)); } catch { return { ok: false, message: `builtins/${id}.json is not valid JSON.` }; }
+    const n = (v: unknown) => Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 16;
+    if (!sheet || !n(sheet.columns) || !n(sheet.rows) || !['flipbook', 'variants', 'texture'].includes(sheet.kind)) return { ok: false, message: `builtins/${id}.json has an invalid layout.` };
+    builtins.push({ id, sheet, bytes: byPath.get(f.path)! });
+  }
+  const wav = m.files.find(f => f.role === 'audio'), lic = m.files.find(f => f.role === 'license');
+  const notices = lic ? new TextDecoder().decode(byPath.get(lic.path)!) : '';
+  return { ok: true, value: { document, manifest: m, assets, builtins, notices, ...(wav ? { mixWav: byPath.get(wav.path)! } : {}) } };
 }

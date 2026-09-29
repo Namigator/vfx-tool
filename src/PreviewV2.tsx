@@ -26,6 +26,10 @@ import { choosePreviewMode, createLightningAudioDemoDocument, hasRootAudio, ribb
 import { AudioTransport, type AudioBufferLike, type AudioContextLike, type BufferSourceLike, type PlayResult } from './audio/transport.ts';
 import type { MixResult } from './audio/mix.ts';
 import { encodeWavPcm16Stereo } from './audio/wav.ts';
+import { describePack, jsonExportWarning, pinBuiltins, referencedBuiltinSprites, type EmbeddedBuiltin, type PinnedBuiltin } from './model/packBuiltins.ts';
+import { BUILTIN_SPRITES } from './assets/builtinSprites.generated.ts';
+import type { SpriteSheet } from './assets/spriteLibrary.ts';
+import { sha256Hex } from './assets/importTexture.ts';
 import { DocumentHistory, type HistoryNotice, type HistoryResult, type Patch } from './editor/history.ts';
 import GraphCanvas from './editor/GraphCanvas.tsx';
 import NodeInspector from './editor/NodeInspector.tsx';
@@ -344,6 +348,7 @@ export default function PreviewV2() {
     a.href = url; a.download = documentFileName(d);
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    setFileNote(jsonExportWarning(d) ?? `Saved ${documentFileName(d)}`);
   }, []);
   const openInputRef = useRef<HTMLInputElement>(null);
 
@@ -355,9 +360,19 @@ export default function PreviewV2() {
       const rec = a.source.kind === 'bundle' ? await getAssetBytes(a.sha256) : undefined;
       if (rec) bytes.set(a.sha256, { sha256: a.sha256, mime: rec.mime, bytes: new Uint8Array(await rec.blob.arrayBuffer()) });
     }
-    let r = await buildPack(d, bytes);
+    // Included-library sprites and the rendered sound mix travel inside the pack (13-PERSISTENCE).
+    const builtins: EmbeddedBuiltin[] = [];
+    for (const id of referencedBuiltinSprites(d)) {
+      const sheet = BUILTIN_SPRITES.find(x => x.id === id);
+      const res = sheet ? await fetch(`/assets/sprites/${sheet.file}`).catch(() => null) : null;
+      if (sheet && res?.ok) builtins.push({ id, sheet: structuredClone(sheet) as SpriteSheet, bytes: new Uint8Array(await res.arrayBuffer()) });
+    }
+    const audio = hasRootAudio(d) ? compileAudio(d) : undefined;
+    const mixWav = audio?.ok ? encodeWavPcm16Stereo(audio.value.mix.left, audio.value.mix.right, audio.value.mix.sampleRate) : undefined;
+    const extras = { builtins, ...(mixWav ? { mixWav } : {}) };
+    let r = await buildPack(d, bytes, extras);
     let note = '';
-    if (!r.ok && /Missing asset bytes/.test(r.message)) { note = ` Exported as a DRAFT: ${r.message}`; r = await buildPack(d, bytes, { draft: true }); }
+    if (!r.ok && /Missing asset bytes/.test(r.message)) { note = ` Exported as a DRAFT: ${r.message}`; r = await buildPack(d, bytes, { ...extras, draft: true }); }
     if (!r.ok) { setFileNote(`Pack export failed: ${r.message}`); return; }
     const url = URL.createObjectURL(new Blob([r.value as Uint8Array<ArrayBuffer>], { type: 'application/zip' }));
     const a = document.createElement('a');
@@ -367,17 +382,38 @@ export default function PreviewV2() {
     setFileNote(`Pack exported (${(r.value.length / 1024).toFixed(0)} KiB).${note}`);
   }, []);
 
-  /** Opens a .vfxpack: checksums and paths are verified first; asset bytes are stored locally, then the document replaces the current one. */
+  /**
+   * Opens a .vfxpack in two steps (13 "Stage ... then Import commits atomically"): checksums, paths and the document
+   * are verified and a summary is shown; nothing is stored until Import. Changed included sprites are pinned.
+   */
+  const [stagedPack, setStagedPack] = useState<{ name: string; doc: EffectDocumentV2; assets: PackAsset[]; pinned: PinnedBuiltin[]; summary: string[] } | null>(null);
   const openPack = useCallback(async (f: File) => {
+    setStagedPack(null);
     const r = await readPack(new Uint8Array(await f.arrayBuffer()));
     if (!r.ok) { setFileNote(`Pack rejected: ${r.message}`); return; }
-    for (const a of r.value.assets) {
+    const v = validateDocument(r.value.document, { registry: createRegistry() });
+    if (!v.ok) { setFileNote(`Pack rejected: its effect is invalid (${v.errors[0]?.message ?? 'unknown error'}).`); return; }
+    const current = new Map<string, string>();
+    for (const b of r.value.builtins) {
+      const sheet = BUILTIN_SPRITES.find(x => x.id === b.id), res = sheet ? await fetch(`/assets/sprites/${sheet.file}`).catch(() => null) : null;
+      if (res?.ok) current.set(b.id, await sha256Hex(new Uint8Array(await res.arrayBuffer())));
+    }
+    const pinned = await pinBuiltins(v.value, r.value.builtins, id => current.get(id));
+    if (!pinned.ok) { setFileNote(`Pack rejected: ${pinned.message}`); return; }
+    const summary = describePack(pinned.doc, r.value.manifest, { importedFiles: r.value.assets.length, builtins: r.value.builtins.length, pinned: pinned.pinned.map(p => p.id), mixWav: !!r.value.mixWav, notices: r.value.notices, warnings: v.warnings.map(w => w.message) });
+    setStagedPack({ name: f.name, doc: pinned.doc, assets: r.value.assets, pinned: pinned.pinned, summary });
+  }, []);
+  const importStagedPack = useCallback(async () => {
+    const st = stagedPack;
+    if (!st) return;
+    for (const a of [...st.assets, ...st.pinned]) {
       const blob = new Blob([a.bytes as Uint8Array<ArrayBuffer>], { type: a.mime });
       await putAssetBytes(a.sha256, a.mime, blob);
       registerAssetUrl(a.sha256, URL.createObjectURL(blob));
     }
-    if (replaceRef.current(JSON.stringify(r.value.document), `Open ${f.name}`)) setFileNote(`Opened ${f.name} (${r.value.manifest.state}, ${r.value.assets.length} asset file${r.value.assets.length === 1 ? '' : 's'}).`);
-  }, []);
+    setStagedPack(null);
+    if (replaceRef.current(JSON.stringify(st.doc), `Open ${st.name}`)) setFileNote(`Opened ${st.name}.`);
+  }, [stagedPack]);
   const replaceRef = useRef<(source: string, origin: string) => boolean>(() => false);
 
   // Project shelf: several named effects kept in browser storage (Keep / choose / Remove).
@@ -534,7 +570,7 @@ export default function PreviewV2() {
       vp = new PreviewViewport(host, { onFrame: setFrame, onError: setRuntimeErrors, onLoop: () => onLoopRef.current(), onContextLost: setGpuLost });
       viewportRef.current = vp;
       // Dev-only diagnostics hook (resource plateau / context-loss checks); absent from production builds.
-      if (import.meta.env.DEV) (window as unknown as { __vfxDebug?: unknown }).__vfxDebug = { viewport: vp, load: (text: string) => replaceRef.current?.(text, 'debug load') };
+      if (import.meta.env.DEV) (window as unknown as { __vfxDebug?: unknown }).__vfxDebug = { viewport: vp, load: (text: string) => replaceRef.current?.(text, 'debug load'), openPack: (f: File) => openPack(f) };
     } catch (e) {
       setFatal(e instanceof Error ? e.message : String(e));
     }
@@ -699,6 +735,14 @@ export default function PreviewV2() {
             </span>
           )}
           {fileNote && <span className="pv2-note" role="status" aria-live="polite">{fileNote}</span>}
+          {stagedPack && (
+            <div className="pv2-banner" role="dialog" aria-label={`Open ${stagedPack.name}`}>
+              <strong>Open pack {stagedPack.name}?</strong> Your current effect is autosaved first.
+              <ul>{stagedPack.summary.map((l, i) => <li key={i}>{l}</li>)}</ul>
+              <button type="button" onClick={() => void importStagedPack()}>Import</button>
+              <button type="button" onClick={() => setStagedPack(null)}>Cancel</button>
+            </div>
+          )}
           {migrationReport && (
             <details className="pv2-report" open>
               <summary>Conversion report</summary>

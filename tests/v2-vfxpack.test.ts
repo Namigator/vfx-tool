@@ -85,3 +85,48 @@ test('zip: Deflate archives from another writer open; a lying uncompressed size 
   const p = await buildPack(doc, new Map([[sha, { sha256: sha, mime: 'image/png', bytes }]]));
   assert.ok(p.ok && (await readPack(p.value)).ok);
 });
+
+test('T31 pack: included sprites are embedded; a library change on the other side pins the packed copy (variants kept)', async () => {
+  const { insertComponent } = await import('../src/graph/components.ts');
+  const { createBlankDocument } = await import('../src/graph/fixtures.ts');
+  const { referencedBuiltinSprites, pinBuiltins } = await import('../src/model/packBuiltins.ts');
+  const { BUILTIN_SPRITES } = await import('../src/assets/builtinSprites.generated.ts');
+  const { materialSheet } = await import('../src/graph/materialSprite.ts');
+  const { readFileSync } = await import('node:fs');
+  const doc = insertComponent(createBlankDocument(), 'impact-flash').doc;
+  const ids = referencedBuiltinSprites(doc);
+  assert.deepEqual(ids, ['ripple-ring', 'soft-glow', 'spark-streak']);
+  const builtins = ids.map(id => { const sheet = BUILTIN_SPRITES.find(x => x.id === id)!; return { id, sheet: structuredClone(sheet), bytes: new Uint8Array(readFileSync(`assets/sprites/${sheet.file}`)) }; });
+  const missing = await buildPack(doc, new Map());
+  assert.ok(!missing.ok && /included sprite/.test(missing.message), 'a validated pack refuses to leave built-ins out');
+  const packed = await buildPack(doc, new Map(), { builtins });
+  if (!packed.ok) assert.fail(packed.message);
+  const r = await readPack(packed.value);
+  if (!r.ok) assert.fail(r.message);
+  assert.deepEqual(r.value.builtins.map(b => b.id), ids);
+  assert.ok(r.value.manifest.capabilities.includes('particles') && r.value.manifest.capabilities.includes('presentation'));
+  // Same library on the other side: nothing changes.
+  const same = await pinBuiltins(doc, r.value.builtins, id => (id ? r.value.manifest.files.find(f => f.path === `builtins/${id}.png`)!.sha256 : undefined));
+  assert.ok(same.ok && same.pinned.length === 0 && JSON.stringify(same.doc) === JSON.stringify(doc));
+  // Library changed: every Material drawing soft-glow now draws the packed copy, with the same grid and variant mode.
+  const pinned = await pinBuiltins(doc, r.value.builtins, id => (id === 'soft-glow' ? 'changed' : r.value.manifest.files.find(f => f.path === `builtins/${id}.png`)!.sha256));
+  if (!pinned.ok) assert.fail(pinned.message);
+  assert.deepEqual(pinned.pinned.map(p => p.id), ['soft-glow']);
+  assert.ok(validateDocument(pinned.doc, { registry: createRegistry() }).ok);
+  const mats = pinned.doc.graphs.flatMap(g => g.nodes).filter(n => n.type === 'Material' && n.params.sprite !== 'ripple-ring' && n.params.sprite !== 'spark-streak');
+  assert.ok(mats.length > 0 && mats.every(m => m.params.textureAsset === pinned.pinned[0].assetId));
+  const sheet = materialSheet(pinned.doc, 'soft-glow', pinned.pinned[0].assetId);
+  assert.ok('sheet' in sheet && sheet.sheet.kind === 'variants' && sheet.sheet.columns === 2 && sheet.sheet.rows === 2);
+});
+
+test('pack: rendered sound mix travels as rendered/mix.wav; .json export names the imported files it leaves out', async () => {
+  const { jsonExportWarning } = await import('../src/model/packBuiltins.ts');
+  const { doc, bytes, sha } = await docWithTexture();
+  const wav = enc('RIFF....WAVE');
+  const p = await buildPack(doc, new Map([[sha, { sha256: sha, mime: 'image/png', bytes }]]), { mixWav: wav });
+  if (!p.ok) assert.fail(p.message);
+  const r = await readPack(p.value);
+  assert.ok(r.ok && r.value.mixWav && new TextDecoder().decode(r.value.mixWav) === 'RIFF....WAVE');
+  assert.match(jsonExportWarning(doc) ?? '', /glow\.png/);
+  assert.equal(jsonExportWarning(createF01Document()), undefined);
+});

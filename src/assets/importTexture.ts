@@ -58,7 +58,7 @@ export type TextureImportOptions = {
   /** color (tint-able RGBA sprite) or mask (alpha/luminance). JPEG is color only. */
   role: 'color' | 'mask';
   /** Present for an atlas: cells read left-to-right, top-to-bottom. */
-  flipbook?: { rows: number; columns: number; frameCount?: number };
+  flipbook?: { rows: number; columns: number; frameCount?: number; cells?: 'sequence' | 'variants' };
 };
 export type TextureImport = { asset: AssetReference; path: string; header: ImageHeader };
 
@@ -75,7 +75,7 @@ export async function createTextureAsset(bytes: Uint8Array, o: TextureImportOpti
     if (![rows, columns].every(n => Number.isInteger(n) && n >= 1 && n <= 16)) return { ok: false, message: 'Flipbook rows and columns must be whole numbers 1..16.' };
     if (!Number.isInteger(frameCount) || frameCount < 1 || frameCount > rows * columns || frameCount > 256) return { ok: false, message: `Frame count must be 1..${Math.min(256, rows * columns)}.` };
     if (h.width % columns || h.height % rows) return { ok: false, message: `Image ${h.width}×${h.height} does not divide into ${columns}×${rows} equal cells.` };
-    flipbook = { rows, columns, frameCount, paddingPixels: 0 };
+    flipbook = { rows, columns, frameCount, paddingPixels: 0, ...(o.flipbook.cells === 'variants' ? { cells: 'variants' as const } : {}) };
   }
   const sha256 = await sha256Hex(bytes);
   const kind = flipbook ? 'flipbook' : 'texture', colorSpace = o.role;
@@ -99,5 +99,5 @@ export function assetSpriteSheet(doc: Pick<EffectDocumentV2, 'assets'>, assetId:
   if (a.kind !== 'texture' && a.kind !== 'flipbook') return `Asset "${a.provenance.originalFilename}" is a ${a.kind}, not a texture.`;
   if (!a.width || !a.height) return `Asset "${a.provenance.originalFilename}" has no recorded size.`;
   const fb = a.interpretation.flipbook, columns = fb?.columns ?? 1, rows = fb?.rows ?? 1;
-  return { id: a.id, file: `${ASSET_FILE_PREFIX}${a.sha256}`, kind: fb ? 'flipbook' : 'texture', cell: [a.width / columns, a.height / rows], columns, rows, blend: 'normal' };
+  return { id: a.id, file: `${ASSET_FILE_PREFIX}${a.sha256}`, kind: fb ? (fb.cells === 'variants' ? 'variants' : 'flipbook') : 'texture', cell: [a.width / columns, a.height / rows], columns, rows, blend: 'normal' };
 }

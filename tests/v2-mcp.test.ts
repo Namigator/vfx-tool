@@ -99,8 +99,12 @@ test('MCP: import a texture onto a Material, export a .vfxpack, reopen it with t
   assert.match((await call('vfx_get_document', { docId: 't', full: true })).text, new RegExp(`"textureAsset": "${id}"`));
   assert.match((await call('vfx_export_pack', { docId: 't' })).text, /Wrote/);
   assert.ok(existsSync(join(root, 'work/mcp/t.vfxpack')));
+  const inspected = await call('vfx_inspect_pack', { path: 'work/mcp/t.vfxpack' });
+  assert.match(inspected.text, /complete[\s\S]*1 imported file/);
+  assert.ok(!existsSync(join(root, 'work/mcp/t2.json')), 'inspect opens nothing');
   const opened = await call('vfx_open_pack', { path: 'work/mcp/t.vfxpack', docId: 't2' });
-  assert.match(opened.text, /validated; 1 asset file/);
+  assert.match(opened.text, /Opened "t2"[\s\S]*1 imported file/);
+  assert.match((await call('vfx_save_document', { docId: 't2' })).text, /Warning: .*blobs\.png/);
   const sha = JSON.parse(readFileSync(join(root, 'work/mcp/t2.json'), 'utf8')).assets[0].sha256;
   assert.ok(existsSync(join(root, `work/mcp/assets/${sha}.png`)));
 });

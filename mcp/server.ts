@@ -28,7 +28,11 @@ import { compilePathPreview } from '../src/graph/toPaths.ts';
 import { compileAudio } from '../src/graph/toAudio.ts';
 import { sampleParticlesAtTick } from '../src/runtime/particles.ts';
 import { encodeWavPcm16Stereo } from '../src/audio/wav.ts';
-import { createTextureAsset } from '../src/assets/importTexture.ts';
+import { describePack, jsonExportWarning, pinBuiltins, referencedBuiltinSprites } from '../src/model/packBuiltins.ts';
+import { BUILTIN_SPRITES } from '../src/assets/builtinSprites.generated.ts';
+import type { SpriteSheet } from '../src/assets/spriteLibrary.ts';
+import { createTextureAsset, sha256Hex } from '../src/assets/importTexture.ts';
+import { hasRootAudio } from '../src/render/previewMode.ts';
 import { createMeshAsset } from '../src/assets/importMesh.ts';
 import { buildPack, readPack, type PackAsset } from '../src/model/vfxpack.ts';
 
@@ -141,7 +145,8 @@ ${formatMigrationReport(report)}`);
   tool('vfx_save_document', 'Write a document to a JSON file (path relative to the project root; default presets/<id>.vfx.json).', { docId: z.string(), path: z.string().optional() }, ({ docId, path }) => {
     const p = resolve(root, path ?? join('presets', `${docId}.vfx.json`));
     mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, JSON.stringify(getDoc(docId), null, 2));
-    return ok(`Saved ${p}`);
+    const warn = jsonExportWarning(getDoc(docId));
+    return ok(`Saved ${p}${warn ? `\nWarning: ${warn}` : ''}`);
   });
   tool('vfx_get_document', 'Readable summary: anchors, nodes (non-default params) and edges. full=true returns the raw JSON.', { docId: z.string(), full: z.boolean().optional() }, ({ docId, full }) => {
     const d = getDoc(docId);
@@ -378,6 +383,23 @@ ${formatMigrationReport(report)}`);
       return `Imported ${asset.provenance.originalFilename} (${summary.triangles} triangles, id ${asset.id})${rendererId ? `; set on ${rendererId}` : ''}.`;
     });
   });
+  /** Reads, verifies and validates a pack, and pins included sprites that changed since it was packed (nothing is written). */
+  const stagePack = async (file: string) => {
+    const r = await readPack(new Uint8Array(readFileSync(file)));
+    if (!r.ok) return { ok: false as const, message: `Pack rejected: ${r.message}` };
+    const v = validateDocument(r.value.document, { registry });
+    if (!v.ok) return { ok: false as const, message: `Pack document is invalid:\n${fmtErrors(v.errors)}` };
+    const current = new Map<string, string>();
+    for (const b of r.value.builtins) {
+      const sheet = BUILTIN_SPRITES.find(x => x.id === b.id), f = sheet ? join(root, 'assets', 'sprites', sheet.file) : '';
+      if (f && existsSync(f)) current.set(b.id, await sha256Hex(new Uint8Array(readFileSync(f))));
+    }
+    const pinned = await pinBuiltins(v.value, r.value.builtins, id => current.get(id));
+    if (!pinned.ok) return { ok: false as const, message: pinned.message };
+    const summary = describePack(pinned.doc, r.value.manifest, { importedFiles: r.value.assets.length, builtins: r.value.builtins.length, pinned: pinned.pinned.map(p => p.id), mixWav: !!r.value.mixWav, notices: r.value.notices, warnings: v.warnings.map(w => w.message) });
+    return { ok: true as const, read: r.value, doc: pinned.doc, pinned: pinned.pinned, summary };
+  };
+
   tool('vfx_export_pack', 'Write a portable .vfxpack (effect + imported asset bytes + manifest checksums) to a project path (default work/mcp/<id>.vfxpack). draft=true allows missing asset bytes.', {
     docId: z.string(), path: z.string().optional(), draft: z.boolean().optional(),
   }, async ({ docId, path, draft }) => {
@@ -387,7 +409,14 @@ ${formatMigrationReport(report)}`);
       const f = join(root, 'work', 'mcp', a.source.path);
       if (existsSync(f)) bytes.set(a.sha256, { sha256: a.sha256, mime: a.mime, bytes: new Uint8Array(readFileSync(f)) });
     }
-    const r = await buildPack(d, bytes, { draft: draft === true, tool: 'vfx-studio-mcp' });
+    // Included-library sprites the effect draws and the rendered sound mix travel inside the pack (13-PERSISTENCE).
+    const builtins = referencedBuiltinSprites(d).flatMap(id => {
+      const sheet = BUILTIN_SPRITES.find(x => x.id === id);
+      return sheet ? [{ id, sheet: structuredClone(sheet) as SpriteSheet, bytes: new Uint8Array(readFileSync(join(root, 'assets', 'sprites', sheet.file))) }] : [];
+    });
+    const audio = hasRootAudio(d) ? compileAudio(d) : undefined;
+    const mixWav = audio?.ok ? encodeWavPcm16Stereo(audio.value.mix.left, audio.value.mix.right, audio.value.mix.sampleRate) : undefined;
+    const r = await buildPack(d, bytes, { draft: draft === true, tool: 'vfx-studio-mcp', builtins, ...(mixWav ? { mixWav } : {}) });
     if (!r.ok) return bad(r.message);
     const out = safeProjectPath(path ?? `work/mcp/${docId}.vfxpack`);
     mkdirSync(dirname(out), { recursive: true }); writeFileSync(out, r.value);
@@ -396,15 +425,19 @@ ${formatMigrationReport(report)}`);
   tool('vfx_open_pack', 'Open a .vfxpack (project path): verifies paths and checksums, restores asset bytes, validates the document and opens it under its document id (or docId).', {
     path: z.string(), docId: z.string().regex(ID).optional(),
   }, async ({ path, docId }) => {
-    const r = await readPack(new Uint8Array(readFileSync(safeProjectPath(path))));
-    if (!r.ok) return bad(`Pack rejected: ${r.message}`);
-    const v = validateDocument(r.value.document, { registry });
-    if (!v.ok) return bad(`Pack document is invalid:\n${fmtErrors(v.errors)}`);
-    const d = { ...v.value, id: docId ?? v.value.id };
+    const staged = await stagePack(safeProjectPath(path));
+    if (!staged.ok) return bad(staged.message);
+    const d = { ...staged.doc, id: docId ?? staged.doc.id };
     mkdirSync(assetDir, { recursive: true });
-    for (const a of r.value.assets) { const ref = d.assets.find(x => x.sha256 === a.sha256); if (ref && ref.source.kind === 'bundle') writeFileSync(join(root, 'work', 'mcp', ref.source.path), a.bytes); }
+    for (const a of staged.read.assets) { const ref = d.assets.find(x => x.sha256 === a.sha256); if (ref && ref.source.kind === 'bundle') writeFileSync(join(root, 'work', 'mcp', ref.source.path), a.bytes); }
+    for (const p of staged.pinned) writeFileSync(join(root, 'work', 'mcp', p.path), p.bytes);
     docs.set(d.id, d); persist(d);
-    return ok(`Opened "${d.id}" (${r.value.manifest.state}; ${r.value.assets.length} asset file(s)).`);
+    return ok(`Opened "${d.id}".\n${staged.summary.join('\n')}`);
+  });
+
+  tool('vfx_inspect_pack', 'Check a .vfxpack without opening it (like the editor\'s preview before Import): name, contents, included sprites that changed since it was packed, sound mix, required capabilities, warnings and licences.', { path: z.string() }, async ({ path }) => {
+    const staged = await stagePack(safeProjectPath(path));
+    return staged.ok ? ok(staged.summary.join('\n')) : bad(staged.message);
   });
 
   tool('vfx_preview_url', 'URL that opens this document in the running editor (vite dev server) for visual inspection.', { docId: z.string() }, ({ docId }) => {

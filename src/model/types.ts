@@ -140,7 +140,8 @@ export type AssetColorSpace = 'color' | 'mask' | 'normal' | 'noise' | 'none';
 export type AssetInterpretation = {
   kind: AssetKind;
   colorSpace: AssetColorSpace;
-  flipbook?: { rows: number; columns: number; frameCount: number; paddingPixels: number };
+  /** cells: 'sequence' (default) plays the cells in order; 'variants' picks one cell per particle (included-library variant sets). */
+  flipbook?: { rows: number; columns: number; frameCount: number; paddingPixels: number; cells?: 'sequence' | 'variants' };
   mesh?: { importScale: number };
 };
 /** sourceUrl is provenance text only, never permission to fetch. */

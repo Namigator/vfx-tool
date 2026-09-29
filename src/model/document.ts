@@ -447,8 +447,9 @@ function checkInterpretation(ctx: Ctx, p: string, v: unknown, kind: string | und
   if (hasOwn(v, 'flipbook')) {
     const fp = `${p}.flipbook`;
     if (kind !== undefined && kind !== 'flipbook') err(ctx, 'INVALID_VALUE', fp, 'Flipbook settings are only allowed for flipbook assets.');
-    else if (shape(ctx, fp, v.flipbook, ['rows', 'columns', 'frameCount', 'paddingPixels'], [], 'flipbook settings')) {
+    else if (shape(ctx, fp, v.flipbook, ['rows', 'columns', 'frameCount', 'paddingPixels'], ['cells'], 'flipbook settings')) {
       const f = v.flipbook as Obj;
+      if (hasOwn(f, 'cells') && f.cells !== 'sequence' && f.cells !== 'variants') err(ctx, 'INVALID_VALUE', `${fp}.cells`, 'Cells must be "sequence" or "variants".');
       for (const k of ['rows', 'columns', 'frameCount']) {
         if (!Number.isSafeInteger(f[k]) || (f[k] as number) < 1) err(ctx, 'INVALID_VALUE', `${fp}.${k}`, `${k} must be a whole number ≥ 1.`);
       }

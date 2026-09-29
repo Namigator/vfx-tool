@@ -61,3 +61,7 @@
 }.pv2-report { flex: 1 0 100%; background: #121722; border: 1px solid #2a3140; border-radius: 6px; padding: 4px 8px; }
 .pv2-report pre { white-space: pre-wrap; font-size: 12px; margin: 4px 0; max-height: 220px; overflow: auto; }
 .pv2 :focus-visible { outline: 2px solid #7fb4ff; outline-offset: 2px; }
+/* 13 pack staging: summary shown before Import. */
+.pv2-banner { display: block; flex-basis: 100%; margin-top: 6px; padding: 8px 10px; border: 1px solid #3a4a66; border-radius: 6px; background: #141b28; }
+.pv2-banner ul { margin: 6px 0; padding-left: 18px; }
+.pv2-banner button { margin-right: 6px; }
