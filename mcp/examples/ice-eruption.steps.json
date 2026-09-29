@@ -1276,9 +1276,9 @@
      1,
      0
     ],
-    "radius": 1.1,
+    "radius": 1.4300000000000002,
     "burst": 0,
-    "rate": 22,
+    "rate": 29,
     "speedMin": 0.05,
     "speedMax": 0.25,
     "lifetimeMin": 1,
@@ -1293,8 +1293,8 @@
    "type": "InitialProperties",
    "id": "vapourip",
    "params": {
-    "sizeMin": 0.35,
-    "sizeMax": 0.7,
+    "sizeMin": 0.5,
+    "sizeMax": 0.95,
     "randomFrameStart": true,
     "rotationMin": 0,
     "rotationMax": 6.283
@@ -1310,10 +1310,52 @@
    "params": {
     "acceleration": [
      0,
-     0.25,
+     0.6,
      0
     ]
    }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "Material",
+   "id": "vapourmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "blend": "normal",
+    "tint": {
+     "srgb": "#DDEFF8",
+     "alpha": 1
+    },
+    "opacity": 1,
+    "groundFade": 0.05
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "OffsetAnchor",
+   "id": "vapourbase",
+   "params": {
+    "offset": [
+     0,
+     0.15,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "node-target.out",
+   "to": "vapourbase.anchor"
   }
  ],
  [
@@ -1359,7 +1401,7 @@
       },
       {
        "x": 0.3,
-       "y": 0.16
+       "y": 0.38
       },
       {
        "x": 1,
@@ -1374,7 +1416,7 @@
   "vfx_connect",
   {
    "docId": "ice",
-   "from": "node-target.out",
+   "from": "vapourbase.out",
    "to": "vapour.anchor"
   }
  ],
@@ -1422,7 +1464,7 @@
   "vfx_connect",
   {
    "docId": "ice",
-   "from": "frostmat.material",
+   "from": "vapourmat.material",
    "to": "vapourbb.material"
   }
  ],

@@ -95,14 +95,18 @@ for (const [file, V] of Object.entries(VARIANTS)) {
   wire('frost.particles', 'frostip.particles'); wire('frostip.particles', 'frostlift.particles'); wire('frostlift.particles', 'frostdrag.particles');
   wire('frostdrag.particles', 'frostbb.particles'); wire('frostmat.material', 'frostbb.material'); out('frostbb');
   // ---- Cold vapour while the shards stand (review: "cold air around it while it's active, not only when it's gone") ----
-  add('Emitter', 'vapour', { shape: 'disc', direction: [0, 1, 0], radius: V.radius, burst: 0, rate: Math.round(10 + V.frost * 0.4), speedMin: 0.05, speedMax: 0.25, lifetimeMin: 1, lifetimeMax: 1.6 });
-  add('InitialProperties', 'vapourip', { sizeMin: 0.35, sizeMax: 0.7, randomFrameStart: true, rotationMin: 0, rotationMax: 6.283 });
-  add('Gravity', 'vapourlift', { acceleration: [0, 0.25, 0] });
+  add('Emitter', 'vapour', { shape: 'disc', direction: [0, 1, 0], radius: V.radius * 1.3, burst: 0, rate: Math.round(14 + V.frost * 0.5), speedMin: 0.05, speedMax: 0.25, lifetimeMin: 1, lifetimeMax: 1.6 });
+  add('InitialProperties', 'vapourip', { sizeMin: 0.5, sizeMax: 0.95, randomFrameStart: true, rotationMin: 0, rotationMax: 6.283 });
+  add('Gravity', 'vapourlift', { acceleration: [0, 0.6, 0] });
+  // Own material: frostmat's ground fade would hide puffs that start at floor level.
+  add('Material', 'vapourmat', { template: 'SpriteTextured', sprite: 'smoke-puff', blend: 'normal', tint: col('#DDEFF8'), opacity: 1, groundFade: 0.05 });
+  add('OffsetAnchor', 'vapourbase', { offset: [0, 0.15, 0] });
+  wire('node-target.out', 'vapourbase.anchor');
   add('Drag', 'vapourdrag', { coefficient: 1.5 });
-  add('BillboardRenderer', 'vapourbb', { flipbookMode: 'overLife', sizeOverLife: lin([[0, 0.6], [1, 1.5]]), opacityOverLife: lin([[0, 0], [0.3, 0.16], [1, 0]]) });
-  wire('node-target.out', 'vapour.anchor'); wire('erupt.window', 'vapour.window');
+  add('BillboardRenderer', 'vapourbb', { flipbookMode: 'overLife', sizeOverLife: lin([[0, 0.6], [1, 1.5]]), opacityOverLife: lin([[0, 0], [0.3, 0.38], [1, 0]]) });
+  wire('vapourbase.out', 'vapour.anchor'); wire('erupt.window', 'vapour.window');
   wire('vapour.particles', 'vapourip.particles'); wire('vapourip.particles', 'vapourlift.particles'); wire('vapourlift.particles', 'vapourdrag.particles');
-  wire('vapourdrag.particles', 'vapourbb.particles'); wire('frostmat.material', 'vapourbb.material'); out('vapourbb');
+  wire('vapourdrag.particles', 'vapourbb.particles'); wire('vapourmat.material', 'vapourbb.material'); out('vapourbb');
   add('Material', 'glintmat', { template: 'SpriteTextured', sprite: 'spark-streak', blend: 'additive', tint: col('#E8F8FF'), emission: 0.6 });
   add('BillboardRenderer', 'glintbb', { alignment: 'velocity', stretchRatio: 2, sizeOverLife: lin([[0, 0.5], [1, 0.3]]), opacityOverLife: lin([[0, 0.6], [1, 0]]) });
   wire('fragfloor.particles', 'glintbb.particles'); wire('glintmat.material', 'glintbb.material'); out('glintbb');

@@ -22243,9 +22243,9 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       1,
       0
      ],
-     "radius": 1.1,
+     "radius": 1.4300000000000002,
      "burst": 0,
-     "rate": 22,
+     "rate": 29,
      "speedMin": 0.05,
      "speedMax": 0.25,
      "lifetimeMin": 1,
@@ -22256,8 +22256,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "vapourip",
     "type": "InitialProperties",
     "params": {
-     "sizeMin": 0.35,
-     "sizeMax": 0.7,
+     "sizeMin": 0.5,
+     "sizeMax": 0.95,
      "randomFrameStart": true,
      "rotationMin": 0,
      "rotationMax": 6.283
@@ -22269,7 +22269,33 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "acceleration": [
       0,
-      0.25,
+      0.6,
+      0
+     ]
+    }
+   },
+   {
+    "id": "vapourmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#DDEFF8",
+      "alpha": 1
+     },
+     "opacity": 1,
+     "groundFade": 0.05
+    }
+   },
+   {
+    "id": "vapourbase",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      0.15,
       0
      ]
     }
@@ -22310,7 +22336,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
        },
        {
         "x": 0.3,
-        "y": 0.16
+        "y": 0.38
        },
        {
         "x": 1,
@@ -22610,6 +22636,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "node-target.out",
+    "vapourbase.anchor"
+   ],
+   [
+    "vapourbase.out",
     "vapour.anchor"
    ],
    [
@@ -22633,7 +22663,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "vapourbb.particles"
    ],
    [
-    "frostmat.material",
+    "vapourmat.material",
     "vapourbb.material"
    ],
    [
@@ -23351,9 +23381,9 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       1,
       0
      ],
-     "radius": 1.4,
+     "radius": 1.8199999999999998,
      "burst": 0,
-     "rate": 20,
+     "rate": 26,
      "speedMin": 0.05,
      "speedMax": 0.25,
      "lifetimeMin": 1,
@@ -23364,8 +23394,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "vapourip",
     "type": "InitialProperties",
     "params": {
-     "sizeMin": 0.35,
-     "sizeMax": 0.7,
+     "sizeMin": 0.5,
+     "sizeMax": 0.95,
      "randomFrameStart": true,
      "rotationMin": 0,
      "rotationMax": 6.283
@@ -23377,7 +23407,33 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "acceleration": [
       0,
-      0.25,
+      0.6,
+      0
+     ]
+    }
+   },
+   {
+    "id": "vapourmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#DDEFF8",
+      "alpha": 1
+     },
+     "opacity": 1,
+     "groundFade": 0.05
+    }
+   },
+   {
+    "id": "vapourbase",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      0.15,
       0
      ]
     }
@@ -23418,7 +23474,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
        },
        {
         "x": 0.3,
-        "y": 0.16
+        "y": 0.38
        },
        {
         "x": 1,
@@ -23718,6 +23774,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "node-target.out",
+    "vapourbase.anchor"
+   ],
+   [
+    "vapourbase.out",
     "vapour.anchor"
    ],
    [
@@ -23741,7 +23801,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "vapourbb.particles"
    ],
    [
-    "frostmat.material",
+    "vapourmat.material",
     "vapourbb.material"
    ],
    [
@@ -24459,9 +24519,9 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       1,
       0
      ],
-     "radius": 0.55,
+     "radius": 0.7150000000000001,
      "burst": 0,
-     "rate": 15,
+     "rate": 20,
      "speedMin": 0.05,
      "speedMax": 0.25,
      "lifetimeMin": 1,
@@ -24472,8 +24532,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "vapourip",
     "type": "InitialProperties",
     "params": {
-     "sizeMin": 0.35,
-     "sizeMax": 0.7,
+     "sizeMin": 0.5,
+     "sizeMax": 0.95,
      "randomFrameStart": true,
      "rotationMin": 0,
      "rotationMax": 6.283
@@ -24485,7 +24545,33 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "acceleration": [
       0,
-      0.25,
+      0.6,
+      0
+     ]
+    }
+   },
+   {
+    "id": "vapourmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "smoke-puff",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#DDEFF8",
+      "alpha": 1
+     },
+     "opacity": 1,
+     "groundFade": 0.05
+    }
+   },
+   {
+    "id": "vapourbase",
+    "type": "OffsetAnchor",
+    "params": {
+     "offset": [
+      0,
+      0.15,
       0
      ]
     }
@@ -24526,7 +24612,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
        },
        {
         "x": 0.3,
-        "y": 0.16
+        "y": 0.38
        },
        {
         "x": 1,
@@ -24826,6 +24912,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "node-target.out",
+    "vapourbase.anchor"
+   ],
+   [
+    "vapourbase.out",
     "vapour.anchor"
    ],
    [
@@ -24849,7 +24939,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "vapourbb.particles"
    ],
    [
-    "frostmat.material",
+    "vapourmat.material",
     "vapourbb.material"
    ],
    [
