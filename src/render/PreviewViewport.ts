@@ -1367,6 +1367,8 @@ export class PreviewViewport {
   #looping = false;
   /** 12 transport Loop: at the end, restart from tick 0 with the same seed. */
   setLoop(on: boolean): void { this.#looping = on; }
+  /** 12 view tools: floor grid on/off (preview only). */
+  setGrid(on: boolean): void { this.#grid.visible = on; }
   /** 12 transport speed (.25x/.5x/1x); preview-only, kept across recompiles. */
   #speed = 1;
   setSpeed(speed: number): void { this.#speed = speed; this.#clock?.setSpeed(speed); }

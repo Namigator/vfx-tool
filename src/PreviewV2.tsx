@@ -174,6 +174,7 @@ export default function PreviewV2() {
   const [timeline, setTimeline] = useState<TimelineInfo>({ markers: [], windows: new Map() });
   const onLoopRef = useRef<() => void>(() => {});
   const [lightBg, setLightBg] = useState(false);
+  const [grid, setGrid] = useState(true);
   /** 06 Solo: preview-only mask of soloed nodes (never saved in the effect). */
   const [solo, setSolo] = useState<ReadonlySet<string>>(() => new Set());
   const toggleSolo = useCallback((id: string) => setSolo(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; }), []);
@@ -207,6 +208,12 @@ export default function PreviewV2() {
    * Compiles the (structurally valid) document; errors clear the preview instead of keeping stale output.
    * Root audio is compiled first; only a successful audio compile lets the visual compiler skip the audio edge.
    */
+  /**
+   * 12 "Invalid graph pauses with last valid preview clearly marked stale": while editing, a broken graph keeps the last
+   * working preview on screen (paused) with a stale notice; a newly loaded document that does not compile shows none.
+   */
+  const lastGoodRef = useRef(false);
+  const pauseStale = () => { const vp = viewportRef.current; if (lastGoodRef.current) vp?.pause(); else vp?.clearPlan(); };
   const compile = useCallback((authored: EffectDocumentV2) => {
     // New seed on cast (preview-only): each loop plays a different random pattern; the document keeps its seed.
     const d = seedOffsetRef.current ? { ...authored, seed: (authored.seed + seedOffsetRef.current * 7919) >>> 0 } : authored;
@@ -216,7 +223,7 @@ export default function PreviewV2() {
     audioRef.current = null;
     setAudio(null);
     const fail = (errors: Diagnostic[]) => {
-      vp?.clearPlan();
+      pauseStale();
       setCompiled(false);
       setDiagnostics(errors);
     };
@@ -250,11 +257,11 @@ export default function PreviewV2() {
       const cut = truncationWarning(d);
       setDiagnostics(mergeDiagnostics(audioWarnings, points.warnings, first.warnings, style, cut ? [cut] : []));
       if (style.some(s => s.severity === 'error')) {
-        vp?.clearPlan();
+        pauseStale();
         setCompiled(false);
         return;
       }
-      setCompiled(true);
+      setCompiled(true); lastGoodRef.current = true;
       setFollowers(points.value.followers);
       setTimeline(timelineInfo(points.value, first.value));
       const snapshot = structuredClone(d);
@@ -273,11 +280,11 @@ export default function PreviewV2() {
       const cut = truncationWarning(d);
       setDiagnostics([...audioWarnings, ...first.warnings, ...style, ...(cut ? [cut] : [])]);
       if (blocked) {
-        vp?.clearPlan();
+        pauseStale();
         setCompiled(false);
         return;
       }
-      setCompiled(true);
+      setCompiled(true); lastGoodRef.current = true;
       setTimeline(timelineInfo(null, first.value));
       const snapshot = structuredClone(d); // Later edits never leak into the running source.
       vp?.setPathSource(first.value, tick => compilePathPreview(snapshot, tick, visualOptions));
@@ -290,7 +297,7 @@ export default function PreviewV2() {
     }
     const cut = truncationWarning(d);
     setDiagnostics([...audioWarnings, ...result.warnings, ...(cut ? [cut] : [])]);
-    setCompiled(true);
+    setCompiled(true); lastGoodRef.current = true;
     setFollowers(result.value.followers);
     setTimeline(timelineInfo(result.value, null));
     vp?.setPlan(result.value); // Starts paused at tick 0.
@@ -353,6 +360,13 @@ export default function PreviewV2() {
   const tabIdRef = useRef(Math.random().toString(36).slice(2));
   const baseRevisionRef = useRef(readDraftMeta(typeof localStorage === 'undefined' ? undefined : localStorage).revision);
   const [stale, setStale] = useState(false);
+  // 12: leaving the page while the last save failed (or another tab took over) warns instead of losing work silently.
+  const unsavedRef = useRef(false);
+  useEffect(() => {
+    const onLeave = (e: BeforeUnloadEvent) => { if (unsavedRef.current) { e.preventDefault(); e.returnValue = ''; } };
+    window.addEventListener('beforeunload', onLeave);
+    return () => window.removeEventListener('beforeunload', onLeave);
+  }, []);
   // ?view=1 (review links): watch a served document without autosaving over the user's own draft.
   const viewOnly = useRef(new URLSearchParams(window.location.search).get('view') === '1').current;
   useEffect(() => {
@@ -361,7 +375,8 @@ export default function PreviewV2() {
       const r = saveDraft(localStorage, doc, new Date(), { tabId: tabIdRef.current, baseRevision: baseRevisionRef.current });
       if (r.ok) baseRevisionRef.current = r.revision;
       else if (r.conflict) setStale(true);
-      setSaveStatus(r.ok ? 'Saved locally' : r.conflict ? 'Not saved: changed in another tab' : `Save failed: ${r.message}`);
+      unsavedRef.current = !r.ok;
+      setSaveStatus(r.ok ? 'Saved locally' : r.conflict ? 'Not saved: changed in another tab' : `Save failed: ${r.message} — use Save .json or Export pack to keep a copy`);
     }, 400);
     return () => clearTimeout(t);
   }, [doc, stale, viewOnly]);
@@ -592,6 +607,7 @@ export default function PreviewV2() {
       return false;
     }
     historyRef.current = next;
+    lastGoodRef.current = false; // A different document never shows the previous one's preview as stale.
     setJsonErrors(valid.warnings);
     setEditMessages([]);
     setTextDirty(false);
@@ -764,7 +780,8 @@ export default function PreviewV2() {
             // 12 workflow 1 "Save As": keep the effect under a new name; the open effect continues as that copy.
             const cur = historyRef.current!.snapshot(), name = window.prompt('Save this effect as (new name):', `${cur.name || 'effect'} copy`)?.trim();
             if (!name) return;
-            onEdit(`Rename to ${name}`, [{ op: 'set', path: ['name'], value: name }]);
+            // 12 "Save As names a separate document": a new name and a new document id.
+            onEdit(`Save as ${name}`, [{ op: 'set', path: ['name'], value: name }, { op: 'set', path: ['id'], value: `effect-${name.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40)}-${Date.now().toString(36)}`.replace(/-+/g, '-') }]);
             const r = saveToShelf(projectsRef.current, { ...historyRef.current!.snapshot(), name });
             if (r.ok) { setShelf(r.entries); setShelfPick(r.entries[0].name); setFileNote(`Saved as "${name}" in Projects; you are now editing "${name}".`); } else setFileNote(r.message);
           }} title="Save a copy under a new name and keep working on that copy">Save as…</button>
@@ -822,7 +839,7 @@ export default function PreviewV2() {
           <div className="pv2-host" ref={hostRef} />
           {fatal && <div className="pv2-overlay pv2-error" role="alert">{fatal}</div>}
           {gpuLost && <div className="pv2-overlay pv2-error" role="alert">The 3D view lost the graphics device (a driver reset or too many open tabs). It comes back by itself; your effect and edits are safe.</div>}
-          {!fatal && !compiled && <div className="pv2-overlay">No preview: the document does not compile (see diagnostics).</div>}
+          {!fatal && !compiled && <div className="pv2-overlay">{lastGoodRef.current ? 'Preview paused: the graph needs attention (see diagnostics). Showing the last working version — stale.' : 'No preview: the document does not compile (see diagnostics).'}</div>}
           {runtimeErrors.length > 0 && (
             <div className="pv2-overlay pv2-error" role="alert">
               Simulation stopped: {runtimeErrors.map(describe).join(' | ')}
@@ -844,6 +861,7 @@ export default function PreviewV2() {
               <option value="reference">Quality: Reference</option><option value="balanced">Quality: Balanced</option><option value="economy">Quality: Economy</option>
             </select>
             <button type="button" aria-pressed={reducedEffects} title="Reduced effects: no screen flashes or camera shake in the preview (the effect itself is unchanged)" onClick={() => { const r = !reducedEffects; setReducedEffects(r); vp?.setReducedEffects(r); }}>{reducedEffects ? 'Reduced effects on' : 'Reduced effects off'}</button>
+            <button type="button" aria-pressed={grid} title="Show or hide the floor grid" onClick={() => { const g = !grid; setGrid(g); vp?.setGrid(g); }}>{grid ? 'Grid on' : 'Grid off'}</button>
             <button type="button" aria-pressed={lightBg} title="Inspect on a light arena" onClick={() => { const l = !lightBg; setLightBg(l); vp?.setBackground(l ? 'light' : 'dark'); }}>{lightBg ? 'Light arena' : 'Dark arena'}</button>
             <button type="button" disabled={disabled} title="One tick back" aria-label="Step back one tick" onClick={() => { vp?.seek(Math.max(0, frame.tick - 1)); stopSound(''); }}>◀</button>
             <button type="button" disabled={disabled} title="One tick forward" aria-label="Step forward one tick" onClick={() => { vp?.seek(Math.min(frame.durationTicks, frame.tick + 1)); stopSound(''); }}>▶</button>
