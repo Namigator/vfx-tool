@@ -224,3 +224,16 @@ test('MCP parity (12): duplicate, copy and paste nodes like Ctrl+D / Ctrl+C / Ct
   assert.equal(p.error, false, p.text); assert.match(p.text, /Pasted: /);
   assert.equal((await call('vfx_paste_nodes', { docId: 'dst', json: 'nope' })).error, true);
 });
+
+test('MCP parity (12 workflow 2): list events and start a component on one', async () => {
+  const { call } = await connect();
+  await call('vfx_new_document', { template: 'blank', id: 'ev' });
+  await call('vfx_add_component', { docId: 'ev', component: 'fireball', group: true });
+  const ev = (await call('vfx_list_events', { docId: 'ev' })).text;
+  const port = /fireball\.(impactwin-start)/.exec(ev);
+  assert.ok(port, ev);
+  const r = await call('vfx_add_component', { docId: 'ev', component: 'impact-flash', startOn: `fireball.${port![1]}` });
+  assert.equal(r.error, false, r.text);
+  assert.match((await call('vfx_compile', { docId: 'ev' })).text, /particles OK/);
+  assert.equal((await call('vfx_add_component', { docId: 'ev', component: 'impact-flash', startOn: 'nope.start' })).error, true);
+});

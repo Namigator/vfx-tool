@@ -3,7 +3,7 @@
 // events never mutate it. Only the in-progress drag preview and edge selection are local state.
 // Keyboard (12): Delete, Enter opens a group, Ctrl/Cmd+D duplicate, Ctrl/Cmd+G group, Ctrl/Cmd+C/V copy/paste, Escape
 // clears the selection (then goes up a level), F fits. Drag on empty canvas box-selects; middle/right drag or Space pans.
-import { COMPONENT_TEMPLATES, componentPlacement, getComponent, insertComponent } from '../graph/components.ts';
+import { COMPONENT_TEMPLATES, componentPlacement, eventSources, getComponent, insertComponent, startComponentOnEvent } from '../graph/components.ts';
 import { groupSelection } from '../graph/groupSelection.ts';
 import { insertUserComponent, saveGroupAsComponent } from '../graph/userComponents.ts';
 import { removeUserComponent, saveUserComponent, useUserComponents } from './userComponentStore.ts';
@@ -149,6 +149,8 @@ const nodeTypes = { card: NodeCard };
 
 function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, soloed, onToggleSolo }: GraphCanvasProps) {
   const [componentId, setComponentId] = useState('');
+  /** 12: when the inserted component starts — its own time ("") or an event "nodeId\u0000port" next to it. */
+  const [startOn, setStartOn] = useState('');
   const userComponents = useUserComponents();
   const userPick = componentId.startsWith('user:') ? userComponents.find(c => c.id === componentId.slice(5)) : undefined;
   const flow = useReactFlow();
@@ -436,7 +438,14 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
     }
     let next;
     // Components insert as one Group node (double-click or Open internals to see the nodes inside).
-    try { next = insertComponent(doc, componentId, undefined, { group: true }).doc; } catch (e) { window.alert(e instanceof Error ? e.message : String(e)); return; }
+    let groupNodeId: string | undefined;
+    try { const r = insertComponent(doc, componentId, undefined, { group: true }); next = r.doc; groupNodeId = r.groupNodeId; } catch (e) { window.alert(e instanceof Error ? e.message : String(e)); return; }
+    if (startOn && groupNodeId) {
+      const [nodeId, port] = startOn.split('\u0000');
+      const s = startComponentOnEvent(next, groupNodeId, { nodeId, port });
+      if (!s.ok) { setNotice({ kind: 'error', lines: [s.message] }); return; }
+      next = s.doc;
+    }
     onEdit(`Add component ${getComponent(componentId).label}`, [
       { op: 'set', path: ['graphs'], value: next.graphs },
       { op: 'set', path: ['anchors'], value: next.anchors },
@@ -445,6 +454,7 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
       { op: 'set', path: ['editor', 'graphs'], value: next.editor.graphs },
     ]);
     setComponentId('');
+    setStartOn('');
   };
   const canDelete = (selectedNode !== undefined && !isLocked(selectedNode)) || selectedEdges.size > 0;
   /** Nodes Group selection would wrap: the Shift+click picks plus the primary selected node. */
@@ -557,6 +567,15 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
               <optgroup label="Built-in">{COMPONENT_TEMPLATES.map(c => <option key={c.id} value={c.id} title={c.description}>{c.label}</option>)}</optgroup>
             </select>
           </label>
+          {componentId && !componentId.startsWith('user:') && graphId === doc.rootGraphId && eventSources(doc, graphId).length > 0 && (
+            <label className="gc-add" title="Start the new component at its own time, or when another part's event happens (it then follows that event, e.g. an impact that waits for a projectile)">
+              <span>Start</span>
+              <select value={startOn} onChange={e => setStartOn(e.target.value)}>
+                <option value="">at its own time</option>
+                {eventSources(doc, graphId).map(ev => <option key={`${ev.nodeId}.${ev.port}`} value={`${ev.nodeId}\u0000${ev.port}`}>when {ev.label}</option>)}
+              </select>
+            </label>
+          )}
           <button type="button" onClick={addComponent} disabled={!componentId}>Insert</button>
           {userPick && <button type="button" onClick={() => { if (window.confirm(`Delete "${userPick.name}" from My components? Effects already using it keep their copy.`)) { removeUserComponent(userPick.id); setComponentId(''); } }} title="Remove this saved component from the list">Delete from My components</button>}
           {selectedNode?.type === GROUP_NODE_TYPE && <button type="button" onClick={() => {

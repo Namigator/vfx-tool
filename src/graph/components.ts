@@ -235,3 +235,51 @@ export function componentPlacement(componentId: string): string {
   const s = uses('node-source') || viaAnchor('source'), t = uses('node-target') || viaAnchor('target');
   return s && t ? 'travels from Source to Target' : s ? 'plays at Source' : t ? 'plays at Target' : 'plays at its own position';
 }
+
+/**
+ * 12 workflow 2 ("Add Impact Burst at arrival/discharge event"): starts an inserted component (Group) when an event
+ * fires instead of at a fixed time. Adds a "start" event input to the Group's graph, wires it (GroupInput bridge) to
+ * every Schedule inside that has no trigger yet — their authored start ticks become delays after the event, keeping
+ * their spacing — and connects `from` (an event output in the Group's parent graph) to it. Never mutates `doc`.
+ */
+export function startComponentOnEvent(doc: EffectDocumentV2, groupNodeId: string, from: { nodeId: string; port: string }): { ok: true; doc: EffectDocumentV2 } | { ok: false; message: string } {
+  const d = structuredClone(doc);
+  const parent = d.graphs.find(g => g.nodes.some(n => n.id === groupNodeId));
+  const group = parent?.nodes.find(n => n.id === groupNodeId);
+  if (!parent || group?.type !== 'Group') return { ok: false, message: `"${groupNodeId}" is not a component (Group) node.` };
+  const child = d.graphs.find(g => g.id === group.params.graphId);
+  if (!child) return { ok: false, message: 'The component has no internal graph.' };
+  if (!parent.nodes.some(n => n.id === from.nodeId)) return { ok: false, message: `Event source "${from.nodeId}" is not next to the component.` };
+  const scheds = child.nodes.filter(n => n.type === 'Schedule' && !child.edges.some(e => e.target.nodeId === n.id && e.target.port === 'trigger'));
+  if (!scheds.length) return { ok: false, message: 'This component has no timed parts to start from an event.' };
+  const taken = new Set(d.graphs.flatMap(g => [...g.nodes.map(n => n.id), ...g.edges.map(e => e.id)]));
+  const fresh = (base: string) => { let id = base; for (let i = 2; taken.has(id); i++) id = `${base}-${i}`; taken.add(id); return id; };
+  let port = 'start';
+  for (let i = 2; child.inputs.some(x => x.id === port); i++) port = `start${i}`;
+  child.inputs.push({ id: port, label: 'Start', type: 'event', cardinality: 'one', required: false, direction: 'input' });
+  const bridge = fresh(`${groupNodeId}-in-${port}`);
+  child.nodes.push({ id: bridge, type: 'GroupInput', definitionVersion: 1, label: 'In: start', enabled: true, randomStreamId: `rs-${bridge}`, params: { portId: port } });
+  for (const s of scheds) child.edges.push({ id: fresh(`${bridge}-e-${s.id}`), source: { nodeId: bridge, port: 'out' }, target: { nodeId: s.id, port: 'trigger' }, order: 0 });
+  parent.edges.push({ id: fresh(`${groupNodeId}-e-start`), source: { nodeId: from.nodeId, port: from.port }, target: { nodeId: groupNodeId, port }, order: 0 });
+  // Start at binds only untriggered Schedules; it now reads as a delay after the event (its bindings stay valid).
+  for (const c of d.controls) if (c.label === 'Start at' && c.bindings.some(b => scheds.some(s => s.id === b.nodeId))) { c.label = 'Delay after event'; c.description = 'Delay after the chosen event (60 ticks = 1 second).'; }
+  const layout = d.editor.graphs[child.id]?.nodes;
+  if (layout) layout[bridge] = { x: -260, y: 0 };
+  return { ok: true, doc: d };
+}
+
+/** Event outputs in `graphId` a component can start from (PathFollower arrival, Schedule start/end, particle events, component event outputs). */
+export function eventSources(doc: EffectDocumentV2, graphId: string): { nodeId: string; port: string; label: string }[] {
+  const g = doc.graphs.find(x => x.id === graphId), reg = createRegistry(), out: { nodeId: string; port: string; label: string }[] = [];
+  if (!g) return out;
+  for (const n of g.nodes) {
+    if (n.type === 'Group') {
+      const child = doc.graphs.find(x => x.id === n.params.graphId);
+      for (const p of child?.outputs ?? []) if (p.type === 'event') out.push({ nodeId: n.id, port: p.id, label: `${n.label || n.id}: ${p.label}` });
+      continue;
+    }
+    const spec = reg.get(`${n.type}@${n.definitionVersion}`);
+    for (const p of spec?.outputs ?? []) if (p.type === 'event') out.push({ nodeId: n.id, port: p.id, label: `${n.label || n.id}: ${p.label}` });
+  }
+  return out;
+}

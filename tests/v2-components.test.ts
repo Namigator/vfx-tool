@@ -241,3 +241,21 @@ test('PublicParameter inside a component reads the Group instance value (a paren
   over.controls.push({ id: 'ctl-root-life', scopeGraphId: over.rootGraphId, label: 'Root life', type: 'number', unit: 'second', value: 0.5, default: 0.5, min: 0.1, max: 5, step: 0.01, section: 'Main', description: '', editPolicy: 'resample', bindings: [{ nodeId: 'spark-burst', parameter: 'ctl-life' }] });
   assert.equal(life(over), 30, 'the parent value 0.5 s reaches the PublicParameter inside the group');
 });
+
+test('12 workflow 2: a component can start on another part\'s event (Impact at the fireball\'s arrival) and follows it', async () => {
+  const { startComponentOnEvent, eventSources } = await import('../src/graph/components.ts');
+  let doc = insertComponent(createBlankDocument(), 'fireball', undefined, { group: true }).doc;
+  doc = insertComponent(doc, 'impact-flash', undefined, { group: true }).doc;
+  const events = eventSources(doc, doc.rootGraphId);
+  const impactStart = events.find(e => e.nodeId === 'fireball' && /impactwin/.test(e.port));
+  assert.ok(impactStart, `fireball exposes its impact event (got ${events.map(e => e.label).join(', ')})`);
+  const r = startComponentOnEvent(doc, 'impact-flash', impactStart!);
+  if (!r.ok) assert.fail(r.message);
+  const flashTick = (d: typeof doc) => compiles(valid(d)).presentation.flashes.find(f => f.nodeId.startsWith('impact-flash'))!.tick;
+  // impact-flash's own schedule started at tick 10; it is now 10 ticks after the fireball's impact (tick 40).
+  assert.equal(flashTick(r.doc), 50);
+  const slow = structuredClone(r.doc);
+  slow.controls.find(c => c.label === 'Travel ticks')!.value = 90; slow.durationTicks = 300;
+  assert.equal(flashTick(slow), 100, 'a slower fireball moves the impact with it');
+  assert.ok(r.doc.controls.some(c => c.label === 'Delay after event'));
+});

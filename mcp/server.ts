@@ -12,7 +12,7 @@ import type { Diagnostic, EffectDocumentV2, NodeDefinition, ParameterValue, Vec3
 import { validateDocument } from '../src/model/document.ts';
 import { createRegistry } from '../src/graph/registry.ts';
 import { createBlankDocument, createF01Document, createForcesDemoDocument, createL01Document } from '../src/graph/fixtures.ts';
-import { COMPONENT_TEMPLATES, insertComponent } from '../src/graph/components.ts';
+import { COMPONENT_TEMPLATES, eventSources, insertComponent, startComponentOnEvent } from '../src/graph/components.ts';
 import { groupSelection } from '../src/graph/groupSelection.ts';
 import { insertUserComponent, saveGroupAsComponent, type UserComponent } from '../src/graph/userComponents.ts';
 import { grownDuration, truncationWarning } from '../src/graph/truncation.ts';
@@ -224,14 +224,25 @@ ${formatMigrationReport(report)}`);
   }, a => { let info = ''; const r = mutate(a.docId, d => { const x = groupSelection(d, a.graphId ?? d.rootGraphId, a.nodeIds, a.label); if (!x.ok) throw new Error(x.message); info = `Group node "${x.groupNodeId}" wraps graph "${x.childGraphId}"`; Object.assign(d, x.doc); return ''; }); return r.isError ? r : ok(`${info}.`); });
   tool('vfx_add_component', 'Insert a component, auto-wired to its Source/Target anchors and Output. Node ids are prefixed; returns the prefix. group=true wraps its visual nodes in one Group node (own graph "graph-<prefix>", knobs exposed on the Group; sound nodes stay in the root), like the editor. "user:<id>" inserts an independent copy of a saved user component as one Group.', {
     docId: z.string(), component: z.string(), prefix: z.string().regex(ID).optional(), group: z.boolean().optional(),
+    startOn: z.string().optional().describe('Start the component when an event fires instead of at its own time: "nodeId.port" of an event output next to it (see vfx_list_events), e.g. "fireball.impactwin-start". Implies group=true.'),
   }, a => { let used = '', gid: string | undefined; const r = mutate(a.docId, d => {
     if (a.component.startsWith('user:')) {
       const c = readUser().find(u => u.id === a.component.slice(5));
       if (!c) throw new Error(`No user component "${a.component}". Use vfx_list_components.`);
       const y = insertUserComponent(d, c); used = y.groupNodeId; gid = y.groupNodeId; Object.assign(d, y.doc); return '';
     }
-    const x = insertComponent(d, a.component, a.prefix, { group: a.group === true }); used = x.prefix; gid = x.groupNodeId; Object.assign(d, x.doc); return ''; }); return r.isError ? r : ok(`Inserted ${a.component} with prefix "${used}" (node ids "${used}-<node>")${gid ? `; Group node "${gid}" wraps graph "graph-${used}"` : ''}.`); });
+    const x = insertComponent(d, a.component, a.prefix, { group: a.group === true || !!a.startOn }); used = x.prefix; gid = x.groupNodeId; let next = x.doc;
+    if (a.startOn && gid) {
+      const dot = a.startOn.lastIndexOf('.'), s = startComponentOnEvent(next, gid, { nodeId: a.startOn.slice(0, dot), port: a.startOn.slice(dot + 1) });
+      if (!s.ok) throw new Error(s.message);
+      next = s.doc;
+    }
+    Object.assign(d, next); return ''; }); return r.isError ? r : ok(`Inserted ${a.component} with prefix "${used}" (node ids "${used}-<node>")${gid ? `; Group node "${gid}" wraps graph "graph-${used}"` : ''}.`); });
 
+  tool('vfx_list_events', 'Event outputs in a graph that a component can start from (vfx_add_component startOn), like the editor\'s Add component → Start choice.', { docId: z.string(), graphId: z.string().optional() }, ({ docId, graphId }) => {
+    const d = getDoc(docId), list = eventSources(d, graphId ?? d.rootGraphId);
+    return ok(list.map(e => `${e.nodeId}.${e.port}  (${e.label})`).join('\n') || 'No event outputs in this graph.');
+  });
   tool('vfx_list_controls', 'Published knobs (document controls) with value, bounds and what they drive.', { docId: z.string() }, ({ docId }) =>
     ok(getDoc(docId).controls.map(c => `${c.id} [${c.section}] ${c.label} = ${JSON.stringify(c.value)} (${c.min ?? '-'}..${c.max ?? '-'} ${c.unit}) -> ${c.bindings.map(b => `${b.nodeId}.${b.parameter}${b.scale ? ' x' + b.scale : ''}`).join(', ')}`).join('\n') || 'No controls.'));
   tool('vfx_set_control', 'Set a published knob by id or label (document validation enforces its bounds). Colour knobs take {srgb:"#RRGGBB",alpha}; vector knobs take [x,y,z].', { docId: z.string(), control: z.string(), value: z.union([z.number(), z.boolean(), z.string(), z.array(z.number()), z.object({ srgb: z.string(), alpha: z.number() })]) }, a =>
