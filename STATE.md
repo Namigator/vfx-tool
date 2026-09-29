@@ -81,8 +81,8 @@
 - Mesh particles export (Sonnet implementer, meshBake.ts): rocks -> Slate Blocks, crystals/shards -> Wedges, orbs ->
   Balls, moved along baked (thinned, interpolated) sim paths; [RAN] Studio: earth-upheaval 66 pieces (EffectData 100 KB),
   ice-eruption 66 pieces (69 KB). Not seen visually.
-- TOOL BROKEN 2026-09-29: ~/.claude/tools/shot.ps1 url returns "chrome produced no file" even for docs that captured
-  earlier (doctor clean, page reports READY via cdp-eval). Use the in-app browser pane or cdp-eval meanwhile.
+- shot.ps1 url failed intermittently 2026-09-29 ("chrome produced no file") while Studio/agent runs were active; works
+  again 2026-09-30 incl. &tick URLs. If it recurs: retry once, else use the in-app browser pane or cdp-eval.
 - USER REPORT 2026-09-29 (open): viewed from behind/in front of the fire (along the jet), the sprites move
   weirdly. Suspect velocity-stretched / velocity-aligned billboards viewed along their velocity (they collapse and
   spin). Needs a capture from those angles first.
