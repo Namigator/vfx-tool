@@ -211,3 +211,16 @@ test('MCP: vfx_compare_images puts two PNGs side by side with a difference score
   assert.equal(r.error, false, r.text);
   assert.match(r.text, /Mean colour difference 51\.0/);
 });
+
+test('MCP parity (12): duplicate, copy and paste nodes like Ctrl+D / Ctrl+C / Ctrl+V', async () => {
+  const { call } = await connect();
+  await call('vfx_new_document', { template: 'f01', id: 'dup' });
+  const d = await call('vfx_duplicate_nodes', { docId: 'dup', nodeIds: ['node-emitter'] });
+  assert.equal(d.error, false, d.text); assert.match(d.text, /Duplicated as: node-emitter_2/);
+  const c = await call('vfx_copy_nodes', { docId: 'dup', nodeIds: ['node-emitter', 'node-initial'] });
+  assert.equal(c.error, false, c.text);
+  await call('vfx_new_document', { template: 'blank', id: 'dst' });
+  const p = await call('vfx_paste_nodes', { docId: 'dst', json: c.text });
+  assert.equal(p.error, false, p.text); assert.match(p.text, /Pasted: /);
+  assert.equal((await call('vfx_paste_nodes', { docId: 'dst', json: 'nope' })).error, true);
+});

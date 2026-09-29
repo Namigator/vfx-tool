@@ -33,6 +33,7 @@ import { BUILTIN_SPRITES } from '../src/assets/builtinSprites.generated.ts';
 import type { SpriteSheet } from '../src/assets/spriteLibrary.ts';
 import { createTextureAsset, sha256Hex } from '../src/assets/importTexture.ts';
 import { hasRootAudio } from '../src/render/previewMode.ts';
+import { copySelection, duplicateSelection, parseClipboard, pasteSelection } from '../src/editor/graphOps.ts';
 import { assetReferences, relinkVerdict, removeAssetPatches } from '../src/model/assetRefs.ts';
 import { createMeshAsset } from '../src/assets/importMesh.ts';
 import { buildPack, readPack, type PackAsset } from '../src/model/vfxpack.ts';
@@ -365,6 +366,22 @@ ${formatMigrationReport(report)}`);
       return `Imported ${asset.provenance.originalFilename} as ${asset.kind} ${asset.width}×${asset.height} (id ${asset.id})${materialId ? `; set on ${materialId}` : ''}.`;
     });
   });
+  // 12 parity: Duplicate / Copy / Paste (the editor's Ctrl+D / Ctrl+C / Ctrl+V).
+  const applyWhole = (docId: string, label: string, next: EffectDocumentV2) => mutate(docId, d => { Object.assign(d, structuredClone(next)); return label; });
+  tool('vfx_duplicate_nodes', 'Duplicate nodes (like the editor Ctrl+D): fresh ids and random streams, internal wiring kept; a Group becomes an independent copy of its component.', { docId: z.string(), nodeIds: z.array(z.string()).min(1), graphId: z.string().optional() }, ({ docId, nodeIds, graphId }) => {
+    const d = getDoc(docId), r = duplicateSelection(d, graphId ?? d.rootGraphId, nodeIds);
+    return r.ok ? applyWhole(docId, `Duplicated as: ${r.newIds.join(', ')}${r.notes.length ? `\n${r.notes.join('\n')}` : ''}`, r.doc) : bad(r.message);
+  });
+  tool('vfx_copy_nodes', 'Copy nodes as the editor clipboard JSON (like Ctrl+C); paste it with vfx_paste_nodes into this or another document.', { docId: z.string(), nodeIds: z.array(z.string()).min(1), graphId: z.string().optional() }, ({ docId, nodeIds, graphId }) => {
+    const d = getDoc(docId), r = copySelection(d, graphId ?? d.rootGraphId, nodeIds);
+    return r.ok ? ok(JSON.stringify(r.value)) : bad(r.message);
+  });
+  tool('vfx_paste_nodes', 'Paste clipboard JSON from vfx_copy_nodes (or the editor) into a graph (like Ctrl+V); validated, refused rather than partly applied.', { docId: z.string(), json: z.string(), graphId: z.string().optional() }, ({ docId, json, graphId }) => {
+    const c = parseClipboard(json);
+    if (!c.ok) return bad(c.message);
+    const d = getDoc(docId), r = pasteSelection(d, graphId ?? d.rootGraphId, c.value);
+    return r.ok ? applyWhole(docId, `Pasted: ${r.newIds.join(', ')}${r.notes.length ? `\n${r.notes.join('\n')}` : ''}`, r.doc) : bad(r.message);
+  });
   tool('vfx_remove_asset', 'Remove an imported asset from a document (like the editor Remove). Refused while nodes still use it; the refusal lists them.', { docId: z.string(), assetId: z.string() }, ({ docId, assetId }) => {
     const r = removeAssetPatches(getDoc(docId), assetId);
     if (!r.ok) return bad(`Cannot remove: ${r.message}`);
@@ -506,16 +523,18 @@ ${formatMigrationReport(report)}`);
   tool('vfx_contact_sheet', 'Render frames at evenly spaced ticks (or the given ticks) and return them as ONE grid image (a timeline strip). Saved to work/mcp/frames/<doc>-sheet.png.', {
     docId: z.string(), count: z.number().int().min(2).max(16).optional(), ticks: z.array(z.number().int().min(0)).min(2).max(16).optional(), columns: z.number().int().min(1).max(8).optional(),
     glow: z.boolean().optional(), background: z.enum(['dark', 'light']).optional(), solo: z.array(z.string()).optional(),
-  }, async ({ docId, count, ticks, columns, glow, background, solo }) => {
+    camera: z.object({ position: z.tuple([z.number(), z.number(), z.number()]), target: z.tuple([z.number(), z.number(), z.number()]), fov: z.number().min(5).max(120).optional() }).optional(),
+    name: z.string().regex(/^[A-Za-z0-9_-]{1,40}$/).optional().describe('Saves to work/mcp/frames/<doc>-<name>.png instead of <doc>-sheet.png (keep several sheets of one effect).'),
+  }, async ({ docId, count, ticks, columns, glow, background, solo, camera, name }) => {
     const d = getDoc(docId), n = count ?? 8;
     const list = ticks ?? Array.from({ length: n }, (_, i) => Math.round((i / (n - 1)) * (d.durationTicks - 1)));
     const frames: Rgba[] = [];
     for (let i = 0; i < list.length; i += 8) {
-      const r = await renderFrames({ docId, ticks: list.slice(i, i + 8), width: 480, height: 270, ...(glow === false ? { glow } : {}), ...(background ? { background } : {}), ...(solo?.length ? { solo } : {}) });
+      const r = await renderFrames({ docId, ticks: list.slice(i, i + 8), width: 480, height: 270, ...(glow === false ? { glow } : {}), ...(background ? { background } : {}), ...(solo?.length ? { solo } : {}), ...(camera ? { camera } : {}) });
       if (r.isError) return r;
       for (const c of r.content) if (c.type === 'image') frames.push(decodePng(Buffer.from(c.data, 'base64')));
     }
-    const sheet = grid(frames, columns ?? 4), out = join(root, 'work', 'mcp', 'frames', `${docId}-sheet.png`), bytes = encodePng(sheet);
+    const sheet = grid(frames, columns ?? 4), out = join(root, 'work', 'mcp', 'frames', `${docId}-${name ?? 'sheet'}.png`), bytes = encodePng(sheet);
     writeFileSync(out, bytes);
     return { content: [{ type: 'text', text: `Contact sheet of ticks ${list.join(', ')}: ${out}` }, { type: 'image', data: bytes.toString('base64'), mimeType: 'image/png' }] };
   });
