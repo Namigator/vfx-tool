@@ -237,3 +237,15 @@ test('MCP parity (12 workflow 2): list events and start a component on one', asy
   assert.match((await call('vfx_compile', { docId: 'ev' })).text, /particles OK/);
   assert.equal((await call('vfx_add_component', { docId: 'ev', component: 'impact-flash', startOn: 'nope.start' })).error, true);
 });
+
+test('MCP parity (13): cleanup removes only unreferenced asset files', async () => {
+  const { root, call } = await connect();
+  const { mkdirSync, writeFileSync, existsSync } = await import('node:fs');
+  mkdirSync(join(root, 'work/mcp/assets'), { recursive: true });
+  const orphan = `${'d'.repeat(64)}.png`;
+  writeFileSync(join(root, 'work/mcp/assets', orphan), 'x');
+  assert.match((await call('vfx_cleanup_assets', { dryRun: true })).text, /Would remove 1 unused file/);
+  assert.ok(existsSync(join(root, 'work/mcp/assets', orphan)));
+  assert.match((await call('vfx_cleanup_assets', {})).text, /Removed 1 unused file/);
+  assert.ok(!existsSync(join(root, 'work/mcp/assets', orphan)));
+});

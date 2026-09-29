@@ -4,7 +4,7 @@
 // work/mcp/<id>.json after every successful change, which the editor opens via ?workspace=v2&doc=...
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -35,6 +35,7 @@ import { createTextureAsset, sha256Hex } from '../src/assets/importTexture.ts';
 import { hasRootAudio } from '../src/render/previewMode.ts';
 import { copySelection, duplicateSelection, parseClipboard, pasteSelection } from '../src/editor/graphOps.ts';
 import { assetReferences, relinkVerdict, removeAssetPatches } from '../src/model/assetRefs.ts';
+import { unusedAssetHashes } from '../src/model/assetStore.ts';
 import { createMeshAsset } from '../src/assets/importMesh.ts';
 import { buildPack, readPack, type PackAsset } from '../src/model/vfxpack.ts';
 
@@ -392,6 +393,18 @@ ${formatMigrationReport(report)}`);
     if (!c.ok) return bad(c.message);
     const d = getDoc(docId), r = pasteSelection(d, graphId ?? d.rootGraphId, c.value);
     return r.ok ? applyWhole(docId, `Pasted: ${r.newIds.join(', ')}${r.notes.length ? `\n${r.notes.join('\n')}` : ''}`, r.doc) : bad(r.message);
+  });
+  tool('vfx_cleanup_assets', 'Delete imported asset files in work/mcp/assets that nothing references (open documents, their undo/redo, every work/mcp/*.json and presets/*.vfx.json, saved user components) — like the editor Clean up unused files. dryRun=true only lists them.', { dryRun: z.boolean().optional() }, ({ dryRun }) => {
+    if (!existsSync(assetDir)) return ok('No asset folder.');
+    const texts: string[] = [...docs.values(), ...undo.values(), ...redo.values()].map(v => JSON.stringify(v));
+    for (const dir of [join(root, 'work', 'mcp'), join(root, 'presets')]) if (existsSync(dir)) for (const f of readdirSync(dir)) if (f.endsWith('.json')) texts.push(readFileSync(join(dir, f), 'utf8'));
+    texts.push(JSON.stringify(readUser()));
+    const files = readdirSync(assetDir).filter(f => /^[0-9a-f]{64}\./.test(f));
+    const unused = new Set(unusedAssetHashes(files.map(f => f.slice(0, 64)), texts));
+    const gone = files.filter(f => unused.has(f.slice(0, 64)));
+    let bytes = 0;
+    for (const f of gone) { bytes += statSync(join(assetDir, f)).size; if (!dryRun) rmSync(join(assetDir, f)); }
+    return ok(gone.length ? `${dryRun ? 'Would remove' : 'Removed'} ${gone.length} unused file(s), ${(bytes / 1024).toFixed(0)} KiB: ${gone.join(', ')}` : `No unused asset files (${files.length} in use).`);
   });
   tool('vfx_remove_asset', 'Remove an imported asset from a document (like the editor Remove). Refused while nodes still use it; the refusal lists them.', { docId: z.string(), assetId: z.string() }, ({ docId, assetId }) => {
     const r = removeAssetPatches(getDoc(docId), assetId);
