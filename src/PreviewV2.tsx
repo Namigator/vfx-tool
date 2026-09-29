@@ -898,6 +898,8 @@ export default function PreviewV2() {
           {runtimeErrors.length > 0 && (
             <div className="pv2-overlay pv2-error" role="alert">
               Simulation stopped: {runtimeErrors.map(describe).join(' | ')}
+              {/* 12 "failure pauses and offers Retry preview" (the simulation runs on the main thread; this replays from tick 0). */}
+              <button type="button" onClick={() => { setRuntimeErrors([]); vp?.restart(); }} title="Run the preview again from the start (after a fix, or if the stop was a one-off)">Retry preview</button>
             </div>
           )}
           <div className="pv2-transport">
