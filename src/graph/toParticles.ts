@@ -233,8 +233,12 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     if (depth > 32) return fail('INVALID_VALUE', `Value chain through "${src.node.id}" is too deep.`, src.node.id);
     if (src.node.type === 'Constant') return param(src, 'value') as number;
     if (src.node.type === 'PublicParameter') {
-      // The control's authored value (a parent Group's exposed override is not applied here yet).
-      const c = doc.controls.find(x => x.id === param(src, 'controlId'));
+      // 06 precedence: the enclosing Group instance's resolved value for this control (parent binding, override or
+      // literal on the Group) wins over the control's own stored value.
+      const cid = param(src, 'controlId') as string, owner = src.groupPath.at(-1);
+      const viaGroup = owner !== undefined ? x.groupControls.find(p => p.nodeId === owner && p.parameter === cid)?.value : undefined;
+      if (typeof viaGroup === 'number') return viaGroup;
+      const c = doc.controls.find(x => x.id === cid);
       return typeof c?.value === 'number' ? c.value : fail('MISSING_REFERENCE', `PublicParameter "${src.node.id}" reads no numeric control.`, src.node.id, 'controlId');
     }
     if (src.node.type === 'RandomRange') {

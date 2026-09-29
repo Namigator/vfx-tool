@@ -227,3 +227,17 @@ test('Colour shift: every component gets one knob that rotates all its material 
   assert.ok(plan.layers.length > 0 && plan.layers.every(l => l.hueShift === 180), 'every sprite layer carries the shift');
   assert.ok(plan.lights.length > 0 && plan.lights.every(l => l.color.srgb !== '#FFFFFF'));
 });
+
+test('PublicParameter inside a component reads the Group instance value (a parent knob bound to the group wins over the stored knob)', () => {
+  const { doc } = insertComponent(createBlankDocument(), 'spark-burst', undefined, { group: true });
+  const child = doc.graphs.find(g => g.id === 'graph-spark-burst')!;
+  doc.controls.push({ id: 'ctl-life', scopeGraphId: child.id, label: 'Life', type: 'number', unit: 'second', value: 0.9, default: 0.9, min: 0.1, max: 5, step: 0.01, section: 'Spark burst', description: '', editPolicy: 'resample', bindings: [] });
+  child.nodes.push({ id: 'pp', type: 'PublicParameter', definitionVersion: 1, label: 'pp', enabled: true, randomStreamId: 'rs-pp', params: { controlId: 'ctl-life' } });
+  child.edges.push({ id: 'e-pp', source: { nodeId: 'pp', port: 'value' }, target: { nodeId: 'spark-burst-em', port: 'lifetimeMax' }, order: 0 });
+  const life = (d: typeof doc) => compiles(valid(d)).systems.find(s => s.descriptor.emitterId === 'spark-burst-em')!.descriptor.lifetimeTicks.max;
+  assert.equal(life(doc), 54, 'stored knob value 0.9 s');
+  const over = structuredClone(doc);
+  // A parent (root) knob bound to the Group's exposed port drives the inner control (06 parent → group → internal).
+  over.controls.push({ id: 'ctl-root-life', scopeGraphId: over.rootGraphId, label: 'Root life', type: 'number', unit: 'second', value: 0.5, default: 0.5, min: 0.1, max: 5, step: 0.01, section: 'Main', description: '', editPolicy: 'resample', bindings: [{ nodeId: 'spark-burst', parameter: 'ctl-life' }] });
+  assert.equal(life(over), 30, 'the parent value 0.5 s reaches the PublicParameter inside the group');
+});

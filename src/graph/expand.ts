@@ -45,6 +45,8 @@ export type ExpandedGraph = {
   connections: ExpandedConnection[];
   controlDrivers: { controlId: string; groupNodeId: string; sources: ExpandedSource[] }[];
   parameters: ResolvedParameter[];
+  /** Resolved values of Group instances' exposed child controls (06 parent → group → internal); read by PublicParameter. */
+  groupControls: ResolvedParameter[];
   rootOutputNodeId: string;
 };
 
@@ -269,9 +271,11 @@ function expand(analysis: GraphAnalysis): ValidationResult<ExpandedGraph> {
   const kept = new Set(nodes.map(x => x.node.id));
   const parameters = analysis.parameters.filter(p => kept.has(p.nodeId))
     .sort((a, b) => byCodeUnit(a.nodeId, b.nodeId) || byCodeUnit(a.parameter, b.parameter));
+  const groupIds = new Set(analysis.document.graphs.flatMap(g => g.nodes).filter(n => n.type === GROUP_NODE_TYPE).map(n => n.id));
+  const groupControls = analysis.parameters.filter(p => groupIds.has(p.nodeId));
   return {
     ok: true,
-    value: structuredClone({ nodes, connections, controlDrivers, parameters, rootOutputNodeId: outputs[0] }),
+    value: structuredClone({ nodes, connections, controlDrivers, parameters, groupControls, rootOutputNodeId: outputs[0] }),
     warnings,
   };
 }
