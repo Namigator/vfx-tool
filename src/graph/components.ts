@@ -6,6 +6,7 @@ import type { EffectDocumentV2, GraphDefinition, NodeDefinition, ParameterValue,
 import { createRegistry } from './registry.ts';
 import { COMPONENT_TEMPLATES } from './components.generated.ts';
 import { BLANK_SOURCE, BLANK_TARGET } from './fixtures.ts';
+import { chroma } from './recolor.ts';
 
 export type ComponentTemplate = {
   id: string; label: string; description: string;
@@ -69,6 +70,66 @@ function adoptLayout(d: EffectDocumentV2, c: ComponentTemplate): void {
   d.anchors = d.anchors.map(a => a.id === 'source' ? { ...a, position: [...c.layout!.source] as Vec3 } : a.id === 'target' ? { ...a, position: [...c.layout!.target] as Vec3 } : a);
 }
 
+// Colour pickers (user 2026-09-29: "why not as a colour picker?" → "lets do both"): the component's representative
+// colour (its most colourful material/light colour) is the swatch of the whole-component Colour picker, and its
+// materials/lights are sorted into parts (main body, sparks, smoke, flash, light) that each get their own picker.
+type ColourPart = { key: string; label: string; swatch: string; nodes: string[] };
+const PART_ORDER = ['main', 'sparks', 'smoke', 'flash', 'light'] as const;
+type PartKey = (typeof PART_ORDER)[number];
+function partOf(id: string, type: string): PartKey | undefined {
+  if (type === 'PointLight') return 'light';
+  const n = id.toLowerCase();
+  if (/steel|barrel|prop/.test(n)) return undefined; // Props (the flamethrower's nozzle) get no part picker.
+  if (/smoke|dust|cloud|vapou?r|residue|haze|wisp/.test(n)) return 'smoke';
+  if (/ember|spark|mote|glint|drop|pop|bubble|drip|streak|shed|foam|burst|chip/.test(n)) return 'sparks';
+  if (/flash|ring|ripple|splash|ignite|impact|imp[a-z]*mat|pulse/.test(n)) return 'flash';
+  return 'main';
+}
+function partLabel(key: PartKey, id: string): string {
+  if (key === 'main') {
+    return /fire|flame|torch/.test(id) ? 'Flame' : /lightning|arc|tether/.test(id) ? 'Bolt' : /water|fountain|rain/.test(id) ? 'Water'
+      : /ice/.test(id) ? 'Ice' : /earth|rock/.test(id) ? 'Rock' : /wind|tornado/.test(id) ? 'Wind' : /poison/.test(id) ? 'Poison'
+      : /shadow/.test(id) ? 'Shadow' : /light|holy/.test(id) ? 'Rays' : /energy|charge/.test(id) ? 'Energy' : /helix|beam/.test(id) ? 'Beam' : 'Main';
+  }
+  if (key === 'sparks') return /fire|flame|torch/.test(id) ? 'Embers' : /water|fountain|rain/.test(id) ? 'Droplets' : /poison/.test(id) ? 'Bubbles' : 'Sparks';
+  if (key === 'smoke') return /poison/.test(id) ? 'Cloud' : /shadow|wind/.test(id) ? 'Wisps' : 'Smoke & dust';
+  if (key === 'flash') return /water|rain|fountain/.test(id) ? 'Splash & rings' : 'Flash & rings';
+  return 'Light';
+}
+type Rgb = { srgb: string; alpha: number };
+const isColour = (v: unknown): v is Rgb => !!v && typeof v === 'object' && typeof (v as Rgb).srgb === 'string';
+const coloursIn = (params: Record<string, unknown> | undefined): Rgb[] => Object.values(params ?? {}).flatMap(v =>
+  isColour(v) ? [v] : v && typeof v === 'object' && Array.isArray((v as { stops?: unknown }).stops) ? (v as { stops: { color: unknown }[] }).stops.map(st => st.color).filter(isColour) : []);
+const mul = (a: Rgb, b: Rgb): Rgb => ({ srgb: `#${[0, 1, 2].map(i => Math.round(parseInt(a.srgb.slice(1 + 2 * i, 3 + 2 * i), 16) * parseInt(b.srgb.slice(1 + 2 * i, 3 + 2 * i), 16) / 255).toString(16).toUpperCase().padStart(2, '0')).join('')}`, alpha: 1 });
+const most = (list: Rgb[]) => list.reduce((a, b) => (chroma(b) > chroma(a) + 1e-9 ? b : a));
+/** The most colourful colour a material/light draws: its tint × the colours of the renderers (and particle chains) it feeds. */
+function swatchOf(c: ComponentTemplate, id: string): Rgb {
+  const node = c.nodes.find(n => n.id === id)!;
+  const own = node.params?.[node.type === 'PointLight' ? 'color' : 'tint'];
+  const tint = isColour(own) ? own : { srgb: '#FFFFFF', alpha: 1 };
+  if (node.type === 'PointLight') return tint;
+  const seen = new Set<string>(), found: Rgb[] = [];
+  const walk = (nid: string, depth: number) => {
+    if (seen.has(nid) || depth > 24) return;
+    seen.add(nid);
+    found.push(...coloursIn(c.nodes.find(n => n.id === nid)?.params));
+    for (const [from, to] of c.edges) if (to.startsWith(`${nid}.particles`)) walk(from.slice(0, from.lastIndexOf('.')), depth + 1);
+  };
+  for (const [from, to] of c.edges) if (from === `${id}.material`) walk(to.slice(0, to.lastIndexOf('.')), 0);
+  return most([tint, ...found.map(f => mul(tint, f))]);
+}
+/** Swatch of the whole component and its colour parts (none when fewer than two parts). */
+export function colourParts(c: ComponentTemplate, ids: string[]): { swatch: string; parts: ColourPart[] } {
+  if (!ids.length) return { swatch: '#FFFFFF', parts: [] };
+  const swatches = new Map(ids.map(id => [id, swatchOf(c, id)]));
+  const type = (id: string) => c.nodes.find(n => n.id === id)!.type;
+  const best = (list: string[]) => most(list.map(id => swatches.get(id)!)).srgb;
+  const usable = ids.filter(id => partOf(id, type(id)));
+  const parts = PART_ORDER.map(key => ({ key, nodes: usable.filter(id => partOf(id, type(id)) === key) }))
+    .filter(x => x.nodes.length).map(x => ({ key: x.key, label: partLabel(x.key, c.id), swatch: best(x.nodes), nodes: x.nodes }));
+  return { swatch: best(usable.length ? usable : ids), parts: parts.length > 1 ? parts : [] };
+}
+
 export function insertComponent(doc: EffectDocumentV2, componentId: string | ComponentTemplate, prefix?: string, opts: { group?: boolean } = {}): { doc: EffectDocumentV2; prefix: string; groupNodeId?: string } {
   const c = typeof componentId === 'string' ? getComponent(componentId) : componentId; // A template object: e.g. an imported asset's (assetComponent.ts).
   const d = structuredClone(doc);
@@ -111,12 +172,18 @@ export function insertComponent(doc: EffectDocumentV2, componentId: string | Com
   for (const a of c.anchors) d.anchors.push({ id: anchorIds.get(a.id)!, name: `${c.label} ${a.id}`, position: [...a.position] as Vec3 });
   const nodeId = (id: string) => endpoint.get(id) ?? `${p}-${id}`;
   const graphOfTemplate = (id: string) => endpointGraph.get(id) ?? homeOfType(c.nodes.find(n => n.id === id)?.type ?? '');
+  const tinted = c.nodes.filter(n => n.type === 'Material' || n.type === 'PointLight');
+  const tintScope = tinted.length ? graphOfTemplate(tinted[0].id) : undefined;
+  const colours = colourParts(c, tinted.filter(n => graphOfTemplate(n.id) === tintScope).map(n => n.id));
+  const partSwatch = new Map(colours.parts.flatMap(pt => pt.nodes.map(id => [id, pt.swatch] as const)));
   const placed = new Map<string, number>();
   c.nodes.forEach(n => {
     if (endpoint.has(n.id)) return; // Reused audio mix/output.
     const g = homeOfType(n.type), id = nodeId(n.id);
     const params = structuredClone(n.params ?? {}) as Record<string, ParameterValue>;
     if (n.type === 'Anchor' && typeof params.anchorId === 'string' && anchorIds.has(params.anchorId)) params.anchorId = anchorIds.get(params.anchorId)!;
+    const ps = partSwatch.get(n.id);
+    if (ps) { params.recolorFrom = { srgb: ps, alpha: 1 }; params.recolorTo = { srgb: ps, alpha: 1 }; }
     newNode(g, id, n.type, `${c.label}: ${n.id}`, params);
     const layout = d.editor.graphs[g.id]?.nodes;
     if (layout) {
@@ -169,16 +236,25 @@ export function insertComponent(doc: EffectDocumentV2, componentId: string | Com
       bindings: scheds.map((n, i) => ({ nodeId: nodeId(n.id), parameter: 'startTicks', ...(offs[i] ? { offset: offs[i] } : {}) })),
     });
   }
-  // Colour shift (user 2026-09-29: "why can't I change the colour of the flamethrower?"): one knob rotates every
-  // colour of the component — materials (tint, colour over life, texture colours) and lights — around the colour wheel.
-  const tinted = c.nodes.filter(n => n.type === 'Material' || n.type === 'PointLight');
+  // Colour (user 2026-09-29: "why can't I change the colour of the flamethrower?", then "why not as a colour picker?"):
+  // one knob rotates every colour of the component — materials (tint, colour over life, texture colours) and lights —
+  // around the colour wheel; the editor shows it as a picker of the swatch. Then one full-colour picker per part.
   if (tinted.length) {
-    const scope = graphOfTemplate(tinted[0].id), inScope = tinted.filter(n => graphOfTemplate(n.id) === scope);
+    const scope = tintScope!, inScope = tinted.filter(n => graphOfTemplate(n.id) === scope);
+    const section = p === c.id ? c.label : `${c.label} (${p})`;
     d.controls.push({
-      id: `ctl-${p}-colour-shift`, scopeGraphId: scope.id, label: 'Colour shift', type: 'number', unit: 'none', value: 0, default: 0, min: -180, max: 180, step: 1,
-      section: p === c.id ? c.label : `${c.label} (${p})`, description: 'Turns all colours of this component around the colour wheel: 180 makes orange fire blue, 120 green, -60 pink. Brightness stays the same.', editPolicy: 'live',
-      bindings: inScope.map(n => ({ nodeId: nodeId(n.id), parameter: 'hueShift' })),
+      id: `ctl-${p}-colour-shift`, scopeGraphId: scope.id, label: 'Colour', type: 'number', unit: 'none', value: 0, default: 0, min: -180, max: 180, step: 1,
+      section, description: 'Changes the colour of the whole component and keeps its light-to-dark look (a flame keeps its bright core): pick a colour, or turn the wheel in degrees (180 makes orange fire blue).', editPolicy: 'live',
+      bindings: inScope.map(n => ({ nodeId: nodeId(n.id), parameter: 'hueShift' })), swatch: colours.swatch,
     });
+    for (const part of colours.parts) {
+      const value = { srgb: part.swatch, alpha: 1 };
+      d.controls.push({
+        id: `ctl-${p}-colour-${part.key}`, scopeGraphId: scope.id, label: `${part.label} colour`, type: 'color', unit: 'none', value, default: structuredClone(value),
+        section, description: `Colour of just the ${part.label.toLowerCase()}: its most colourful tone becomes the picked colour and the rest follows (hue, richness and brightness). Applied before the whole-component Colour.`, editPolicy: 'live',
+        bindings: part.nodes.map(id => ({ nodeId: nodeId(id), parameter: 'recolorTo' })),
+      });
+    }
   }
   // Knobs become document controls bound to the component's (prefixed) nodes; type/unit/bounds come from
   // the first binding's parameter spec, bounds widened so every scaled binding stays inside its own range.

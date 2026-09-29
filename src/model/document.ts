@@ -684,7 +684,8 @@ function checkGroupStructure(ctx: Ctx) {
 // ---------- controls ----------
 
 function checkControl(ctx: Ctx, p: string, c: unknown, targets: Map<string, string>) {
-  if (!shape(ctx, p, c, ['id', 'scopeGraphId', 'label', 'type', 'unit', 'value', 'default', 'section', 'description', 'editPolicy', 'bindings'], ['min', 'max', 'step', 'choices'], 'control')) return;
+  if (!shape(ctx, p, c, ['id', 'scopeGraphId', 'label', 'type', 'unit', 'value', 'default', 'section', 'description', 'editPolicy', 'bindings'], ['min', 'max', 'step', 'choices', 'swatch'], 'control')) return;
+  if (c.swatch !== undefined && (typeof c.swatch !== 'string' || !/^#[0-9A-Fa-f]{6}$/.test(c.swatch))) err(ctx, 'INVALID_VALUE', `${p}.swatch`, 'Control swatch must be a #RRGGBB colour.');
   objectId(ctx, `${p}.id`, c.id);
   let scope: string | undefined;
   if (idField(ctx, `${p}.scopeGraphId`, c.scopeGraphId)) {

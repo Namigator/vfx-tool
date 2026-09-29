@@ -2,6 +2,7 @@
 // pure modules the editor uses — registry, document validation, particle/path/audio compilers and the
 // particle runtime — so there is no MCP-only behaviour. Documents live in memory and are mirrored to
 // work/mcp/<id>.json after every successful change, which the editor opens via ?workspace=v2&doc=...
+import { hueShiftToward } from '../src/graph/recolor.ts';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -248,12 +249,18 @@ ${formatMigrationReport(report)}`);
     return ok(list.map(e => `${e.nodeId}.${e.port}  (${e.label})`).join('\n') || 'No event outputs in this graph.');
   });
   tool('vfx_list_controls', 'Published knobs (document controls) with value, bounds and what they drive.', { docId: z.string() }, ({ docId }) =>
-    ok(getDoc(docId).controls.map(c => `${c.id} [${c.section}] ${c.label} = ${JSON.stringify(c.value)} (${c.min ?? '-'}..${c.max ?? '-'} ${c.unit}) -> ${c.bindings.map(b => `${b.nodeId}.${b.parameter}${b.scale ? ' x' + b.scale : ''}`).join(', ')}`).join('\n') || 'No controls.'));
-  tool('vfx_set_control', 'Set a published knob by id or label (document validation enforces its bounds). Colour knobs take {srgb:"#RRGGBB",alpha}; vector knobs take [x,y,z].', { docId: z.string(), control: z.string(), value: z.union([z.number(), z.boolean(), z.string(), z.array(z.number()), z.object({ srgb: z.string(), alpha: z.number() })]) }, a =>
+    ok(getDoc(docId).controls.map(c => `${c.id} [${c.section}] ${c.label} = ${JSON.stringify(c.value)}${c.swatch ? ` (colour picker, original ${c.swatch})` : ''} (${c.min ?? '-'}..${c.max ?? '-'} ${c.unit}) -> ${c.bindings.map(b => `${b.nodeId}.${b.parameter}${b.scale ? ' x' + b.scale : ''}`).join(', ')}`).join('\n') || 'No controls.'));
+  tool('vfx_set_control', 'Set a published knob by id or label (document validation enforces its bounds). Colour knobs take {srgb:"#RRGGBB",alpha}; the whole-component Colour knob takes degrees or a "#RRGGBB" colour (turned toward that hue); vector knobs take [x,y,z].', { docId: z.string(), control: z.string(), value: z.union([z.number(), z.boolean(), z.string(), z.array(z.number()), z.object({ srgb: z.string(), alpha: z.number() })]) }, a =>
     mutate(a.docId, d => {
       const c = d.controls.find(x => x.id === a.control) ?? d.controls.filter(x => x.label === a.control).at(-1);
       if (!c) throw new Error(`No control "${a.control}". Use vfx_list_controls.`);
       const before = structuredClone(d);
+      // A Colour knob (swatch) also takes a picked colour, like the editor's picker: the wheel turn toward its hue.
+      const picked = typeof a.value === 'string' ? a.value : typeof a.value === 'object' && !Array.isArray(a.value) ? a.value.srgb : undefined;
+      if (c.swatch && picked !== undefined) {
+        if (!/^#[0-9A-Fa-f]{6}$/.test(picked)) throw new Error(`"${c.label}" takes degrees or a #RRGGBB colour.`);
+        a.value = hueShiftToward({ srgb: c.swatch, alpha: 1 }, { srgb: picked.toUpperCase(), alpha: 1 });
+      }
       c.value = a.value as never;
       // Like the editor: a knob that pushes the effect's end past its duration lengthens it (never shortens).
       const grow = grownDuration(before, d);

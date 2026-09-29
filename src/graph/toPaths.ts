@@ -24,6 +24,7 @@
 // - Validation does not depend on effectTick: geometry is always evaluated; a layer outside its window
 //   (or at/after the document end) is inactive and carries no paths.
 import { prepareDocument, sameInputText } from './prepare.ts';
+import { gradeOf, type ColorGrade } from './recolor.ts';
 import { BUILTIN_SPRITES } from '../assets/builtinSprites.generated.ts';
 import type { SpriteSheet } from '../assets/spriteLibrary.ts';
 import type { ColorValue, CurveValue, Diagnostic, ErrorCode, ParameterValue, Quaternion, Transform, ValidationResult, Vec3 } from '../model/types.ts';
@@ -118,6 +119,8 @@ export type PathPreviewLayer = {
   liquid: number;
   /** Material Colour shift in degrees (0 = unchanged). */
   hueShift: number;
+  /** Material per-part colour grade (recolorFrom → recolorTo); absent = off. */
+  grade?: ColorGrade;
   /** Material depth test off: drawn over solid objects. Absent = on. */
   depthTest?: false;
 };
@@ -632,6 +635,7 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
         alphaCutoff: num(mat, 'alphaCutoff'),
         liquid: num(mat, 'liquid'),
         hueShift: num(mat, 'hueShift'),
+        ...((): { grade?: ColorGrade } => { const g = gradeOf(param(mat, 'recolorFrom') as ColorValue, param(mat, 'recolorTo') as ColorValue); return g ? { grade: g } : {}; })(),
         ...(param(mat, 'depthTest') === false ? { depthTest: false as const } : {}),
         ...(sprite ? { sprite } : {}),
         ...((): Pick<PathPreviewLayer, 'uvAnim'> => {

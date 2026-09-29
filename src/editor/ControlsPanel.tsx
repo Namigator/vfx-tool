@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ReactElement } from 'react';
 import type { EffectDocumentV2, PublicControl } from '../model/types.ts';
 import type { Patch as HistoryPatch } from './history.ts';
 import type { FollowerTravel } from '../graph/toParticles.ts';
+import { hueRotate, hueShiftToward } from '../graph/recolor.ts';
 
 const UNIT_LABEL: Record<string, string> = { meter: 'm', second: 's', tick: 'ticks', radian: 'rad', metersPerSecond: 'm/s', metersPerSecondSquared: 'm/s²', hertz: 'Hz', perSecond: '/s', linearGain: '×', normalized: '', none: '' };
 
@@ -83,6 +84,25 @@ function ValueRow({ c, index, onEdit }: { c: PublicControl; index: number; onEdi
   );
 }
 
+/** A Colour knob (number bound to hueShift with a swatch): a picker showing the shifted swatch; picking sets the
+ *  wheel turn that brings the swatch's hue to the picked one. The degrees field stays for exact values. */
+function HueRow({ c, index, onEdit }: { c: PublicControl; index: number; onEdit: Props['onEdit'] }) {
+  const value = typeof c.value === 'number' ? c.value : 0;
+  const swatch = { srgb: c.swatch!, alpha: 1 };
+  const set = (v: number) => { if (v !== value) onEdit(`Set ${c.label} = ${v}`, [{ op: 'set', path: ['controls', index, 'value'], value: v }]); };
+  const shown = hueRotate(swatch, value).srgb.toLowerCase();
+  return (
+    <div className="cp-row cp-row-hue" title={c.description}>
+      <label className="cp-label" htmlFor={`cp-${c.id}`}>{c.label}</label>
+      <ColorInput key={shown} id={`cp-${c.id}`} value={shown} onCommit={srgb => set(hueShiftToward(swatch, { srgb, alpha: 1 }))} />
+      <input className="cp-num" type="number" min={-180} max={180} step={1} defaultValue={value} key={value} aria-label={`${c.label} degrees`}
+        onBlur={e => { const n = Math.round(Number(e.currentTarget.value)); if (Number.isFinite(n)) set(Math.max(-180, Math.min(180, n))); }}
+        onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }} />
+      <span className="cp-unit">°{value !== 0 ? <button type="button" className="cp-reset" onClick={() => set(0)} title="Back to the original colours">reset</button> : null}</span>
+    </div>
+  );
+}
+
 const isNumber = (c: PublicControl) => c.type === 'number' || c.type === 'integer';
 
 /** 10 "resolved duration shown": each projectile's distance, travel ticks and actual speed. */
@@ -111,13 +131,15 @@ export function ControlsPanel({ document: doc, onEdit, followers = [] }: Props) 
       {sections.map(s => (
         <fieldset key={s} className="cp-section">
           <legend>{s}</legend>
-          {all.filter(([c]) => c.section === s).map(([c, i]) => isNumber(c)
+          {all.filter(([c]) => c.section === s).map(([c, i]) => c.swatch && isNumber(c)
+            ? <HueRow key={c.id} c={c} index={i} onEdit={onEdit} />
+            : isNumber(c)
             ? <ControlRow key={c.id} c={c} index={i} onEdit={onEdit} durationTicks={doc.durationTicks} />
             : <ValueRow key={`${c.id}-${JSON.stringify(c.value)}`} c={c} index={i} onEdit={onEdit} />)}
         </fieldset>
       ))}
       <TravelReadout doc={doc} followers={followers} />
-      <style>{`.cp-root{display:flex;flex-direction:column;gap:10px}.cp-section{border:1px solid #2a3140;border-radius:6px;padding:6px 8px 8px;margin:0}.cp-section legend{font-size:13px;font-weight:600;padding:0 4px}.cp-row{display:grid;grid-template-columns:minmax(90px,1fr) 2fr 72px auto;gap:6px;align-items:center;font-size:13px;margin-top:4px}.cp-num{width:72px}.cp-row-value{grid-template-columns:minmax(90px,1fr) 3fr}.cp-vec{display:flex;gap:4px}.cp-travel{font-size:12px;opacity:.85;margin-top:4px}.cp-unit{font-size:11px;opacity:.7}`}</style>
+      <style>{`.cp-root{display:flex;flex-direction:column;gap:10px}.cp-section{border:1px solid #2a3140;border-radius:6px;padding:6px 8px 8px;margin:0}.cp-section legend{font-size:13px;font-weight:600;padding:0 4px}.cp-row{display:grid;grid-template-columns:minmax(90px,1fr) 2fr 72px auto;gap:6px;align-items:center;font-size:13px;margin-top:4px}.cp-num{width:72px}.cp-row-value{grid-template-columns:minmax(90px,1fr) 3fr}.cp-vec{display:flex;gap:4px}.cp-travel{font-size:12px;opacity:.85;margin-top:4px}.cp-unit{font-size:11px;opacity:.7}.cp-row-hue{grid-template-columns:minmax(90px,1fr) 2fr 72px auto}.cp-reset{margin-left:4px;font-size:11px}`}</style>
     </div>
   );
 }

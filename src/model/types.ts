@@ -127,6 +127,8 @@ export type PublicControl = {
   section: string; description: string; editPolicy: EditPolicy;
   /** Ordered. */
   bindings: ControlBinding[];
+  /** Number knobs bound to hueShift: the unshifted representative colour (#RRGGBB); the editor shows a colour picker. */
+  swatch?: string;
 };
 
 /** Position vec3, rotation quaternion xyzw, positive uniform scale. */

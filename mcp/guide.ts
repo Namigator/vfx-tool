@@ -63,7 +63,8 @@ export const GUIDE: Record<string, string> = {
 
   materials: `MATERIALS AND TEMPLATES
 - Material.template sets fixed rules on the same fields: SpriteUnlit (soft disc), SpriteTextured (library or imported sprite), RibbonUnlit (plain strips), MeshLit (meshes lit whatever the renderer says), SurfaceTranslucent (normal blend, liquid ribbons, some reflection, optional refraction on meshes), DarkVolumeSprite (normal-blend textured smoke, emission forced to 0 so glow never lifts it).
-- hueShift (-180..180 degrees) rotates every colour the material draws; each component also gets an automatic "Colour shift" knob.
+- hueShift (-180..180 degrees) rotates every colour the material draws; each component gets an automatic "Colour" knob (degrees, or pass a "#RRGGBB" to vfx_set_control) that keeps the light-to-dark look.
+- recolorFrom/recolorTo (Material, PointLight) recolour one part fully (hue, saturation, brightness): recolorFrom is the part's representative colour, recolorTo what it becomes. Components publish one "<Part> colour" knob per part (Flame, Embers, Smoke & dust, Flash & rings, Light...).
 - Flipbooks: BillboardRenderer flipbookMode overLife/fps/first; flipbookLoop false holds the last frame in fps mode; flipbookCrossfade blends into the next cell (smoother slow flipbooks).
 - Dissolve (billboards): dissolve amount, dissolveStart, dissolveEdge + dissolveEdgeColor for a burning rim. noiseAsset (an imported texture with role noise) replaces the included dissolve pattern.
 - Lit meshes: reflection, surfaceDetail + detailScale, colorVariation, rim; normalAsset (an imported texture with role normal) adds real relief; refraction bends what is behind (preview enhancement).

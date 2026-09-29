@@ -211,21 +211,60 @@ test('a slower fireball (Travel ticks 120) keeps flying to the target, impacts o
   assert.equal(grownDuration(before, structuredClone(before)), undefined);
 });
 
-test('Colour shift: every component gets one knob that rotates all its material and light colours', async () => {
+test('Colour: every component gets one knob that rotates all its material and light colours, shown as a picker of its swatch', async () => {
   const { hueRotate } = await import('../src/graph/toParticles.ts');
   assert.deepEqual(hueRotate({ srgb: '#FF8000', alpha: 1 }, 0), { srgb: '#FF8000', alpha: 1 });
   const blue = hueRotate({ srgb: '#FF8000', alpha: 0.5 }, 180);
   assert.ok(parseInt(blue.srgb.slice(5, 7), 16) > parseInt(blue.srgb.slice(1, 3), 16) && blue.alpha === 0.5, `orange turned bluish: ${blue.srgb}`);
   for (const c of COMPONENT_TEMPLATES) {
     const { doc } = insertComponent(createBlankDocument(), c.id);
-    const k = doc.controls.find(x => x.label === 'Colour shift');
-    assert.ok(k && k.bindings.length > 0 && k.bindings.every(b => b.parameter === 'hueShift'), c.id);
+    const k = doc.controls.find(x => x.label === 'Colour');
+    assert.ok(k && k.bindings.length > 0 && k.bindings.every(b => b.parameter === 'hueShift') && /^#[0-9A-F]{6}$/.test(k.swatch ?? ''), c.id);
   }
   const { doc } = insertComponent(createBlankDocument(), 'flamethrower');
-  doc.controls.find(x => x.label === 'Colour shift')!.value = 180;
+  doc.controls.find(x => x.label === 'Colour')!.value = 180;
   const plan = compiles(valid(doc));
   assert.ok(plan.layers.length > 0 && plan.layers.every(l => l.hueShift === 180), 'every sprite layer carries the shift');
   assert.ok(plan.lights.length > 0 && plan.lights.every(l => l.color.srgb !== '#FFFFFF'));
+});
+
+test('Colour pickers: a picked colour sets the wheel turn toward its hue; part pickers recolour only their part', async () => {
+  const { gradeOf, applyGrade, hueRotate, hueShiftToward, rgbToHsv } = await import('../src/graph/recolor.ts');
+  const hue = (hex: string) => rgbToHsv([1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255))[0];
+  const dist = (a: number, b: number) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
+  const orange = { srgb: '#FF8A30', alpha: 1 };
+  for (const pick of ['#2060FF', '#20FF40', '#FF20C0']) {
+    const d = hueShiftToward(orange, { srgb: pick, alpha: 1 });
+    assert.ok(dist(hue(hueRotate(orange, d).srgb), hue(pick)) < 8, `${pick}: turned by ${d}`);
+  }
+  assert.equal(hueShiftToward(orange, { srgb: '#808080', alpha: 1 }), 0, 'a grey pick leaves the colour');
+  // Grade: the swatch lands exactly on the pick; other tones keep their relation; grey swatches take the picked hue.
+  const g = gradeOf(orange, { srgb: '#3060FF', alpha: 1 })!;
+  const out = applyGrade(orange, g).srgb;
+  assert.ok([1, 3, 5].every(i => Math.abs(parseInt(out.slice(i, i + 2), 16) - parseInt('#3060FF'.slice(i, i + 2), 16)) <= 2), out);
+  assert.equal(gradeOf(orange, orange), undefined);
+  assert.equal(gradeOf({ srgb: '#808080', alpha: 0 }, orange), undefined, 'alpha 0 = off');
+  const smoke = applyGrade({ srgb: '#6A6A6A', alpha: 1 }, gradeOf({ srgb: '#707070', alpha: 1 }, { srgb: '#30A040', alpha: 1 }));
+  assert.ok(dist(hue(smoke.srgb), hue('#30A040')) < 4, `grey smoke turned green: ${smoke.srgb}`);
+
+  const { doc } = insertComponent(createBlankDocument(), 'flamethrower', undefined, { group: true });
+  const labels = doc.controls.filter(c => c.type === 'color').map(c => c.label);
+  for (const want of ['Flame colour', 'Embers colour', 'Smoke & dust colour', 'Light colour']) assert.ok(labels.includes(want), `${want} in ${labels}`);
+  const base = compiles(valid(doc));
+  assert.ok(base.layers.every(l => !l.grade), 'unchanged pickers grade nothing');
+  const smokeKnob = doc.controls.find(c => c.label === 'Smoke & dust colour')!;
+  smokeKnob.value = { srgb: '#30A040', alpha: 1 };
+  const plan = compiles(valid(doc));
+  const smokeIds = new Set(smokeKnob.bindings.map(b => b.nodeId));
+  const graded = plan.layers.filter(l => l.grade);
+  assert.ok(graded.length > 0, 'the smoke layer carries a grade');
+  const child = doc.graphs.find(gr => gr.id === 'graph-flamethrower')!;
+  const matOf = (rendererId: string) => child.edges.find(e => e.target.nodeId === rendererId && e.target.port === 'material')?.source.nodeId;
+  assert.ok(graded.every(l => smokeIds.has(matOf(l.nodeId)!)), 'only smoke layers are graded');
+  // Light colour recolours the lights at compile time.
+  doc.controls.find(c => c.label === 'Light colour')!.value = { srgb: '#40A0FF', alpha: 1 };
+  const lit = compiles(valid(doc));
+  assert.ok(lit.lights.every(l => dist(hue(l.color.srgb), hue('#40A0FF')) < 6), lit.lights.map(l => l.color.srgb).join());
 });
 
 test('PublicParameter inside a component reads the Group instance value (a parent knob bound to the group wins over the stored knob)', () => {

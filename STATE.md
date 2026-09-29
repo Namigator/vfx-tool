@@ -29,6 +29,13 @@
   Use it instead of the in-app pane for timing: the pane is hidden/throttled (rAF ~1 Hz).
   f75cbad: parent-event run reused across the 600-tick duration check and the preview -> flamethrower edit median
   227 -> 209 ms (p max 393), all-49 median 107 ms. Next perf targets: flamethrower (209), lightning (~175 ms).
+- Colour pickers (user 2026-09-29 "why not a colour picker?" -> "lets do both"): the whole-component Colour knob
+  (hueShift) shows as a picker of its swatch (src/graph/recolor.ts hueShiftToward); plus one full-colour picker per part
+  (Flame/Embers/Smoke & dust/Flash & rings/Light..., components.ts colourParts) via Material/PointLight
+  recolorFrom->recolorTo HSV grade (shader vfxGrade; CPU for meshes/lights). MCP vfx_set_control takes "#RRGGBB" for
+  Colour. [SAW] flamethrower orange->blue whole; blue flame + green smoke + blue light with orange embers; editor panel.
+  Only NEW inserts get the pickers; effects saved before keep the old slider. shot url can return a blank frame
+  (virtual-time flake) - retake before debugging.
 - Post-release (user order): performance pass → timeline strip with component bars, then keyframed knobs →
   engine export → in-editor AI box that runs its own render→look→adjust loop → full AI guide → sound.
 

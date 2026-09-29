@@ -24,6 +24,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 // both layer kinds comes from layerRenderOrder(renderOrderOffset, visualOrder).
 import type { Diagnostic, ValidationResult, Vec3 } from '../model/types.ts';
 import type { MeshLayer, ParticlePreviewLayer, ParticlePreviewPlan, ParticleTrailLayer, PointLightLayer } from '../graph/toParticles.ts';
+import type { ColorGrade } from '../graph/recolor.ts';
 import { createBuiltinMesh, type BuiltinMesh } from './builtinMeshes.ts';
 import { valueNoise4 } from '../runtime/noise.ts';
 import { spriteCellBlend } from '../assets/spriteLibrary.ts';
@@ -242,6 +243,23 @@ void main() {
 const FRAGMENT = /* glsl */ `
 uniform float uHue;
 uniform float uDim;
+uniform vec4 uGrade;
+uniform float uGradeMode;
+// Per-part colour (recolor.ts applyGrade): HSV grade in sRGB. Mode 0 off, 1 relative hue, 2 absolute hue.
+vec3 vfxGrade(vec3 lin) {
+  if (uGradeMode < 0.5) return lin;
+  vec3 c = pow(max(lin, vec3(0.0)), vec3(1.0 / 2.2));
+  vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+  vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+  vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+  float d = q.x - min(q.w, q.y), e = 1.0e-10;
+  vec3 h = vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+  h.x = uGradeMode > 1.5 ? uGrade.x : fract(h.x + uGrade.x + 1.0);
+  h.y = clamp(h.y * uGrade.y + uGrade.z, 0.0, 1.0);
+  h.z *= uGrade.w;
+  vec3 rgb = h.z * mix(vec3(1.0), clamp(abs(fract(h.xxx + vec3(1.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0) - 1.0, 0.0, 1.0), h.y);
+  return pow(rgb, vec3(2.2));
+}
 // Colour shift: CSS hue-rotate matrix (same as hueRotate in toParticles), luminance-preserving.
 vec3 vfxHue(vec3 c, float r) {
   if (r == 0.0) return c;
@@ -319,7 +337,7 @@ void main() {
   else if (a <= 0.0) discard;
   // 09 sprite rim: radial (a camera-facing quad has no useful fresnel normal).
   vec3 rimRgb = uRim.x > 0.0 ? uRimColor * uRim.x * pow(clamp(length(vUv - 0.5) * 2.0, 0.0, 1.0), uRim.y) : vec3(0.0);
-  gl_FragColor = vec4(vfxHue(t.rgb * uColor * vLifeColor * (1.0 + uEmission) + edgeRgb + rimRgb, uHue), a * uDim);
+  gl_FragColor = vec4(vfxHue(vfxGrade(t.rgb * uColor * vLifeColor * (1.0 + uEmission) + edgeRgb + rimRgb), uHue), a * uDim);
   #include <colorspace_fragment>
 }`;
 
@@ -340,6 +358,23 @@ void main() {
 const RIBBON_FRAGMENT = /* glsl */ `
 uniform float uHue;
 uniform float uDim;
+uniform vec4 uGrade;
+uniform float uGradeMode;
+// Per-part colour (recolor.ts applyGrade): HSV grade in sRGB. Mode 0 off, 1 relative hue, 2 absolute hue.
+vec3 vfxGrade(vec3 lin) {
+  if (uGradeMode < 0.5) return lin;
+  vec3 c = pow(max(lin, vec3(0.0)), vec3(1.0 / 2.2));
+  vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+  vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+  vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+  float d = q.x - min(q.w, q.y), e = 1.0e-10;
+  vec3 h = vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+  h.x = uGradeMode > 1.5 ? uGrade.x : fract(h.x + uGrade.x + 1.0);
+  h.y = clamp(h.y * uGrade.y + uGrade.z, 0.0, 1.0);
+  h.z *= uGrade.w;
+  vec3 rgb = h.z * mix(vec3(1.0), clamp(abs(fract(h.xxx + vec3(1.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0) - 1.0, 0.0, 1.0), h.y);
+  return pow(rgb, vec3(2.2));
+}
 // Colour shift: CSS hue-rotate matrix (same as hueRotate in toParticles), luminance-preserving.
 vec3 vfxHue(vec3 c, float r) {
   if (r == 0.0) return c;
@@ -420,7 +455,7 @@ void main() {
   }
   if (uCutout > 0.5) { if (a < uCutoff) discard; a = 1.0; }
   else if (a <= 0.0) discard;
-  gl_FragColor = vec4(vfxHue(rgb * (1.0 + uEmission), uHue), a * uDim);
+  gl_FragColor = vec4(vfxHue(vfxGrade(rgb * (1.0 + uEmission)), uHue), a * uDim);
   #include <colorspace_fragment>
 }`;
 
@@ -434,8 +469,9 @@ export type PathCompile = (tick: number) => ValidationResult<PathPreviewPlan>;
 /** Blend/colour/opacity/emission uniforms and state shared by point and ribbon materials. */
 function materialFor(
   vertexShader: string, fragmentShader: string,
-  m: { color: { srgb: string; alpha: number }; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout'; alphaCutoff: number; hueShift?: number; depthTest?: false },
+  m: { color: { srgb: string; alpha: number }; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout'; alphaCutoff: number; hueShift?: number; grade?: ColorGrade; depthTest?: false },
 ): THREE.ShaderMaterial {
+  const g = m.grade;
   const cutout = m.blend === 'cutout';
   return new THREE.ShaderMaterial({
     vertexShader,
@@ -447,6 +483,8 @@ function materialFor(
       uCutoff: { value: m.alphaCutoff },
       uCutout: { value: cutout ? 1 : 0 },
       uHue: { value: ((m.hueShift ?? 0) * Math.PI) / 180 },
+      uGrade: { value: new THREE.Vector4(g ? (((g.hue / 360) % 1) + 1) % 1 : 0, g?.sGain ?? 1, g?.sAdd ?? 0, g?.vGain ?? 1) },
+      uGradeMode: { value: g ? (g.setHue ? 2 : 1) : 0 },
       uDim: { value: 1 },
     },
     transparent: !cutout,
@@ -458,7 +496,7 @@ function materialFor(
 
 /** Layer set identity: meshes are rebuilt only when these change between ticks. */
 function ribbonKey(layers: readonly PathPreviewLayer[]): string {
-  return JSON.stringify(layers.map(l => [l.nodeId, l.color, l.opacity, l.emission, l.blend, l.alphaCutoff, l.liquid, l.hueShift, l.renderOrderOffset, l.visualOrder]));
+  return JSON.stringify(layers.map(l => [l.nodeId, l.color, l.opacity, l.emission, l.blend, l.alphaCutoff, l.liquid, l.hueShift, l.grade, l.renderOrderOffset, l.visualOrder]));
 }
 
 export class PreviewViewport {
