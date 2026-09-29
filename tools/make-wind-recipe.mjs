@@ -38,11 +38,11 @@ for (const [file, V] of Object.entries(VARIANTS)) {
     const phase = +(((i / V.ribbons) * Math.PI * 2 + i * 0.37) % (Math.PI * 2)).toFixed(3), r = +(V.radius * (0.8 + 0.1 * (i % 3))).toFixed(3), w = +(0.035 + 0.015 * (i % 4)).toFixed(3);
     add('HelixPath', `helix${i}`, { radius: r, turns: V.turns, phase, spin: V.spin * (i % 2 ? 1 : 0.8), taper: 'both', samples: 72 });
     wire('node-source.out', `helix${i}.start`); wire(end, `helix${i}.end`);
-    add('Material', `ribmat${i}`, { template: 'SpriteTextured', sprite: 'smoke-puff', variant: i % 16, blend: 'normal', tint: col(i % 2 ? '#8FBDB9' : '#76AAA6'), emission: 0.15,
+    add('Material', `ribmat${i}`, { template: 'SpriteTextured', sprite: 'smoke-puff', variant: i % 16, blend: 'normal', tint: col(i % 2 ? '#6FA9A4' : '#5A948F'), emission: 0.25,
       uvScroll: [-V.flow * (1 + 0.15 * i), 0], uvDistort: 0.06 });
     add('ScalarMath', `ribfade${i}`, { operation: 'multiply', b: +(0.85 - 0.08 * (i % 3)).toFixed(2), inputUnit: 'normalized', unit: 'normalized' });
     wire('envelope.value', `ribfade${i}.a`); wire(`ribfade${i}.value`, `ribmat${i}.opacity`);
-    add('RibbonRenderer', `ribbon${i}`, { width: w * 2.2, endFade: 0.3, uvMode: 'tile', uvTileLength: 1.4 });
+    add('RibbonRenderer', `ribbon${i}`, { width: w * 3, endFade: 0.3, uvMode: 'tile', uvTileLength: 1.4 });
     wire(`helix${i}.paths`, `ribbon${i}.paths`); wire(`ribmat${i}.material`, `ribbon${i}.material`); wire('gust.window', `ribbon${i}.window`); out(`ribbon${i}`);
   }
 
@@ -61,7 +61,7 @@ for (const [file, V] of Object.entries(VARIANTS)) {
   add('InitialProperties', 'wispip', { sizeMin: 0.35, sizeMax: 0.6, randomFrameStart: true, rotationMin: 0, rotationMax: 6.283, angularVelocityMin: -1, angularVelocityMax: 1 });
   add('Vortex', 'swirl', { axis: [1, 0, 0], tangential: 2.5, inward: 0.2, falloff: 2, strength: 1 });
   add('Drag', 'wispdrag', { coefficient: 0.6 });
-  add('Material', 'wispmat', { template: 'SpriteTextured', sprite: 'smoke-puff', blend: 'normal', tint: col('#B0CFCC'), opacity: 0.12 });
+  add('Material', 'wispmat', { template: 'SpriteTextured', sprite: 'smoke-puff', blend: 'normal', tint: col('#9CC4C0'), opacity: 0.2 });
   add('BillboardRenderer', 'wispbb', { flipbookMode: 'overLife', sizeOverLife: lin([[0, 0.6], [1, 1.6]]), opacityOverLife: lin([[0, 0], [0.3, 1], [1, 0]]) });
   wire('node-source.out', 'wisps.anchor'); wire(end, 'wisps.aim'); wire('streakwin.window', 'wisps.window');
   wire('wisps.particles', 'wispip.particles'); wire('wispip.particles', 'swirl.particles'); wire('node-source.out', 'swirl.anchor'); wire('swirl.particles', 'wispdrag.particles');

@@ -352,6 +352,11 @@ void main() {
     float hi = streak * band + 0.15 * band;
     a *= mix(1.0, clamp(0.05 + 0.8 * rimL + 0.8 * hi, 0.0, 1.0), uLiquid);
     rgb = mix(rgb, vec3(1.0), clamp(0.55 * rimL + 0.9 * hi, 0.0, 1.0) * uLiquid);
+    // Refraction edge: a thin darker line just inside the silhouette so clear liquid still reads on light
+    // backgrounds (on a dark arena it is nearly invisible, the bright rim carries the shape there).
+    float edgeD = smoothstep(0.84, 0.95, s) * (1.0 - smoothstep(0.95, 1.0, s));
+    rgb = mix(rgb, uColor * 0.32, edgeD * 0.85 * uLiquid);
+    a = max(a, uAlpha * vOpacity * edgeD * 0.6 * uLiquid);
   }
   if (uUseTex > 0.5) {
     if (vStrip.z < -0.001) discard; // Round-join fans would smear the texture into spikes.
@@ -819,6 +824,19 @@ export class PreviewViewport {
    * Explicit camera pose (matched framing for A/B comparisons, 17 Gate B): world position, look-at target and
    * optional vertical field of view in degrees. Stays until the next plan load resets the camera.
    */
+  /**
+   * Orbits the current (auto-framed) camera around its target: yaw degrees about +Y, then sets the elevation to
+   * `pitchDeg` above the horizon (keeps the distance). Evidence captures use it for fixed oblique angles that still
+   * fit each effect. Like a user orbit, it stops later auto-framing.
+   */
+  orbitCamera(yawDeg: number, pitchDeg: number, distanceScale = 1): void {
+    const t = this.#controls.target, p = this.#camera.position;
+    const dx = p.x - t.x, dy = p.y - t.y, dz = p.z - t.z, dist = Math.hypot(dx, dy, dz) * distanceScale;
+    const yaw = Math.atan2(dx, dz) + (yawDeg * Math.PI) / 180, pitch = (Math.max(-80, Math.min(80, pitchDeg)) * Math.PI) / 180;
+    const pos: [number, number, number] = [t.x + dist * Math.cos(pitch) * Math.sin(yaw), t.y + dist * Math.sin(pitch), t.z + dist * Math.cos(pitch) * Math.cos(yaw)];
+    this.setCameraPose(pos, [t.x, t.y, t.z]);
+  }
+
   setCameraPose(position: readonly [number, number, number], target: readonly [number, number, number], fovDeg?: number): void {
     this.#camera.position.set(position[0], position[1], position[2]);
     this.#controls.target.set(target[0], target[1], target[2]);

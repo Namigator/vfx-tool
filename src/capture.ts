@@ -56,6 +56,9 @@ async function main(): Promise<void> {
   const vec = (s: string | null) => { const v = (s ?? '').split(',').map(Number); return v.length === 3 && v.every(Number.isFinite) ? v as [number, number, number] : undefined; };
   const cam = vec(q.get('cam')), look = vec(q.get('look'));
   if (cam && look) vp.setCameraPose(cam, look, q.get('fov') ? Number(q.get('fov')) : undefined);
+  // Oblique evidence angles on top of the auto framing: orbit=yawDeg,pitchDeg[,distanceScale] (after the framing settles).
+  const orbit = (q.get('orbit') ?? '').split(',').map(Number);
+  if (!cam && orbit.length >= 2 && orbit.every(Number.isFinite)) { await new Promise(r => setTimeout(r, 150)); vp.orbitCamera(orbit[0], orbit[1], orbit[2] ?? 1); }
   // Benchmark mode (15/T37): ?bench=seconds[&profile=reference|balanced|economy] plays from the start and records
   // frame intervals; the result lands in window.__benchResult and the title.
   const bench = Number(q.get('bench'));

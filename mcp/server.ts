@@ -491,8 +491,8 @@ ${formatMigrationReport(report)}`);
     persist(getDoc(docId));
     return ok(`${editorUrl}?workspace=v2&doc=/work/mcp/${encodeURIComponent(docId)}.json`);
   });
-  type RenderArgs = { docId: string; ticks: number[]; width?: number; height?: number; glow?: boolean; background?: 'dark' | 'light'; solo?: string[]; camera?: { position: [number, number, number]; target: [number, number, number]; fov?: number } };
-  const renderFrames = ({ docId, ticks, width, height, glow, background, camera, solo }: RenderArgs): Result => {
+  type RenderArgs = { docId: string; ticks: number[]; width?: number; height?: number; glow?: boolean; background?: 'dark' | 'light'; solo?: string[]; orbit?: { yaw: number; pitch: number; distance?: number }; camera?: { position: [number, number, number]; target: [number, number, number]; fov?: number } };
+  const renderFrames = ({ docId, ticks, width, height, glow, background, camera, solo, orbit }: RenderArgs): Result => {
     const d = getDoc(docId); persist(d);
     const chrome = options.chromePath ?? CHROME_CANDIDATES.find(p => p && existsSync(p));
     if (!chrome) return bad('No Chrome/Edge found; set VFX_CHROME to its executable path.');
@@ -501,7 +501,7 @@ ${formatMigrationReport(report)}`);
     for (const tick of ticks) {
       const out = join(dir, `${docId}-t${tick}${background === 'light' ? '-light' : ''}.png`), profile = mkdtempSync(join(tmpdir(), 'vfx-chrome-'));
       rmSync(out, { force: true });
-      const url = new URL(`capture.html?doc=/work/mcp/${encodeURIComponent(docId)}.json&tick=${tick}&label=1${glow === false ? '&glow=0' : ''}${background === 'light' ? '&bg=light' : ''}${solo?.length ? `&solo=${solo.map(encodeURIComponent).join(',')}` : ''}${camera ? `&cam=${camera.position.join(',')}&look=${camera.target.join(',')}${camera.fov ? `&fov=${camera.fov}` : ''}` : ''}`, editorUrl).href;
+      const url = new URL(`capture.html?doc=/work/mcp/${encodeURIComponent(docId)}.json&tick=${tick}&label=1${glow === false ? '&glow=0' : ''}${background === 'light' ? '&bg=light' : ''}${solo?.length ? `&solo=${solo.map(encodeURIComponent).join(',')}` : ''}${orbit && !camera ? `&orbit=${orbit.yaw},${orbit.pitch},${orbit.distance ?? 1}` : ''}${camera ? `&cam=${camera.position.join(',')}&look=${camera.target.join(',')}${camera.fov ? `&fov=${camera.fov}` : ''}` : ''}`, editorUrl).href;
       spawnSync(chrome, ['--headless=new', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--hide-scrollbars', '--no-first-run', '--no-default-browser-check',
         `--user-data-dir=${profile}`, `--window-size=${width ?? 960},${height ?? 540}`, '--virtual-time-budget=6000', `--screenshot=${out}`, url], { timeout: 90_000, stdio: 'ignore' });
       rmSync(profile, { recursive: true, force: true });
@@ -517,6 +517,7 @@ ${formatMigrationReport(report)}`);
     docId: z.string(), ticks: z.array(z.number().int().min(0)).min(1).max(8), width: z.number().int().min(160).max(1920).optional(), height: z.number().int().min(120).max(1080).optional(), glow: z.boolean().optional(), background: z.enum(['dark', 'light']).optional(),
     camera: z.object({ position: z.tuple([z.number(), z.number(), z.number()]), target: z.tuple([z.number(), z.number(), z.number()]), fov: z.number().min(5).max(120).optional() }).optional(),
     solo: z.array(z.string()).optional().describe('Show only these nodes (renderers, lights or whole components/Group nodes), like the editor Outline Solo. The effect is unchanged.'),
+    orbit: z.object({ yaw: z.number(), pitch: z.number(), distance: z.number().min(0.2).max(5).optional() }).optional().describe('Keep the automatic framing but orbit it (yaw/pitch degrees, distance multiplier); ignored with camera.'),
   }, args => renderFrames(args));
 
   // WP-MCP2: one image over the whole timeline, and a side-by-side comparison of two captures.
@@ -525,12 +526,13 @@ ${formatMigrationReport(report)}`);
     glow: z.boolean().optional(), background: z.enum(['dark', 'light']).optional(), solo: z.array(z.string()).optional(),
     camera: z.object({ position: z.tuple([z.number(), z.number(), z.number()]), target: z.tuple([z.number(), z.number(), z.number()]), fov: z.number().min(5).max(120).optional() }).optional(),
     name: z.string().regex(/^[A-Za-z0-9_-]{1,40}$/).optional().describe('Saves to work/mcp/frames/<doc>-<name>.png instead of <doc>-sheet.png (keep several sheets of one effect).'),
-  }, async ({ docId, count, ticks, columns, glow, background, solo, camera, name }) => {
+    orbit: z.object({ yaw: z.number(), pitch: z.number(), distance: z.number().min(0.2).max(5).optional() }).optional().describe('Keep the automatic framing but orbit it: yaw degrees around the effect, pitch degrees above the horizon, distance multiplier.'),
+  }, async ({ docId, count, ticks, columns, glow, background, solo, camera, name, orbit }) => {
     const d = getDoc(docId), n = count ?? 8;
     const list = ticks ?? Array.from({ length: n }, (_, i) => Math.round((i / (n - 1)) * (d.durationTicks - 1)));
     const frames: Rgba[] = [];
     for (let i = 0; i < list.length; i += 8) {
-      const r = await renderFrames({ docId, ticks: list.slice(i, i + 8), width: 480, height: 270, ...(glow === false ? { glow } : {}), ...(background ? { background } : {}), ...(solo?.length ? { solo } : {}), ...(camera ? { camera } : {}) });
+      const r = await renderFrames({ docId, ticks: list.slice(i, i + 8), width: 480, height: 270, ...(glow === false ? { glow } : {}), ...(background ? { background } : {}), ...(solo?.length ? { solo } : {}), ...(camera ? { camera } : {}), ...(orbit ? { orbit } : {}) });
       if (r.isError) return r;
       for (const c of r.content) if (c.type === 'image') frames.push(decodePng(Buffer.from(c.data, 'base64')));
     }

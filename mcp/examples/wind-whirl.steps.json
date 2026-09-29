@@ -158,10 +158,10 @@
     "variant": 0,
     "blend": "normal",
     "tint": {
-     "srgb": "#76AAA6",
+     "srgb": "#5A948F",
      "alpha": 1
     },
-    "emission": 0.15,
+    "emission": 0.25,
     "uvScroll": [
      -1.6,
      0
@@ -207,7 +207,7 @@
    "type": "RibbonRenderer",
    "id": "ribbon0",
    "params": {
-    "width": 0.07700000000000001,
+    "width": 0.10500000000000001,
     "endFade": 0.3,
     "uvMode": "tile",
     "uvTileLength": 1.4
@@ -290,10 +290,10 @@
     "variant": 1,
     "blend": "normal",
     "tint": {
-     "srgb": "#8FBDB9",
+     "srgb": "#6FA9A4",
      "alpha": 1
     },
-    "emission": 0.15,
+    "emission": 0.25,
     "uvScroll": [
      -1.8399999999999999,
      0
@@ -339,7 +339,7 @@
    "type": "RibbonRenderer",
    "id": "ribbon1",
    "params": {
-    "width": 0.11000000000000001,
+    "width": 0.15000000000000002,
     "endFade": 0.3,
     "uvMode": "tile",
     "uvTileLength": 1.4
@@ -422,10 +422,10 @@
     "variant": 2,
     "blend": "normal",
     "tint": {
-     "srgb": "#76AAA6",
+     "srgb": "#5A948F",
      "alpha": 1
     },
-    "emission": 0.15,
+    "emission": 0.25,
     "uvScroll": [
      -2.08,
      0
@@ -471,7 +471,7 @@
    "type": "RibbonRenderer",
    "id": "ribbon2",
    "params": {
-    "width": 0.14300000000000002,
+    "width": 0.195,
     "endFade": 0.3,
     "uvMode": "tile",
     "uvTileLength": 1.4
@@ -554,10 +554,10 @@
     "variant": 3,
     "blend": "normal",
     "tint": {
-     "srgb": "#8FBDB9",
+     "srgb": "#6FA9A4",
      "alpha": 1
     },
-    "emission": 0.15,
+    "emission": 0.25,
     "uvScroll": [
      -2.32,
      0
@@ -603,7 +603,7 @@
    "type": "RibbonRenderer",
    "id": "ribbon3",
    "params": {
-    "width": 0.17600000000000002,
+    "width": 0.24,
     "endFade": 0.3,
     "uvMode": "tile",
     "uvTileLength": 1.4
@@ -686,10 +686,10 @@
     "variant": 4,
     "blend": "normal",
     "tint": {
-     "srgb": "#76AAA6",
+     "srgb": "#5A948F",
      "alpha": 1
     },
-    "emission": 0.15,
+    "emission": 0.25,
     "uvScroll": [
      -2.5600000000000005,
      0
@@ -735,7 +735,7 @@
    "type": "RibbonRenderer",
    "id": "ribbon4",
    "params": {
-    "width": 0.07700000000000001,
+    "width": 0.10500000000000001,
     "endFade": 0.3,
     "uvMode": "tile",
     "uvTileLength": 1.4
@@ -1037,10 +1037,10 @@
     "sprite": "smoke-puff",
     "blend": "normal",
     "tint": {
-     "srgb": "#B0CFCC",
+     "srgb": "#9CC4C0",
      "alpha": 1
     },
-    "opacity": 0.12
+    "opacity": 0.2
    }
   }
  ],

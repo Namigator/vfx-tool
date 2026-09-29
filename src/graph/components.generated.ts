@@ -28419,10 +28419,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "variant": 0,
      "blend": "normal",
      "tint": {
-      "srgb": "#76AAA6",
+      "srgb": "#5A948F",
       "alpha": 1
      },
-     "emission": 0.15,
+     "emission": 0.25,
      "uvScroll": [
       -2.5,
       0
@@ -28444,7 +28444,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "ribbon0",
     "type": "RibbonRenderer",
     "params": {
-     "width": 0.07700000000000001,
+     "width": 0.10500000000000001,
      "endFade": 0.3,
      "uvMode": "tile",
      "uvTileLength": 1.4
@@ -28471,10 +28471,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "variant": 1,
      "blend": "normal",
      "tint": {
-      "srgb": "#8FBDB9",
+      "srgb": "#6FA9A4",
       "alpha": 1
      },
-     "emission": 0.15,
+     "emission": 0.25,
      "uvScroll": [
       -2.875,
       0
@@ -28496,7 +28496,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "ribbon1",
     "type": "RibbonRenderer",
     "params": {
-     "width": 0.11000000000000001,
+     "width": 0.15000000000000002,
      "endFade": 0.3,
      "uvMode": "tile",
      "uvTileLength": 1.4
@@ -28523,10 +28523,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "variant": 2,
      "blend": "normal",
      "tint": {
-      "srgb": "#76AAA6",
+      "srgb": "#5A948F",
       "alpha": 1
      },
-     "emission": 0.15,
+     "emission": 0.25,
      "uvScroll": [
       -3.25,
       0
@@ -28548,7 +28548,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "ribbon2",
     "type": "RibbonRenderer",
     "params": {
-     "width": 0.14300000000000002,
+     "width": 0.195,
      "endFade": 0.3,
      "uvMode": "tile",
      "uvTileLength": 1.4
@@ -28575,10 +28575,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "variant": 3,
      "blend": "normal",
      "tint": {
-      "srgb": "#8FBDB9",
+      "srgb": "#6FA9A4",
       "alpha": 1
      },
-     "emission": 0.15,
+     "emission": 0.25,
      "uvScroll": [
       -3.625,
       0
@@ -28600,7 +28600,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "ribbon3",
     "type": "RibbonRenderer",
     "params": {
-     "width": 0.17600000000000002,
+     "width": 0.24,
      "endFade": 0.3,
      "uvMode": "tile",
      "uvTileLength": 1.4
@@ -28774,10 +28774,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sprite": "smoke-puff",
      "blend": "normal",
      "tint": {
-      "srgb": "#B0CFCC",
+      "srgb": "#9CC4C0",
       "alpha": 1
      },
-     "opacity": 0.12
+     "opacity": 0.2
     }
    },
    {
@@ -29194,10 +29194,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "variant": 0,
      "blend": "normal",
      "tint": {
-      "srgb": "#76AAA6",
+      "srgb": "#5A948F",
       "alpha": 1
      },
-     "emission": 0.15,
+     "emission": 0.25,
      "uvScroll": [
       -4,
       0
@@ -29219,7 +29219,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "ribbon0",
     "type": "RibbonRenderer",
     "params": {
-     "width": 0.07700000000000001,
+     "width": 0.10500000000000001,
      "endFade": 0.3,
      "uvMode": "tile",
      "uvTileLength": 1.4
@@ -29246,10 +29246,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "variant": 1,
      "blend": "normal",
      "tint": {
-      "srgb": "#8FBDB9",
+      "srgb": "#6FA9A4",
       "alpha": 1
      },
-     "emission": 0.15,
+     "emission": 0.25,
      "uvScroll": [
       -4.6,
       0
@@ -29271,7 +29271,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "ribbon1",
     "type": "RibbonRenderer",
     "params": {
-     "width": 0.11000000000000001,
+     "width": 0.15000000000000002,
      "endFade": 0.3,
      "uvMode": "tile",
      "uvTileLength": 1.4
@@ -29298,10 +29298,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "variant": 2,
      "blend": "normal",
      "tint": {
-      "srgb": "#76AAA6",
+      "srgb": "#5A948F",
       "alpha": 1
      },
-     "emission": 0.15,
+     "emission": 0.25,
      "uvScroll": [
       -5.2,
       0
@@ -29323,7 +29323,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "ribbon2",
     "type": "RibbonRenderer",
     "params": {
-     "width": 0.14300000000000002,
+     "width": 0.195,
      "endFade": 0.3,
      "uvMode": "tile",
      "uvTileLength": 1.4
@@ -29497,10 +29497,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sprite": "smoke-puff",
      "blend": "normal",
      "tint": {
-      "srgb": "#B0CFCC",
+      "srgb": "#9CC4C0",
       "alpha": 1
      },
-     "opacity": 0.12
+     "opacity": 0.2
     }
    },
    {
@@ -29888,10 +29888,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "variant": 0,
      "blend": "normal",
      "tint": {
-      "srgb": "#76AAA6",
+      "srgb": "#5A948F",
       "alpha": 1
      },
-     "emission": 0.15,
+     "emission": 0.25,
      "uvScroll": [
       -1.6,
       0
@@ -29913,7 +29913,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "ribbon0",
     "type": "RibbonRenderer",
     "params": {
-     "width": 0.07700000000000001,
+     "width": 0.10500000000000001,
      "endFade": 0.3,
      "uvMode": "tile",
      "uvTileLength": 1.4
@@ -29940,10 +29940,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "variant": 1,
      "blend": "normal",
      "tint": {
-      "srgb": "#8FBDB9",
+      "srgb": "#6FA9A4",
       "alpha": 1
      },
-     "emission": 0.15,
+     "emission": 0.25,
      "uvScroll": [
       -1.8399999999999999,
       0
@@ -29965,7 +29965,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "ribbon1",
     "type": "RibbonRenderer",
     "params": {
-     "width": 0.11000000000000001,
+     "width": 0.15000000000000002,
      "endFade": 0.3,
      "uvMode": "tile",
      "uvTileLength": 1.4
@@ -29992,10 +29992,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "variant": 2,
      "blend": "normal",
      "tint": {
-      "srgb": "#76AAA6",
+      "srgb": "#5A948F",
       "alpha": 1
      },
-     "emission": 0.15,
+     "emission": 0.25,
      "uvScroll": [
       -2.08,
       0
@@ -30017,7 +30017,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "ribbon2",
     "type": "RibbonRenderer",
     "params": {
-     "width": 0.14300000000000002,
+     "width": 0.195,
      "endFade": 0.3,
      "uvMode": "tile",
      "uvTileLength": 1.4
@@ -30044,10 +30044,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "variant": 3,
      "blend": "normal",
      "tint": {
-      "srgb": "#8FBDB9",
+      "srgb": "#6FA9A4",
       "alpha": 1
      },
-     "emission": 0.15,
+     "emission": 0.25,
      "uvScroll": [
       -2.32,
       0
@@ -30069,7 +30069,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "ribbon3",
     "type": "RibbonRenderer",
     "params": {
-     "width": 0.17600000000000002,
+     "width": 0.24,
      "endFade": 0.3,
      "uvMode": "tile",
      "uvTileLength": 1.4
@@ -30096,10 +30096,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "variant": 4,
      "blend": "normal",
      "tint": {
-      "srgb": "#76AAA6",
+      "srgb": "#5A948F",
       "alpha": 1
      },
-     "emission": 0.15,
+     "emission": 0.25,
      "uvScroll": [
       -2.5600000000000005,
       0
@@ -30121,7 +30121,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "ribbon4",
     "type": "RibbonRenderer",
     "params": {
-     "width": 0.07700000000000001,
+     "width": 0.10500000000000001,
      "endFade": 0.3,
      "uvMode": "tile",
      "uvTileLength": 1.4
@@ -30295,10 +30295,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sprite": "smoke-puff",
      "blend": "normal",
      "tint": {
-      "srgb": "#B0CFCC",
+      "srgb": "#9CC4C0",
       "alpha": 1
      },
-     "opacity": 0.12
+     "opacity": 0.2
     }
    },
    {
