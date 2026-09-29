@@ -20,6 +20,8 @@ export class TrailHistory {
 
   clear(): void { this.#entries.clear(); }
   get size(): number { return this.#entries.size; }
+  /** Stored trail samples (15 hard limit: 65536 across the effect). */
+  get sampleCount(): number { let n = 0; for (const e of this.#entries.values()) n += e.points.length; return n; }
 
   /** Records the particles alive at `tick` and drops samples older than the history window. */
   push(tick: number, particles: readonly ParticleState[]): void {

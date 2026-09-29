@@ -5,7 +5,7 @@ import { writeFileSync } from 'node:fs';
 // Variants (01 'Required variants') are the same graph with different values; nothing is cloned in code.
 const VARIANTS = {
   'lightning-strike': { doc: 'bolt', charge: 24, core: 1, branches: { count: 14, len: [0.4, 1.8], op: [0.2, 0.48], w: [0.2, 0.4] }, forks: 7, srcSparks: 45, hitSparks: 70, decay: 3, active: 39, halo: 2, ripple: 5.6 },
-  'lightning-thin-fork': { doc: 'thinfork', charge: 24, core: 0.5, branches: { count: 22, len: [0.3, 1.4], op: [0.12, 0.3], w: [0.1, 0.2] }, forks: 9, srcSparks: 25, hitSparks: 35, decay: 5, active: 26, halo: 1.4, ripple: 4 },
+  'lightning-thin-fork': { doc: 'thinfork', charge: 24, core: 0.5, branches: { count: 14, len: [0.3, 1.4], op: [0.12, 0.3], w: [0.1, 0.2] }, forks: 6, srcSparks: 25, hitSparks: 35, decay: 5, active: 26, halo: 1.4, ripple: 4 },
   'lightning-heavy-strike': { doc: 'heavy', charge: 33, core: 1.6, branches: { count: 8, len: [0.8, 2.4], op: [0.4, 0.7], w: [0.35, 0.6] }, forks: 5, srcSparks: 60, hitSparks: 100, decay: 2.5, active: 45, halo: 3, ripple: 7.5 },
 };
 for (const [file, V] of Object.entries(VARIANTS)) {

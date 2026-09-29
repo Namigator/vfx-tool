@@ -8634,7 +8634,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "branches",
     "type": "BranchPath",
     "params": {
-     "count": 22,
+     "count": 14,
      "attachmentMin": 0.12,
      "attachmentMax": 0.88,
      "lengthMin": 0.3,
@@ -8649,7 +8649,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "forks",
     "type": "BranchPath",
     "params": {
-     "count": 9,
+     "count": 6,
      "lengthMin": 0.3,
      "lengthMax": 1,
      "opacityMin": 0.15,
@@ -9885,7 +9885,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    {
     "id": "branches",
     "label": "Branches",
-    "value": 22,
+    "value": 14,
     "bindings": [
      {
       "node": "branches",

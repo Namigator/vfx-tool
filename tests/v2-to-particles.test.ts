@@ -711,3 +711,15 @@ test('05 OverLife: supplies over-life curves to renderers downstream unless the 
   const off = plan(withOL(d => { root(d).nodes.find(n => n.id === 'node-ol')!.enabled = false; }));
   assert.deepEqual(off.layers[0].opacityOverLife, base.layers[0].opacityOverLife, 'disabled OverLife bypasses');
 });
+
+test('15 hard limit: more than 4 point lights active at once is an error (never silently dropped)', () => {
+  const d = f01(g => {
+    const r = root(g);
+    r.nodes.push(node('node-lw', 'Schedule', { startTicks: 0, durationTicks: 60, mode: 'window' }));
+    for (let i = 0; i < 5; i++) {
+      r.nodes.push(node(`node-l${i}`, 'PointLight', {}));
+      r.edges.push(edge(`e-la${i}`, 'node-target', 'out', `node-l${i}`, 'anchor'), edge(`e-lw${i}`, 'node-lw', 'window', `node-l${i}`, 'window'), edge(`e-lv${i}`, `node-l${i}`, 'visual', 'node-output', 'visual', 10 + i));
+    }
+  });
+  assert.ok(errorsOf(compileParticlePreview(d)).some(e => e.code === 'BUDGET_EXCEEDED' && /5 point lights/.test(e.message)));
+});

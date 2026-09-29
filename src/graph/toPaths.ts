@@ -131,7 +131,7 @@ export type PathPreviewPlan = {
  * Work budget of one compile (plan15-style caps). Paths/points are counted over evaluated path node
  * outputs; points are also counted separately over the world-space copies emitted by active layers.
  */
-export const MAX_PREVIEW_PATHS = 4096;
+export const MAX_PREVIEW_PATHS = 256; // 15 hard limit: individual paths per tick (vertices per path are capped by MAX_PATH_SAMPLES = 128).
 export const MAX_PREVIEW_POINTS = 262144;
 
 const RIBBON_PORTS = ['paths', 'material', 'window'];

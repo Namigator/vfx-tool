@@ -20,7 +20,8 @@ const steps = [];
 for (const ids of Object.values(FAMILIES)) for (const id of ids) {
   // Automatic framing (fits every part of the effect), orbited to two oblique angles: front-right and back-left.
   const cams = { a: { yaw: 30, pitch: 28 }, b: { yaw: -150, pitch: 22 } };
-  steps.push(['vfx_open_document', { path: `work/mcp/rv-${id}.json` }]);
+  // Built fresh from the current component (like the editor's Add component), never from a stale saved copy.
+  steps.push(['vfx_new_document', { template: 'blank', id: `rv-${id}` }], ['vfx_add_component', { docId: `rv-${id}`, component: id, group: true }]);
   for (const [angle, orbit] of Object.entries(cams)) for (const background of ['dark', 'light']) {
     steps.push(['vfx_contact_sheet', { docId: `rv-${id}`, count: 6, columns: 6, orbit, background, name: `${angle}-${background}` }, true]);
   }

@@ -46,6 +46,8 @@ const DEFAULT_TARGET: Vec3 = [0, 0.5, 0];
 const DEFAULT_NEAR = 0.01, DEFAULT_FAR = 200;
 
 export const PREVIEW_POOL_SIZE = DEFAULT_MAX_LIVE_PARTICLES;
+/** 15 hard limits enforced while drawing. */
+export const MAX_MESH_INSTANCES = 512, MAX_MESH_TRIANGLES = 250_000, MAX_TRAIL_SAMPLES = 65_536;
 /** Largest wall-clock step fed to the clock per frame (tab switches must not jump the preview). */
 const MAX_FRAME_SECONDS = 0.25;
 
@@ -1135,6 +1137,9 @@ export class PreviewViewport {
   #feedTrails(systemId: string, sim: ParticleSimulation): void {
     let snap: ParticleState[] | undefined;
     for (const t of this.#trails) if (t.layer.systemId === systemId) t.history.push(sim.tick, snap ??= sim.snapshot().particles);
+    // 15 hard limit: trail samples across the effect; stop with an error instead of dropping history.
+    const samples = this.#trails.reduce((n, t) => n + t.history.sampleCount, 0);
+    if (samples > MAX_TRAIL_SAMPLES) this.#fail([{ code: 'BUDGET_EXCEEDED', severity: 'error', message: `Trails store ${samples} samples at tick ${sim.tick}; the limit is ${MAX_TRAIL_SAMPLES}. Shorten trail history, lower Max points or emit fewer particles.` }]);
   }
 
   /** Instanced mesh transforms: size × scale × size-over-life, tumble (random axis, spin) or velocity (+Y forward). */
@@ -1142,6 +1147,11 @@ export class PreviewViewport {
     const step = alpha * PARTICLE_DT, q = new THREE.Quaternion(), qYaw = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), mtx = new THREE.Matrix4(), axis = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), col = new THREE.Color();
     for (const m of this.#meshes) {
       const ps = this.#snapshots.get(m.layer.systemId) ?? [], n = Math.min(ps.length, PREVIEW_POOL_SIZE);
+      // 15 hard limits: 512 mesh instances and 250k visible triangles; an error, never a silent cap.
+      const tris = n * ((m.mesh.geometry.index ? m.mesh.geometry.index.count : m.mesh.geometry.getAttribute('position').count) / 3);
+      if (n > MAX_MESH_INSTANCES || tris > MAX_MESH_TRIANGLES) {
+        return this.#fail([{ code: 'BUDGET_EXCEEDED', severity: 'error', nodeId: m.layer.nodeId, message: `MeshRenderer "${m.layer.nodeId}" draws ${n} pieces (${Math.round(tris)} triangles); the limits are ${MAX_MESH_INSTANCES} pieces and ${MAX_MESH_TRIANGLES} triangles. Emit fewer or use a simpler mesh.` }]);
+      }
       for (let i = 0; i < n; i++) {
         const pt = ps[i], u = lifeFraction(pt.ageTicks, pt.lifetimeTicks, alpha), h = fnv1a32Utf8(pt.parentRandomKey);
         p.set(pt.position[0] + pt.velocity[0] * step, pt.position[1] + pt.velocity[1] * step, pt.position[2] + pt.velocity[2] * step);

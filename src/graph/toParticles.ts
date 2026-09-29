@@ -141,6 +141,7 @@ export type ParticlePreviewPlan = {
 
 export type FollowerTravel = { nodeId: string; startTick: number; travelTicks: number; lengthMeters: number; speedMode: boolean };
 
+export const MAX_ACTIVE_LIGHTS = 4;
 export const DEFAULT_PREVIEW_SIZE = { min: 0.08, max: 0.16 } as const;
 
 const EMITTER_PORTS = ['anchor', 'paths', 'trigger', 'window', 'aim'];
@@ -1027,6 +1028,12 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     } catch (e) {
       if (!(e instanceof Fail)) throw e;
     }
+  }
+
+  // 15 hard limit: at most 4 point lights active at the same tick (the busiest moment is always some light's start).
+  for (const l of lights) {
+    const atStart = lights.filter(o => o.startTick <= l.startTick && l.startTick < o.endTick).length;
+    if (atStart > MAX_ACTIVE_LIGHTS) { report('BUDGET_EXCEEDED', `${atStart} point lights are active at tick ${l.startTick}; the limit is ${MAX_ACTIVE_LIGHTS}. Shorten or merge light windows.`, l.nodeId); break; }
   }
 
   // ---------- presentation ----------
