@@ -11,7 +11,7 @@ import { applyGrade, hueRotate, type ColorGrade } from '../../graph/recolor.ts';
 import { trackValue, type LayerAnimation } from '../../graph/keyframes.ts';
 import {
   MAX_SEQUENCE_KEYS, STUDS_PER_METER,
-  type RbxBeamLayer, type RbxColorKey, type RbxEmitter, type RbxFlipbook, type RbxLight, type RbxNumberKey, type RbxReportItem, type RbxStepTrack, type RobloxEffect, type Vec3,
+  type RbxBeamLayer, type RbxColorKey, type RbxTrail, type RbxEmitter, type RbxFlipbook, type RbxLight, type RbxNumberKey, type RbxReportItem, type RbxStepTrack, type RobloxEffect, type Vec3,
 } from './types.ts';
 
 const S = STUDS_PER_METER;
@@ -347,7 +347,41 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
     else usedBy.set(layer.systemId, layer.nodeId);
     emitters.push(emitterFrom(layer, d, origin, plan.value.durationTicks, unique(layer.nodeId), report));
   }
-  for (const t of plan.value.trails) report.push({ level: 'dropped', item: t.nodeId, message: 'Per-particle trails are not exported yet (Roblox Trails need one attachment pair per particle).' });
+  // Trails: one particle riding a moving source → a native Roblox Trail; trails behind many particles → stretched
+  // velocity-aligned particles on that system's emitter (Roblox cannot trail every particle).
+  const trails: RbxTrail[] = [];
+  const emitterBySystem = new Map(plan.value.layers.map((l, i) => [l.systemId, emitters[i]] as const).filter(([, e]) => !!e));
+  for (const t of plan.value.trails) {
+    const d = systems.get(t.systemId);
+    if (!d) continue;
+    const births = d.bursts.reduce((n, b) => n + b.count, 0);
+    if (d.attachToSource && d.sourceTrack && !d.rate && births <= 2) {
+      const start = Math.min(...d.bursts.map(b => b.tick));
+      const rel = (p: readonly number[]): Vec3 => [r3((p[0] - origin[0]) * S), r3((p[1] - origin[1]) * S), r3((p[2] - origin[2]) * S)];
+      const path: [number, Vec3][] = [];
+      let prev = '';
+      d.sourceTrack.positions.forEach((p, i) => { const q = rel(p), k = q.join(); if (k !== prev) { path.push([d.sourceTrack!.startTick + i, q]); prev = k; } });
+      const c = hueRotate(applyGrade(t.color, t.grade), t.hueShift ?? 0), base = r3(1 - Math.min(1, t.opacity * t.color.alpha));
+      const fade = Math.min(0.95, Math.max(0.05, t.endFade));
+      trails.push({
+        name: unique(t.nodeId), position: path[0]?.[1] ?? rel(d.sourcePosition), path,
+        window: [start, Math.min(plan.value.durationTicks, start + d.lifetimeTicks.max)],
+        lifetime: r3(t.historyTicks / TICKS_PER_SECOND), width: r3(t.width * S), color: hex(c).map(r3) as [number, number, number],
+        transparency: [{ t: 0, v: base, e: 0 }, { t: r3(1 - fade), v: base, e: 0 }, { t: 1, v: 1, e: 0 }],
+        widthScale: [{ t: 0, v: 1, e: 0 }, { t: 1, v: 0.3, e: 0 }],
+        lightEmission: t.blend === 'additive' ? 1 : 0, brightness: r3(1 + t.emission),
+      });
+      continue;
+    }
+    const em = emitterBySystem.get(t.systemId);
+    if (em) {
+      const speed = (em.speed[0] + em.speed[1]) / 2, size = Math.max(0.01, em.size[0]?.v ?? 0.1);
+      const s = r3(Math.min(3, Math.max(0.5, Math.log2(1 + (speed * t.historyTicks) / TICKS_PER_SECOND / size))));
+      em.orientation = 'VelocityParallel';
+      em.squash = [{ t: 0, v: s, e: 0 }, { t: 1, v: s, e: 0 }];
+      report.push({ level: 'approximated', item: t.nodeId, message: 'Trails behind many particles become stretched, velocity-aligned particles (Roblox cannot trail every particle).' });
+    } else report.push({ level: 'dropped', item: t.nodeId, message: 'A trail on particles with no visible sprite cannot be exported.' });
+  }
   for (const m of plan.value.meshes) report.push({ level: 'dropped', item: m.nodeId, message: `Mesh particles (${m.meshAsset ? 'imported model' : m.mesh}) are not exported yet.` });
   if (plan.value.presentation.flashes.length) report.push({ level: 'dropped', item: 'presentation', message: 'Screen flashes are not exported (a client-side ScreenGui flash can be added later).' });
   if (plan.value.presentation.impulses.length) report.push({ level: 'dropped', item: 'presentation', message: 'Camera shake is not exported.' });
@@ -363,6 +397,7 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
     name: safeName(doc.name || 'Effect'), durationTicks: plan.value.durationTicks, studsPerMeter: r3(S), emitters, beams, lights,
     anchors: { source: rel(src), target: rel(tgt) },
     ...(flight ? { travel: { startTick: flight.startTick, travelTicks: flight.travelTicks } } : {}),
+    trails,
     textures, report,
   } };
 }

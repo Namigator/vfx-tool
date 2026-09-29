@@ -15,6 +15,7 @@ export function handBuiltEffect(): RobloxEffect {
     studsPerMeter: 3.571,
     anchors: { source: [0, 4, 0], target: [14, 4, 0] },
     travel: { startTick: 10, travelTicks: 30 },
+    trails: [{ name: 'streak', position: [0, 4, 0], path: [[10, [0, 4, 0]], [11, [1, 4, 0]], [12, [2, 4, 0]]], window: [10, 40], lifetime: 0.3, width: 1.2, color: [1, 0.5, 0.1], transparency: [{ t: 0, v: 0, e: 0 }, { t: 0.8, v: 0, e: 0 }, { t: 1, v: 1, e: 0 }], widthScale: [{ t: 0, v: 1, e: 0 }, { t: 1, v: 0.3, e: 0 }], lightEmission: 1, brightness: 2 }],
     emitters: [
       {
         name: 'flame', position: [0, 1, 0], direction: [0, 1, 0], partSize: [2, 0.5, 2],

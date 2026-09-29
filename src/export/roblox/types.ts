@@ -122,6 +122,29 @@ export type RbxLight = {
   path?: [tick: number, position: Vec3][];
 };
 
+/**
+ * A glowing streak behind one particle that rides a moving source (fireball streak, energy trail): a native Roblox
+ * Trail between two attachments on a Part the player moves along `path`, enabled over `window`.
+ */
+export type RbxTrail = {
+  name: string;
+  /** Origin-relative studs at the start, and the moving position per tick (sparse, changed ticks only). */
+  position: Vec3;
+  path: [tick: number, position: Vec3][];
+  /** Enabled from window[0] until window[1] (ticks). */
+  window: [number, number];
+  /** Trail.Lifetime in seconds (how long a point stays). */
+  lifetime: number;
+  /** Width in studs (distance between the two attachments). */
+  width: number;
+  color: [number, number, number];
+  /** Over the trail: t=0 at the head (newest), t=1 at the tail. */
+  transparency: RbxNumberKey[];
+  widthScale: RbxNumberKey[];
+  lightEmission: number;
+  brightness: number;
+};
+
 export type RbxReportItem = { level: 'approximated' | 'dropped' | 'info'; item: string; message: string };
 
 export type RobloxEffect = {
@@ -132,6 +155,7 @@ export type RobloxEffect = {
   emitters: RbxEmitter[];
   beams: RbxBeamLayer[];
   lights: RbxLight[];
+  trails: RbxTrail[];
   /**
    * Retargeting (user 2026-09-30 "fix the targeting"): the authored Source and Target points (origin-relative studs).
    * The player maps the effect onto a runtime source → target: positions stretch along the Source→Target line and

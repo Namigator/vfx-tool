@@ -101,6 +101,20 @@ for _, d in ipairs(data.lights) do
 	if not light then fail("light missing: " .. d.name) else summary.lights += 1 end
 end
 
+-- trails: instance tree
+local tFolder = model:FindFirstChild("Trails")
+summary.trails = 0
+for _, d in ipairs(data.trails or {}) do
+	local part = tFolder and tFolder:FindFirstChild(d.name)
+	local tr = part and part:FindFirstChildOfClass("Trail")
+	if not tr then fail("trail missing: " .. d.name)
+	else
+		summary.trails += 1
+		if not (tr.Attachment0 and tr.Attachment1) then fail(d.name .. ": trail attachments") end
+	end
+end
+summary.trailEnabledSteps = 0
+
 -- play on a simulated 60 Hz clock
 local perEmitter = {}
 local maxRate, maxBright = {}, 0
@@ -127,6 +141,12 @@ while not player.isDone() and steps < maxSteps do
 		local l = part:FindFirstChildOfClass("PointLight")
 		if l then maxBright = math.max(maxBright, l.Brightness) end
 	end
+	if tFolder then
+		for _, part in ipairs(tFolder:GetChildren()) do
+			local tr = part:FindFirstChildOfClass("Trail")
+			if tr and tr.Enabled then summary.trailEnabledSteps += 1 break end
+		end
+	end
 	if rig and rig.Parent then
 		local enabled = 0
 		for _, c in ipairs(rig:GetChildren()) do
@@ -146,6 +166,7 @@ while not player.isDone() and steps < maxSteps do
 	end
 end
 summary.ticksPlayed = steps
+if #(data.trails or {}) > 0 and summary.trailEnabledSteps == 0 then fail("no trail was ever enabled") end
 if not player.isDone() then fail("player did not finish within " .. maxSteps .. " steps") end
 if rig and rig.Parent then fail("beam rig not cleaned up") end
 for _, part in ipairs(eFolder:GetChildren()) do
@@ -176,7 +197,7 @@ if data.anchors then
 		end
 		local stepN, nearHits, earliest = 0, 0, math.huge
 		local aim = Player.create(model, nil, {
-			source = src, target = tgt, speed = speed,
+			source = src, target = tgt, speed = speed, scale = 0.5,
 			onEmit = function(em)
 				local p = em.Parent.Position
 				if (p - tgt).Magnitude < 4 then nearHits += 1; earliest = math.min(earliest, stepN) end

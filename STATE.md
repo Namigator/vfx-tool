@@ -68,6 +68,12 @@
   ~1150 Beams; (4) flat ground rings become camera-facing; (5) ground collision dropped; (6) effect scale vs
   Roblox characters (a knob/preset for game scale); (7) vfx_new_document template vs component confusing;
   (8) long control ids. Fixed: asset-ids accepts rbxassetid:// form in the report; origin wording.
+- 2026-09-30 Roblox: aiming (6786bc1) - play(model, nil, {source, target, speed|travelTime, scale}); trails: single
+  particle on a moving source -> native Trail (fireball streak), many-particle trails -> stretched velocity particles;
+  scale option. [RAN] Studio: fireball aimed 90deg/2x/40 studs/s/scale .5 lands step 66 vs 65, trail on 41 ticks;
+  lightning bolt reaches 69-stud target. SpellForge branch vfx-studio-test 805f1c9: fire+lightning play from cast time
+  at predicted hit, projectile speed; 27/27 headless. Remaining SpellForge gaps: hit is predicted (moving mobs miss),
+  only waypoint/velocity trajectories, flat ground rings still camera-facing, ~1150 lightning beams.
 - TOOL BROKEN 2026-09-29: ~/.claude/tools/shot.ps1 url returns "chrome produced no file" even for docs that captured
   earlier (doctor clean, page reports READY via cdp-eval). Use the in-app browser pane or cdp-eval meanwhile.
 - USER REPORT 2026-09-29 (open): viewed from behind/in front of the fire (along the jet), the sprites move

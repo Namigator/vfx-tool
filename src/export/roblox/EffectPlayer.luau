@@ -11,6 +11,9 @@
 -- flight; without them the authored speed is kept, so a farther target takes proportionally longer. Everything after
 -- the arrival (impact, sparks, lights) shifts with it.
 --
+-- options.scale (default 1) resizes the effect for your game (particle sizes, speeds, spread, beam/trail widths,
+-- light range, offsets across the aim line); the Source->Target reach still follows source/target.
+--
 -- EffectPlayer.create(...) returns the same object plus update(dt) / isDone() so a host can drive time itself
 -- (used by tools/roblox-check.mjs); options.onEmit(emitter, count) is called for every :Emit.
 
@@ -85,6 +88,7 @@ export type Options = {
 	target: Vector3?,
 	speed: number?,
 	travelTime: number?,
+	scale: number?,
 }
 
 -- Right-handed frame (forward, up, side) around a direction; up follows +Y unless the direction is near vertical.
@@ -105,8 +109,9 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 
 	-- Space: authored origin-relative studs -> world. Default = the origin CFrame; with a target, the Source->Target
 	-- line is stretched onto the runtime source->target and the effect is rotated to face it.
+	local k = if opts.scale and opts.scale > 0 then opts.scale else 1
 	local toWorld: (Vector3) -> Vector3 = function(p)
-		return originCF * p
+		return originCF * (p * k)
 	end
 	local worldRot: CFrame = originCF.Rotation
 	local stretch = 1
@@ -125,7 +130,7 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 			stretch = runDir.Magnitude / D.Magnitude
 			toWorld = function(p)
 				local d = p - Sa
-				return s + v * (d:Dot(ua) * stretch) + upr * d:Dot(upa) + wr * d:Dot(wa)
+				return s + v * (d:Dot(ua) * stretch) + (upr * d:Dot(upa) + wr * d:Dot(wa)) * k
 			end
 			worldRot = CFrame.fromMatrix(Vector3.zero, v, upr, wr) * CFrame.fromMatrix(Vector3.zero, ua, upa, wa):Inverse()
 		end
@@ -183,10 +188,10 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 				em = em,
 				rot = rel - rel.Position,
 				home = Vector3.new(d.pos[1], d.pos[2], d.pos[3]),
-				baseSpeed = em.Speed,
+				baseSpeed = if k ~= 1 then NumberRange.new(em.Speed.Min * k, em.Speed.Max * k) else em.Speed,
 				baseLife = em.Lifetime,
-				baseSize = em.Size,
-				baseAccel = em.Acceleration,
+				baseSize = if k ~= 1 then scaleSequence(em.Size, k) else em.Size,
+				baseAccel = em.Acceleration * k,
 				baseDrag = em.Drag,
 				baseColor = em.Color,
 				baseTransparency = em.Transparency,
@@ -198,6 +203,9 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 				end
 			end
 			maxLifetime = math.max(maxLifetime, s.baseLife.Max * lifeScale)
+			if k ~= 1 then
+				part.Size = part.Size * k
+			end
 			table.insert(emitters, s)
 		end
 	end
@@ -250,6 +258,9 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 		local light = part and part:FindFirstChildOfClass("PointLight")
 		if part and light then
 			local rel = pivot:ToObjectSpace(part.CFrame)
+			if k ~= 1 then
+				light.Range = math.min(60, light.Range * k)
+			end
 			table.insert(lights, {
 				d = d,
 				part = part,
@@ -257,6 +268,25 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 				rot = rel - rel.Position,
 				home = Vector3.new(d.pos[1], d.pos[2], d.pos[3]),
 			})
+		end
+	end
+
+	local trailsFolder = model:FindFirstChild("Trails")
+	local trails = {}
+	for _, d in ipairs(data.trails or {}) do
+		local part = trailsFolder and trailsFolder:FindFirstChild(d.name)
+		local trail = part and part:FindFirstChildOfClass("Trail")
+		if part and trail then
+			local rel = pivot:ToObjectSpace(part.CFrame)
+			if k ~= 1 then
+				for _, att in ipairs(part:GetChildren()) do
+					if att:IsA("Attachment") then
+						att.Position = att.Position * k
+					end
+				end
+			end
+			table.insert(trails, { d = d, part = part, trail = trail, rot = rel - rel.Position, home = Vector3.new(d.pos[1], d.pos[2], d.pos[3]) })
+			maxLifetime = math.max(maxLifetime, trail.Lifetime)
 		end
 	end
 
@@ -316,6 +346,13 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 			l.brightI, l.pathI = 1, 1
 			l.pos = l.home
 			placePart(l, l.pos)
+		end
+		for _, t in ipairs(trails) do
+			t.trail.Enabled = false
+			t.pathI = 1
+			t.pos = t.home
+			placePart(t, t.pos)
+			t.trail:Clear()
 		end
 		rig.CFrame = CFrame.identity
 	end
@@ -425,7 +462,7 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 				end
 			end
 		end
-		local wmul = scale * layer.ratio
+		local wmul = scale * layer.ratio * k
 		local baseT = layer.d.transparency
 		local seg = 0
 		for pi, pa in ipairs(pathsA) do
@@ -611,9 +648,31 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 		end
 	end
 
+	local function stepTrail(t, tick, a)
+		local d = t.d
+		local path = d.path
+		if path then
+			while t.pathI <= #path and path[t.pathI][1] <= tick do
+				t.pathI += 1
+			end
+			local p = pathAt(path, t.pathI, a)
+			if p and p ~= t.pos then
+				t.pos = p
+				placePart(t, p)
+			end
+		end
+		local on = tick >= d.on and tick < d.off
+		if t.trail.Enabled ~= on then
+			t.trail.Enabled = on
+		end
+	end
+
 	local function finishRun()
 		for _, s in ipairs(emitters) do
 			s.em.Rate = 0
+		end
+		for _, t in ipairs(trails) do
+			t.trail.Enabled = false
 		end
 		for _, l in ipairs(lights) do
 			l.light.Brightness = 0
@@ -654,6 +713,9 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 			end
 			for _, l in ipairs(lights) do
 				stepLight(l, tick, a)
+			end
+			for _, t in ipairs(trails) do
+				stepTrail(t, tick, a)
 			end
 			if tick >= duration then
 				finishRun()
