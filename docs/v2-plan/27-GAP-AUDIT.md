@@ -68,3 +68,23 @@ A-05 part 1 (model build) 2026-09-28: 5 runs of a fresh MCP-only agent building 
 2026-09-29 WP24 reliability: GPU context loss handled (webglcontextlost is prevented, drawing pauses, the editor shows 'lost the graphics device ... comes back by itself', three.js rebuilds on restore and the frame redraws; [RAN] forced loss/restore via WEBGL_lose_context, [SAW] effect drawn again). T38 [RAN]: 100 loads cycling ten components with seeks, preview resize toggles and a final forced context loss - scene objects/geometries/materials per effect stay constant (energy bolt 11 objects at loads 10/40/70), JS heap 80-132 MB with no trend (81 MB at the end). Viewport.resourceStats() + a dev-only window.__vfxDebug hook back this. Budgets (T15) were already enforced at compile; worker (T14) deferred; audio items (T24) parked with sound.
 
 2026-09-29 WP25 performance/accessibility: preview quality profiles (Reference / Balanced default / Economy: pixel-ratio and internal-pixel caps, Economy without glow) in the editor; T37 benchmark [RAN] at 1920x1080 Balanced - all ten defaults avg 1-3.6 ms, max 7.9 ms CPU draw cost, none over 16.7 ms (docs/v2-plan/evidence/perf-2026-09-29.md; GPU time not isolated). T29 [RAN]: Outline panel (parts list: select, enable/disable, open components) reachable by keyboard; canvas Delete/Backspace deletes the selection and Enter opens a selected component; visible focus rings; Reduced effects toggle (no flash/shake) defaulting to the system setting.
+
+## 2026-09-29 "finish everything in the mds" pass (user request) — status per plan document
+
+Requirement-by-requirement map: `evidence/TRACEABILITY.md` (T01–T40). Tests: 587 passing, tsc clean (814920f).
+
+| Doc | Status after this pass | Remaining / decisions |
+| --- | --- | --- |
+| 05 catalog | ✅ Curve, Gradient, OverLife, RingRenderer added; Emitter path shape (I1 now complete); PublicParameter reads Group overrides | Value nodes EventDelay/MergeEvents: covered by Schedule offsets and "Start when <event>" wiring. |
+| 06 graph | ✅ Solo mask, Delete and reconnect, Duplicate with the same random pattern (Preserve pattern) | — |
+| 07 simulation | ✅ in-step bounce contact, 64 MiB checkpoint ceiling, "Catching up" readout ([UNVERIFIED] visually; the pane is hidden) | **Decisions:** local space is rejected with a named error, not implemented. The collision plane is y = 0 for all particles, not y = radius, because presets are tuned to it. Worker deferred by measurement (I12/T14). Audio-clock-driven playback is parked with sound. |
+| 08 rendering | ✅ selection highlight, arena markers, reset camera, frame stats, width taper, liquid shading | Real fps needs a focused window (performance pass). |
+| 09 materials | ✅ six templates, flipbook loop and crossfade, reflection/detail/variation/refraction, colour shift | — |
+| 10 assets | ✅ minimum library (17 sheets incl. lightning charge, wisps, dark wisp, star/ray/ring, gradients; provenance/licence/thumbnail); plane mesh; normal/noise roles; flipbook playback in the import preview; Add to effect; Relink / Replace / Remove / Clean up | WAV import parked (sound). |
+| 12 editor | ✅ Library panel with tabs and search; curve/gradient editors; Disconnect/Unbind/Jump to driver; transport step/speed/new seed; stale preview; Retry preview; narrow-window notice | 1024–1279 px drawers: the Library toggle is the drawer; the inspector column stays. |
+| 13 persistence/packs | ✅ built-ins embedded and pinned; capabilities; staged import; JSON-export warning; Save as; quota download | — |
+| 15 performance | ✅ hard limits enforced; edit+compile p95 128 ms, seek p95 85/5 ms, app ~0.8 s | Performance pass (focused-window fps, lightning ~150 ms recompile) is post-release (user). |
+| 16 portability | ✅ node classes and capabilities; compile report | Engine export is post-release (user). |
+| 22 conformance | ✅ F01–F11 as named tests | — |
+| 25 contracts | ◐ error codes, ports and ValidationResult as specified | **Decision:** no worker protocol or RenderPacket typed-array transport, because simulation runs on the main thread (I12). Compiled preview plans play the role of CompiledEffect. |
+| Gates | B ✅ evidence; D ✅ re-rendered 120 sheets + README; defaults approved by the user | A-05 run 6 verdict, variant approval, Gate E (sound) and focused-window fps are open. |
