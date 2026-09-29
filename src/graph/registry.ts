@@ -12,6 +12,7 @@
 // - Path nodes: HelixPath, PathFollower, PathTransform and ParticlePaths are not registered yet;
 //   RibbonRenderer envelope is not registered yet (same as BillboardRenderer).
 // - Capability identifiers are empty: the vocabulary is defined with the renderer.
+import { NODE_PORTABILITY } from './portability.ts';
 import type { EvaluationDomain, NodeSpec, ParameterSpec, PortSpec } from '../model/types.ts';
 import { TICKS_PER_SECOND, MAX_DURATION_TICKS } from '../model/types.ts';
 import { BUILTIN_SPRITES } from '../assets/builtinSprites.generated.ts';
@@ -32,8 +33,9 @@ const param = (p: P): ParameterSpec => ({
 const port = (p: Omit<PortSpec, 'cardinality' | 'required'> & Partial<Pick<PortSpec, 'cardinality' | 'required'>>): PortSpec =>
   ({ cardinality: 'one', required: false, ...p });
 
+/** 16: every node declares its capabilities and portability class (src/graph/portability.ts). */
 const node = (type: string, s: Omit<NodeSpec, 'type' | 'definitionVersion' | 'capabilities'>): NodeSpec =>
-  ({ type, definitionVersion: REGISTRY_DEFINITION_VERSION, capabilities: [], ...s });
+  ({ type, definitionVersion: REGISTRY_DEFINITION_VERSION, capabilities: [`portability:${NODE_PORTABILITY[type]?.class ?? 'approximation'}`, ...(NODE_PORTABILITY[type]?.capabilities ?? [])], ...s });
 
 const white = () => ({ srgb: '#FFFFFF', alpha: 1 });
 

@@ -12,6 +12,7 @@ import { createRegistry } from '../graph/registry.ts';
 import type { Patch } from './history.ts';
 import { inspectorValues, type InspectorValue } from './inspector-values.ts';
 import { CurveEditor, GradientEditor } from './CurveEditor.tsx';
+import { nodePortability, PORTABILITY_LABEL } from '../graph/portability.ts';
 import './node-inspector.css';
 
 export type NodeInspectorProps = {
@@ -87,6 +88,10 @@ export default function NodeInspector({ document: doc, graphId, nodeId, onEdit, 
       </label>
       {protectedNode && <p className="ni-muted">{node.type} nodes are protected and cannot be disabled.</p>}
       <p className="ni-muted"><code>{node.type}@{node.definitionVersion}</code> · <code>{node.id}</code></p>
+      {(() => { const pt = nodePortability(node.type, node.params); return (
+        <p className={`ni-port ni-port-${pt.class}`} title="16-PORTABILITY: how this part is expected to carry over to a future engine export (an authoring contract, not a tested engine feature)">
+          {PORTABILITY_LABEL[pt.class]}{pt.reasons.length ? `: ${pt.reasons.join(', ')}` : ''}
+        </p>); })()}
       {!spec ? (
         <p className="ni-unsupported" role="note">Unknown node type; parameters cannot be edited.</p>
       ) : node.type === 'Group' ? (

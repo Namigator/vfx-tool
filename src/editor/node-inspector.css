@@ -41,3 +41,7 @@
 .ge-bar { height: 16px; border-radius: 3px; border: 1px solid #2a3140; background-color: #000; }
 .ni-unlink { margin-left: 4px; font-size: 11px; padding: 1px 6px; }
 .ni-reset-block { align-self: flex-start; margin-bottom: 4px; }
+.ni-port { font-size: 12px; margin: 0 0 6px; }
+.ni-port-core { color: #8fd18f; }
+.ni-port-approximation { color: #e8c170; }
+.ni-port-enhancement { color: #9aa4b8; }
