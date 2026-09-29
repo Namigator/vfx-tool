@@ -21,6 +21,7 @@
 // - Schedule event keys are scheduleEventRandomKey(stream, tick, repeatOrdinal); start and end ticks of
 //   one repeat always differ (durationTicks >= 1), so no extra tag is needed. Duplicate keys (the same
 //   Schedule output wired twice) are a DUPLICATE_ID error.
+import { prepareDocument } from './prepare.ts';
 import type { ColorValue, CurveValue, Diagnostic, ErrorCode, GradientValue, ParameterValue, Quaternion, Transform, ValidationResult, Vec3 } from '../model/types.ts';
 import { TICKS_PER_SECOND } from '../model/types.ts';
 import { registryKey } from '../model/controls.ts';
@@ -177,10 +178,10 @@ export type ParticlePreviewOptions = {
 };
 
 export function compileParticlePreview(input: unknown, options: ParticlePreviewOptions = {}): ValidationResult<ParticlePreviewPlan> {
-  const registry = createRegistry();
-  const analysis = analyzeGraph(input, { registry });
+  const prepared = prepareDocument(input); // Shared, read-only (prepare.ts).
+  const { registry, analysis } = prepared;
   if (!analysis.ok) return analysis;
-  const expansion = expandGroups(analysis.value);
+  const expansion = prepared.expansion!;
   if (!expansion.ok) return expansion;
   const warnings = [...analysis.warnings, ...expansion.warnings];
   const doc = analysis.value.document;

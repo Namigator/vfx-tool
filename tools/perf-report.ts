@@ -24,7 +24,7 @@ const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 42
 function edited(doc: EffectDocumentV2, i: number): EffectDocumentV2 {
   const d = JSON.parse(JSON.stringify(doc)) as EffectDocumentV2;
   const c = d.controls.find(x => typeof x.value === 'number' && x.bindings.length);
-  if (c && typeof c.value === 'number') { const lo = c.min ?? c.value, hi = c.max ?? c.value; c.value = Math.min(hi, Math.max(lo, c.value * (i % 2 ? 1.01 : 0.99))); }
+  if (c && typeof c.value === 'number') { const lo = c.min ?? c.value, hi = c.max ?? c.value; c.value = Math.min(hi, Math.max(lo, c.value * (1 - 0.002 * i))); } // unique value per edit: no cache can help
   return d;
 }
 

@@ -802,8 +802,31 @@ export function sampleParticlesAtTick(input: unknown, tick: number, options?: Pa
   return { ok: true, value: sim.snapshot(), warnings: [] };
 }
 
+/**
+ * Pure function of (descriptor, limits), so recent results are cached by their JSON (15 performance: an edit that does
+ * not touch the parent system — e.g. smoke colour on a flamethrower — no longer re-simulates the whole flame to find
+ * where its smoke is born). Every call returns fresh copies.
+ */
+const eventCache = new Map<string, ValidationResult<ParticleEvent[]>>();
+const EVENT_CACHE_SIZE = 32;
+const copyEvents = (r: ValidationResult<ParticleEvent[]>): ValidationResult<ParticleEvent[]> =>
+  r.ok ? { ok: true, value: r.value.map(e => ({ ...e, position: cloneVec(e.position), velocity: cloneVec(e.velocity) })), warnings: [...r.warnings] } : { ok: false, errors: r.errors.map(d => ({ ...d })) };
+
 /** Runs a descriptor to its end and returns every birth/death/collision event (compile-time child emission). */
 export function collectParticleEvents(input: unknown, options?: Partial<ParticleLimits>): ValidationResult<ParticleEvent[]> {
+  let key: string | undefined;
+  try { key = JSON.stringify([input, options ?? null]); } catch { key = undefined; }
+  const hit = key === undefined ? undefined : eventCache.get(key);
+  if (hit) { eventCache.delete(key!); eventCache.set(key!, hit); return copyEvents(hit); }
+  const result = runParticleEvents(input, options);
+  if (key !== undefined) {
+    eventCache.set(key, result);
+    if (eventCache.size > EVENT_CACHE_SIZE) eventCache.delete(eventCache.keys().next().value as string);
+  }
+  return copyEvents(result);
+}
+
+function runParticleEvents(input: unknown, options?: Partial<ParticleLimits>): ValidationResult<ParticleEvent[]> {
   const created = ParticleSimulation.create(input, options, true);
   if (!created.ok) return created;
   const sim = created.value;

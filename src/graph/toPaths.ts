@@ -23,6 +23,7 @@
 //   Material.opacity may be driven by EffectTimeCurve.value (curve sampled at effect seconds; disabled driver falls back to the literal). Disabled nodes are not parameter-checked (they contribute no values).
 // - Validation does not depend on effectTick: geometry is always evaluated; a layer outside its window
 //   (or at/after the document end) is inactive and carries no paths.
+import { prepareDocument, sameInputText } from './prepare.ts';
 import { BUILTIN_SPRITES } from '../assets/builtinSprites.generated.ts';
 import type { SpriteSheet } from '../assets/spriteLibrary.ts';
 import type { ColorValue, CurveValue, Diagnostic, ErrorCode, ParameterValue, Quaternion, Transform, ValidationResult, Vec3 } from '../model/types.ts';
@@ -175,34 +176,11 @@ export function probePathLength(input: unknown, nodeId: string, port: string, ti
   } finally { lengthProbeDepth--; }
 }
 
-/**
- * Validation, analysis and group expansion do not depend on the tick, but the preview recompiles every
- * tick (~80 of a lightning strike's 86 ms per frame was this). Cached per input object; a hit is reused
- * only while the object's JSON text is unchanged, so an in-place edit can never serve a stale plan.
- */
-type PreparedPaths = { registry: ReturnType<typeof createRegistry>; analysis: ReturnType<typeof analyzeGraph>; expansion?: ReturnType<typeof expandGroups> };
-const preparedCache = new WeakMap<object, { text: string; prepared: PreparedPaths }>();
-/** Same-content check shared by the tick-independent caches below. */
-function sameInputText(input: unknown): string | undefined {
-  try { return JSON.stringify(input); } catch { return undefined; }
-}
-function preparePathDocument(input: unknown): PreparedPaths {
-  const key = typeof input === 'object' && input !== null ? input : undefined;
-  const text = key ? sameInputText(input) : undefined;
-  const cached = key ? preparedCache.get(key) : undefined;
-  if (cached && text !== undefined && cached.text === text) return cached.prepared;
-  const registry = createRegistry();
-  const analysis = analyzeGraph(input, { registry });
-  const prepared: PreparedPaths = { registry, analysis, expansion: analysis.ok ? expandGroups(analysis.value) : undefined };
-  if (key && text !== undefined) preparedCache.set(key, { text, prepared });
-  return prepared;
-}
-
 export function compilePathPreview(input: unknown, effectTick: number, options: PathPreviewOptions = {}): ValidationResult<PathPreviewPlan> {
   if (typeof effectTick !== 'number' || !Number.isInteger(effectTick) || effectTick < 0) {
     return { ok: false, errors: [{ code: 'INVALID_VALUE', severity: 'error', message: `effectTick must be a nonnegative integer; got ${String(effectTick)}.` }] };
   }
-  const prepared = preparePathDocument(input);
+  const prepared = prepareDocument(input);
   const { registry, analysis } = prepared;
   if (!analysis.ok) return analysis;
   const expansion = prepared.expansion!;
