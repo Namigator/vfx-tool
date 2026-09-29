@@ -36,6 +36,7 @@ import GraphCanvas from './editor/GraphCanvas.tsx';
 import NodeInspector from './editor/NodeInspector.tsx';
 import { PreviewViewport, type PreviewFrameInfo } from './render/PreviewViewport.ts';
 import { mergeDiagnostics } from './render/layerOrder.ts';
+import { timelineInfo, type TimelineInfo } from './render/timeline.ts';
 import './preview-v2.css';
 
 const EMPTY_FRAME: PreviewFrameInfo = { tick: 0, durationTicks: 0, playing: false, suspended: false, live: 0, mode: 'none', sampleParticleId: '' };
@@ -55,6 +56,13 @@ function DiagText({ d, onFocus }: { d: Diagnostic; onFocus: (d: Diagnostic) => v
 }
 
 const toText = (doc: EffectDocumentV2) => JSON.stringify(doc, null, 2);
+
+/** A selected Schedule's own window (start, start + duration) for the timeline highlight. */
+function scheduleWindow(n: EffectDocumentV2['graphs'][number]['nodes'][number] | undefined): [number, number] | undefined {
+  if (n?.type !== 'Schedule') return undefined;
+  const s = Number(n.params.startTicks ?? 0), d = Number(n.params.durationTicks ?? 0);
+  return [s, s + Math.max(1, d)];
+}
 
 /** The validated canonical mix of one audio compile; the revision changes on every compile. */
 type HeldAudio = { revision: string; mix: MixResult };
@@ -159,6 +167,11 @@ export default function PreviewV2() {
   const [glow, setGlow] = useState(true);
   const [syncSound, setSyncSound] = useState(true);
   const [looping, setLooping] = useState(false);
+  /** 12 transport: playback speed and "New seed on cast" (preview-only; the saved seed never changes). */
+  const [speed, setSpeed] = useState(1);
+  const [newSeed, setNewSeed] = useState(false);
+  const seedOffsetRef = useRef(0);
+  const [timeline, setTimeline] = useState<TimelineInfo>({ markers: [], windows: new Map() });
   const onLoopRef = useRef<() => void>(() => {});
   const [lightBg, setLightBg] = useState(false);
   /** 06 Solo: preview-only mask of soloed nodes (never saved in the effect). */
@@ -194,7 +207,9 @@ export default function PreviewV2() {
    * Compiles the (structurally valid) document; errors clear the preview instead of keeping stale output.
    * Root audio is compiled first; only a successful audio compile lets the visual compiler skip the audio edge.
    */
-  const compile = useCallback((d: EffectDocumentV2) => {
+  const compile = useCallback((authored: EffectDocumentV2) => {
+    // New seed on cast (preview-only): each loop plays a different random pattern; the document keeps its seed.
+    const d = seedOffsetRef.current ? { ...authored, seed: (authored.seed + seedOffsetRef.current * 7919) >>> 0 } : authored;
     const vp = viewportRef.current;
     setRuntimeErrors([]);
     stopSound(transportRef.current?.status === 'playing' ? 'Sound stopped: the document changed.' : '');
@@ -241,6 +256,7 @@ export default function PreviewV2() {
       }
       setCompiled(true);
       setFollowers(points.value.followers);
+      setTimeline(timelineInfo(points.value, first.value));
       const snapshot = structuredClone(d);
       vp?.setMixedSource(points.value, first.value, tick => compilePathPreview(snapshot, tick, visualOptions));
       return;
@@ -262,6 +278,7 @@ export default function PreviewV2() {
         return;
       }
       setCompiled(true);
+      setTimeline(timelineInfo(null, first.value));
       const snapshot = structuredClone(d); // Later edits never leak into the running source.
       vp?.setPathSource(first.value, tick => compilePathPreview(snapshot, tick, visualOptions));
       return;
@@ -275,6 +292,7 @@ export default function PreviewV2() {
     setDiagnostics([...audioWarnings, ...result.warnings, ...(cut ? [cut] : [])]);
     setCompiled(true);
     setFollowers(result.value.followers);
+    setTimeline(timelineInfo(result.value, null));
     vp?.setPlan(result.value); // Starts paused at tick 0.
   }, [stopSound]);
 
@@ -319,7 +337,12 @@ export default function PreviewV2() {
     }, ms);
   }, []);
 
-  useEffect(() => { onLoopRef.current = () => { if (syncSound && audioRef.current) void playSound(0); }; }, [syncSound, playSound]);
+  useEffect(() => {
+    onLoopRef.current = () => {
+      if (newSeed) { seedOffsetRef.current++; compile(historyRef.current!.snapshot()); viewportRef.current?.play(); }
+      if (syncSound && audioRef.current) void playSound(0);
+    };
+  }, [syncSound, playSound, newSeed, compile]);
 
   // Autosave: mirror every committed document to local storage (debounced); status is announced politely.
   const [saveStatus, setSaveStatus] = useState('');
@@ -798,10 +821,10 @@ export default function PreviewV2() {
             </div>
           )}
           <div className="pv2-transport">
-            <button type="button" disabled={disabled} onClick={() => { if (frame.playing) { vp?.pause(); stopSound(''); } else { vp?.play(); if (syncSound && audio) void playSound(frame.tick); } }}>
+            <button type="button" disabled={disabled} onClick={() => { if (frame.playing) { vp?.pause(); stopSound(''); } else { vp?.play(); if (syncSound && audio && speed === 1) void playSound(frame.tick); } }}>
               {frame.playing ? 'Pause' : frame.suspended ? 'Resume' : 'Play'}
             </button>
-            <button type="button" disabled={disabled} onClick={() => { vp?.restart(); if (syncSound && audio) void playSound(0); else stopSound(''); }}>Restart</button>
+            <button type="button" disabled={disabled} onClick={() => { vp?.restart(); if (syncSound && audio && speed === 1) void playSound(0); else stopSound(''); }}>Restart</button>
             {/* Viewport ResizeObserver refits path framing to the new size until the user orbits. */}
             <button type="button" aria-pressed={expanded} onClick={() => setExpanded(e => !e)}>
               {expanded ? 'Collapse preview' : 'Expand preview'}
@@ -814,10 +837,25 @@ export default function PreviewV2() {
             </select>
             <button type="button" aria-pressed={reducedEffects} title="Reduced effects: no screen flashes or camera shake in the preview (the effect itself is unchanged)" onClick={() => { const r = !reducedEffects; setReducedEffects(r); vp?.setReducedEffects(r); }}>{reducedEffects ? 'Reduced effects on' : 'Reduced effects off'}</button>
             <button type="button" aria-pressed={lightBg} title="Inspect on a light arena" onClick={() => { const l = !lightBg; setLightBg(l); vp?.setBackground(l ? 'light' : 'dark'); }}>{lightBg ? 'Light arena' : 'Dark arena'}</button>
-            <input
-              type="range" min={0} max={frame.durationTicks} step={1} value={frame.tick} disabled={disabled}
-              aria-label="Tick" onChange={e => { vp?.seek(Number(e.target.value)); stopSound(''); }}
-            />
+            <button type="button" disabled={disabled} title="One tick back" aria-label="Step back one tick" onClick={() => { vp?.seek(Math.max(0, frame.tick - 1)); stopSound(''); }}>◀</button>
+            <button type="button" disabled={disabled} title="One tick forward" aria-label="Step forward one tick" onClick={() => { vp?.seek(Math.min(frame.durationTicks, frame.tick + 1)); stopSound(''); }}>▶</button>
+            <select aria-label="Playback speed" value={speed} title="Preview playback speed (sound plays only at 1x)" onChange={e => { const v = Number(e.currentTarget.value); setSpeed(v); vp?.setSpeed(v); if (v !== 1) stopSound(''); }}>
+              <option value={0.25}>0.25x</option><option value={0.5}>0.5x</option><option value={1}>1x</option>
+            </select>
+            <label className="pv2-check" title="Preview only: every loop plays with a different random pattern; the saved effect keeps its seed">
+              <input type="checkbox" checked={newSeed} onChange={e => { setNewSeed(e.currentTarget.checked); if (!e.currentTarget.checked && seedOffsetRef.current) { seedOffsetRef.current = 0; compile(historyRef.current!.snapshot()); } }} /> New seed each loop
+            </label>
+            <div className="pv2-scrub">
+              <input
+                type="range" min={0} max={frame.durationTicks} step={1} value={frame.tick} disabled={disabled}
+                aria-label="Tick" onChange={e => { vp?.seek(Number(e.target.value)); stopSound(''); }}
+              />
+              {/* Event markers and the selected part's active window (12); decorative, the list is in the title. */}
+              <div className="pv2-marks" aria-hidden="true" title={timeline.markers.map(m => `${m.kind} ${m.nodeId} @ ${m.tick}`).join('\n')}>
+                {(() => { const w = selectedNodeId ? timeline.windows.get(selectedNodeId) ?? scheduleWindow(selectedNode) : undefined; return w && frame.durationTicks > 0 ? <span className="pv2-window" style={{ left: `${(100 * w[0]) / frame.durationTicks}%`, width: `${(100 * Math.max(1, w[1] - w[0])) / frame.durationTicks}%` }} /> : null; })()}
+                {frame.durationTicks > 0 && timeline.markers.map((m, i) => <span key={i} className={`pv2-mark pv2-mark-${m.kind}`} style={{ left: `${(100 * m.tick) / frame.durationTicks}%` }} />)}
+              </div>
+            </div>
             {/* Not a live region: per-frame tick changes must not be announced. Errors use role="alert". */}
             <span className="pv2-readout" title={frame.sampleParticleId ? `Sample particle ${frame.sampleParticleId}` : undefined}>
               {frame.suspended && <>Paused (tab hidden) · </>}

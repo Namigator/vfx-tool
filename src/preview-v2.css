@@ -67,3 +67,12 @@
 .pv2-banner button { margin-right: 6px; }
 .pv2-diag-link { all: unset; cursor: pointer; text-decoration: underline dotted; }
 .pv2-diag-link:focus-visible { outline: 2px solid #7fb4ff; }
+/* 12 transport: scrub bar with event markers and the selected part's active window */
+.pv2-scrub { position: relative; display: inline-flex; flex-direction: column; flex: 1 1 220px; min-width: 160px; }
+.pv2-scrub input[type=range] { width: 100%; flex: none; min-height: 28px; }
+.pv2-marks { position: relative; height: 8px; margin: 0 7px; }
+.pv2-mark { position: absolute; top: 0; width: 2px; height: 8px; margin-left: -1px; background: #7fb4ff; border-radius: 1px; }
+.pv2-mark-arrival { background: #ffb060; }
+.pv2-mark-flash, .pv2-mark-shake { background: #ff7070; }
+.pv2-window { position: absolute; top: 2px; height: 4px; background: rgba(127, 180, 255, .35); border-radius: 2px; }
+.pv2-check { display: inline-flex; gap: 4px; align-items: center; font-size: 13px; }

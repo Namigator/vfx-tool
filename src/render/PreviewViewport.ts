@@ -576,7 +576,7 @@ export class PreviewViewport {
     if (this.#disposed) return;
     this.#clearLayers();
     if (this.#pathCamera) this.#resetCamera(); // Point preview never inherits the path framing.
-    this.#clock = new PlaybackClock({ durationTicks: plan.durationTicks });
+    this.#clock = new PlaybackClock({ durationTicks: plan.durationTicks, speed: this.#speed });
     this.#failed = false;
     this.#suspended = false;
     this.#addPointLayers(plan);
@@ -594,7 +594,7 @@ export class PreviewViewport {
     this.#clearLayers();
     this.#resetCamera();
     this.#plan = null;
-    this.#clock = new PlaybackClock({ durationTicks: plan.durationTicks });
+    this.#clock = new PlaybackClock({ durationTicks: plan.durationTicks, speed: this.#speed });
     this.#failed = false;
     this.#suspended = false;
     this.#beginPathSource(plan, compile);
@@ -610,7 +610,7 @@ export class PreviewViewport {
     if (this.#disposed) return;
     this.#clearLayers();
     this.#resetCamera();
-    this.#clock = new PlaybackClock({ durationTicks: Math.max(points.durationTicks, paths.durationTicks) });
+    this.#clock = new PlaybackClock({ durationTicks: Math.max(points.durationTicks, paths.durationTicks), speed: this.#speed });
     this.#failed = false;
     this.#suspended = false;
     this.#addPointLayers(points);
@@ -1349,6 +1349,9 @@ export class PreviewViewport {
   #looping = false;
   /** 12 transport Loop: at the end, restart from tick 0 with the same seed. */
   setLoop(on: boolean): void { this.#looping = on; }
+  /** 12 transport speed (.25x/.5x/1x); preview-only, kept across recompiles. */
+  #speed = 1;
+  setSpeed(speed: number): void { this.#speed = speed; this.#clock?.setSpeed(speed); }
 
   /** Glow (bloom) on/off for inspection (08 "Provide glow-off inspection"); tone mapping stays identical. */
   setGlow(on: boolean): void {
