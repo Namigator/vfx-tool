@@ -480,14 +480,14 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
     { op: 'set', path: ['durationTicks'], value: next.durationTicks },
     { op: 'set', path: ['editor', 'graphs'], value: next.editor.graphs },
   ]);
-  const duplicate = () => {
+  const duplicate = (preservePattern = false) => {
     if (!groupIds.length) { setNotice({ kind: 'info', lines: ['Select nodes to duplicate.'] }); return; }
-    const r = duplicateSelection(doc, graphId, groupIds);
+    const r = duplicateSelection(doc, graphId, groupIds, { preservePattern });
     if (!r.ok) { setNotice({ kind: 'error', lines: [r.message] }); return; }
     commitDoc(`Duplicate ${groupIds.length} node(s)`, r.doc);
     setPicked(new Set(r.newIds.length > 1 ? r.newIds : []));
     onSelectNode(r.newIds[0] ?? null);
-    setNotice({ kind: 'info', lines: [`Duplicated ${groupIds.length} node(s). Copies are independent (own ids and randomness).`, ...r.notes] });
+    setNotice({ kind: 'info', lines: [preservePattern ? `Duplicated ${groupIds.length} node(s) with the same random pattern (own ids).` : `Duplicated ${groupIds.length} node(s). Copies are independent (own ids and randomness).`, ...r.notes] });
   };
   const copy = async () => {
     const r = copySelection(doc, graphId, groupIds);
@@ -663,7 +663,8 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
             ) : n ? (
               <>
                 {n.type === GROUP_NODE_TYPE && item('Open internals', () => openGraph(n.params.graphId as string, `Open ${n.label}`))}
-                {item('Duplicate  (Ctrl+D)', duplicate, isLocked(n))}
+                {item('Duplicate  (Ctrl+D)', () => duplicate(), isLocked(n))}
+                {item('Duplicate, same random pattern', () => duplicate(true), isLocked(n))}
                 {item('Copy  (Ctrl+C)', () => void copy(), isLocked(n))}
                 {item('Group selection  (Ctrl+G)', groupPicked)}
                 {n.type === GROUP_NODE_TYPE && item('Save as my component', () => { const name = window.prompt('Name for this component:', n.label); if (!name) return; const r = saveGroupAsComponent(doc, n.id, name); if (!r.ok) { setNotice({ kind: 'error', lines: [r.message] }); return; } saveUserComponent(r.value); setNotice({ kind: 'info', lines: [`Saved "${r.value.name}" to My components.`] }); })}

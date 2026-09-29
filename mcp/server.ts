@@ -398,8 +398,8 @@ ${formatMigrationReport(report)}`);
   }); return r.isError ? r : ok(info); });
   // 12 parity: Duplicate / Copy / Paste (the editor's Ctrl+D / Ctrl+C / Ctrl+V).
   const applyWhole = (docId: string, label: string, next: EffectDocumentV2) => mutate(docId, d => { Object.assign(d, structuredClone(next)); return label; });
-  tool('vfx_duplicate_nodes', 'Duplicate nodes (like the editor Ctrl+D): fresh ids and random streams, internal wiring kept; a Group becomes an independent copy of its component.', { docId: z.string(), nodeIds: z.array(z.string()).min(1), graphId: z.string().optional() }, ({ docId, nodeIds, graphId }) => {
-    const d = getDoc(docId), r = duplicateSelection(d, graphId ?? d.rootGraphId, nodeIds);
+  tool('vfx_duplicate_nodes', 'Duplicate nodes (like the editor Ctrl+D): fresh ids and random streams, internal wiring kept; a Group becomes an independent copy of its component. preservePattern=true keeps the random streams (same sampled pattern, distinct ids), like the editor menu item "Duplicate, same random pattern".', { docId: z.string(), nodeIds: z.array(z.string()).min(1), graphId: z.string().optional(), preservePattern: z.boolean().optional() }, ({ docId, nodeIds, graphId, preservePattern }) => {
+    const d = getDoc(docId), r = duplicateSelection(d, graphId ?? d.rootGraphId, nodeIds, { preservePattern });
     return r.ok ? applyWhole(docId, `Duplicated as: ${r.newIds.join(', ')}${r.notes.length ? `\n${r.notes.join('\n')}` : ''}`, r.doc) : bad(r.message);
   });
   tool('vfx_copy_nodes', 'Copy nodes as the editor clipboard JSON (like Ctrl+C); paste it with vfx_paste_nodes into this or another document.', { docId: z.string(), nodeIds: z.array(z.string()).min(1), graphId: z.string().optional() }, ({ docId, nodeIds, graphId }) => {

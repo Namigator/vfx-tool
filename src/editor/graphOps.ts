@@ -69,7 +69,7 @@ export function parseClipboard(text: string): { ok: true; value: ClipboardSelect
  * Pastes a payload into `graphId` with fresh node/edge/random-stream IDs (so copies never share randomness), offset
  * from the originals, then validates the whole document; an invalid paste is refused, never partly applied.
  */
-export function pasteSelection(doc: EffectDocumentV2, graphId: string, clip: ClipboardSelection, offset = { x: 40, y: 40 }): OpResult {
+export function pasteSelection(doc: EffectDocumentV2, graphId: string, clip: ClipboardSelection, offset = { x: 40, y: 40 }, opts: { preservePattern?: boolean } = {}): OpResult {
   let d = structuredClone(doc);
   const g = d.graphs.find(x => x.id === graphId);
   if (!g) return { ok: false, message: `Graph "${graphId}" does not exist.` };
@@ -80,7 +80,9 @@ export function pasteSelection(doc: EffectDocumentV2, graphId: string, clip: Cli
   for (const n of clip.nodes) {
     const id = freshId(n.id.replace(/_\d+$/, ''), taken);
     map.set(n.id, id); newIds.push(id);
-    g.nodes.push({ ...structuredClone(n), id, randomStreamId: freshId(`rs-${id}`, taken) });
+    // 07/22 F05: a copy gets its own random stream (a different pattern); Preserve pattern keeps the stream, so the copy
+    // samples the same random quantities while its node (and so every particle object ID) stays distinct.
+    g.nodes.push({ ...structuredClone(n), id, randomStreamId: opts.preservePattern ? n.randomStreamId : freshId(`rs-${id}`, taken) });
     const p = clip.layout[n.id];
     if (p) { d.editor.graphs[graphId] ??= { nodes: {}, viewport: { x: 0, y: 0, zoom: 1 } }; d.editor.graphs[graphId].nodes[id] = { x: p.x + offset.x, y: p.y + offset.y }; }
   }
@@ -100,7 +102,7 @@ export function pasteSelection(doc: EffectDocumentV2, graphId: string, clip: Cli
 }
 
 /** Duplicate = copy + paste into the same graph (Group nodes become independent copies of their component). */
-export function duplicateSelection(doc: EffectDocumentV2, graphId: string, ids: readonly string[]): OpResult {
+export function duplicateSelection(doc: EffectDocumentV2, graphId: string, ids: readonly string[], opts: { preservePattern?: boolean } = {}): OpResult {
   const c = copySelection(doc, graphId, ids);
-  return c.ok ? pasteSelection(doc, graphId, c.value) : c;
+  return c.ok ? pasteSelection(doc, graphId, c.value, undefined, opts) : c;
 }
