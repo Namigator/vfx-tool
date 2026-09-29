@@ -3,7 +3,7 @@
 **Goal:** A simple composable web VFX/SFX node tool with ten editable elemental defaults, original-lightning quality floor, and engine-neutral future exporters.
 
 ## CURRENT — 2026-09-29, end of the "finish everything in the mds" pass (read this first)
-- Branch squad/vfx-v2, not merged, not pushed. Gate: `git add …; bash tools/gate-commit.sh "msg"` (587 tests, tsc).
+- Branch squad/vfx-v2, not merged, not pushed. Gate: `git add …; bash tools/gate-commit.sh "msg"` (581 tests, tsc).
   After src/render changes: `node tools/render-smoke.mjs`.
 - Plan status per document: `docs/v2-plan/27-GAP-AUDIT.md`, last section. T01–T40 map: `docs/v2-plan/evidence/TRACEABILITY.md`.
 - Done in this pass (details in git log since 8814928):
@@ -19,8 +19,9 @@
 - Waiting on the USER: A-05 run 6 verdict (work/a05); variant approval (Gate D); whether additive effects need a
   light-arena variant (faint on light floors); visual OK before merging to main.
 - [UNVERIFIED]: "Catching up" readout (hidden pane); Jump to driver was not clicked.
-- Before release (user backlog): new editor as the default page, remove the v1 editor + "Back to v1" button, converter
-  renamed "Import old effect", stop calling the release "v1".
+- Before-release backlog DONE (117ad01): the graph editor is the default page (http://127.0.0.1:5174/), the old editor
+  UI is removed (src/core stays only for importing old effects), the converter is "Import old effect", and a first run
+  opens a blank effect with the Library. The release is just "VFX Studio" (no "v1").
 - Post-release (user order): performance pass → timeline strip with component bars, then keyframed knobs →
   engine export → in-editor AI box that runs its own render→look→adjust loop → full AI guide → sound.
 
