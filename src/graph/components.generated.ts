@@ -15672,9 +15672,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "dropfloor",
     "type": "GroundCollision",
     "params": {
-     "mode": "bounce",
-     "restitution": 0.25,
-     "maxBounces": 1
+     "mode": "kill"
     }
    },
    {
@@ -15859,7 +15857,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "ScalarMath",
     "params": {
      "operation": "multiply",
-     "b": -0.3,
+     "b": -0.18,
      "inputUnit": "normalized",
      "unit": "normalized"
     }
@@ -15869,7 +15867,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "ScalarMath",
     "params": {
      "operation": "add",
-     "b": 0.3,
+     "b": 0.18,
      "unit": "normalized"
     }
    },
@@ -15928,7 +15926,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "ScalarMath",
     "params": {
      "operation": "multiply",
-     "b": -0.22999999999999998,
+     "b": -0.13999999999999999,
      "inputUnit": "normalized",
      "unit": "normalized"
     }
@@ -15938,7 +15936,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "ScalarMath",
     "params": {
      "operation": "add",
-     "b": 0.23,
+     "b": 0.14,
      "unit": "normalized"
     }
    },
@@ -15997,7 +15995,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "ScalarMath",
     "params": {
      "operation": "multiply",
-     "b": -0.15999999999999998,
+     "b": -0.09999999999999999,
      "inputUnit": "normalized",
      "unit": "normalized"
     }
@@ -16007,7 +16005,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "ScalarMath",
     "params": {
      "operation": "add",
-     "b": 0.16,
+     "b": 0.1,
      "unit": "normalized"
     }
    },
@@ -16840,9 +16838,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "dropfloor",
     "type": "GroundCollision",
     "params": {
-     "mode": "bounce",
-     "restitution": 0.25,
-     "maxBounces": 1
+     "mode": "kill"
     }
    },
    {
@@ -17027,7 +17023,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "ScalarMath",
     "params": {
      "operation": "multiply",
-     "b": -0.3,
+     "b": -0.18,
      "inputUnit": "normalized",
      "unit": "normalized"
     }
@@ -17037,7 +17033,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "ScalarMath",
     "params": {
      "operation": "add",
-     "b": 0.3,
+     "b": 0.18,
      "unit": "normalized"
     }
    },
@@ -17096,7 +17092,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "ScalarMath",
     "params": {
      "operation": "multiply",
-     "b": -0.22999999999999998,
+     "b": -0.13999999999999999,
      "inputUnit": "normalized",
      "unit": "normalized"
     }
@@ -17106,7 +17102,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "ScalarMath",
     "params": {
      "operation": "add",
-     "b": 0.23,
+     "b": 0.14,
      "unit": "normalized"
     }
    },
@@ -17165,7 +17161,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "ScalarMath",
     "params": {
      "operation": "multiply",
-     "b": -0.15999999999999998,
+     "b": -0.09999999999999999,
      "inputUnit": "normalized",
      "unit": "normalized"
     }
@@ -17175,7 +17171,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "ScalarMath",
     "params": {
      "operation": "add",
-     "b": 0.16,
+     "b": 0.1,
      "unit": "normalized"
     }
    },
@@ -18008,9 +18004,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "dropfloor",
     "type": "GroundCollision",
     "params": {
-     "mode": "bounce",
-     "restitution": 0.25,
-     "maxBounces": 1
+     "mode": "kill"
     }
    },
    {
@@ -18195,7 +18189,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "ScalarMath",
     "params": {
      "operation": "multiply",
-     "b": -0.3,
+     "b": -0.18,
      "inputUnit": "normalized",
      "unit": "normalized"
     }
@@ -18205,7 +18199,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "ScalarMath",
     "params": {
      "operation": "add",
-     "b": 0.3,
+     "b": 0.18,
      "unit": "normalized"
     }
    },
@@ -18264,7 +18258,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "ScalarMath",
     "params": {
      "operation": "multiply",
-     "b": -0.22999999999999998,
+     "b": -0.13999999999999999,
      "inputUnit": "normalized",
      "unit": "normalized"
     }
@@ -18274,7 +18268,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "ScalarMath",
     "params": {
      "operation": "add",
-     "b": 0.23,
+     "b": 0.14,
      "unit": "normalized"
     }
    },
@@ -18333,7 +18327,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "ScalarMath",
     "params": {
      "operation": "multiply",
-     "b": -0.15999999999999998,
+     "b": -0.09999999999999999,
      "inputUnit": "normalized",
      "unit": "normalized"
     }
@@ -18343,7 +18337,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "ScalarMath",
     "params": {
      "operation": "add",
-     "b": 0.16,
+     "b": 0.1,
      "unit": "normalized"
     }
    },

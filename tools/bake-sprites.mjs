@@ -103,7 +103,9 @@ sheet('smoke-puff', 4, 4, 'flipbook', (fi, x, y) => {
     let f1 = 9, f2 = 9; for (const p of pts) { const d = Math.hypot(x - p[0], y - p[1]); if (d < f1) { f2 = f1; f1 = d; } else if (d < f2) f2 = d; }
     const edge = 1 - smooth(0, .025, f2 - f1), rr = Math.hypot(x - .5, y - .5) * 2, m = 1 - smooth(.35, .95, rr * 1.1 + (fbm(x * 3, y * 3, 31) - .5) * .9);
     const th = fi / 15 * .6, holes = smooth(th, th + .12, fbm(x * 5, y * 5, 41) + .12);
-    return [.93, .97, .99, m * holes * (edge * .85 + .16)];
+    // Soft clumpy foam (review 2026-09-29: the old cell-edge network read as spiderwebs); `edge` kept only as faint bubble rims.
+    const clump = smooth(.38, .72, fbm(x * 7, y * 7, 51)), fine = smooth(.35, .8, fbm(x * 19, y * 19, 53));
+    return [.93, .97, .99, m * holes * clamp(.25 + .55 * clump + .25 * fine + edge * .12)];
   }, { blend: 'normal', usage: 'foam/splash surface; ground-oriented cards or billboards' });
 }
 

@@ -77,7 +77,7 @@ for (const [file, V] of Object.entries(VARIANTS)) {
   add('Emitter', 'drops', { shape: 'cone', direction: [0, 1, 0], coneAngle: 1.3, radius: 0.08, burst: V.droplets, rate: 0, speedMin: V.dropSpeed[0], speedMax: V.dropSpeed[1], lifetimeMin: 0.4, lifetimeMax: 1.2, useEventPosition: false });
   add('InitialProperties', 'dropip', { sizeMin: V.dropSize[0] * 2, sizeMax: V.dropSize[1] * 2 });
   add('Gravity', 'dropg', { acceleration: [0, -9.81, 0] });
-  add('GroundCollision', 'dropfloor', { mode: 'bounce', restitution: 0.25, maxBounces: 1 });
+  add('GroundCollision', 'dropfloor', { mode: 'kill' }); // Drops vanish into the pool (resting drops read as dark pebbles).
   add('Material', 'dropmat', { template: 'SpriteTextured', sprite: 'droplet', blend: 'normal', tint: col('#F2F9FD'), opacity: 0.85, groundFade: 0.12 });
   add('BillboardRenderer', 'dropbb', { alignment: 'velocity', stretchRatio: 1.6, opacityOverLife: lin([[0, 1], [0.8, 0.8], [1, 0]]) });
   wire('node-target.out', 'drops.anchor'); wire('head.arrival', 'drops.trigger');
@@ -104,8 +104,8 @@ for (const [file, V] of Object.entries(VARIANTS)) {
     // Size and fade follow progress through this ripple's own window (moves with Travel time).
     add('Time', `ringclock${i}`); wire(`ripwin${i}.window`, `ringclock${i}.window`);
     add('ScalarMath', `ringsize${i}`, { operation: 'max', b: +(0.2 / V.ripple).toFixed(4), unit: 'normalized' });
-    add('ScalarMath', `ringdim${i}`, { operation: 'multiply', b: -(0.3 - i * 0.07), inputUnit: 'normalized', unit: 'normalized' });
-    add('ScalarMath', `ringfade${i}`, { operation: 'add', b: +(0.3 - i * 0.07).toFixed(3), unit: 'normalized' });
+    add('ScalarMath', `ringdim${i}`, { operation: 'multiply', b: -(0.18 - i * 0.04), inputUnit: 'normalized', unit: 'normalized' });
+    add('ScalarMath', `ringfade${i}`, { operation: 'add', b: +(0.18 - i * 0.04).toFixed(3), unit: 'normalized' });
     wire(`ringclock${i}.progress`, `ringsize${i}.a`); wire(`ringclock${i}.progress`, `ringdim${i}.a`); wire(`ringdim${i}.value`, `ringfade${i}.a`);
     add('Material', `ringmat${i}`, { blend: 'normal', tint: col('#D6EEFF') });
     add('RibbonRenderer', `ripple${i}`, { width: 0.018, endFade: 0, orientation: 'camera' });

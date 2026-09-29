@@ -774,9 +774,7 @@
    "type": "GroundCollision",
    "id": "dropfloor",
    "params": {
-    "mode": "bounce",
-    "restitution": 0.25,
-    "maxBounces": 1
+    "mode": "kill"
    }
   }
  ],
@@ -1149,7 +1147,7 @@
    "id": "ringdim0",
    "params": {
     "operation": "multiply",
-    "b": -0.3,
+    "b": -0.18,
     "inputUnit": "normalized",
     "unit": "normalized"
    }
@@ -1163,7 +1161,7 @@
    "id": "ringfade0",
    "params": {
     "operation": "add",
-    "b": 0.3,
+    "b": 0.18,
     "unit": "normalized"
    }
   }
@@ -1346,7 +1344,7 @@
    "id": "ringdim1",
    "params": {
     "operation": "multiply",
-    "b": -0.22999999999999998,
+    "b": -0.13999999999999999,
     "inputUnit": "normalized",
     "unit": "normalized"
    }
@@ -1360,7 +1358,7 @@
    "id": "ringfade1",
    "params": {
     "operation": "add",
-    "b": 0.23,
+    "b": 0.14,
     "unit": "normalized"
    }
   }
@@ -1543,7 +1541,7 @@
    "id": "ringdim2",
    "params": {
     "operation": "multiply",
-    "b": -0.15999999999999998,
+    "b": -0.09999999999999999,
     "inputUnit": "normalized",
     "unit": "normalized"
    }
@@ -1557,7 +1555,7 @@
    "id": "ringfade2",
    "params": {
     "operation": "add",
-    "b": 0.16,
+    "b": 0.1,
     "unit": "normalized"
    }
   }
