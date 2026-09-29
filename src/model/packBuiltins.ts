@@ -6,6 +6,7 @@
 import { createTextureAsset, sha256Hex } from '../assets/importTexture.ts';
 import type { SpriteSheet } from '../assets/spriteLibrary.ts';
 import type { EffectDocumentV2 } from './types.ts';
+import { isTexturedTemplate } from '../graph/materialSprite.ts';
 
 export type EmbeddedBuiltin = { id: string; sheet: SpriteSheet; bytes: Uint8Array };
 export type PinnedBuiltin = { id: string; assetId: string; sha256: string; mime: string; bytes: Uint8Array; path: string };
@@ -13,7 +14,7 @@ export type PinnedBuiltin = { id: string; assetId: string; sha256: string; mime:
 const DEFAULT_SPRITE = 'soft-glow';
 const materials = (doc: EffectDocumentV2) => doc.graphs.flatMap(g => g.nodes).filter(n => n.type === 'Material');
 const usesLibrarySprite = (params: Record<string, unknown>) =>
-  params.template === 'SpriteTextured' && (typeof params.textureAsset !== 'string' || params.textureAsset === '');
+  isTexturedTemplate(params.template, params) && (typeof params.textureAsset !== 'string' || params.textureAsset === '');
 
 /** Included-library sprite ids drawn by this document (Materials with template SpriteTextured and no imported texture). */
 export function referencedBuiltinSprites(doc: EffectDocumentV2): string[] {

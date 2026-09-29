@@ -33,7 +33,7 @@ import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { createRegistry } from './registry.ts';
 import { followerTravel, scheduleStart, TimingError, type TimingContext } from './eventTiming.ts';
-import { materialSheet } from './materialSprite.ts';
+import { isTexturedTemplate, materialSheet, MATERIAL_TEMPLATE_IDS, templateLitsMeshes, templateParam } from './materialSprite.ts';
 import { lifeCurveError, OPACITY_OVER_LIFE_BOUNDS, SIZE_OVER_LIFE_BOUNDS } from '../render/billboardLife.ts';
 import { BUILTIN_SPRITES } from '../assets/builtinSprites.generated.ts';
 import { compilePathPreview, probePathLength } from './toPaths.ts';
@@ -52,6 +52,8 @@ export type ParticlePreviewLayer = {
   nodeId: string;
   /** Material Colour shift in degrees (0 = unchanged); the shader rotates the final colour. */
   hueShift?: number;
+  /** Material depthTest off: drawn over solid objects. Absent = on. */
+  depthTest?: false;
   /** Material ground fade height in world meters (0 = off). */
   groundFade?: number;
   /** 09 dissolve over life (amount 0 = off). */
@@ -91,7 +93,7 @@ export type ParticlePreviewLayer = {
 /** 05 ParticleTrail sink: ribbon trails behind one particle system's particles. */
 export type ParticleTrailLayer = {
   nodeId: string; systemId: string; historyTicks: number; maxPoints: number; width: number; endFade: number;
-  color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout'; alphaCutoff: number; hueShift?: number;
+  color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout'; alphaCutoff: number; hueShift?: number; depthTest?: false;
   renderOrderOffset: number; visualOrder: number;
 };
 /** 05 PointLight: lights the preview ground over its window. */
@@ -118,6 +120,8 @@ export type MeshLayer = {
   surface?: { reflection: number; detail: number; detailScale: number; variation: number };
   color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout';
   sizeOverLife: CurveValue; colorOverLife: GradientValue; renderOrderOffset: number; visualOrder: number; spinOverLife?: CurveValue;
+  /** 09 Material faces / depth test / refraction (enhancement, lit meshes); absent = front, on, none. */
+  faceMode?: 'back' | 'double'; depthTest?: false; refraction?: number;
 };
 /** 05 presentation: screen flashes and camera impulses at event ticks (preview-only, reduced-motion aware). */
 export type PresentationPlan = {
@@ -224,7 +228,12 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     source: (nodeId, port) => { const c = into(nodeId, port)[0]; return c && c.source.kind === 'node' ? { nodeId: c.source.nodeId, port: c.source.port } : undefined; },
     pathLength: (nodeId, port, tick) => probePathLength(input, nodeId, port, tick),
   };
+  /** 09 material templates fix some Material fields (materialSprite.templateParam); everything else is as authored. */
   const rawParam = (n: ExpandedNode, id: string): ParameterValue => {
+    const v = rawParamBase(n, id);
+    return n.node.type === 'Material' && id !== 'template' ? templateParam(rawParamBase(n, 'template'), id, v) : v;
+  };
+  const rawParamBase = (n: ExpandedNode, id: string): ParameterValue => {
     const dv = drivenValue(n, id);
     if (dv !== undefined) return dv;
     const v = params.get(`${n.node.id}\u0000${id}`);
@@ -364,6 +373,13 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     return fail('GRAPH_CYCLE', `Particle chain of "${owner}" does not terminate at an Emitter.`, owner);
   };
 
+  /** 09 depth test off travels only when set (keeps plans unchanged otherwise). */
+  const depthOf = (m: ExpandedNode): { depthTest?: false } => (param(m, 'depthTest') === false ? { depthTest: false } : {});
+  /** 09 mesh faces and refraction (refraction is an enhancement previewed on lit meshes only). */
+  const meshMaterialOf = (m: ExpandedNode): { faceMode?: 'back' | 'double'; depthTest?: false; refraction?: number } => {
+    const f = param(m, 'faceMode'), r = num(m, 'refraction');
+    return { ...(f === 'back' || f === 'double' ? { faceMode: f } : {}), ...depthOf(m), ...(r > 0 ? { refraction: r } : {}) };
+  };
   /** A renderer's over-life setting, or the chain's OverLife one when the renderer leaves it at its default (not stored, not connected). */
   const lifeFrom = (b: ExpandedNode, chain: Chain | undefined, id: string, olId: string): ParameterValue =>
     chain?.overLife && !Object.hasOwn(b.node.params, id) && into(b.node.id, id).length === 0 ? param(chain.overLife, olId) : param(b, id);
@@ -759,7 +775,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         systems.push({ id: tid, descriptor: v.value });
         trails.push({
           nodeId: tid, systemId: tid, historyTicks: Math.max(1, Math.round(num(b, 'history') * TICKS_PER_SECOND)), maxPoints: num(b, 'maxPoints'),
-          width: num(b, 'width') * scale, endFade: num(b, 'endFade'), color: param(m, 'tint') as ColorValue, hueShift: num(m, 'hueShift'), opacity: num(m, 'opacity'), emission: num(m, 'emission'),
+          width: num(b, 'width') * scale, endFade: num(b, 'endFade'), color: param(m, 'tint') as ColorValue, hueShift: num(m, 'hueShift'), ...depthOf(m), opacity: num(m, 'opacity'), emission: num(m, 'emission'),
           blend: param(m, 'blend') as ParticleTrailLayer['blend'], alphaCutoff: num(m, 'alphaCutoff'), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
         });
         continue;
@@ -794,7 +810,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
           nodeId: mid, systemId: chain.terminalId, mesh: param(b, 'mesh') as MeshLayer['mesh'], scale: num(b, 'scale'), orientation: param(b, 'orientation') as MeshLayer['orientation'],
           scaleY: num(b, 'scaleY'), pivot: param(b, 'pivot') as 'center' | 'base', tilt: num(b, 'tilt'), roughness: num(m, 'roughness'), metalness: num(m, 'metalness'), surface: { reflection: num(m, 'reflection'), detail: num(m, 'surfaceDetail'), detailScale: num(m, 'detailScale'), variation: num(m, 'colorVariation') },
           ...(num(m, 'rim') > 0 ? { rim: { strength: num(m, 'rim'), color: structuredClone(param(m, 'rimColor') as ColorValue), power: num(m, 'rimPower') } } : {}),
-          lit: param(b, 'lit') === true, color: hueRotate(multiplyColors(base, param(m, 'tint') as ColorValue), num(m, 'hueShift')), opacity: num(m, 'opacity'), emission: num(m, 'emission'), blend: param(m, 'blend') as MeshLayer['blend'],
+          lit: param(b, 'lit') === true || templateLitsMeshes(param(m, 'template')), color: hueRotate(multiplyColors(base, param(m, 'tint') as ColorValue), num(m, 'hueShift')), ...meshMaterialOf(m), opacity: num(m, 'opacity'), emission: num(m, 'emission'), blend: param(m, 'blend') as MeshLayer['blend'],
           sizeOverLife: structuredClone(sc), colorOverLife: hueGradient(structuredClone(lifeFrom(b, chain, 'colorOverLife', 'colorOverLife') as GradientValue), num(m, 'hueShift')), ...spinOf(chain), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
         });
         continue;
@@ -871,7 +887,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
           nodeId: pid, systemId: pid, mesh: param(b, 'mesh') as MeshLayer['mesh'], scale: 1, orientation: 'fixed', direction: dir,
           scaleY: length / width, pivot: 'center', tilt: 0, roughness: num(m, 'roughness'), metalness: num(m, 'metalness'), surface: { reflection: num(m, 'reflection'), detail: num(m, 'surfaceDetail'), detailScale: num(m, 'detailScale'), variation: num(m, 'colorVariation') },
           ...(num(m, 'rim') > 0 ? { rim: { strength: num(m, 'rim'), color: structuredClone(param(m, 'rimColor') as ColorValue), power: num(m, 'rimPower') } } : {}),
-          lit: param(b, 'lit') === true, color: hueRotate(param(m, 'tint') as ColorValue, num(m, 'hueShift')), opacity: num(m, 'opacity'), emission: num(m, 'emission'), blend: param(m, 'blend') as MeshLayer['blend'],
+          lit: param(b, 'lit') === true || templateLitsMeshes(param(m, 'template')), color: hueRotate(param(m, 'tint') as ColorValue, num(m, 'hueShift')), ...meshMaterialOf(m), opacity: num(m, 'opacity'), emission: num(m, 'emission'), blend: param(m, 'blend') as MeshLayer['blend'],
           sizeOverLife: flat, colorOverLife: { stops: [{ position: 0, color: { srgb: '#FFFFFF', alpha: 1 } }, { position: 1, color: { srgb: '#FFFFFF', alpha: 1 } }] }, renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
         });
         continue;
@@ -915,13 +931,13 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
           return structuredClone(c);
         };
         let sprite: ParticlePreviewLayer['sprite'];
-        if (param(m, 'template') === 'SpriteTextured') {
+        if (isTexturedTemplate(param(m, 'template'), m.node.params)) {
           const r = materialSheet(doc, param(m, 'sprite'), param(m, 'textureAsset'));
           if ('error' in r) report('MISSING_REFERENCE', r.error, m.node.id, r.field);
           else sprite = { sheet: r.sheet, mode: 'overLife', fps: 24, randomStart: false, variant: num(m, 'variant') };
         }
         layers.push({
-          nodeId: sid, systemId: sid, color: param(m, 'tint') as ColorValue, hueShift: num(m, 'hueShift'), opacity: num(m, 'opacity'), emission: num(m, 'emission'),
+          nodeId: sid, systemId: sid, color: param(m, 'tint') as ColorValue, hueShift: num(m, 'hueShift'), ...depthOf(m), opacity: num(m, 'opacity'), emission: num(m, 'emission'),
           blend: param(m, 'blend') as ParticlePreviewLayer['blend'], alphaCutoff: num(m, 'alphaCutoff'), groundFade: num(m, 'groundFade') * transform.scale, ...dissolveOf(m), ...spriteOpsOf(m), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
           sizeOverLife: curve('sizeOverWindow', SIZE_OVER_LIFE_BOUNDS), opacityOverLife: curve('opacityOverWindow', OPACITY_OVER_LIFE_BOUNDS),
           colorOverLife: structuredClone(param(b, 'colorOverWindow') as GradientValue), stretchRatio: 1, pivot: 0.5,
@@ -937,7 +953,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         const mat = mats.length === 1 ? sourceNode(mats[0].source, tid, 'material') : undefined;
         if (!mat || mat.node.type !== 'Material' || !mat.effectiveEnabled) { fail('MISSING_REFERENCE', `Required input "material" of "${tid}" needs an enabled Material.`, tid); }
         const m = mat as ExpandedNode;
-        if (param(m, 'template') === 'SpriteTextured') report('INVALID_VALUE', 'ParticleTrail draws untextured ribbons in the preview; use a SpriteUnlit material.', m.node.id, 'template');
+        if (isTexturedTemplate(param(m, 'template'), m.node.params)) report('INVALID_VALUE', 'ParticleTrail draws untextured ribbons in the preview; use a SpriteUnlit material.', m.node.id, 'template');
         const chain = traceChain(tid);
         if (!chain) continue;
         if (!systems.some(s => s.id === chain.terminalId)) {
@@ -952,7 +968,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         const base = chain.initial ? param(chain.initial, 'color') as ColorValue : { srgb: '#FFFFFF', alpha: 1 };
         trails.push({
           nodeId: tid, systemId: chain.terminalId, historyTicks: Math.max(1, Math.round(num(b, 'history') * TICKS_PER_SECOND)), maxPoints: num(b, 'maxPoints'),
-          width: num(b, 'width') * transform.scale, endFade: num(b, 'endFade'), color: multiplyColors(base, param(m, 'tint') as ColorValue), hueShift: num(m, 'hueShift'), opacity: num(m, 'opacity'),
+          width: num(b, 'width') * transform.scale, endFade: num(b, 'endFade'), color: multiplyColors(base, param(m, 'tint') as ColorValue), hueShift: num(m, 'hueShift'), ...depthOf(m), opacity: num(m, 'opacity'),
           emission: num(m, 'emission'), blend: param(m, 'blend') as ParticleTrailLayer['blend'], alphaCutoff: num(m, 'alphaCutoff'), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
         });
         continue;
@@ -981,11 +997,11 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       noDrivenParams(mat, []);
       const template = param(mat, 'template');
       let sprite: ParticlePreviewLayer['sprite'];
-      if (template === 'SpriteTextured') {
+      if (isTexturedTemplate(template, mat.node.params)) {
         const r = materialSheet(doc, param(mat, 'sprite'), param(mat, 'textureAsset'));
         if ('error' in r) report('MISSING_REFERENCE', r.error, mat.node.id, r.field);
         else sprite = { sheet: r.sheet, mode: param(b, 'flipbookMode') as FlipbookMode, fps: num(b, 'flipbookFps'), randomStart: false, variant: num(mat, 'variant') };
-      } else if (template !== 'SpriteUnlit') report('INVALID_VALUE', `Material template "${String(template)}" is not supported.`, mat.node.id, 'template');
+      } else if (!(MATERIAL_TEMPLATE_IDS as readonly unknown[]).includes(template)) report('INVALID_VALUE', `Material template "${String(template)}" is not supported.`, mat.node.id, 'template');
 
       const chain = traceChain(bid);
       if (!chain) continue; // Empty source or disabled Emitter: no particles, no layer.
@@ -1005,7 +1021,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       layers.push({
         nodeId: bid,
         systemId: chain.terminalId,
-        color: multiplyColors(base, param(mat, 'tint') as ColorValue), hueShift: num(mat, 'hueShift'),
+        color: multiplyColors(base, param(mat, 'tint') as ColorValue), hueShift: num(mat, 'hueShift'), ...depthOf(mat),
         opacity: num(mat, 'opacity'),
         emission: num(mat, 'emission'),
         blend: param(mat, 'blend') as ParticlePreviewLayer['blend'],

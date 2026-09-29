@@ -416,7 +416,7 @@ export type PathCompile = (tick: number) => ValidationResult<PathPreviewPlan>;
 /** Blend/colour/opacity/emission uniforms and state shared by point and ribbon materials. */
 function materialFor(
   vertexShader: string, fragmentShader: string,
-  m: { color: { srgb: string; alpha: number }; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout'; alphaCutoff: number; hueShift?: number },
+  m: { color: { srgb: string; alpha: number }; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout'; alphaCutoff: number; hueShift?: number; depthTest?: false },
 ): THREE.ShaderMaterial {
   const cutout = m.blend === 'cutout';
   return new THREE.ShaderMaterial({
@@ -431,7 +431,8 @@ function materialFor(
       uHue: { value: ((m.hueShift ?? 0) * Math.PI) / 180 },
     },
     transparent: !cutout,
-    depthWrite: cutout,
+    depthWrite: cutout && m.depthTest !== false,
+    depthTest: m.depthTest !== false,
     blending: m.blend === 'additive' ? THREE.AdditiveBlending : THREE.NormalBlending,
   });
 }
@@ -649,9 +650,13 @@ export class PreviewViewport {
       let geometry = this.#meshGeometries.get(gkey);
       if (!geometry) { geometry = layer.meshAsset ? this.#importedMesh(layer.meshAsset, gkey, base, size?.mode === 'real' ? size.importScale : undefined) : basePivot(createBuiltinMesh(layer.mesh as BuiltinMesh), base); this.#meshGeometries.set(gkey, geometry); }
       const color = new THREE.Color().setStyle(layer.color.srgb), additive = layer.blend === 'additive';
+      // 09 refraction (enhancement): a lit mesh with refraction becomes a transmissive physical material (what is behind bends through it).
+      const litOpts = { color, roughness: layer.roughness ?? 0.75, metalness: layer.metalness ?? 0.05, flatShading: true, emissive: color.clone().multiplyScalar(layer.emission), transparent: layer.opacity < 1, opacity: layer.opacity };
       const material: THREE.Material = !additive && layer.lit
-        ? new THREE.MeshStandardMaterial({ color, roughness: layer.roughness ?? 0.75, metalness: layer.metalness ?? 0.05, flatShading: true, emissive: color.clone().multiplyScalar(layer.emission), transparent: layer.opacity < 1, opacity: layer.opacity })
+        ? (layer.refraction ? new THREE.MeshPhysicalMaterial({ ...litOpts, transmission: 1, ior: 1 + 0.06 * layer.refraction, thickness: 0.4 }) : new THREE.MeshStandardMaterial(litOpts))
         : new THREE.MeshBasicMaterial({ color: color.clone().multiplyScalar(1 + layer.emission), transparent: additive || layer.opacity < 1, opacity: layer.opacity, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending, depthWrite: !additive });
+      material.side = layer.faceMode === 'double' ? THREE.DoubleSide : layer.faceMode === 'back' ? THREE.BackSide : THREE.FrontSide;
+      if (layer.depthTest === false) { material.depthTest = false; material.depthWrite = false; }
       const surface = layer.surface;
       if (material instanceof THREE.MeshStandardMaterial && surface && surface.reflection > 0) { material.envMap = this.#environment(); material.envMapIntensity = surface.reflection; }
       patchMeshShader(material, layer.rim, surface?.detail ?? 0, surface?.detailScale ?? 4);

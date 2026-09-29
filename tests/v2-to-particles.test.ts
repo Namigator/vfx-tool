@@ -723,3 +723,17 @@ test('15 hard limit: more than 4 point lights active at once is an error (never 
   });
   assert.ok(errorsOf(compileParticlePreview(d)).some(e => e.code === 'BUDGET_EXCEEDED' && /5 point lights/.test(e.message)));
 });
+
+test('09 material templates: DarkVolumeSprite (normal blend, no emission, textured), SurfaceTranslucent (normal, liquid/reflection floors), MeshLit lights meshes; depth test off travels', async () => {
+  const { templateParam, isTexturedTemplate, templateLitsMeshes } = await import('../src/graph/materialSprite.ts');
+  assert.equal(templateParam('DarkVolumeSprite', 'blend', 'additive'), 'normal');
+  assert.equal(templateParam('DarkVolumeSprite', 'emission', 3), 0);
+  assert.equal(templateParam('SurfaceTranslucent', 'liquid', 0), 0.85);
+  assert.equal(templateParam('SurfaceTranslucent', 'reflection', 1.2), 1.2);
+  assert.equal(templateParam('SpriteUnlit', 'blend', 'additive'), 'additive');
+  assert.ok(isTexturedTemplate('DarkVolumeSprite', {}) && !isTexturedTemplate('SurfaceTranslucent', {}) && isTexturedTemplate('SurfaceTranslucent', { sprite: 'droplet' }));
+  assert.ok(templateLitsMeshes('MeshLit') && !templateLitsMeshes('SpriteUnlit'));
+  const d = f01(g => Object.assign(root(g).nodes.find(n => n.id === 'node-material')!.params, { template: 'DarkVolumeSprite', sprite: 'smoke-puff', blend: 'additive', emission: 2, depthTest: false }));
+  const l = plan(d).layers[0];
+  assert.deepEqual([l.blend, l.emission, l.depthTest, !!l.sprite], ['normal', 0, false, true]);
+});

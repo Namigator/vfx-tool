@@ -40,7 +40,7 @@ export const NODE_PORTABILITY: Record<string, Portability> = {
 
 /** Material operations that are not plain textured billboards (checked on each Material's parameters). */
 const MATERIAL_OPS: { param: string; active: (v: unknown) => boolean; label: string; p: Portability }[] = [
-  { param: 'dissolve', active: v => v === true, label: 'dissolve', p: P('approximation', 'dissolve-rim') },
+  { param: 'dissolve', active: v => typeof v === 'number' && v > 0, label: 'dissolve', p: P('approximation', 'dissolve-rim') },
   { param: 'rim', active: v => typeof v === 'number' && v > 0, label: 'rim', p: P('approximation', 'dissolve-rim') },
   { param: 'liquid', active: v => typeof v === 'number' && v > 0, label: 'liquid shading', p: P('approximation', 'water-refraction') },
   { param: 'reflection', active: v => typeof v === 'number' && v > 0, label: 'reflection', p: P('approximation', 'pbr-material') },

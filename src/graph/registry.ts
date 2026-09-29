@@ -13,12 +13,13 @@
 //   RibbonRenderer envelope is not registered yet (same as BillboardRenderer).
 // - Capability identifiers are empty: the vocabulary is defined with the renderer.
 import { NODE_PORTABILITY } from './portability.ts';
+import { MATERIAL_TEMPLATE_IDS } from './materialSprite.ts';
 import type { EvaluationDomain, NodeSpec, ParameterSpec, PortSpec } from '../model/types.ts';
 import { TICKS_PER_SECOND, MAX_DURATION_TICKS } from '../model/types.ts';
 import { BUILTIN_SPRITES } from '../assets/builtinSprites.generated.ts';
 
 export const REGISTRY_DEFINITION_VERSION = 1;
-export const MATERIAL_TEMPLATES = ['SpriteUnlit', 'SpriteTextured'];
+export const MATERIAL_TEMPLATES = [...MATERIAL_TEMPLATE_IDS];
 
 const CONST: EvaluationDomain[] = ['constant'];
 const ONE_TICK_SECONDS = 1 / TICKS_PER_SECOND;
@@ -626,7 +627,7 @@ function material(): NodeSpec {
     inputs: [],
     outputs: [port({ id: 'material', label: 'Material', type: 'material' })],
     parameters: [
-      param({ id: 'template', label: 'Template', type: 'enum', unit: 'none', default: 'SpriteUnlit', choices: [...MATERIAL_TEMPLATES], description: 'SpriteUnlit: soft procedural disc. SpriteTextured: a sprite/flipbook from the included library.' }),
+      param({ id: 'template', label: 'Template', type: 'enum', unit: 'none', default: 'SpriteUnlit', choices: [...MATERIAL_TEMPLATES], description: 'SpriteUnlit: soft disc. SpriteTextured: a library/imported sprite or flipbook. RibbonUnlit: plain strips. MeshLit: lit PBR meshes. SurfaceTranslucent: water/ice-like (normal blend, liquid shading, reflection, optional refraction). DarkVolumeSprite: dark textured smoke (no emission; edge tint = rim colour).' }),
       param({ id: 'textureAsset', label: 'Texture asset', type: 'string', unit: 'none', default: '', description: 'Imported texture/flipbook asset ID (Import texture…); when set it replaces Sprite. Empty = use the included library sprite.' }),
       param({ id: 'sprite', label: 'Sprite', type: 'enum', unit: 'none', default: 'soft-glow', choices: BUILTIN_SPRITES.map(s => s.id), description: 'Included library sheet (SpriteTextured only). Flipbooks animate; variant sets pick one cell per particle.' }),
       param({ id: 'variant', label: 'Variant', type: 'integer', unit: 'none', default: -1, min: -1, max: 255, step: 1, description: 'Variant/mask sheets: -1 picks a random cell per particle; otherwise this fixed cell (row-major).' }),
@@ -656,6 +657,9 @@ function material(): NodeSpec {
       param({ id: 'dissolveEdge', label: 'Dissolve edge width', type: 'number', unit: 'normalized', default: 0, min: 0, max: 0.25, editPolicy: 'live', description: 'Width of a glowing band on the burning edge (0 = none).' }),
       param({ id: 'dissolveEdgeColor', label: 'Dissolve edge colour', type: 'color', unit: 'none', default: { srgb: '#FFB040', alpha: 1 }, editPolicy: 'live' }),
       param({ id: 'groundFade', label: 'Ground fade', type: 'number', unit: 'meter', default: 0, min: 0, max: 2, editPolicy: 'live', description: 'Sprites fade out over this height above the floor (y = 0) instead of being cut by it (08 analytic ground fade). 0 = off.' }),
+      param({ id: 'faceMode', label: 'Faces', type: 'enum', unit: 'none', default: 'front', choices: ['front', 'back', 'double'], editPolicy: 'live', description: 'Meshes: which faces are drawn (double for thin open shapes). Camera-facing sprites and ribbons always face the camera.' }),
+      param({ id: 'depthTest', label: 'Depth test', type: 'boolean', unit: 'none', default: true, editPolicy: 'live', description: 'Off: always drawn on top of solid objects (UI-like glows).' }),
+      param({ id: 'refraction', label: 'Refraction', type: 'number', unit: 'none', default: 0, min: 0, max: 8, editPolicy: 'live', description: 'Enhancement: bends what is behind (pixels at 1080p). Previewed on lit meshes (ice, glass); sprites and ribbons show a notice instead.' }),
       param({ id: 'alphaCutoff', label: 'Alpha cutoff', type: 'number', unit: 'normalized', default: 0.5, min: 0, max: 1, editPolicy: 'live', description: 'Cutout blend only.' }),
     ],
     disabledBehavior: 'fallback',

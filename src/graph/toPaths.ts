@@ -39,7 +39,7 @@ import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { createRegistry } from './registry.ts';
 import { scheduleStart, TimingError, type TimingContext } from './eventTiming.ts';
-import { materialSheet } from './materialSprite.ts';
+import { isTexturedTemplate, materialSheet, MATERIAL_TEMPLATE_IDS, templateLitsMeshes, templateParam } from './materialSprite.ts';
 import { compileParticlePreview } from './toParticles.ts';
 import { ParticleSimulation, type ParticleEmitterDescriptor, type ParticleState } from '../runtime/particles.ts';
 import { fnv1a32Utf8 } from '../runtime/random.ts';
@@ -117,6 +117,8 @@ export type PathPreviewLayer = {
   liquid: number;
   /** Material Colour shift in degrees (0 = unchanged). */
   hueShift: number;
+  /** Material depth test off: drawn over solid objects. Absent = on. */
+  depthTest?: false;
 };
 export type PathPreviewPlan = {
   durationTicks: number;
@@ -255,7 +257,12 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
     source: (nodeId, port) => { const c = into(nodeId, port)[0]; return c && c.source.kind === 'node' ? { nodeId: c.source.nodeId, port: c.source.port } : undefined; },
     pathLength: (nodeId, port, tick) => probePathLength(input, nodeId, port, tick),
   };
+  /** 09 material templates fix some Material fields (materialSprite.templateParam); everything else is as authored. */
   const rawParam = (n: ExpandedNode, id: string): ParameterValue => {
+    const v = rawParamBase(n, id);
+    return n.node.type === 'Material' && id !== 'template' ? templateParam(rawParamBase(n, 'template'), id, v) : v;
+  };
+  const rawParamBase = (n: ExpandedNode, id: string): ParameterValue => {
     const v = params.get(`${n.node.id}\u0000${id}`);
     if (v !== undefined) return v;
     const spec = registry.get(registryKey(n.node.type, n.node.definitionVersion))?.parameters.find(p => p.id === id);
@@ -582,13 +589,14 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
         continue;
       }
       noDrivenParams(mat, ['opacity']);
+      if (num(mat, 'refraction') > 0) warnings.push({ code: 'INVALID_VALUE', severity: 'warning', nodeId: mat.node.id, message: `Material "${mat.node.id}" refraction is an enhancement previewed on lit meshes only; this ribbon is drawn without it.` });
       const opacity = drivenScalar(mat, 'opacity');
       let sprite: PathPreviewLayer['sprite'];
-      if (param(mat, 'template') === 'SpriteTextured') {
+      if (isTexturedTemplate(param(mat, 'template'), mat.node.params)) {
         const r = materialSheet(doc, param(mat, 'sprite'), param(mat, 'textureAsset'));
         if ('error' in r) report('MISSING_REFERENCE', r.error, mat.node.id, r.field);
         else sprite = { sheet: r.sheet, variant: num(mat, 'variant') };
-      } else if (param(mat, 'template') !== 'SpriteUnlit') report('INVALID_VALUE', `Material template "${String(param(mat, 'template'))}" is not supported.`, mat.node.id, 'template');
+      } else if (!(MATERIAL_TEMPLATE_IDS as readonly unknown[]).includes(param(mat, 'template'))) report('INVALID_VALUE', `Material template "${String(param(mat, 'template'))}" is not supported.`, mat.node.id, 'template');
 
       let window: PathPreviewLayer['window'] = { startTick: 0, endTick: duration }; // Unconnected: whole document (25).
       const ws = into(rid, 'window');
@@ -646,6 +654,7 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
         alphaCutoff: num(mat, 'alphaCutoff'),
         liquid: num(mat, 'liquid'),
         hueShift: num(mat, 'hueShift'),
+        ...(param(mat, 'depthTest') === false ? { depthTest: false as const } : {}),
         ...(sprite ? { sprite } : {}),
         ...((): Pick<PathPreviewLayer, 'uvAnim'> => {
           const sc = param(mat, 'uvScroll') as [number, number], dist = num(mat, 'uvDistort');
