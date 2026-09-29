@@ -47,6 +47,13 @@ function describe(d: Diagnostic): string {
   return where ? `${d.code} at ${where}: ${d.message}` : `${d.code}: ${d.message}`;
 }
 
+/** 12 "Error panel can focus the responsible node/field": a diagnostic naming a node is a button that selects it. */
+function DiagText({ d, onFocus }: { d: Diagnostic; onFocus: (d: Diagnostic) => void }) {
+  return d.nodeId
+    ? <button type="button" className="pv2-diag-link" title="Show the node (and field) this is about" onClick={() => onFocus(d)}>{describe(d)}</button>
+    : <>{describe(d)}</>;
+}
+
 const toText = (doc: EffectDocumentV2) => JSON.stringify(doc, null, 2);
 
 /** The validated canonical mix of one audio compile; the revision changes on every compile. */
@@ -502,6 +509,21 @@ export default function PreviewV2() {
     if (committed.changed) publish(committed.semanticChanged);
   }, [publish]);
 
+  /** Opens the graph that holds the diagnostic's node, selects it and focuses the named parameter field. */
+  const focusDiagnostic = useCallback((d: Diagnostic) => {
+    if (!d.nodeId) return;
+    const cur = historyRef.current!.snapshot(), g = cur.graphs.find(x => x.nodes.some(n => n.id === d.nodeId));
+    if (!g) return;
+    if (g.id !== canvasGraphId(cur)) onEdit(`Show ${d.nodeId}`, [{ op: 'set', path: ['editor', 'openedGraphId'], value: g.id }]);
+    setSelectedNodeId(d.nodeId);
+    const param = /\.params\.([A-Za-z0-9_]+)/.exec(d.fieldPath ?? '')?.[1];
+    setTimeout(() => {
+      const el = (param && document.getElementById(`ni-${d.nodeId}-${param}`)) || document.querySelector<HTMLElement>('.ni-row input, .ni-row select');
+      el?.scrollIntoView({ block: 'center' });
+      (el as HTMLElement | null)?.focus();
+    }, 60);
+  }, [onEdit]);
+
   const undo = useCallback(() => {
     const r = historyRef.current!.undo();
     if (!r.ok) return;
@@ -866,8 +888,8 @@ export default function PreviewV2() {
             </ul>
           )}
           <ul className="pv2-diags" role="status" aria-live="polite" aria-label="Diagnostics">
-            {errors.map((d, i) => <li key={`e${i}`} className="pv2-error">{describe(d)}</li>)}
-            {warnings.map((d, i) => <li key={`w${i}`} className="pv2-warn">{describe(d)}</li>)}
+            {errors.map((d, i) => <li key={`e${i}`} className="pv2-error"><DiagText d={d} onFocus={focusDiagnostic} /></li>)}
+            {warnings.map((d, i) => <li key={`w${i}`} className="pv2-warn"><DiagText d={d} onFocus={focusDiagnostic} /></li>)}
             {compiled && errors.length === 0 && <li className="pv2-ok">Compiled; loads paused at tick 0.</li>}
           </ul>
           <details className="pv2-advanced">
@@ -887,7 +909,7 @@ export default function PreviewV2() {
               onChange={e => { setText(e.target.value); setTextDirty(true); }}
             />
             <ul className="pv2-diags" role="status" aria-live="polite" aria-label="JSON diagnostics">
-              {jsonErrors.map((d, i) => <li key={i} className={d.severity === 'error' ? 'pv2-error' : 'pv2-warn'}>{describe(d)}</li>)}
+              {jsonErrors.map((d, i) => <li key={i} className={d.severity === 'error' ? 'pv2-error' : 'pv2-warn'}><DiagText d={d} onFocus={focusDiagnostic} /></li>)}
             </ul>
           </details>
         </aside>

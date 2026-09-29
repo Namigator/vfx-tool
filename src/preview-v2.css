@@ -65,3 +65,5 @@
 .pv2-banner { display: block; flex-basis: 100%; margin-top: 6px; padding: 8px 10px; border: 1px solid #3a4a66; border-radius: 6px; background: #141b28; }
 .pv2-banner ul { margin: 6px 0; padding-left: 18px; }
 .pv2-banner button { margin-right: 6px; }
+.pv2-diag-link { all: unset; cursor: pointer; text-decoration: underline dotted; }
+.pv2-diag-link:focus-visible { outline: 2px solid #7fb4ff; }
