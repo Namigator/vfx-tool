@@ -18,7 +18,7 @@
   - README + MCP guide updated.
 - Waiting on the USER: A-05 run 6 verdict (work/a05); variant approval (Gate D); whether additive effects need a
   light-arena variant (faint on light floors); visual OK before merging to main.
-- [UNVERIFIED]: "Catching up" readout (hidden pane); Jump to driver was not clicked.
+- [UNVERIFIED]: "Catching up" readout (hidden pane). Jump to driver [RAN] via DOM (selects the driving node).
 - Before-release backlog DONE (117ad01): the graph editor is the default page (http://127.0.0.1:5174/), the old editor
   UI is removed (src/core stays only for importing old effects), the converter is "Import old effect", and a first run
   opens a blank effect with the Library. The release is just "VFX Studio" (no "v1").
