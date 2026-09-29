@@ -11,7 +11,7 @@ export type InspectorValue =
   /** Resolved (scaled/offset) public-control value. */
   | { kind: 'control'; value: ParameterValue; controlLabel: string }
   /** Driven by a graph edge; the value exists only at runtime. */
-  | { kind: 'connection'; from: string }
+  | { kind: 'connection'; from: string; fromNodeId?: string }
   /** Control-driven but resolution failed; never substitute the fallback. */
   | { kind: 'unavailable'; controlLabel: string; reason: string };
 
@@ -29,11 +29,12 @@ export function inspectorValues(
   if (!graph || !node || !spec) return out;
   const ids = new Set(spec.parameters.map(p => p.id));
 
-  const connected = new Map<string, string>();
+  const connected = new Map<string, string>(), connectedNode = new Map<string, string>();
   for (const e of graph.edges) {
     if (e.target.nodeId !== node.id || !ids.has(e.target.port) || connected.has(e.target.port)) continue;
     const src = graph.nodes.find(n => n.id === e.source.nodeId);
     connected.set(e.target.port, `${src?.label || e.source.nodeId}.${e.source.port}`);
+    connectedNode.set(e.target.port, e.source.nodeId);
   }
   const bound = new Map<string, string>();
   for (const c of doc.controls) {
@@ -52,7 +53,7 @@ export function inspectorValues(
 
   for (const p of spec.parameters) {
     const from = connected.get(p.id);
-    if (from !== undefined) { out.set(p.id, { kind: 'connection', from }); continue; }
+    if (from !== undefined) { out.set(p.id, { kind: 'connection', from, fromNodeId: connectedNode.get(p.id) }); continue; }
     const controlLabel = bound.get(p.id);
     if (controlLabel !== undefined) {
       const r = res?.ok ? res.value.find(v => v.nodeId === node.id && v.parameter === p.id) : undefined;

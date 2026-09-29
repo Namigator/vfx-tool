@@ -22,6 +22,8 @@ export type NodeInspectorProps = {
   onEdit: (label: string, patches: Patch[]) => void;
   /** Active public-control overrides (e.g. Group exposed values) used when resolving driven fields. */
   controlOverrides?: ReadonlyMap<string, ParameterValue>;
+  /** 04 "Jump to driver": selects the node whose connection drives a field. */
+  onSelectNode?: (nodeId: string) => void;
 };
 
 const REGISTRY: ReadonlyMap<string, NodeSpec> = createRegistry();
@@ -48,7 +50,7 @@ function rangeText(spec: ParameterSpec): string {
   return parts.join(' ');
 }
 
-export default function NodeInspector({ document: doc, graphId, nodeId, onEdit, controlOverrides }: NodeInspectorProps) {
+export default function NodeInspector({ document: doc, graphId, nodeId, onEdit, controlOverrides, onSelectNode }: NodeInspectorProps) {
   const gi = doc.graphs.findIndex(g => g.id === graphId);
   const graph = doc.graphs[gi];
   const ni = graph ? graph.nodes.findIndex(n => n.id === nodeId) : -1;
@@ -115,7 +117,7 @@ export default function NodeInspector({ document: doc, graphId, nodeId, onEdit, 
                 structural={STRUCTURAL[node.type] === p.id}
                 onSet={v => onEdit(`Set ${title} ${p.label}`, [{ op: 'set', path, value: v }])}
                 onReset={() => onEdit(`Reset ${title} ${p.label}`, [{ op: 'delete', path }])}
-                onDisconnect={() => disconnect(p.id, p.label)} onUnbind={() => unbind(p.id, p.label)}
+                onDisconnect={() => disconnect(p.id, p.label)} onUnbind={() => unbind(p.id, p.label)} onJump={onSelectNode}
               />
             );
           })}
@@ -147,10 +149,10 @@ type RowProps = {
   doc: EffectDocumentV2; node: NodeDefinition; spec: ParameterSpec; eff: InspectorValue; stored: boolean;
   structural: boolean;
   onSet: (v: ParameterValue) => void; onReset: () => void;
-  onDisconnect: () => void; onUnbind: () => void;
+  onDisconnect: () => void; onUnbind: () => void; onJump?: (nodeId: string) => void;
 };
 
-function ParamRow({ doc, node, spec, eff, stored, structural, onSet, onReset, onDisconnect, onUnbind }: RowProps) {
+function ParamRow({ doc, node, spec, eff, stored, structural, onSet, onReset, onDisconnect, onUnbind, onJump }: RowProps) {
   // Errors are kept per input slot ('' scalar, 0/1/2 vector components, 'alpha') so an unchanged sibling
   // component cannot clear another component's invalid draft.
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -254,7 +256,7 @@ function ParamRow({ doc, node, spec, eff, stored, structural, onSet, onReset, on
       </div>
       {control}
       <p id={helpId} className="ni-help">
-        {eff.kind === 'connection' && <strong className="ni-driven">Driven by connection from {eff.from}; value is computed at runtime. <button type="button" className="ni-unlink" onClick={onDisconnect} title="Remove the connection so this field can be edited here">Disconnect</button> </strong>}
+        {eff.kind === 'connection' && <strong className="ni-driven">Driven by connection from {eff.from}; value is computed at runtime. {onJump && eff.fromNodeId && <button type="button" className="ni-unlink" onClick={() => onJump(eff.fromNodeId!)} title="Select the node that drives this field">Jump to driver</button>} <button type="button" className="ni-unlink" onClick={onDisconnect} title="Remove the connection so this field can be edited here">Disconnect</button> </strong>}
         {eff.kind === 'control' && <strong className="ni-driven">Driven by public control “{eff.controlLabel}”; showing its resolved value. <button type="button" className="ni-unlink" onClick={onUnbind} title="Stop the knob from driving this field (the knob keeps its other targets)">Unbind</button> </strong>}
         {eff.kind === 'unavailable' && <strong className="ni-driven">Driven by public control “{eff.controlLabel}”; value unavailable: {eff.reason} <button type="button" className="ni-unlink" onClick={onUnbind}>Unbind</button> </strong>}
         {structural && <strong className="ni-driven">Structural reference; not editable here. </strong>}

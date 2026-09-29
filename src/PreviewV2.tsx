@@ -979,7 +979,7 @@ export default function PreviewV2() {
           <section className="pv2-panel" aria-label="Selected node">
             <h2 className="pv2-heading">Selected node</h2>
             {selectedNode ? (
-              <NodeInspector document={doc} graphId={graphId} nodeId={selectedNode.id} onEdit={onEdit} />
+              <NodeInspector document={doc} graphId={graphId} nodeId={selectedNode.id} onEdit={onEdit} onSelectNode={setSelectedNodeId} />
             ) : (
               <p className="pv2-muted">No node selected. Select a node in the graph.</p>
             )}
