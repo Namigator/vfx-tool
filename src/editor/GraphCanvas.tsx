@@ -1,7 +1,8 @@
 // Controlled node canvas for one graph of an EffectDocumentV2 (12-EDITOR). The document prop is
 // authoritative: every authored change leaves through onEdit as history patches, and React Flow change
 // events never mutate it. Only the in-progress drag preview and edge selection are local state.
-// Deferred here: Group authoring, multi-node selection, viewport persistence, parameter editing.
+// Keyboard (12): Delete, Enter opens a group, Ctrl/Cmd+D duplicate, Ctrl/Cmd+G group, Ctrl/Cmd+C/V copy/paste, Escape
+// clears the selection (then goes up a level), F fits. Drag on empty canvas box-selects; middle/right drag or Space pans.
 import { COMPONENT_TEMPLATES, componentPlacement, getComponent, insertComponent } from '../graph/components.ts';
 import { groupSelection } from '../graph/groupSelection.ts';
 import { insertUserComponent, saveGroupAsComponent } from '../graph/userComponents.ts';
@@ -20,6 +21,8 @@ import { createRegistry } from '../graph/registry.ts';
 import { GROUP_NODE_TYPE, resolveSignature, type ResolvedSignature } from '../graph/signature.ts';
 import { analyzeGraph } from '../graph/analyze.ts';
 import { resolveSelection } from './selection.ts';
+import { copySelection, duplicateSelection, parseClipboard, pasteSelection } from './graphOps.ts';
+import { canSolo } from '../graph/solo.ts';
 
 export type GraphCanvasProps = {
   document: EffectDocumentV2;
@@ -27,6 +30,9 @@ export type GraphCanvasProps = {
   selectedNodeId?: string;
   onSelectNode: (id: string | null) => void;
   onEdit: (label: string, patches: HistoryPatch[]) => void;
+  /** 06 Solo (preview-only): shown and toggled on node cards. */
+  soloed?: ReadonlySet<string>;
+  onToggleSolo?: (id: string) => void;
 };
 
 type CardData = {
@@ -40,6 +46,8 @@ type CardData = {
   showAdvanced: boolean;
   onToggleEnabled: (nodeId: string, enabled: boolean) => void;
   onToggleAdvanced: (nodeId: string) => void;
+  solo: boolean;
+  onToggleSolo?: (nodeId: string) => void;
 };
 type CardNode = Node<CardData, 'card'>;
 
@@ -78,6 +86,21 @@ function isAdvancedPort(node: NodeDefinition, port: PortSpec): boolean {
   return spec.parameters.some(p => p.id === port.id) && !spec.inputs.some(i => i.id === port.id);
 }
 
+/** 12 "Node cards show ... a small summary": the few settings that identify a node at a glance. */
+function summary(n: NodeDefinition): string {
+  const p = n.params as Record<string, unknown>, num = (k: string) => (typeof p[k] === 'number' ? +(p[k] as number).toFixed(3) : undefined);
+  switch (n.type) {
+    case 'Emitter': return [p.shape, num('burst') ? `burst ${num('burst')}` : '', num('rate') ? `${num('rate')}/s` : ''].filter(Boolean).join(' · ');
+    case 'Schedule': return `start ${num('startTicks') ?? 0} · ${num('durationTicks') ?? 0} ticks${p.mode && p.mode !== 'window' ? ` · ${p.mode}` : ''}`;
+    case 'Material': return [p.template === 'SpriteTextured' ? (p.textureAsset ? 'imported texture' : p.sprite) : 'plain', p.blend].filter(Boolean).join(' · ');
+    case 'Anchor': return String(p.anchorId ?? '');
+    case 'PathFollower': return num('speed') ? `${num('speed')} m/s` : `${num('durationTicks') ?? ''} ticks`;
+    case 'PointLight': return `intensity ${num('intensity') ?? ''}`;
+    case 'MeshRenderer': return String(p.meshAsset ? 'imported model' : p.mesh ?? '');
+    default: return '';
+  }
+}
+
 function NodeCard({ data, selected }: NodeProps<CardNode>) {
   const { node, signature, signatureError, locked, connected, issues, connectedInputs, showAdvanced } = data;
   const protectedEnable = specOf(node)?.disabledBehavior === 'protected';
@@ -92,10 +115,15 @@ function NodeCard({ data, selected }: NodeProps<CardNode>) {
       <div className="gc-card-head">
         <span className="gc-title">{node.label || node.id}</span>
         <span className="gc-type">{node.type}{locked ? ' 🔒' : ''}</span>
+        {data.onToggleSolo && canSolo(node.type) && (
+          <button type="button" className="gc-solo nodrag nopan" aria-pressed={data.solo} onClick={() => data.onToggleSolo!(node.id)}
+            title="Solo: show only soloed parts in the preview (does not change the effect)">S</button>
+        )}
         <label className="gc-enabled nodrag nopan" title={protectedEnable ? 'This node cannot be disabled.' : 'Enabled'}>
           <input type="checkbox" checked={node.enabled} disabled={protectedEnable} onChange={onChange} aria-label={`Enable ${node.label || node.id}`} />
         </label>
       </div>
+      {summary(node) && <div className="gc-summary">{summary(node)}</div>}
       {signature ? (
         <div className="gc-ports">
           <div className="gc-col">{inputs.map(p => <PortRow key={p.id} port={p} side="in" />)}</div>
@@ -119,7 +147,7 @@ function NodeCard({ data, selected }: NodeProps<CardNode>) {
 
 const nodeTypes = { card: NodeCard };
 
-function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }: GraphCanvasProps) {
+function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, soloed, onToggleSolo }: GraphCanvasProps) {
   const [componentId, setComponentId] = useState('');
   const userComponents = useUserComponents();
   const userPick = componentId.startsWith('user:') ? userComponents.find(c => c.id === componentId.slice(5)) : undefined;
@@ -131,6 +159,8 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
   const [notice, setNotice] = useState<{ kind: 'error' | 'info'; lines: string[] } | null>(null);
   const [addType, setAddType] = useState('');
+  /** Context menu (right click) or the Add-connected-node chooser, at a pane position. */
+  const [menu, setMenu] = useState<{ x: number; y: number; flow: { x: number; y: number }; nodeId?: string; from?: { nodeId: string; port: string; side: 'source' | 'target'; portType: string } } | null>(null);
   const [advancedNodes, setAdvancedNodes] = useState<ReadonlySet<string>>(new Set());
   const nodesInitialized = useNodesInitialized();
   // The camera is local preview state, never authored/undoable. It is seeded from the saved layout once per
@@ -209,10 +239,11 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
           issues: issuesByNode.get(n.id) ?? [], onToggleEnabled: toggleEnabled,
           connectedInputs: new Set(graph.edges.filter(e => e.target.nodeId === n.id).map(e => e.target.port)),
           showAdvanced: advancedNodes.has(n.id), onToggleAdvanced: toggleAdvanced,
+          solo: soloed?.has(n.id) ?? false, ...(onToggleSolo ? { onToggleSolo } : {}),
         },
       };
     });
-  }, [graph, doc, graphId, layout, dragPreview, measured, selectedNodeId, picked, issuesByNode, toggleEnabled, advancedNodes, toggleAdvanced]);
+  }, [graph, doc, graphId, layout, dragPreview, measured, selectedNodeId, picked, issuesByNode, toggleEnabled, advancedNodes, toggleAdvanced, soloed, onToggleSolo]);
 
   const edges: Edge[] = useMemo(() => (graph?.edges ?? []).map(e => ({
     id: e.id, source: e.source.nodeId, sourceHandle: e.source.port, target: e.target.nodeId, targetHandle: e.target.port,
@@ -230,6 +261,9 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
         setMeasured(prev => prev[c.id]?.width === d.width && prev[c.id]?.height === d.height ? prev : { ...prev, [c.id]: { width: d.width, height: d.height } });
       }
     }
+    // Box selection (drag on empty canvas) selects several nodes at once: they become the Group/Duplicate set.
+    const boxed = changes.flatMap(c => (c.type === 'select' && c.selected ? [c.id] : []));
+    if (boxed.length > 1) setPicked(new Set(boxed));
     // Resolve the whole batch once so select/deselect ordering cannot end in a spurious null.
     const next = resolveSelection(changes, selectedNodeId);
     if (next !== undefined) onSelectNode(next);
@@ -427,6 +461,65 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
     setNotice({ kind: 'info', lines: [`Grouped ${groupIds.length} node(s). Double-click the group (or Open internals) to see them.`] });
     onSelectNode(r.groupNodeId);
   };
+  /** Commits a whole-document result (duplicate/paste) as one undoable edit. */
+  const commitDoc = (label: string, next: EffectDocumentV2) => onEdit(label, [
+    { op: 'set', path: ['graphs'], value: next.graphs },
+    { op: 'set', path: ['controls'], value: next.controls },
+    { op: 'set', path: ['anchors'], value: next.anchors },
+    { op: 'set', path: ['assets'], value: next.assets },
+    { op: 'set', path: ['durationTicks'], value: next.durationTicks },
+    { op: 'set', path: ['editor', 'graphs'], value: next.editor.graphs },
+  ]);
+  const duplicate = () => {
+    if (!groupIds.length) { setNotice({ kind: 'info', lines: ['Select nodes to duplicate.'] }); return; }
+    const r = duplicateSelection(doc, graphId, groupIds);
+    if (!r.ok) { setNotice({ kind: 'error', lines: [r.message] }); return; }
+    commitDoc(`Duplicate ${groupIds.length} node(s)`, r.doc);
+    setPicked(new Set(r.newIds.length > 1 ? r.newIds : []));
+    onSelectNode(r.newIds[0] ?? null);
+    setNotice({ kind: 'info', lines: [`Duplicated ${groupIds.length} node(s). Copies are independent (own ids and randomness).`, ...r.notes] });
+  };
+  const copy = async () => {
+    const r = copySelection(doc, graphId, groupIds);
+    if (!r.ok) { setNotice({ kind: 'error', lines: [r.message] }); return; }
+    try { await navigator.clipboard.writeText(JSON.stringify(r.value)); setNotice({ kind: 'info', lines: [`Copied ${groupIds.length} node(s). Paste with Ctrl+V here or in another effect.`] }); }
+    catch { setNotice({ kind: 'error', lines: ['The browser refused clipboard access.'] }); }
+  };
+  const paste = async () => {
+    let text = '';
+    try { text = await navigator.clipboard.readText(); } catch { setNotice({ kind: 'error', lines: ['The browser refused clipboard access.'] }); return; }
+    const c = parseClipboard(text);
+    if (!c.ok) { setNotice({ kind: 'error', lines: [c.message] }); return; }
+    const r = pasteSelection(doc, graphId, c.value);
+    if (!r.ok) { setNotice({ kind: 'error', lines: [r.message] }); return; }
+    commitDoc(`Paste ${r.newIds.length} node(s)`, r.doc);
+    onSelectNode(r.newIds[0] ?? null);
+    setNotice({ kind: 'info', lines: [`Pasted ${r.newIds.length} node(s).`, ...r.notes, ...(c.value.assets.length ? ['Imported files come with their records; if one shows MISSING under Imported assets, use Relink….'] : [])] });
+  };
+  const goUp = () => { const parent = trail.at(-2); if (parent) openGraph(parent.id, `Back to ${parent.label}`); };
+  /** 12 "Expose Add connected node from a dangling compatible port": node types that can take/feed this port type. */
+  const compatibleTypes = (portType: string, side: 'source' | 'target') => addable.filter(s => (side === 'source' ? s.inputs : s.outputs).some(p => p.type === portType)).slice(0, 14);
+  const addConnected = (typeKey: string, at: { x: number; y: number }, from: { nodeId: string; port: string; side: 'source' | 'target'; portType: string }) => {
+    const spec = addable.find(s => registryKey(s.type, s.definitionVersion) === typeKey);
+    if (!spec) return;
+    const all = doc.graphs.flatMap(g => g.nodes);
+    const id = freshId(spec.type.charAt(0).toLowerCase() + spec.type.slice(1), new Set(all.map(n => n.id)));
+    const params: NodeDefinition['params'] = {};
+    for (const p of spec.parameters) params[p.id] = structuredClone(p.default);
+    const node: NodeDefinition = { id, type: spec.type, definitionVersion: spec.definitionVersion, label: spec.type, enabled: true, randomStreamId: freshId(`${id}_rng`, new Set(all.map(n => n.randomStreamId))), params };
+    const port = (from.side === 'source' ? spec.inputs : spec.outputs).find(p => p.type === from.portType)!;
+    const sameTarget = from.side === 'source' ? [] : graph.edges.filter(e => e.target.nodeId === from.nodeId && e.target.port === from.port);
+    const edge: EdgeDefinition = from.side === 'source'
+      ? { id: freshId(`e_${from.nodeId}_${id}`, new Set(doc.graphs.flatMap(g => g.edges.map(e => e.id)))), source: { nodeId: from.nodeId, port: from.port }, target: { nodeId: id, port: port.id }, order: 0 }
+      : { id: freshId(`e_${id}_${from.nodeId}`, new Set(doc.graphs.flatMap(g => g.edges.map(e => e.id)))), source: { nodeId: id, port: port.id }, target: { nodeId: from.nodeId, port: from.port }, order: sameTarget.reduce((m, e) => Math.max(m, e.order + 1), 0) };
+    const pos = { x: Math.round(at.x), y: Math.round(at.y) };
+    onEdit(`Add connected ${spec.type}`, [
+      { op: 'splice', path: ['graphs', gi, 'nodes'], index: graph.nodes.length, deleteCount: 0, insert: [node] },
+      { op: 'splice', path: ['graphs', gi, 'edges'], index: graph.edges.length, deleteCount: 0, insert: [edge] },
+      layout ? { op: 'set', path: ['editor', 'graphs', graphId, 'nodes', id], value: pos } : { op: 'set', path: ['editor', 'graphs', graphId], value: { nodes: { [id]: pos }, viewport: { ...DEFAULT_VIEWPORT } } },
+    ]);
+    onSelectNode(id);
+  };
   /** Opens a Group's internals in this canvas (06: double-click or Open internals; breadcrumb returns). */
   const openGraph = (id: string, label: string) => { onSelectNode(null); onEdit(label, [{ op: 'set', path: ['editor', 'openedGraphId'], value: id }]); };
   const parentOf = (id: string) => doc.graphs.find(g => g.nodes.some(n => n.type === GROUP_NODE_TYPE && n.params.graphId === id));
@@ -489,15 +582,22 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
         // 12 keyboard equivalents: Delete/Backspace removes the selection, Enter opens a selected group.
         const t = e.target as HTMLElement;
         if (t.closest('input, textarea, select, [contenteditable="true"]')) return;
+        const mod = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
         if ((e.key === 'Delete' || e.key === 'Backspace') && canDelete) { e.preventDefault(); deleteSelection(); }
         else if (e.key === 'Enter' && selectedNode?.type === GROUP_NODE_TYPE) { e.preventDefault(); openGraph(selectedNode.params.graphId as string, `Open ${selectedNode.label}`); }
+        else if (mod && k === 'd') { e.preventDefault(); duplicate(); }
+        else if (mod && k === 'g') { e.preventDefault(); if (groupIds.length) groupPicked(); }
+        else if (mod && k === 'c' && groupIds.length) { e.preventDefault(); void copy(); }
+        else if (mod && k === 'v') { e.preventDefault(); void paste(); }
+        else if (e.key === 'Escape') { e.preventDefault(); setMenu(null); if (selectedNodeId || picked.size || selectedEdges.size) { onSelectNode(null); setPicked(new Set()); setSelectedEdges(new Set()); } else goUp(); }
+        else if (!mod && k === 'f') { e.preventDefault(); void flow.fitView({ padding: 0.2 }); }
       }}>
       <ReactFlow<CardNode, Edge>
         nodes={nodes} edges={edges} nodeTypes={nodeTypes}
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
         onNodeDragStop={onNodeDragStop} onConnect={onConnect}
         onNodeDoubleClick={(_, n) => { const def = graph.nodes.find(x => x.id === n.id); if (def?.type === GROUP_NODE_TYPE) openGraph(def.params.graphId as string, `Open ${def.label}`); }}
-        onPaneClick={() => { onSelectNode(null); setSelectedEdges(new Set()); setPicked(new Set()); }}
+        onPaneClick={() => { setMenu(null); onSelectNode(null); setSelectedEdges(new Set()); setPicked(new Set()); }}
         onNodeClick={(e, n) => setPicked(prev => {
           if (!e.shiftKey) return new Set();
           const next = new Set(prev);
@@ -506,6 +606,18 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
           return next;
         })}
         deleteKeyCode={null} multiSelectionKeyCode={null} selectionKeyCode={null}
+        selectionOnDrag panOnDrag={[1, 2]} panActivationKeyCode="Space"
+        onNodeContextMenu={(e, n) => { e.preventDefault(); const r = wrapper.current!.getBoundingClientRect(); onSelectNode(n.id); setMenu({ x: e.clientX - r.left, y: e.clientY - r.top, flow: flow.screenToFlowPosition({ x: e.clientX, y: e.clientY }), nodeId: n.id }); }}
+        onPaneContextMenu={e => { e.preventDefault(); const r = wrapper.current!.getBoundingClientRect(); setMenu({ x: e.clientX - r.left, y: e.clientY - r.top, flow: flow.screenToFlowPosition({ x: e.clientX, y: e.clientY }) }); }}
+        onConnectEnd={(e, st) => {
+          if (st.isValid || st.toHandle || !st.fromHandle || !st.fromNode) return;
+          const pt = 'changedTouches' in e ? e.changedTouches[0] : e, r = wrapper.current!.getBoundingClientRect();
+          const side = st.fromHandle.type === 'source' ? 'source' as const : 'target' as const;
+          const card = nodes.find(n => n.id === st.fromNode!.id)?.data.signature;
+          const port = card ? (side === 'source' ? card.outputs : card.inputs).find(p => p.id === st.fromHandle!.id) : undefined;
+          if (!port) return;
+          setMenu({ x: pt.clientX - r.left, y: pt.clientY - r.top, flow: flow.screenToFlowPosition({ x: pt.clientX, y: pt.clientY }), from: { nodeId: st.fromNode.id, port: port.id, side, portType: port.type } });
+        }}
         viewport={camera.viewport} onViewportChange={onViewportChange} minZoom={0.1}
       >
         {notice && (
@@ -517,6 +629,39 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }
           </Panel>
         )}
       </ReactFlow>
+      {menu && (() => {
+        const n = menu.nodeId ? graph.nodes.find(x => x.id === menu.nodeId) : undefined;
+        const close = () => setMenu(null);
+        const item = (label: string, fn: () => void, disabled = false) => <button type="button" role="menuitem" disabled={disabled} onClick={() => { close(); fn(); }}>{label}</button>;
+        return (
+          <div className="gc-menu" role="menu" style={{ left: menu.x, top: menu.y }} onKeyDown={e => { if (e.key === 'Escape') close(); }}>
+            {menu.from ? (
+              <>
+                <div className="gc-menu-title">Add a node connected to {menu.from.port} ({menu.from.portType})</div>
+                {compatibleTypes(menu.from.portType, menu.from.side).map(s => item(s.type, () => addConnected(registryKey(s.type, s.definitionVersion), menu.flow, menu.from!)))}
+                {compatibleTypes(menu.from.portType, menu.from.side).length === 0 && <div className="gc-menu-title">No node type fits this port.</div>}
+              </>
+            ) : n ? (
+              <>
+                {n.type === GROUP_NODE_TYPE && item('Open internals', () => openGraph(n.params.graphId as string, `Open ${n.label}`))}
+                {item('Duplicate  (Ctrl+D)', duplicate, isLocked(n))}
+                {item('Copy  (Ctrl+C)', () => void copy(), isLocked(n))}
+                {item('Group selection  (Ctrl+G)', groupPicked)}
+                {n.type === GROUP_NODE_TYPE && item('Save as my component', () => { const name = window.prompt('Name for this component:', n.label); if (!name) return; const r = saveGroupAsComponent(doc, n.id, name); if (!r.ok) { setNotice({ kind: 'error', lines: [r.message] }); return; } saveUserComponent(r.value); setNotice({ kind: 'info', lines: [`Saved "${r.value.name}" to My components.`] }); })}
+                {onToggleSolo && canSolo(n.type) && item(soloed?.has(n.id) ? 'Unsolo' : 'Solo', () => onToggleSolo(n.id))}
+                {item('Delete  (Del)', deleteSelection, isLocked(n))}
+              </>
+            ) : (
+              <>
+                {item('Paste  (Ctrl+V)', () => void paste())}
+                {item('Fit view  (F)', () => void flow.fitView({ padding: 0.2 }))}
+                {trail.length > 1 && item('Up to parent  (Esc)', goUp)}
+              </>
+            )}
+            <button type="button" className="gc-menu-close" onClick={close}>Close</button>
+          </div>
+        );
+      })()}
       </div>
     </div>
   );

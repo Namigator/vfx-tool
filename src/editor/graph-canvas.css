@@ -42,3 +42,14 @@
 .gc-trail { flex: none; padding: 4px 8px; font-size: 12px; background: #1a1e25; border-bottom: 1px solid #343a46; }
 .gc-crumb { font: inherit; color: #7fb4ff; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
 .gc-hint { flex: none; margin: 0; padding: 4px 8px; font-size: 12px; color: #aab3c5; background: #1a1e25; border-bottom: 1px solid #343a46; }
+/* 12 context menu / add-connected chooser, card summary and Solo */
+.gc-flow { position: relative; }
+.gc-menu { position: absolute; z-index: 20; min-width: 190px; max-height: 320px; overflow: auto; display: flex; flex-direction: column; background: #161b26; border: 1px solid #3a4a66; border-radius: 6px; padding: 4px; box-shadow: 0 6px 18px rgba(0,0,0,.5); }
+.gc-menu button { text-align: left; background: none; border: 0; color: #d6dae3; padding: 5px 8px; border-radius: 4px; cursor: pointer; font: inherit; font-size: 13px; }
+.gc-menu button:hover:not(:disabled), .gc-menu button:focus-visible { background: #24304a; }
+.gc-menu button:disabled { opacity: .45; cursor: default; }
+.gc-menu-title { font-size: 12px; color: #8a92a3; padding: 4px 8px; }
+.gc-menu .gc-menu-close { color: #8a92a3; border-top: 1px solid #2a3140; margin-top: 2px; }
+.gc-summary { font-size: 11px; color: #9aa4b8; padding: 0 8px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gc-solo { font-size: 10px; padding: 0 4px; line-height: 16px; border-radius: 3px; background: #1d2433; color: #8a92a3; border: 1px solid #2a3140; cursor: pointer; }
+.gc-solo[aria-pressed=true] { background: #7a5a10; color: #ffe2a0; }
