@@ -242,13 +242,23 @@
    "params": {
     "blend": "normal",
     "tint": {
-     "srgb": "#8FCBE6",
+     "srgb": "#4E94BE",
      "alpha": 1
     },
-    "roughness": 0.18,
+    "roughness": 0.08,
     "metalness": 0.05,
     "emission": 0,
-    "opacity": 0.94
+    "opacity": 0.88,
+    "reflection": 0.6,
+    "surfaceDetail": 0.3,
+    "detailScale": 3,
+    "colorVariation": 0.45,
+    "rim": 0.25,
+    "rimColor": {
+     "srgb": "#CFF4FF",
+     "alpha": 1
+    },
+    "rimPower": 3
    }
   }
  ],
@@ -282,8 +292,8 @@
    "type": "InitialProperties",
    "id": "shardsaip",
    "params": {
-    "sizeMin": 0.15,
-    "sizeMax": 0.35
+    "sizeMin": 0.2,
+    "sizeMax": 0.45
    }
   }
  ],
@@ -399,8 +409,8 @@
    "type": "InitialProperties",
    "id": "shardsbip",
    "params": {
-    "sizeMin": 0.15,
-    "sizeMax": 0.35
+    "sizeMin": 0.2,
+    "sizeMax": 0.45
    }
   }
  ],
@@ -516,8 +526,8 @@
    "type": "InitialProperties",
    "id": "shardscip",
    "params": {
-    "sizeMin": 0.15,
-    "sizeMax": 0.35
+    "sizeMin": 0.2,
+    "sizeMax": 0.45
    }
   }
  ],
@@ -1250,6 +1260,177 @@
   {
    "docId": "ice",
    "from": "frostbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "Emitter",
+   "id": "vapour",
+   "params": {
+    "shape": "disc",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "radius": 1.1,
+    "burst": 0,
+    "rate": 22,
+    "speedMin": 0.05,
+    "speedMax": 0.25,
+    "lifetimeMin": 1,
+    "lifetimeMax": 1.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "InitialProperties",
+   "id": "vapourip",
+   "params": {
+    "sizeMin": 0.35,
+    "sizeMax": 0.7,
+    "randomFrameStart": true,
+    "rotationMin": 0,
+    "rotationMax": 6.283
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "Gravity",
+   "id": "vapourlift",
+   "params": {
+    "acceleration": [
+     0,
+     0.25,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "Drag",
+   "id": "vapourdrag",
+   "params": {
+    "coefficient": 1.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "ice",
+   "type": "BillboardRenderer",
+   "id": "vapourbb",
+   "params": {
+    "flipbookMode": "overLife",
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.6
+      },
+      {
+       "x": 1,
+       "y": 1.5
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.3,
+       "y": 0.16
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "node-target.out",
+   "to": "vapour.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "erupt.window",
+   "to": "vapour.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "vapour.particles",
+   "to": "vapourip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "vapourip.particles",
+   "to": "vapourlift.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "vapourlift.particles",
+   "to": "vapourdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "vapourdrag.particles",
+   "to": "vapourbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "frostmat.material",
+   "to": "vapourbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "ice",
+   "from": "vapourbb.visual",
    "to": "node-output.visual"
   }
  ],

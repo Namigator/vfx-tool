@@ -128,8 +128,16 @@ sheet('spark-streak', 2, 2, 'variants', (i, x, y) => {
 sheet('droplet', 2, 2, 'variants', (i, x, y) => {
   const u = (x - .5) * 2.2, v = (y - .5) * 2.2, r = Math.hypot(u, v), R = .86 + (fbm(u * 2 + i * 3, v * 2, 5 + i) - .5) * .14, inside = 1 - smooth(R - .06, R, r), fr = Math.pow(smooth(.15, 1, r / R), 1.5);
   const sp = Math.exp(-((u + .33) ** 2 + (v + .38) ** 2) / .018), ca = Math.exp(-((u - .28) ** 2 + (v - .42) ** 2) / .05) * .7, sh = clamp((v + 1) / 2 * .8 + fr * .3);
-  return [mix(.75, .27, sh) + sp * .25 + ca * .2, mix(.9, .47, sh) + sp * .1 + ca * .1, mix(.95, .59, sh) + sp * .05 + ca * .05, inside * Math.max(mix(.18, .7, fr), sp, ca * .8)];
+  // Clear water (review 2026-09-29: "remove the blue, make it transparent"): near-neutral, see-through middle, lit rim.
+  return [mix(.92, .66, sh) + sp * .1 + ca * .1, mix(.96, .74, sh) + sp * .05 + ca * .05, mix(.98, .8, sh) + sp * .02 + ca * .02, inside * Math.max(mix(.22, .62, fr), sp, ca * .7)];
 }, { blend: 'normal', usage: 'water droplet with fresnel rim, glint and caustic; stretch along velocity for motion blur' });
+sheet('bubble', 2, 2, 'variants', (i, x, y) => {
+  // Soap/gas bubble: thin bright rim, nearly clear middle, a main glint and a small opposite glint; slight wobble per variant.
+  const u = (x - .5) * 2.15, v = (y - .5) * 2.15, r = Math.hypot(u, v), R = .88 + (fbm(u * 1.5 + i * 5, v * 1.5, 60 + i) - .5) * .08;
+  const rim = Math.exp(-(((r - R) / .045) ** 2)), inner = (1 - smooth(R - .05, R, r)) * (.06 + .22 * Math.pow(r / R, 4));
+  const g1 = Math.exp(-((u + .36) ** 2 + (v + .4) ** 2) / .012), g2 = Math.exp(-((u - .42) ** 2 + (v - .38) ** 2) / .006) * .6;
+  return [1, 1, 1, clamp(rim * .85 + inner + g1 + g2)];
+}, { blend: 'normal', usage: 'bubble with thin rim, clear middle and glints (gas, poison, underwater); tint with the material' });
 sheet('ripple-ring', 2, 2, 'variants', (i, x, y) => {
   const u = x * 2 - 1, v = y * 2 - 1, r = Math.hypot(u, v), a = Math.atan2(v, u), brk = smooth(.35, .6, noise2(Math.cos(a) * 3 + i * 7, Math.sin(a) * 3, 90 + i));
   return [.9, .96, 1, (Math.exp(-(((r - .85) / .03) ** 2)) + .4 * Math.exp(-(((r - .62) / .02) ** 2))) * brk];

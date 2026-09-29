@@ -110,6 +110,8 @@ export type MeshLayer = {
   scaleY?: number; pivot?: 'center' | 'base'; tilt?: number; roughness?: number; metalness?: number;
   /** 09 rim: fresnel edge emission (strength 0 = off). */
   rim?: { strength: number; color: ColorValue; power: number };
+  /** 09 surface: environment reflection, procedural bump/grain detail and per-piece colour variation (all 0 = off). */
+  surface?: { reflection: number; detail: number; detailScale: number; variation: number };
   color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout';
   sizeOverLife: CurveValue; colorOverLife: GradientValue; renderOrderOffset: number; visualOrder: number;
 };
@@ -349,7 +351,8 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     if (!b || !n.effectiveEnabled) return b;
     noDrivenParams(n, ['anchor']);
     const o = param(n, 'offset') as Vec3;
-    return [b[0] + o[0], b[1] + o[1], b[2] + o[2]];
+    // Drop to ground: keep the anchor's horizontal position, height = offset.y above the ground (y = 0).
+    return [b[0] + o[0], param(n, 'dropToGround') === true ? o[1] : b[1] + o[1], b[2] + o[2]];
   };
   /** 05 EventDelay / MergeEvents: follows a trigger connection back to its producers, summing delays. */
   type RoutedEvent = { c: ExpandedConnection; delay: number; consumer: string };
@@ -735,7 +738,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         meshes.push({
           ...(imported?.kind === 'mesh' ? { meshAsset: imported.sha256, meshAssetSize: { mode: param(b, 'importedSize') as 'fit' | 'real', importScale: imported.interpretation.mesh?.importScale ?? 1 } } : {}),
           nodeId: mid, systemId: chain.terminalId, mesh: param(b, 'mesh') as MeshLayer['mesh'], scale: num(b, 'scale'), orientation: param(b, 'orientation') as MeshLayer['orientation'],
-          scaleY: num(b, 'scaleY'), pivot: param(b, 'pivot') as 'center' | 'base', tilt: num(b, 'tilt'), roughness: num(m, 'roughness'), metalness: num(m, 'metalness'),
+          scaleY: num(b, 'scaleY'), pivot: param(b, 'pivot') as 'center' | 'base', tilt: num(b, 'tilt'), roughness: num(m, 'roughness'), metalness: num(m, 'metalness'), surface: { reflection: num(m, 'reflection'), detail: num(m, 'surfaceDetail'), detailScale: num(m, 'detailScale'), variation: num(m, 'colorVariation') },
           ...(num(m, 'rim') > 0 ? { rim: { strength: num(m, 'rim'), color: structuredClone(param(m, 'rimColor') as ColorValue), power: num(m, 'rimPower') } } : {}),
           lit: param(b, 'lit') === true, color: multiplyColors(base, param(m, 'tint') as ColorValue), opacity: num(m, 'opacity'), emission: num(m, 'emission'), blend: param(m, 'blend') as MeshLayer['blend'],
           sizeOverLife: structuredClone(sc), colorOverLife: structuredClone(param(b, 'colorOverLife') as GradientValue), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
@@ -812,7 +815,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         meshes.push({
           ...(imported?.kind === 'mesh' ? { meshAsset: imported.sha256, meshAssetSize: { mode: param(b, 'importedSize') as 'fit' | 'real', importScale: imported.interpretation.mesh?.importScale ?? 1 } } : {}),
           nodeId: pid, systemId: pid, mesh: param(b, 'mesh') as MeshLayer['mesh'], scale: 1, orientation: 'fixed', direction: dir,
-          scaleY: length / width, pivot: 'center', tilt: 0, roughness: num(m, 'roughness'), metalness: num(m, 'metalness'),
+          scaleY: length / width, pivot: 'center', tilt: 0, roughness: num(m, 'roughness'), metalness: num(m, 'metalness'), surface: { reflection: num(m, 'reflection'), detail: num(m, 'surfaceDetail'), detailScale: num(m, 'detailScale'), variation: num(m, 'colorVariation') },
           ...(num(m, 'rim') > 0 ? { rim: { strength: num(m, 'rim'), color: structuredClone(param(m, 'rimColor') as ColorValue), power: num(m, 'rimPower') } } : {}),
           lit: param(b, 'lit') === true, color: param(m, 'tint') as ColorValue, opacity: num(m, 'opacity'), emission: num(m, 'emission'), blend: param(m, 'blend') as MeshLayer['blend'],
           sizeOverLife: flat, colorOverLife: { stops: [{ position: 0, color: { srgb: '#FFFFFF', alpha: 1 } }, { position: 1, color: { srgb: '#FFFFFF', alpha: 1 } }] }, renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,

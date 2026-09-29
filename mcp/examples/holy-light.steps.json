@@ -26,26 +26,27 @@
   }
  ],
  [
-  "vfx_set_anchor",
-  {
-   "docId": "light",
-   "anchorId": "groundpoint",
-   "position": [
-    0,
-    0.02,
-    0
-   ]
-  }
- ],
- [
   "vfx_add_node",
   {
    "docId": "light",
-   "type": "Anchor",
+   "type": "OffsetAnchor",
    "id": "ground",
    "params": {
-    "anchorId": "groundpoint"
+    "offset": [
+     0,
+     0.02,
+     0
+    ],
+    "dropToGround": true
    }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "node-target.out",
+   "to": "ground.anchor"
   }
  ],
  [

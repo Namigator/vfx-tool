@@ -9,6 +9,7 @@ import { ASSET_FILE_PREFIX } from '../assets/importTexture.ts';
 import { whenAssetUrl } from '../assets/assetUrls.ts';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -88,11 +89,39 @@ export class WebGLUnavailableError extends Error {}
  * vector from the instance transform, rim = colour × strength × (1 − |n·v|)^power, added before tone mapping.
  */
 function addRim(material: THREE.Material, rim: { strength: number; color: { srgb: string }; power: number }): void {
-  const uniforms = { uRim: { value: rim.strength }, uRimPower: { value: rim.power }, uRimColor: { value: new THREE.Color().setStyle(rim.color.srgb) } };
+  patchMeshShader(material, rim, 0, 4);
+}
+
+/** Object-space value-noise fBm (3 octaves) for 09 surface detail; it stays fixed on each piece as it tumbles. */
+const DETAIL_GLSL = /* glsl */ `
+float vfxHash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float vfxNoise(vec3 x) {
+  vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(vfxHash(i), vfxHash(i + vec3(1,0,0)), f.x), mix(vfxHash(i + vec3(0,1,0)), vfxHash(i + vec3(1,1,0)), f.x), f.y),
+             mix(mix(vfxHash(i + vec3(0,0,1)), vfxHash(i + vec3(1,0,1)), f.x), mix(vfxHash(i + vec3(0,1,1)), vfxHash(i + vec3(1,1,1)), f.x), f.y), f.z);
+}
+float vfxFbm(vec3 p) { return 0.55 * vfxNoise(p) + 0.3 * vfxNoise(p * 2.13 + 7.1) + 0.15 * vfxNoise(p * 4.37 + 3.3); }
+vec3 vfxPerturb(vec3 surfPos, vec3 surfNorm, vec2 dHdxy, float faceDir) {
+  vec3 sx = normalize(dFdx(surfPos)), sy = normalize(dFdy(surfPos));
+  vec3 r1 = cross(sy, surfNorm), r2 = cross(surfNorm, sx);
+  float det = dot(sx, r1) * faceDir;
+  return normalize(abs(det) * surfNorm - sign(det) * (dHdxy.x * r1 + dHdxy.y * r2));
+}`;
+
+/**
+ * 09 mesh shader patch. Rim: fresnel edge emission, colour x strength x (1 - |n.v|)^power, added before tone
+ * mapping (lit or unlit). Detail (lit only): object-space fBm bumps (perturbed normal), grain (albedo) and
+ * patchy roughness.
+ */
+function patchMeshShader(material: THREE.Material, rim: { strength: number; color: { srgb: string }; power: number } | undefined, detail: number, detailScale: number): void {
+  const lit = material instanceof THREE.MeshStandardMaterial, useDetail = lit && detail > 0, useRim = !!rim && rim.strength > 0;
+  if (!useDetail && !useRim) return;
+  const uniforms = { uRim: { value: rim?.strength ?? 0 }, uRimPower: { value: rim?.power ?? 2 }, uRimColor: { value: new THREE.Color().setStyle(rim?.color.srgb ?? '#ffffff') }, uDetail: { value: detail }, uDetailScale: { value: detailScale } };
   material.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vRimN;\nvarying vec3 vRimV;')
+      .replace('#include <common>', '#include <common>\nvarying vec3 vRimN;\nvarying vec3 vRimV;\nvarying vec3 vObjPos;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\n  vObjPos = transformed;')
       .replace('#include <project_vertex>', `#include <project_vertex>
   vec3 rimObjN = normal;
   #ifdef USE_INSTANCING
@@ -100,12 +129,33 @@ function addRim(material: THREE.Material, rim: { strength: number; color: { srgb
   #endif
   vRimN = normalize(normalMatrix * rimObjN);
   vRimV = -mvPosition.xyz;`);
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vRimN;\nvarying vec3 vRimV;\nuniform float uRim;\nuniform float uRimPower;\nuniform vec3 uRimColor;')
+    let f = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+varying vec3 vRimN;
+varying vec3 vRimV;
+varying vec3 vObjPos;
+uniform float uRim;
+uniform float uRimPower;
+uniform vec3 uRimColor;
+uniform float uDetail;
+uniform float uDetailScale;
+${DETAIL_GLSL}`)
       .replace('#include <tonemapping_fragment>', `gl_FragColor.rgb += uRimColor * uRim * pow(1.0 - abs(dot(normalize(vRimN), normalize(vRimV))), uRimPower);
 #include <tonemapping_fragment>`);
+    if (useDetail) {
+      f = f
+        .replace('#include <color_fragment>', `#include <color_fragment>
+  float vfxH = vfxFbm(vObjPos * uDetailScale);
+  float vfxGrain = vfxNoise(vObjPos * uDetailScale * 9.0);
+  diffuseColor.rgb *= mix(1.0, clamp(0.25 + 1.3 * vfxH + 0.6 * (vfxGrain - 0.5), 0.15, 1.6), uDetail);`)
+        .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+  roughnessFactor = clamp(roughnessFactor * mix(1.0, 0.6 + 0.8 * vfxNoise(vObjPos * uDetailScale * 0.7 + 11.0), uDetail), 0.04, 1.0);`)
+        .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+  normal = vfxPerturb(-vViewPosition, normal, vec2(dFdx(vfxH), dFdy(vfxH)) * uDetail * 14.0, faceDirection);`);
+    }
+    shader.fragmentShader = f;
   };
-  material.customProgramCacheKey = () => 'rim';
+  material.customProgramCacheKey = () => `mesh-patch:${useRim ? 1 : 0}:${useDetail ? 1 : 0}`;
 }
 
 function basePivot(g: THREE.BufferGeometry, base: boolean): THREE.BufferGeometry {
@@ -261,6 +311,7 @@ uniform float uTime;
 uniform sampler2D uNoise;
 uniform float uEndFade;
 uniform float uFadeHead;
+uniform float uLiquid;
 varying float vOpacity;
 varying float vSide;
 varying vec3 vStrip;
@@ -271,6 +322,17 @@ void main() {
   float edge = uSoftness > 0.0 ? 1.0 - smoothstep(1.0 - uSoftness, 1.0, s) : 1.0;
   vec3 rgb = uColor;
   float a = uAlpha * vOpacity * edge;
+  if (uLiquid > 0.0 && uUseTex < 0.5) {
+    // 09 liquid: see-through core, bright edges (like a lit tube seen side-on) and highlights that run along
+    // the flow (two drifting streaks on one side of the centreline). Opacity comes mostly from edges and streaks.
+    float rimL = smoothstep(0.45, 0.97, s);
+    float flow = vStrip.x * 5.0 - uTime * 7.0;
+    float streak = pow(0.5 + 0.5 * sin(flow + 2.1 * sin(vStrip.x * 1.7 + uTime)), 8.0);
+    float band = 1.0 - smoothstep(0.08, 0.3, abs(vSide - 0.35));
+    float hi = streak * band + 0.15 * band;
+    a *= mix(1.0, clamp(0.05 + 0.8 * rimL + 0.8 * hi, 0.0, 1.0), uLiquid);
+    rgb = mix(rgb, vec3(1.0), clamp(0.55 * rimL + 0.9 * hi, 0.0, 1.0) * uLiquid);
+  }
   if (uUseTex > 0.5) {
     if (vStrip.z < -0.001) discard; // Round-join fans would smear the texture into spikes.
     // u along the strip (stretched over the path, or tiled every uTile metres), v across it.
@@ -333,7 +395,7 @@ function materialFor(
 
 /** Layer set identity: meshes are rebuilt only when these change between ticks. */
 function ribbonKey(layers: readonly PathPreviewLayer[]): string {
-  return JSON.stringify(layers.map(l => [l.nodeId, l.color, l.opacity, l.emission, l.blend, l.alphaCutoff, l.renderOrderOffset, l.visualOrder]));
+  return JSON.stringify(layers.map(l => [l.nodeId, l.color, l.opacity, l.emission, l.blend, l.alphaCutoff, l.liquid, l.renderOrderOffset, l.visualOrder]));
 }
 
 export class PreviewViewport {
@@ -437,10 +499,13 @@ export class PreviewViewport {
       grid = new THREE.GridHelper(10, 20, 0x3a4150, 0x1d222c);
       this.#scene.add(grid);
       // Lit (PointLight nodes illuminate it); ambient π reproduces the former unlit base colour.
-      ground = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ color: 0x10131a, roughness: 0.85, metalness: 0, depthWrite: true }));
-      this.#scene.add(new THREE.AmbientLight(0xffffff, Math.PI));
-      // Soft key light so lit meshes (rocks, shards) read as 3D; the ground's base colour changes only slightly.
-      const key = new THREE.DirectionalLight(0xffffff, 1.2);
+      // Lighting for lit meshes: a weak flat fill, a sky/ground hemisphere and a stronger key light, so rocks and
+      // shards show form and surface detail instead of the former flat ambient pi wash. The ground colour is
+      // raised by the same factor the fill dropped, so the floor keeps its former brightness.
+      ground = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ color: new THREE.Color(0x10131a).multiplyScalar(Math.PI / 1.4), roughness: 0.85, metalness: 0, depthWrite: true }));
+      this.#scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+      this.#scene.add(new THREE.HemisphereLight(0xbfd0ff, 0x3a3128, 0.8));
+      const key = new THREE.DirectionalLight(0xfff4e6, 2.6);
       key.position.set(3, 6, 4);
       this.#scene.add(key);
       ground.rotation.x = -Math.PI / 2;
@@ -542,7 +607,9 @@ export class PreviewViewport {
       const material: THREE.Material = !additive && layer.lit
         ? new THREE.MeshStandardMaterial({ color, roughness: layer.roughness ?? 0.75, metalness: layer.metalness ?? 0.05, flatShading: true, emissive: color.clone().multiplyScalar(layer.emission), transparent: layer.opacity < 1, opacity: layer.opacity })
         : new THREE.MeshBasicMaterial({ color: color.clone().multiplyScalar(1 + layer.emission), transparent: additive || layer.opacity < 1, opacity: layer.opacity, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending, depthWrite: !additive });
-      if (layer.rim) addRim(material, layer.rim);
+      const surface = layer.surface;
+      if (material instanceof THREE.MeshStandardMaterial && surface && surface.reflection > 0) { material.envMap = this.#environment(); material.envMapIntensity = surface.reflection; }
+      patchMeshShader(material, layer.rim, surface?.detail ?? 0, surface?.detailScale ?? 4);
       const mesh = new THREE.InstancedMesh(geometry, material, PREVIEW_POOL_SIZE);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(PREVIEW_POOL_SIZE * 3).fill(1), 3);
@@ -563,7 +630,7 @@ export class PreviewViewport {
       const material = materialFor(RIBBON_VERTEX, RIBBON_FRAGMENT, layer);
       material.side = THREE.DoubleSide;
       material.uniforms.uSoftness = { value: ribbonSoftness(layer.blend) };
-      Object.assign(material.uniforms, { uUseTex: { value: 0 }, uTex: { value: null }, uGrid: { value: new THREE.Vector2(1, 1) }, uVariant: { value: -1 }, uTile: { value: 0 }, uScroll: { value: new THREE.Vector2(0, 0) }, uDistort: { value: 0 }, uTime: this.#effectTime, uNoise: { value: null }, uEndFade: { value: layer.endFade ?? DEFAULT_RIBBON_END_FADE }, uFadeHead: { value: 0 } });
+      Object.assign(material.uniforms, { uUseTex: { value: 0 }, uTex: { value: null }, uGrid: { value: new THREE.Vector2(1, 1) }, uVariant: { value: -1 }, uTile: { value: 0 }, uScroll: { value: new THREE.Vector2(0, 0) }, uDistort: { value: 0 }, uTime: this.#effectTime, uNoise: { value: null }, uLiquid: { value: 0 }, uEndFade: { value: layer.endFade ?? DEFAULT_RIBBON_END_FADE }, uFadeHead: { value: 0 } });
       const mesh = new THREE.Mesh(ribbon.geometry, material);
       mesh.frustumCulled = false;
       mesh.renderOrder = layerRenderOrder(layer.renderOrderOffset, layer.visualOrder);
@@ -663,6 +730,18 @@ export class PreviewViewport {
   readonly #effectTime = { value: 0 };
   #noiseTex: THREE.Texture | null = null;
   /** Included dissolve-noise mask, sampled as data (no colour-space conversion) and wrapped for per-particle offsets. */
+  /** 09 reflection: a prefiltered procedural studio environment (RoomEnvironment), built once per viewport on first use. */
+  #envTexture: THREE.Texture | null = null;
+  #environment(): THREE.Texture {
+    if (!this.#envTexture) {
+      const pmrem = new THREE.PMREMGenerator(this.#renderer), room = new RoomEnvironment();
+      this.#envTexture = pmrem.fromScene(room, 0.04).texture;
+      room.dispose();
+      pmrem.dispose();
+    }
+    return this.#envTexture;
+  }
+
   #noiseTexture(): THREE.Texture {
     if (!this.#noiseTex) {
       this.#noiseTex = new THREE.TextureLoader().load('/assets/sprites/dissolve-noise.png', () => { if (!this.#disposed) this.#emitFrame(true); });
@@ -814,6 +893,7 @@ export class PreviewViewport {
     this.#quad.dispose();
     for (const t of this.#textures.values()) t.dispose();
     for (const g of this.#meshGeometries.values()) g.dispose();
+    this.#envTexture?.dispose();
     this.#textures.clear();
     this.#grid.geometry.dispose();
     (this.#grid.material as THREE.Material).dispose();
@@ -896,6 +976,7 @@ export class PreviewViewport {
         material.uniforms.uDistort = { value: layer.uvAnim?.distort ?? 0 };
         material.uniforms.uTime = this.#effectTime;
         material.uniforms.uNoise = { value: layer.uvAnim?.distort ? this.#noiseTexture() : null };
+        material.uniforms.uLiquid = { value: layer.liquid ?? 0 };
         const mesh = new THREE.Mesh(ribbon.geometry, material);
         mesh.renderOrder = layerRenderOrder(layer.renderOrderOffset, layer.visualOrder);
         this.#scene.add(mesh);
@@ -1025,7 +1106,10 @@ export class PreviewViewport {
         s.set(k, k * (m.layer.scaleY ?? 1), k);
         m.mesh.setMatrixAt(i, mtx.compose(p, q, s));
         sampleLifeGradient(m.color, u, rgbaScratch);
-        m.mesh.setColorAt(i, col.setRGB(rgbaScratch[0], rgbaScratch[1], rgbaScratch[2]));
+        // 09 colour variation: a stable per-piece shade (up to +-40 %) and a slight warm/cool hue shift.
+        const cv = m.layer.surface?.variation ?? 0;
+        const shade = cv > 0 ? 1 + cv * 0.4 * ((((h >>> 3) & 255) / 255) * 2 - 1) : 1, hue = cv > 0 ? cv * 0.12 * ((((h >>> 11) & 255) / 255) * 2 - 1) : 0;
+        m.mesh.setColorAt(i, col.setRGB(rgbaScratch[0] * shade * (1 + hue), rgbaScratch[1] * shade, rgbaScratch[2] * shade * (1 - hue)));
       }
       m.mesh.count = n;
       m.mesh.instanceMatrix.needsUpdate = true;

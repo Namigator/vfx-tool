@@ -281,7 +281,10 @@ function offsetAnchor(): NodeSpec {
   return node('OffsetAnchor', {
     inputs: [port({ id: 'anchor', label: 'Anchor', type: 'anchor', required: true })],
     outputs: [port({ id: 'out', label: 'Out', type: 'anchor' })],
-    parameters: [param({ id: 'offset', label: 'Offset', type: 'vec3', unit: 'meter', default: [0, 1, 0], min: -100, max: 100 })],
+    parameters: [
+      param({ id: 'offset', label: 'Offset', type: 'vec3', unit: 'meter', default: [0, 1, 0], min: -100, max: 100 }),
+      param({ id: 'dropToGround', label: 'Drop to ground', type: 'boolean', unit: 'none', default: false, description: 'Follow the anchor sideways but sit on the ground (height = Offset Y). For ground rings, scorch marks and light pools under a moving Target.' }),
+    ],
     disabledBehavior: 'bypass',
     bypass: { input: 'anchor', output: 'out' },
   });
@@ -578,6 +581,11 @@ function material(): NodeSpec {
       param({ id: 'uvDistort', label: 'UV distortion', type: 'number', unit: 'normalized', default: 0, min: 0, max: 0.15, editPolicy: 'live', description: 'Noise wobble of the texture lookup (09: 0–.15 normalized UV). Textured ribbons.' }),
       param({ id: 'roughness', label: 'Roughness', type: 'number', unit: 'normalized', default: 0.75, min: 0.04, max: 1, editPolicy: 'live', description: 'Lit meshes: low = glossy facets (ice ≈ .18).' }),
       param({ id: 'metalness', label: 'Metalness', type: 'number', unit: 'normalized', default: 0.05, min: 0, max: 1, editPolicy: 'live', description: 'Lit meshes only.' }),
+      param({ id: 'reflection', label: 'Reflection', type: 'number', unit: 'normalized', default: 0, min: 0, max: 3, editPolicy: 'live', description: 'Lit meshes: mirrors a soft studio sky, so glossy surfaces (low Roughness) shine. Ice about 1.2, wet stone about .4, 0 = off.' }),
+      param({ id: 'surfaceDetail', label: 'Surface detail', type: 'number', unit: 'normalized', default: 0, min: 0, max: 1, editPolicy: 'live', description: 'Lit meshes: procedural bumps, grain and patchy roughness on the surface. Stone about .7, ice about .3, 0 = smooth.' }),
+      param({ id: 'detailScale', label: 'Detail scale', type: 'number', unit: 'none', default: 4, min: 0.5, max: 30, editPolicy: 'live', description: 'Size of the surface detail: higher = finer grain.' }),
+      param({ id: 'liquid', label: 'Liquid', type: 'number', unit: 'normalized', default: 0, min: 0, max: 1, editPolicy: 'live', description: 'Ribbons: a clear liquid look. The middle turns see-through, the edges catch light and highlights run along the flow. Use a pale Tint with Blend normal. Water about .85, 0 = solid colour.' }),
+      param({ id: 'colorVariation', label: 'Colour variation', type: 'number', unit: 'normalized', default: 0, min: 0, max: 1, editPolicy: 'live', description: 'Meshes: every piece gets a slightly different shade and hue (natural stone, crystal clusters). 0 = all identical.' }),
       param({ id: 'rim', label: 'Rim glow', type: 'number', unit: 'linearGain', default: 0, min: 0, max: 8, editPolicy: 'live', description: 'Meshes: glow on edges seen side-on (fresnel), e.g. energy shells or backlit ice. Billboards: a radial glow toward the sprite edge (a flat sprite has no useful normal). 0 = off.' }),
       param({ id: 'rimColor', label: 'Rim colour', type: 'color', unit: 'none', default: white(), editPolicy: 'live' }),
       param({ id: 'rimPower', label: 'Rim sharpness', type: 'number', unit: 'none', default: 3, min: 0.5, max: 8, editPolicy: 'live', description: 'Higher = thinner rim hugging the silhouette.' }),

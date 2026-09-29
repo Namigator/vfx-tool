@@ -391,14 +391,14 @@
    "id": "bubblemat",
    "params": {
     "template": "SpriteTextured",
-    "sprite": "ripple-ring",
+    "sprite": "bubble",
     "blend": "normal",
     "tint": {
-     "srgb": "#B4DA4A",
+     "srgb": "#C8EE6A",
      "alpha": 1
     },
-    "opacity": 0.9,
-    "emission": 0.12
+    "opacity": 0.75,
+    "emission": 0.1
    }
   }
  ],

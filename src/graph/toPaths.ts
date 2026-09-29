@@ -113,6 +113,8 @@ export type PathPreviewLayer = {
   emission: number;
   blend: 'normal' | 'additive' | 'cutout';
   alphaCutoff: number;
+  /** 09 liquid (0..1): clear core, lit edges and flowing highlights; 0 = solid. */
+  liquid: number;
 };
 export type PathPreviewPlan = {
   durationTicks: number;
@@ -308,7 +310,8 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
     if (!b || !n.effectiveEnabled) return b;
     noDrivenParams(n, ['anchor']);
     const o = param(n, 'offset') as Vec3;
-    return [b[0] + o[0], b[1] + o[1], b[2] + o[2]];
+    // Drop to ground: keep the anchor's horizontal position, height = offset.y above the ground (y = 0).
+    return [b[0] + o[0], param(n, 'dropToGround') === true ? o[1] : b[1] + o[1], b[2] + o[2]];
   };
   const anchorOf = (n: ExpandedNode, port: string): Vec3 => {
     const cs = into(n.node.id, port);
@@ -614,6 +617,7 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
         emission: num(mat, 'emission'),
         blend: param(mat, 'blend') as PathPreviewLayer['blend'],
         alphaCutoff: num(mat, 'alphaCutoff'),
+        liquid: num(mat, 'liquid'),
         ...(sprite ? { sprite } : {}),
         ...((): Pick<PathPreviewLayer, 'uvAnim'> => {
           const sc = param(mat, 'uvScroll') as [number, number], dist = num(mat, 'uvDistort');

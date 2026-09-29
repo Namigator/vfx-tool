@@ -39,7 +39,8 @@ for (const [file, V] of Object.entries(VARIANTS)) {
   wire('arc.paths', 'reveal.paths'); wire('travelclock.progress', 'reveal.fraction');
   add('Schedule', 'flow', { startTicks: START, durationTicks: 108 - START, mode: 'window' });
   add('EffectTimeCurve', 'bodyfade', { curve: eff([[sec(START), 0.42], [sec(STOP), 0.42], [sec(108), 0]]) });
-  add('Material', 'bodymat', { blend: 'normal', tint: col('#4F9CC8'), emission: 0 });
+  // Clear water (review 2026-09-29: "remove the blue, make it transparent"): liquid ribbon shading, pale tints.
+  add('Material', 'bodymat', { blend: 'normal', tint: col('#D8EEF8'), emission: 0, liquid: 0.85 });
   wire('bodyfade.value', 'bodymat.opacity');
   add('RibbonRenderer', 'body', { width: V.width, endFade: 0.08, widthOverPath: lin([[0, 0.55], [0.5, 1], [1, 0.8]]) });
   wire('reveal.paths', 'body.paths'); wire('bodymat.material', 'body.material'); wire('flow.window', 'body.window'); out('body');
@@ -51,7 +52,7 @@ for (const [file, V] of Object.entries(VARIANTS)) {
   wire('hlfade.value', 'hlmat.opacity');
   add('RibbonRenderer', 'highlight', { width: 0.035, endFade: 0.15 });
   wire('lift.paths', 'highlight.paths'); wire('hlmat.material', 'highlight.material'); wire('flow.window', 'highlight.window'); out('highlight');
-  add('Material', 'coremat', { blend: 'normal', tint: col('#9CD4F0'), emission: 0 });
+  add('Material', 'coremat', { blend: 'normal', tint: col('#E6F4FB'), emission: 0, opacity: 0.06 });
   add('EffectTimeCurve', 'corefade', { curve: eff([[sec(START), 0.22], [sec(STOP), 0.22], [sec(108), 0]]) });
   wire('corefade.value', 'coremat.opacity');
   add('RibbonRenderer', 'core', { width: V.width * 0.45, endFade: 0.1 });
@@ -61,7 +62,7 @@ for (const [file, V] of Object.entries(VARIANTS)) {
   add('Schedule', 'travelwin', { startTicks: START, durationTicks: 180 - START, mode: 'window' });
   add('PathFollower', 'head', { durationTicks: V.travel, easing: 'linear' });
   wire('arc.paths', 'head.paths'); wire('travelwin.window', 'head.window');
-  add('Material', 'headmat', { template: 'SpriteTextured', sprite: 'droplet', blend: 'normal', tint: col('#BFE6FF'), opacity: 0.8 });
+  add('Material', 'headmat', { template: 'SpriteTextured', sprite: 'droplet', blend: 'normal', tint: col('#F2F9FD'), opacity: 0.8 });
   add('SpriteRenderer', 'headsprite', { size: 0.18 });
   wire('head.anchor', 'headsprite.anchor'); wire('headmat.material', 'headsprite.material'); wire('headwin.window', 'headsprite.window'); out('headsprite');
 
@@ -77,7 +78,7 @@ for (const [file, V] of Object.entries(VARIANTS)) {
   add('InitialProperties', 'dropip', { sizeMin: V.dropSize[0] * 2, sizeMax: V.dropSize[1] * 2 });
   add('Gravity', 'dropg', { acceleration: [0, -9.81, 0] });
   add('GroundCollision', 'dropfloor', { mode: 'bounce', restitution: 0.25, maxBounces: 1 });
-  add('Material', 'dropmat', { template: 'SpriteTextured', sprite: 'droplet', blend: 'normal', tint: col('#CFEBFF'), opacity: 0.85, groundFade: 0.12 });
+  add('Material', 'dropmat', { template: 'SpriteTextured', sprite: 'droplet', blend: 'normal', tint: col('#F2F9FD'), opacity: 0.85, groundFade: 0.12 });
   add('BillboardRenderer', 'dropbb', { alignment: 'velocity', stretchRatio: 1.6, opacityOverLife: lin([[0, 1], [0.8, 0.8], [1, 0]]) });
   wire('node-target.out', 'drops.anchor'); wire('head.arrival', 'drops.trigger');
   wire('drops.particles', 'dropip.particles'); wire('dropip.particles', 'dropg.particles'); wire('dropg.particles', 'dropfloor.particles');

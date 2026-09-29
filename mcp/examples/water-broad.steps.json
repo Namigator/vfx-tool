@@ -201,10 +201,11 @@
    "params": {
     "blend": "normal",
     "tint": {
-     "srgb": "#4F9CC8",
+     "srgb": "#D8EEF8",
      "alpha": 1
     },
-    "emission": 0
+    "emission": 0,
+    "liquid": 0.85
    }
   }
  ],
@@ -406,10 +407,11 @@
    "params": {
     "blend": "normal",
     "tint": {
-     "srgb": "#9CD4F0",
+     "srgb": "#E6F4FB",
      "alpha": 1
     },
-    "emission": 0
+    "emission": 0,
+    "opacity": 0.06
    }
   }
  ],
@@ -545,7 +547,7 @@
     "sprite": "droplet",
     "blend": "normal",
     "tint": {
-     "srgb": "#BFE6FF",
+     "srgb": "#F2F9FD",
      "alpha": 1
     },
     "opacity": 0.8
@@ -789,7 +791,7 @@
     "sprite": "droplet",
     "blend": "normal",
     "tint": {
-     "srgb": "#CFEBFF",
+     "srgb": "#F2F9FD",
      "alpha": 1
     },
     "opacity": 0.85,

@@ -74,11 +74,7 @@
     "rotationMin": 0,
     "rotationMax": 0,
     "angularVelocityMin": 0,
-    "angularVelocityMax": 0,
-    "color": {
-     "srgb": "#A8E6FF",
-     "alpha": 1
-    }
+    "angularVelocityMax": 0
    }
   }
  ],
@@ -110,7 +106,23 @@
    "id": "icemat",
    "params": {
     "blend": "normal",
-    "emission": 0.35
+    "tint": {
+     "srgb": "#4E94BE",
+     "alpha": 1
+    },
+    "roughness": 0.08,
+    "metalness": 0.05,
+    "opacity": 0.9,
+    "reflection": 0.6,
+    "surfaceDetail": 0.3,
+    "detailScale": 3,
+    "colorVariation": 0.45,
+    "rim": 0.25,
+    "rimColor": {
+     "srgb": "#CFF4FF",
+     "alpha": 1
+    },
+    "rimPower": 3
    }
   }
  ],
@@ -140,7 +152,8 @@
        }
       }
      ]
-    }
+    },
+    "lit": true
    }
   }
  ],
@@ -207,8 +220,12 @@
    "params": {
     "template": "SpriteTextured",
     "sprite": "smoke-puff",
-    "blend": "additive",
-    "opacity": 0.35
+    "blend": "normal",
+    "opacity": 0.6,
+    "tint": {
+     "srgb": "#DDEFF8",
+     "alpha": 1
+    }
    }
   }
  ],

@@ -100,12 +100,18 @@
    "type": "Material",
    "id": "strandmat",
    "params": {
+    "template": "SpriteTextured",
+    "sprite": "electric-arc",
     "blend": "additive",
     "tint": {
-     "srgb": "#7FE0FF",
+     "srgb": "#6FD8FF",
      "alpha": 1
     },
-    "emission": 0.5
+    "emission": 0.6,
+    "uvScroll": [
+     -1.5,
+     0
+    ]
    }
   }
  ],
@@ -116,8 +122,10 @@
    "type": "RibbonRenderer",
    "id": "ribA",
    "params": {
-    "width": 0.07,
-    "endFade": 0.1
+    "width": 0.16,
+    "endFade": 0.1,
+    "uvMode": "tile",
+    "uvTileLength": 0.6
    }
   }
  ],
@@ -128,8 +136,10 @@
    "type": "RibbonRenderer",
    "id": "ribB",
    "params": {
-    "width": 0.07,
-    "endFade": 0.1
+    "width": 0.16,
+    "endFade": 0.1,
+    "uvMode": "tile",
+    "uvTileLength": 0.6
    }
   }
  ],
@@ -142,11 +152,11 @@
    "params": {
     "blend": "additive",
     "tint": {
-     "srgb": "#FFFFFF",
+     "srgb": "#DFF6FF",
      "alpha": 1
     },
-    "emission": 0.8,
-    "opacity": 0.6
+    "emission": 0.4,
+    "opacity": 0.35
    }
   }
  ],

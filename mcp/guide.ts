@@ -39,7 +39,11 @@ export const GUIDE: Record<string, string> = {
 - spark-streak sprite, additive, alignment velocity, stretchRatio 3-6, pivot 0.7-0.8, size 0.015-0.04, emission 0.8-1.5.
 - Burst on an event (impact) or a low rate (20-60/s) during a window; Gravity down for sparks, up for embers; Drag 1-2; GroundCollision bounce restitution 0.3 for impacts.
 - colorOverLife white -> orange -> dark red with alpha 0 at the end. ParticleTrail adds tapered streaks (history 0.08-0.15 s); it needs a separate SpriteUnlit Material (additive, tinted).
-- Stones/debris: MeshRenderer rock-a/b/c, orientation tumble, lit, rough Material (roughness 0.85).`,
+- Stones/debris: MeshRenderer rock-a/b/c, orientation tumble, lit, rough Material (roughness 0.85). For real stone add surfaceDetail 0.75, detailScale 5, colorVariation 0.7, reflection 0.3 and a mid-brown tint (#7A6654); without them rocks read as flat plastic.
+- Ice: lit crystal/shard meshes, tint #4E94BE, roughness 0.08, reflection 0.6, surfaceDetail 0.3, colorVariation 0.45, rim 0.25 (#CFF4FF), opacity 0.88. Keep reflection and rim low or it glows like neon. Cold air: a slow rate emitter of smoke-puff (opacity about 0.16) under the shards for as long as they stand.
+- Water: never a solid blue ribbon. RibbonRenderer + Material liquid 0.85, pale tint (#D8EEF8), blend normal; droplets = sprite droplet, blend normal, near-white tint. Additive dots read as sparks, not water.
+- Bubbles/gas: sprite bubble (thin rim, clear middle), blend normal, opacity about 0.75; ripple-ring reads as flat circles.
+- Ground rings, scorch marks and light pools under a Target: OffsetAnchor from node-target with dropToGround true and offset [0, 0.02, 0]. Never a separate fixed document anchor: it stays behind when Target moves.`,
 
   beams: `BEAMS, BOLTS, RINGS (ribbons)
 - LinePath/BezierPath between Source and Target; JaggedPath + BranchPath for lightning; HelixPath for swirling wind/energy; RingPath for shockwaves.

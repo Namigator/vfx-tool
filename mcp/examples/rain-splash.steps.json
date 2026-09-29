@@ -106,8 +106,11 @@
     "template": "SpriteTextured",
     "sprite": "droplet",
     "blend": "normal",
-    "opacity": 1,
-    "emission": 1.5
+    "opacity": 0.8,
+    "tint": {
+     "srgb": "#E8F2F8",
+     "alpha": 1
+    }
    }
   }
  ],
@@ -192,13 +195,13 @@
    "id": "splashmat",
    "params": {
     "template": "SpriteTextured",
-    "sprite": "soft-glow",
-    "blend": "additive",
+    "sprite": "droplet",
+    "blend": "normal",
     "tint": {
-     "srgb": "#CFEFFF",
+     "srgb": "#E3EEF4",
      "alpha": 1
     },
-    "emission": 1
+    "opacity": 0.75
    }
   }
  ],

@@ -191,12 +191,16 @@
    "params": {
     "blend": "normal",
     "tint": {
-     "srgb": "#857566",
+     "srgb": "#7A6654",
      "alpha": 1
     },
     "roughness": 0.85,
     "metalness": 0,
-    "emission": 0
+    "emission": 0,
+    "reflection": 0.3,
+    "surfaceDetail": 0.75,
+    "detailScale": 5,
+    "colorVariation": 0.7
    }
   }
  ],

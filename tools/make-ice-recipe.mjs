@@ -42,11 +42,13 @@ for (const [file, V] of Object.entries(VARIANTS)) {
   wire('motepull.particles', 'motebb.particles'); wire('motemat.material', 'motebb.material'); out('motebb');
 
   // ---- Ground shards: three shape variations, base pivot, grow over `growth` ticks, hold, gone at fracture ----
-  add('Material', 'icemat', { blend: 'normal', tint: col('#8FCBE6'), roughness: 0.18, metalness: 0.05, emission: 0, opacity: 0.94 });
+  // Glossy ice (review 2026-09-29: "more details, more gloss"): sky reflection, faint facet detail, per-shard shade, cold rim.
+  add('Material', 'icemat', { blend: 'normal', tint: col('#4E94BE'), roughness: 0.08, metalness: 0.05, emission: 0, opacity: 0.88,
+    reflection: 0.6, surfaceDetail: 0.3, detailScale: 3, colorVariation: 0.45, rim: 0.25, rimColor: col('#CFF4FF'), rimPower: 3 });
   const grow = Math.min(0.9, V.growth / life);
   [['shardsa', 'crystal', V.counts[0], 1], ['shardsb', 'crystal-b', V.counts[1], 0.8], ['shardsc', 'shard', V.counts[2], 0.6]].forEach(([id, mesh, count, hs]) => {
     add('Emitter', id, { shape: 'disc', direction: [0, 1, 0], radius: V.radius, burst: count, rate: 0, speedMin: 0, speedMax: 0, lifetimeMin: life / 60, lifetimeMax: life / 60 });
-    add('InitialProperties', `${id}ip`, { sizeMin: 0.15, sizeMax: 0.35 });
+    add('InitialProperties', `${id}ip`, { sizeMin: 0.2, sizeMax: 0.45 });
     add('MeshRenderer', `${id}mesh`, { mesh, orientation: 'upright', pivot: 'base', tilt: V.tilt, scaleY: +(V.scaleY * hs).toFixed(2), lit: true,
       sizeOverLife: lin([[0, 0], [grow, 1], [1, 1]]) });
     wire('node-target.out', `${id}.anchor`); wire('erupt.start', `${id}.trigger`);
@@ -92,6 +94,15 @@ for (const [file, V] of Object.entries(VARIANTS)) {
   wire('chest.out', 'frost.anchor'); wire('fracture.start', 'frost.trigger');
   wire('frost.particles', 'frostip.particles'); wire('frostip.particles', 'frostlift.particles'); wire('frostlift.particles', 'frostdrag.particles');
   wire('frostdrag.particles', 'frostbb.particles'); wire('frostmat.material', 'frostbb.material'); out('frostbb');
+  // ---- Cold vapour while the shards stand (review: "cold air around it while it's active, not only when it's gone") ----
+  add('Emitter', 'vapour', { shape: 'disc', direction: [0, 1, 0], radius: V.radius, burst: 0, rate: Math.round(10 + V.frost * 0.4), speedMin: 0.05, speedMax: 0.25, lifetimeMin: 1, lifetimeMax: 1.6 });
+  add('InitialProperties', 'vapourip', { sizeMin: 0.35, sizeMax: 0.7, randomFrameStart: true, rotationMin: 0, rotationMax: 6.283 });
+  add('Gravity', 'vapourlift', { acceleration: [0, 0.25, 0] });
+  add('Drag', 'vapourdrag', { coefficient: 1.5 });
+  add('BillboardRenderer', 'vapourbb', { flipbookMode: 'overLife', sizeOverLife: lin([[0, 0.6], [1, 1.5]]), opacityOverLife: lin([[0, 0], [0.3, 0.16], [1, 0]]) });
+  wire('node-target.out', 'vapour.anchor'); wire('erupt.window', 'vapour.window');
+  wire('vapour.particles', 'vapourip.particles'); wire('vapourip.particles', 'vapourlift.particles'); wire('vapourlift.particles', 'vapourdrag.particles');
+  wire('vapourdrag.particles', 'vapourbb.particles'); wire('frostmat.material', 'vapourbb.material'); out('vapourbb');
   add('Material', 'glintmat', { template: 'SpriteTextured', sprite: 'spark-streak', blend: 'additive', tint: col('#E8F8FF'), emission: 0.6 });
   add('BillboardRenderer', 'glintbb', { alignment: 'velocity', stretchRatio: 2, sizeOverLife: lin([[0, 0.5], [1, 0.3]]), opacityOverLife: lin([[0, 0.6], [1, 0]]) });
   wire('fragfloor.particles', 'glintbb.particles'); wire('glintmat.material', 'glintbb.material'); out('glintbb');

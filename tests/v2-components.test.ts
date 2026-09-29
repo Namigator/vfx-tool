@@ -39,7 +39,9 @@ test('components bind to the existing Source/Target anchor nodes and never mutat
   const g = doc.graphs[0];
   assert.equal(g.nodes.filter(n => n.type === 'Anchor' && n.params.anchorId === 'source').length, 1);
   assert.ok(g.edges.some(e => e.source.nodeId === 'node-source' && e.target.port === 'anchor'));
-  assert.ok(doc.anchors.some(a => a.id.endsWith('flamecenter')), 'component-owned anchor added with prefix');
+  // Review 2026-09-29: parts pinned to a fixed document anchor stayed behind when Source/Target moved (the ground
+  // ring under Impact flash / Holy light). Every part must follow Source/Target (OffsetAnchor, Drop to ground).
+  for (const c of COMPONENT_TEMPLATES) assert.deepEqual(c.anchors, [], `${c.id} pins parts to its own fixed anchor`);
   assert.throws(() => insertComponent(blank, 'nope'), /Unknown component/);
 });
 
@@ -177,4 +179,15 @@ test('a fresh New effect adopts the first component designed layout; later inser
   assert.deepEqual(first.anchors.find(a => a.id === 'target')!.position, water.layout!.target);
   const second = insertComponent(first, 'energy-bolt', undefined, { group: true }).doc;
   assert.deepEqual(second.anchors.find(a => a.id === 'target')!.position, water.layout!.target, 'second component does not move the stage');
+});
+
+test('ground parts follow a moved Target but stay on the ground (OffsetAnchor Drop to ground)', () => {
+  for (const [id, ring] of [['impact-flash', 'shockwave'], ['holy-light', 'halo']] as const) {
+    const { doc } = insertComponent(createBlankDocument(), id);
+    doc.anchors.find(a => a.id === 'target')!.position = [5, 2, 1];
+    const p = compileParticlePreview(doc, { audioHandled: true, ribbonsHandled: true });
+    if (!p.ok) assert.fail(JSON.stringify(p.errors));
+    const s = p.value.systems.find(x => x.id === `${id}-${ring}`)!;
+    assert.deepEqual(s.descriptor.sourcePosition, [5, 0.02, 1], `${id} ${ring}`);
+  }
 });

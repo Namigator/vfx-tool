@@ -45,7 +45,8 @@ for (const [file, V] of Object.entries(VARIANTS)) {
   add('Emitter', 'bubbles', { shape: 'disc', direction: [0, 1, 0], radius: V.radius * 0.8, rate: V.bubbles, burst: 0, speedMin: V.bubbleRise[0], speedMax: V.bubbleRise[1], lifetimeMin: 0.6, lifetimeMax: 1.3 });
   add('InitialProperties', 'bubbleip', { sizeMin: 0.08, sizeMax: 0.28 });
   add('NoiseForce', 'bubblewobble', { mode: 'vector', amplitude: 0.4, frequency: 1.5, evolution: 1 });
-  add('Material', 'bubblemat', { template: 'SpriteTextured', sprite: 'ripple-ring', blend: 'normal', tint: col('#B4DA4A'), opacity: 0.9, emission: 0.12 });
+  // Real bubbles (review 2026-09-29: circles "more transparent or more gassy"): bubble sprite, clear middle, glints.
+  add('Material', 'bubblemat', { template: 'SpriteTextured', sprite: 'bubble', blend: 'normal', tint: col('#C8EE6A'), opacity: 0.75, emission: 0.1 });
   add('BillboardRenderer', 'bubblebb', { sizeOverLife: lin([[0, 0.5], [0.9, 1], [1, 1.2]]), opacityOverLife: lin([[0, 0], [0.1, 1], [0.95, 1], [1, 0]]) });
   wire('node-target.out', 'bubbles.anchor'); wire('bubblewin.window', 'bubbles.window');
   wire('bubbles.particles', 'bubbleip.particles'); wire('bubbleip.particles', 'bubblewobble.particles');

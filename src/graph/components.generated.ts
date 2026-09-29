@@ -353,16 +353,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "label": "Flame jet",
   "description": "Textured flame flipbooks aimed Source→Target with turbulence, core glow and a flickering floor light.",
   "durationTicks": 180,
-  "anchors": [
-   {
-    "id": "flamecenter",
-    "position": [
-     0,
-     0.9,
-     0
-    ]
-   }
-  ],
+  "anchors": [],
   "nodes": [
    {
     "id": "sched",
@@ -635,9 +626,14 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    },
    {
     "id": "centeranchor",
-    "type": "Anchor",
+    "type": "OffsetAnchor",
     "params": {
-     "anchorId": "flamecenter"
+     "offset": [
+      2,
+      -0.1,
+      0
+     ],
+     "dropToGround": false
     }
    },
    {
@@ -787,6 +783,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    [
     "core.visual",
     "node-output.visual"
+   ],
+   [
+    "node-source.out",
+    "centeranchor.anchor"
    ],
    [
     "centeranchor.out",
@@ -1225,8 +1225,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "ip",
     "type": "InitialProperties",
     "params": {
-     "sizeMin": 0.03,
-     "sizeMax": 0.055,
+     "sizeMin": 0.035,
+     "sizeMax": 0.065,
      "rotationMin": 0,
      "rotationMax": 0,
      "angularVelocityMin": 0,
@@ -1258,7 +1258,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "mat",
     "type": "Material",
     "params": {
-     "blend": "additive"
+     "template": "SpriteTextured",
+     "sprite": "droplet",
+     "blend": "normal",
+     "opacity": 0.9
     }
    },
    {
@@ -1273,21 +1276,21 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
        {
         "position": 0,
         "color": {
-         "srgb": "#E8FAFF",
+         "srgb": "#FFFFFF",
          "alpha": 1
         }
        },
        {
-        "position": 0.6,
+        "position": 0.7,
         "color": {
-         "srgb": "#7CC8EA",
-         "alpha": 0.8
+         "srgb": "#EAF4F9",
+         "alpha": 0.9
         }
        },
        {
         "position": 1,
         "color": {
-         "srgb": "#2A6A90",
+         "srgb": "#DCEBF2",
          "alpha": 0
         }
        }
@@ -1563,8 +1566,11 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "template": "SpriteTextured",
      "sprite": "droplet",
      "blend": "normal",
-     "opacity": 1,
-     "emission": 1.5
+     "opacity": 0.8,
+     "tint": {
+      "srgb": "#E8F2F8",
+      "alpha": 1
+     }
     }
    },
    {
@@ -1625,13 +1631,13 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "Material",
     "params": {
      "template": "SpriteTextured",
-     "sprite": "soft-glow",
-     "blend": "additive",
+     "sprite": "droplet",
+     "blend": "normal",
      "tint": {
-      "srgb": "#CFEFFF",
+      "srgb": "#E3EEF4",
       "alpha": 1
      },
-     "emission": 1
+     "opacity": 0.75
     }
    },
    {
@@ -1842,16 +1848,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "label": "Impact flash",
   "description": "Timed glow sprite with a spark burst at Target.",
   "durationTicks": 90,
-  "anchors": [
-   {
-    "id": "groundpoint",
-    "position": [
-     0,
-     0.02,
-     0
-    ]
-   }
-  ],
+  "anchors": [],
   "nodes": [
    {
     "id": "hit",
@@ -1992,9 +1989,14 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    },
    {
     "id": "ground",
-    "type": "Anchor",
+    "type": "OffsetAnchor",
     "params": {
-     "anchorId": "groundpoint"
+     "offset": [
+      0,
+      0.02,
+      0
+     ],
+     "dropToGround": true
     }
    },
    {
@@ -2206,6 +2208,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    [
     "bb.visual",
     "node-output.visual"
+   ],
+   [
+    "node-target.out",
+    "ground.anchor"
    ],
    [
     "ground.out",
@@ -2737,7 +2743,17 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "rockmat",
     "type": "Material",
     "params": {
-     "blend": "normal"
+     "blend": "normal",
+     "tint": {
+      "srgb": "#7A6654",
+      "alpha": 1
+     },
+     "roughness": 0.85,
+     "metalness": 0,
+     "reflection": 0.3,
+     "surfaceDetail": 0.75,
+     "detailScale": 5,
+     "colorVariation": 0.7
     }
    },
    {
@@ -2745,7 +2761,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "MeshRenderer",
     "params": {
      "mesh": "rock-a",
-     "orientation": "tumble"
+     "orientation": "tumble",
+     "lit": true
     }
    },
    {
@@ -3903,11 +3920,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "rotationMin": 0,
      "rotationMax": 0,
      "angularVelocityMin": 0,
-     "angularVelocityMax": 0,
-     "color": {
-      "srgb": "#A8E6FF",
-      "alpha": 1
-     }
+     "angularVelocityMax": 0
     }
    },
    {
@@ -3927,7 +3940,23 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "Material",
     "params": {
      "blend": "normal",
-     "emission": 0.35
+     "tint": {
+      "srgb": "#4E94BE",
+      "alpha": 1
+     },
+     "roughness": 0.08,
+     "metalness": 0.05,
+     "opacity": 0.9,
+     "reflection": 0.6,
+     "surfaceDetail": 0.3,
+     "detailScale": 3,
+     "colorVariation": 0.45,
+     "rim": 0.25,
+     "rimColor": {
+      "srgb": "#CFF4FF",
+      "alpha": 1
+     },
+     "rimPower": 3
     }
    },
    {
@@ -3953,7 +3982,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
         }
        }
       ]
-     }
+     },
+     "lit": true
     }
    },
    {
@@ -4004,8 +4034,12 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "template": "SpriteTextured",
      "sprite": "smoke-puff",
-     "blend": "additive",
-     "opacity": 0.35
+     "blend": "normal",
+     "opacity": 0.6,
+     "tint": {
+      "srgb": "#DDEFF8",
+      "alpha": 1
+     }
     }
    },
    {
@@ -4637,13 +4671,14 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "Material",
     "params": {
      "template": "SpriteTextured",
-     "sprite": "droplet",
+     "sprite": "bubble",
      "blend": "normal",
      "tint": {
-      "srgb": "#B6FF5C",
+      "srgb": "#C8EE6A",
       "alpha": 1
      },
-     "emission": 0.4
+     "opacity": 0.75,
+     "emission": 0.1
     }
    },
    {
@@ -5433,22 +5468,18 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "label": "Holy light",
   "description": "Radiating light rays, a white-gold core, a spinning ground halo and a warm light.",
   "durationTicks": 120,
-  "anchors": [
-   {
-    "id": "groundpoint",
-    "position": [
-     0,
-     0.02,
-     0
-    ]
-   }
-  ],
+  "anchors": [],
   "nodes": [
    {
     "id": "ground",
-    "type": "Anchor",
+    "type": "OffsetAnchor",
     "params": {
-     "anchorId": "groundpoint"
+     "offset": [
+      0,
+      0.02,
+      0
+     ],
+     "dropToGround": true
     }
    },
    {
@@ -5770,6 +5801,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
   "edges": [
    [
     "node-target.out",
+    "ground.anchor"
+   ],
+   [
+    "node-target.out",
     "rays.anchor"
    ],
    [
@@ -6006,28 +6041,38 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "strandmat",
     "type": "Material",
     "params": {
+     "template": "SpriteTextured",
+     "sprite": "electric-arc",
      "blend": "additive",
      "tint": {
-      "srgb": "#7FE0FF",
+      "srgb": "#6FD8FF",
       "alpha": 1
      },
-     "emission": 0.5
+     "emission": 0.6,
+     "uvScroll": [
+      -1.5,
+      0
+     ]
     }
    },
    {
     "id": "ribA",
     "type": "RibbonRenderer",
     "params": {
-     "width": 0.07,
-     "endFade": 0.1
+     "width": 0.16,
+     "endFade": 0.1,
+     "uvMode": "tile",
+     "uvTileLength": 0.6
     }
    },
    {
     "id": "ribB",
     "type": "RibbonRenderer",
     "params": {
-     "width": 0.07,
-     "endFade": 0.1
+     "width": 0.16,
+     "endFade": 0.1,
+     "uvMode": "tile",
+     "uvTileLength": 0.6
     }
    },
    {
@@ -6036,11 +6081,11 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "additive",
      "tint": {
-      "srgb": "#FFFFFF",
+      "srgb": "#DFF6FF",
       "alpha": 1
      },
-     "emission": 0.8,
-     "opacity": 0.6
+     "emission": 0.4,
+     "opacity": 0.35
     }
    },
    {
@@ -6211,7 +6256,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    {
     "id": "width",
     "label": "Strand width",
-    "value": 0.07,
+    "value": 0.16,
     "bindings": [
      {
       "node": "ribA",
@@ -15346,10 +15391,11 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "normal",
      "tint": {
-      "srgb": "#4F9CC8",
+      "srgb": "#D8EEF8",
       "alpha": 1
      },
-     "emission": 0
+     "emission": 0,
+     "liquid": 0.85
     }
    },
    {
@@ -15439,10 +15485,11 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "normal",
      "tint": {
-      "srgb": "#9CD4F0",
+      "srgb": "#E6F4FB",
       "alpha": 1
      },
-     "emission": 0
+     "emission": 0,
+     "opacity": 0.06
     }
    },
    {
@@ -15502,7 +15549,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sprite": "droplet",
      "blend": "normal",
      "tint": {
-      "srgb": "#BFE6FF",
+      "srgb": "#F2F9FD",
       "alpha": 1
      },
      "opacity": 0.8
@@ -15638,7 +15685,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sprite": "droplet",
      "blend": "normal",
      "tint": {
-      "srgb": "#CFEBFF",
+      "srgb": "#F2F9FD",
       "alpha": 1
      },
      "opacity": 0.85,
@@ -16512,10 +16559,11 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "normal",
      "tint": {
-      "srgb": "#4F9CC8",
+      "srgb": "#D8EEF8",
       "alpha": 1
      },
-     "emission": 0
+     "emission": 0,
+     "liquid": 0.85
     }
    },
    {
@@ -16605,10 +16653,11 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "normal",
      "tint": {
-      "srgb": "#9CD4F0",
+      "srgb": "#E6F4FB",
       "alpha": 1
      },
-     "emission": 0
+     "emission": 0,
+     "opacity": 0.06
     }
    },
    {
@@ -16668,7 +16717,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sprite": "droplet",
      "blend": "normal",
      "tint": {
-      "srgb": "#BFE6FF",
+      "srgb": "#F2F9FD",
       "alpha": 1
      },
      "opacity": 0.8
@@ -16804,7 +16853,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sprite": "droplet",
      "blend": "normal",
      "tint": {
-      "srgb": "#CFEBFF",
+      "srgb": "#F2F9FD",
       "alpha": 1
      },
      "opacity": 0.85,
@@ -17678,10 +17727,11 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "normal",
      "tint": {
-      "srgb": "#4F9CC8",
+      "srgb": "#D8EEF8",
       "alpha": 1
      },
-     "emission": 0
+     "emission": 0,
+     "liquid": 0.85
     }
    },
    {
@@ -17771,10 +17821,11 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "normal",
      "tint": {
-      "srgb": "#9CD4F0",
+      "srgb": "#E6F4FB",
       "alpha": 1
      },
-     "emission": 0
+     "emission": 0,
+     "opacity": 0.06
     }
    },
    {
@@ -17834,7 +17885,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sprite": "droplet",
      "blend": "normal",
      "tint": {
-      "srgb": "#BFE6FF",
+      "srgb": "#F2F9FD",
       "alpha": 1
      },
      "opacity": 0.8
@@ -17970,7 +18021,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sprite": "droplet",
      "blend": "normal",
      "tint": {
-      "srgb": "#CFEBFF",
+      "srgb": "#F2F9FD",
       "alpha": 1
      },
      "opacity": 0.85,
@@ -21690,13 +21741,23 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "normal",
      "tint": {
-      "srgb": "#8FCBE6",
+      "srgb": "#4E94BE",
       "alpha": 1
      },
-     "roughness": 0.18,
+     "roughness": 0.08,
      "metalness": 0.05,
      "emission": 0,
-     "opacity": 0.94
+     "opacity": 0.88,
+     "reflection": 0.6,
+     "surfaceDetail": 0.3,
+     "detailScale": 3,
+     "colorVariation": 0.45,
+     "rim": 0.25,
+     "rimColor": {
+      "srgb": "#CFF4FF",
+      "alpha": 1
+     },
+     "rimPower": 3
     }
    },
    {
@@ -21722,8 +21783,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "shardsaip",
     "type": "InitialProperties",
     "params": {
-     "sizeMin": 0.15,
-     "sizeMax": 0.35
+     "sizeMin": 0.2,
+     "sizeMax": 0.45
     }
    },
    {
@@ -21779,8 +21840,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "shardsbip",
     "type": "InitialProperties",
     "params": {
-     "sizeMin": 0.15,
-     "sizeMax": 0.35
+     "sizeMin": 0.2,
+     "sizeMax": 0.45
     }
    },
    {
@@ -21836,8 +21897,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "shardscip",
     "type": "InitialProperties",
     "params": {
-     "sizeMin": 0.15,
-     "sizeMax": 0.35
+     "sizeMin": 0.2,
+     "sizeMax": 0.45
     }
    },
    {
@@ -22173,6 +22234,93 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     }
    },
    {
+    "id": "vapour",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 1.1,
+     "burst": 0,
+     "rate": 22,
+     "speedMin": 0.05,
+     "speedMax": 0.25,
+     "lifetimeMin": 1,
+     "lifetimeMax": 1.6
+    }
+   },
+   {
+    "id": "vapourip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.35,
+     "sizeMax": 0.7,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283
+    }
+   },
+   {
+    "id": "vapourlift",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      0.25,
+      0
+     ]
+    }
+   },
+   {
+    "id": "vapourdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1.5
+    }
+   },
+   {
+    "id": "vapourbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 1.5
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.3,
+        "y": 0.16
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
     "id": "glintmat",
     "type": "Material",
     "params": {
@@ -22461,6 +22609,38 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "node-output.visual"
    ],
    [
+    "node-target.out",
+    "vapour.anchor"
+   ],
+   [
+    "erupt.window",
+    "vapour.window"
+   ],
+   [
+    "vapour.particles",
+    "vapourip.particles"
+   ],
+   [
+    "vapourip.particles",
+    "vapourlift.particles"
+   ],
+   [
+    "vapourlift.particles",
+    "vapourdrag.particles"
+   ],
+   [
+    "vapourdrag.particles",
+    "vapourbb.particles"
+   ],
+   [
+    "frostmat.material",
+    "vapourbb.material"
+   ],
+   [
+    "vapourbb.visual",
+    "node-output.visual"
+   ],
+   [
     "fragfloor.particles",
     "glintbb.particles"
    ],
@@ -22669,13 +22849,23 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "normal",
      "tint": {
-      "srgb": "#8FCBE6",
+      "srgb": "#4E94BE",
       "alpha": 1
      },
-     "roughness": 0.18,
+     "roughness": 0.08,
      "metalness": 0.05,
      "emission": 0,
-     "opacity": 0.94
+     "opacity": 0.88,
+     "reflection": 0.6,
+     "surfaceDetail": 0.3,
+     "detailScale": 3,
+     "colorVariation": 0.45,
+     "rim": 0.25,
+     "rimColor": {
+      "srgb": "#CFF4FF",
+      "alpha": 1
+     },
+     "rimPower": 3
     }
    },
    {
@@ -22701,8 +22891,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "shardsaip",
     "type": "InitialProperties",
     "params": {
-     "sizeMin": 0.15,
-     "sizeMax": 0.35
+     "sizeMin": 0.2,
+     "sizeMax": 0.45
     }
    },
    {
@@ -22758,8 +22948,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "shardsbip",
     "type": "InitialProperties",
     "params": {
-     "sizeMin": 0.15,
-     "sizeMax": 0.35
+     "sizeMin": 0.2,
+     "sizeMax": 0.45
     }
    },
    {
@@ -22815,8 +23005,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "shardscip",
     "type": "InitialProperties",
     "params": {
-     "sizeMin": 0.15,
-     "sizeMax": 0.35
+     "sizeMin": 0.2,
+     "sizeMax": 0.45
     }
    },
    {
@@ -23152,6 +23342,93 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     }
    },
    {
+    "id": "vapour",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 1.4,
+     "burst": 0,
+     "rate": 20,
+     "speedMin": 0.05,
+     "speedMax": 0.25,
+     "lifetimeMin": 1,
+     "lifetimeMax": 1.6
+    }
+   },
+   {
+    "id": "vapourip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.35,
+     "sizeMax": 0.7,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283
+    }
+   },
+   {
+    "id": "vapourlift",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      0.25,
+      0
+     ]
+    }
+   },
+   {
+    "id": "vapourdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1.5
+    }
+   },
+   {
+    "id": "vapourbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 1.5
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.3,
+        "y": 0.16
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
     "id": "glintmat",
     "type": "Material",
     "params": {
@@ -23440,6 +23717,38 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "node-output.visual"
    ],
    [
+    "node-target.out",
+    "vapour.anchor"
+   ],
+   [
+    "erupt.window",
+    "vapour.window"
+   ],
+   [
+    "vapour.particles",
+    "vapourip.particles"
+   ],
+   [
+    "vapourip.particles",
+    "vapourlift.particles"
+   ],
+   [
+    "vapourlift.particles",
+    "vapourdrag.particles"
+   ],
+   [
+    "vapourdrag.particles",
+    "vapourbb.particles"
+   ],
+   [
+    "frostmat.material",
+    "vapourbb.material"
+   ],
+   [
+    "vapourbb.visual",
+    "node-output.visual"
+   ],
+   [
     "fragfloor.particles",
     "glintbb.particles"
    ],
@@ -23648,13 +23957,23 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "normal",
      "tint": {
-      "srgb": "#8FCBE6",
+      "srgb": "#4E94BE",
       "alpha": 1
      },
-     "roughness": 0.18,
+     "roughness": 0.08,
      "metalness": 0.05,
      "emission": 0,
-     "opacity": 0.94
+     "opacity": 0.88,
+     "reflection": 0.6,
+     "surfaceDetail": 0.3,
+     "detailScale": 3,
+     "colorVariation": 0.45,
+     "rim": 0.25,
+     "rimColor": {
+      "srgb": "#CFF4FF",
+      "alpha": 1
+     },
+     "rimPower": 3
     }
    },
    {
@@ -23680,8 +23999,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "shardsaip",
     "type": "InitialProperties",
     "params": {
-     "sizeMin": 0.15,
-     "sizeMax": 0.35
+     "sizeMin": 0.2,
+     "sizeMax": 0.45
     }
    },
    {
@@ -23737,8 +24056,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "shardsbip",
     "type": "InitialProperties",
     "params": {
-     "sizeMin": 0.15,
-     "sizeMax": 0.35
+     "sizeMin": 0.2,
+     "sizeMax": 0.45
     }
    },
    {
@@ -23794,8 +24113,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "shardscip",
     "type": "InitialProperties",
     "params": {
-     "sizeMin": 0.15,
-     "sizeMax": 0.35
+     "sizeMin": 0.2,
+     "sizeMax": 0.45
     }
    },
    {
@@ -24131,6 +24450,93 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     }
    },
    {
+    "id": "vapour",
+    "type": "Emitter",
+    "params": {
+     "shape": "disc",
+     "direction": [
+      0,
+      1,
+      0
+     ],
+     "radius": 0.55,
+     "burst": 0,
+     "rate": 15,
+     "speedMin": 0.05,
+     "speedMax": 0.25,
+     "lifetimeMin": 1,
+     "lifetimeMax": 1.6
+    }
+   },
+   {
+    "id": "vapourip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.35,
+     "sizeMax": 0.7,
+     "randomFrameStart": true,
+     "rotationMin": 0,
+     "rotationMax": 6.283
+    }
+   },
+   {
+    "id": "vapourlift",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      0.25,
+      0
+     ]
+    }
+   },
+   {
+    "id": "vapourdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1.5
+    }
+   },
+   {
+    "id": "vapourbb",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 1.5
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.3,
+        "y": 0.16
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
     "id": "glintmat",
     "type": "Material",
     "params": {
@@ -24419,6 +24825,38 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "node-output.visual"
    ],
    [
+    "node-target.out",
+    "vapour.anchor"
+   ],
+   [
+    "erupt.window",
+    "vapour.window"
+   ],
+   [
+    "vapour.particles",
+    "vapourip.particles"
+   ],
+   [
+    "vapourip.particles",
+    "vapourlift.particles"
+   ],
+   [
+    "vapourlift.particles",
+    "vapourdrag.particles"
+   ],
+   [
+    "vapourdrag.particles",
+    "vapourbb.particles"
+   ],
+   [
+    "frostmat.material",
+    "vapourbb.material"
+   ],
+   [
+    "vapourbb.visual",
+    "node-output.visual"
+   ],
+   [
     "fragfloor.particles",
     "glintbb.particles"
    ],
@@ -24624,12 +25062,16 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "normal",
      "tint": {
-      "srgb": "#857566",
+      "srgb": "#7A6654",
       "alpha": 1
      },
      "roughness": 0.85,
      "metalness": 0,
-     "emission": 0
+     "emission": 0,
+     "reflection": 0.3,
+     "surfaceDetail": 0.75,
+     "detailScale": 5,
+     "colorVariation": 0.7
     }
    },
    {
@@ -25719,12 +26161,16 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "normal",
      "tint": {
-      "srgb": "#857566",
+      "srgb": "#7A6654",
       "alpha": 1
      },
      "roughness": 0.85,
      "metalness": 0,
-     "emission": 0
+     "emission": 0,
+     "reflection": 0.3,
+     "surfaceDetail": 0.75,
+     "detailScale": 5,
+     "colorVariation": 0.7
     }
    },
    {
@@ -26814,12 +27260,16 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "blend": "normal",
      "tint": {
-      "srgb": "#857566",
+      "srgb": "#7A6654",
       "alpha": 1
      },
      "roughness": 0.85,
      "metalness": 0,
-     "emission": 0
+     "emission": 0,
+     "reflection": 0.3,
+     "surfaceDetail": 0.75,
+     "detailScale": 5,
+     "colorVariation": 0.7
     }
    },
    {
@@ -30381,14 +30831,14 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "Material",
     "params": {
      "template": "SpriteTextured",
-     "sprite": "ripple-ring",
+     "sprite": "bubble",
      "blend": "normal",
      "tint": {
-      "srgb": "#B4DA4A",
+      "srgb": "#C8EE6A",
       "alpha": 1
      },
-     "opacity": 0.9,
-     "emission": 0.12
+     "opacity": 0.75,
+     "emission": 0.1
     }
    },
    {
@@ -31151,14 +31601,14 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "Material",
     "params": {
      "template": "SpriteTextured",
-     "sprite": "ripple-ring",
+     "sprite": "bubble",
      "blend": "normal",
      "tint": {
-      "srgb": "#B4DA4A",
+      "srgb": "#C8EE6A",
       "alpha": 1
      },
-     "opacity": 0.9,
-     "emission": 0.12
+     "opacity": 0.75,
+     "emission": 0.1
     }
    },
    {
@@ -31921,14 +32371,14 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "Material",
     "params": {
      "template": "SpriteTextured",
-     "sprite": "ripple-ring",
+     "sprite": "bubble",
      "blend": "normal",
      "tint": {
-      "srgb": "#B4DA4A",
+      "srgb": "#C8EE6A",
       "alpha": 1
      },
-     "opacity": 0.9,
-     "emission": 0.12
+     "opacity": 0.75,
+     "emission": 0.1
     }
    },
    {

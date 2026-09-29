@@ -283,26 +283,27 @@
   }
  ],
  [
-  "vfx_set_anchor",
-  {
-   "docId": "impact",
-   "anchorId": "groundpoint",
-   "position": [
-    0,
-    0.02,
-    0
-   ]
-  }
- ],
- [
   "vfx_add_node",
   {
    "docId": "impact",
-   "type": "Anchor",
+   "type": "OffsetAnchor",
    "id": "ground",
    "params": {
-    "anchorId": "groundpoint"
+    "offset": [
+     0,
+     0.02,
+     0
+    ],
+    "dropToGround": true
    }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "impact",
+   "from": "node-target.out",
+   "to": "ground.anchor"
   }
  ],
  [

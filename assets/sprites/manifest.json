@@ -122,6 +122,19 @@
       "usage": "water droplet with fresnel rim, glint and caustic; stretch along velocity for motion blur"
     },
     {
+      "id": "bubble",
+      "file": "bubble.png",
+      "kind": "variants",
+      "cell": [
+        256,
+        256
+      ],
+      "columns": 2,
+      "rows": 2,
+      "blend": "normal",
+      "usage": "bubble with thin rim, clear middle and glints (gas, poison, underwater); tint with the material"
+    },
+    {
       "id": "ripple-ring",
       "file": "ripple-ring.png",
       "kind": "variants",

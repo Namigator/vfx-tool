@@ -34,7 +34,8 @@ for (const [file, V] of Object.entries(VARIANTS)) {
   wire('floor.out', 'pulse.anchor'); wire('pulsemat.material', 'pulse.material'); wire('pulsewin.window', 'pulse.window'); out('pulse');
 
   // ---- Shared rock material: rough, non-emissive, warm brown/grey; a warm key light reveals facets ----
-  add('Material', 'rockmat', { blend: 'normal', tint: col('#857566'), roughness: 0.85, metalness: 0, emission: 0 });
+  // Textured stone (review 2026-09-29: "stones need more textures and colours"): bumps, grain, per-stone shade.
+  add('Material', 'rockmat', { blend: 'normal', tint: col('#7A6654'), roughness: 0.85, metalness: 0, emission: 0, reflection: 0.3, surfaceDetail: 0.75, detailScale: 5, colorVariation: 0.7 });
   add('Schedule', 'lightwin', { startTicks: ERUPT - 6, durationTicks: 150, mode: 'window' });
   add('OffsetAnchor', 'lamp', { offset: [1.8, 3.5, 2.4] });
   wire('node-target.out', 'lamp.anchor');

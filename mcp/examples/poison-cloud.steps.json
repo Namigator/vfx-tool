@@ -269,13 +269,14 @@
    "id": "bubblemat",
    "params": {
     "template": "SpriteTextured",
-    "sprite": "droplet",
+    "sprite": "bubble",
     "blend": "normal",
     "tint": {
-     "srgb": "#B6FF5C",
+     "srgb": "#C8EE6A",
      "alpha": 1
     },
-    "emission": 0.4
+    "opacity": 0.75,
+    "emission": 0.1
    }
   }
  ],

@@ -459,26 +459,27 @@
   }
  ],
  [
-  "vfx_set_anchor",
-  {
-   "docId": "flame-jet",
-   "anchorId": "flamecenter",
-   "position": [
-    0,
-    0.9,
-    0
-   ]
-  }
- ],
- [
   "vfx_add_node",
   {
    "docId": "flame-jet",
-   "type": "Anchor",
+   "type": "OffsetAnchor",
    "id": "centeranchor",
    "params": {
-    "anchorId": "flamecenter"
+    "offset": [
+     2,
+     -0.1,
+     0
+    ],
+    "dropToGround": false
    }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flame-jet",
+   "from": "node-source.out",
+   "to": "centeranchor.anchor"
   }
  ],
  [
