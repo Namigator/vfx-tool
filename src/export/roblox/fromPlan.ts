@@ -355,7 +355,16 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
   const beams = beamsFrom(doc, origin, report);
   report.push({ level: 'info', item: 'scale', message: `1 m = ${r3(S)} studs; the effect origin (model pivot) is the floor point under the Source anchor, so the effect starts ${r3(src[1] * S)} studs above it. Target positions are baked (moving the target in Roblox does not re-aim the effect).` });
   const textures = [...new Set([...emitters.map(e => e.textureKey), ...beams.map(b => b.textureKey)].filter((x): x is string => !!x))];
-  return { ok: true, value: { name: safeName(doc.name || 'Effect'), durationTicks: plan.value.durationTicks, studsPerMeter: r3(S), emitters, beams, lights, textures, report } };
+  const rel = (p: readonly number[]): Vec3 => [r3((p[0] - origin[0]) * S), r3((p[1] - origin[1]) * S), r3((p[2] - origin[2]) * S)];
+  const tgt = doc.anchors.find(a => a.id === 'target')?.position ?? src;
+  const flight = [...plan.value.followers].sort((a, b) => b.travelTicks - a.travelTicks)[0];
+  report.push({ level: 'info', item: 'targeting', message: 'Aim it in Roblox with EffectPlayer.play(model, nil, { source = casterPosition, target = hitPosition, speed = studsPerSecond }): the effect stretches from the caster to the target and the flight is retimed to that speed.' });
+  return { ok: true, value: {
+    name: safeName(doc.name || 'Effect'), durationTicks: plan.value.durationTicks, studsPerMeter: r3(S), emitters, beams, lights,
+    anchors: { source: rel(src), target: rel(tgt) },
+    ...(flight ? { travel: { startTick: flight.startTick, travelTicks: flight.travelTicks } } : {}),
+    textures, report,
+  } };
 }
 
 export type { GradientValue, CurveValue };

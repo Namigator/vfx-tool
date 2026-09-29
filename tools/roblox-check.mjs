@@ -156,6 +156,55 @@ summary.perEmitterEmit = perEmitter
 summary.maxRate = maxRate
 summary.maxLightBrightness = maxBright
 
+-- Aiming: turn the effect 90 degrees, send it twice as far, at a set speed. The impact must land at the new target,
+-- and when the effect has a flight, not before the retimed arrival.
+if data.anchors then
+	local pivot = model:GetPivot()
+	local Sa = Vector3.new(data.anchors.source[1], data.anchors.source[2], data.anchors.source[3])
+	local Ta = Vector3.new(data.anchors.target[1], data.anchors.target[2], data.anchors.target[3])
+	local L = (Ta - Sa).Magnitude
+	if L > 1 then
+		local src = pivot * Sa
+		local tgt = src + Vector3.new(0, (Ta - Sa).Y * 2, -math.sqrt((Ta - Sa).X ^ 2 + (Ta - Sa).Z ^ 2) * 2)
+		local speed = 40
+		-- Authored bursts near the Target (impact) and their authored ticks.
+		local impactTicks = {}
+		for _, d in ipairs(data.emitters) do
+			for _, b in ipairs(d.bursts or {}) do
+				if b[3] and (Vector3.new(b[3], b[4], b[5]) - Ta).Magnitude < 3 then table.insert(impactTicks, b[1]) end
+			end
+		end
+		local stepN, nearHits, earliest = 0, 0, math.huge
+		local aim = Player.create(model, nil, {
+			source = src, target = tgt, speed = speed,
+			onEmit = function(em)
+				local p = em.Parent.Position
+				if (p - tgt).Magnitude < 4 then nearHits += 1; earliest = math.min(earliest, stepN) end
+			end,
+		})
+		local beamNearTarget = false
+		while not aim.isDone() and stepN < maxSteps * 3 do
+			stepN += 1
+			local okStep, err = pcall(aim.update, 1 / 60)
+			if not okStep then fail("aimed update error: " .. tostring(err)) break end
+			local r = model:FindFirstChild("_BeamRig")
+			if r and not beamNearTarget then
+				for _, c in ipairs(r:GetChildren()) do
+					if c:IsA("Beam") and c.Enabled and ((c.Attachment0.WorldPosition - tgt).Magnitude < 3 or (c.Attachment1.WorldPosition - tgt).Magnitude < 3) then beamNearTarget = true break end
+				end
+			end
+		end
+		summary.aim = { distance = (tgt - src).Magnitude, impactBurstsNearTarget = nearHits, firstImpactStep = earliest, beamReachedTarget = beamNearTarget, steps = stepN }
+		if #impactTicks > 0 and nearHits == 0 then fail("aimed: no impact burst landed near the new target") end
+		if #data.beams > 0 and not beamNearTarget then fail("aimed: no beam reached the new target") end
+		if data.travel and #impactTicks > 0 then
+			local arrival = data.travel.startTick + (tgt - src).Magnitude / speed * 60
+			summary.aim.expectedArrivalStep = arrival
+			if earliest < arrival - 3 then fail("aimed: impact at step " .. earliest .. " before the retimed arrival " .. arrival) end
+		end
+	end
+end
+
 -- play()/stop() wiring (Heartbeat)
 local okPlay, pl = pcall(function() return Player.play(model, nil, { loop = true }) end)
 if okPlay then pl.stop() else fail("play(): " .. tostring(pl)) end

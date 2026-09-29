@@ -132,6 +132,14 @@ export type RobloxEffect = {
   emitters: RbxEmitter[];
   beams: RbxBeamLayer[];
   lights: RbxLight[];
+  /**
+   * Retargeting (user 2026-09-30 "fix the targeting"): the authored Source and Target points (origin-relative studs).
+   * The player maps the effect onto a runtime source → target: positions stretch along the Source→Target line and
+   * rotate with it (widths and heights unchanged), so the start stays at the caster and the impact lands on the target.
+   */
+  anchors: { source: Vec3; target: Vec3 };
+  /** The projectile flight (the longest PathFollower): authored start tick and travel ticks; the player retimes it for a runtime speed. */
+  travel?: { startTick: number; travelTicks: number };
   /** Sprite sheet files referenced by textureKey (upload these, then pass their rbxassetid map to the writer). */
   textures: string[];
   report: RbxReportItem[];

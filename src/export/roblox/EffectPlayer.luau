@@ -5,6 +5,12 @@
 --   local player = EffectPlayer.play(model, origin?, { loop = true })
 --   player.stop()
 --
+-- Aiming (retargeting): pass options.source (Vector3 or CFrame, the caster) and options.target (Vector3, the hit
+-- point). The effect is stretched along its authored Source->Target line to reach the target and rotated to face it
+-- (sizes, widths and heights unchanged). options.speed (studs/s) or options.travelTime (s) retimes the projectile
+-- flight; without them the authored speed is kept, so a farther target takes proportionally longer. Everything after
+-- the arrival (impact, sparks, lights) shifts with it.
+--
 -- EffectPlayer.create(...) returns the same object plus update(dt) / isDone() so a host can drive time itself
 -- (used by tools/roblox-check.mjs); options.onEmit(emitter, count) is called for every :Emit.
 
@@ -72,13 +78,82 @@ local function lerpFlat(a, b, f)
 	return out
 end
 
-function EffectPlayer.create(model: Model, origin: CFrame?, options: { loop: boolean?, onEmit: ((ParticleEmitter, number) -> ())? }?)
+export type Options = {
+	loop: boolean?,
+	onEmit: ((ParticleEmitter, number) -> ())?,
+	source: (Vector3 | CFrame)?,
+	target: Vector3?,
+	speed: number?,
+	travelTime: number?,
+}
+
+-- Right-handed frame (forward, up, side) around a direction; up follows +Y unless the direction is near vertical.
+local function frameOf(dir: Vector3): (Vector3, Vector3, Vector3)
+	local u = dir.Unit
+	local ref = if math.abs(u.Y) < 0.95 then Vector3.yAxis else Vector3.xAxis
+	local w = u:Cross(ref).Unit
+	return u, w:Cross(u), w
+end
+
+function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 	local opts = options or {}
 	local data = require(model:FindFirstChild("EffectData"))
 	local pivot = model:GetPivot()
 	local originCF = origin or pivot
 	local duration = data.durationTicks
 	local onEmit = opts.onEmit
+
+	-- Space: authored origin-relative studs -> world. Default = the origin CFrame; with a target, the Source->Target
+	-- line is stretched onto the runtime source->target and the effect is rotated to face it.
+	local toWorld: (Vector3) -> Vector3 = function(p)
+		return originCF * p
+	end
+	local worldRot: CFrame = originCF.Rotation
+	local stretch = 1
+	local anchors = data.anchors
+	if opts.target and anchors then
+		local Sa = Vector3.new(anchors.source[1], anchors.source[2], anchors.source[3])
+		local Ta = Vector3.new(anchors.target[1], anchors.target[2], anchors.target[3])
+		local src = opts.source
+		local s = if typeof(src) == "CFrame" then src.Position elseif typeof(src) == "Vector3" then src else originCF * Sa
+		local t = opts.target
+		local D = Ta - Sa
+		local runDir = t - s
+		if D.Magnitude > 1e-3 and runDir.Magnitude > 1e-3 then
+			local ua, upa, wa = frameOf(D)
+			local v, upr, wr = frameOf(runDir)
+			stretch = runDir.Magnitude / D.Magnitude
+			toWorld = function(p)
+				local d = p - Sa
+				return s + v * (d:Dot(ua) * stretch) + upr * d:Dot(upa) + wr * d:Dot(wa)
+			end
+			worldRot = CFrame.fromMatrix(Vector3.zero, v, upr, wr) * CFrame.fromMatrix(Vector3.zero, ua, upa, wa):Inverse()
+		end
+	end
+
+	-- Time: the flight [start, start + travel) is retimed; later ticks shift by the difference.
+	local flightStart, flightA, flightR = 0, 0, 0
+	if data.travel and data.travel.travelTicks > 0 then
+		flightStart, flightA = data.travel.startTick, data.travel.travelTicks
+		flightR = flightA * stretch
+		if opts.target and opts.speed and opts.speed > 0 and anchors then
+			local Sa = Vector3.new(anchors.source[1], anchors.source[2], anchors.source[3])
+			local Ta = Vector3.new(anchors.target[1], anchors.target[2], anchors.target[3])
+			flightR = (Ta - Sa).Magnitude * stretch / opts.speed * TICK_RATE
+		elseif opts.travelTime and opts.travelTime > 0 then
+			flightR = opts.travelTime * TICK_RATE
+		end
+		flightR = math.max(1, flightR)
+	end
+	local runDuration = duration + (flightR - flightA)
+	local function authoredAt(n: number): number
+		if flightA <= 0 or n <= flightStart then
+			return n
+		elseif n < flightStart + flightR then
+			return flightStart + (n - flightStart) * flightA / flightR
+		end
+		return n - (flightR - flightA)
+	end
 
 	local emittersFolder = model:FindFirstChild("Emitters")
 	local beamsFolder = model:FindFirstChild("Beams")
@@ -92,7 +167,7 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: { loop: boo
 	rig.CanQuery = false
 	rig.Transparency = 1
 	rig.Size = Vector3.new(0.1, 0.1, 0.1)
-	rig.CFrame = originCF
+	rig.CFrame = CFrame.identity -- Beam attachments are placed in world space (toWorld).
 	rig.Parent = model
 
 	local emitters = {}
@@ -191,7 +266,23 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: { loop: boo
 	local connection = nil
 
 	local function placePart(s, p)
-		s.part.CFrame = originCF * CFrame.new(p) * s.rot
+		s.part.CFrame = CFrame.new(toWorld(p)) * worldRot * s.rot
+	end
+
+	-- Sparse per-tick paths: between two consecutive-tick entries the position is blended by the fractional tick
+	-- (a retimed, slowed flight glides instead of stepping).
+	local function pathAt(path, i: number, a: number): Vector3?
+		local e = path[i - 1]
+		if not e then
+			return nil
+		end
+		local p = Vector3.new(e[2], e[3], e[4])
+		local n = path[i]
+		if n and n[1] - e[1] == 1 and a > e[1] then
+			local f = math.min(1, a - e[1])
+			p = p:Lerp(Vector3.new(n[2], n[3], n[4]), f)
+		end
+		return p
 	end
 
 	local function resetState()
@@ -226,7 +317,7 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: { loop: boo
 			l.pos = l.home
 			placePart(l, l.pos)
 		end
-		rig.CFrame = originCF
+		rig.CFrame = CFrame.identity
 	end
 
 	local function getBeam(layer, index)
@@ -367,8 +458,8 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: { loop: boo
 				seg += 1
 				local b = getBeam(layer, seg)
 				local o = (i - 1) * 4
-				b.a0.Position = pos(o)
-				b.a1.Position = pos(o + 4)
+				b.a0.Position = toWorld(pos(o))
+				b.a1.Position = toWorld(pos(o + 4))
 				b.beam.Width0 = width(o)
 				b.beam.Width1 = width(o + 4)
 				if b.alpha ~= alpha then
@@ -459,7 +550,7 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: { loop: boo
 		s.em.Transparency = buildNumbers(lerpFlat(a[3], b[3], f))
 	end
 
-	local function stepEmitter(s, tick)
+	local function stepEmitter(s, tick, a)
 		local d = s.d
 		local em = s.em
 		local rate = d.rate
@@ -467,18 +558,16 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: { loop: boo
 			em.Rate = rate[s.rateI][2]
 			s.rateI += 1
 		end
-		local moved = false
 		local path = d.path
 		if path then
 			while s.pathI <= #path and path[s.pathI][1] <= tick do
-				local e = path[s.pathI]
-				s.pos = Vector3.new(e[2], e[3], e[4])
-				moved = true
 				s.pathI += 1
 			end
-		end
-		if moved then
-			placePart(s, s.pos)
+			local p = pathAt(path, s.pathI, a)
+			if p and p ~= s.pos then
+				s.pos = p
+				placePart(s, p)
+			end
 		end
 		local bursts = d.bursts
 		if bursts then
@@ -502,7 +591,7 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: { loop: boo
 		applyColorFrames(s, tick)
 	end
 
-	local function stepLight(l, tick)
+	local function stepLight(l, tick, a)
 		local d = l.d
 		local br = d.brightness
 		while l.brightI <= #br and br[l.brightI][1] <= tick do
@@ -511,15 +600,13 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: { loop: boo
 		end
 		local path = d.path
 		if path then
-			local moved = false
 			while l.pathI <= #path and path[l.pathI][1] <= tick do
-				local e = path[l.pathI]
-				l.pos = Vector3.new(e[2], e[3], e[4])
-				moved = true
 				l.pathI += 1
 			end
-			if moved then
-				placePart(l, l.pos)
+			local p = pathAt(path, l.pathI, a)
+			if p and p ~= l.pos then
+				l.pos = p
+				placePart(l, p)
 			end
 		end
 	end
@@ -557,21 +644,22 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: { loop: boo
 		end
 		elapsed += dt
 		if phase == "run" then
-			local tick = math.min(math.floor(elapsed * TICK_RATE + 1e-6), duration)
+			local a = math.min(authoredAt(elapsed * TICK_RATE), duration)
+			local tick = math.min(math.floor(a + 1e-6), duration)
 			for _, s in ipairs(emitters) do
-				stepEmitter(s, tick)
+				stepEmitter(s, tick, a)
 			end
 			for _, layer in ipairs(beamLayers) do
 				updateBeams(layer, tick)
 			end
 			for _, l in ipairs(lights) do
-				stepLight(l, tick)
+				stepLight(l, tick, a)
 			end
 			if tick >= duration then
 				finishRun()
 			end
 		end
-		if phase == "tail" and elapsed >= duration / TICK_RATE + maxLifetime then
+		if phase == "tail" and elapsed >= runDuration / TICK_RATE + maxLifetime then
 			if opts.loop then
 				resetState()
 			else
@@ -598,7 +686,7 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: { loop: boo
 	return player
 end
 
-function EffectPlayer.play(model: Model, origin: CFrame?, options: { loop: boolean?, onEmit: ((ParticleEmitter, number) -> ())? }?)
+function EffectPlayer.play(model: Model, origin: CFrame?, options: Options?)
 	local player = EffectPlayer.create(model, origin, options)
 	local connection
 	connection = RunService.Heartbeat:Connect(function(dt)

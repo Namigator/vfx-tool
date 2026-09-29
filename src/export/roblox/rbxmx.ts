@@ -346,6 +346,8 @@ function effectDataSource(effect: RobloxEffect, names: { e: string[]; b: string[
     name: effect.name,
     durationTicks: Math.max(1, Math.round(effect.durationTicks)),
     studsPerMeter: effect.studsPerMeter,
+    anchors: { source: effect.anchors.source, target: effect.anchors.target } as unknown as LuaValue,
+    travel: effect.travel ? ({ startTick: effect.travel.startTick, travelTicks: effect.travel.travelTicks } as unknown as LuaValue) : undefined,
     emitters: emitters as unknown as LuaValue,
     beams: beams as unknown as LuaValue,
     lights: lights as unknown as LuaValue,

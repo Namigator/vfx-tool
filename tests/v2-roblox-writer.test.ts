@@ -13,6 +13,8 @@ export function handBuiltEffect(): RobloxEffect {
     name: 'Test <Effect> & "co"',
     durationTicks: 120,
     studsPerMeter: 3.571,
+    anchors: { source: [0, 4, 0], target: [14, 4, 0] },
+    travel: { startTick: 10, travelTicks: 30 },
     emitters: [
       {
         name: 'flame', position: [0, 1, 0], direction: [0, 1, 0], partSize: [2, 0.5, 2],

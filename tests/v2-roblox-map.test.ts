@@ -65,3 +65,17 @@ test('Roblox map: a keyframed Colour becomes colour frames on the emitters', () 
   assert.equal(a.color.length, b.color.length);
   assert.ok(a.color.some((k, i) => k.c[2] < b.color[i].c[2]), 'blue rises toward the second key');
 });
+
+test('Roblox map: exports carry the authored Source/Target and the projectile flight for runtime aiming', async () => {
+  const fire = effect('fireball');
+  const { source, target } = fire.anchors;
+  assert.ok(Math.hypot(target[0] - source[0], target[1] - source[1], target[2] - source[2]) > 10, 'Source→Target distance in studs');
+  assert.ok(fire.travel && fire.travel.travelTicks > 0, 'the fireball flight is exported');
+  assert.ok(fire.report.some(r => r.item === 'targeting'));
+  const bolt = effect('lightning-strike');
+  assert.equal(bolt.travel, undefined, 'no projectile flight in a strike');
+  const { writeRbxmx } = await import('../src/export/roblox/rbxmx.ts');
+  const xml = writeRbxmx(fire, { playerSource: '-- player' });
+  assert.match(xml, /anchors/);
+  assert.match(xml, /travelTicks/);
+});
