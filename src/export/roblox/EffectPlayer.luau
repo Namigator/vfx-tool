@@ -11,6 +11,9 @@
 -- flight; without them the authored speed is kept, so a farther target takes proportionally longer. Everything after
 -- the arrival (impact, sparks, lights) shifts with it.
 --
+-- The returned handle also has setTarget(position) (follow a moving target) and hit(position?) (the projectile
+-- really hit: jump to the impact now, where it happened).
+--
 -- options.scale (default 1) resizes the effect for your game (particle sizes, speeds, spread, beam/trail widths,
 -- light range, offsets across the aim line); the Source->Target reach still follows source/target.
 --
@@ -116,24 +119,33 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 	local worldRot: CFrame = originCF.Rotation
 	local stretch = 1
 	local anchors = data.anchors
-	if opts.target and anchors then
-		local Sa = Vector3.new(anchors.source[1], anchors.source[2], anchors.source[3])
-		local Ta = Vector3.new(anchors.target[1], anchors.target[2], anchors.target[3])
-		local src = opts.source
-		local s = if typeof(src) == "CFrame" then src.Position elseif typeof(src) == "Vector3" then src else originCF * Sa
-		local t = opts.target
+	local Sa = anchors and Vector3.new(anchors.source[1], anchors.source[2], anchors.source[3])
+	local Ta = anchors and Vector3.new(anchors.target[1], anchors.target[2], anchors.target[3])
+	local runSource: Vector3? = nil
+	-- Maps the authored Source->Target line onto runSource->t (called again by setTarget / hit).
+	local function aimAt(t: Vector3)
+		if not (Sa and Ta and runSource) then
+			return
+		end
+		local s = runSource
 		local D = Ta - Sa
 		local runDir = t - s
-		if D.Magnitude > 1e-3 and runDir.Magnitude > 1e-3 then
-			local ua, upa, wa = frameOf(D)
-			local v, upr, wr = frameOf(runDir)
-			stretch = runDir.Magnitude / D.Magnitude
-			toWorld = function(p)
-				local d = p - Sa
-				return s + v * (d:Dot(ua) * stretch) + (upr * d:Dot(upa) + wr * d:Dot(wa)) * k
-			end
-			worldRot = CFrame.fromMatrix(Vector3.zero, v, upr, wr) * CFrame.fromMatrix(Vector3.zero, ua, upa, wa):Inverse()
+		if D.Magnitude <= 1e-3 or runDir.Magnitude <= 1e-3 then
+			return
 		end
+		local ua, upa, wa = frameOf(D)
+		local v, upr, wr = frameOf(runDir)
+		stretch = runDir.Magnitude / D.Magnitude
+		toWorld = function(p)
+			local d = p - Sa
+			return s + v * (d:Dot(ua) * stretch) + (upr * d:Dot(upa) + wr * d:Dot(wa)) * k
+		end
+		worldRot = CFrame.fromMatrix(Vector3.zero, v, upr, wr) * CFrame.fromMatrix(Vector3.zero, ua, upa, wa):Inverse()
+	end
+	if opts.target and anchors then
+		local src = opts.source
+		runSource = if typeof(src) == "CFrame" then src.Position elseif typeof(src) == "Vector3" then src else originCF * Sa
+		aimAt(opts.target)
 	end
 
 	-- Time: the flight [start, start + travel) is retimed; later ticks shift by the difference.
@@ -142,8 +154,6 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 		flightStart, flightA = data.travel.startTick, data.travel.travelTicks
 		flightR = flightA * stretch
 		if opts.target and opts.speed and opts.speed > 0 and anchors then
-			local Sa = Vector3.new(anchors.source[1], anchors.source[2], anchors.source[3])
-			local Ta = Vector3.new(anchors.target[1], anchors.target[2], anchors.target[3])
 			flightR = (Ta - Sa).Magnitude * stretch / opts.speed * TICK_RATE
 		elseif opts.travelTime and opts.travelTime > 0 then
 			flightR = opts.travelTime * TICK_RATE
@@ -727,6 +737,49 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 			else
 				phase = "done"
 				cleanup()
+			end
+		end
+	end
+
+	-- Re-places every Part after the aim changed (static emitters never move on their own).
+	local function replaceAll()
+		for _, e in ipairs(emitters) do
+			placePart(e, e.pos or e.home)
+		end
+		for _, l in ipairs(lights) do
+			placePart(l, l.pos or l.home)
+		end
+		for _, t in ipairs(trails) do
+			placePart(t, t.pos or t.home)
+		end
+		for _, layer in ipairs(beamLayers) do
+			layer.key = nil
+		end
+	end
+
+	-- Moving target (homing, a running mob): re-aims the rest of the effect at `target`; the timing stays.
+	function player.setTarget(target: Vector3)
+		if stopped or not runSource then
+			return
+		end
+		aimAt(target)
+		replaceAll()
+	end
+
+	-- The projectile really hit (possibly early, or somewhere else): aim at `at` (when given) and jump straight to
+	-- the arrival, so the impact plays now and where it happened. No effect once the flight is over.
+	function player.hit(at: Vector3?)
+		if stopped or phase ~= "run" then
+			return
+		end
+		if at and runSource then
+			aimAt(at)
+			replaceAll()
+		end
+		if flightA > 0 then
+			local arrival = (flightStart + flightR) / TICK_RATE
+			if elapsed < arrival then
+				elapsed = arrival - 1e-6
 			end
 		end
 	end

@@ -218,6 +218,26 @@ if data.anchors then
 		summary.aim = { distance = (tgt - src).Magnitude, impactBurstsNearTarget = nearHits, firstImpactStep = earliest, beamReachedTarget = beamNearTarget, steps = stepN }
 		if #impactTicks > 0 and nearHits == 0 then fail("aimed: no impact burst landed near the new target") end
 		if #data.beams > 0 and not beamNearTarget then fail("aimed: no beam reached the new target") end
+		-- Early real hit: halfway, at step 10 -> the impact must play there within a few ticks.
+		if data.travel and #impactTicks > 0 then
+			local mid = src:Lerp(tgt, 0.5) + Vector3.new(0, 0, 6)
+			local stepH, hitNear, hitStep = 0, 0, math.huge
+			local hp = Player.create(model, nil, {
+				source = src, target = tgt, speed = speed,
+				onEmit = function(em)
+					if (em.Parent.Position - mid).Magnitude < 4 then hitNear += 1; hitStep = math.min(hitStep, stepH) end
+				end,
+			})
+			while not hp.isDone() and stepH < maxSteps * 3 do
+				stepH += 1
+				if stepH == 10 then hp.hit(mid) end
+				local okStep, err = pcall(hp.update, 1 / 60)
+				if not okStep then fail("hit() update error: " .. tostring(err)) break end
+			end
+			summary.aim.earlyHit = { near = hitNear, firstStep = hitStep }
+			if hitNear == 0 then fail("hit(): no impact near the real hit point") end
+			if hitStep > 10 + 3 + (impactTicks[1] - (data.travel.startTick + data.travel.travelTicks)) then fail("hit(): impact came late at step " .. hitStep) end
+		end
 		if data.travel and #impactTicks > 0 then
 			local arrival = data.travel.startTick + (tgt - src).Magnitude / speed * 60
 			summary.aim.expectedArrivalStep = arrival
