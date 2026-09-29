@@ -2,6 +2,28 @@
 
 **Goal:** A simple composable web VFX/SFX node tool with ten editable elemental defaults, original-lightning quality floor, and engine-neutral future exporters.
 
+## CURRENT — 2026-09-29, end of the "finish everything in the mds" pass (read this first)
+- Branch squad/vfx-v2, not merged, not pushed. Gate: `git add …; bash tools/gate-commit.sh "msg"` (587 tests, tsc).
+  After src/render changes: `node tools/render-smoke.mjs`.
+- Plan status per document: `docs/v2-plan/27-GAP-AUDIT.md`, last section. T01–T40 map: `docs/v2-plan/evidence/TRACEABILITY.md`.
+- Done in this pass (details in git log since 8814928):
+  - Packs, colour shift, curve/gradient editors, Solo, error focus, Relink/Replace/Remove/Cleanup.
+  - Emitter path shape, OverLife, RingRenderer, Curve/Gradient nodes, copy/paste/duplicate (and Preserve pattern),
+    Delete and reconnect, Start on event.
+  - Material templates, flipbook loop/crossfade, portability classes, hard limits, selection highlight, markers.
+  - Asset library to the 10 minimum (17 sheets), normal/noise roles, plane mesh, Add to effect, flipbook preview playback.
+  - Library panel (Presets/Components/Assets/My Blocks + search), Jump to driver, Retry preview, Catching up.
+  - In-step ground bounce, checkpoint ceiling, conformance F05–F11 tests.
+  - Gate B + Gate D evidence (120 sheets re-rendered), perf evidence (compile p95 128 ms, seek 85/5 ms, load 0.8 s).
+  - README + MCP guide updated.
+- Waiting on the USER: A-05 run 6 verdict (work/a05); variant approval (Gate D); whether additive effects need a
+  light-arena variant (faint on light floors); visual OK before merging to main.
+- [UNVERIFIED]: "Catching up" readout (hidden pane); Jump to driver was not clicked.
+- Before release (user backlog): new editor as the default page, remove the v1 editor + "Back to v1" button, converter
+  renamed "Import old effect", stop calling the release "v1".
+- Post-release (user order): performance pass → timeline strip with component bars, then keyframed knobs →
+  engine export → in-editor AI box that runs its own render→look→adjust loop → full AI guide → sound.
+
 ## Direction (user decision 2026-09-26) — tool first, presets second
 - Stop polishing individual effects feature-by-feature. Build **generic, reusable building blocks** first; presets are assembled from them afterwards, never hand-special-cased.
 - Ease of use is the product. This is the plan's own Simple view + component templates + published knobs (01, 12) — not a new concept; the failure was execution order (see 27-GAP-AUDIT). Reusable **layer types** (e.g. Flame jet, Smoke, Sparks, Glow, Bolt, Ring) that expose their own big knobs (reach, spread, turbulence, lift, size, heat colour, density), sitting on top of the node graph (graph stays as "advanced"). Per-preset published controls alone are not enough.
