@@ -21,22 +21,32 @@ node node_modules/vite/bin/vite.js build                                        
 
 ## Using the editor
 
+- **Library** (left, or the Library button): **Presets** open a ready-made effect as a new effect, **Components** and
+  **My Blocks** insert into the open one, **Assets** lists the included sprites and your imports. Search filters by
+  name, element or type.
 - **Add component** (below the preview): pick a ready-made effect (49 built-in, plus *My components*) and press
   Insert. It arrives as one component box; its knobs appear under **Controls** on the right.
-- **Play / Restart / scrub** the timeline under the preview. **Glow**, **Dark/Light arena**, **Quality** and
+- **Play / Restart / scrub** the timeline under the preview; ◀ ▶ step one tick, 0.25x/0.5x/1x speed, New seed each loop,
+  Reset camera, Grid on/off (also hides the Source/Target markers). Selecting a node dims everything it does not draw. **Glow**, **Dark/Light arena**, **Quality** and
   **Reduced effects** only change the preview, never the effect.
 - **Start at** (every component) delays it, so parts play in sequence (charge → shot → impact).
 - **Graph**: drag nodes, connect ports, select a node to edit it on the right. Double-click a component (or Open
   internals) to see inside; the breadcrumb goes back. Shift+click several nodes → **Group selection**. Select a
   component → **Save as my component** to reuse it anywhere. Delete key removes the selection; Enter opens a component.
+  Ctrl+D duplicates, Ctrl+C/V copy and paste (also between effects), right-click for the menu (Duplicate with the same
+  random pattern, Delete and reconnect, Solo). Drag from a port into empty space to add a connected node.
+- **Inspector**: curve and gradient editors (drag points or type values), Disconnect / Unbind / Jump to driver on
+  driven fields, Reset block. An error in the list opens its node and field.
 - **Outline (parts list)** on the right lists the parts for keyboard/screen-reader use: select, switch on/off, open.
 - **Files**: Keep (project list in this browser), Projects, Remove (goes to Trash, restorable), Save .json, Open…,
   Export pack (.vfxpack with imported images/models). Everything autosaves; the last five versions are kept. Two tabs
   on the same effect never overwrite each other.
 - **Legacy v1**: pick an old v1 effect and **Convert a copy** — a new graph is made and a report lists what was
   converted. The original is never changed.
-- **Imported assets**: import PNG/WebP/JPEG textures (with flipbook grid preview) and GLB models (with a picture and
-  real size), then use them on a Material / MeshRenderer.
+- **Imported assets**: import PNG/WebP/JPEG textures as colour, mask, normal map or noise (flipbook grid and playback
+  preview) and GLB models (with a picture and real size). **Add to effect** inserts a ready-made component that uses
+  the asset; **Use on selected Material/MeshRenderer** applies it to an existing part. Relink, Remove and Clean up
+  unused files keep the local library tidy.
 
 ## For AI agents (MCP)
 
@@ -44,7 +54,7 @@ node node_modules/vite/bin/vite.js build                                        
 tools mirror every editor action (the map is in `STATE.md`, "Standing rule: MCP parity"): documents, nodes, edges,
 knobs, components, groups, user components, imports, packs, legacy conversion, undo/redo, compile (with event and
 tail reports), headless frame rendering (with camera, glow, lit/bright statistics), contact sheets, image comparison,
-particle sampling, audio rendering, and `vfx_guide` (authoring recipes per element).
+particle sampling, audio rendering, and `vfx_guide` (authoring recipes per element, materials, curves and workflow tools).
 `node mcp/run-steps.mjs <file>` runs a scripted list of tool calls (see `mcp/examples/*.steps.json`).
 
 ## Where things are
@@ -65,4 +75,6 @@ particle sampling, audio rendering, and `vfx_guide` (authoring recipes per eleme
   user and have not been listened to or tuned.
 - Simulation runs on the main thread (measured < 1 ms per tick on average; a worker was not needed).
 - No engine exporters yet (Unity/Unreal/Godot); documents are engine-neutral JSON.
-- Performance figures in `docs/v2-plan/evidence/perf-2026-09-29.md` are CPU draw costs on one machine; GPU time is not isolated.
+- Performance figures in `docs/v2-plan/evidence/` are CPU costs on one machine (draw 1–8 ms, edit+compile p95 128 ms,
+  seek p95 85 ms); GPU time is not isolated and real fps needs a focused browser window.
+- Local particle space is not supported (world space only); refraction and liquid shading are preview enhancements.
