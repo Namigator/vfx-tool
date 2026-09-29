@@ -177,3 +177,10 @@ Sprite library: `node tools/bake-sprites.mjs` → assets/sprites/ (flame-tongue-
 - Post-v1 idea (user, 2026-09-29): in-editor AI box ("make it more electric" edits the effect live). Requirement from
   the discussion: it must run the render -> look -> adjust loop itself (several rounds, frame stats, compare) before
   showing a result; one blind edit = "not bad" quality (A-05), iterated + guided = the quality of the built-ins.
+- 2026-09-29 "finish everything in the mds" pass (user): plan audit found — A packs (DONE 8814928: built-ins
+  embedded+pinned, mix.wav, capabilities, staged import summary, .json warning, MCP inspect_pack; T31 fresh-origin
+  [RAN]); Colour shift knob on every component (DONE 2ce12ba, user request); fireball Travel fix (0ffc732).
+  REMAINING: B editor — curve + gradient editors (12: points + keyboard numeric table), Solo preview mask (06),
+  error list focuses node, Relink by file with hash check (10); C — Emitter path shape, PublicParameter parent
+  Group override; D — T01–T40 traceability table, quota-failure test, update 27-GAP-AUDIT/INDEX. Parked: sound
+  (T18 WAV import, T25 listening), worker (T14; measured unnecessary — record as decision in plan).

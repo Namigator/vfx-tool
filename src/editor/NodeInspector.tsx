@@ -4,13 +4,14 @@
 // connection > control binding > stored literal > registry default. Driven fields are read-only and are never
 // written; resetting deletes the stored override so the registry default applies again.
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactElement } from 'react';
-import type { EffectDocumentV2, NodeDefinition, NodeSpec, ParameterSpec, ParameterValue, Unit, ColorValue } from '../model/types.ts';
+import type { EffectDocumentV2, NodeDefinition, NodeSpec, ParameterSpec, ParameterValue, Unit, ColorValue, CurveValue, GradientValue } from '../model/types.ts';
 import { MAX_LABEL_CODE_POINTS } from '../model/types.ts';
 import { validateParameterValue } from '../model/values.ts';
 import { registryKey } from '../model/controls.ts';
 import { createRegistry } from '../graph/registry.ts';
 import type { Patch } from './history.ts';
 import { inspectorValues, type InspectorValue } from './inspector-values.ts';
+import { CurveEditor, GradientEditor } from './CurveEditor.tsx';
 import './node-inspector.css';
 
 export type NodeInspectorProps = {
@@ -204,6 +205,13 @@ function ParamRow({ doc, node, spec, eff, stored, structural, onSet, onReset }: 
           {doc.assets.map(a => <option key={a.id} value={a.id}>{a.provenance.originalFilename || a.id} ({a.kind})</option>)}
         </select>
       ) : <span className="ni-unsupported">No assets in this document.</span>;
+      break;
+    case 'curve':
+      control = <CurveEditor id={id} label={spec.label} value={value as CurveValue} disabled={readOnly} durationSeconds={doc.durationTicks / 60}
+        yMin={spec.min} yMax={spec.max} onCommit={v => commit(v)} />;
+      break;
+    case 'gradient':
+      control = <GradientEditor id={id} label={spec.label} value={value as GradientValue} disabled={readOnly} onCommit={v => commit(v)} />;
       break;
     default:
       control = <span className="ni-unsupported" role="note">Editing {spec.type} values is not supported yet.</span>;

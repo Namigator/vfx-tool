@@ -27,3 +27,15 @@
 .ni-error { margin: 0; color: #e06c75; }
 .ni-unsupported { color: #e5c07b; font-style: italic; }
 .ni :focus-visible { outline: 2px solid #61afef; outline-offset: 2px; }
+/* 12 curve and gradient editors */
+.ce { display: flex; flex-direction: column; gap: 4px; }
+.ce-plot { background: #0f131b; border: 1px solid #2a3140; border-radius: 4px; touch-action: none; max-width: 100%; }
+.ce-bg { fill: none; stroke: #232a38; }
+.ce-line { fill: none; stroke: #7fb4ff; stroke-width: 2; }
+.ce-key { fill: #d6dae3; stroke: #0f131b; stroke-width: 1.5; cursor: grab; }
+.ce-tools { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.ce-range { color: #8a92a3; font-size: 12px; }
+.ce-table { border-collapse: collapse; font-size: 12px; }
+.ce-table th { text-align: left; color: #8a92a3; font-weight: normal; padding: 0 4px; }
+.ce-table input[type=number] { width: 64px; }
+.ge-bar { height: 16px; border-radius: 3px; border: 1px solid #2a3140; background-color: #000; }
