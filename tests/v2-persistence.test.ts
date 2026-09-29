@@ -117,3 +117,17 @@ test('merging project lists keeps every name once (newest copy wins), newest fir
   assert.equal(m[1].text, 'x-new');
   assert.equal(mergeEntryLists('not json', '[]'), '[]');
 });
+
+test('13 asset cleanup keeps every hash any document/revision/undo text mentions; quota failure keeps the previous draft', async () => {
+  const { unusedAssetHashes } = await import('../src/model/assetStore.ts');
+  const a = 'a'.repeat(64), b = 'b'.repeat(64), c = 'c'.repeat(64);
+  assert.deepEqual(unusedAssetHashes([a, b, c], [`{"assets":[{"sha256":"${a}"}]}`, null, `[{"patch":"${b}"}]`]), [c]);
+  // Quota: a storage that throws on write reports the failure and leaves the previous draft untouched.
+  const { saveDraft, DRAFT_KEY } = await import('../src/model/persistence.ts');
+  const { createF01Document } = await import('../src/graph/fixtures.ts');
+  const mem = new Map<string, string>([[DRAFT_KEY, 'previous']]);
+  const full = { getItem: (k: string) => mem.get(k) ?? null, setItem: () => { throw new DOMException('quota', 'QuotaExceededError'); } };
+  const r = saveDraft(full, createF01Document(), new Date());
+  assert.ok(!r.ok && /quota/i.test(r.message), JSON.stringify(r));
+  assert.equal(mem.get(DRAFT_KEY), 'previous');
+});

@@ -26,6 +26,8 @@ const persist = () => { try { store?.setItem(USER_COMPONENTS_KEY, JSON.stringify
 export function saveUserComponent(c: UserComponent): void { list = [c, ...list.filter(x => x.name !== c.name)]; persist(); }
 export function removeUserComponent(id: string): void { list = list.filter(x => x.id !== id); persist(); }
 export function userComponentError(): string { return lastError; }
+/** Text of every saved component (blocks), for asset cleanup. */
+export function userComponentsText(): string { return JSON.stringify(list); }
 
 export function useUserComponents(): UserComponent[] {
   const [value, setValue] = useState(list);

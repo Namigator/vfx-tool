@@ -16,10 +16,11 @@ import { FAMILIES, type Recipe } from './core/types.ts';
 import { compilePathPreview } from './graph/toPaths.ts';
 import { createBlankDocument, createF01Document, createForcesDemoDocument } from './graph/fixtures.ts';
 import { TexturePanel } from './editor/TexturePanel.tsx';
-import { getAssetBytes, openProjectStorage, putAssetBytes } from './model/assetStore.ts';
+import { userComponentsText } from './editor/userComponentStore.ts';
+import { deleteAssetBytes, listAssetBytes, unusedAssetHashes, getAssetBytes, openProjectStorage, putAssetBytes } from './model/assetStore.ts';
 import { buildPack, readPack, type PackAsset } from './model/vfxpack.ts';
 import { hasAssetUrl, registerAssetUrl } from './assets/assetUrls.ts';
-import { DRAFT_META_KEY, SHELF_KEY, TRASH_KEY, documentFileName, mergeEntryLists, emptyTrash, loadDraftText, readDraftMeta, readShelf, readTrash, recoverDraft, removeFromShelf, restoreFromTrash, saveDraft, saveToShelf, type DraftStorage, type ShelfEntry, type TrashEntry } from './model/persistence.ts';
+import { CORRUPT_KEY, DRAFT_KEY, REVISIONS_KEY, DRAFT_META_KEY, SHELF_KEY, TRASH_KEY, documentFileName, mergeEntryLists, emptyTrash, loadDraftText, readDraftMeta, readShelf, readTrash, recoverDraft, removeFromShelf, restoreFromTrash, saveDraft, saveToShelf, type DraftStorage, type ShelfEntry, type TrashEntry } from './model/persistence.ts';
 import { ControlsPanel } from './editor/ControlsPanel.tsx';
 import { OutlinePanel } from './editor/OutlinePanel.tsx';
 import { compileAudio } from './graph/toAudio.ts';
@@ -490,6 +491,24 @@ export default function PreviewV2() {
     });
     return () => { live = false; };
   }, []);
+  /** 13 explicit asset cleanup: removes stored bytes nothing references (current effect, undo history, autosave and its revisions, projects, trash, saved components). */
+  const cleanupAssets = useCallback(async () => {
+    const stored = await listAssetBytes();
+    const ls = typeof localStorage === 'undefined' ? null : localStorage;
+    const texts = [JSON.stringify(historyRef.current!.snapshot()), historyRef.current!.patchText(), ls?.getItem(DRAFT_KEY), ls?.getItem(REVISIONS_KEY), ls?.getItem(CORRUPT_KEY),
+      projectsRef.current.getItem(SHELF_KEY), projectsRef.current.getItem(TRASH_KEY), userComponentsText()];
+    const unused = unusedAssetHashes(stored.map(s => s.byteHash), texts);
+    if (!unused.length) { setFileNote(`No unused imported files (${stored.length} stored, all in use).`); return; }
+    if (!window.confirm(`Remove ${unused.length} imported file(s) that nothing uses any more? This cannot be undone.`)) return;
+    const freed = await deleteAssetBytes(unused, new Map(stored.map(s => [s.byteHash, s.size])));
+    setFileNote(freed > 0 ? `Removed ${unused.length} unused file(s); ${(freed / 1024).toFixed(0)} KiB freed.` : 'Cleanup failed; nothing was removed.');
+  }, []);
+  /** Downloads text as a file (13: unreadable autosaves and unknown-version files stay downloadable, never discarded). */
+  const downloadText = (name: string, text: string) => {
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  };
   const keepProject = useCallback(() => {
     const r = saveToShelf(projectsRef.current, historyRef.current!.snapshot());
     if (r.ok) { setShelf(r.entries); setShelfPick(r.entries[0].name); setFileNote(`Kept "${r.entries[0].name}" in projects`); }
@@ -812,6 +831,12 @@ export default function PreviewV2() {
             </span>
           )}
           {fileNote && <span className="pv2-note" role="status" aria-live="polite">{fileNote}</span>}
+          {recoveredFromRef.current && typeof localStorage !== 'undefined' && localStorage.getItem(CORRUPT_KEY) && (
+            <button type="button" onClick={() => downloadText('unreadable-autosave.json', localStorage.getItem(CORRUPT_KEY) ?? '')} title="The unreadable autosave was kept aside; download it to inspect or recover it by hand">Download the unreadable autosave</button>
+          )}
+          {jsonErrors.some(e => e.code === 'UNSUPPORTED_VERSION') && textDirty && (
+            <button type="button" onClick={() => downloadText('effect-unsupported-version.json', text)} title="This file is from a version this editor cannot open; it was not changed or converted. Download it as-is.">Download the file as-is</button>
+          )}
           {stagedPack && (
             <div className="pv2-banner" role="dialog" aria-label={`Open ${stagedPack.name}`}>
               <strong>Open pack {stagedPack.name}?</strong> Your current effect is autosaved first.
@@ -927,6 +952,7 @@ export default function PreviewV2() {
           <section className="pv2-panel" aria-label="Imported assets">
             <h2 className="pv2-heading">Imported assets</h2>
             <TexturePanel document={doc} graphId={graphId} selectedNodeId={selectedNode?.id} onEdit={onEdit} missingIds={missingAssets} onBytesRestored={() => setAssetCheck(n => n + 1)} />
+            <button type="button" onClick={() => void cleanupAssets()} title="Remove imported image/model files that no effect, project, autosave revision, saved component or undo step uses (asks first, reports the space freed)">Clean up unused files</button>
             {missingAssets.length > 0 && <p className="pv2-warn" role="alert">Missing imported files on this device: {missingAssets.map(id => doc.assets.find(a => a.id === id)?.provenance.originalFilename ?? id).join(', ')}. Use Relink… next to each one under Imported assets.</p>}
           </section>
           <section className="pv2-panel pv2-sound" aria-label="Sound audition">

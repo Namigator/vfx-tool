@@ -60,6 +60,49 @@ export async function getAssetBytes(byteHash: string): Promise<AssetBytesRecord 
   }
 }
 
+/** Every stored asset byte record with its size (for the explicit cleanup action). */
+export async function listAssetBytes(): Promise<{ byteHash: string; size: number }[]> {
+  try {
+    const db = await openDb();
+    return await new Promise((resolve, reject) => {
+      const req = db.transaction('assets', 'readonly').objectStore('assets').getAll();
+      req.onsuccess = () => resolve((req.result as AssetBytesRecord[]).map(r => ({ byteHash: r.byteHash, size: r.blob.size })));
+      req.onerror = () => reject(req.error);
+    });
+  } catch {
+    return [];
+  }
+}
+
+/** Deletes the given byte records in one transaction; resolves to the bytes reclaimed (0 on failure). */
+export async function deleteAssetBytes(hashes: readonly string[], sizes: ReadonlyMap<string, number>): Promise<number> {
+  if (!hashes.length) return 0;
+  try {
+    const db = await openDb();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction('assets', 'readwrite'), store = tx.objectStore('assets');
+      for (const h of hashes) store.delete(h);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+    return hashes.reduce((n, h) => n + (sizes.get(h) ?? 0), 0);
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * 13 "Asset cleanup computes references across documents, revisions, blocks and active undo history": every SHA-256
+ * mentioned anywhere in those texts is kept (a content hash only ever appears as a reference), everything else in the
+ * store is unused.
+ */
+export function unusedAssetHashes(stored: readonly string[], referenceTexts: readonly (string | null | undefined)[]): string[] {
+  const used = new Set<string>();
+  for (const t of referenceTexts) if (t) for (const m of t.matchAll(/[0-9a-f]{64}/g)) used.add(m[0]);
+  return stored.filter(h => !used.has(h));
+}
+
 /**
  * Project shelf and trash in IndexedDB (13: named documents must not be squeezed by the ~5 MB localStorage
  * quota). A synchronous key/value view over the `preferences` store: values for `keys` are loaded once into

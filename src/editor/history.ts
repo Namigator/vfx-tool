@@ -220,6 +220,11 @@ export class DocumentHistory {
     if (!isRecord(this.#doc)) throw new Error('Initial document must be a JSON object.');
   }
 
+  /** Text of every retained undo/redo patch (asset cleanup keeps anything an undo could bring back). */
+  patchText(): string {
+    return JSON.stringify([this.#undo, this.#redo]);
+  }
+
   /** Owned deep clone of the current document (including uncommitted transaction edits). */
   snapshot(): EffectDocumentV2 {
     return copy(this.#doc) as EffectDocumentV2;
