@@ -353,7 +353,7 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
   if (plan.value.presentation.impulses.length) report.push({ level: 'dropped', item: 'presentation', message: 'Camera shake is not exported.' });
   const lights = plan.value.lights.map(l => lightFrom(l, origin, plan.value.durationTicks, report));
   const beams = beamsFrom(doc, origin, report);
-  report.push({ level: 'info', item: 'scale', message: `1 m = ${r3(S)} studs; the effect origin is the Source anchor on the floor. Target positions are baked (moving the target in Roblox does not re-aim the effect).` });
+  report.push({ level: 'info', item: 'scale', message: `1 m = ${r3(S)} studs; the effect origin (model pivot) is the floor point under the Source anchor, so the effect starts ${r3(src[1] * S)} studs above it. Target positions are baked (moving the target in Roblox does not re-aim the effect).` });
   const textures = [...new Set([...emitters.map(e => e.textureKey), ...beams.map(b => b.textureKey)].filter((x): x is string => !!x))];
   return { ok: true, value: { name: safeName(doc.name || 'Effect'), durationTicks: plan.value.durationTicks, studsPerMeter: r3(S), emitters, beams, lights, textures, report } };
 }

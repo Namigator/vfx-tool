@@ -60,6 +60,14 @@
   Textures: tools/roblox-upload-textures.mjs (dry run default, --yes uploads as Image assets, ids ->
   work/roblox/asset-ids.json). BLOCKED on user: OK to upload 5 sheets under IntoToilet (11041117443) + key needs
   Assets read/write. Not exported yet: per-particle trails, mesh particles, flash/shake, turbulence/attract/vortex/ground.
+- SpellForge acceptance test 2026-09-29 (Sonnet agent, MCP-only): 3 effects (fire/lightning/poison) exported and
+  wired into SpellForge branch vfx-studio-test (worktree C:/Dev/Projects/SpellForgeLegacy-vfxstudio, commit d13a776,
+  USE_VFX_STUDIO flag, impactFx only); headless 30/30 PASS; NOT seen in Studio; textures are stand-ins.
+  GAPS to fix next (priority): (1) runtime retarget/scale - Source/Target baked, projectiles can't follow gameplay
+  (play(model, origin, {target=...})); (2) per-particle trails dropped (fireball streak gone); (3) lightning up to
+  ~1150 Beams; (4) flat ground rings become camera-facing; (5) ground collision dropped; (6) effect scale vs
+  Roblox characters (a knob/preset for game scale); (7) vfx_new_document template vs component confusing;
+  (8) long control ids. Fixed: asset-ids accepts rbxassetid:// form in the report; origin wording.
 - TOOL BROKEN 2026-09-29: ~/.claude/tools/shot.ps1 url returns "chrome produced no file" even for docs that captured
   earlier (doctor clean, page reports READY via cdp-eval). Use the in-app browser pane or cdp-eval meanwhile.
 - USER REPORT 2026-09-29 (open): viewed from behind/in front of the fire (along the jet), the sprites move

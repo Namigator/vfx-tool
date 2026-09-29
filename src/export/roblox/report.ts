@@ -9,7 +9,7 @@ export function reportMarkdown(e: RobloxEffect, assetIds: Record<string, string>
   const missing = e.textures.filter(t => !assetIds[t]);
   lines.push('## Textures', '');
   if (!e.textures.length) lines.push('None (plain round particles).');
-  for (const t of e.textures) lines.push(`- ${t}: ${assetIds[t] ? `rbxassetid://${assetIds[t]}` : 'NOT UPLOADED - shows the default Roblox sparkle until uploaded'}`);
+  for (const t of e.textures) lines.push(`- ${t}: ${assetIds[t] ? (/^[a-z]+:\/\//i.test(assetIds[t]) ? assetIds[t] : `rbxassetid://${assetIds[t]}`) : 'NOT UPLOADED - shows the default Roblox sparkle until uploaded'}`);
   if (missing.length) lines.push('', `${missing.length} texture(s) still need uploading to Roblox.`);
   const groups: [string, string][] = [['dropped', 'Not available in Roblox (left out)'], ['approximated', 'Approximated'], ['info', 'Notes']];
   for (const [level, title] of groups) {
@@ -22,7 +22,7 @@ export function reportMarkdown(e: RobloxEffect, assetIds: Record<string, string>
   }
   lines.push('', '## Using it in Studio', '',
     '1. In Studio: right-click Workspace → Insert from File → pick the .rbxmx.',
-    '2. Move the model where the effect should happen (its pivot is the effect origin: the Source point on the floor).',
+    '2. Move the model where the effect should happen. Its pivot is the effect origin: the floor point under the Source, and the effect starts at the Source height above it.',
     '3. To preview: select the model\'s Demo script, tick Enabled, press Play. From your own scripts: `require(model.EffectPlayer).play(model)`.');
   return lines.join('\n') + '\n';
 }
