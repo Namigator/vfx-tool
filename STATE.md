@@ -184,3 +184,6 @@ Sprite library: `node tools/bake-sprites.mjs` → assets/sprites/ (flame-tongue-
   error list focuses node, Relink by file with hash check (10); C — Emitter path shape, PublicParameter parent
   Group override; D — T01–T40 traceability table, quota-failure test, update 27-GAP-AUDIT/INDEX. Parked: sound
   (T18 WAV import, T25 listening), worker (T14; measured unnecessary — record as decision in plan).
+- Commit rule (2026-09-29): `git add …; bash tools/gate-commit.sh "msg"` (checks the gate's real exit code — piping
+  gate.sh into tail once let a tsc failure through, fixed in ee17c39). After ANY change under src/render/ also run
+  `node tools/render-smoke.mjs` (tests cannot compile GLSL; a missing varying once blanked every billboard).
