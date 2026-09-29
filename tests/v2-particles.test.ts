@@ -470,3 +470,29 @@ test('07 bounce solves the contact inside the step: reflected there, then the re
   assert.ok(Math.abs(hit.position[1] - hit.velocity[1] * rest) < 1e-9, `rises by the remaining fraction (y=${hit.position[1]})`);
   assert.ok(Math.abs(hit.position[0] - (before.position[0] + 2 / 60)) < 1e-9, 'horizontal motion is continuous through the contact');
 });
+
+test('15 performance: events of a shorter run equal the prefix of a longer run of the same system (event cache reuse)', async () => {
+  const { collectParticleEvents } = await import('../src/runtime/particles.ts');
+  const { compileParticlePreview } = await import('../src/graph/toParticles.ts');
+  const { insertComponent } = await import('../src/graph/components.ts');
+  const { createBlankDocument } = await import('../src/graph/fixtures.ts');
+  const doc = insertComponent(createBlankDocument(), 'flamethrower', undefined, { group: true }).doc;
+  const plan = compileParticlePreview({ ...doc, durationTicks: 600 }, { audioHandled: true, ribbonsHandled: true });
+  if (!plan.ok) assert.fail(JSON.stringify(plan.errors));
+  const flame = plan.value.systems.map(s => s.descriptor).find(d => d.durationTicks === 600 && d.bursts.length === 0 && d.rate)!;
+  const parent = { ...flame, rate: { ...flame.rate!, endTick: 150 } }; // emits up to the cut, so the long run has later deaths
+  const long = collectParticleEvents(parent);
+  const short = collectParticleEvents({ ...parent, durationTicks: 150 }); // served from the long run
+  const fresh = collectParticleEvents({ ...parent, durationTicks: 150, documentSeed: parent.documentSeed }); // same key → same answer
+  if (!long.ok || !short.ok || !fresh.ok) assert.fail('events');
+  assert.ok(long.value.length > short.value.length && short.value.length > 0);
+  assert.deepEqual(short.value, long.value.filter(e => e.tick < 150));
+  // Reference: an independent 150-tick simulation (different options object → different cache key).
+  const reference = collectParticleEvents({ ...parent, durationTicks: 150 }, {});
+  if (!reference.ok) assert.fail(JSON.stringify(reference.errors));
+  assert.deepEqual(short.value, reference.value);
+  // A shorter end that invalidates the rate window is still an error, not a filtered cache hit.
+  const wide = { ...parent, rate: { ...parent.rate!, endTick: 600 } };
+  assert.equal(collectParticleEvents(wide).ok, true);
+  assert.equal(collectParticleEvents({ ...wide, durationTicks: 30 }).ok, false);
+});

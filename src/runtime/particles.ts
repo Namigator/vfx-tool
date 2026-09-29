@@ -814,20 +814,35 @@ export function sampleParticlesAtTick(input: unknown, tick: number, options?: Pa
  * not touch the parent system — e.g. smoke colour on a flamethrower — no longer re-simulates the whole flame to find
  * where its smoke is born). Every call returns fresh copies.
  */
-const eventCache = new Map<string, ValidationResult<ParticleEvent[]>>();
+const eventCache = new Map<string, { duration: number; result: ValidationResult<ParticleEvent[]> }>();
 const EVENT_CACHE_SIZE = 32;
 const copyEvents = (r: ValidationResult<ParticleEvent[]>): ValidationResult<ParticleEvent[]> =>
   r.ok ? { ok: true, value: r.value.map(e => ({ ...e, position: cloneVec(e.position), velocity: cloneVec(e.velocity) })), warnings: [...r.warnings] } : { ok: false, errors: r.errors.map(d => ({ ...d })) };
 
 /** Runs a descriptor to its end and returns every birth/death/collision event (compile-time child emission). */
 export function collectParticleEvents(input: unknown, options?: Partial<ParticleLimits>): ValidationResult<ParticleEvent[]> {
-  let key: string | undefined;
-  try { key = JSON.stringify([input, options ?? null]); } catch { key = undefined; }
+  let key: string | undefined, duration = -1;
+  // Keyed without the duration: a run to a later end has exactly the same events before the earlier end (the end only
+  // empties outputs, it creates no events), so the duration check's 600-tick run also serves the preview's shorter one.
+  try {
+    if (input && typeof input === 'object' && typeof (input as { durationTicks?: unknown }).durationTicks === 'number') {
+      duration = (input as { durationTicks: number }).durationTicks;
+      key = JSON.stringify([{ ...(input as object), durationTicks: 0 }, options ?? null]);
+    }
+  } catch { key = undefined; }
   const hit = key === undefined ? undefined : eventCache.get(key);
-  if (hit) { eventCache.delete(key!); eventCache.set(key!, hit); return copyEvents(hit); }
+  if (hit && (hit.duration === duration || (hit.duration > duration && hit.result.ok))) {
+    eventCache.delete(key!); eventCache.set(key!, hit);
+    if (hit.duration === duration) return copyEvents(hit.result);
+    // The shorter end can make bursts/rate ticks invalid that were valid for the longer run.
+    const valid = validateParticleDescriptor(input, options);
+    if (!valid.ok) return valid;
+    const r = hit.result as { ok: true; value: ParticleEvent[]; warnings: Diagnostic[] };
+    return copyEvents({ ok: true, value: r.value.filter(e => e.tick < duration), warnings: r.warnings });
+  }
   const result = runParticleEvents(input, options);
-  if (key !== undefined) {
-    eventCache.set(key, result);
+  if (key !== undefined && !(hit && hit.duration > duration)) {
+    eventCache.set(key, { duration, result });
     if (eventCache.size > EVENT_CACHE_SIZE) eventCache.delete(eventCache.keys().next().value as string);
   }
   return copyEvents(result);
