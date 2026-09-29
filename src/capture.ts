@@ -11,6 +11,7 @@ import { PreviewViewport } from './render/PreviewViewport.ts';
 import { registerAssetUrl } from './assets/assetUrls.ts';
 import { glowSettings } from './graph/glow.ts';
 
+import { soloMask } from './graph/solo.ts';
 const q = new URLSearchParams(location.search);
 const msg = document.getElementById('msg') as HTMLElement;
 const fail = (text: string) => { document.title = `ERROR ${text.slice(0, 200)}`; msg.textContent = text; };
@@ -45,6 +46,9 @@ async function main(): Promise<void> {
     if (!p.ok) return fail(fmt(p.errors));
     vp.setPlan(p.value);
   }
+  // 06 Solo (MCP parity with the editor's Outline Solo): solo=<nodeId>,<nodeId> shows only those sinks/components.
+  const solo = (q.get('solo') ?? '').split(',').filter(Boolean);
+  if (solo.length) vp.setSoloMask(soloMask(d, new Set(solo)));
   vp.setGlow(q.get('glow') !== '0');
   vp.setGlowSettings(glowSettings(d));
   vp.setBackground(q.get('bg') === 'light' ? 'light' : 'dark');

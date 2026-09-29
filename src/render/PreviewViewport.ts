@@ -437,6 +437,8 @@ export class PreviewViewport {
   #sims = new Map<string, ParticleSimulation>();
   #snapshots = new Map<string, ParticleState[]>();
   #layers: LayerMesh[] = [];
+  /** 06 Solo: sink node IDs to show (null = show all). A preview mask only; simulations still run, so timing is unchanged. */
+  #solo: ReadonlySet<string> | null = null;
   #pathCompile: PathCompile | null = null;
   #pathPlan: PathPreviewPlan | null = null;
   #ribbons: RibbonMesh[] = [];
@@ -1259,9 +1261,24 @@ export class PreviewViewport {
    * 15/T37 benchmark primitive: draws the current tick once, synchronously, and waits for the GPU (gl.finish), so
    * the cost of a frame can be measured even where the browser throttles requestAnimationFrame.
    */
+  /** 06 Solo: only these sink nodes are drawn (null clears the mask). Never changes the effect or its timing. */
+  setSoloMask(ids: ReadonlySet<string> | null): void {
+    this.#solo = ids && ids.size ? new Set(ids) : ids ? new Set() : null;
+  }
+
+  #applySolo(): void {
+    const s = this.#solo, on = (id: string) => !s || s.has(id);
+    for (const l of this.#layers) l.mesh.visible = on(l.layer.nodeId);
+    for (const t of this.#trails) t.mesh.visible = on(t.nodeId);
+    for (const l of this.#lights) l.light.visible = on(l.layer.nodeId);
+    for (const m of this.#meshes) m.mesh.visible = on(m.layer.nodeId);
+    for (const r of this.#ribbons) r.mesh.visible = on(r.nodeId);
+  }
+
   measureFrame(): { cpuMs: number; totalMs: number } {
     const gl = this.#renderer.getContext(), t0 = performance.now();
     if (this.#plan && this.#clock) this.#upload(0);
+    this.#applySolo();
     if (this.#composer) this.#composer.render(); else this.#renderer.render(this.#scene, this.#camera);
     const t1 = performance.now();
     gl.finish();
@@ -1309,6 +1326,7 @@ export class PreviewViewport {
         shaken = true;
       }
     } else if (this.#flashEl) this.#flashEl.style.opacity = '0';
+    this.#applySolo();
     if (this.#composer) this.#composer.render();
     else this.#renderer.render(this.#scene, this.#camera);
     if (shaken) { cam.position.copy(savedPos); cam.quaternion.copy(savedQuat); }

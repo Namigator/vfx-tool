@@ -2,6 +2,7 @@
 // graph document with a controlled graph canvas below it. DocumentHistory owns the authoritative document;
 // React holds an owned snapshot of it plus diagnostics and tick. Particle state lives in the viewport, never
 // in React state. Only semantic changes recompile, so moving nodes does not reset the simulation.
+import { soloMask } from './graph/solo.ts';
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import type { Diagnostic, EffectDocumentV2 } from './model/types.ts';
 import { validateDocument } from './model/document.ts';
@@ -153,6 +154,8 @@ export default function PreviewV2() {
   const [looping, setLooping] = useState(false);
   const onLoopRef = useRef<() => void>(() => {});
   const [lightBg, setLightBg] = useState(false);
+  /** 06 Solo: preview-only mask of soloed nodes (never saved in the effect). */
+  const [solo, setSolo] = useState<ReadonlySet<string>>(() => new Set());
   const [expanded, setExpanded] = useState(() => new URLSearchParams(window.location.search).get('expand') === '1');
   // Bumped by every document replacement; async file reads apply only if still the latest request.
   const generationRef = useRef(0);
@@ -597,6 +600,8 @@ export default function PreviewV2() {
     ctx?.close().catch(() => { /* already closed */ });
   }, []);
 
+  useEffect(() => { viewportRef.current?.setSoloMask(soloMask(doc, solo)); }, [doc, solo]);
+
   // Undo: Ctrl/Cmd+Z. Redo: Ctrl/Cmd+Shift+Z or Ctrl+Y. Suppressed in text inputs, textareas and contenteditable.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -814,7 +819,8 @@ export default function PreviewV2() {
         <aside className="pv2-side">
           <details className="pv2-panel" aria-label="Outline">
             <summary className="pv2-heading">Outline (parts list)</summary>
-            <OutlinePanel document={doc} graphId={graphId} selectedNodeId={selectedNode ? selectedNode.id : undefined} onSelectNode={setSelectedNodeId} onEdit={onEdit} />
+            <OutlinePanel document={doc} graphId={graphId} selectedNodeId={selectedNode ? selectedNode.id : undefined} onSelectNode={setSelectedNodeId} onEdit={onEdit}
+              soloed={solo} onToggleSolo={id => setSolo(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; })} onClearSolo={() => setSolo(new Set())} />
           </details>
           <section className="pv2-panel" aria-label="Controls">
             <h2 className="pv2-heading">Controls</h2>

@@ -444,8 +444,8 @@ ${formatMigrationReport(report)}`);
     persist(getDoc(docId));
     return ok(`${editorUrl}?workspace=v2&doc=/work/mcp/${encodeURIComponent(docId)}.json`);
   });
-  type RenderArgs = { docId: string; ticks: number[]; width?: number; height?: number; glow?: boolean; background?: 'dark' | 'light'; camera?: { position: [number, number, number]; target: [number, number, number]; fov?: number } };
-  const renderFrames = ({ docId, ticks, width, height, glow, background, camera }: RenderArgs): Result => {
+  type RenderArgs = { docId: string; ticks: number[]; width?: number; height?: number; glow?: boolean; background?: 'dark' | 'light'; solo?: string[]; camera?: { position: [number, number, number]; target: [number, number, number]; fov?: number } };
+  const renderFrames = ({ docId, ticks, width, height, glow, background, camera, solo }: RenderArgs): Result => {
     const d = getDoc(docId); persist(d);
     const chrome = options.chromePath ?? CHROME_CANDIDATES.find(p => p && existsSync(p));
     if (!chrome) return bad('No Chrome/Edge found; set VFX_CHROME to its executable path.');
@@ -454,7 +454,7 @@ ${formatMigrationReport(report)}`);
     for (const tick of ticks) {
       const out = join(dir, `${docId}-t${tick}${background === 'light' ? '-light' : ''}.png`), profile = mkdtempSync(join(tmpdir(), 'vfx-chrome-'));
       rmSync(out, { force: true });
-      const url = new URL(`capture.html?doc=/work/mcp/${encodeURIComponent(docId)}.json&tick=${tick}&label=1${glow === false ? '&glow=0' : ''}${background === 'light' ? '&bg=light' : ''}${camera ? `&cam=${camera.position.join(',')}&look=${camera.target.join(',')}${camera.fov ? `&fov=${camera.fov}` : ''}` : ''}`, editorUrl).href;
+      const url = new URL(`capture.html?doc=/work/mcp/${encodeURIComponent(docId)}.json&tick=${tick}&label=1${glow === false ? '&glow=0' : ''}${background === 'light' ? '&bg=light' : ''}${solo?.length ? `&solo=${solo.map(encodeURIComponent).join(',')}` : ''}${camera ? `&cam=${camera.position.join(',')}&look=${camera.target.join(',')}${camera.fov ? `&fov=${camera.fov}` : ''}` : ''}`, editorUrl).href;
       spawnSync(chrome, ['--headless=new', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--hide-scrollbars', '--no-first-run', '--no-default-browser-check',
         `--user-data-dir=${profile}`, `--window-size=${width ?? 960},${height ?? 540}`, '--virtual-time-budget=6000', `--screenshot=${out}`, url], { timeout: 90_000, stdio: 'ignore' });
       rmSync(profile, { recursive: true, force: true });
@@ -469,18 +469,19 @@ ${formatMigrationReport(report)}`);
   tool('vfx_render_frames', 'Render effect frames to PNG with headless Chrome (needs the vite dev server) and return the images. Look at them before claiming anything about the visual result. Glow (bloom) is on by default and is tuned per effect on the EffectOutput node (glowStrength, glowRadius, glowThreshold, glowLimit — see vfx_describe_node_type EffectOutput); glow:false shows the raw shapes.', {
     docId: z.string(), ticks: z.array(z.number().int().min(0)).min(1).max(8), width: z.number().int().min(160).max(1920).optional(), height: z.number().int().min(120).max(1080).optional(), glow: z.boolean().optional(), background: z.enum(['dark', 'light']).optional(),
     camera: z.object({ position: z.tuple([z.number(), z.number(), z.number()]), target: z.tuple([z.number(), z.number(), z.number()]), fov: z.number().min(5).max(120).optional() }).optional(),
+    solo: z.array(z.string()).optional().describe('Show only these nodes (renderers, lights or whole components/Group nodes), like the editor Outline Solo. The effect is unchanged.'),
   }, args => renderFrames(args));
 
   // WP-MCP2: one image over the whole timeline, and a side-by-side comparison of two captures.
   tool('vfx_contact_sheet', 'Render frames at evenly spaced ticks (or the given ticks) and return them as ONE grid image (a timeline strip). Saved to work/mcp/frames/<doc>-sheet.png.', {
     docId: z.string(), count: z.number().int().min(2).max(16).optional(), ticks: z.array(z.number().int().min(0)).min(2).max(16).optional(), columns: z.number().int().min(1).max(8).optional(),
-    glow: z.boolean().optional(), background: z.enum(['dark', 'light']).optional(),
-  }, async ({ docId, count, ticks, columns, glow, background }) => {
+    glow: z.boolean().optional(), background: z.enum(['dark', 'light']).optional(), solo: z.array(z.string()).optional(),
+  }, async ({ docId, count, ticks, columns, glow, background, solo }) => {
     const d = getDoc(docId), n = count ?? 8;
     const list = ticks ?? Array.from({ length: n }, (_, i) => Math.round((i / (n - 1)) * (d.durationTicks - 1)));
     const frames: Rgba[] = [];
     for (let i = 0; i < list.length; i += 8) {
-      const r = await renderFrames({ docId, ticks: list.slice(i, i + 8), width: 480, height: 270, ...(glow === false ? { glow } : {}), ...(background ? { background } : {}) });
+      const r = await renderFrames({ docId, ticks: list.slice(i, i + 8), width: 480, height: 270, ...(glow === false ? { glow } : {}), ...(background ? { background } : {}), ...(solo?.length ? { solo } : {}) });
       if (r.isError) return r;
       for (const c of r.content) if (c.type === 'image') frames.push(decodePng(Buffer.from(c.data, 'base64')));
     }

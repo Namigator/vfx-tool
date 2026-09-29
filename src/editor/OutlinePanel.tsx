@@ -3,6 +3,7 @@
 // the canvas. Each change is one undoable edit.
 import type { EffectDocumentV2 } from '../model/types.ts';
 import type { Patch } from './history.ts';
+import { canSolo } from '../graph/solo.ts';
 
 type Props = {
   document: EffectDocumentV2;
@@ -10,11 +11,15 @@ type Props = {
   selectedNodeId: string | undefined;
   onSelectNode: (id: string | null) => void;
   onEdit: (label: string, patches: Patch[]) => void;
+  /** 06 Solo (preview-only mask): soloed node IDs, toggle and clear. */
+  soloed: ReadonlySet<string>;
+  onToggleSolo: (id: string) => void;
+  onClearSolo: () => void;
 };
 
 const LOCKED = new Set(['EffectOutput', 'GroupInput', 'GroupOutput']);
 
-export function OutlinePanel({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit }: Props) {
+export function OutlinePanel({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, soloed, onToggleSolo, onClearSolo }: Props) {
   const gi = doc.graphs.findIndex(g => g.id === graphId);
   if (gi < 0) return null;
   const graph = doc.graphs[gi];
@@ -22,6 +27,10 @@ export function OutlinePanel({ document: doc, graphId, selectedNodeId, onSelectN
   const rows = graph.nodes.map((n, ni) => ({ n, ni })).sort((a, b) => Number(b.n.type === 'Group') - Number(a.n.type === 'Group') || (a.n.label || a.n.id).localeCompare(b.n.label || b.n.id));
   const open = (childId: string, label: string) => { onSelectNode(null); onEdit(`Open ${label}`, [{ op: 'set', path: ['editor', 'openedGraphId'], value: childId }]); };
   return (
+    <>
+    {soloed.size > 0 && (
+      <p className="ol-solo-note" role="status">Solo: only {soloed.size} part{soloed.size === 1 ? '' : 's'} shown in the preview (the effect itself is unchanged). <button type="button" onClick={onClearSolo}>Clear solo</button></p>
+    )}
     <ul className="ol-list" aria-label="Parts of this effect">
       {rows.map(({ n, ni }) => (
         <li key={n.id} className={n.id === selectedNodeId ? 'ol-selected' : undefined}>
@@ -34,12 +43,16 @@ export function OutlinePanel({ document: doc, graphId, selectedNodeId, onSelectN
               on
             </label>
           )}
+          {canSolo(n.type) && (
+            <button type="button" className="ol-solo" aria-pressed={soloed.has(n.id)} onClick={() => onToggleSolo(n.id)} title="Show only the soloed parts in the preview (does not change the effect)">Solo</button>
+          )}
           {n.type === 'Group' && typeof n.params.graphId === 'string' && (
             <button type="button" onClick={() => open(n.params.graphId as string, `Open ${n.label || n.id}`)} title="Show the nodes inside this component">Open</button>
           )}
         </li>
       ))}
-      <style>{`.ol-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;font-size:14px}.ol-list li{display:flex;gap:6px;align-items:center}.ol-name{flex:1;text-align:left;min-height:32px}.ol-selected .ol-name{outline:1px solid #7fb4ff}.ol-type{font-size:11px;opacity:.65;margin-left:4px}.ol-toggle{display:flex;gap:3px;align-items:center;font-size:12px}`}</style>
+      <style>{`.ol-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;font-size:14px}.ol-list li{display:flex;gap:6px;align-items:center}.ol-name{flex:1;text-align:left;min-height:32px}.ol-selected .ol-name{outline:1px solid #7fb4ff}.ol-type{font-size:11px;opacity:.65;margin-left:4px}.ol-toggle{display:flex;gap:3px;align-items:center;font-size:12px}.ol-solo[aria-pressed=true]{background:#7a5a10;color:#ffe2a0}.ol-solo-note{margin:0 0 6px;font-size:13px;color:#ffd28a}`}</style>
     </ul>
+    </>
   );
 }
