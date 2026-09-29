@@ -43,3 +43,18 @@ test('12 duplicate a component group: an independent copy (editing one leaves th
   copyGraph.nodes.find(n => n.type === 'Emitter')!.params.burst = 999;
   assert.notEqual(r.doc.graphs.find(g => g.id === 'graph-spark-burst')!.nodes.find(n => n.type === 'Emitter')!.params.burst, 999);
 });
+
+test('06 Delete and reconnect joins downstream links to the same-typed upstream source', async () => {
+  const { removeAndReconnect } = await import('../src/editor/graphOps.ts');
+  const { createF01Document } = await import('../src/graph/fixtures.ts');
+  const d = createF01Document();
+  const r = removeAndReconnect(d, 'graph-root', 'node-initial');
+  if (!r.ok) assert.fail(r.message);
+  const g = r.doc.graphs[0];
+  assert.ok(!g.nodes.some(n => n.id === 'node-initial'));
+  assert.ok(g.edges.some(e => e.source.nodeId === 'node-emitter' && e.target.nodeId === 'node-billboard' && e.target.port === 'particles'), 'Emitter → Billboard');
+  assert.equal(r.newIds.length, 1);
+  assert.ok(!removeAndReconnect(d, 'graph-root', 'node-output').ok, 'protected nodes refused');
+  const m = removeAndReconnect(d, 'graph-root', 'node-material');
+  assert.ok(m.ok && m.newIds.length === 0 && m.notes.length === 1 && /lost its material input/.test(m.notes[0]), JSON.stringify(m));
+});

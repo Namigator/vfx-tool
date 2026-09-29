@@ -34,7 +34,7 @@ import { BUILTIN_SPRITES } from '../src/assets/builtinSprites.generated.ts';
 import type { SpriteSheet } from '../src/assets/spriteLibrary.ts';
 import { createTextureAsset, sha256Hex } from '../src/assets/importTexture.ts';
 import { hasRootAudio } from '../src/render/previewMode.ts';
-import { copySelection, duplicateSelection, parseClipboard, pasteSelection } from '../src/editor/graphOps.ts';
+import { copySelection, duplicateSelection, parseClipboard, pasteSelection, removeAndReconnect } from '../src/editor/graphOps.ts';
 import { assetReferences, relinkVerdict, removeAssetPatches } from '../src/model/assetRefs.ts';
 import { unusedAssetHashes } from '../src/model/assetStore.ts';
 import { portabilityReport } from '../src/graph/portability.ts';
@@ -278,7 +278,13 @@ ${formatMigrationReport(report)}`);
     if (layout) layout[id] = { x: 260 * (Object.keys(layout).length % 7), y: 180 * Math.floor(Object.keys(layout).length / 7) + 320 };
     return `Added ${id} (${spec.type}).`;
   }));
-  tool('vfx_remove_node', 'Remove a node and every edge touching it.', { docId: z.string(), nodeId: z.string(), graphId: z.string().optional() }, a => mutate(a.docId, d => {
+  tool('vfx_remove_node', 'Remove a node and every edge touching it. reconnect=true joins its downstream connections to the same-typed upstream source (the editor menu item "Delete and reconnect").', { docId: z.string(), nodeId: z.string(), graphId: z.string().optional(), reconnect: z.boolean().optional() }, a => mutate(a.docId, d => {
+    if (a.reconnect) {
+      const r = removeAndReconnect(d, rootGraph(d, a.graphId).id, a.nodeId);
+      if (!r.ok) throw new Error(r.message);
+      Object.assign(d, r.doc);
+      return [`Removed ${a.nodeId}; ${r.newIds.length} connection(s) now bypass it.`, ...r.notes].join('\n');
+    }
     const g = rootGraph(d, a.graphId);
     if (!g.nodes.some(n => n.id === a.nodeId)) throw new Error(`No node "${a.nodeId}".`);
     g.nodes = g.nodes.filter(n => n.id !== a.nodeId);

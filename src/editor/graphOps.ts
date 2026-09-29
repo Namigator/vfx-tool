@@ -106,3 +106,36 @@ export function duplicateSelection(doc: EffectDocumentV2, graphId: string, ids: 
   const c = copySelection(doc, graphId, ids);
   return c.ok ? pasteSelection(doc, graphId, c.value, undefined, opts) : c;
 }
+
+/**
+ * 06 "Remove and reconnect": deletes one node and joins each of its downstream connections to the upstream source
+ * that fed it with the same port type (e.g. drop a Drag from Emitter → Drag → Billboard to get Emitter → Billboard).
+ * Connections without a same-typed upstream are simply removed (consumers keep their literals). Validated; refused
+ * rather than partly applied.
+ */
+export function removeAndReconnect(doc: EffectDocumentV2, graphId: string, nodeId: string): OpResult {
+  const d = structuredClone(doc);
+  const g = d.graphs.find(x => x.id === graphId);
+  const n = g?.nodes.find(x => x.id === nodeId);
+  if (!g || !n) return { ok: false, message: `Node "${nodeId}" is not in graph "${graphId}".` };
+  if (PROTECTED.has(n.type) || n.type === GROUP_NODE_TYPE) return { ok: false, message: `${n.type} cannot be removed with reconnect.` };
+  const specOf = (x: NodeDefinition | undefined) => (x ? registry.get(`${x.type}@${x.definitionVersion}`) : undefined);
+  const spec = specOf(n);
+  const typeOut = (e: EdgeDefinition) => specOf(g.nodes.find(x => x.id === e.source.nodeId))?.outputs.find(p => p.id === e.source.port)?.type;
+  const incoming = g.edges.filter(e => e.target.nodeId === nodeId), outgoing = g.edges.filter(e => e.source.nodeId === nodeId);
+  const notes: string[] = [];
+  const taken = new Set(d.graphs.flatMap(x => x.edges.map(e => e.id)));
+  const added: EdgeDefinition[] = [];
+  for (const o of outgoing) {
+    const t = spec?.outputs.find(p => p.id === o.source.port)?.type;
+    const up = incoming.find(i => spec?.inputs.find(p => p.id === i.target.port)?.type === t && typeOut(i) === t);
+    if (!up) { notes.push(`"${o.target.nodeId}.${o.target.port}" lost its ${o.source.port} input (nothing of that type fed ${n.label}).`); continue; }
+    added.push({ ...structuredClone(o), id: freshId(`e_${up.source.nodeId}_${o.target.nodeId}`, taken), source: { ...up.source } });
+  }
+  g.nodes = g.nodes.filter(x => x.id !== nodeId);
+  g.edges = [...g.edges.filter(e => e.source.nodeId !== nodeId && e.target.nodeId !== nodeId), ...added];
+  delete d.editor.graphs[graphId]?.nodes[nodeId];
+  const v = validateDocument(d, { registry });
+  if (!v.ok) return { ok: false, message: `Remove and reconnect refused: ${v.errors[0]?.message ?? 'the result would be invalid'}` };
+  return { ok: true, doc: d, newIds: added.map(e => e.id), notes };
+}

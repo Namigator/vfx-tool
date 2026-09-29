@@ -21,7 +21,7 @@ import { createRegistry } from '../graph/registry.ts';
 import { GROUP_NODE_TYPE, resolveSignature, type ResolvedSignature } from '../graph/signature.ts';
 import { analyzeGraph } from '../graph/analyze.ts';
 import { resolveSelection } from './selection.ts';
-import { copySelection, duplicateSelection, parseClipboard, pasteSelection } from './graphOps.ts';
+import { copySelection, duplicateSelection, parseClipboard, pasteSelection, removeAndReconnect } from './graphOps.ts';
 import { canSolo } from '../graph/solo.ts';
 
 export type GraphCanvasProps = {
@@ -670,6 +670,7 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
                 {n.type === GROUP_NODE_TYPE && item('Save as my component', () => { const name = window.prompt('Name for this component:', n.label); if (!name) return; const r = saveGroupAsComponent(doc, n.id, name); if (!r.ok) { setNotice({ kind: 'error', lines: [r.message] }); return; } saveUserComponent(r.value); setNotice({ kind: 'info', lines: [`Saved "${r.value.name}" to My components.`] }); })}
                 {onToggleSolo && canSolo(n.type) && item(soloed?.has(n.id) ? 'Unsolo' : 'Solo', () => onToggleSolo(n.id))}
                 {item('Delete  (Del)', deleteSelection, isLocked(n))}
+                {n.type !== GROUP_NODE_TYPE && item('Delete and reconnect', () => { const r = removeAndReconnect(doc, graphId, n.id); if (!r.ok) { setNotice({ kind: 'error', lines: [r.message] }); return; } commitDoc(`Delete ${n.label} and reconnect`, r.doc); onSelectNode(null); setNotice({ kind: 'info', lines: [`Deleted ${n.label}; ${r.newIds.length} connection(s) now bypass it.`, ...r.notes] }); }, isLocked(n))}
               </>
             ) : (
               <>
