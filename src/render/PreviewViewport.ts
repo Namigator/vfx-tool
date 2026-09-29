@@ -237,6 +237,7 @@ void main() {
 
 const FRAGMENT = /* glsl */ `
 uniform float uHue;
+uniform float uDim;
 // Colour shift: CSS hue-rotate matrix (same as hueRotate in toParticles), luminance-preserving.
 vec3 vfxHue(vec3 c, float r) {
   if (r == 0.0) return c;
@@ -314,7 +315,7 @@ void main() {
   else if (a <= 0.0) discard;
   // 09 sprite rim: radial (a camera-facing quad has no useful fresnel normal).
   vec3 rimRgb = uRim.x > 0.0 ? uRimColor * uRim.x * pow(clamp(length(vUv - 0.5) * 2.0, 0.0, 1.0), uRim.y) : vec3(0.0);
-  gl_FragColor = vec4(vfxHue(t.rgb * uColor * vLifeColor * (1.0 + uEmission) + edgeRgb + rimRgb, uHue), a);
+  gl_FragColor = vec4(vfxHue(t.rgb * uColor * vLifeColor * (1.0 + uEmission) + edgeRgb + rimRgb, uHue), a * uDim);
   #include <colorspace_fragment>
 }`;
 
@@ -334,6 +335,7 @@ void main() {
 
 const RIBBON_FRAGMENT = /* glsl */ `
 uniform float uHue;
+uniform float uDim;
 // Colour shift: CSS hue-rotate matrix (same as hueRotate in toParticles), luminance-preserving.
 vec3 vfxHue(vec3 c, float r) {
   if (r == 0.0) return c;
@@ -414,7 +416,7 @@ void main() {
   }
   if (uCutout > 0.5) { if (a < uCutoff) discard; a = 1.0; }
   else if (a <= 0.0) discard;
-  gl_FragColor = vec4(vfxHue(rgb * (1.0 + uEmission), uHue), a);
+  gl_FragColor = vec4(vfxHue(rgb * (1.0 + uEmission), uHue), a * uDim);
   #include <colorspace_fragment>
 }`;
 
@@ -441,6 +443,7 @@ function materialFor(
       uCutoff: { value: m.alphaCutoff },
       uCutout: { value: cutout ? 1 : 0 },
       uHue: { value: ((m.hueShift ?? 0) * Math.PI) / 180 },
+      uDim: { value: 1 },
     },
     transparent: !cutout,
     depthWrite: cutout && m.depthTest !== false,
@@ -516,6 +519,7 @@ export class PreviewViewport {
     let grid: THREE.GridHelper | null = null, ground: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial> | null = null;
     try {
       renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+      renderer.info.autoReset = false; // 08 diagnostics: reset once per frame, before all passes.
       renderer.setClearColor(0x0b0d12, 1);
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       this.#scene.background = new THREE.Color(0x0b0d12);
@@ -550,6 +554,7 @@ export class PreviewViewport {
       controls = new OrbitControls(this.#camera, renderer.domElement);
       controls.target.set(...DEFAULT_TARGET);
       controls.enableDamping = true;
+      controls.maxPolarAngle = Math.PI * 0.495; // 08: orbit stays above the ground by default.
       controls.update();
       // Once the user orbits/zooms, resizes stop refitting the path frame.
       controls.addEventListener('start', () => { this.#frameSets = null; this.#userOrbited = true; });
@@ -616,7 +621,7 @@ export class PreviewViewport {
     this.#suspended = false;
     this.#addPointLayers(plan);
     const sets = particleFrameSets(plan);
-    if (sets.length) { this.#frameSets = sets; this.#framePaths(); }
+    if (sets.length) { this.#frameSets = sets; this.#fitSets = sets; this.#framePaths(); }
     this.#replayTo(0);
   }
 
@@ -844,6 +849,7 @@ export class PreviewViewport {
     const duration = this.#clock ? this.#clock.durationTicks : plan.durationTicks;
     const sets: FramePointSet[] = [...collectTimelineFrameSets(plan, duration, compile), ...extra];
     this.#frameSets = sets.length ? sets : null;
+    this.#fitSets = this.#frameSets;
     // Broadside initial view until the user orbits; later edits keep their orbit direction.
     if (sets.length && !this.#userOrbited) {
       const cam = this.#camera, target = this.#controls.target;
@@ -881,6 +887,53 @@ export class PreviewViewport {
     this.#userOrbited = true; // Plan reloads keep the pose instead of re-framing.
     this.#frameSets = null; // Resizes must not auto-frame over an explicit pose (same as a user orbit).
     this.#emitFrame(true);
+  }
+
+  /** 08 "Reset camera fits those bounds": re-frames the whole effect (all ticks) from the current direction. */
+  #fitSets: FramePointSet[] | null = null;
+  resetView(): void {
+    this.#userOrbited = false;
+    if (this.#fitSets?.length) { this.#frameSets = this.#fitSets; this.#framePaths(); } else this.#resetCamera();
+    this.#emitFrame(true);
+  }
+
+  /** 08 arena markers for Source/Target (world positions); hidden together with the grid. */
+  #markers: THREE.Mesh[] = [];
+  setMarkers(points: readonly { position: readonly [number, number, number]; kind: 'source' | 'target' | 'other' }[]): void {
+    for (const m of this.#markers) { this.#scene.remove(m); m.geometry.dispose(); (m.material as THREE.Material).dispose(); }
+    this.#markers = points.map(pt => {
+      const mesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.06), new THREE.MeshBasicMaterial({ color: pt.kind === 'source' ? 0x6fd48f : pt.kind === 'target' ? 0xffa060 : 0x9aa4b8, wireframe: true, depthWrite: false }));
+      mesh.position.set(pt.position[0], pt.position[1], pt.position[2]);
+      mesh.visible = this.#grid.visible;
+      mesh.renderOrder = -1;
+      this.#scene.add(mesh);
+      return mesh;
+    });
+  }
+
+  /**
+   * 08 "selecting a block can highlight its contributing geometry": other layers are dimmed to 20 % (preview overlay
+   * only; saved materials never change). null clears it.
+   */
+  #highlight: ReadonlySet<string> | null = null;
+  setHighlight(ids: ReadonlySet<string> | null): void { this.#highlight = ids && ids.size ? new Set(ids) : null; }
+  #applyHighlight(): void {
+    const h = this.#highlight, dim = (id: string) => (h && !h.has(id) ? 0.2 : 1);
+    for (const l of this.#layers) l.material.uniforms.uDim.value = dim(l.layer.nodeId);
+    for (const t of this.#trails) if (t.material.uniforms.uDim) t.material.uniforms.uDim.value = dim(t.nodeId);
+    for (const r of this.#ribbons) if (r.material.uniforms.uDim) r.material.uniforms.uDim.value = dim(r.nodeId);
+    for (const m of this.#meshes) {
+      const base = (m as unknown as { baseOpacity?: number }).baseOpacity ??= (m.material as THREE.Material & { opacity: number }).opacity;
+      const mat = m.material as THREE.Material & { opacity: number };
+      const f = dim(m.layer.nodeId);
+      mat.opacity = base * f; mat.transparent = mat.opacity < 1 || (m.layer.blend === 'additive');
+    }
+  }
+
+  /** 08 diagnostics: draw calls and triangles of the last frame, render-target size, plus scene resources. */
+  renderStats(): { calls: number; triangles: number; width: number; height: number; pixelRatio: number } & ReturnType<PreviewViewport['resourceStats']> {
+    const info = this.#renderer.info.render, c = this.#renderer.domElement;
+    return { calls: info.calls, triangles: info.triangles, width: c.width, height: c.height, pixelRatio: this.#renderer.getPixelRatio(), ...this.resourceStats() };
   }
 
   /** Restores the point-mode camera pose, clip planes and orbit target. */
@@ -1349,6 +1402,8 @@ export class PreviewViewport {
     const gl = this.#renderer.getContext(), t0 = performance.now();
     if (this.#plan && this.#clock) this.#upload(0);
     this.#applySolo();
+    this.#applyHighlight();
+    this.#renderer.info.reset(); // Counters cover the whole frame (every composer pass), not just the last one.
     if (this.#composer) this.#composer.render(); else this.#renderer.render(this.#scene, this.#camera);
     const t1 = performance.now();
     gl.finish();
@@ -1397,6 +1452,8 @@ export class PreviewViewport {
       }
     } else if (this.#flashEl) this.#flashEl.style.opacity = '0';
     this.#applySolo();
+    this.#applyHighlight();
+    this.#renderer.info.reset(); // Counters cover the whole frame (every composer pass), not just the last one.
     if (this.#composer) this.#composer.render();
     else this.#renderer.render(this.#scene, this.#camera);
     if (shaken) { cam.position.copy(savedPos); cam.quaternion.copy(savedQuat); }
@@ -1420,7 +1477,7 @@ export class PreviewViewport {
   /** 12 transport Loop: at the end, restart from tick 0 with the same seed. */
   setLoop(on: boolean): void { this.#looping = on; }
   /** 12 view tools: floor grid on/off (preview only). */
-  setGrid(on: boolean): void { this.#grid.visible = on; }
+  setGrid(on: boolean): void { this.#grid.visible = on; for (const m of this.#markers) m.visible = on; }
   /** 12 transport speed (.25x/.5x/1x); preview-only, kept across recompiles. */
   #speed = 1;
   setSpeed(speed: number): void { this.#speed = speed; this.#clock?.setSpeed(speed); }

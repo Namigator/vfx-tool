@@ -667,6 +667,8 @@ export default function PreviewV2() {
       generationRef.current++; // Invalidates in-flight file reads.
       vp?.dispose();
       if (viewportRef.current === vp) viewportRef.current = null;
+      const dbg = (window as unknown as { __vfxDebug?: { viewport?: unknown } }).__vfxDebug;
+      if (import.meta.env.DEV && dbg?.viewport === vp) delete (window as unknown as { __vfxDebug?: unknown }).__vfxDebug; // Never leave a handle to a disposed viewport.
     };
   }, [compile]);
 
@@ -682,6 +684,25 @@ export default function PreviewV2() {
   }, []);
 
   useEffect(() => { viewportRef.current?.setSoloMask(soloMask(doc, solo)); }, [doc, solo]);
+  // 08: selecting a part dims everything it does not draw (preview overlay only).
+  useEffect(() => {
+    const m = selectedNodeId ? soloMask(doc, new Set([selectedNodeId])) : null;
+    viewportRef.current?.setHighlight(m && m.size ? m : null);
+  }, [doc, selectedNodeId]);
+  // 08 arena markers at Source/Target (and other anchors), in world space through the root transform.
+  useEffect(() => {
+    const t = doc.rootTransform, [qx, qy, qz, qw] = t.rotation;
+    const world = (p: readonly number[]): [number, number, number] => {
+      const x = p[0] * t.scale, y = p[1] * t.scale, z = p[2] * t.scale;
+      // v' = v + w·t + q × t with t = 2 (q × v)  (unit quaternion rotation)
+      const tx = 2 * (qy * z - qz * y), ty = 2 * (qz * x - qx * z), tz = 2 * (qx * y - qy * x);
+      return [x + qw * tx + (qy * tz - qz * ty) + t.position[0], y + qw * ty + (qz * tx - qx * tz) + t.position[1], z + qw * tz + (qx * ty - qy * tx) + t.position[2]];
+    };
+    viewportRef.current?.setMarkers(doc.anchors.map(a => ({ position: world(a.position), kind: a.id === 'source' ? 'source' as const : a.id === 'target' ? 'target' as const : 'other' as const })));
+  }, [doc.anchors, doc.rootTransform]);
+  // 08 diagnostics readout, refreshed once a second.
+  const [renderStats, setRenderStats] = useState<ReturnType<PreviewViewport['renderStats']> | null>(null);
+  useEffect(() => { const id = setInterval(() => { const v = viewportRef.current; if (v) setRenderStats(v.renderStats()); }, 1000); return () => clearInterval(id); }, []);
 
   // Undo: Ctrl/Cmd+Z. Redo: Ctrl/Cmd+Shift+Z or Ctrl+Y. Suppressed in text inputs, textareas and contenteditable.
   useEffect(() => {
@@ -886,7 +907,8 @@ export default function PreviewV2() {
               <option value="reference">Quality: Reference</option><option value="balanced">Quality: Balanced</option><option value="economy">Quality: Economy</option>
             </select>
             <button type="button" aria-pressed={reducedEffects} title="Reduced effects: no screen flashes or camera shake in the preview (the effect itself is unchanged)" onClick={() => { const r = !reducedEffects; setReducedEffects(r); vp?.setReducedEffects(r); }}>{reducedEffects ? 'Reduced effects on' : 'Reduced effects off'}</button>
-            <button type="button" aria-pressed={grid} title="Show or hide the floor grid" onClick={() => { const g = !grid; setGrid(g); vp?.setGrid(g); }}>{grid ? 'Grid on' : 'Grid off'}</button>
+            <button type="button" title="Fit the whole effect in view again (after orbiting or zooming)" onClick={() => vp?.resetView()}>Reset camera</button>
+            <button type="button" aria-pressed={grid} title="Show or hide the floor grid and the Source/Target markers" onClick={() => { const g = !grid; setGrid(g); vp?.setGrid(g); }}>{grid ? 'Grid on' : 'Grid off'}</button>
             <button type="button" aria-pressed={lightBg} title="Inspect on a light arena" onClick={() => { const l = !lightBg; setLightBg(l); vp?.setBackground(l ? 'light' : 'dark'); }}>{lightBg ? 'Light arena' : 'Dark arena'}</button>
             <button type="button" disabled={disabled} title="One tick back" aria-label="Step back one tick" onClick={() => { vp?.seek(Math.max(0, frame.tick - 1)); stopSound(''); }}>◀</button>
             <button type="button" disabled={disabled} title="One tick forward" aria-label="Step forward one tick" onClick={() => { vp?.seek(Math.min(frame.durationTicks, frame.tick + 1)); stopSound(''); }}>▶</button>
@@ -917,6 +939,7 @@ export default function PreviewV2() {
             <details className="pv2-tech">
               <summary>Technical details</summary>
               Sample particle ID: <code>{frame.sampleParticleId}</code>
+              {renderStats && <div className="pv2-muted">Last frame: {renderStats.calls} draw calls, {renderStats.triangles} triangles · {renderStats.width}×{renderStats.height} px (pixel ratio {renderStats.pixelRatio}) · {renderStats.geometries} geometries, {renderStats.materials} materials, {renderStats.textures} textures{renderStats.contextLost ? ' · GPU context lost' : ''}</div>}
             </details>
           )}
           <div className="pv2-graph" aria-label="Graph editor">
