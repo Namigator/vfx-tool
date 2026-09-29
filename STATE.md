@@ -128,6 +128,10 @@ Sprite library: `node tools/bake-sprites.mjs` → assets/sprites/ (flame-tongue-
 - [PROXY] Mixed billboard+ribbon preview works in current browser, but width shaping, textured UVs and parallel transport unsupported. EffectTimeCurve drives only RevealPath.fraction. Billboard life curves are renderer parameters, not graph-driven signals. AudioMix supports one level and one final limiter, not nested mixes. Invalid root audio blocks the whole preview. Playback uses Web Audio but actual listening/download remains unchecked. Persistence, ten complete presets and exporters remain pending.
 
 ## Backlog (not scheduled)
+- BEFORE RELEASE (user 2026-09-29): new editor becomes the default page (no ?workspace=v2); remove the old editor
+  and its "Back to v1 editor" button; keep the converter renamed "Import old effect". Stop calling the release "v1".
+- BEFORE RELEASE (optional, offered): sub-group component internals (e.g. Energy bolt: Charge/Bolt/Impact).
+- LATER: performance pass ("slight delay in some things", user editor test 2026-09-29).
 - **Realistic water material (Three.js):** move the water look into the tool's renderer — refraction of the scene behind, fresnel/environment reflection, animated normal-map surface, lit textured floor + environment map for something to reflect/refract, caustics. Canvas2D reference `docs/v2-plan/references/standalone-water/water.html` (TIDE) is at its ceiling; user verdict 2026-09-26: "looks computer generated". Matches 03-WATER.md SurfaceTranslucent.
 - **Sim-rendered sprites via Blender:** render splash crown, droplets, foam, spray from real fluid sims into flipbooks for the sprite library (blender MCP exists; needs Blender running).
 - TIDE physics notes already applied: specular = single half-vector line on the tube; instability grows with distance from source (Plateau–Rayleigh), width ∝ 1/sqrt(speed); ripples only on standing water.
@@ -155,3 +159,18 @@ Sprite library: `node tools/bake-sprites.mjs` → assets/sprites/ (flame-tongue-
   (clone/analyze/expand + ParticlePaths particle compile) every tick = 86 ms/frame. Now cached per document
   (hit only if JSON unchanged): ~3 ms/frame path compile; est. total 7-13 ms/frame [PROXY: parts measured, real
   rAF fps not measurable in the throttled browser pane]. User to confirm smoothness.
+- c0b6656 (2026-09-29) user review round 1 (notes in chat). User decision: fix TOOL gaps + bugs only; taste tweaks on
+  presets (lightning branches, charge-up colour, smoke sizes, fireball trail, arc beam, thin fork) are SKIPPED — users
+  tune those with knobs. Done: Material reflection/surfaceDetail/detailScale/colorVariation/liquid; new lighting
+  (fill .6 + hemisphere .8 + key 2.6); droplet sprite de-blued, bubble sprite; OffsetAnchor dropToGround; ground
+  rings follow Target (guard test: no component owns fixed anchors); recipes updated (stone, ice + vapour, water,
+  fountain, rain, bubbles, helix). [SAW] closeups: stone, ice, water stream, fountain, poison bubbles, helix.
+  NEXT: full review strips re-render (running), look at flamethrower/other lit meshes under the new lighting, then
+  user re-checks; then REVIEW.md section 2 (editor test) and merge. "How far from product": v1 = this + editor test;
+  engine exporters / sound / AI guide are post-v1.
+- 2026-09-29 user editor test (REVIEW.md s2): "everything seems to work, slight delay in some things" -> performance
+  pass later (not v1-blocking). Asked why Energy bolt has 49 nodes; offered sub-grouping component internals
+  (Charge/Bolt/Impact) — awaiting answer.
+- Post-v1 idea (user, 2026-09-29): in-editor AI box ("make it more electric" edits the effect live). Requirement from
+  the discussion: it must run the render -> look -> adjust loop itself (several rounds, frame stats, compare) before
+  showing a result; one blind edit = "not bad" quality (A-05), iterated + guided = the quality of the built-ins.
