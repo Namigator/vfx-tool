@@ -27,6 +27,7 @@ import { FAMILIES } from '../src/core/types.ts';
 import { createL01AudioDocument } from '../src/graph/audioFixtures.ts';
 import { compileParticlePreview } from '../src/graph/toParticles.ts';
 import { compilePathPreview } from '../src/graph/toPaths.ts';
+import { timelineInfo, timelineLanes } from '../src/render/timeline.ts';
 import { compileAudio } from '../src/graph/toAudio.ts';
 import { sampleParticlesAtTick } from '../src/runtime/particles.ts';
 import { encodeWavPcm16Stereo } from '../src/audio/wav.ts';
@@ -346,6 +347,16 @@ ${formatMigrationReport(report)}`);
     if (cut) out.push(`WARNING: ${cut.message}`);
     if (hasAudio) { const a = compileAudio(d); out.push(a.ok ? `audio OK: ${a.value.kind}, peak ${a.value.mix.postPeak.toFixed(3)}${a.value.mix.severeLimiting ? ' (SEVERE LIMITING)' : ''}` : `audio FAILED:\n${fmtErrors(a.errors)}`); }
     return ok(out.join('\n'));
+  });
+  tool('vfx_list_timeline', 'One line per inserted component: its active tick span, Start at knob and length knob (Burn time / Travel ticks). Moving a component = vfx_set_control on its Start at; stretching it = its length control.', { docId: z.string() }, ({ docId }) => {
+    const d = getDoc(docId);
+    const p = compileParticlePreview(d, { audioHandled: true, ribbonsHandled: true });
+    if (!p.ok) return bad(fmtErrors(p.errors));
+    const r = compilePathPreview(d, 0, { audioHandled: true });
+    if (!r.ok) return bad(fmtErrors(r.errors));
+    const lanes = timelineLanes(d, timelineInfo(p.value, r.value).windows);
+    const knob = (i: number) => { const c = d.controls[i]!; return `${c.label} = ${JSON.stringify(c.value)} (control ${c.id})`; };
+    return ok(lanes.map(l => [`${l.label} [${l.prefix}]: ${l.span ? `ticks ${l.span[0]}-${l.span[1]}` : 'not visible'}`, ...(l.startControl !== undefined ? [knob(l.startControl)] : []), ...(l.lengthControl !== undefined ? [`length: ${knob(l.lengthControl)}`] : [])].join(' | ')).join('\n') || 'No components.');
   });
   tool('vfx_sample_particles', 'Simulate to a tick and report, per particle system, live count, bounding box, mean speed and the first few particles.', { docId: z.string(), tick: z.number().int().min(0), show: z.number().int().min(0).max(50).optional() }, ({ docId, tick, show }) => {
     const p = compileParticlePreview(getDoc(docId), { audioHandled: true, ribbonsHandled: true });

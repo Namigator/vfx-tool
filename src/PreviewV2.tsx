@@ -38,7 +38,8 @@ import GraphCanvas from './editor/GraphCanvas.tsx';
 import NodeInspector from './editor/NodeInspector.tsx';
 import { PreviewViewport, type PreviewFrameInfo } from './render/PreviewViewport.ts';
 import { mergeDiagnostics } from './render/layerOrder.ts';
-import { timelineInfo, type TimelineInfo } from './render/timeline.ts';
+import { timelineInfo, timelineLanes, type TimelineInfo } from './render/timeline.ts';
+import { TimelineStrip } from './editor/TimelineStrip.tsx';
 import './preview-v2.css';
 
 const EMPTY_FRAME: PreviewFrameInfo = { tick: 0, durationTicks: 0, playing: false, suspended: false, live: 0, mode: 'none', sampleParticleId: '' };
@@ -730,6 +731,7 @@ export default function PreviewV2() {
   const graphId = canvasGraphId(doc);
   const graph = doc.graphs.find(g => g.id === graphId);
   const selectedNode = selectedNodeId ? graph?.nodes.find(n => n.id === selectedNodeId) : undefined;
+  const lanes = useMemo(() => timelineLanes(doc, timeline.windows), [doc, timeline]);
 
   // Imported texture bytes: register object URLs for document assets from the local asset store.
   const [missingAssets, setMissingAssets] = useState<string[]>([]);
@@ -940,6 +942,9 @@ export default function PreviewV2() {
               tick {frame.tick}/{frame.durationTicks} · {frame.live} {frame.mode === 'paths' ? 'paths' : frame.mode === 'mixed' ? 'particles + paths' : 'live'}
             </span>
           </div>
+          <TimelineStrip document={doc} lanes={lanes} tick={frame.tick} durationTicks={frame.durationTicks} selectedNodeId={selectedNodeId}
+            onEdit={onEdit} onSeek={t => { vp?.seek(Math.max(0, Math.min(frame.durationTicks, t))); stopSound(''); }}
+            onSelect={nodeId => { const cur = historyRef.current!.snapshot(); if (canvasGraphId(cur) !== cur.rootGraphId) onEdit('Show the effect', [{ op: 'set', path: ['editor', 'openedGraphId'], value: cur.rootGraphId }]); setSelectedNodeId(nodeId); }} />
           {frame.sampleParticleId && (
             <details className="pv2-tech">
               <summary>Technical details</summary>

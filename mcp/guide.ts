@@ -81,6 +81,7 @@ export const GUIDE: Record<string, string> = {
 - Components: vfx_list_components, then vfx_add_component (group true), or vfx_new_document component="<id>" to open a preset as a new effect. startOn "node.port" starts a component on an event (vfx_list_events lists them).
 - Imported assets: vfx_import_texture role color|mask|normal|noise (materialId applies it), vfx_import_mesh, then vfx_add_asset_component inserts a ready-made component that uses the asset.
 - Editing: vfx_duplicate_nodes (preservePattern keeps the same random pattern), vfx_copy_nodes / vfx_paste_nodes, vfx_remove_node reconnect=true joins the neighbours, vfx_group_nodes, vfx_set_control (a longer Travel grows the effect duration).
+- Timeline: vfx_list_timeline shows each component's active tick span, its Start at knob and its length knob; move a component with vfx_set_control on its Start at, stretch it with its length control.
 - Looking: vfx_render_frames / vfx_contact_sheet accept orbit {yaw, pitch, distance}, camera, solo [node ids] and background "light". Look at the images before claiming anything.`,
 };
 

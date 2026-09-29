@@ -36,6 +36,12 @@
   Colour. [SAW] flamethrower orange->blue whole; blue flame + green smoke + blue light with orange embers; editor panel.
   Only NEW inserts get the pickers; effects saved before keep the old slider. shot url can return a blank frame
   (virtual-time flake) - retake before debugging.
+- Timeline strip DONE (user order item 2): src/editor/TimelineStrip.tsx under the scrub bar, lanes from
+  src/render/timeline.ts timelineLanes (component = ctl-<prefix>-start-at/-colour-shift, longest-prefix node match).
+  Drag bar = Start at, right-edge handle = length knob (tick knob bound to durationTicks: only 8 components have one),
+  click = select Group, empty track = seek. MCP vfx_list_timeline. [SAW] 3 lanes; [RAN] browser drag 90->12, stretch
+  Travel 36->87, click selects. Note: a bar shows the VISIBLE span, so the bolt's bar doesn't grow with Travel (its
+  trail tail already ends later). Next: keyframed knobs.
 - USER REPORT 2026-09-29 (open): viewed from behind/in front of the fire (along the jet), the sprites move
   weirdly. Suspect velocity-stretched / velocity-aligned billboards viewed along their velocity (they collapse and
   spin). Needs a capture from those angles first.

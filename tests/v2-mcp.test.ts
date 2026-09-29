@@ -81,6 +81,7 @@ test('components and knobs through MCP: insert, list, set, recompile', async () 
   assert.match((await call('vfx_list_controls', { docId: 'k' })).text, /Sparks = 150/);
   assert.equal((await call('vfx_set_control', { docId: 'k', control: 'Sparks', value: -3 })).error, true, 'out of bounds is rejected');
   assert.match((await call('vfx_compile', { docId: 'k' })).text, /particles OK: 3 system/);
+  assert.match((await call('vfx_list_timeline', { docId: 'k' })).text, /\[impact-flash\]: ticks \d+-\d+ \| Start at = 0 \(control ctl-impact-flash-start-at\)/);
 });
 
 test('MCP: import a texture onto a Material, export a .vfxpack, reopen it with the bytes restored', async () => {

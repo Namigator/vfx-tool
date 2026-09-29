@@ -32,3 +32,52 @@ export function timelineInfo(points: ParticlePreviewPlan | null, paths: PathPrev
   const seen = new Set<string>();
   return { markers: markers.filter(m => { const k = `${m.tick}:${m.kind}`; if (seen.has(k)) return false; seen.add(k); return true; }).sort((a, b) => a.tick - b.tick), windows };
 }
+
+/**
+ * Timeline strip (user order 2026-09-29, after the performance pass): one lane per inserted component, its bar spanning
+ * the ticks where any of its parts is active. Components are found by their automatic knobs (ctl-<prefix>-start-at /
+ * -colour-shift); a node belongs to the component with the longest matching id prefix (fire-jet-2 vs fire-jet).
+ * Dragging the bar edits Start at; dragging the right edge edits the component's length knob when it has one
+ * (a tick knob bound to durationTicks: Burn time, Travel time/ticks).
+ */
+export type TimelineLane = {
+  prefix: string; label: string;
+  /** Active window [start, end) in effect ticks; undefined when nothing of it shows. */
+  span?: [number, number];
+  /** Indices into doc.controls. */
+  startControl?: number; lengthControl?: number;
+  /** Root Group node of a grouped component (selecting the bar selects it). */
+  groupNodeId?: string;
+};
+type LaneDoc = {
+  controls: readonly { id: string; label: string; section: string; unit: string; type: string; bindings: readonly { parameter: string }[] }[];
+  graphs: readonly { id: string; nodes: readonly { id: string; type: string }[] }[];
+  rootGraphId: string;
+};
+
+export function timelineLanes(doc: LaneDoc, windows: ReadonlyMap<string, readonly [number, number]>): TimelineLane[] {
+  const lanes = new Map<string, TimelineLane>();
+  doc.controls.forEach((c, i) => {
+    const m = /^ctl-(.+)-(start-at|colour-shift)$/.exec(c.id);
+    if (!m) return;
+    const lane = lanes.get(m[1]) ?? { prefix: m[1], label: c.section };
+    if (m[2] === 'start-at') lane.startControl = i;
+    lanes.set(m[1], lane);
+  });
+  const prefixes = [...lanes.keys()].sort((a, b) => b.length - a.length);
+  doc.controls.forEach((c, i) => {
+    const p = prefixes.find(x => c.id.startsWith(`ctl-${x}-`));
+    if (p && c.unit === 'tick' && c.type === 'integer' && !c.id.endsWith('-start-at') && c.bindings.length > 0 && c.bindings.every(b => b.parameter === 'durationTicks')) {
+      lanes.get(p)!.lengthControl ??= i;
+    }
+  });
+  for (const [id, w] of windows) {
+    const p = prefixes.find(x => id.startsWith(`${x}-`));
+    if (!p) continue;
+    const lane = lanes.get(p)!;
+    lane.span = lane.span ? [Math.min(lane.span[0], w[0]), Math.max(lane.span[1], w[1])] : [w[0], w[1]];
+  }
+  const root = doc.graphs.find(g => g.id === doc.rootGraphId);
+  for (const lane of lanes.values()) if (root?.nodes.some(n => n.id === lane.prefix && n.type === 'Group')) lane.groupNodeId = lane.prefix;
+  return [...lanes.values()];
+}
