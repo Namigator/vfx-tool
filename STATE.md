@@ -27,8 +27,8 @@
   evidence/perf-compile-seek-*.md). Tools: `node tools/perf-fps.mjs`, `node tools/perf-knob.mjs`, both via
   `~/.claude/tools/cdp-eval.mjs` (headless Chrome + DevTools protocol; `--gpu` real GPU, `--profile x.cpuprofile`).
   Use it instead of the in-app pane for timing: the pane is hidden/throttled (rAF ~1 Hz).
-  Next perf targets: flamethrower edits (227 ms median; compile-time parent-event sim + duration check at 600 ticks),
-  lightning (~176 ms).
+  f75cbad: parent-event run reused across the 600-tick duration check and the preview -> flamethrower edit median
+  227 -> 209 ms (p max 393), all-49 median 107 ms. Next perf targets: flamethrower (209), lightning (~175 ms).
 - Post-release (user order): performance pass → timeline strip with component bars, then keyframed knobs →
   engine export → in-editor AI box that runs its own render→look→adjust loop → full AI guide → sound.
 
