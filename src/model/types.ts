@@ -81,7 +81,9 @@ export type PortType =
   | 'event' | 'timeWindow' | 'anchor' | 'paths' | 'particles' | 'material'
   | 'visual' | 'audio' | 'presentation' | 'scalarSignal' | 'colorSignal'
   | 'vec2Signal' | 'vec3Signal' | 'quaternionSignal' | 'booleanSignal' | 'asset'
-  | 'meshAsset' | 'textureAsset' | 'audioAsset';
+  | 'meshAsset' | 'textureAsset' | 'audioAsset'
+  /** 05 Curve / Gradient value nodes feeding curve / gradient parameters (one curve can drive several nodes). */
+  | 'curveValue' | 'gradientValue';
 
 export type PortSpec = {
   id: string; label: string; type: PortType; unit?: Unit;

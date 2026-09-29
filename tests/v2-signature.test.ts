@@ -60,7 +60,7 @@ function groupDoc(): EffectDocumentV2 {
 }
 const child = (d: EffectDocumentV2) => d.graphs.find(g => g.id === 'graph-child')!;
 
-test('value types map to signal ports; asset stays legacy generic; non-signal values have no port', () => {
+test('value types map to signal ports; asset stays legacy generic; curves/gradients get value ports; enum/string have none', () => {
   assert.equal(valueTypeToPortType('number'), 'scalarSignal');
   assert.equal(valueTypeToPortType('integer'), 'scalarSignal');
   assert.equal(valueTypeToPortType('boolean'), 'booleanSignal');
@@ -69,7 +69,10 @@ test('value types map to signal ports; asset stays legacy generic; non-signal va
   assert.equal(valueTypeToPortType('vec3'), 'vec3Signal');
   assert.equal(valueTypeToPortType('quaternion'), 'quaternionSignal');
   assert.equal(valueTypeToPortType('asset'), 'asset');
-  for (const t of ['enum', 'string', 'curve', 'gradient', 'registeredRecord'] as const) assert.equal(valueTypeToPortType(t), undefined, t);
+  // 05 Curve/Gradient nodes feed curve/gradient parameters through their own value ports.
+  assert.equal(valueTypeToPortType('curve'), 'curveValue');
+  assert.equal(valueTypeToPortType('gradient'), 'gradientValue');
+  for (const t of ['enum', 'string', 'registeredRecord'] as const) assert.equal(valueTypeToPortType(t), undefined, t);
 });
 
 test('port compatibility: exact type, exact units, domain subset with constant promotion', () => {

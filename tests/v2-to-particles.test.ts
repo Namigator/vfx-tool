@@ -676,3 +676,18 @@ test('PropMesh pivot start: the mesh begins at the anchor and extends along its 
   }));
   assert.deepEqual(p.systems.find(s => s.id === 'node-leg')!.descriptor.sourcePosition.map(v => +v.toFixed(6)), [0, 0.5, 0], 'centre half a metre below the anchor at y 1');
 });
+
+test('05 Curve / Gradient nodes drive curve and gradient parameters; disabled = the literal; the receiver still checks its range', () => {
+  const shape = { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 0.2 }, { x: 0.5, y: 1 }, { x: 1, y: 0.4 }] };
+  const ramp = { stops: [{ position: 0, color: { srgb: '#FF0000', alpha: 1 } }, { position: 1, color: { srgb: '#0000FF', alpha: 1 } }] };
+  const withNodes = (enabled = true, y = 1) => f01(d => {
+    root(d).nodes.push(node('node-curve', 'Curve', { curve: { ...shape, keys: shape.keys.map(k => ({ ...k, y: k.y * y })) } }), node('node-grad', 'Gradient', { gradient: ramp }));
+    root(d).nodes.find(n => n.id === 'node-curve')!.enabled = enabled;
+    root(d).edges.push(edge('e-c', 'node-curve', 'curve', 'node-billboard', 'sizeOverLife'), edge('e-g', 'node-grad', 'gradient', 'node-billboard', 'colorOverLife'));
+  });
+  const l = plan(withNodes()).layers[0];
+  assert.deepEqual(l.sizeOverLife.keys.map(k => k.y), [0.2, 1, 0.4]);
+  assert.deepEqual(l.colorOverLife.stops.map(s => s.color.srgb), ['#FF0000', '#0000FF']);
+  assert.ok(plan(withNodes(false)).layers[0].sizeOverLife.keys.every(k => k.y === 1), 'a disabled Curve leaves the literal');
+  assert.ok(errorsOf(compileParticlePreview(withNodes(true, 50))).length > 0, 'a curve outside the receiver range is an error, never clamped');
+});

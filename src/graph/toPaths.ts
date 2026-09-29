@@ -231,7 +231,16 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
   const into = (nodeId: string, port: string): ExpandedConnection[] =>
     x.connections.filter(c => c.target.nodeId === nodeId && c.target.port === port && c.source.kind !== 'empty');
   /** Event-relative Schedules (eventTiming.ts): startTicks includes the trigger event's tick. */
+  /** 05 Curve/Gradient nodes: a connected, enabled one supplies a curve/gradient parameter (disabled = the literal). */
+  const shapeDriver = (n: ExpandedNode, id: string): ParameterValue | undefined => {
+    const c = into(n.node.id, id).find(x => x.source.kind === 'node');
+    const src = c && c.source.kind === 'node' ? nodes.get(c.source.nodeId) : undefined;
+    if (!src || (src.node.type !== 'Curve' && src.node.type !== 'Gradient') || !src.effectiveEnabled) return undefined;
+    return rawParam(src, src.node.type === 'Curve' ? 'curve' : 'gradient');
+  };
   const param = (n: ExpandedNode, id: string): ParameterValue => {
+    const shaped = shapeDriver(n, id);
+    if (shaped !== undefined) return shaped;
     if (n.node.type === 'Schedule' && id === 'startTicks' && into(n.node.id, 'trigger').length) {
       try { return scheduleStart(timing, n.node.id); } catch (e) {
         if (e instanceof TimingError) return fail('INVALID_VALUE', e.message, e.nodeId);
@@ -258,6 +267,7 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
     const before = errors.length;
     for (const c of x.connections) {
       if (c.target.nodeId !== n.node.id || structural.includes(c.target.port) || c.source.kind === 'empty') continue;
+      if (c.source.kind === 'node' && ['Curve', 'Gradient'].includes(nodes.get(c.source.nodeId)?.node.type ?? '')) continue;
       if (n.node.type === 'Schedule' && c.target.port === 'trigger') continue; // Resolved by scheduleStart.
       report('DOMAIN_MISMATCH', `Input "${c.target.port}" of "${n.node.id}" is driven by a connection; connected/animated parameters are not supported by the path preview yet. Disconnect it and set a literal.`, n.node.id, c.target.port);
     }

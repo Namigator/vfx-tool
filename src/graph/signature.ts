@@ -53,6 +53,8 @@ const VALUE_PORT: Partial<Record<ValueType, PortType>> = {
   vec2: 'vec2Signal', vec3: 'vec3Signal', quaternion: 'quaternionSignal',
   // Legacy generic asset port; never implicitly converted to meshAsset/textureAsset/audioAsset.
   asset: 'asset',
+  // 05 Curve/Gradient nodes: every curve/gradient parameter can be fed by one (shared shapes and colour ramps).
+  curve: 'curveValue', gradient: 'gradientValue',
 };
 
 /** Port type carrying a value type, or undefined (enum/string/curve/gradient/registeredRecord). */

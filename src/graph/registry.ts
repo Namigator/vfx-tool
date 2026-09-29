@@ -234,6 +234,26 @@ function constantNode(): NodeSpec {
   });
 }
 
+/** 05 Curve: a reusable normalized curve (linear or hold, 2–16 keys) that can drive any curve parameter. */
+function curveNode(): NodeSpec {
+  return node('Curve', {
+    inputs: [],
+    outputs: [port({ id: 'curve', label: 'Curve', type: 'curveValue' })],
+    parameters: [param({ id: 'curve', label: 'Curve', type: 'curve', unit: 'none', curveDomain: 'normalized', default: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 0 }] }, min: -100, max: 100, editPolicy: 'live', description: 'Connect to any curve setting (size/opacity over life, rate over window, width over path...). The receiving setting still checks its own value range.' })],
+    disabledBehavior: 'empty',
+  });
+}
+
+/** 05 Gradient: a reusable colour ramp (2–8 stops, linear RGB) that can drive any gradient parameter. */
+function gradientNode(): NodeSpec {
+  return node('Gradient', {
+    inputs: [],
+    outputs: [port({ id: 'gradient', label: 'Gradient', type: 'gradientValue' })],
+    parameters: [param({ id: 'gradient', label: 'Gradient', type: 'gradient', unit: 'none', default: { stops: [{ position: 0, color: { srgb: '#FFFFFF', alpha: 1 } }, { position: 1, color: { srgb: '#FFFFFF', alpha: 1 } }] }, editPolicy: 'live', description: 'Connect to any colour-over-life/window setting; one ramp can colour several parts.' })],
+    disabledBehavior: 'empty',
+  });
+}
+
 /** 05 ScalarMath: a (op) b. Evaluated once per cast from constants; over effect time when an operand is a time signal (Time, Oscillator, curve). */
 function scalarMath(): NodeSpec {
   return node('ScalarMath', {
@@ -978,7 +998,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 /** Fresh, independent registry each call. */
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
-    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), constantNode(), scalarMath(), publicParameter(), offsetAnchor(), eventDelay(), mergeEvents(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), propMesh(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
+    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), constantNode(), curveNode(), gradientNode(), scalarMath(), publicParameter(), offsetAnchor(), eventDelay(), mergeEvents(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), propMesh(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
     linePath(), bezierPath(), helixPathNode(), pathTransformNode(), mergePathsNode(), particlePathsNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(), oscillator(), timeNode(),
     audioSource(), audioEnvelope(), audioFilter(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),

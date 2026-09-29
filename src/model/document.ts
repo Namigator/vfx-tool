@@ -40,7 +40,7 @@ export const MAX_QUOTED_CODE_POINTS = 48;
 
 const VALUE_TYPES = ['boolean', 'number', 'integer', 'color', 'vec2', 'vec3', 'quaternion', 'enum', 'string', 'asset', 'curve', 'gradient', 'registeredRecord'];
 const UNITS = ['none', 'meter', 'second', 'tick', 'radian', 'metersPerSecond', 'metersPerSecondSquared', 'hertz', 'perSecond', 'linearGain', 'normalized'];
-const PORT_TYPES = ['event', 'timeWindow', 'anchor', 'paths', 'particles', 'material', 'visual', 'audio', 'presentation', 'scalarSignal', 'colorSignal', 'vec2Signal', 'vec3Signal', 'quaternionSignal', 'booleanSignal', 'asset', 'meshAsset', 'textureAsset', 'audioAsset'];
+const PORT_TYPES = ['event', 'timeWindow', 'anchor', 'paths', 'particles', 'material', 'visual', 'audio', 'presentation', 'scalarSignal', 'colorSignal', 'vec2Signal', 'vec3Signal', 'quaternionSignal', 'booleanSignal', 'asset', 'meshAsset', 'textureAsset', 'audioAsset', 'curveValue', 'gradientValue'];
 const DOMAINS = ['constant', 'effectTime', 'normalizedAge', 'pathU'];
 const EDIT_POLICIES = ['live', 'resample'];
 const ASSET_KINDS = ['texture', 'flipbook', 'mesh', 'sound'];
