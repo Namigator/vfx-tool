@@ -51,6 +51,15 @@
   Editor: diamond button per knob (key at playhead; keyed knob edits the key at the playhead), x clears; lane diamonds;
   edits while paused keep the playhead. MCP vfx_set_control_keys. [SAW] orange thin t30 -> blue dense t92;
   [RAN] editor key+edit at t150. Cost: a keyed doc compiles (keys+1)x (~350 ms flamethrower, 2 keyed knobs).
+- Roblox export v1 (user order item 4; user chose Roblox): src/export/roblox/ - fromPlan.ts (mine: plans -> RobloxEffect
+  IR types.ts; emitters/beams/lights, report of approximations; beam geometry sharing, width-only + thinned
+  interpolated frames), rbxmx.ts + EffectPlayer.luau + playerSource.node.ts (Sonnet implementer), report.ts.
+  Editor "Export Roblox" button (downloads .rbxmx + .roblox-report.md), MCP vfx_export_roblox (work/roblox/).
+  [RAN] tools/roblox-check.mjs in real Studio (run-in-roblox): flamethrower 7 emitters/105 emits, lightning 7 emitters +
+  8 beam layers (~1460 Beams peak - heavy), enums verified against engine. NOT seen in Studio visually.
+  Textures: tools/roblox-upload-textures.mjs (dry run default, --yes uploads as Image assets, ids ->
+  work/roblox/asset-ids.json). BLOCKED on user: OK to upload 5 sheets under IntoToilet (11041117443) + key needs
+  Assets read/write. Not exported yet: per-particle trails, mesh particles, flash/shake, turbulence/attract/vortex/ground.
 - TOOL BROKEN 2026-09-29: ~/.claude/tools/shot.ps1 url returns "chrome produced no file" even for docs that captured
   earlier (doctor clean, page reports READY via cdp-eval). Use the in-app browser pane or cdp-eval meanwhile.
 - USER REPORT 2026-09-29 (open): viewed from behind/in front of the fire (along the jet), the sprites move

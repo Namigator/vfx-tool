@@ -28,6 +28,10 @@ import { FAMILIES } from '../src/core/types.ts';
 import { createL01AudioDocument } from '../src/graph/audioFixtures.ts';
 import { compileParticlePreview } from '../src/graph/toParticles.ts';
 import { compilePathPreview } from '../src/graph/toPaths.ts';
+import { robloxEffectFrom } from '../src/export/roblox/fromPlan.ts';
+import { writeRbxmx } from '../src/export/roblox/rbxmx.ts';
+import { effectPlayerSource } from '../src/export/roblox/playerSource.node.ts';
+import { reportMarkdown } from '../src/export/roblox/report.ts';
 import { timelineInfo, timelineLanes } from '../src/render/timeline.ts';
 import { compileAudio } from '../src/graph/toAudio.ts';
 import { sampleParticlesAtTick } from '../src/runtime/particles.ts';
@@ -524,6 +528,24 @@ ${formatMigrationReport(report)}`);
     return { ok: true as const, read: r.value, doc: pinned.doc, pinned: pinned.pinned, summary };
   };
 
+  tool('vfx_export_roblox', 'Export the effect for Roblox: a .rbxmx model (ParticleEmitters, Beams, PointLights + an EffectPlayer script that replays the timeline) and a conversion report (.md) listing what was approximated or left out. Textures use rbxassetid ids from work/roblox/asset-ids.json (sheet file -> id) when present; missing ones show the default Roblox sparkle. Default path work/roblox/<docId>.rbxmx.', {
+    docId: z.string(), path: z.string().optional(),
+  }, ({ docId, path }) => {
+    const d = getDoc(docId);
+    const r = robloxEffectFrom(d);
+    if (!r.ok) return bad(r.message);
+    const idsFile = join(root, 'work', 'roblox', 'asset-ids.json');
+    const assetIds: Record<string, string> = existsSync(idsFile) ? JSON.parse(readFileSync(idsFile, 'utf8')) : {};
+    const out = safeProjectPath(path ?? `work/roblox/${docId}.rbxmx`);
+    mkdirSync(dirname(out), { recursive: true });
+    writeFileSync(out, writeRbxmx(r.value, { assetIds, playerSource: effectPlayerSource() }));
+    const md = reportMarkdown(r.value, assetIds);
+    writeFileSync(out.replace(/\.rbxmx$/i, '') + '.report.md', md);
+    const e = r.value, dropped = e.report.filter(x => x.level === 'dropped').length, approx = e.report.filter(x => x.level === 'approximated').length;
+    return ok(`Wrote ${out} (${e.emitters.length} emitters, ${e.beams.length} beam layers, ${e.lights.length} lights; ${approx} approximations, ${dropped} left out; textures ${e.textures.filter(t => assetIds[t]).length}/${e.textures.length} uploaded) and its .report.md.
+
+${md}`);
+  });
   tool('vfx_export_pack', 'Write a portable .vfxpack (effect + imported asset bytes + manifest checksums) to a project path (default work/mcp/<id>.vfxpack). draft=true allows missing asset bytes.', {
     docId: z.string(), path: z.string().optional(), draft: z.boolean().optional(),
   }, async ({ docId, path, draft }) => {

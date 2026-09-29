@@ -446,6 +446,34 @@ export default function PreviewV2() {
   }, []);
 
   /**
+   * Roblox export (user order: engine export, first target Roblox): a .rbxmx model (ParticleEmitters, Beams,
+   * PointLights + the EffectPlayer script) and its conversion report. Loaded on demand so the editor stays light.
+   * Texture ids come from /work/roblox/asset-ids.json when that file exists (sheet file -> rbxassetid).
+   */
+  const downloadRoblox = useCallback(async () => {
+    const d = historyRef.current!.snapshot();
+    setFileNote('Exporting for Roblox…');
+    const [{ robloxEffectFrom }, { writeRbxmx }, { reportMarkdown }, player] = await Promise.all([
+      import('./export/roblox/fromPlan.ts'), import('./export/roblox/rbxmx.ts'), import('./export/roblox/report.ts'), import('./export/roblox/EffectPlayer.luau?raw'),
+    ]);
+    const r = robloxEffectFrom(d);
+    if (!r.ok) { setFileNote(`Roblox export failed: ${r.message}`); return; }
+    const assetIds: Record<string, string> = await fetch('/work/roblox/asset-ids.json', { cache: 'no-store' }).then(x => (x.ok ? x.json() : {})).catch(() => ({}));
+    const base = documentFileName(d).replace(/\.vfx\.json$/, '');
+    const save = (text: string, name: string, type: string) => {
+      const url = URL.createObjectURL(new Blob([text], { type }));
+      const a = document.createElement('a');
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    };
+    save(writeRbxmx(r.value, { assetIds, playerSource: player.default }), `${base}.rbxmx`, 'application/xml');
+    save(reportMarkdown(r.value, assetIds), `${base}.roblox-report.md`, 'text/markdown');
+    const e = r.value, left = e.report.filter(x => x.level === 'dropped').length, missing = e.textures.filter(t => !assetIds[t]).length;
+    setFileNote(`Roblox export: ${e.emitters.length} emitters, ${e.beams.length} beam layers, ${e.lights.length} lights. ${left} feature(s) left out${missing ? `, ${missing} texture(s) not uploaded yet` : ''} - see the report file.`);
+  }, []);
+
+  /**
    * Opens a .vfxpack in two steps (13 "Stage ... then Import commits atomically"): checksums, paths and the document
    * are verified and a summary is shown; nothing is stored until Import. Changed included sprites are pinned.
    */
@@ -825,6 +853,7 @@ export default function PreviewV2() {
           }); }} />
           <button type="button" onClick={downloadDocument} title="Download this effect as a .vfx.json file (recipe only; imported asset bytes not included)">Save .json</button>
           <button type="button" onClick={() => void downloadPack()} title="Download a portable .vfxpack: the effect plus its imported asset bytes and checksums">Export pack</button>
+          <button type="button" onClick={() => void downloadRoblox()} title="Download a Roblox model (.rbxmx: particle emitters, beams, lights and a player script) plus a report of what Roblox can't do">Export Roblox</button>
           <button type="button" onClick={keepProject} title="Keep a copy of this effect in the local project shelf (same name replaces)">Keep</button>
           <button type="button" onClick={() => {
             // 12 workflow 1 "Save As": keep the effect under a new name; the open effect continues as that copy.
