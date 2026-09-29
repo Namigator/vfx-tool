@@ -440,3 +440,20 @@ test('clone() is an exact checkpoint: advancing the copy matches the original an
   a.advance();
   assert.deepEqual(frozen.snapshot(), before);
 });
+
+test('path emission (24): births sample normalized arc length uniformly across the polylines; direction follows the cone', () => {
+  // An L: 3 m along X, then 1 m up Y. Uniform in arc length puts ~3/4 of births on the long leg.
+  const paths: [number, number, number][][] = [[[0, 0, 0], [3, 0, 0], [3, 1, 0]]];
+  const d = base({ shape: 'path', bursts: [{ tick: 1, eventRandomKey: 'k', count: 400 }], emission: { shape: 'path', axis: [0, 1, 0], radius: 0, coneAngle: 0, speed: { min: 2, max: 2 }, paths } });
+  const s = run(d);
+  const born = s[1].particles;
+  assert.equal(born.length, 400);
+  const onPath = (p: number[]) => (Math.abs(p[1]) < 1e-9 && p[0] >= -1e-9 && p[0] <= 3 + 1e-9) || (Math.abs(p[0] - 3) < 1e-9 && p[1] >= 0 && p[1] <= 1 + 1e-9);
+  // Births are not integrated on their birth tick: positions are the sampled path points.
+  assert.ok(born.every(p => onPath(p.position)), 'every birth lies on the path');
+  const longLeg = born.filter(p => Math.abs(p.position[1]) < 1e-9).length / born.length;
+  assert.ok(longLeg > 0.68 && longLeg < 0.82, `3/4 on the 3 m leg (got ${longLeg.toFixed(2)})`);
+  assert.ok(born.every(p => Math.abs(p.velocity[0]) < 1e-9 && Math.abs(p.velocity[1] - 2) < 1e-9), 'coneAngle 0 = straight along the axis');
+  const bad = validateParticleDescriptor({ ...d, emission: { ...d.emission!, paths: [[[0, 0, 0]]] } });
+  assert.ok(!bad.ok);
+});

@@ -33,7 +33,7 @@ export const PARTICLE_PROPERTY_KEYS = { lifetime: 'lifetime', size: 'size', spee
 /** Billboard spin sampled once per particle: rotation (radians) and angular velocity (radians/second). */
 export type ParticleSpin = { rotation: { min: number; max: number }; angularVelocity: { min: number; max: number } };
 
-export type EmitterShape = 'point' | 'cone' | 'sphere' | 'disc' | 'box';
+export type EmitterShape = 'point' | 'cone' | 'sphere' | 'disc' | 'box' | 'path';
 /**
  * Shaped emission. Directions are relative to the unit world `axis` (the emitter's local +X after rotation
  * or aim). point: along axis. cone: uniform in solid angle within coneAngle of axis, born on a disc of
@@ -41,8 +41,10 @@ export type EmitterShape = 'point' | 'cone' | 'sphere' | 'disc' | 'box';
  * disc: radial direction in the plane perpendicular to axis, position radius*sqrt(u). box: position uniform
  * in a cube of half-extent `radius`, direction along axis. Speed is sampled uniformly per particle.
  */
-export type ParticleEmission = { shape: EmitterShape; axis: Vec3; radius: number; coneAngle: number; speed: { min: number; max: number } };
-const SHAPES: readonly EmitterShape[] = ['point', 'cone', 'sphere', 'disc', 'box'];
+/** `paths` (shape "path" only): world-space polylines; births sample normalized arc length uniformly across all of them (24). */
+export type ParticleEmission = { shape: EmitterShape; axis: Vec3; radius: number; coneAngle: number; speed: { min: number; max: number }; paths?: Vec3[][] };
+const SHAPES: readonly EmitterShape[] = ['point', 'cone', 'sphere', 'disc', 'box', 'path'];
+const MAX_EMISSION_PATH_POINTS = 4096;
 
 export type ParticleVelocitySpec =
   | { kind: 'vector'; value: Vec3 }
@@ -226,7 +228,7 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
   for (const k of ['emitterId', 'randomStreamId'] as const) {
     if (typeof input[k] !== 'string' || !ID_PATTERN.test(input[k] as string)) e.push(err('INVALID_VALUE', `${k} must be a stored identifier.`, `${p}.${k}`));
   }
-  if (!SHAPES.includes(input.shape as EmitterShape)) e.push(err('INVALID_VALUE', 'shape must be point, cone, sphere, disc or box (path emission is not implemented).', `${p}.shape`));
+  if (!SHAPES.includes(input.shape as EmitterShape)) e.push(err('INVALID_VALUE', 'shape must be point, cone, sphere, disc, box or path.', `${p}.shape`));
   let emission: ParticleEmission | undefined;
   const em = input.emission;
   if (em === undefined) {
@@ -234,8 +236,15 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
   } else if (!isObj(em)) e.push(err('INVALID_VALUE', 'emission must be an object.', `${p}.emission`));
   else {
     const ep = `${p}.emission`;
-    checkKeys(em, ['shape', 'axis', 'radius', 'coneAngle', 'speed'], ep, e);
+    checkKeys(em, ['shape', 'axis', 'radius', 'coneAngle', 'speed', 'paths'], ep, e);
     let ok = true;
+    let paths: Vec3[][] | undefined;
+    if (em.shape === 'path' || em.paths !== undefined) {
+      const ps = em.paths, total = Array.isArray(ps) ? ps.reduce((n: number, q: unknown) => n + (Array.isArray(q) ? q.length : 0), 0) : 0;
+      if (em.shape !== 'path' || !Array.isArray(ps) || !ps.length || total > MAX_EMISSION_PATH_POINTS || !ps.every(q => Array.isArray(q) && q.length >= 2 && q.every(isVec3))) {
+        ok = false; e.push(err('INVALID_VALUE', `Path emission needs emission.paths: 1+ polylines of 2+ finite points (at most ${MAX_EMISSION_PATH_POINTS} points), only with shape "path".`, `${ep}.paths`));
+      } else paths = (ps as Vec3[][]).map(q => q.map(v => cloneVec(v)));
+    }
     if (em.shape !== input.shape) { ok = false; e.push(err('INVALID_VALUE', 'emission.shape must equal descriptor.shape.', `${ep}.shape`)); }
     if (!isVec3(em.axis) || Math.abs(Math.hypot(em.axis[0], em.axis[1], em.axis[2]) - 1) > 1e-6) { ok = false; e.push(err('INVALID_VALUE', 'emission.axis must be a finite unit vec3.', `${ep}.axis`)); }
     if (!isFiniteNum(em.radius) || em.radius < 0 || em.radius > 20) { ok = false; e.push(err('INVALID_VALUE', 'emission.radius must be finite in 0..20.', `${ep}.radius`)); }
@@ -243,7 +252,7 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
     const sp = em.speed;
     if (!isObj(sp) || !isFiniteNum(sp.min) || !isFiniteNum(sp.max) || sp.min < 0 || sp.max < sp.min || sp.max > 100) { ok = false; e.push(err('INVALID_VALUE', 'emission.speed must be {min,max} with 0 <= min <= max <= 100.', `${ep}.speed`)); }
     else checkKeys(sp, ['min', 'max'], `${ep}.speed`, e);
-    if (ok) emission = { shape: em.shape as EmitterShape, axis: cloneVec(em.axis as Vec3), radius: em.radius as number, coneAngle: em.coneAngle as number, speed: { min: (sp as Record<string, number>).min, max: (sp as Record<string, number>).max } };
+    if (ok) emission = { shape: em.shape as EmitterShape, axis: cloneVec(em.axis as Vec3), radius: em.radius as number, coneAngle: em.coneAngle as number, speed: { min: (sp as Record<string, number>).min, max: (sp as Record<string, number>).max }, ...(paths ? { paths } : {}) };
   }
   if (!isVec3(input.sourcePosition)) e.push(err('INVALID_VALUE', 'sourcePosition must be a finite vec3.', `${p}.sourcePosition`));
 
@@ -679,6 +688,24 @@ export class ParticleSimulation {
       off = [dir[0] * r, dir[1] * r, dir[2] * r];
     } else if (em.shape === 'box') {
       off = comb((2 * s(K.posU) - 1) * em.radius, (2 * s(K.posV) - 1) * em.radius, (2 * s(K.posW) - 1) * em.radius);
+    } else if (em.shape === 'path' && em.paths) {
+      // Position: uniform in normalized arc length over all polylines (absolute world points, the anchor is not added);
+      // direction: the cone around the emitter axis (coneAngle 0 = straight along the axis).
+      const c = 1 + (Math.cos(em.coneAngle) - 1) * u, sn = Math.sqrt(Math.max(0, 1 - c * c));
+      dir = comb(c, sn * Math.cos(az), sn * Math.sin(az));
+      const seg = (q: Vec3, r: Vec3) => Math.hypot(r[0] - q[0], r[1] - q[1], r[2] - q[2]);
+      let total = 0;
+      for (const p of em.paths) for (let i = 1; i < p.length; i++) total += seg(p[i - 1], p[i]);
+      let want = s(K.posU) * total;
+      for (const p of em.paths) for (let i = 1; i < p.length; i++) {
+        const l = seg(p[i - 1], p[i]);
+        if (want <= l || (p === em.paths[em.paths.length - 1] && i === p.length - 1)) {
+          const t = l > 0 ? Math.min(1, want / l) : 0, a0 = p[i - 1], a1 = p[i];
+          const speed = em.speed.min === em.speed.max ? em.speed.min : em.speed.min + s(K.speed) * (em.speed.max - em.speed.min);
+          return [[a0[0] + (a1[0] - a0[0]) * t, a0[1] + (a1[1] - a0[1]) * t, a0[2] + (a1[2] - a0[2]) * t], fixedVelocity ?? [dir[0] * speed, dir[1] * speed, dir[2] * speed]];
+        }
+        want -= l;
+      }
     }
     const speed = em.speed.min === em.speed.max ? em.speed.min : em.speed.min + s(K.speed) * (em.speed.max - em.speed.min);
     const vel: Vec3 = fixedVelocity ?? [dir[0] * speed, dir[1] * speed, dir[2] * speed];

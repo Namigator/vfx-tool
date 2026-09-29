@@ -459,9 +459,11 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     const id = em.node.id;
     noDrivenParams(em, EMITTER_PORTS);
     const shape = param(em, 'shape') as string;
-    if (shape === 'path') report('INVALID_VALUE', 'Emitter shape "path" is not supported yet; use point, cone, sphere, disc or box.', id, 'shape');
     if (param(em, 'space') !== 'world') report('INVALID_VALUE', 'Emitter local space is not supported by the point preview; use "world".', id, 'space');
-    if (into(id, 'paths').length) report('INVALID_VALUE', 'Emitter paths input is not supported by the point preview; connect an anchor.', id);
+    // 24 path emission: shape "path" spawns along the connected paths (the anchor is optional then).
+    const pathIns = into(id, 'paths');
+    if (shape === 'path' && pathIns.length !== 1) report('MISSING_REFERENCE', 'Emitter shape "path" needs exactly one connected path (paths input), e.g. a LinePath, BezierPath or RingPath.', id, 'shape');
+    if (shape !== 'path' && pathIns.length) report('INVALID_VALUE', 'Emitter paths input is only used with shape "path".', id, 'shape');
     const speedMin = num(em, 'speedMin'), speedMax = num(em, 'speedMax');
 
     for (const ip of chain.enabledInitials) {
@@ -478,7 +480,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     const track = anchorNode?.node.type === 'PathFollower' ? followerTrack(anchorNode) : undefined;
     const sp = anchorNode && !track ? staticAnchor(anchorNode) : undefined;
     if (track) { /* Moving source: positions come from the follower track. */ } else if (!sp) {
-      if (!eventOnly) report('MISSING_REFERENCE', 'Emitter needs an enabled Anchor (or OffsetAnchor) referencing an existing document anchor on its anchor input (Schedule events carry no position; particle events do when Use event position is on).', id);
+      if (!eventOnly && shape !== 'path') report('MISSING_REFERENCE', 'Emitter needs an enabled Anchor (or OffsetAnchor) referencing an existing document anchor on its anchor input (Schedule events carry no position; particle events do when Use event position is on).', id);
     } else local = sp;
 
     const duration = doc.durationTicks;
@@ -641,6 +643,20 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       if (r.some(v => v !== 0) || w.some(v => v !== 0)) d.spin = { rotation: { min: r[0], max: r[1] }, angularVelocity: { min: w[0], max: w[1] } };
     }
     if (shaped && shape !== 'path') d.emission = { shape: d.shape, axis, radius: num(em, 'radius') * scale, coneAngle: num(em, 'coneAngle'), speed: { min: speedMin * scale, max: speedMax * scale } };
+    if (shape === 'path' && pathIns.length === 1 && pathIns[0].source.kind === 'node') {
+      // The path is evaluated (world space) at the first emission tick; later path motion does not move births.
+      const t0 = Math.min(...bursts.map(b => b.tick), rate ? rate.startTick : Infinity);
+      const src = pathIns[0].source;
+      const pr = compilePathPreview(input, Number.isFinite(t0) ? t0 : 0, { audioHandled: true, probe: { nodeId: src.nodeId, port: src.port } });
+      if (!pr.ok) errors.push(...pr.errors.map(e => ({ ...e, nodeId: e.nodeId ?? id })));
+      const paths = pr.ok ? (pr.value.probe ?? []).map(p => p.points.map(q => [q[0], q[1], q[2]] as Vec3)).filter(p => p.length >= 2) : [];
+      if (pr.ok && !paths.length) report('MISSING_REFERENCE', `Emitter "${id}" path input produced no path at tick ${Number.isFinite(t0) ? t0 : 0}.`, id);
+      if (paths.length) {
+        d.shape = 'path';
+        d.sourcePosition = [...paths[0][0]] as Vec3;
+        d.emission = { shape: 'path', axis, radius: 0, coneAngle: num(em, 'coneAngle'), speed: { min: speedMin * scale, max: speedMax * scale }, paths };
+      }
+    }
     return d;
   };
 
