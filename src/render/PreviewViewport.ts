@@ -1277,6 +1277,7 @@ export class PreviewViewport {
     this.#updateMeshes(alpha);
   }
 
+  #lastEmitAt = 0;
   #emitFrame(force: boolean): void {
     const cb = this.#callbacks.onFrame;
     const clock = this.#clock;
@@ -1285,6 +1286,11 @@ export class PreviewViewport {
     const suspended = this.#suspended;
     if (this.#disposed || !cb) return;
     if (!force && tick === this.#lastTick && playing === this.#lastPlaying && suspended === this.#lastSuspended) return;
+    // 15 "transport display to 10 Hz": while playing, tick-only changes reach the editor at most every 100 ms (each one
+    // re-renders the whole editor); play/pause/suspend changes, seeks (force) and the final tick are sent at once.
+    const now = performance.now(), atEnd = clock ? tick >= clock.durationTicks : false;
+    if (!force && playing && playing === this.#lastPlaying && suspended === this.#lastSuspended && !atEnd && now - this.#lastEmitAt < 100) return;
+    this.#lastEmitAt = now;
     this.#lastTick = tick;
     this.#lastPlaying = playing;
     this.#lastSuspended = suspended;
