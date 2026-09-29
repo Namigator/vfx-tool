@@ -234,6 +234,23 @@ function constantNode(): NodeSpec {
   });
 }
 
+/** 05 OverLife: size/opacity/colour/spin-speed over each particle's life for every renderer downstream (a renderer's own over-life settings win). */
+function overLife(): NodeSpec {
+  const lin = (keys: [number, number][]) => ({ domain: 'normalized' as const, interpolation: 'linear' as const, keys: keys.map(([x, y]) => ({ x, y })) });
+  return node('OverLife', {
+    inputs: [port({ id: 'particles', label: 'Particles', type: 'particles', required: true })],
+    outputs: [port({ id: 'particles', label: 'Particles', type: 'particles' })],
+    parameters: [
+      param({ id: 'sizeOverLife', label: 'Size over life', type: 'curve', unit: 'none', curveDomain: 'normalized', default: lin([[0, 1], [1, 1]]), min: 0, max: 20, editPolicy: 'live' }),
+      param({ id: 'opacityOverLife', label: 'Opacity over life', type: 'curve', unit: 'normalized', curveDomain: 'normalized', default: lin([[0, 0], [0.1, 1], [1, 0]]), min: 0, max: 1, editPolicy: 'live', description: 'Default: fade in over the first 10% of life, fade out to the end.' }),
+      param({ id: 'colorOverLife', label: 'Colour over life', type: 'gradient', unit: 'none', default: { stops: [{ position: 0, color: { srgb: '#FFFFFF', alpha: 1 } }, { position: 1, color: { srgb: '#FFFFFF', alpha: 1 } }] }, editPolicy: 'live' }),
+      param({ id: 'spinOverLife', label: 'Spin speed over life', type: 'curve', unit: 'none', curveDomain: 'normalized', default: lin([[0, 1], [1, 1]]), min: 0, max: 10, editPolicy: 'live', description: 'Multiplies the angular velocity from InitialProperties across the life (e.g. fast then slowing).' }),
+    ],
+    disabledBehavior: 'bypass',
+    bypass: { input: 'particles', output: 'particles' },
+  });
+}
+
 /** 05 Curve: a reusable normalized curve (linear or hold, 2–16 keys) that can drive any curve parameter. */
 function curveNode(): NodeSpec {
   return node('Curve', {
@@ -998,7 +1015,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 /** Fresh, independent registry each call. */
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
-    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), constantNode(), curveNode(), gradientNode(), scalarMath(), publicParameter(), offsetAnchor(), eventDelay(), mergeEvents(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), propMesh(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
+    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), constantNode(), overLife(), curveNode(), gradientNode(), scalarMath(), publicParameter(), offsetAnchor(), eventDelay(), mergeEvents(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), propMesh(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
     linePath(), bezierPath(), helixPathNode(), pathTransformNode(), mergePathsNode(), particlePathsNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(), oscillator(), timeNode(),
     audioSource(), audioEnvelope(), audioFilter(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),

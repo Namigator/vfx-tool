@@ -158,6 +158,21 @@ ${DETAIL_GLSL}`)
   material.customProgramCacheKey = () => `mesh-patch:${useRim ? 1 : 0}:${useDetail ? 1 : 0}`;
 }
 
+/**
+ * OverLife spin speed: the angle after age t with angular velocity w scaled by curve s(u) is w·t·mean(s over [0,u]);
+ * the mean is integrated with 8 trapezoids (a flat curve returns exactly 1).
+ */
+const spinSamplers = new WeakMap<object, LifeCurveSampler>();
+function spinAverage(curve: import('../model/types.ts').CurveValue | undefined, u: number): number {
+  if (!curve) return 1;
+  let s = spinSamplers.get(curve);
+  if (!s) { s = compileLifeCurve(curve); spinSamplers.set(curve, s); }
+  if (u <= 1e-6) return sampleLifeCurve(s, 0);
+  let acc = 0;
+  for (let i = 0; i < 8; i++) acc += (sampleLifeCurve(s, (u * i) / 8) + sampleLifeCurve(s, (u * (i + 1)) / 8)) / 2;
+  return acc / 8;
+}
+
 function basePivot(g: THREE.BufferGeometry, base: boolean): THREE.BufferGeometry {
   if (!base) return g;
   g.computeBoundingBox();
@@ -1140,7 +1155,7 @@ export class PreviewViewport {
         } else if (m.layer.orientation === 'velocity' && Math.hypot(pt.velocity[0], pt.velocity[1], pt.velocity[2]) > 1e-6) q.setFromUnitVectors(up, axis.set(pt.velocity[0], pt.velocity[1], pt.velocity[2]).normalize());
         else {
           const a = (h & 1023) / 1023 * Math.PI * 2, b = ((h >>> 10) & 1023) / 1023 * 2 - 1, r = Math.sqrt(1 - b * b);
-          const angle = (pt.rotation ?? (h >>> 20) / 4096 * Math.PI * 2) + (pt.angularVelocity ?? 0) * (pt.ageTicks + alpha) * PARTICLE_DT;
+          const angle = (pt.rotation ?? (h >>> 20) / 4096 * Math.PI * 2) + (pt.angularVelocity ?? 0) * (pt.ageTicks + alpha) * PARTICLE_DT * spinAverage(m.layer.spinOverLife, u);
           q.setFromAxisAngle(axis.set(r * Math.cos(a), b, r * Math.sin(a)), angle);
         }
         const k = pt.size * m.layer.scale * sampleLifeCurve(m.size, u);
@@ -1232,7 +1247,7 @@ export class PreviewViewport {
         sampleLifeGradient(l.colorSampler, u, rgbaScratch);
         col[i * 3] = rgbaScratch[0]; col[i * 3 + 1] = rgbaScratch[1]; col[i * 3 + 2] = rgbaScratch[2];
         op[i] = sampleLifeCurve(l.opacitySampler, u) * rgbaScratch[3];
-        spin[i] = p.rotation === undefined ? 0 : p.rotation + (p.angularVelocity ?? 0) * (p.ageTicks + alpha) * PARTICLE_DT;
+        spin[i] = p.rotation === undefined ? 0 : p.rotation + (p.angularVelocity ?? 0) * (p.ageTicks + alpha) * PARTICLE_DT * spinAverage(l.layer.spinOverLife, lifeFraction(p.ageTicks, p.lifetimeTicks, alpha));
         vel[i * 3] = p.velocity[0]; vel[i * 3 + 1] = p.velocity[1]; vel[i * 3 + 2] = p.velocity[2];
         m[o] = s; m[o + 1] = 0; m[o + 2] = 0; m[o + 3] = 0;
         m[o + 4] = 0; m[o + 5] = s; m[o + 6] = 0; m[o + 7] = 0;

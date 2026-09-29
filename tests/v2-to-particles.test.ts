@@ -691,3 +691,23 @@ test('05 Curve / Gradient nodes drive curve and gradient parameters; disabled = 
   assert.ok(plan(withNodes(false)).layers[0].sizeOverLife.keys.every(k => k.y === 1), 'a disabled Curve leaves the literal');
   assert.ok(errorsOf(compileParticlePreview(withNodes(true, 50))).length > 0, 'a curve outside the receiver range is an error, never clamped');
 });
+
+test('05 OverLife: supplies over-life curves to renderers downstream unless the renderer sets its own; visual-only; disabled bypasses', () => {
+  const withOL = (mutate?: (d: EffectDocumentV2) => void) => f01(d => {
+    const g = root(d);
+    g.nodes.push(node('node-ol', 'OverLife', { spinOverLife: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 2 }, { x: 1, y: 0 }] } }));
+    const e = g.edges.find(x => x.target.nodeId === 'node-billboard' && x.target.port === 'particles')!;
+    g.edges = g.edges.filter(x => x !== e);
+    g.edges.push(edge('e-ol1', e.source.nodeId, 'particles', 'node-ol', 'particles'), edge('e-ol2', 'node-ol', 'particles', 'node-billboard', 'particles'));
+    mutate?.(d);
+  });
+  const base = plan(f01());
+  const p = plan(withOL());
+  assert.deepEqual(p.layers[0].opacityOverLife.keys.map(k => [k.x, k.y]), [[0, 0], [0.1, 1], [1, 0]], 'OverLife default opacity (10% attack)');
+  assert.ok(p.layers[0].spinOverLife, 'spin speed curve carried');
+  assert.equal(p.layers[0].systemId, base.layers[0].systemId, 'OverLife does not create a new particle system');
+  const own = plan(withOL(d => { root(d).nodes.find(n => n.id === 'node-billboard')!.params.opacityOverLife = { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] }; }));
+  assert.ok(own.layers[0].opacityOverLife.keys.every(k => k.y === 1), "the renderer's own setting wins");
+  const off = plan(withOL(d => { root(d).nodes.find(n => n.id === 'node-ol')!.enabled = false; }));
+  assert.deepEqual(off.layers[0].opacityOverLife, base.layers[0].opacityOverLife, 'disabled OverLife bypasses');
+});

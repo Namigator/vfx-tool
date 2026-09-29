@@ -76,6 +76,8 @@ export type ParticlePreviewLayer = {
   opacityOverLife: CurveValue;
   /** Colour × alpha multiplier over normalized age; document validation owns stop rules. */
   colorOverLife: GradientValue;
+  /** OverLife spin-speed multiplier across the life (absent = constant angular velocity). */
+  spinOverLife?: CurveValue;
   alignment: 'camera' | 'velocity' | 'worldAxis';
   /** Unit normal the quad faces for worldAxis alignment. */
   worldAxis: Vec3;
@@ -115,7 +117,7 @@ export type MeshLayer = {
   /** 09 surface: environment reflection, procedural bump/grain detail and per-piece colour variation (all 0 = off). */
   surface?: { reflection: number; detail: number; detailScale: number; variation: number };
   color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout';
-  sizeOverLife: CurveValue; colorOverLife: GradientValue; renderOrderOffset: number; visualOrder: number;
+  sizeOverLife: CurveValue; colorOverLife: GradientValue; renderOrderOffset: number; visualOrder: number; spinOverLife?: CurveValue;
 };
 /** 05 presentation: screen flashes and camera impulses at event ticks (preview-only, reduced-motion aware). */
 export type PresentationPlan = {
@@ -315,7 +317,8 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
   }
 
   // ---------- chains and systems ----------
-  type Chain = { emitter: ExpandedNode; initial: ExpandedNode | undefined; enabledInitials: ExpandedNode[]; forces: ExpandedNode[]; terminalId: string };
+  /** overLife: the enabled OverLife nearest the renderer (visual-only: it never changes the system identity). */
+  type Chain = { emitter: ExpandedNode; initial: ExpandedNode | undefined; enabledInitials: ExpandedNode[]; forces: ExpandedNode[]; terminalId: string; overLife?: ExpandedNode };
   const traceChain = (billboardId: string): Chain | undefined => {
     const sources = into(billboardId, 'particles');
     if (sources.length === 0) return undefined; // Empty expansion source: no layer.
@@ -328,8 +331,17 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     const enabledInitials: ExpandedNode[] = [];
     const forces: ExpandedNode[] = []; // Renderer-to-emitter order while tracing.
     let terminal: string | undefined;
+    let overLifeNode: ExpandedNode | undefined;
     for (let guard = 0; guard <= nodes.size; guard++) {
       const n = cur.node;
+      if (n.type === 'OverLife') {
+        if (cur.effectiveEnabled) overLifeNode ??= cur;
+        const up = into(n.id, 'particles');
+        if (up.length === 0) return undefined;
+        if (up.length > 1) return fail('MULTIPLE_DRIVERS', `OverLife "${n.id}" resolves to ${up.length} particle sources.`, n.id);
+        cur = sourceNode(up[0].source, n.id, 'particles');
+        continue;
+      }
       if (n.type === 'InitialProperties' || FORCE_TYPES.includes(n.type)) {
         if (cur.effectiveEnabled) { // Disabled modifier bypasses.
           terminal ??= n.id;
@@ -344,13 +356,22 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       if (n.type === 'Emitter') {
         if (!cur.effectiveEnabled) return undefined; // Disabled Emitter emits nothing.
         const initial = enabledInitials[0];
-        return { emitter: cur, initial, enabledInitials, forces: forces.reverse(), terminalId: terminal ?? n.id };
+        return { emitter: cur, initial, enabledInitials, forces: forces.reverse(), terminalId: terminal ?? n.id, ...(overLifeNode ? { overLife: overLifeNode } : {}) };
       }
       return fail('UNKNOWN_NODE', `Node "${n.id}" (${n.type}) is not supported in a particle chain by the point preview.`, n.id);
     }
     return fail('GRAPH_CYCLE', `Particle chain of "${owner}" does not terminate at an Emitter.`, owner);
   };
 
+  /** A renderer's over-life setting, or the chain's OverLife one when the renderer leaves it at its default (not stored, not connected). */
+  const lifeFrom = (b: ExpandedNode, chain: Chain | undefined, id: string, olId: string): ParameterValue =>
+    chain?.overLife && !Object.hasOwn(b.node.params, id) && into(b.node.id, id).length === 0 ? param(chain.overLife, olId) : param(b, id);
+  /** OverLife spin speed curve (only when not flat 1). */
+  const spinOf = (chain: Chain | undefined): { spinOverLife?: CurveValue } => {
+    if (!chain?.overLife) return {};
+    const c = param(chain.overLife, 'spinOverLife') as CurveValue;
+    return c.keys.every(k => k.y === 1) ? {} : { spinOverLife: structuredClone(c) };
+  };
   const transform: Transform = doc.rootTransform;
   const anchorPos = new Map(doc.anchors.map(a => [a.id, a.position]));
   /** 05 Anchor / OffsetAnchor chain → document-space position; undefined when it does not resolve (disabled Anchor, missing document anchor). */
@@ -761,7 +782,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
             else systems.push({ id: chain.terminalId, descriptor: v.value });
           }
         }
-        const sc = param(b, 'sizeOverLife') as CurveValue, serr = lifeCurveError(sc, SIZE_OVER_LIFE_BOUNDS);
+        const sc = lifeFrom(b, chain, 'sizeOverLife', 'sizeOverLife') as CurveValue, serr = lifeCurveError(sc, SIZE_OVER_LIFE_BOUNDS);
         if (serr !== undefined) report('INVALID_VALUE', `MeshRenderer "${mid}" sizeOverLife: ${serr}`, mid, 'sizeOverLife');
         const base = chain.initial ? param(chain.initial, 'color') as ColorValue : { srgb: '#FFFFFF', alpha: 1 };
         const ma = param(b, 'meshAsset') as string;
@@ -773,7 +794,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
           scaleY: num(b, 'scaleY'), pivot: param(b, 'pivot') as 'center' | 'base', tilt: num(b, 'tilt'), roughness: num(m, 'roughness'), metalness: num(m, 'metalness'), surface: { reflection: num(m, 'reflection'), detail: num(m, 'surfaceDetail'), detailScale: num(m, 'detailScale'), variation: num(m, 'colorVariation') },
           ...(num(m, 'rim') > 0 ? { rim: { strength: num(m, 'rim'), color: structuredClone(param(m, 'rimColor') as ColorValue), power: num(m, 'rimPower') } } : {}),
           lit: param(b, 'lit') === true, color: hueRotate(multiplyColors(base, param(m, 'tint') as ColorValue), num(m, 'hueShift')), opacity: num(m, 'opacity'), emission: num(m, 'emission'), blend: param(m, 'blend') as MeshLayer['blend'],
-          sizeOverLife: structuredClone(sc), colorOverLife: hueGradient(structuredClone(param(b, 'colorOverLife') as GradientValue), num(m, 'hueShift')), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
+          sizeOverLife: structuredClone(sc), colorOverLife: hueGradient(structuredClone(lifeFrom(b, chain, 'colorOverLife', 'colorOverLife') as GradientValue), num(m, 'hueShift')), ...spinOf(chain), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
         });
         continue;
       }
@@ -944,14 +965,12 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       if (alignment === 'worldAxis' && !(wl > 1e-9)) report('INVALID_VALUE', 'Billboard worldAxis must be nonzero.', bid, 'worldAxis');
       const worldAxis: Vec3 = wl > 1e-9 ? rotate(transform.rotation, [wa[0] / wl, wa[1] / wl, wa[2] / wl]) : [0, 1, 0];
       if (param(b, 'softIntersection') !== false) report('INVALID_VALUE', 'Soft intersection is not supported by the point preview; turn it off.', bid, 'softIntersection');
-      const lifeCurve = (id: string, bounds: { min: number; max: number }): CurveValue => {
-        const curve = param(b, id) as CurveValue;
+      const lifeCurve = (id: string, bounds: { min: number; max: number }, ch?: Chain): CurveValue => {
+        const curve = lifeFrom(b, ch, id, id) as CurveValue;
         const err = lifeCurveError(curve, bounds);
         if (err !== undefined) report('INVALID_VALUE', `BillboardRenderer "${bid}" ${id}: ${err}`, bid, id);
         return structuredClone(curve);
       };
-      const sizeOverLife = lifeCurve('sizeOverLife', SIZE_OVER_LIFE_BOUNDS);
-      const opacityOverLife = lifeCurve('opacityOverLife', OPACITY_OVER_LIFE_BOUNDS);
 
       const mats = into(bid, 'material');
       const mat = mats.length === 1 ? sourceNode(mats[0].source, bid, 'material') : undefined;
@@ -980,6 +999,8 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
       }
       const white: ColorValue = { srgb: '#FFFFFF', alpha: 1 };
       const base = chain.initial ? param(chain.initial, 'color') as ColorValue : white;
+      const sizeOverLife = lifeCurve('sizeOverLife', SIZE_OVER_LIFE_BOUNDS, chain);
+      const opacityOverLife = lifeCurve('opacityOverLife', OPACITY_OVER_LIFE_BOUNDS, chain);
       layers.push({
         nodeId: bid,
         systemId: chain.terminalId,
@@ -995,7 +1016,8 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
         visualOrder,
         sizeOverLife,
         opacityOverLife,
-        colorOverLife: structuredClone(param(b, 'colorOverLife') as GradientValue),
+        colorOverLife: structuredClone(lifeFrom(b, chain, 'colorOverLife', 'colorOverLife') as GradientValue),
+        ...spinOf(chain),
         alignment: alignment === 'velocity' ? 'velocity' : alignment === 'worldAxis' ? 'worldAxis' : 'camera',
         worldAxis,
         stretchRatio: num(b, 'stretchRatio'),
