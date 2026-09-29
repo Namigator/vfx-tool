@@ -130,11 +130,12 @@ ${formatMigrationReport(report)}`);
   });
 
   // ---------- documents ----------
-  tool('vfx_new_document', `Create an in-memory document from a template (${TEMPLATES.join(', ')}). "blank" has Source/Target anchors and an EffectOutput only.`,
-    { template: z.enum(TEMPLATES), id: z.string().regex(ID).optional(), name: z.string().optional() }, ({ template, id, name }) => {
-      const fresh = template === 'blank' ? createBlankDocument('doc', 'Blank') : template === 'f01' ? createF01Document() : template === 'forces' ? createForcesDemoDocument()
+  tool('vfx_new_document', `Create an in-memory document from a template (${TEMPLATES.join(', ')}). "blank" has Source/Target anchors and an EffectOutput only. component="<id>" opens a preset: blank + that component as one Group (the editor Library's Presets → Open).`,
+    { template: z.enum(TEMPLATES), id: z.string().regex(ID).optional(), name: z.string().optional(), component: z.string().optional() }, ({ template, id, name, component }) => {
+      let fresh = template === 'blank' ? createBlankDocument('doc', 'Blank') : template === 'f01' ? createF01Document() : template === 'forces' ? createForcesDemoDocument()
         : template === 'lightning' ? createL01Document() : createL01AudioDocument();
       fresh.id = id ?? `doc-${template}-${docs.size + 1}`;
+      if (component) { try { fresh = { ...insertComponent(fresh, component, undefined, { group: true }).doc, id: fresh.id }; } catch (e) { return bad(e instanceof Error ? e.message : String(e)); } }
       if (name) fresh.name = name; else if (template === 'blank') fresh.name = fresh.id;
       const v = validateDocument(fresh, { registry });
       if (!v.ok) return bad(fmtErrors(v.errors));

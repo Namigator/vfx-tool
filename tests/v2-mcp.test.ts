@@ -269,3 +269,11 @@ test('MCP parity (10): import a normal-role texture onto a Material and Add to e
   assert.match(r.text, /Rocks with bumps\.png/);
   assert.match((await call('vfx_add_asset_component', { docId: 'roles', assetId: 'nope' })).text, /No asset/);
 });
+
+test('MCP parity (12 Library): open a preset as a new document', async () => {
+  const { call } = await connect();
+  const r = await call('vfx_new_document', { template: 'blank', id: 'p1', component: 'fireball' });
+  assert.equal(r.error, false, r.text);
+  assert.match((await call('vfx_compile', { docId: 'p1' })).text, /particle|layer|path/i);
+  assert.equal((await call('vfx_new_document', { template: 'blank', id: 'p2', component: 'nope' })).error, true);
+});
