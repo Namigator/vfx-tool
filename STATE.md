@@ -131,6 +131,9 @@ Sprite library: `node tools/bake-sprites.mjs` → assets/sprites/ (flame-tongue-
 - BEFORE RELEASE (user 2026-09-29): new editor becomes the default page (no ?workspace=v2); remove the old editor
   and its "Back to v1 editor" button; keep the converter renamed "Import old effect". Stop calling the release "v1".
 - BEFORE RELEASE (optional, offered): sub-group component internals (e.g. Energy bolt: Charge/Bolt/Impact).
+- LATER (user asked about keyframes 2026-09-29): (1) timeline strip with a bar per component (drag = Start at,
+  stretch = travel/duration) — recommended first; (2) animated knobs (keyframe a knob over effect time).
+- User review round 2 (2026-09-29): all good except water splash 'spiderwebs' -> fixed 4f36aa3.
 - LATER: performance pass ("slight delay in some things", user editor test 2026-09-29).
 - **Realistic water material (Three.js):** move the water look into the tool's renderer — refraction of the scene behind, fresnel/environment reflection, animated normal-map surface, lit textured floor + environment map for something to reflect/refract, caustics. Canvas2D reference `docs/v2-plan/references/standalone-water/water.html` (TIDE) is at its ceiling; user verdict 2026-09-26: "looks computer generated". Matches 03-WATER.md SurfaceTranslucent.
 - **Sim-rendered sprites via Blender:** render splash crown, droplets, foam, spray from real fluid sims into flipbooks for the sprite library (blender MCP exists; needs Blender running).
