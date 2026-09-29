@@ -33,7 +33,7 @@ export function choosePreviewMode(doc: unknown): PreviewModeChoice {
     if (c.target.nodeId !== x.rootOutputNodeId || c.target.port !== 'visual' || c.source.kind !== 'node') continue;
     const n = nodes.get(c.source.nodeId);
     if (!n) continue;
-    if (n.node.type === 'RibbonRenderer' && n.effectiveEnabled && !ribbons.includes(n.node.id)) ribbons.push(n.node.id);
+    if ((n.node.type === 'RibbonRenderer' || n.node.type === 'RingRenderer') && n.effectiveEnabled && !ribbons.includes(n.node.id)) ribbons.push(n.node.id);
     if ((n.node.type === 'BillboardRenderer' || n.node.type === 'ParticleTrail' || n.node.type === 'SpriteRenderer' || n.node.type === 'PropMesh' || n.node.type === 'PointLight' || n.node.type === 'MeshRenderer' || n.node.type === 'MotionTrail') && n.effectiveEnabled && !billboards.includes(n.node.id)) billboards.push(n.node.id);
   }
   if (x.connections.some(c => c.target.nodeId === x.rootOutputNodeId && c.target.port === 'presentation' && c.source.kind === 'node')) billboards.push('<presentation>');

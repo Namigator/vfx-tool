@@ -239,3 +239,23 @@ test('emitted world-space points are budgeted per ribbon, so fanout of a shared 
   // Inactive layers emit nothing and so do not count.
   assert.equal(plan(build(ribbons), 120).layers.length, ribbons);
 });
+
+test('05 RingRenderer: a closed ring at the anchor, radius from its curve at the window progress, rotated by orientation', () => {
+  const d = createF01Document();
+  const g = d.graphs[0];
+  d.anchors.find(a => a.id === 'target')!.position = [2, 0.5, 0];
+  const n = (id: string, type: string, params: Record<string, unknown>) => ({ id, type, definitionVersion: 1, label: id, enabled: true, randomStreamId: `rs-${id}`, params: params as never });
+  g.nodes.push(n('node-rw', 'Schedule', { startTicks: 0, durationTicks: 100, mode: 'window' }), n('node-rm', 'Material', {}),
+    n('node-ring', 'RingRenderer', { radius: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 0 }, { x: 1, y: 2 }] }, segments: 16 }));
+  const e = (id: string, s: string, sp: string, t: string, tp: string, order = 0) => ({ id, source: { nodeId: s, port: sp }, target: { nodeId: t, port: tp }, order });
+  g.edges.push(e('e-ra', 'node-target', 'out', 'node-ring', 'anchor'), e('e-rm', 'node-rm', 'material', 'node-ring', 'material'), e('e-rw', 'node-rw', 'window', 'node-ring', 'window'),
+    e('e-rv', 'node-ring', 'visual', 'node-output', 'visual', 5));
+  const r = compilePathPreview(d, 50);
+  if (!r.ok) assert.fail(JSON.stringify(r.errors));
+  const ring = r.value.layers.find(l => l.nodeId === 'node-ring')!;
+  const pts = ring.paths[0].points;
+  assert.equal(pts.length, 17, 'closed: 16 segments + repeated first point');
+  for (const p of pts) assert.ok(Math.abs(Math.hypot(p[0] - 2, p[2]) - 1) < 1e-9 && Math.abs(p[1] - 0.5) < 1e-9, 'radius 1 m at half the window, flat at the anchor height');
+  const later = compilePathPreview(d, 100);
+  assert.ok(later.ok && !later.value.layers.find(l => l.nodeId === 'node-ring')!.active, 'gone after its window');
+});

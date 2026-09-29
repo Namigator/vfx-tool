@@ -569,10 +569,11 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
       const r = sourceNode(c.source, outputId, 'visual');
       if (r.node.type === 'BillboardRenderer' || r.node.type === 'ParticleTrail' || r.node.type === 'SpriteRenderer' || r.node.type === 'PropMesh' || r.node.type === 'PointLight' || r.node.type === 'MeshRenderer' || r.node.type === 'MotionTrail') continue; // Particle layers: compileParticlePreview.
       if (done.has(r.node.id) || !r.effectiveEnabled) continue; // Disabled sink (of any type) contributes nothing.
-      if (r.node.type !== 'RibbonRenderer') fail('UNKNOWN_NODE', `Visual source "${r.node.id}" (${r.node.type}) is not supported by the path preview.`, r.node.id);
+      const isRing = r.node.type === 'RingRenderer';
+      if (r.node.type !== 'RibbonRenderer' && !isRing) fail('UNKNOWN_NODE', `Visual source "${r.node.id}" (${r.node.type}) is not supported by the path preview.`, r.node.id);
       done.add(r.node.id);
       const rid = r.node.id;
-      noDrivenParams(r, RIBBON_PORTS);
+      noDrivenParams(r, isRing ? ['anchor', 'material', 'window'] : RIBBON_PORTS);
 
       const mats = into(rid, 'material');
       const mat = mats.length === 1 ? sourceNode(mats[0].source, rid, 'material') : undefined;
@@ -603,7 +604,21 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
         }
       }
 
-      const local = pathsInto(rid, 'paths');
+      // 05 RingRenderer: one closed ring at the anchor, radius from its curve at the window progress, rotated by orientation.
+      const ringLocal = (): PathData[] => {
+        const c = anchorOf(r, 'anchor'), w = window ?? { startTick: 0, endTick: duration };
+        const u = Math.min(1, Math.max(0, (effectTick - w.startTick) / Math.max(1, w.endTick - w.startTick)));
+        const radius = Math.max(0, evaluateCurve(param(r, 'radius') as CurveValue, u)), n = num(r, 'segments');
+        const q = param(r, 'orientation') as [number, number, number, number], ql = Math.hypot(q[0], q[1], q[2], q[3]) || 1;
+        const qn: Quaternion = [q[0] / ql, q[1] / ql, q[2] / ql, q[3] / ql];
+        const points: Vec3[] = [];
+        for (let i = 0; i <= n; i++) {
+          const a = (2 * Math.PI * (i % n)) / n, p = rotate(qn, [Math.cos(a) * radius, 0, Math.sin(a) * radius]);
+          points.push([c[0] + p[0], c[1] + p[1], c[2] + p[2]]);
+        }
+        return radius > 0 ? [{ id: `${rid}:ring`, points, widthScale: 1, opacityScale: 1 }] : [];
+      };
+      const local = isRing ? ringLocal() : pathsInto(rid, 'paths');
       const active = window !== null && effectTick < duration && effectTick >= window.startTick && effectTick < window.endTick;
       const scale = transform.scale;
       if (active) {
@@ -617,11 +632,11 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
         active,
         paths: active ? local.map(p => toWorld(p, transform)) : [],
         width: num(r, 'width') * scale,
-        widthOverPath: structuredClone(param(r, 'widthOverPath') as CurveValue),
-        endFade: num(r, 'endFade'),
-        uvMode: param(r, 'uvMode') as PathPreviewLayer['uvMode'],
-        uvTileLength: num(r, 'uvTileLength') * scale,
-        orientation: param(r, 'orientation') as PathPreviewLayer['orientation'],
+        widthOverPath: isRing ? { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] } : structuredClone(param(r, 'widthOverPath') as CurveValue),
+        endFade: isRing ? 0 : num(r, 'endFade'),
+        uvMode: isRing ? 'stretch' : param(r, 'uvMode') as PathPreviewLayer['uvMode'],
+        uvTileLength: isRing ? scale : num(r, 'uvTileLength') * scale,
+        orientation: isRing ? 'camera' : param(r, 'orientation') as PathPreviewLayer['orientation'],
         renderOrderOffset: num(r, 'renderOrderOffset'),
         visualOrder,
         color: { ...(param(mat, 'tint') as ColorValue) },

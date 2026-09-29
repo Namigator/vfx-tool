@@ -251,6 +251,26 @@ function overLife(): NodeSpec {
   });
 }
 
+/** 05 RingRenderer: a ring at an anchor whose radius follows a curve over its window (shockwaves, halos, ripples). */
+function ringRenderer(): NodeSpec {
+  return node('RingRenderer', {
+    inputs: [
+      port({ id: 'anchor', label: 'Anchor', type: 'anchor', required: true }),
+      port({ id: 'material', label: 'Material', type: 'material', required: true }),
+      port({ id: 'window', label: 'Window', type: 'timeWindow' }),
+    ],
+    outputs: [port({ id: 'visual', label: 'Visual', type: 'visual' })],
+    parameters: [
+      param({ id: 'radius', label: 'Radius over window', type: 'curve', unit: 'meter', curveDomain: 'normalized', default: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 0 }, { x: 1, y: 1 }] }, min: 0, max: 50, editPolicy: 'live', description: 'Ring radius in metres across the window (0 = window start, 1 = end).' }),
+      param({ id: 'width', label: 'Width', type: 'number', unit: 'meter', default: 0.03, min: 0.001, max: 5, editPolicy: 'live' }),
+      param({ id: 'orientation', label: 'Orientation', type: 'quaternion', unit: 'none', default: [0, 0, 0, 1], editPolicy: 'live', description: 'Rotation of the ring; identity lies flat on the ground (XZ plane).' }),
+      param({ id: 'segments', label: 'Segments', type: 'integer', unit: 'none', default: 64, min: 8, max: 128, editPolicy: 'resample' }),
+      param({ id: 'renderOrderOffset', label: 'Render order offset', type: 'integer', unit: 'none', default: 0, min: -100, max: 100, editPolicy: 'live' }),
+    ],
+    disabledBehavior: 'empty',
+  });
+}
+
 /** 05 Curve: a reusable normalized curve (linear or hold, 2–16 keys) that can drive any curve parameter. */
 function curveNode(): NodeSpec {
   return node('Curve', {
@@ -1015,7 +1035,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 /** Fresh, independent registry each call. */
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
-    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), constantNode(), overLife(), curveNode(), gradientNode(), scalarMath(), publicParameter(), offsetAnchor(), eventDelay(), mergeEvents(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), propMesh(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
+    anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), constantNode(), overLife(), ringRenderer(), curveNode(), gradientNode(), scalarMath(), publicParameter(), offsetAnchor(), eventDelay(), mergeEvents(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), propMesh(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
     linePath(), bezierPath(), helixPathNode(), pathTransformNode(), mergePathsNode(), particlePathsNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(), oscillator(), timeNode(),
     audioSource(), audioEnvelope(), audioFilter(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),

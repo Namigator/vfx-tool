@@ -724,7 +724,7 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
   for (const [visualOrder, c] of visual.entries()) {
     try {
       const b = sourceNode(c.source, outputId, 'visual');
-      if (options.ribbonsHandled === true && b.node.type === 'RibbonRenderer') continue; // Ribbon layers: compilePathPreview.
+      if (options.ribbonsHandled === true && (b.node.type === 'RibbonRenderer' || b.node.type === 'RingRenderer')) continue; // Ribbon/ring layers: compilePathPreview.
       if (done.has(b.node.id) || !b.effectiveEnabled) continue; // Disabled sink contributes nothing.
       if (b.node.type === 'MotionTrail') {
         // A ribbon behind a (moving) anchor: one particle attached to the anchor/follower track over the window.
