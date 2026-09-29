@@ -678,7 +678,7 @@ test('PropMesh pivot start: the mesh begins at the anchor and extends along its 
 });
 
 test('05 Curve / Gradient nodes drive curve and gradient parameters; disabled = the literal; the receiver still checks its range', () => {
-  const shape = { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 0.2 }, { x: 0.5, y: 1 }, { x: 1, y: 0.4 }] };
+  const shape = { domain: 'normalized' as const, interpolation: 'linear' as const, keys: [{ x: 0, y: 0.2 }, { x: 0.5, y: 1 }, { x: 1, y: 0.4 }] };
   const ramp = { stops: [{ position: 0, color: { srgb: '#FF0000', alpha: 1 } }, { position: 1, color: { srgb: '#0000FF', alpha: 1 } }] };
   const withNodes = (enabled = true, y = 1) => f01(d => {
     root(d).nodes.push(node('node-curve', 'Curve', { curve: { ...shape, keys: shape.keys.map(k => ({ ...k, y: k.y * y })) } }), node('node-grad', 'Gradient', { gradient: ramp }));
