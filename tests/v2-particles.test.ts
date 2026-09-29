@@ -356,7 +356,7 @@ test('ground collision: kill removes on contact, bounce reflects with restitutio
   assert.equal(at(kill, 40).totalDeaths, 1);
   const bounce = dropper({ kind: 'ground', mode: 'bounce', restitution: 0.5, friction: 0.2, maxBounces: 2 });
   let minY = Infinity, sawUp = false;
-  for (let t = 1; t < 199; t++) { const p = at(bounce, t).particles[0]; minY = Math.min(minY, p.position[1]); if (p.position[1] <= 1e-9 && p.velocity[1] > 0.5) sawUp = true; }
+  for (let t = 1; t < 199; t++) { const p = at(bounce, t).particles[0]; minY = Math.min(minY, p.position[1]); if (p.position[1] < 0.1 && p.velocity[1] > 0.5) sawUp = true; }
   assert.ok(minY >= 0, 'never below the plane');
   assert.ok(sawUp, 'bounced upward');
   const late = at(bounce, 198).particles[0];
@@ -456,4 +456,17 @@ test('path emission (24): births sample normalized arc length uniformly across t
   assert.ok(born.every(p => Math.abs(p.velocity[0]) < 1e-9 && Math.abs(p.velocity[1] - 2) < 1e-9), 'coneAngle 0 = straight along the axis');
   const bad = validateParticleDescriptor({ ...d, emission: { ...d.emission!, paths: [[[0, 0, 0]]] } });
   assert.ok(!bad.ok);
+});
+
+test('07 bounce solves the contact inside the step: reflected there, then the rest of the step is integrated once', () => {
+  const d = dropper({ kind: 'ground', mode: 'bounce', restitution: 0.5, friction: 0, maxBounces: 2 });
+  let t = 1;
+  while (at(d, t).particles[0].bounces === undefined || at(d, t).particles[0].bounces === 0) t++;
+  const before = at(d, t - 1).particles[0], hit = at(d, t).particles[0];
+  const vy = before.velocity[1] - 9.81 / 60, y1 = before.position[1] + vy / 60, f = before.position[1] / (before.position[1] - y1);
+  assert.ok(f > 0 && f < 1, `contact inside the step (f=${f})`);
+  const rest = (1 - f) / 60;
+  assert.ok(Math.abs(hit.velocity[1] - -vy * 0.5) < 1e-9, 'reflected with restitution');
+  assert.ok(Math.abs(hit.position[1] - hit.velocity[1] * rest) < 1e-9, `rises by the remaining fraction (y=${hit.position[1]})`);
+  assert.ok(Math.abs(hit.position[0] - (before.position[0] + 2 / 60)) < 1e-9, 'horizontal motion is continuous through the contact');
 });

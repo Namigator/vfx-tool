@@ -1,7 +1,8 @@
 // Fixed-step point particle core (plan07 update order, plan22 F01-F04, plan24 random identity).
-// Minimal runtime: point/cone/sphere/disc/box emission (24-ALGORITHMS "Particle shapes"), one emitter,
-// gravity/drag/noise/ground operators. Path emission, other forces, trails, collisions, local space and child-event graphs are NOT implemented and are
-// rejected by validation rather than ignored. Pure data: no DOM, wall clock or global RNG.
+// Runtime: point/cone/sphere/disc/box/path emission (24-ALGORITHMS "Particle shapes"), one emitter per system, gravity/drag/
+// noise/attract/vortex forces, ground collision (kill/slide/bounce) and birth/death/collision events (child emission is compiled
+// from recorded parent events). Local space is NOT implemented and is rejected by the compiler rather than ignored.
+// Pure data: no DOM, wall clock or global RNG.
 import { MAX_DURATION_TICKS, TICKS_PER_SECOND, ID_PATTERN } from '../model/types.ts';
 import type { Diagnostic, ValidationResult, Vec3 } from '../model/types.ts';
 import { emitterParentRandomKey, randomTupleHash, sampleUnit } from './random.ts';
@@ -492,8 +493,9 @@ export class ParticleSimulation {
     if (sim.#failure) return { ok: false, errors: sim.#failure.map((d) => ({ ...d })) };
     return { ok: true, value: sim, warnings: [] };
   }
-
   get tick(): number { return this.#tick; }
+  /** Live particle count (cheap; e.g. checkpoint cache size estimates). */
+  get liveCount(): number { return this.#particles.length; }
 
   /** Exact deep copy of the current state (12 seek checkpoints): advancing the copy matches advancing the original. */
   clone(): ParticleSimulation {
@@ -608,13 +610,17 @@ export class ParticleSimulation {
       if (ground && x[1] <= 0 && (v[1] <= 0 || x[1] < 0)) {
         if (ground.mode === 'kill') { x[1] = 0; killed.add(p); this.#event('collision', n, p, 0); this.#event('death', n, p, 0); }
         else {
-          const b = p.bounces ?? 0;
+          const b = p.bounces ?? 0, y1 = x[1];
           x[1] = 0;
           if (ground.mode === 'bounce' && b < ground.maxBounces && v[1] < -1e-6) {
+            // 07: solve the contact fraction f within the step, reflect there, then integrate the remaining (1 - f) once.
+            const y0 = y1 - v[1] * dt, f = y0 > 0 ? Math.min(1, y0 / (y0 - y1)) : 1, rest = (1 - f) * dt;
+            x[0] -= v[0] * rest; x[2] -= v[2] * rest; x[1] = 0;
             this.#event('collision', n, p, b);
             p.bounces = b + 1;
             v[1] = -v[1] * ground.restitution;
             v[0] *= 1 - ground.friction; v[2] *= 1 - ground.friction;
+            x[0] += v[0] * rest; x[1] += v[1] * rest; x[2] += v[2] * rest;
           } else {
             if (!p.grounded) { this.#event('collision', n, p, b); p.grounded = true; }
             p.bounces = b;

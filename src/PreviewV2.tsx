@@ -932,6 +932,7 @@ export default function PreviewV2() {
             {/* Not a live region: per-frame tick changes must not be announced. Errors use role="alert". */}
             <span className="pv2-readout" title={frame.sampleParticleId ? `Sample particle ${frame.sampleParticleId}` : undefined}>
               {frame.suspended && <>Paused (tab hidden) · </>}
+              {frame.catchingUp && <span title="The preview is running slower than real time on this device; every simulation step is still computed">Catching up · </span>}
               tick {frame.tick}/{frame.durationTicks} · {frame.live} {frame.mode === 'paths' ? 'paths' : frame.mode === 'mixed' ? 'particles + paths' : 'live'}
             </span>
           </div>

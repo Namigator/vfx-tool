@@ -62,6 +62,8 @@ export type PreviewFrameInfo = {
   mode: 'points' | 'paths' | 'mixed' | 'none';
   /** First live particle of the first system, namespaced `${systemId}/${particleId}`; '' if none. */
   sampleParticleId: string;
+  /** 07 "Catching up": playback frames recently took longer than the simulation can follow in real time (shown for 1 s). */
+  catchingUp?: boolean;
 };
 
 export type PreviewViewportCallbacks = {
@@ -82,6 +84,8 @@ export function namespacedParticleId(systemId: string, particleId: string): stri
 
 /** Seek checkpoint spacing (12): at most durationTicks / 30 + 1 clones per system. */
 const CHECKPOINT_TICKS = 30;
+/** 07: checkpoint cache ceiling, with a per-clone size estimate (particle record ≈ 200 B incl. arrays, plus fixed state). */
+const CHECKPOINT_CEILING_BYTES = 64 * 1024 * 1024, CHECKPOINT_BASE_BYTES = 4096, CHECKPOINT_PARTICLE_BYTES = 200;
 
 export class WebGLUnavailableError extends Error {}
 
@@ -1166,6 +1170,15 @@ export class PreviewViewport {
     list.push(sim.clone());
     list.sort((a, b) => a.tick - b.tick);
     this.#checkpoints.set(id, list);
+    // 07 cache ceiling (64 MiB, estimated from live particles): evict the oldest nonzero checkpoints first; tick 0 stays.
+    const bytes = () => [...this.#checkpoints.values()].flat().reduce((s, c) => s + CHECKPOINT_BASE_BYTES + c.liveCount * CHECKPOINT_PARTICLE_BYTES, 0);
+    while (bytes() > CHECKPOINT_CEILING_BYTES) {
+      let victim: { list: ParticleSimulation[]; i: number } | null = null;
+      for (const l of this.#checkpoints.values()) l.forEach((c, i) => { if (c.tick > 0 && (!victim || c.tick < victim.list[victim.i].tick)) victim = { list: l, i }; });
+      if (!victim) break;
+      const v: { list: ParticleSimulation[]; i: number } = victim;
+      v.list.splice(v.i, 1);
+    }
   }
 
   #replayTo(tick: number): void {
@@ -1393,7 +1406,7 @@ export class PreviewViewport {
     const ps = first ? this.#snapshots.get(first.id) : undefined;
     const mode = this.#pathCompile ? (this.#plan ? 'mixed' : 'paths') : this.#plan ? 'points' : 'none';
     cb({
-      tick, playing, suspended, live, mode,
+      tick, playing, suspended, live, mode, ...(playing && now < this.#behindUntil ? { catchingUp: true } : {}),
       durationTicks: clock ? clock.durationTicks : 0,
       sampleParticleId: first && ps && ps.length ? namespacedParticleId(first.id, ps[0].id) : '',
     });
@@ -1429,11 +1442,14 @@ export class PreviewViewport {
     return { cpuMs: t1 - t0, totalMs: performance.now() - t0 };
   }
 
+  #behindUntil = 0;
   #loop = (now: number): void => {
     if (this.#disposed) return;
     this.#raf = requestAnimationFrame(this.#loop);
     if (this.#contextLost) return; // Nothing can be drawn until the browser restores the GPU context.
-    const dt = this.#lastTime < 0 ? 0 : Math.min(MAX_FRAME_SECONDS, Math.max(0, (now - this.#lastTime) / 1000));
+    const raw = this.#lastTime < 0 ? 0 : Math.max(0, (now - this.#lastTime) / 1000), dt = Math.min(MAX_FRAME_SECONDS, raw);
+    // 07: a slow frame while playing (≥ 100 ms, i.e. under 10 fps) flags "Catching up"; no simulation tick is ever dropped.
+    if (raw >= 0.1 && this.#clock?.playing && document.visibilityState === 'visible') this.#behindUntil = now + 1000;
     this.#lastTime = now;
     const clock = this.#clock;
     if (clock && clock.playing && !this.#failed) {
