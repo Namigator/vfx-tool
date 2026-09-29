@@ -1,5 +1,5 @@
 // RobloxEffect -> .rbxmx (Roblox XML model). See types.ts for the IR; EffectPlayer.luau is the runtime.
-import type { RbxBeamLayer, RbxColorKey, RbxEmitter, RbxLight, RbxNumberKey, RbxTrail, RobloxEffect, Vec3 } from './types.ts';
+import type { RbxBeamLayer, RbxColorKey, RbxEmitter, RbxLight, RbxMeshLayer, RbxNumberKey, RbxTrail, RobloxEffect, Vec3 } from './types.ts';
 import { MAX_SEQUENCE_KEYS } from './types.ts';
 
 export const DEFAULT_TEXTURE = 'rbxasset://textures/particles/sparkles_main.dds';
@@ -14,6 +14,9 @@ export const ENUM = {
   FlipbookLayout: { None: 0, Grid2x2: 1, Grid4x4: 2, Grid8x8: 3 },
   FlipbookMode: { Loop: 0, OneShot: 1, PingPong: 2, Random: 3 },
   TextureMode: { Stretch: 0, Wrap: 1, Static: 2 },
+  /** Enum.PartType (Part.Shape); Wedge is its own class (WedgePart). */
+  PartType: { Ball: 0, Block: 1, Cylinder: 2 },
+  Material: { SmoothPlastic: 272, Neon: 288, Slate: 800, Metal: 1088, Ice: 1536 },
 } as const;
 
 export type WriteOptions = {
@@ -267,6 +270,28 @@ function trailItem(refs: Refs, t: RbxTrail, name: string): string {
   return partItem(refs, name, [0.2, 0.2, 0.2], t.position, [0, 1, 0], [att(r0, 'A0', half), att(r1, 'A1', -half), trail]);
 }
 
+/** One template Part per mesh layer (hidden; the player clones it per live piece). Wedges are WedgeParts. */
+function meshTemplateItem(refs: Refs, m: RbxMeshLayer, name: string): string {
+  const c = m.color.map(x => Math.round(clamp(x, 0, 1) * 255));
+  const props = [
+    P.str('Name', name),
+    P.bool('Anchored', true),
+    P.bool('CanCollide', false),
+    P.bool('CanTouch', false),
+    P.bool('CanQuery', false),
+    P.bool('CastShadow', m.castShadow),
+    P.bool('Massless', true),
+    P.token('Material', ENUM.Material[m.material]),
+    `<Color3uint8 name="Color3uint8">${(0xff000000 | (c[0] << 16) | (c[1] << 8) | c[2]) >>> 0}</Color3uint8>`,
+    P.float('Transparency', 1),
+    P.float('Reflectance', clamp(m.reflectance, 0, 1)),
+    P.vec3('Size', [1, 1, 1]),
+    coordinateFrame('CFrame', [0, 0, 0]),
+    ...(m.shape === 'Wedge' ? [] : [P.token('shape', ENUM.PartType[m.shape])]),
+  ];
+  return item(m.shape === 'Wedge' ? 'WedgePart' : 'Part', refs.next(), props);
+}
+
 // ---------- EffectData (Luau) ----------
 
 const luaStr = (s: string): string => {
@@ -311,7 +336,7 @@ function uniqueNamer(): (name: string) => string {
   };
 }
 
-function effectDataSource(effect: RobloxEffect, names: { e: string[]; b: string[]; l: string[]; t: string[] }): string {
+function effectDataSource(effect: RobloxEffect, names: { e: string[]; b: string[]; l: string[]; t: string[]; m: string[] }): string {
   const emitters = effect.emitters.map((e, i) => ({
     name: names.e[i],
     pos: e.position,
@@ -363,6 +388,23 @@ function effectDataSource(effect: RobloxEffect, names: { e: string[]; b: string[
     brightness: byTick(l.brightness.map(([t, v]) => [t, v] as [number, number])),
     path: l.path && l.path.length ? byTick(l.path.map(([t, p]) => [t, ...p] as [number, ...number[]])) : undefined,
   }));
+  // Mesh frames: one string per piece, `stride` numbers per frame: tick px py pz qx qy qz sx sy sz [r g b transparency];
+  // the quaternion's w (>= 0) is rebuilt by the player.
+  const d = (x: number, n: number): string => String(Number(fin(x).toFixed(n)));
+  const meshes = (effect.meshes ?? []).map((m, i) => ({
+    name: names.m[i],
+    shape: m.shape, material: m.material,
+    stride: m.colorVaries ? 14 : 10,
+    transparency: clamp(m.transparency, 0, 1),
+    pieces: m.pieces.map(p => [
+      Math.round(p.birthTick), Math.round(p.deathTick),
+      p.frames.map(f => [
+        d(f.tick, 0), d(f.pos[0], 2), d(f.pos[1], 2), d(f.pos[2], 2), d(f.rot[0], 3), d(f.rot[1], 3), d(f.rot[2], 3),
+        d(f.size[0], 2), d(f.size[1], 2), d(f.size[2], 2),
+        ...(m.colorVaries ? [d(f.color?.[0] ?? m.color[0], 3), d(f.color?.[1] ?? m.color[1], 3), d(f.color?.[2] ?? m.color[2], 3), d(f.transparency ?? m.transparency, 2)] : []),
+      ].join(' ')).join(' '),
+    ] as LuaValue),
+  }));
   const data: LuaValue = {
     name: effect.name,
     durationTicks: Math.max(1, Math.round(effect.durationTicks)),
@@ -372,6 +414,7 @@ function effectDataSource(effect: RobloxEffect, names: { e: string[]; b: string[
     emitters: emitters as unknown as LuaValue,
     beams: beams as unknown as LuaValue,
     lights: lights as unknown as LuaValue,
+    meshes: meshes as unknown as LuaValue,
     trails: (effect.trails ?? []).map((t, i) => ({
       name: names.t[i], pos: t.position, on: t.window[0], off: t.window[1],
       path: t.path.length ? byTick(t.path.map(([k, p]) => [k, ...p] as [number, ...number[]])) : undefined,
@@ -394,7 +437,8 @@ export function writeRbxmx(effect: RobloxEffect, opts: WriteOptions): string {
   const nameB = uniqueNamer();
   const nameL = uniqueNamer();
   const nameT = uniqueNamer();
-  const names = { e: effect.emitters.map(e => nameE(e.name)), b: effect.beams.map(b => nameB(b.name)), l: effect.lights.map(l => nameL(l.name)), t: (effect.trails ?? []).map(t => nameT(t.name)) };
+  const nameM = uniqueNamer();
+  const names = { e: effect.emitters.map(e => nameE(e.name)), b: effect.beams.map(b => nameB(b.name)), l: effect.lights.map(l => nameL(l.name)), t: (effect.trails ?? []).map(t => nameT(t.name)), m: (effect.meshes ?? []).map(m => nameM(m.name)) };
 
   const originRef = refs.next();
   const originPart = partItem(refs, 'Origin', [0.2, 0.2, 0.2], [0, 0, 0], [0, 1, 0], [], originRef);
@@ -410,6 +454,7 @@ export function writeRbxmx(effect: RobloxEffect, opts: WriteOptions): string {
     item('Folder', refs.next(), [P.str('Name', 'Beams')], beamFolders),
     item('Folder', refs.next(), [P.str('Name', 'Lights')], lightParts),
     item('Folder', refs.next(), [P.str('Name', 'Trails')], (effect.trails ?? []).map((t, i) => trailItem(refs, t, names.t[i]))),
+    item('Folder', refs.next(), [P.str('Name', 'Meshes')], (effect.meshes ?? []).map((m, i) => meshTemplateItem(refs, m, names.m[i]))),
     item('ModuleScript', refs.next(), [P.str('Name', 'EffectData'), P.source('Source', effectDataSource(effect, names))]),
     item('ModuleScript', refs.next(), [P.str('Name', 'EffectPlayer'), P.source('Source', opts.playerSource)]),
     item('Script', refs.next(), [P.str('Name', 'Demo'), P.bool('Disabled', true), P.source('Source', DEMO_SOURCE)]),

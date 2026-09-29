@@ -13,7 +13,7 @@ export function handBuiltEffect(): RobloxEffect {
     name: 'Test <Effect> & "co"',
     durationTicks: 120,
     studsPerMeter: 3.571,
-    anchors: { source: [0, 4, 0], target: [14, 4, 0] },
+    anchors: { source: [0, 0, 0], target: [3, 0, 0] },
     travel: { startTick: 10, travelTicks: 30 },
     trails: [{ name: 'streak', position: [0, 4, 0], path: [[10, [0, 4, 0]], [11, [1, 4, 0]], [12, [2, 4, 0]]], window: [10, 40], lifetime: 0.3, width: 1.2, color: [1, 0.5, 0.1], transparency: [{ t: 0, v: 0, e: 0 }, { t: 0.8, v: 0, e: 0 }, { t: 1, v: 1, e: 0 }], widthScale: [{ t: 0, v: 1, e: 0 }, { t: 1, v: 0.3, e: 0 }], lightEmission: 1, brightness: 2 }],
     emitters: [
@@ -59,6 +59,21 @@ export function handBuiltEffect(): RobloxEffect {
       frames: [], sameGeometryAs: 'bolt', widthRatio: 0.5,
     }],
     lights: [{ name: 'glow', color: [1, 0.6, 0.2], range: 20, position: [0, 3, 0], brightness: [[0, 2], [100, 0]] }],
+    meshes: [
+      { name: 'rocks', shape: 'Block', material: 'Slate', source: 'rock-a', color: [0.5, 0.4, 0.3], transparency: 0, reflectance: 0, castShadow: true, colorVaries: false, pieces: [
+        { birthTick: 10, deathTick: 14, frames: [
+          { tick: 10, pos: [1, 0.5, 2], rot: [0, 0, 0, 1], size: [2, 1.5, 1.8] },
+          { tick: 12, pos: [1, 1.5, 2], rot: [0, 0.7071, 0, 0.7071], size: [2, 1.5, 1.8] },
+          { tick: 14, pos: [1, 0.5, 2], rot: [0, 1, 0, 0], size: [0, 0, 0] },
+        ] },
+      ] },
+      { name: 'ice', shape: 'Wedge', material: 'Ice', source: 'crystal', color: [0.6, 0.8, 1], transparency: 0.2, reflectance: 0.25, castShadow: false, colorVaries: true, pieces: [
+        { birthTick: 0, deathTick: 2, frames: [
+          { tick: 0, pos: [0, 1, 0], rot: [0, 0, 0, 1], size: [1, 2, 1], color: [1, 1, 1], transparency: 0.1 },
+          { tick: 2, pos: [0, 2, 0], rot: [0, 0, 0, 1], size: [1, 2, 1], color: [0.2, 0.4, 0.6], transparency: 0.9 },
+        ] },
+      ] },
+    ],
     textures: ['flame.png'],
     report: [],
   };
@@ -164,6 +179,31 @@ test('EffectData carries bursts, paths and tracks; players are embedded', () => 
   assert.ok(player.includes('EffectPlayer.play'));
   assert.ok(xml.includes('function EffectPlayer.play'));
   assert.ok(xml.includes('name="Source"><![CDATA[' + player.slice(0, 40)));
+});
+
+test('mesh layers: template Parts (WedgePart for wedges) and compact frame strings in EffectData', () => {
+  const xml = writeRbxmx(handBuiltEffect(), { playerSource: PLAYER });
+  checkBalanced(xml);
+  assert.ok(xml.includes('>Meshes</string>'));
+  assert.ok(xml.includes('class="WedgePart"'));
+  assert.ok(xml.includes(`<token name="Material">${ENUM.Material.Slate}</token>`));
+  assert.ok(xml.includes(`<token name="Material">${ENUM.Material.Ice}</token>`));
+  assert.ok(xml.includes(`<token name="shape">${ENUM.PartType.Block}</token>`), 'the Block layer sets Part.shape');
+  assert.equal([...xml.matchAll(/<token name="shape">/g)].length, 1, 'the WedgePart has no shape');
+  assert.ok(xml.includes('<float name="Reflectance">0.25</float>'));
+  assert.match(xml, /<Color3uint8 name="Color3uint8">\d+<\/Color3uint8>/);
+  const data = /<string name="Name">EffectData<\/string><ProtectedString name="Source"><!\[CDATA\[([\s\S]*?)\]\]>/.exec(xml)![1];
+  // stride 10: tick pos(3) quat xyz(3) size(3)
+  assert.ok(data.includes('name="rocks",stride=10') || data.includes('stride=10'), data);
+  assert.ok(data.includes('{10,14,"10 1 0.5 2 0 0 0 2 1.5 1.8 12 1 1.5 2 0 0.707 0 2 1.5 1.8 14 1 0.5 2 0 1 0 0 0 0"}'), data);
+  // stride 14 adds colour and transparency
+  assert.ok(data.includes('stride=14'));
+  assert.ok(data.includes('"0 0 1 0 0 0 0 1 2 1 1 1 1 0.1 2 0 2 0 0 0 0 1 2 1 0.2 0.4 0.6 0.9"'), data);
+  assert.ok(!/\d\.\d{4}/.test(data));
+  // a layer-free effect still writes an (empty) Meshes folder
+  const bare = handBuiltEffect();
+  bare.meshes = [];
+  assert.ok(writeRbxmx(bare, { playerSource: PLAYER }).includes('>Meshes</string>'));
 });
 
 test('duplicate names are made unique and the source escapes CDATA terminators', () => {

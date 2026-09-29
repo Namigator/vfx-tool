@@ -300,6 +300,28 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 		end
 	end
 
+	-- Mesh particles (rocks, crystals...): a pool of cloned template Parts per layer, moved along baked frames.
+	local meshesFolder = model:FindFirstChild("Meshes")
+	local meshRig = Instance.new("Folder")
+	meshRig.Name = "_MeshRig"
+	meshRig.Parent = model
+	local meshLayers = {}
+	for _, d in ipairs(data.meshes or {}) do
+		local template = meshesFolder and meshesFolder:FindFirstChild(d.name)
+		if template and template:IsA("BasePart") then
+			table.insert(meshLayers, {
+				d = d,
+				template = template,
+				stride = d.stride,
+				varies = d.stride > 10,
+				baseTransparency = d.transparency or 0,
+				free = {},
+				active = {},
+				nextI = 1,
+			})
+		end
+	end
+
 	local elapsed = 0
 	local phase = "run" -- run | tail | done
 	local stopped = false
@@ -325,9 +347,31 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 		return p
 	end
 
+	local function releaseMesh(layer, piece)
+		local part = piece.part
+		piece.part = nil
+		if part then
+			part.Parent = nil
+			table.insert(layer.free, part)
+		end
+	end
+
+	local function releaseAllMeshes()
+		for _, layer in ipairs(meshLayers) do
+			for _, piece in ipairs(layer.active) do
+				releaseMesh(layer, piece)
+			end
+			table.clear(layer.active)
+		end
+	end
+
 	local function resetState()
 		elapsed = 0
 		phase = "run"
+		releaseAllMeshes()
+		for _, layer in ipairs(meshLayers) do
+			layer.nextI = 1
+		end
 		for _, s in ipairs(emitters) do
 			local em = s.em
 			em.Rate = 0
@@ -677,7 +721,112 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 		end
 	end
 
+	-- piece = { birth, death, "frames string" }; frame layout: tick px py pz qx qy qz sx sy sz [r g b transparency]
+	-- (the quaternion's w is rebuilt, it is always >= 0).
+	local function decodeFrames(piece)
+		local nums = piece.nums
+		if not nums then
+			nums = {}
+			for token in string.gmatch(piece[3], "%S+") do
+				nums[#nums + 1] = tonumber(token)
+			end
+			piece.nums = nums
+		end
+		return nums
+	end
+
+	local function frameRotation(nums, o)
+		local x, y, z = nums[o + 5], nums[o + 6], nums[o + 7]
+		return CFrame.new(0, 0, 0, x, y, z, math.sqrt(math.max(0, 1 - x * x - y * y - z * z)))
+	end
+
+	local function placeMesh(layer, piece, a)
+		local part = piece.part
+		local nums = decodeFrames(piece)
+		local stride = layer.stride
+		local n = #nums // stride
+		-- last frame with tick <= a
+		local lo, hi = 1, n
+		if nums[1] > a then
+			hi = 1
+		end
+		while lo < hi do
+			local mid = (lo + hi + 1) // 2
+			if nums[(mid - 1) * stride + 1] <= a then
+				lo = mid
+			else
+				hi = mid - 1
+			end
+		end
+		local o = (lo - 1) * stride
+		local f, o2 = 0, o
+		if lo < n and a > nums[o + 1] then
+			o2 = o + stride
+			f = math.min(1, (a - nums[o + 1]) / (nums[o2 + 1] - nums[o + 1]))
+		end
+		local pos = Vector3.new(nums[o + 2], nums[o + 3], nums[o + 4])
+		local size = Vector3.new(nums[o + 8], nums[o + 9], nums[o + 10])
+		local rot = frameRotation(nums, o)
+		if f > 0 then
+			pos = pos:Lerp(Vector3.new(nums[o2 + 2], nums[o2 + 3], nums[o2 + 4]), f)
+			size = size:Lerp(Vector3.new(nums[o2 + 8], nums[o2 + 9], nums[o2 + 10]), f)
+			rot = rot:Lerp(frameRotation(nums, o2), f)
+		end
+		size = size * k
+		part.CFrame = CFrame.new(toWorld(pos)) * worldRot * rot
+		part.Size = Vector3.new(math.max(size.X, 0.05), math.max(size.Y, 0.05), math.max(size.Z, 0.05))
+		local tiny = math.max(size.X, size.Y, size.Z) < 0.06
+		if layer.varies then
+			local r, g, b, tr = nums[o + 11], nums[o + 12], nums[o + 13], nums[o + 14]
+			if f > 0 then
+				r += (nums[o2 + 11] - r) * f
+				g += (nums[o2 + 12] - g) * f
+				b += (nums[o2 + 13] - b) * f
+				tr += (nums[o2 + 14] - tr) * f
+			end
+			part.Color = Color3.new(r, g, b)
+			part.Transparency = if tiny then 1 else tr
+		else
+			part.Transparency = if tiny then 1 else layer.baseTransparency
+		end
+	end
+
+	local function updateMeshes(a)
+		for _, layer in ipairs(meshLayers) do
+			local pieces = layer.d.pieces
+			-- births due (a piece whose whole life already passed, e.g. after hit(), is skipped)
+			while layer.nextI <= #pieces and pieces[layer.nextI][1] <= a do
+				local piece = pieces[layer.nextI]
+				layer.nextI += 1
+				if piece[2] >= a then
+					local part = table.remove(layer.free)
+					if not part then
+						part = layer.template:Clone()
+						part.Name = layer.d.name
+					end
+					piece.part = part
+					part.Parent = meshRig
+					table.insert(layer.active, piece)
+				end
+			end
+			local active = layer.active
+			local i = 1
+			while i <= #active do
+				local piece = active[i]
+				if piece[2] < a then
+					releaseMesh(layer, piece)
+					active[i] = active[#active]
+					active[#active] = nil
+				else
+					placeMesh(layer, piece, a)
+					i += 1
+				end
+			end
+		end
+	end
+
 	local function finishRun()
+		releaseAllMeshes()
 		for _, s in ipairs(emitters) do
 			s.em.Rate = 0
 		end
@@ -702,6 +851,8 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 		for _, l in ipairs(lights) do
 			l.light.Brightness = 0
 		end
+		releaseAllMeshes()
+		meshRig:Destroy()
 		rig:Destroy()
 	end
 
@@ -727,6 +878,7 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 			for _, t in ipairs(trails) do
 				stepTrail(t, tick, a)
 			end
+			updateMeshes(a)
 			if tick >= duration then
 				finishRun()
 			end

@@ -77,8 +77,10 @@
 - 2026-09-30 player setTarget/hit (ee49d4e). SpellForge vfx-studio-test 6c789f4: fire/lightning from cast time,
   hit(realPos) on the real projectile end (disposeBody), setTarget per frame for homing/arc/boomerang/formula;
   35/35 headless. SpellForge-side gaps left: poison only via impactFx (live projectiles never call it), orbit/static
-  trajectories keep old orb, scale unused, stand-in textures, no real playtest. Mesh particle export in progress
-  (Sonnet implementer).
+  trajectories keep old orb, scale unused, stand-in textures, no real playtest.
+- Mesh particles export (Sonnet implementer, meshBake.ts): rocks -> Slate Blocks, crystals/shards -> Wedges, orbs ->
+  Balls, moved along baked (thinned, interpolated) sim paths; [RAN] Studio: earth-upheaval 66 pieces (EffectData 100 KB),
+  ice-eruption 66 pieces (69 KB). Not seen visually.
 - TOOL BROKEN 2026-09-29: ~/.claude/tools/shot.ps1 url returns "chrome produced no file" even for docs that captured
   earlier (doctor clean, page reports READY via cdp-eval). Use the in-app browser pane or cdp-eval meanwhile.
 - USER REPORT 2026-09-29 (open): viewed from behind/in front of the fire (along the jet), the sprites move

@@ -145,6 +145,42 @@ export type RbxTrail = {
   brightness: number;
 };
 
+/** One baked keyframe of a mesh piece; `tick` may be fractional only for the death frame's neighbours (integers otherwise). */
+export type RbxMeshFrame = {
+  tick: number;
+  /** Part centre, origin-relative studs. */
+  pos: Vec3;
+  /** Part rotation as a unit quaternion [x, y, z, w] (w >= 0). */
+  rot: [number, number, number, number];
+  /** Part Size in studs. */
+  size: Vec3;
+  /** sRGB 0..1 and transparency 0..1 at this frame (only exported when the layer's colorVaries). */
+  color?: [number, number, number];
+  transparency?: number;
+};
+/** One mesh particle: visible from birthTick to deathTick, positioned by frames (sorted by tick, first = birth, last = death). */
+export type RbxMeshPiece = { birthTick: number; deathTick: number; frames: RbxMeshFrame[] };
+
+/**
+ * Mesh particles (rocks, crystals, shards, orbs...) as Roblox Parts. Roblox has no custom meshes in a plain model, so
+ * each kind is a primitive: Block (rocks, boxes, imported models), Ball, Cylinder, Wedge (crystals, shards, cones).
+ * The player clones a template Part per live piece and moves it along the baked frames.
+ */
+export type RbxMeshLayer = {
+  name: string;
+  shape: 'Block' | 'Ball' | 'Cylinder' | 'Wedge';
+  material: 'Slate' | 'Ice' | 'Neon' | 'SmoothPlastic' | 'Metal';
+  /** Mesh kind or 'imported model' (documentation only). */
+  source: string;
+  /** Template colour / transparency (the first frame's; per frame when colorVaries). */
+  color: [number, number, number];
+  transparency: number;
+  reflectance: number;
+  castShadow: boolean;
+  colorVaries: boolean;
+  pieces: RbxMeshPiece[];
+};
+
 export type RbxReportItem = { level: 'approximated' | 'dropped' | 'info'; item: string; message: string };
 
 export type RobloxEffect = {
@@ -156,6 +192,8 @@ export type RobloxEffect = {
   beams: RbxBeamLayer[];
   lights: RbxLight[];
   trails: RbxTrail[];
+  /** Mesh particles as Parts on baked trajectories. */
+  meshes: RbxMeshLayer[];
   /**
    * Retargeting (user 2026-09-30 "fix the targeting"): the authored Source and Target points (origin-relative studs).
    * The player maps the effect onto a runtime source → target: positions stretch along the Source→Target line and

@@ -101,6 +101,49 @@ for _, d in ipairs(data.lights) do
 	if not light then fail("light missing: " .. d.name) else summary.lights += 1 end
 end
 
+-- mesh templates: one hidden anchored Part / WedgePart per layer, with the exported shape and material
+local mFolder = model:FindFirstChild("Meshes")
+summary.meshLayers = 0
+summary.meshPieces = 0
+for _, d in ipairs(data.meshes or {}) do
+	local tpl = mFolder and mFolder:FindFirstChild(d.name)
+	if not (tpl and tpl:IsA("BasePart")) then
+		fail("mesh template missing: " .. d.name)
+	else
+		summary.meshLayers += 1
+		summary.meshPieces += #d.pieces
+		if not tpl.Anchored or tpl.CanCollide or tpl.CanTouch or tpl.CanQuery then fail(d.name .. ": mesh template flags") end
+		if tpl.Material.Name ~= d.material then fail(d.name .. ": Material " .. tpl.Material.Name .. " ~= " .. d.material) end
+		if d.shape == "Wedge" then
+			if not tpl:IsA("WedgePart") then fail(d.name .. ": expected a WedgePart") end
+		elseif not (tpl:IsA("Part") and tpl.Shape.Name == d.shape) then
+			fail(d.name .. ": Shape mismatch, expected " .. d.shape)
+		end
+		if #d.pieces == 0 then fail(d.name .. ": no pieces") end
+	end
+end
+local meshSeen, meshLastCF = {}, {}
+summary.meshMaxVisible = 0
+summary.meshMoves = 0
+summary.meshPartsEverSeen = 0
+local function sampleMeshes(tag, stepN)
+	local mr = model:FindFirstChild("_MeshRig")
+	if not mr then return end
+	local visible = 0
+	for _, part in ipairs(mr:GetChildren()) do
+		if part:IsA("BasePart") then
+			local cf = part.CFrame
+			if cf ~= cf or part.Size.X ~= part.Size.X then fail(tag .. ": NaN mesh part at step " .. stepN) end
+			if part.Transparency < 1 then visible += 1 end
+			if not meshSeen[part] then meshSeen[part] = true summary.meshPartsEverSeen += 1 end
+			local prev = meshLastCF[part]
+			if prev and (prev.Position - cf.Position).Magnitude > 1e-3 then summary.meshMoves += 1 end
+			meshLastCF[part] = cf
+		end
+	end
+	summary.meshMaxVisible = math.max(summary.meshMaxVisible, visible)
+end
+
 -- trails: instance tree
 local tFolder = model:FindFirstChild("Trails")
 summary.trails = 0
@@ -147,6 +190,7 @@ while not player.isDone() and steps < maxSteps do
 			if tr and tr.Enabled then summary.trailEnabledSteps += 1 break end
 		end
 	end
+	sampleMeshes("run", steps)
 	if rig and rig.Parent then
 		local enabled = 0
 		for _, c in ipairs(rig:GetChildren()) do
@@ -169,6 +213,11 @@ summary.ticksPlayed = steps
 if #(data.trails or {}) > 0 and summary.trailEnabledSteps == 0 then fail("no trail was ever enabled") end
 if not player.isDone() then fail("player did not finish within " .. maxSteps .. " steps") end
 if rig and rig.Parent then fail("beam rig not cleaned up") end
+if model:FindFirstChild("_MeshRig") then fail("mesh rig not cleaned up") end
+if #(data.meshes or {}) > 0 then
+	if summary.meshMaxVisible == 0 then fail("no mesh piece was ever visible") end
+	if summary.meshMoves == 0 then fail("mesh pieces never moved") end
+end
 for _, part in ipairs(eFolder:GetChildren()) do
 	local em = part:FindFirstChildOfClass("ParticleEmitter")
 	if em and em.Rate ~= 0 then fail(em.Name .. ": Rate not 0 after finish") end
@@ -208,6 +257,7 @@ if data.anchors then
 			stepN += 1
 			local okStep, err = pcall(aim.update, 1 / 60)
 			if not okStep then fail("aimed update error: " .. tostring(err)) break end
+			sampleMeshes("aimed", stepN)
 			local r = model:FindFirstChild("_BeamRig")
 			if r and not beamNearTarget then
 				for _, c in ipairs(r:GetChildren()) do
@@ -215,6 +265,7 @@ if data.anchors then
 				end
 			end
 		end
+		if model:FindFirstChild("_MeshRig") then fail("aimed: mesh rig not cleaned up") end
 		summary.aim = { distance = (tgt - src).Magnitude, impactBurstsNearTarget = nearHits, firstImpactStep = earliest, beamReachedTarget = beamNearTarget, steps = stepN }
 		if #impactTicks > 0 and nearHits == 0 then fail("aimed: no impact burst landed near the new target") end
 		if #data.beams > 0 and not beamNearTarget then fail("aimed: no beam reached the new target") end

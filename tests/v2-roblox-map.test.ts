@@ -79,3 +79,41 @@ test('Roblox map: exports carry the authored Source/Target and the projectile fl
   assert.match(xml, /anchors/);
   assert.match(xml, /travelTicks/);
 });
+
+for (const id of ['earth-upheaval', 'ice-eruption']) {
+  test(`Roblox map: ${id} exports its mesh particles as Parts on baked trajectories`, () => {
+    const e = effect(id);
+    assert.ok(e.meshes.length > 0, 'has mesh layers');
+    assert.ok(!e.report.some(r => /Mesh particles .* not exported/.test(r.message)), 'no longer reported as dropped');
+    assert.ok(e.report.some(r => r.level === 'approximated' && /simple Roblox parts/.test(r.message)));
+    let pieces = 0;
+    for (const m of e.meshes) {
+      assert.ok(['Block', 'Ball', 'Cylinder', 'Wedge'].includes(m.shape) && m.pieces.length > 0, m.name);
+      for (const p of m.pieces) {
+        pieces++;
+        assert.ok(p.deathTick > p.birthTick && p.frames.length >= 2, `${m.name} piece has frames`);
+        assert.equal(p.frames[0].tick, p.birthTick);
+        assert.equal(p.frames[p.frames.length - 1].tick, p.deathTick);
+        for (let i = 0; i < p.frames.length; i++) {
+          const f = p.frames[i];
+          assert.ok(f.tick >= p.birthTick && f.tick <= p.deathTick, 'frame inside birth..death');
+          if (i > 0) assert.ok(f.tick > p.frames[i - 1].tick, 'frames strictly increase');
+          assert.ok(f.size.every(x => x >= 0 && Number.isFinite(x)), `size ${f.size}`);
+          assert.ok(f.pos.every(x => Math.abs(x) < 200), `position near the effect ${f.pos}`);
+          assert.ok(Math.abs(Math.hypot(...f.rot) - 1) < 0.01 && f.rot[3] >= 0, 'unit quaternion, w >= 0');
+        }
+        assert.ok(p.frames.some(f => f.size.every(x => x > 0)), 'sizes > 0 while alive');
+      }
+    }
+    assert.ok(pieces > 0 && pieces <= 300, `${pieces} pieces within the cap`);
+  });
+}
+
+test('Roblox map: earth-upheaval rocks are Slate blocks with irregular per-piece ratios; ice-eruption crystals are Ice wedges', () => {
+  const earth = effect('earth-upheaval'), ice = effect('ice-eruption');
+  const rocks = earth.meshes.filter(m => m.shape === 'Block' && m.material === 'Slate');
+  assert.ok(rocks.length > 0, `rocks: ${earth.meshes.map(m => `${m.source}:${m.shape}/${m.material}`)}`);
+  const ratios = new Set(rocks.flatMap(m => m.pieces.map(p => (p.frames[1].size[1] / p.frames[1].size[0]).toFixed(2))));
+  assert.ok(ratios.size > 1, 'rocks are not all the same proportions');
+  assert.ok(ice.meshes.some(m => m.shape === 'Wedge' && m.material === 'Ice'), `ice: ${ice.meshes.map(m => `${m.source}:${m.shape}/${m.material}`)}`);
+});

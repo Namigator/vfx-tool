@@ -9,6 +9,7 @@ import type { ParticleEmitterDescriptor } from '../../runtime/particles.ts';
 import { compileLifeCurve, compileLifeGradient, sampleLifeCurve, sampleLifeGradient } from '../../render/billboardLife.ts';
 import { applyGrade, hueRotate, type ColorGrade } from '../../graph/recolor.ts';
 import { trackValue, type LayerAnimation } from '../../graph/keyframes.ts';
+import { bakeMeshes } from './meshBake.ts';
 import {
   MAX_SEQUENCE_KEYS, STUDS_PER_METER,
   type RbxBeamLayer, type RbxColorKey, type RbxTrail, type RbxEmitter, type RbxFlipbook, type RbxLight, type RbxNumberKey, type RbxReportItem, type RbxStepTrack, type RobloxEffect, type Vec3,
@@ -382,7 +383,7 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
       report.push({ level: 'approximated', item: t.nodeId, message: 'Trails behind many particles become stretched, velocity-aligned particles (Roblox cannot trail every particle).' });
     } else report.push({ level: 'dropped', item: t.nodeId, message: 'A trail on particles with no visible sprite cannot be exported.' });
   }
-  for (const m of plan.value.meshes) report.push({ level: 'dropped', item: m.nodeId, message: `Mesh particles (${m.meshAsset ? 'imported model' : m.mesh}) are not exported yet.` });
+  const meshes = bakeMeshes(plan.value.meshes, systems, origin, plan.value.durationTicks, unique, report);
   if (plan.value.presentation.flashes.length) report.push({ level: 'dropped', item: 'presentation', message: 'Screen flashes are not exported (a client-side ScreenGui flash can be added later).' });
   if (plan.value.presentation.impulses.length) report.push({ level: 'dropped', item: 'presentation', message: 'Camera shake is not exported.' });
   const lights = plan.value.lights.map(l => lightFrom(l, origin, plan.value.durationTicks, report));
@@ -397,7 +398,7 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
     name: safeName(doc.name || 'Effect'), durationTicks: plan.value.durationTicks, studsPerMeter: r3(S), emitters, beams, lights,
     anchors: { source: rel(src), target: rel(tgt) },
     ...(flight ? { travel: { startTick: flight.startTick, travelTicks: flight.travelTicks } } : {}),
-    trails,
+    trails, meshes,
     textures, report,
   } };
 }
