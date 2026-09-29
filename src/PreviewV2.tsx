@@ -7,7 +7,7 @@ import type { Diagnostic, EffectDocumentV2 } from './model/types.ts';
 import { validateDocument } from './model/document.ts';
 import { createRegistry } from './graph/registry.ts';
 import { compileParticlePreview, type FollowerTravel } from './graph/toParticles.ts';
-import { truncationWarning } from './graph/truncation.ts';
+import { grownDuration, truncationWarning } from './graph/truncation.ts';
 import { glowSettings } from './graph/glow.ts';
 import { convertLegacyRecipe, formatMigrationReport } from './model/migrate.ts';
 import { createRecipe, parseRecipe, validateRecipe } from './core/recipe.ts';
@@ -451,8 +451,12 @@ export default function PreviewV2() {
     const id = `edit-${++txCounterRef.current}`;
     const begun = h.begin(id, label);
     if (!begun.ok) { setEditMessages([failText(label, begun)]); return; }
+    const before = patches.some(p => p.path[0] === 'controls') ? h.snapshot() : null;
     const applied = h.apply(patches);
     if (!applied.ok) { h.cancel(); setEditMessages([failText(label, applied)]); return; }
+    // Knob edits lengthen the effect when they push its end past the duration (never shorten; same rule as vfx_set_control).
+    const grow = before ? grownDuration(before, h.snapshot()) : undefined;
+    if (grow !== undefined) h.apply([{ op: 'set', path: ['durationTicks'], value: grow }]);
     const committed = h.commit();
     if (!committed.ok) { h.cancel(); setEditMessages([failText(label, committed)]); return; }
     setEditMessages(noticeText(committed.notices));

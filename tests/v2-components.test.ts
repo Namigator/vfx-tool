@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { COMPONENT_TEMPLATES, insertComponent } from '../src/graph/components.ts';
+import { grownDuration } from '../src/graph/truncation.ts';
 import { createBlankDocument, createF01Document } from '../src/graph/fixtures.ts';
 import { validateDocument } from '../src/model/document.ts';
 import { createRegistry } from '../src/graph/registry.ts';
@@ -110,7 +111,7 @@ test('grouped sound components: cues inside the group drive the root audio chain
 test('Start at knob delays every Schedule of a component together (keeps their spacing)', () => {
   const { doc } = insertComponent(createBlankDocument(), 'fireball', undefined, { group: true });
   const k = doc.controls.find(c => c.label === 'Start at')!;
-  assert.ok(k && k.value === 0 && k.bindings.length === 2);
+  assert.ok(k && k.value === 0 && k.bindings.length === 1); // flight only: the impact Schedule follows ball.arrival (event-triggered), so it moves with it
   const later = structuredClone(doc); later.controls.find(c => c.id === k.id)!.value = 30; later.durationTicks = 200;
   const ticks = (d: typeof doc) => compiles(valid(d)).systems.map(s => s.descriptor.bursts[0]?.tick ?? s.descriptor.rate?.startTick).filter(t => t !== undefined).sort((a, b) => a! - b!);
   assert.deepEqual(ticks(later), ticks({ ...doc, durationTicks: 200 }).map(t => t! + 30));
@@ -190,4 +191,22 @@ test('ground parts follow a moved Target but stay on the ground (OffsetAnchor Dr
     const s = p.value.systems.find(x => x.id === `${id}-${ring}`)!;
     assert.deepEqual(s.descriptor.sourcePosition, [5, 0.02, 1], `${id} ${ring}`);
   }
+});
+
+test('a slower fireball (Travel ticks 120) keeps flying to the target, impacts on arrival and is not cut off', () => {
+  const doc = insertComponent(createBlankDocument(), 'fireball').doc;
+  const before = structuredClone(doc);
+  doc.controls.find(c => c.label === 'Travel ticks')!.value = 120;
+  const grow = grownDuration(before, doc);
+  assert.ok(grow !== undefined && grow >= 150, `effect lengthened (${grow})`);
+  doc.durationTicks = grow!;
+  const plan = compiles(valid(doc));
+  // The ball's trail emits until arrival (flight window follows the knob), not until the old tick 42.
+  const trail = plan.systems.find(s => s.descriptor.emitterId === 'fireball-trailem')!.descriptor;
+  assert.ok(trail.rate && trail.rate.endTick >= 120, `trail emits until ${trail.rate?.endTick}`);
+  // Impact sparks burst when the ball arrives (tick 120), not at the old fixed tick 40.
+  const boom = plan.systems.find(s => s.descriptor.emitterId === 'fireball-boom')!.descriptor;
+  assert.ok(boom.bursts[0].tick >= 119 && boom.bursts[0].tick <= 121, `impact at ${boom.bursts[0].tick}`);
+  // Unchanged knob or a shorter travel never lengthens the effect.
+  assert.equal(grownDuration(before, structuredClone(before)), undefined);
 });

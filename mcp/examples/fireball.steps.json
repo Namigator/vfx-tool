@@ -598,10 +598,18 @@
    "type": "Schedule",
    "id": "impactwin",
    "params": {
-    "startTicks": 40,
+    "startTicks": 0,
     "durationTicks": 30,
     "mode": "window"
    }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireball",
+   "from": "ball.arrival",
+   "to": "impactwin.trigger"
   }
  ],
  [

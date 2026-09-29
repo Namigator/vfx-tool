@@ -23,9 +23,8 @@ function ControlRow({ c, index, onEdit, durationTicks }: { c: PublicControl; ind
     if (!Number.isFinite(v)) return;
     v = Math.min(max, Math.max(min, c.type === 'integer' ? Math.round(v) : v));
     if (v === value) return;
-    // A component's Start at knob lengthens the effect by the same amount so the delayed part is not cut off (never shortens).
-    const grow = c.id.endsWith('-start-at') && v > value ? Math.min(600, durationTicks + (v - value)) : durationTicks;
-    onEdit(`Set ${c.label} = ${v}`, [{ op: 'set', path: ['controls', index, 'value'], value: v }, ...(grow > durationTicks ? [{ op: 'set' as const, path: ['durationTicks'], value: grow }] : [])]);
+    // The editor lengthens the effect when the new value pushes its end past the duration (grownDuration).
+    onEdit(`Set ${c.label} = ${v}`, [{ op: 'set', path: ['controls', index, 'value'], value: v }]);
   };
   return (
     <div className="cp-row" title={c.description}>

@@ -15,7 +15,7 @@ import { createBlankDocument, createF01Document, createForcesDemoDocument, creat
 import { COMPONENT_TEMPLATES, insertComponent } from '../src/graph/components.ts';
 import { groupSelection } from '../src/graph/groupSelection.ts';
 import { insertUserComponent, saveGroupAsComponent, type UserComponent } from '../src/graph/userComponents.ts';
-import { truncationWarning } from '../src/graph/truncation.ts';
+import { grownDuration, truncationWarning } from '../src/graph/truncation.ts';
 import { describeFrameStats, pngFrameStats } from './frameStats.ts';
 import { guideText } from './guide.ts';
 import { decodePng, downscale, encodePng, grid, meanDifference, type Rgba } from './imageTools.ts';
@@ -231,8 +231,12 @@ ${formatMigrationReport(report)}`);
     mutate(a.docId, d => {
       const c = d.controls.find(x => x.id === a.control) ?? d.controls.filter(x => x.label === a.control).at(-1);
       if (!c) throw new Error(`No control "${a.control}". Use vfx_list_controls.`);
+      const before = structuredClone(d);
       c.value = a.value as never;
-      return `${c.label} = ${JSON.stringify(a.value)}`;
+      // Like the editor: a knob that pushes the effect's end past its duration lengthens it (never shortens).
+      const grow = grownDuration(before, d);
+      if (grow !== undefined) d.durationTicks = grow;
+      return `${c.label} = ${JSON.stringify(a.value)}${grow !== undefined ? ` (effect lengthened to ${grow} ticks so nothing is cut off)` : ''}`;
     }));
 
   // ---------- graph editing ----------

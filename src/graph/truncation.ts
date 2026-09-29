@@ -25,6 +25,20 @@ export function effectEndTick(doc: EffectDocumentV2): number | undefined {
   return end;
 }
 
+/**
+ * Knob edits never cut an effect off: when a change (a longer travel, a later Start at, a longer burn) pushes the
+ * visible end past the document duration, the duration grows to fit (capped). Returns the new duration, or undefined
+ * when nothing needs to change. It never shortens, and ignores tails that were already cut before the edit.
+ */
+export function grownDuration(before: EffectDocumentV2, after: EffectDocumentV2): number | undefined {
+  const endAfter = effectEndTick(after);
+  if (endAfter === undefined || endAfter <= after.durationTicks) return undefined;
+  const endBefore = effectEndTick(before) ?? 0;
+  if (endAfter <= endBefore) return undefined;
+  const grown = Math.min(MAX_DURATION_TICKS, endAfter);
+  return grown > after.durationTicks ? grown : undefined;
+}
+
 /** Warning when the document ends before its content does (the Start at knob and long tails are the usual cause). */
 export function truncationWarning(doc: EffectDocumentV2): Diagnostic | undefined {
   const end = effectEndTick(doc);

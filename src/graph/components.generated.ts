@@ -41094,7 +41094,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "impactwin",
     "type": "Schedule",
     "params": {
-     "startTicks": 40,
+     "startTicks": 0,
      "durationTicks": 30,
      "mode": "window"
     }
@@ -41430,6 +41430,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "sparks.material"
    ],
    [
+    "ball.arrival",
+    "impactwin.trigger"
+   ],
+   [
     "node-target.out",
     "flash.anchor"
    ],
@@ -41567,6 +41571,11 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      {
       "node": "ball",
       "parameter": "durationTicks"
+     },
+     {
+      "node": "flight",
+      "parameter": "durationTicks",
+      "offset": 2
      }
     ]
    },
