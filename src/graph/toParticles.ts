@@ -33,7 +33,7 @@ import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { createRegistry } from './registry.ts';
 import { followerTravel, scheduleStart, TimingError, type TimingContext } from './eventTiming.ts';
-import { isTexturedTemplate, materialSheet, MATERIAL_TEMPLATE_IDS, templateLitsMeshes, templateParam } from './materialSprite.ts';
+import { dataTextureFile, isTexturedTemplate, materialSheet, MATERIAL_TEMPLATE_IDS, templateLitsMeshes, templateParam } from './materialSprite.ts';
 import { lifeCurveError, OPACITY_OVER_LIFE_BOUNDS, SIZE_OVER_LIFE_BOUNDS } from '../render/billboardLife.ts';
 import { BUILTIN_SPRITES } from '../assets/builtinSprites.generated.ts';
 import { compilePathPreview, probePathLength } from './toPaths.ts';
@@ -58,6 +58,8 @@ export type ParticlePreviewLayer = {
   groundFade?: number;
   /** 09 dissolve over life (amount 0 = off). */
   dissolve?: { amount: number; start: number; softness: number; edge: number; edgeColor: ColorValue };
+  /** 10 imported noise-role texture replacing the included dissolve noise (viewport file). */
+  noiseTexture?: string;
   /** 09 UV ops on textured billboards (tiling, offset, rotation, scroll per second); absent = identity. */
   uv?: { tiling: [number, number]; offset: [number, number]; rotation: number; scroll: [number, number] };
   /** 09 radial sprite rim (strength 0 = off). */
@@ -105,7 +107,7 @@ export type PointLightLayer = {
 };
 /** 05 MeshRenderer: instanced built-in mesh per particle. */
 export type MeshLayer = {
-  nodeId: string; systemId: string; mesh: 'shard' | 'rock-a' | 'rock-b' | 'rock-c' | 'orb' | 'cone' | 'crystal' | 'crystal-b' | 'cylinder' | 'box'; scale: number;
+  nodeId: string; systemId: string; mesh: 'shard' | 'rock-a' | 'rock-b' | 'rock-c' | 'orb' | 'cone' | 'crystal' | 'crystal-b' | 'cylinder' | 'box' | 'plane'; scale: number;
   /** Imported GLB (byte SHA-256) replacing `mesh` when present. */
   meshAsset?: string;
   /** Imported GLB sizing: fitted to ≈1 m, or its real size = file units × importScale meters. */
@@ -118,6 +120,8 @@ export type MeshLayer = {
   rim?: { strength: number; color: ColorValue; power: number };
   /** 09 surface: environment reflection, procedural bump/grain detail and per-piece colour variation (all 0 = off). */
   surface?: { reflection: number; detail: number; detailScale: number; variation: number };
+  /** 10 imported normal-role texture on lit meshes (viewport file). */
+  normalMap?: string;
   color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout';
   sizeOverLife: CurveValue; colorOverLife: GradientValue; renderOrderOffset: number; visualOrder: number; spinOverLife?: CurveValue;
   /** 09 Material faces / depth test / refraction (enhancement, lit meshes); absent = front, on, none. */
@@ -291,9 +295,12 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
     }
   };
   /** 09 dissolve settings of a Material, present only when the amount is above 0. */
-  const dissolveOf = (m: ExpandedNode): Pick<ParticlePreviewLayer, 'dissolve'> => num(m, 'dissolve') > 0
-    ? { dissolve: { amount: num(m, 'dissolve'), start: num(m, 'dissolveStart'), softness: num(m, 'dissolveSoftness'), edge: num(m, 'dissolveEdge'), edgeColor: param(m, 'dissolveEdgeColor') as ColorValue } }
-    : {};
+  const dissolveOf = (m: ExpandedNode): Pick<ParticlePreviewLayer, 'dissolve' | 'noiseTexture'> => {
+    if (!(num(m, 'dissolve') > 0)) return {};
+    const n = dataTextureFile(doc, param(m, 'noiseAsset'), 'noise');
+    if (n && 'error' in n) report('MISSING_REFERENCE', n.error, m.node.id, 'noiseAsset');
+    return { dissolve: { amount: num(m, 'dissolve'), start: num(m, 'dissolveStart'), softness: num(m, 'dissolveSoftness'), edge: num(m, 'dissolveEdge'), edgeColor: param(m, 'dissolveEdgeColor') as ColorValue }, ...(n && 'file' in n ? { noiseTexture: n.file } : {}) };
+  };
   /** 09 UV ops and sprite rim of a Material, present only when they differ from identity/off. */
   const spriteOpsOf = (m: ExpandedNode): Pick<ParticlePreviewLayer, 'uv' | 'rim'> => {
     const t = param(m, 'uvTiling') as number[], o = param(m, 'uvOffset') as number[], sc = param(m, 'uvScroll') as number[], r = num(m, 'uvRotation');
@@ -376,9 +383,10 @@ export function compileParticlePreview(input: unknown, options: ParticlePreviewO
   /** 09 depth test off travels only when set (keeps plans unchanged otherwise). */
   const depthOf = (m: ExpandedNode): { depthTest?: false } => (param(m, 'depthTest') === false ? { depthTest: false } : {});
   /** 09 mesh faces and refraction (refraction is an enhancement previewed on lit meshes only). */
-  const meshMaterialOf = (m: ExpandedNode): { faceMode?: 'back' | 'double'; depthTest?: false; refraction?: number } => {
-    const f = param(m, 'faceMode'), r = num(m, 'refraction');
-    return { ...(f === 'back' || f === 'double' ? { faceMode: f } : {}), ...depthOf(m), ...(r > 0 ? { refraction: r } : {}) };
+  const meshMaterialOf = (m: ExpandedNode): { faceMode?: 'back' | 'double'; depthTest?: false; refraction?: number; normalMap?: string } => {
+    const f = param(m, 'faceMode'), r = num(m, 'refraction'), nm = dataTextureFile(doc, param(m, 'normalAsset'), 'normal');
+    if (nm && 'error' in nm) report('MISSING_REFERENCE', nm.error, m.node.id, 'normalAsset');
+    return { ...(f === 'back' || f === 'double' ? { faceMode: f } : {}), ...depthOf(m), ...(r > 0 ? { refraction: r } : {}), ...(nm && 'file' in nm ? { normalMap: nm.file } : {}) };
   };
   /** A renderer's over-life setting, or the chain's OverLife one when the renderer leaves it at its default (not stored, not connected). */
   const lifeFrom = (b: ExpandedNode, chain: Chain | undefined, id: string, olId: string): ParameterValue =>

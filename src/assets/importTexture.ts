@@ -55,8 +55,8 @@ export function readImageHeader(b: Uint8Array): ImageHeader | string {
 
 export type TextureImportOptions = {
   filename: string;
-  /** color (tint-able RGBA sprite) or mask (alpha/luminance). JPEG is color only. */
-  role: 'color' | 'mask';
+  /** color (tint-able RGBA sprite), mask (alpha/luminance), normal (tangent-space normal map) or noise (data pattern). JPEG is color only. */
+  role: 'color' | 'mask' | 'normal' | 'noise';
   /** Present for an atlas: cells read left-to-right, top-to-bottom. */
   flipbook?: { rows: number; columns: number; frameCount?: number; cells?: 'sequence' | 'variants' };
 };
@@ -68,7 +68,7 @@ export async function createTextureAsset(bytes: Uint8Array, o: TextureImportOpti
   const h = readImageHeader(bytes);
   if (typeof h === 'string') return { ok: false, message: h };
   if (h.width < 1 || h.height < 1 || h.width > MAX_TEXTURE_SIDE || h.height > MAX_TEXTURE_SIDE) return { ok: false, message: `Image is ${h.width}×${h.height}; textures must be 1..${MAX_TEXTURE_SIDE} px per side.` };
-  if (h.mime === 'image/jpeg' && o.role !== 'color') return { ok: false, message: 'JPEG has no alpha; import it as a color texture or use PNG/WebP for masks.' };
+  if (h.mime === 'image/jpeg' && o.role !== 'color') return { ok: false, message: 'JPEG is for color textures only (lossy, no alpha); use PNG or WebP for masks, normal maps and noise.' };
   let flipbook: AssetInterpretation['flipbook'];
   if (o.flipbook) {
     const { rows, columns } = o.flipbook, frameCount = o.flipbook.frameCount ?? rows * columns;

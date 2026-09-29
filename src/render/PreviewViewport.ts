@@ -676,6 +676,7 @@ export class PreviewViewport {
       if (layer.depthTest === false) { material.depthTest = false; material.depthWrite = false; }
       const surface = layer.surface;
       if (material instanceof THREE.MeshStandardMaterial && surface && surface.reflection > 0) { material.envMap = this.#environment(); material.envMapIntensity = surface.reflection; }
+      if (layer.normalMap && material instanceof THREE.MeshStandardMaterial) material.normalMap = this.#dataTexture(layer.normalMap, false);
       patchMeshShader(material, layer.rim, surface?.detail ?? 0, surface?.detailScale ?? 4);
       const mesh = new THREE.InstancedMesh(geometry, material, PREVIEW_POOL_SIZE);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -722,7 +723,7 @@ export class PreviewViewport {
       material.uniforms.uDissolve = { value: dv?.amount ?? 0 };
       material.uniforms.uDissolveShape = { value: new THREE.Vector4(dv?.start ?? 0, dv?.softness ?? 0.08, dv?.edge ?? 0, 0) };
       material.uniforms.uDissolveEdgeColor = { value: new THREE.Color().setStyle(dv?.edgeColor.srgb ?? '#ffb040') };
-      material.uniforms.uDissolveTex = { value: dv ? this.#noiseTexture() : null };
+      material.uniforms.uDissolveTex = { value: dv ? (layer.noiseTexture ? this.#dataTexture(layer.noiseTexture, true) : this.#noiseTexture()) : null };
       const uvo = layer.uv;
       material.uniforms.uUvOps = { value: uvo ? 1 : 0 };
       material.uniforms.uUvTileOffset = { value: new THREE.Vector4(uvo?.tiling[0] ?? 1, uvo?.tiling[1] ?? 1, uvo?.offset[0] ?? 0, uvo?.offset[1] ?? 0) };
@@ -815,6 +816,24 @@ export class PreviewViewport {
       this.#noiseTex.wrapS = this.#noiseTex.wrapT = THREE.RepeatWrapping;
     }
     return this.#noiseTex;
+  }
+
+  /** 10 normal/noise role textures: imported bytes sampled as data (no colour-space conversion), wrap optional. */
+  #dataTexture(file: string, wrap: boolean): THREE.Texture {
+    const key = `data:${wrap ? 'wrap:' : ''}${file}`;
+    let t = this.#textures.get(key);
+    if (!t) {
+      const tex = new THREE.Texture();
+      t = tex;
+      tex.colorSpace = THREE.NoColorSpace;
+      if (wrap) tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      whenAssetUrl(file.slice(ASSET_FILE_PREFIX.length), url => new THREE.ImageLoader().load(url, img => {
+        if (this.#disposed) return;
+        tex.image = img; tex.needsUpdate = true; this.#emitFrame(true);
+      }));
+      this.#textures.set(key, tex);
+    }
+    return t;
   }
 
   readonly #textures = new Map<string, THREE.Texture>();

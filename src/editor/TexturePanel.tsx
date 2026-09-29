@@ -3,7 +3,7 @@
 // "Use on selected Material" is the explicit add-to-effect step; importing alone does not change the graph.
 // 10 "Inspect → classify role → preview → add": a chosen image is previewed with its flipbook cell grid first
 // and only added on confirm.
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createTextureAsset, sha256Hex } from '../assets/importTexture.ts';
 import { relinkVerdict, removeAssetPatches, replaceAssetPatches } from '../model/assetRefs.ts';
 import { createMeshAsset, inspectGlb, type GlbSummary } from '../assets/importMesh.ts';
@@ -12,6 +12,11 @@ import { registerAssetUrl } from '../assets/assetUrls.ts';
 import { putAssetBytes } from '../model/assetStore.ts';
 import type { AssetReference, EffectDocumentV2 } from '../model/types.ts';
 import type { Patch } from './history.ts';
+import { assetComponent } from '../graph/assetComponent.ts';
+import { insertComponent } from '../graph/components.ts';
+
+type TextureRole = 'color' | 'mask' | 'normal' | 'noise';
+const ROLE_TEXT: Record<TextureRole, string> = { color: 'colour', mask: 'mask (alpha/brightness only)', normal: 'normal map (read as data, for lit meshes)', noise: 'noise (read as data, dissolve pattern)' };
 
 type Props = {
   document: EffectDocumentV2;
@@ -23,6 +28,23 @@ type Props = {
   /** Called after bytes were restored locally so the editor re-checks missing assets. */
   onBytesRestored: () => void;
 };
+
+/**
+ * 10 "For flipbooks show … playback and frame ordering left-to-right, top-to-bottom": plays the cells of the chosen
+ * image at 12 fps in that order, with the frame number, so a wrong grid or order is visible before adding.
+ */
+function FlipbookPlayer({ url, rows, columns }: { url: string; rows: number; columns: number }) {
+  const [frame, setFrame] = useState(0);
+  const count = rows * columns;
+  useEffect(() => { setFrame(0); const id = setInterval(() => setFrame(f => (f + 1) % count), 1000 / 12); return () => clearInterval(id); }, [count]);
+  const col = frame % columns, row = Math.floor(frame / columns);
+  return (
+    <div className="tp-player" aria-label="Flipbook playback">
+      <div className="tp-cell" style={{ backgroundImage: `url(${url})`, backgroundSize: `${columns * 100}% ${rows * 100}%`, backgroundPosition: `${columns > 1 ? (col / (columns - 1)) * 100 : 0}% ${rows > 1 ? (row / (rows - 1)) * 100 : 0}%` }} />
+      <span className="pv2-muted">Frame {frame + 1} / {count} (row {row + 1}, column {col + 1})</span>
+    </div>
+  );
+}
 
 export function TexturePanel({ document: doc, graphId, selectedNodeId, onEdit, missingIds, onBytesRestored }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -50,7 +72,7 @@ export function TexturePanel({ document: doc, graphId, selectedNodeId, onEdit, m
     const fb = o.asset.interpretation.flipbook;
     const r = o.asset.kind === 'mesh'
       ? await createMeshAsset(o.bytes, o.file.name, o.asset.interpretation.mesh?.importScale ?? 1)
-      : await createTextureAsset(o.bytes, { filename: o.file.name, role: o.asset.colorSpace === 'mask' ? 'mask' : 'color', ...(fb ? { flipbook: { rows: fb.rows, columns: fb.columns, frameCount: fb.frameCount, ...(fb.cells ? { cells: fb.cells } : {}) } } : {}) });
+      : await createTextureAsset(o.bytes, { filename: o.file.name, role: (['mask', 'normal', 'noise'] as const).find(r => r === o.asset.colorSpace) ?? 'color', ...(fb ? { flipbook: { rows: fb.rows, columns: fb.columns, frameCount: fb.frameCount, ...(fb.cells ? { cells: fb.cells } : {}) } } : {}) });
     if (!r.ok) { setStatus(`Replace failed: ${r.message}`); return; }
     const blob = new Blob([o.bytes as Uint8Array<ArrayBuffer>], { type: r.value.asset.mime });
     await putAssetBytes(r.value.asset.sha256, r.value.asset.mime, blob);
@@ -65,14 +87,30 @@ export function TexturePanel({ document: doc, graphId, selectedNodeId, onEdit, m
     onEdit(`Remove ${a.provenance.originalFilename}`, r.patches);
     setStatus(`Removed ${a.provenance.originalFilename} from this effect.`);
   };
+  /** 10 "Add to effect": the asset's ready-made component, inserted as one Group node (one undoable edit). */
+  const addToEffect = (a: AssetReference) => {
+    const t = assetComponent(a);
+    if (typeof t === 'string') { setStatus(t); return; }
+    let r;
+    try { r = insertComponent(doc, t, undefined, { group: true }); } catch (e) { setStatus(`Add to effect failed: ${e instanceof Error ? e.message : String(e)}`); return; }
+    onEdit(`Add ${t.label}`, [
+      { op: 'set', path: ['graphs'], value: r.doc.graphs },
+      { op: 'set', path: ['anchors'], value: r.doc.anchors },
+      { op: 'set', path: ['controls'], value: r.doc.controls },
+      { op: 'set', path: ['durationTicks'], value: r.doc.durationTicks },
+      { op: 'set', path: ['editor', 'graphs'], value: r.doc.editor.graphs },
+    ]);
+    setStatus(`Added "${t.label}" (Group ${r.groupNodeId}): ${t.description}`);
+  };
   const assetButtons = (a: AssetReference) => (
     <>
+      <button type="button" onClick={() => addToEffect(a)} title="Insert a small ready-made component that uses this asset (undo removes it)">Add to effect</button>
       {missingIds.includes(a.id) && <button type="button" onClick={() => { setRelinkTarget(a); relinkRef.current?.click(); }} title="Pick the original file again; a different file is only used if you confirm Replace">Relink…</button>}
       <button type="button" onClick={() => removeAsset(a)} title="Remove from this effect (refused while nodes still use it)">Remove</button>
     </>
   );
   const meshRef = useRef<HTMLInputElement>(null);
-  const [role, setRole] = useState<'color' | 'mask'>('color');
+  const [role, setRole] = useState<TextureRole>('color');
   const [grid, setGrid] = useState({ rows: 1, columns: 1 });
   const [status, setStatus] = useState('');
   /** 10-ASSETS: the user confirms a uniform import scale (file units → meters; 0.01 for centimetres). */
@@ -130,9 +168,10 @@ export function TexturePanel({ document: doc, graphId, selectedNodeId, onEdit, m
     onEdit(`Use model ${name} on ${meshRenderer.label}`, [{ op: 'set', path: ['graphs', gi, 'nodes', ni, 'params', 'meshAsset'], value: assetId }]);
   };
 
-  const useOn = (assetId: string, name: string) => {
+  const useOn = (assetId: string, name: string, role: string) => {
     if (!material) return;
     const base = ['graphs', gi, 'nodes', ni, 'params'];
+    if (role === 'normal' || role === 'noise') { onEdit(`Use ${name} as ${role === 'normal' ? 'normal map' : 'noise'} on ${material.label}`, [{ op: 'set', path: [...base, role === 'normal' ? 'normalAsset' : 'noiseAsset'], value: assetId }]); return; }
     onEdit(`Use texture ${name} on ${material.label}`, [
       { op: 'set', path: [...base, 'template'], value: 'SpriteTextured' },
       { op: 'set', path: [...base, 'textureAsset'], value: assetId },
@@ -142,7 +181,7 @@ export function TexturePanel({ document: doc, graphId, selectedNodeId, onEdit, m
   return (
     <div className="tp-root">
       <div className="tp-row">
-        <label>Role <select value={role} onChange={e => setRole(e.currentTarget.value as 'color' | 'mask')}><option value="color">Color</option><option value="mask">Mask</option></select></label>
+        <label>Role <select value={role} onChange={e => setRole(e.currentTarget.value as TextureRole)} title="How the image is read: Color and Mask draw sprites; Normal adds surface relief to lit meshes; Noise replaces the dissolve pattern"><option value="color">Color</option><option value="mask">Mask</option><option value="normal">Normal map</option><option value="noise">Noise</option></select></label>
         <label>Grid <input type="number" min={1} max={16} value={grid.columns} aria-label="Flipbook columns" onChange={e => { const columns = Math.max(1, Math.min(16, Math.round(Number(e.currentTarget.value) || 1))); setGrid(g => ({ ...g, columns })); }} />×
           <input type="number" min={1} max={16} value={grid.rows} aria-label="Flipbook rows" onChange={e => { const rows = Math.max(1, Math.min(16, Math.round(Number(e.currentTarget.value) || 1))); setGrid(g => ({ ...g, rows })); }} /></label>
         <button type="button" onClick={() => fileRef.current?.click()} title="PNG, static WebP or JPEG; up to 16 MiB and 4096 px">Import texture…</button>
@@ -162,9 +201,10 @@ export function TexturePanel({ document: doc, graphId, selectedNodeId, onEdit, m
               {Array.from({ length: grid.rows - 1 }, (_, i) => <line key={`r${i}`} y1={(100 * (i + 1)) / grid.rows} y2={(100 * (i + 1)) / grid.rows} x1={0} x2={100} />)}
             </svg>
           </div>
+          {grid.rows * grid.columns > 1 && <FlipbookPlayer url={pending.url} rows={grid.rows} columns={grid.columns} />}
           <div className="tp-preview-info">
             <strong>{pending.file.name}</strong>
-            <span>{pending.size ? `${pending.size[0]}×${pending.size[1]} px` : 'reading…'} · {role === 'mask' ? 'mask (alpha/brightness only)' : 'colour'}{grid.rows * grid.columns > 1 ? ` · ${grid.columns}×${grid.rows} = ${grid.rows * grid.columns} frames${pending.size ? ` of ${Math.floor(pending.size[0] / grid.columns)}×${Math.floor(pending.size[1] / grid.rows)} px` : ''}` : ' · single image'}</span>
+            <span>{pending.size ? `${pending.size[0]}×${pending.size[1]} px` : 'reading…'} · {ROLE_TEXT[role]}{grid.rows * grid.columns > 1 ? ` · ${grid.columns}×${grid.rows} = ${grid.rows * grid.columns} frames${pending.size ? ` of ${Math.floor(pending.size[0] / grid.columns)}×${Math.floor(pending.size[1] / grid.rows)} px` : ''}` : ' · single image'}</span>
             <span className="pv2-muted">Check the grid lines sit between the frames, then add. Role and Grid above update this preview.</span>
             <span>
               <button type="button" onClick={() => { const f = pending.file; clearPending(); void importFile(f); }}>Add texture</button>
@@ -204,7 +244,7 @@ export function TexturePanel({ document: doc, graphId, selectedNodeId, onEdit, m
             <li key={a.id}>
               <span>{missingIds.includes(a.id) && <strong className="pv2-warn">MISSING </strong>}{a.provenance.originalFilename} — {a.width}×{a.height}{a.interpretation.flipbook ? ` · ${a.interpretation.flipbook.columns}×${a.interpretation.flipbook.rows}` : ''} · {a.colorSpace}</span>
               {assetButtons(a)}
-              <button type="button" disabled={!material} onClick={() => useOn(a.id, a.provenance.originalFilename)} title={material ? `Set ${material.label} to this texture` : 'Select a Material node first'}>Use on selected Material</button>
+              <button type="button" disabled={!material} onClick={() => useOn(a.id, a.provenance.originalFilename, a.colorSpace)} title={material ? `Set ${material.label} to this texture` : 'Select a Material node first'}>Use on selected Material</button>
             </li>
           ))}
         </ul>
@@ -220,7 +260,7 @@ export function TexturePanel({ document: doc, graphId, selectedNodeId, onEdit, m
           ))}
         </ul>
       )}
-      <style>{`.tp-root{display:flex;flex-direction:column;gap:6px;font-size:13px}.tp-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.tp-row input[type=number]{width:44px}.tp-list{margin:0;padding-left:16px;display:flex;flex-direction:column;gap:4px}.tp-list li span{margin-right:6px}.tp-preview{display:flex;gap:10px;align-items:flex-start;border:1px solid #2a3140;border-radius:6px;padding:6px}.tp-frame{position:relative;width:160px;flex:none;background:repeating-conic-gradient(#222 0 25%,#333 0 50%) 0 0/16px 16px}.tp-frame img{display:block;width:100%;height:auto}.tp-grid{position:absolute;inset:0;width:100%;height:100%}.tp-grid line{stroke:#4cc3ff;stroke-width:.6;vector-effect:non-scaling-stroke}.tp-preview-info{display:flex;flex-direction:column;gap:4px}.tp-preview-info button{margin-right:6px}`}</style>
+      <style>{`.tp-root{display:flex;flex-direction:column;gap:6px;font-size:13px}.tp-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.tp-row input[type=number]{width:44px}.tp-list{margin:0;padding-left:16px;display:flex;flex-direction:column;gap:4px}.tp-list li span{margin-right:6px}.tp-preview{display:flex;gap:10px;align-items:flex-start;border:1px solid #2a3140;border-radius:6px;padding:6px}.tp-frame{position:relative;width:160px;flex:none;background:repeating-conic-gradient(#222 0 25%,#333 0 50%) 0 0/16px 16px}.tp-frame img{display:block;width:100%;height:auto}.tp-grid{position:absolute;inset:0;width:100%;height:100%}.tp-grid line{stroke:#4cc3ff;stroke-width:.6;vector-effect:non-scaling-stroke}.tp-player{display:flex;flex-direction:column;gap:4px;width:120px;flex:none}.tp-cell{width:120px;height:120px;background-repeat:no-repeat;background-color:#111}.tp-preview-info{display:flex;flex-direction:column;gap:4px}.tp-preview-info button{margin-right:6px}`}</style>
     </div>
   );
 }

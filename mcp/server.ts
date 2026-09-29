@@ -13,6 +13,7 @@ import { validateDocument } from '../src/model/document.ts';
 import { createRegistry } from '../src/graph/registry.ts';
 import { createBlankDocument, createF01Document, createForcesDemoDocument, createL01Document } from '../src/graph/fixtures.ts';
 import { COMPONENT_TEMPLATES, eventSources, insertComponent, startComponentOnEvent } from '../src/graph/components.ts';
+import { assetComponent } from '../src/graph/assetComponent.ts';
 import { groupSelection } from '../src/graph/groupSelection.ts';
 import { insertUserComponent, saveGroupAsComponent, type UserComponent } from '../src/graph/userComponents.ts';
 import { grownDuration, truncationWarning } from '../src/graph/truncation.ts';
@@ -360,8 +361,8 @@ ${formatMigrationReport(report)}`);
   // capture page and the editor's ?doc= loader look for a document's bundle assets.
   const assetDir = join(root, 'work', 'mcp', 'assets');
   const safeProjectPath = (p: string) => { const abs = resolve(root, p); if (!abs.startsWith(root)) throw new Error(`Path "${p}" is outside the project.`); return abs; };
-  tool('vfx_import_texture', 'Import a PNG/static WebP/JPEG (path relative to the project) as a document texture or flipbook asset (≤16 MiB, ≤4096 px; grid 1..16). Optionally set it on a Material (template SpriteTextured, textureAsset). Returns the asset id.', {
-    docId: z.string(), path: z.string(), role: z.enum(['color', 'mask']).optional(), rows: z.number().int().min(1).max(16).optional(), columns: z.number().int().min(1).max(16).optional(), materialId: z.string().optional(),
+  tool('vfx_import_texture', 'Import a PNG/static WebP/JPEG (path relative to the project) as a document texture or flipbook asset (≤16 MiB, ≤4096 px; grid 1..16). Optionally set it on a Material: color/mask → template SpriteTextured + textureAsset; normal → normalAsset (lit meshes); noise → noiseAsset (dissolve pattern). Returns the asset id. vfx_add_asset_component then inserts a ready-made component using it.', {
+    docId: z.string(), path: z.string(), role: z.enum(['color', 'mask', 'normal', 'noise']).optional(), rows: z.number().int().min(1).max(16).optional(), columns: z.number().int().min(1).max(16).optional(), materialId: z.string().optional(),
   }, async ({ docId, path, role, rows, columns, materialId }) => {
     const bytes = new Uint8Array(readFileSync(safeProjectPath(path)));
     const grid = (rows ?? 1) * (columns ?? 1) > 1 ? { rows: rows ?? 1, columns: columns ?? 1 } : undefined;
@@ -375,11 +376,25 @@ ${formatMigrationReport(report)}`);
       if (materialId) {
         const m = rootGraph(d).nodes.find(n => n.id === materialId);
         if (!m || m.type !== 'Material') throw new Error(`"${materialId}" is not a Material in the root graph.`);
-        m.params.template = 'SpriteTextured'; m.params.textureAsset = asset.id;
+        if (asset.colorSpace === 'normal') m.params.normalAsset = asset.id;
+        else if (asset.colorSpace === 'noise') m.params.noiseAsset = asset.id;
+        else { m.params.template = 'SpriteTextured'; m.params.textureAsset = asset.id; }
       }
       return `Imported ${asset.provenance.originalFilename} as ${asset.kind} ${asset.width}×${asset.height} (id ${asset.id})${materialId ? `; set on ${materialId}` : ''}.`;
     });
   });
+  // 10 parity: the editor's asset list "Add to effect".
+  tool('vfx_add_asset_component', 'Insert the ready-made component for an imported asset (the editor\'s "Add to effect"), as one Group node: color texture/flipbook → rising sprites; mask → glowing additive sprites; normal → lit rocks using it as a normal map; noise → dissolving puffs using it as the pattern; mesh → a tumbling burst of that model. Import alone never changes the graph.', {
+    docId: z.string(), assetId: z.string(),
+  }, ({ docId, assetId }) => { let info = ''; const r = mutate(docId, d => {
+    const a = d.assets.find(x => x.id === assetId);
+    if (!a) throw new Error(`No asset "${assetId}" in this document (vfx_get_document lists assets).`);
+    const t = assetComponent(a);
+    if (typeof t === 'string') throw new Error(t);
+    const x = insertComponent(d, t, undefined, { group: true });
+    info = `Added "${t.label}" as Group "${x.groupNodeId}" (knobs: ${t.knobs.map(k => k.label).join(', ')}).`;
+    Object.assign(d, x.doc); return '';
+  }); return r.isError ? r : ok(info); });
   // 12 parity: Duplicate / Copy / Paste (the editor's Ctrl+D / Ctrl+C / Ctrl+V).
   const applyWhole = (docId: string, label: string, next: EffectDocumentV2) => mutate(docId, d => { Object.assign(d, structuredClone(next)); return label; });
   tool('vfx_duplicate_nodes', 'Duplicate nodes (like the editor Ctrl+D): fresh ids and random streams, internal wiring kept; a Group becomes an independent copy of its component.', { docId: z.string(), nodeIds: z.array(z.string()).min(1), graphId: z.string().optional() }, ({ docId, nodeIds, graphId }) => {

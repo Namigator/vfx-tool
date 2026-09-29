@@ -403,7 +403,7 @@ function propMesh(): NodeSpec {
     ],
     outputs: [port({ id: 'visual', label: 'Visual', type: 'visual' })],
     parameters: [
-      param({ id: 'mesh', label: 'Mesh', type: 'enum', unit: 'none', default: 'cylinder', choices: ['shard', 'rock-a', 'rock-b', 'rock-c', 'orb', 'cone', 'crystal', 'crystal-b', 'cylinder', 'box'], description: 'Included mesh, ≈1 m, length along its +Y axis.' }),
+      param({ id: 'mesh', label: 'Mesh', type: 'enum', unit: 'none', default: 'cylinder', choices: ['shard', 'rock-a', 'rock-b', 'rock-c', 'orb', 'cone', 'crystal', 'crystal-b', 'cylinder', 'box', 'plane'], description: 'Included mesh, ≈1 m, length along its +Y axis.' }),
       param({ id: 'meshAsset', label: 'Mesh asset', type: 'string', unit: 'none', default: '', description: 'Imported GLB asset ID; replaces Mesh.' }),
       param({ id: 'importedSize', label: 'Imported size', type: 'enum', unit: 'none', default: 'fit', choices: ['fit', 'real'] }),
       param({ id: 'size', label: 'Width', type: 'number', unit: 'meter', default: 0.12, min: 0.001, max: 20, editPolicy: 'live' }),
@@ -489,7 +489,7 @@ function meshRenderer(): NodeSpec {
     parameters: [
       param({ id: 'meshAsset', label: 'Mesh asset', type: 'string', unit: 'none', default: '', description: 'Imported GLB asset ID (Import 3D model…); when set it replaces Mesh. See Imported size.' }),
       param({ id: 'importedSize', label: 'Imported size', type: 'enum', unit: 'none', default: 'fit', choices: ['fit', 'real'], description: 'fit: the imported model is fitted to ≈1 m like the included meshes. real: its true size (file units × the import scale chosen at import) in meters. Particle size × Scale multiplies either.' }),
-      param({ id: 'mesh', label: 'Mesh', type: 'enum', unit: 'none', default: 'rock-a', choices: ['shard', 'rock-a', 'rock-b', 'rock-c', 'orb', 'cone', 'crystal', 'crystal-b', 'cylinder', 'box'], description: 'Included procedural mesh (≈1 m across, scaled by particle size × Scale).' }),
+      param({ id: 'mesh', label: 'Mesh', type: 'enum', unit: 'none', default: 'rock-a', choices: ['shard', 'rock-a', 'rock-b', 'rock-c', 'orb', 'cone', 'crystal', 'crystal-b', 'cylinder', 'box', 'plane'], description: 'Included procedural mesh (≈1 m across, scaled by particle size × Scale).' }),
       param({ id: 'scale', label: 'Scale', type: 'number', unit: 'none', default: 1, min: 0.01, max: 20, editPolicy: 'live' }),
       param({ id: 'scaleY', label: 'Height scale', type: 'number', unit: 'none', default: 1, min: 0.05, max: 20, editPolicy: 'live', description: 'Extra stretch along the mesh +Y (tall shards: height independent of width).' }),
       param({ id: 'pivot', label: 'Pivot', type: 'enum', unit: 'none', default: 'center', choices: ['center', 'base'], editPolicy: 'live', description: 'base: the mesh grows up from the particle position (grounded shards).' }),
@@ -629,6 +629,8 @@ function material(): NodeSpec {
     parameters: [
       param({ id: 'template', label: 'Template', type: 'enum', unit: 'none', default: 'SpriteUnlit', choices: [...MATERIAL_TEMPLATES], description: 'SpriteUnlit: soft disc. SpriteTextured: a library/imported sprite or flipbook. RibbonUnlit: plain strips. MeshLit: lit PBR meshes. SurfaceTranslucent: water/ice-like (normal blend, liquid shading, reflection, optional refraction). DarkVolumeSprite: dark textured smoke (no emission; edge tint = rim colour).' }),
       param({ id: 'textureAsset', label: 'Texture asset', type: 'string', unit: 'none', default: '', description: 'Imported texture/flipbook asset ID (Import texture…); when set it replaces Sprite. Empty = use the included library sprite.' }),
+      param({ id: 'normalAsset', label: 'Normal map', type: 'string', unit: 'none', default: '', description: 'Lit meshes: an imported texture with role Normal adds fine surface relief (tangent-space, uses the mesh UVs). Empty = none.' }),
+      param({ id: 'noiseAsset', label: 'Noise texture', type: 'string', unit: 'none', default: '', description: 'An imported texture with role Noise replaces the included dissolve noise (billboard dissolve pattern). Empty = included noise.' }),
       param({ id: 'sprite', label: 'Sprite', type: 'enum', unit: 'none', default: 'soft-glow', choices: BUILTIN_SPRITES.map(s => s.id), description: 'Included library sheet (SpriteTextured only). Flipbooks animate; variant sets pick one cell per particle.' }),
       param({ id: 'variant', label: 'Variant', type: 'integer', unit: 'none', default: -1, min: -1, max: 255, step: 1, description: 'Variant/mask sheets: -1 picks a random cell per particle; otherwise this fixed cell (row-major).' }),
       param({ id: 'blend', label: 'Blend', type: 'enum', unit: 'none', default: 'additive', choices: ['normal', 'additive', 'cutout'] }),

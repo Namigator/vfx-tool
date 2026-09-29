@@ -1,7 +1,7 @@
 // Material sprite resolution shared by the preview compilers: an imported document texture asset
 // (Material.textureAsset, non-empty) wins over the included-library sheet (Material.sprite).
 import { BUILTIN_SPRITES } from '../assets/builtinSprites.generated.ts';
-import { assetSpriteSheet } from '../assets/importTexture.ts';
+import { ASSET_FILE_PREFIX, assetSpriteSheet } from '../assets/importTexture.ts';
 import type { SpriteSheet } from '../assets/spriteLibrary.ts';
 import type { EffectDocumentV2, ParameterValue } from '../model/types.ts';
 
@@ -34,6 +34,19 @@ export function isTexturedTemplate(template: unknown, stored: Readonly<Record<st
 
 /** MeshLit and SurfaceTranslucent light their meshes whatever the renderer's Lit switch says. */
 export const templateLitsMeshes = (template: unknown) => template === 'MeshLit' || template === 'SurfaceTranslucent';
+
+/**
+ * 10 texture roles: a Material's normal map (normalAsset) or noise pattern (noiseAsset) is an imported texture whose role
+ * matches; it is sampled as data (no sRGB decode). Empty = not used. Returns the viewport file or why it cannot be used.
+ */
+export function dataTextureFile(doc: Pick<EffectDocumentV2, 'assets'>, assetId: ParameterValue, role: 'normal' | 'noise'): { file: string } | { error: string } | null {
+  if (typeof assetId !== 'string' || assetId === '') return null;
+  const a = doc.assets.find(x => x.id === assetId);
+  if (!a) return { error: `Texture asset "${assetId}" is not listed in this document's assets.` };
+  if (a.kind !== 'texture') return { error: `Asset "${a.provenance.originalFilename}" is a ${a.kind}; a ${role} texture must be a single image.` };
+  if (a.colorSpace !== role) return { error: `Asset "${a.provenance.originalFilename}" was imported as ${a.colorSpace}; import it again with role ${role} to use it here.` };
+  return { file: `${ASSET_FILE_PREFIX}${a.sha256}` };
+}
 
 /** The sheet to draw, or an error message; `field` names the Material parameter at fault. */
 export function materialSheet(doc: Pick<EffectDocumentV2, 'assets'>, sprite: ParameterValue, textureAsset: ParameterValue): { sheet: SpriteSheet } | { error: string; field: 'sprite' | 'textureAsset' } {

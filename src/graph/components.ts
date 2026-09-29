@@ -69,8 +69,8 @@ function adoptLayout(d: EffectDocumentV2, c: ComponentTemplate): void {
   d.anchors = d.anchors.map(a => a.id === 'source' ? { ...a, position: [...c.layout!.source] as Vec3 } : a.id === 'target' ? { ...a, position: [...c.layout!.target] as Vec3 } : a);
 }
 
-export function insertComponent(doc: EffectDocumentV2, componentId: string, prefix?: string, opts: { group?: boolean } = {}): { doc: EffectDocumentV2; prefix: string; groupNodeId?: string } {
-  const c = getComponent(componentId);
+export function insertComponent(doc: EffectDocumentV2, componentId: string | ComponentTemplate, prefix?: string, opts: { group?: boolean } = {}): { doc: EffectDocumentV2; prefix: string; groupNodeId?: string } {
+  const c = typeof componentId === 'string' ? getComponent(componentId) : componentId; // A template object: e.g. an imported asset's (assetComponent.ts).
   const d = structuredClone(doc);
   adoptLayout(d, c);
   const root = d.graphs.find(x => x.id === d.rootGraphId);

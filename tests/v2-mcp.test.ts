@@ -249,3 +249,23 @@ test('MCP parity (13): cleanup removes only unreferenced asset files', async () 
   assert.match((await call('vfx_cleanup_assets', {})).text, /Removed 1 unused file/);
   assert.ok(!existsSync(join(root, 'work/mcp/assets', orphan)));
 });
+
+test('MCP parity (10): import a normal-role texture onto a Material and Add to effect', async () => {
+  const { root, call } = await connect();
+  const { writeFileSync } = await import('node:fs');
+  const b = new Uint8Array(96).fill(5); b.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52]); new DataView(b.buffer).setUint32(16, 128); new DataView(b.buffer).setUint32(20, 128);
+  writeFileSync(join(root, 'bumps.png'), b);
+  await call('vfx_new_document', { template: 'blank', id: 'roles' });
+  await call('vfx_add_node', { docId: 'roles', type: 'Material', id: 'm' });
+  const imp = await call('vfx_import_texture', { docId: 'roles', path: 'bumps.png', role: 'normal', materialId: 'm' });
+  assert.equal(imp.error, false, imp.text);
+  const id = /id ([0-9a-f]{64})/.exec(imp.text)![1];
+  const doc = JSON.parse((await call('vfx_get_document', { docId: 'roles', full: true })).text);
+  const m = doc.graphs[0].nodes.find((n: { id: string }) => n.id === 'm');
+  assert.equal(m.params.normalAsset, id);
+  assert.equal(m.params.textureAsset, undefined, 'a normal map is not drawn as the sprite');
+  const r = await call('vfx_add_asset_component', { docId: 'roles', assetId: id });
+  assert.equal(r.error, false, r.text);
+  assert.match(r.text, /Rocks with bumps\.png/);
+  assert.match((await call('vfx_add_asset_component', { docId: 'roles', assetId: 'nope' })).text, /No asset/);
+});
