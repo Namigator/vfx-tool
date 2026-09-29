@@ -147,7 +147,7 @@ export default function PreviewV2() {
       if (r?.recoveredFrom) recoveredFromRef.current = r.recoveredFrom;
       return r?.value ?? null;
     };
-    historyRef.current = new DocumentHistory(demo === 'lightning' ? createLightningAudioDemoDocument() : demo === 'forces' ? createForcesDemoDocument() : draft() ?? createF01Document());
+    historyRef.current = new DocumentHistory(demo === 'lightning' ? createLightningAudioDemoDocument() : demo === 'forces' ? createForcesDemoDocument() : draft() ?? createBlankDocument()); // First run: a blank effect; the Library offers the presets.
   }
   const [doc, setDoc] = useState<EffectDocumentV2>(() => historyRef.current!.snapshot());
   const [text, setText] = useState(() => toText(doc));
@@ -643,9 +643,9 @@ export default function PreviewV2() {
   /** 14-MIGRATION "Convert to editable graph": a new document from a v1 recipe plus a visible conversion report. */
   const convertLegacy = useCallback((recipe: Recipe) => {
     const { doc: converted, report } = convertLegacyRecipe(recipe);
-    if (replace(toText(converted), `Convert v1 "${recipe.name}"`)) {
+    if (replace(toText(converted), `Import old effect "${recipe.name}"`)) {
       setMigrationReport(formatMigrationReport(report));
-      setFileNote(`Converted a copy of v1 "${recipe.name}" (the original is unchanged)`);
+      setFileNote(`Imported an editable copy of "${recipe.name}" (the original is unchanged)`);
     }
   }, [replace]);
   replaceRef.current = replace;
@@ -801,14 +801,8 @@ export default function PreviewV2() {
   return (
     <div className="pv2">
       <header className="pv2-header">
-        <strong>V2 graph preview — {mode === 'paths' ? 'path ribbons' : mode === 'mixed' ? 'points and ribbons' : 'point particles'}</strong>
-        <span className="pv2-note">
-          {mode === 'paths'
-            ? 'Preview of graph data: camera-facing ribbons. No bloom; sound is auditioned separately.'
-            : mode === 'mixed'
-              ? 'Preview of graph data: particles (sprites, trails, lights) and ribbons, layered by visual order. No bloom; sound is auditioned separately.'
-              : 'Preview of graph data: particles with textured sprites, trails and lights. No bloom; sound is auditioned separately.'}
-        </span>
+        <strong>VFX Studio</strong>
+        <span className="pv2-note">{doc.name}</span>
         <div className="pv2-history" role="group" aria-label="File">
           {narrow && <span className="pv2-note" role="note">Desktop authoring recommended: this window is under 1024 px wide, so panels stack; previewing works.</span>}
           <button type="button" aria-pressed={libraryOpen} onClick={() => setLibraryOpen(o => !o)} title="Show or hide the library: presets, components, assets and your saved blocks">Library</button>
@@ -818,7 +812,7 @@ export default function PreviewV2() {
             // A v1 recipe or v1 bundle is never opened as v2: offer an explicit converted copy instead.
             let legacyRecipe: Recipe | null = null;
             try { const j = JSON.parse(t); if (j && (j.schemaVersion === 1 || j.format === 'vfx-studio-bundle')) legacyRecipe = parseRecipe(t); } catch { /* not v1 */ }
-            if (legacyRecipe) { if (window.confirm(`"${f.name}" is a v1 effect. Convert a copy into an editable graph? The file is not changed.`)) convertLegacy(legacyRecipe); return; }
+            if (legacyRecipe) { if (window.confirm(`"${f.name}" was made with the old editor. Import an editable copy? The file is not changed.`)) convertLegacy(legacyRecipe); return; }
             replace(t, `Open ${f.name}`);
           }); }} />
           <button type="button" onClick={downloadDocument} title="Download this effect as a .vfx.json file (recipe only; imported asset bytes not included)">Save .json</button>
@@ -846,11 +840,11 @@ export default function PreviewV2() {
             <button type="button" disabled={!trashPick} onClick={() => { const r = restoreFromTrash(projectsRef.current, trashPick); if (r.ok) { setShelf(r.shelf); setTrash(r.trash); setFileNote(`Restored "${trashPick}" to projects`); setTrashPick(''); } else setFileNote(r.message); }} title="Put the chosen project back in Projects">Restore</button>
             <button type="button" onClick={() => { if (window.confirm(`Permanently delete ${trash.length} project(s) in the trash?`)) { emptyTrash(projectsRef.current); setTrash([]); setTrashPick(''); setFileNote('Trash emptied'); } }} title="Permanently delete everything in the trash">Empty trash</button>
           </>}
-          <select aria-label="Legacy v1 effects" value={legacyPick} onChange={e => setLegacyPick(e.currentTarget.value)} title="Effects from the old (v1) editor: your saved presets and the ten originals. Converting makes a new graph copy; the original is never changed.">
-            <option value="">Legacy v1 ({legacy.length})…</option>
+          <select aria-label="Import old effect" value={legacyPick} onChange={e => setLegacyPick(e.currentTarget.value)} title="Effects made with the old editor: your saved presets and the ten originals. Importing makes a new editable copy; the original is never changed.">
+            <option value="">Import old effect ({legacy.length})…</option>
             {legacy.map((r, i) => <option key={i} value={String(i)}>{r.name}</option>)}
           </select>
-          <button type="button" disabled={legacyPick === ''} onClick={() => { const r = legacy[Number(legacyPick)]; if (r) convertLegacy(r); setLegacyPick(''); }} title="Build an editable graph copy of the chosen v1 effect and show what was converted">Convert a copy</button>
+          <button type="button" disabled={legacyPick === ''} onClick={() => { const r = legacy[Number(legacyPick)]; if (r) convertLegacy(r); setLegacyPick(''); }} title="Build an editable copy of the chosen old effect and show what was converted">Import</button>
           <span className="pv2-note" role="status" aria-live="polite">{saveStatus}</span>
           {stale && (
             <span className="pv2-stale" role="alert">
@@ -886,7 +880,6 @@ export default function PreviewV2() {
           <button type="button" disabled={!historyFlags.canUndo} onClick={undo} title="Undo (Ctrl/Cmd+Z)">Undo</button>
           <button type="button" disabled={!historyFlags.canRedo} onClick={redo} title="Redo (Ctrl/Cmd+Shift+Z)">Redo</button>
         </div>
-        <a className="pv2-link" href={window.location.pathname}>Back to v1 editor</a>
       </header>
       <main className="pv2-main">
         {libraryOpen && <LibraryPanel document={doc} graphId={graphId} onEdit={onEdit} onOpenNew={(t, label) => { setShelfPick(''); replace(t, label); }} onClose={() => setLibraryOpen(false)} />}
@@ -1027,7 +1020,7 @@ export default function PreviewV2() {
               <button type="button" onClick={() => { replace(text, 'Apply JSON'); }}>Apply JSON</button>
               <button type="button" onClick={() => fileRef.current?.click()}>Load file…</button>
               <input ref={fileRef} className="pv2-file-input" type="file" accept=".json,application/json" tabIndex={-1} aria-hidden="true" onChange={onFile} />
-              <button type="button" onClick={resetF01}>Reset to F01</button>
+              <button type="button" onClick={resetF01}>Load test graph (F01)</button>
               <button type="button" onClick={loadLightningDemo}>Load lightning demo</button>
               {textDirty && <button type="button" onClick={revertText}>Revert text</button>}
             </div>

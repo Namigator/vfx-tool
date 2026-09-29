@@ -2,14 +2,11 @@ import { createRoot } from 'react-dom/client';
 
 const host = document.getElementById('root')!;
 host.textContent = 'Loading workspace…';
-const useGraphPreview = new URLSearchParams(window.location.search).get('workspace') === 'v2';
 
+// The graph editor is the only editor (the old one was retired before release; its effects open through
+// "Import old effect"). ?workspace=v2 links from earlier builds still land here.
 async function mountWorkspace() {
-  // Load exactly one workspace and its styles; v1 remains the default route.
-  const { default: Workspace } = useGraphPreview
-    ? await import('./PreviewV2.tsx')
-    : await import('./App.tsx');
-  if (!useGraphPreview) await import('./style.css');
+  const { default: Workspace } = await import('./PreviewV2.tsx');
   createRoot(host).render(<Workspace />);
 }
 

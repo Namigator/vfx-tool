@@ -6,8 +6,8 @@ AI agents can do everything the editor can. Everything lives in `F:\Dev2\VFX-Too
 
 ## Start
 
-Double-click `Start-VFX.cmd` (keep its window open), then open **http://127.0.0.1:5174/?workspace=v2** in Chrome or
-Edge. The old v1 editor is still at http://127.0.0.1:5174/ ("Back to v1 editor" in the new one).
+Double-click `Start-VFX.cmd` (keep its window open), then open **http://127.0.0.1:5174/** in Chrome or Edge.
+Effects made with the old editor open through **Import old effect** (an editable copy; the original is unchanged).
 
 Manual commands (Node 24+):
 
@@ -41,8 +41,8 @@ node node_modules/vite/bin/vite.js build                                        
 - **Files**: Keep (project list in this browser), Projects, Remove (goes to Trash, restorable), Save .json, Open…,
   Export pack (.vfxpack with imported images/models). Everything autosaves; the last five versions are kept. Two tabs
   on the same effect never overwrite each other.
-- **Legacy v1**: pick an old v1 effect and **Convert a copy** — a new graph is made and a report lists what was
-  converted. The original is never changed.
+- **Import old effect**: pick an effect made with the old editor (or open its file) and press **Import** — a new
+  editable copy is made and a report lists what was converted. The original is never changed.
 - **Imported assets**: import PNG/WebP/JPEG textures as colour, mask, normal map or noise (flipbook grid and playback
   preview) and GLB models (with a picture and real size). **Add to effect** inserts a ready-made component that uses
   the asset; **Use on selected Material/MeshRenderer** applies it to an existing part. Relink, Remove and Clean up
@@ -63,7 +63,7 @@ particle sampling, audio rendering, and `vfx_guide` (authoring recipes per eleme
 - `src/graph/` — node registry, graph analysis, compilers (particles, paths, audio), components, grouping.
 - `src/runtime/` — deterministic particle and path simulation.
 - `src/render/` — preview viewport (particles, ribbons, meshes, lights, bloom), built-in meshes.
-- `src/editor/` + `src/PreviewV2.tsx` — the v2 editor. `src/App.tsx` + `src/core/` — the preserved v1 editor.
+- `src/editor/` + `src/PreviewV2.tsx` — the editor. `src/core/` — the old effect format, kept only so old effects can be imported.
 - `tools/` — sprite baker, component builder, per-element recipe generators, `gate.sh`.
 - `mcp/` — MCP server, examples, guide, image tools.
 - `docs/v2-plan/` — the plan; `27-GAP-AUDIT.md` tracks what was built with evidence; `evidence/` holds measurements.

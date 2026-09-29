@@ -6,7 +6,7 @@ Where the proof for each part of the plan lives. Evidence tags as everywhere: [R
 
 Requirement-by-requirement map (T01–T40): `TRACEABILITY.md`.
 
-## Automated tests — [RAN] `bash tools/gate.sh` (tsc + 587 tests, 2026-09-29)
+## Automated tests — [RAN] `bash tools/gate.sh` (tsc + 581 tests, 2026-09-29)
 
 | Area (plan) | Test files |
 | --- | --- |
@@ -18,12 +18,12 @@ Requirement-by-requirement map (T01–T40): `TRACEABILITY.md`.
 | Compilers | v2-to-particles, v2-to-paths, v2-integration, v2-preview-mode, v2-visual-audio-handled, v2-effect-time-curve |
 | Materials, glow, assets (09, 10) | v2-sprite-library, v2-glow, v2-import-texture, v2-import-mesh, v2-asset-refs, v2-asset-roles, v2-portability |
 | Audio (11, parked for tuning) | v2-audio-graph, v2-audio-mix, v2-audio-synthesis, v2-audio-transport, v2-edge-mix |
-| Editor (12) | v2-history, v2-selection, v2-timeline, editor |
+| Editor (12) | v2-history, v2-selection, v2-timeline |
 | Persistence, packs (13) | v2-persistence, v2-vfxpack, v2-examples |
 | Migration (14, T33) | v2-migrate |
 | Components | v2-components, v2-lightning-fixture, v2-lightning-audio-fixture |
 | Agent tooling (MCP) | v2-mcp, v2-frame-stats, v2-image-tools |
-| Legacy v1 (preserved) | generator, recipe, bundle, audio, audio-lifecycle |
+| Old effect format (import only) | generator, recipe, bundle, audio, audio-lifecycle |
 
 ## Visual evidence — [SAW]
 
