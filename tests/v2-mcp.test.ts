@@ -105,6 +105,15 @@ test('MCP: import a texture onto a Material, export a .vfxpack, reopen it with t
   const opened = await call('vfx_open_pack', { path: 'work/mcp/t.vfxpack', docId: 't2' });
   assert.match(opened.text, /Opened "t2"[\s\S]*1 imported file/);
   assert.match((await call('vfx_save_document', { docId: 't2' })).text, /Warning: .*blobs\.png/);
+  // T19 parity: removal blocked while used; relink needs the original bytes or an explicit replace.
+  assert.match((await call('vfx_remove_asset', { docId: 't', assetId: id })).text, /Still used by .*textureAsset/);
+  assert.match((await call('vfx_relink_asset', { docId: 't', assetId: id, path: 'in/blobs.png' })).text, /the file is the original/);
+  copyFileSync(join(process.cwd(), 'mcp/examples/assets/four-blobs.png'), join(root, 'in/other.png'));
+  const { appendFileSync } = await import('node:fs'); appendFileSync(join(root, 'in/other.png'), new Uint8Array([0]));
+  const refused = await call('vfx_relink_asset', { docId: 't', assetId: id, path: 'in/other.png' });
+  assert.equal(refused.error, true); assert.match(refused.text, /not the original/);
+  assert.match((await call('vfx_relink_asset', { docId: 't', assetId: id, path: 'in/other.png', replace: true })).text, /Replaced blobs\.png with other\.png .*1 use/);
+  assert.doesNotMatch((await call('vfx_get_document', { docId: 't', full: true })).text, new RegExp(id));
   const sha = JSON.parse(readFileSync(join(root, 'work/mcp/t2.json'), 'utf8')).assets[0].sha256;
   assert.ok(existsSync(join(root, `work/mcp/assets/${sha}.png`)));
 });

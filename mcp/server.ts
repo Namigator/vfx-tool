@@ -33,6 +33,7 @@ import { BUILTIN_SPRITES } from '../src/assets/builtinSprites.generated.ts';
 import type { SpriteSheet } from '../src/assets/spriteLibrary.ts';
 import { createTextureAsset, sha256Hex } from '../src/assets/importTexture.ts';
 import { hasRootAudio } from '../src/render/previewMode.ts';
+import { assetReferences, relinkVerdict, removeAssetPatches } from '../src/model/assetRefs.ts';
 import { createMeshAsset } from '../src/assets/importMesh.ts';
 import { buildPack, readPack, type PackAsset } from '../src/model/vfxpack.ts';
 
@@ -362,6 +363,35 @@ ${formatMigrationReport(report)}`);
         m.params.template = 'SpriteTextured'; m.params.textureAsset = asset.id;
       }
       return `Imported ${asset.provenance.originalFilename} as ${asset.kind} ${asset.width}×${asset.height} (id ${asset.id})${materialId ? `; set on ${materialId}` : ''}.`;
+    });
+  });
+  tool('vfx_remove_asset', 'Remove an imported asset from a document (like the editor Remove). Refused while nodes still use it; the refusal lists them.', { docId: z.string(), assetId: z.string() }, ({ docId, assetId }) => {
+    const r = removeAssetPatches(getDoc(docId), assetId);
+    if (!r.ok) return bad(`Cannot remove: ${r.message}`);
+    return mutate(docId, d => { d.assets = d.assets.filter(x => x.id !== assetId); return `Removed asset ${assetId}.`; });
+  });
+  tool('vfx_relink_asset', 'Restore a missing imported asset from a project file (like the editor Relink…). The file must be the original (same SHA-256); a different file is only used with replace=true, which imports it as a NEW asset and points every use at it.', {
+    docId: z.string(), assetId: z.string(), path: z.string(), replace: z.boolean().optional(),
+  }, async ({ docId, assetId, path, replace }) => {
+    const d = getDoc(docId), asset = d.assets.find(x => x.id === assetId);
+    if (!asset) return bad(`Asset ${assetId} is not in this document.`);
+    const bytes = new Uint8Array(readFileSync(safeProjectPath(path)));
+    mkdirSync(assetDir, { recursive: true });
+    if (relinkVerdict(asset, await sha256Hex(bytes)) === 'same') {
+      if (asset.source.kind === 'bundle') writeFileSync(join(root, 'work', 'mcp', asset.source.path), bytes);
+      return ok(`Relinked ${asset.provenance.originalFilename}: the file is the original.`);
+    }
+    if (!replace) return bad(`${path} is not the original ${asset.provenance.originalFilename} (different content). Pass replace=true to use it as a new asset.`);
+    const fb = asset.interpretation.flipbook, name = path.split(/[\/]/).pop() ?? path;
+    const r = asset.kind === 'mesh' ? await createMeshAsset(bytes, name, asset.interpretation.mesh?.importScale ?? 1)
+      : await createTextureAsset(bytes, { filename: name, role: asset.colorSpace === 'mask' ? 'mask' : 'color', ...(fb ? { flipbook: { rows: fb.rows, columns: fb.columns, frameCount: fb.frameCount, ...(fb.cells ? { cells: fb.cells } : {}) } } : {}) });
+    if (!r.ok) return bad(r.message);
+    writeFileSync(join(root, 'work', 'mcp', r.value.path), bytes);
+    const uses = assetReferences(d, assetId).length;
+    return mutate(docId, doc => {
+      for (const g of doc.graphs) for (const n of g.nodes) for (const [k, v] of Object.entries(n.params)) if (v === assetId) n.params[k] = r.value.asset.id;
+      doc.assets = [...doc.assets.filter(x => x.id !== assetId && x.id !== r.value.asset.id), r.value.asset];
+      return `Replaced ${asset.provenance.originalFilename} with ${name} (new asset ${r.value.asset.id}; ${uses} use(s) updated).`;
     });
   });
   tool('vfx_import_mesh', 'Import a self-contained .glb (project path; ≤20 MiB, ≤50k triangles, no animation/cameras/lights) as a mesh asset; optionally set it on a MeshRenderer (meshAsset). By default the model is fitted to ≈1 m; with MeshRenderer importedSize "real" it keeps file units × importScale meters. Particle size × Scale multiplies either.', {

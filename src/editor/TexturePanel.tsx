@@ -4,12 +4,13 @@
 // 10 "Inspect → classify role → preview → add": a chosen image is previewed with its flipbook cell grid first
 // and only added on confirm.
 import { useRef, useState } from 'react';
-import { createTextureAsset } from '../assets/importTexture.ts';
+import { createTextureAsset, sha256Hex } from '../assets/importTexture.ts';
+import { relinkVerdict, removeAssetPatches, replaceAssetPatches } from '../model/assetRefs.ts';
 import { createMeshAsset, inspectGlb, type GlbSummary } from '../assets/importMesh.ts';
 import { previewGlb, type ModelPreview } from './modelPreview.ts';
 import { registerAssetUrl } from '../assets/assetUrls.ts';
 import { putAssetBytes } from '../model/assetStore.ts';
-import type { EffectDocumentV2 } from '../model/types.ts';
+import type { AssetReference, EffectDocumentV2 } from '../model/types.ts';
 import type { Patch } from './history.ts';
 
 type Props = {
@@ -17,10 +18,59 @@ type Props = {
   graphId: string;
   selectedNodeId: string | undefined;
   onEdit: (label: string, patches: Patch[]) => void;
+  /** IDs of imported assets whose bytes are not on this device (10: named placeholder + Relink). */
+  missingIds: readonly string[];
+  /** Called after bytes were restored locally so the editor re-checks missing assets. */
+  onBytesRestored: () => void;
 };
 
-export function TexturePanel({ document: doc, graphId, selectedNodeId, onEdit }: Props) {
+export function TexturePanel({ document: doc, graphId, selectedNodeId, onEdit, missingIds, onBytesRestored }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const relinkRef = useRef<HTMLInputElement>(null);
+  const [relinkTarget, setRelinkTarget] = useState<AssetReference | null>(null);
+  /** A relink file that is NOT the original: only an explicit Replace as new asset uses it. */
+  const [replaceOffer, setReplaceOffer] = useState<{ asset: AssetReference; file: File; bytes: Uint8Array } | null>(null);
+  const relink = async (asset: AssetReference, f: File) => {
+    const bytes = new Uint8Array(await f.arrayBuffer());
+    if (relinkVerdict(asset, await sha256Hex(bytes)) === 'same') {
+      const blob = new Blob([bytes], { type: asset.mime });
+      const stored = await putAssetBytes(asset.sha256, asset.mime, blob);
+      registerAssetUrl(asset.sha256, URL.createObjectURL(blob));
+      setReplaceOffer(null);
+      setStatus(`Relinked ${asset.provenance.originalFilename}: the file is the original${stored.ok ? '' : ` (not saved locally: ${stored.message})`}.`);
+      onBytesRestored();
+    } else {
+      setReplaceOffer({ asset, file: f, bytes });
+      setStatus('');
+    }
+  };
+  const replaceAsNew = async () => {
+    const o = replaceOffer;
+    if (!o) return;
+    const fb = o.asset.interpretation.flipbook;
+    const r = o.asset.kind === 'mesh'
+      ? await createMeshAsset(o.bytes, o.file.name, o.asset.interpretation.mesh?.importScale ?? 1)
+      : await createTextureAsset(o.bytes, { filename: o.file.name, role: o.asset.colorSpace === 'mask' ? 'mask' : 'color', ...(fb ? { flipbook: { rows: fb.rows, columns: fb.columns, frameCount: fb.frameCount, ...(fb.cells ? { cells: fb.cells } : {}) } } : {}) });
+    if (!r.ok) { setStatus(`Replace failed: ${r.message}`); return; }
+    const blob = new Blob([o.bytes as Uint8Array<ArrayBuffer>], { type: r.value.asset.mime });
+    await putAssetBytes(r.value.asset.sha256, r.value.asset.mime, blob);
+    registerAssetUrl(r.value.asset.sha256, URL.createObjectURL(blob));
+    onEdit(`Replace ${o.asset.provenance.originalFilename} with ${o.file.name}`, replaceAssetPatches(doc, o.asset.id, r.value.asset));
+    setReplaceOffer(null);
+    setStatus(`Replaced ${o.asset.provenance.originalFilename} with ${o.file.name} everywhere it was used (undo restores the old one).`);
+  };
+  const removeAsset = (a: AssetReference) => {
+    const r = removeAssetPatches(doc, a.id);
+    if (!r.ok) { setStatus(`Cannot remove ${a.provenance.originalFilename}: ${r.message}`); return; }
+    onEdit(`Remove ${a.provenance.originalFilename}`, r.patches);
+    setStatus(`Removed ${a.provenance.originalFilename} from this effect.`);
+  };
+  const assetButtons = (a: AssetReference) => (
+    <>
+      {missingIds.includes(a.id) && <button type="button" onClick={() => { setRelinkTarget(a); relinkRef.current?.click(); }} title="Pick the original file again; a different file is only used if you confirm Replace">Relink…</button>}
+      <button type="button" onClick={() => removeAsset(a)} title="Remove from this effect (refused while nodes still use it)">Remove</button>
+    </>
+  );
   const meshRef = useRef<HTMLInputElement>(null);
   const [role, setRole] = useState<'color' | 'mask'>('color');
   const [grid, setGrid] = useState({ rows: 1, columns: 1 });
@@ -139,12 +189,21 @@ export function TexturePanel({ document: doc, graphId, selectedNodeId, onEdit }:
           </div>
         </div>
       )}
+      <input ref={relinkRef} type="file" accept="image/png,image/webp,image/jpeg,.glb,model/gltf-binary" hidden onChange={e => { const f = e.currentTarget.files?.[0]; e.currentTarget.value = ''; if (f && relinkTarget) void relink(relinkTarget, f); }} />
       {status && <p className="pv2-note" role="status">{status}</p>}
+      {replaceOffer && (
+        <p className="pv2-warn" role="alert">
+          {replaceOffer.file.name} is not the original {replaceOffer.asset.provenance.originalFilename} (different content), so the effect would look different.
+          <button type="button" onClick={() => void replaceAsNew()}>Replace as new asset</button>
+          <button type="button" onClick={() => setReplaceOffer(null)}>Cancel</button>
+        </p>
+      )}
       {textures.length === 0 ? <p className="pv2-muted">No imported textures in this effect.</p> : (
         <ul className="tp-list">
           {textures.map(a => (
             <li key={a.id}>
-              <span>{a.provenance.originalFilename} — {a.width}×{a.height}{a.interpretation.flipbook ? ` · ${a.interpretation.flipbook.columns}×${a.interpretation.flipbook.rows}` : ''} · {a.colorSpace}</span>
+              <span>{missingIds.includes(a.id) && <strong className="pv2-warn">MISSING </strong>}{a.provenance.originalFilename} — {a.width}×{a.height}{a.interpretation.flipbook ? ` · ${a.interpretation.flipbook.columns}×${a.interpretation.flipbook.rows}` : ''} · {a.colorSpace}</span>
+              {assetButtons(a)}
               <button type="button" disabled={!material} onClick={() => useOn(a.id, a.provenance.originalFilename)} title={material ? `Set ${material.label} to this texture` : 'Select a Material node first'}>Use on selected Material</button>
             </li>
           ))}
@@ -154,7 +213,8 @@ export function TexturePanel({ document: doc, graphId, selectedNodeId, onEdit }:
         <ul className="tp-list">
           {models.map(a => (
             <li key={a.id}>
-              <span>{a.provenance.originalFilename} · 3D model</span>
+              <span>{missingIds.includes(a.id) && <strong className="pv2-warn">MISSING </strong>}{a.provenance.originalFilename} · 3D model</span>
+              {assetButtons(a)}
               <button type="button" disabled={!meshRenderer} onClick={() => useModel(a.id, a.provenance.originalFilename)} title={meshRenderer ? `Draw ${meshRenderer.label} particles as this model` : 'Select a MeshRenderer node first'}>Use on selected MeshRenderer</button>
             </li>
           ))}

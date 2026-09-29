@@ -647,16 +647,17 @@ export default function PreviewV2() {
 
   // Imported texture bytes: register object URLs for document assets from the local asset store.
   const [missingAssets, setMissingAssets] = useState<string[]>([]);
+  const [assetCheck, setAssetCheck] = useState(0);
   useEffect(() => {
     let live = true;
     const need = doc.assets.filter(a => (a.kind === 'texture' || a.kind === 'flipbook' || a.kind === 'mesh') && !hasAssetUrl(a.sha256));
     void Promise.all(need.map(async a => {
       const rec = await getAssetBytes(a.sha256);
       if (rec) registerAssetUrl(a.sha256, URL.createObjectURL(rec.blob));
-      return rec ? null : a.provenance.originalFilename;
+      return rec ? null : a.id;
     })).then(r => { if (live) setMissingAssets(r.filter((x): x is string => x !== null)); });
     return () => { live = false; };
-  }, [doc.assets]);
+  }, [doc.assets, assetCheck]);
 
   // A selection whose node was deleted (edit, undo/redo or JSON replace) is cleared.
   useEffect(() => {
@@ -858,8 +859,8 @@ export default function PreviewV2() {
           </section>
           <section className="pv2-panel" aria-label="Imported assets">
             <h2 className="pv2-heading">Imported assets</h2>
-            <TexturePanel document={doc} graphId={graphId} selectedNodeId={selectedNode?.id} onEdit={onEdit} />
-            {missingAssets.length > 0 && <p className="pv2-warn" role="alert">Missing imported asset bytes on this device: {missingAssets.join(', ')}. Import the same file again to relink.</p>}
+            <TexturePanel document={doc} graphId={graphId} selectedNodeId={selectedNode?.id} onEdit={onEdit} missingIds={missingAssets} onBytesRestored={() => setAssetCheck(n => n + 1)} />
+            {missingAssets.length > 0 && <p className="pv2-warn" role="alert">Missing imported files on this device: {missingAssets.map(id => doc.assets.find(a => a.id === id)?.provenance.originalFilename ?? id).join(', ')}. Use Relink… next to each one under Imported assets.</p>}
           </section>
           <section className="pv2-panel pv2-sound" aria-label="Sound audition">
             <h2 className="pv2-heading">Sound audition</h2>
