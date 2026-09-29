@@ -154,6 +154,64 @@ function pnoise(x, y, p, s) { const i = Math.floor(x), j = Math.floor(y), fx = x
   manifest.sprites.push({ id: 'dissolve-noise', file: 'dissolve-noise.png', kind: 'texture', cell: [S, S], columns: 1, rows: 1, blend: 'n/a', usage: 'tileable noise for dissolve/erosion and UV distortion' });
 }
 
+// ---- 10 minimum library additions (2026-09-29): lightning charge accents, wisps, dark wisps, star/ray masks, gradients.
+{
+  // 16-frame lightning charge: crackling filaments gathering into a bright core (frame 0 sparse → frame 15 dense core).
+  const arcs = Array.from({ length: 12 }, (_, k) => { const r = rng(1200 + k); return { a: r() * Math.PI * 2, len: .25 + r() * .2, bend: (r() - .5) * .8, seed: 1300 + k }; });
+  sheet('lightning-charge', 4, 4, 'flipbook', (fi, x, y) => {
+    const u = x - .5, v = y - .5, r = Math.hypot(u, v), t = fi / 15;
+    let line = 0;
+    for (const [k, arc] of arcs.entries()) {
+      if (k / arcs.length > .35 + .65 * t) continue;
+      const ang = arc.a + fi * .4 + k, along = (u * Math.cos(ang) + v * Math.sin(ang)) / arc.len, across = -u * Math.sin(ang) + v * Math.cos(ang);
+      if (along < 0 || along > 1) continue;
+      const jag = (noise2(along * 9 + fi, k, arc.seed) - .5) * .06 * (1 - along) + arc.bend * along * (1 - along) * .15;
+      line = Math.max(line, Math.exp(-(((across - jag) / .006) ** 2)) * (1 - along * .6));
+    }
+    const core = Math.exp(-(r * r) / (.004 + .012 * t)) * (.3 + .7 * t), glow = Math.exp(-(r * r) / .03) * .35 * t;
+    const a = clamp(line + core + glow) * (1 - smooth(.42, .5, r));
+    return [mix(.55, 1, core + line * .5), mix(.8, 1, core), 1, a];
+  }, { blend: 'additive', usage: 'lightning charge accents: filaments gathering into a core over 16 frames (overLife)' });
+
+  // Two static wisp masks: soft curling smoke threads (variant 0 thin, 1 broad), 2×2 with two seeds each.
+  sheet('wisp', 2, 2, 'variants', (i, x, y) => {
+    const broad = i >= 2, s = 700 + i * 13, u = x - .5, v = y - .5;
+    const curve = Math.sin(v * (broad ? 4 : 6) + i) * (broad ? .18 : .12) + (fbm(v * 3, i, s) - .5) * .2;
+    const d = Math.abs(u - curve) / (broad ? .16 : .07), tex = fbm(x * 6, y * 3, s + 1);
+    return [1, 1, 1, clamp(Math.exp(-d * d) * (.4 + .9 * tex)) * smooth(0, .15, y) * smooth(0, .15, 1 - y)];
+  }, { blend: 'normal', usage: 'static wisp masks (0–1 thin, 2–3 broad) for smoke threads, wind, spirits' });
+
+  // Dark-wisp flipbook: a smoky tendril curling and thinning away over 16 frames (tint dark, normal blend).
+  sheet('dark-wisp', 4, 4, 'flipbook', (fi, x, y) => {
+    const t = fi / 15, u = x - .5, v = y - .5, s = 800;
+    const curl = Math.sin(v * 5 + t * 3) * (.1 + .12 * t) + (fbm(v * 2.5 + t, t * 2, s) - .5) * .3;
+    const d = Math.abs(u - curl) / (.12 + .1 * t), tex = fbm(x * 5 + t * 2, y * 4 - t, s + 3);
+    const body = Math.exp(-d * d) * (.5 + .8 * tex) * (1 - .7 * t) * smooth(.5 + .4 * t, 0, Math.abs(v) + .1);
+    return [.12, .1, .16, clamp(body)];
+  }, { blend: 'normal', usage: 'dark smoke tendril curling and dissipating over 16 frames (DarkVolumeSprite)' });
+
+  // Star / ray / ring masks (2×2): 0 four-point star, 1 eight-ray burst, 2 thin ring, 3 soft cross flare.
+  sheet('star-ray', 2, 2, 'variants', (i, x, y) => {
+    const u = (x - .5) * 2, v = (y - .5) * 2, r = Math.hypot(u, v), a = Math.atan2(v, u);
+    let m = 0;
+    if (i === 0) m = Math.exp(-r * 3) * Math.pow(Math.abs(Math.cos(2 * a)), 24) + Math.exp(-(r * r) * 40);
+    else if (i === 1) m = Math.exp(-r * 2.2) * Math.pow(Math.abs(Math.cos(4 * a)), 40) * (.6 + .4 * noise2(a * 3, 0, 900)) + Math.exp(-(r * r) * 30);
+    else if (i === 2) m = Math.exp(-(((r - .75) / .04) ** 2));
+    else m = Math.exp(-Math.abs(u) * 18) * Math.exp(-Math.abs(v) * 1.5) + Math.exp(-Math.abs(v) * 18) * Math.exp(-Math.abs(u) * 1.5);
+    return [1, 1, 1, clamp(m) * (1 - smooth(.92, 1, r))];
+  }, { blend: 'additive', usage: 'star (0), ray burst (1), thin ring (2) and cross flare (3) masks for glints, holy light, impacts' });
+
+  // Neutral gradient utilities (2×2): 0 linear top→bottom, 1 radial, 2 soft vertical band, 3 diagonal.
+  sheet('gradient', 2, 2, 'variants', (i, x, y) => {
+    const r = Math.hypot(x - .5, y - .5) * 2;
+    const g = i === 0 ? 1 - y : i === 1 ? clamp(1 - r) : i === 2 ? Math.exp(-(((x - .5) / .18) ** 2)) : clamp((x + (1 - y)) / 2);
+    return [g, g, g, 1];
+  }, { blend: 'normal', usage: 'neutral gradient utilities: linear (0), radial (1), band (2), diagonal (3); tint or use as masks' });
+}
+
+// 10 "Include ... intended usage and license/provenance": every entry records its generator, seed policy and rights.
+for (const sp of manifest.sprites) Object.assign(sp, { provenance: { origin: 'authored', generator: 'tools/bake-sprites.mjs', seed: 'fixed seeds in the generator (deterministic bake)' }, license: 'VFX Studio included asset (procedural, no third-party rights)', thumbnail: 'assets/sprites/preview.html' });
+
 writeFileSync(join(outDir, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
 if (writeTs) {
   const rows = manifest.sprites.map(s => `  { id: ${JSON.stringify(s.id)}, file: ${JSON.stringify(s.file)}, kind: ${JSON.stringify(s.kind)}, cell: [${s.cell}], columns: ${s.columns}, rows: ${s.rows}, blend: ${JSON.stringify(s.blend)} },`);

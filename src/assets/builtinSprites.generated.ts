@@ -14,4 +14,9 @@ export const BUILTIN_SPRITES: readonly SpriteSheet[] = [
   { id: "bubble", file: "bubble.png", kind: "variants", cell: [256,256], columns: 2, rows: 2, blend: "normal" },
   { id: "ripple-ring", file: "ripple-ring.png", kind: "variants", cell: [256,256], columns: 2, rows: 2, blend: "normal" },
   { id: "dissolve-noise", file: "dissolve-noise.png", kind: "texture", cell: [256,256], columns: 1, rows: 1, blend: "n/a" },
+  { id: "lightning-charge", file: "lightning-charge.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "additive" },
+  { id: "wisp", file: "wisp.png", kind: "variants", cell: [256,256], columns: 2, rows: 2, blend: "normal" },
+  { id: "dark-wisp", file: "dark-wisp.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "normal" },
+  { id: "star-ray", file: "star-ray.png", kind: "variants", cell: [256,256], columns: 2, rows: 2, blend: "additive" },
+  { id: "gradient", file: "gradient.png", kind: "variants", cell: [256,256], columns: 2, rows: 2, blend: "normal" },
 ];

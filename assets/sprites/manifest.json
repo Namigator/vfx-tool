@@ -13,7 +13,14 @@
       "rows": 4,
       "blend": "normal",
       "usage": "flame tongue, leans left; tip up (+V); play over life",
-      "tint": "hot palette baked in; darken/redden with colour over life"
+      "tint": "hot palette baked in; darken/redden with colour over life",
+      "provenance": {
+        "origin": "authored",
+        "generator": "tools/bake-sprites.mjs",
+        "seed": "fixed seeds in the generator (deterministic bake)"
+      },
+      "license": "VFX Studio included asset (procedural, no third-party rights)",
+      "thumbnail": "assets/sprites/preview.html"
     },
     {
       "id": "flame-tongue-b",
@@ -27,7 +34,14 @@
       "rows": 4,
       "blend": "normal",
       "usage": "flame tongue, leans right, different silhouette",
-      "tint": "hot palette baked in"
+      "tint": "hot palette baked in",
+      "provenance": {
+        "origin": "authored",
+        "generator": "tools/bake-sprites.mjs",
+        "seed": "fixed seeds in the generator (deterministic bake)"
+      },
+      "license": "VFX Studio included asset (procedural, no third-party rights)",
+      "thumbnail": "assets/sprites/preview.html"
     },
     {
       "id": "fire-puff",
@@ -41,7 +55,14 @@
       "rows": 4,
       "blend": "normal",
       "usage": "billowing fire blob that cools and tears apart over life: flame body, fire decay, fireball puffs; play over life, additive or normal",
-      "tint": "hot palette baked in"
+      "tint": "hot palette baked in",
+      "provenance": {
+        "origin": "authored",
+        "generator": "tools/bake-sprites.mjs",
+        "seed": "fixed seeds in the generator (deterministic bake)"
+      },
+      "license": "VFX Studio included asset (procedural, no third-party rights)",
+      "thumbnail": "assets/sprites/preview.html"
     },
     {
       "id": "smoke-puff",
@@ -54,7 +75,14 @@
       "columns": 4,
       "rows": 4,
       "blend": "normal",
-      "usage": "smoke/dust puff evolving over 16 frames; tint grey/brown with colour over life"
+      "usage": "smoke/dust puff evolving over 16 frames; tint grey/brown with colour over life",
+      "provenance": {
+        "origin": "authored",
+        "generator": "tools/bake-sprites.mjs",
+        "seed": "fixed seeds in the generator (deterministic bake)"
+      },
+      "license": "VFX Studio included asset (procedural, no third-party rights)",
+      "thumbnail": "assets/sprites/preview.html"
     },
     {
       "id": "foam",
@@ -67,7 +95,14 @@
       "columns": 4,
       "rows": 4,
       "blend": "normal",
-      "usage": "foam/splash surface; ground-oriented cards or billboards"
+      "usage": "foam/splash surface; ground-oriented cards or billboards",
+      "provenance": {
+        "origin": "authored",
+        "generator": "tools/bake-sprites.mjs",
+        "seed": "fixed seeds in the generator (deterministic bake)"
+      },
+      "license": "VFX Studio included asset (procedural, no third-party rights)",
+      "thumbnail": "assets/sprites/preview.html"
     },
     {
       "id": "soft-glow",
@@ -80,7 +115,14 @@
       "columns": 2,
       "rows": 2,
       "blend": "additive",
-      "usage": "radial core/halo masks: tight, medium, wide, core+ring"
+      "usage": "radial core/halo masks: tight, medium, wide, core+ring",
+      "provenance": {
+        "origin": "authored",
+        "generator": "tools/bake-sprites.mjs",
+        "seed": "fixed seeds in the generator (deterministic bake)"
+      },
+      "license": "VFX Studio included asset (procedural, no third-party rights)",
+      "thumbnail": "assets/sprites/preview.html"
     },
     {
       "id": "spark-streak",
@@ -93,7 +135,14 @@
       "columns": 2,
       "rows": 2,
       "blend": "additive",
-      "usage": "spark streak, head at top (-V); use velocity alignment + stretch"
+      "usage": "spark streak, head at top (-V); use velocity alignment + stretch",
+      "provenance": {
+        "origin": "authored",
+        "generator": "tools/bake-sprites.mjs",
+        "seed": "fixed seeds in the generator (deterministic bake)"
+      },
+      "license": "VFX Studio included asset (procedural, no third-party rights)",
+      "thumbnail": "assets/sprites/preview.html"
     },
     {
       "id": "electric-arc",
@@ -106,7 +155,14 @@
       "columns": 2,
       "rows": 2,
       "blend": "additive",
-      "usage": "electric arc strip, endpoints at left/right edge centres"
+      "usage": "electric arc strip, endpoints at left/right edge centres",
+      "provenance": {
+        "origin": "authored",
+        "generator": "tools/bake-sprites.mjs",
+        "seed": "fixed seeds in the generator (deterministic bake)"
+      },
+      "license": "VFX Studio included asset (procedural, no third-party rights)",
+      "thumbnail": "assets/sprites/preview.html"
     },
     {
       "id": "droplet",
@@ -119,7 +175,14 @@
       "columns": 2,
       "rows": 2,
       "blend": "normal",
-      "usage": "water droplet with fresnel rim, glint and caustic; stretch along velocity for motion blur"
+      "usage": "water droplet with fresnel rim, glint and caustic; stretch along velocity for motion blur",
+      "provenance": {
+        "origin": "authored",
+        "generator": "tools/bake-sprites.mjs",
+        "seed": "fixed seeds in the generator (deterministic bake)"
+      },
+      "license": "VFX Studio included asset (procedural, no third-party rights)",
+      "thumbnail": "assets/sprites/preview.html"
     },
     {
       "id": "bubble",
@@ -132,7 +195,14 @@
       "columns": 2,
       "rows": 2,
       "blend": "normal",
-      "usage": "bubble with thin rim, clear middle and glints (gas, poison, underwater); tint with the material"
+      "usage": "bubble with thin rim, clear middle and glints (gas, poison, underwater); tint with the material",
+      "provenance": {
+        "origin": "authored",
+        "generator": "tools/bake-sprites.mjs",
+        "seed": "fixed seeds in the generator (deterministic bake)"
+      },
+      "license": "VFX Studio included asset (procedural, no third-party rights)",
+      "thumbnail": "assets/sprites/preview.html"
     },
     {
       "id": "ripple-ring",
@@ -145,7 +215,14 @@
       "columns": 2,
       "rows": 2,
       "blend": "normal",
-      "usage": "thin broken ripple ring mask for ground/water rings"
+      "usage": "thin broken ripple ring mask for ground/water rings",
+      "provenance": {
+        "origin": "authored",
+        "generator": "tools/bake-sprites.mjs",
+        "seed": "fixed seeds in the generator (deterministic bake)"
+      },
+      "license": "VFX Studio included asset (procedural, no third-party rights)",
+      "thumbnail": "assets/sprites/preview.html"
     },
     {
       "id": "dissolve-noise",
@@ -158,7 +235,114 @@
       "columns": 1,
       "rows": 1,
       "blend": "n/a",
-      "usage": "tileable noise for dissolve/erosion and UV distortion"
+      "usage": "tileable noise for dissolve/erosion and UV distortion",
+      "provenance": {
+        "origin": "authored",
+        "generator": "tools/bake-sprites.mjs",
+        "seed": "fixed seeds in the generator (deterministic bake)"
+      },
+      "license": "VFX Studio included asset (procedural, no third-party rights)",
+      "thumbnail": "assets/sprites/preview.html"
+    },
+    {
+      "id": "lightning-charge",
+      "file": "lightning-charge.png",
+      "kind": "flipbook",
+      "cell": [
+        256,
+        256
+      ],
+      "columns": 4,
+      "rows": 4,
+      "blend": "additive",
+      "usage": "lightning charge accents: filaments gathering into a core over 16 frames (overLife)",
+      "provenance": {
+        "origin": "authored",
+        "generator": "tools/bake-sprites.mjs",
+        "seed": "fixed seeds in the generator (deterministic bake)"
+      },
+      "license": "VFX Studio included asset (procedural, no third-party rights)",
+      "thumbnail": "assets/sprites/preview.html"
+    },
+    {
+      "id": "wisp",
+      "file": "wisp.png",
+      "kind": "variants",
+      "cell": [
+        256,
+        256
+      ],
+      "columns": 2,
+      "rows": 2,
+      "blend": "normal",
+      "usage": "static wisp masks (0–1 thin, 2–3 broad) for smoke threads, wind, spirits",
+      "provenance": {
+        "origin": "authored",
+        "generator": "tools/bake-sprites.mjs",
+        "seed": "fixed seeds in the generator (deterministic bake)"
+      },
+      "license": "VFX Studio included asset (procedural, no third-party rights)",
+      "thumbnail": "assets/sprites/preview.html"
+    },
+    {
+      "id": "dark-wisp",
+      "file": "dark-wisp.png",
+      "kind": "flipbook",
+      "cell": [
+        256,
+        256
+      ],
+      "columns": 4,
+      "rows": 4,
+      "blend": "normal",
+      "usage": "dark smoke tendril curling and dissipating over 16 frames (DarkVolumeSprite)",
+      "provenance": {
+        "origin": "authored",
+        "generator": "tools/bake-sprites.mjs",
+        "seed": "fixed seeds in the generator (deterministic bake)"
+      },
+      "license": "VFX Studio included asset (procedural, no third-party rights)",
+      "thumbnail": "assets/sprites/preview.html"
+    },
+    {
+      "id": "star-ray",
+      "file": "star-ray.png",
+      "kind": "variants",
+      "cell": [
+        256,
+        256
+      ],
+      "columns": 2,
+      "rows": 2,
+      "blend": "additive",
+      "usage": "star (0), ray burst (1), thin ring (2) and cross flare (3) masks for glints, holy light, impacts",
+      "provenance": {
+        "origin": "authored",
+        "generator": "tools/bake-sprites.mjs",
+        "seed": "fixed seeds in the generator (deterministic bake)"
+      },
+      "license": "VFX Studio included asset (procedural, no third-party rights)",
+      "thumbnail": "assets/sprites/preview.html"
+    },
+    {
+      "id": "gradient",
+      "file": "gradient.png",
+      "kind": "variants",
+      "cell": [
+        256,
+        256
+      ],
+      "columns": 2,
+      "rows": 2,
+      "blend": "normal",
+      "usage": "neutral gradient utilities: linear (0), radial (1), band (2), diagonal (3); tint or use as masks",
+      "provenance": {
+        "origin": "authored",
+        "generator": "tools/bake-sprites.mjs",
+        "seed": "fixed seeds in the generator (deterministic bake)"
+      },
+      "license": "VFX Studio included asset (procedural, no third-party rights)",
+      "thumbnail": "assets/sprites/preview.html"
     }
   ]
 }
