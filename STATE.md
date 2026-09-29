@@ -22,6 +22,13 @@
 - Before-release backlog DONE (117ad01): the graph editor is the default page (http://127.0.0.1:5174/), the old editor
   UI is removed (src/core stays only for importing old effects), the converter is "Import old effect", and a first run
   opens a blank effect with the Library. The release is just "VFX Studio" (no "v1").
+- Performance pass STARTED 2026-09-29 (user's first post-release item): real-GPU fps for all 49 = 60 fps
+  (evidence/perf-fps-*.md); in-editor knob edit → preview median ~100 ms, worst component median 227 ms (was ~300–500;
+  evidence/perf-compile-seek-*.md). Tools: `node tools/perf-fps.mjs`, `node tools/perf-knob.mjs`, both via
+  `~/.claude/tools/cdp-eval.mjs` (headless Chrome + DevTools protocol; `--gpu` real GPU, `--profile x.cpuprofile`).
+  Use it instead of the in-app pane for timing: the pane is hidden/throttled (rAF ~1 Hz).
+  Next perf targets: flamethrower edits (227 ms median; compile-time parent-event sim + duration check at 600 ticks),
+  lightning (~176 ms).
 - Post-release (user order): performance pass → timeline strip with component bars, then keyframed knobs →
   engine export → in-editor AI box that runs its own render→look→adjust loop → full AI guide → sound.
 
