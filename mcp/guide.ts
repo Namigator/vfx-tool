@@ -58,7 +58,29 @@ export const GUIDE: Record<string, string> = {
   props: `PROPS AND MESHES
 - PropMesh: one static mesh (cylinder, box, cone, orb, shard, rock-*, crystal*, or an imported GLB) at an anchor, pointing at Aim (another anchor) or along Direction. Width = size, Length = along the pointing direction. pivot start: the mesh begins at the anchor and extends along the pointing direction (legs, posts); pivot end: it ends at the anchor, body behind (nozzles, barrels); center: centred.
 - OffsetAnchor moves an anchor by a fixed offset (a floor point under the target, a point above a hand...).
-- Lit meshes need light: a PointLight near them; Material roughness/metalness shape the look; rim adds an edge glow.`,
+- Lit meshes need light: a PointLight near them; Material roughness/metalness shape the look; rim adds an edge glow.
+- MeshRenderer mesh "plane" is a flat 1 m card (+Y forward) for decals and flakes; set Material faceMode "double" to see both sides.`,
+
+  materials: `MATERIALS AND TEMPLATES
+- Material.template sets fixed rules on the same fields: SpriteUnlit (soft disc), SpriteTextured (library or imported sprite), RibbonUnlit (plain strips), MeshLit (meshes lit whatever the renderer says), SurfaceTranslucent (normal blend, liquid ribbons, some reflection, optional refraction on meshes), DarkVolumeSprite (normal-blend textured smoke, emission forced to 0 so glow never lifts it).
+- hueShift (-180..180 degrees) rotates every colour the material draws; each component also gets an automatic "Colour shift" knob.
+- Flipbooks: BillboardRenderer flipbookMode overLife/fps/first; flipbookLoop false holds the last frame in fps mode; flipbookCrossfade blends into the next cell (smoother slow flipbooks).
+- Dissolve (billboards): dissolve amount, dissolveStart, dissolveEdge + dissolveEdgeColor for a burning rim. noiseAsset (an imported texture with role noise) replaces the included dissolve pattern.
+- Lit meshes: reflection, surfaceDetail + detailScale, colorVariation, rim; normalAsset (an imported texture with role normal) adds real relief; refraction bends what is behind (preview enhancement).
+- Included sprites (vfx_describe_node_type Material lists them): flame tongues, fire-puff, smoke-puff, foam, soft-glow, spark-streak, electric-arc, droplet, bubble, ripple-ring, dissolve-noise, lightning-charge (16-frame gathering crackle), wisp (thin/broad threads), dark-wisp (16-frame tendril), star-ray (star, ray burst, thin ring, cross flare), gradient (linear, radial, band, diagonal).`,
+
+  values: `CURVES, GRADIENTS AND OVER-LIFE
+- Curve and Gradient value nodes feed curve/gradient parameters (one curve can drive several renderers).
+- OverLife sits in a particle chain: size/opacity/colour/spin-speed over life for every renderer downstream, unless that renderer sets its own.
+- RingRenderer: a closed ring at an anchor with a radius curve over its window (shockwaves) - simpler than RingPath + RibbonRenderer.
+- Emitter shape "path": births spread along the connected paths by arc length (sparks along a bolt, mist along a stream).
+- A parent knob bound to a Group's exposed control drives the group's PublicParameter nodes.`,
+
+  workflow: `WORKFLOW TOOLS
+- Components: vfx_list_components, then vfx_add_component (group true), or vfx_new_document component="<id>" to open a preset as a new effect. startOn "node.port" starts a component on an event (vfx_list_events lists them).
+- Imported assets: vfx_import_texture role color|mask|normal|noise (materialId applies it), vfx_import_mesh, then vfx_add_asset_component inserts a ready-made component that uses the asset.
+- Editing: vfx_duplicate_nodes (preservePattern keeps the same random pattern), vfx_copy_nodes / vfx_paste_nodes, vfx_remove_node reconnect=true joins the neighbours, vfx_group_nodes, vfx_set_control (a longer Travel grows the effect duration).
+- Looking: vfx_render_frames / vfx_contact_sheet accept orbit {yaw, pitch, distance}, camera, solo [node ids] and background "light". Look at the images before claiming anything.`,
 };
 
 export function guideText(topic?: string): string {
