@@ -19,7 +19,7 @@ jobs:
         with: 
           version: 11
           runtime: node@22
-          cache: true
+          cache: false
 
       - run: pnpm ci
       - run: pnpm run build
