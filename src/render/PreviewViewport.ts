@@ -227,12 +227,23 @@ void main() {
   // Instance matrix carries translation (column 3) and uniform size (column 0.x); quad faces the camera.
   vec4 mv = modelViewMatrix * vec4(instanceMatrix[3].xyz, 1.0);
   // Local quad: pivot shifts the particle along +Y (0 trailing end, 1 leading tip), then stretch along +Y.
-  vec2 p = vec2(position.x, (position.y + 0.5 - uPivot) * uStretch);
+  float stretch = uStretch;
   float ang = spinAngle;
   if (uAlign > 0.5 && uAlign < 1.5) {
     vec3 vv = (modelViewMatrix * vec4(worldVelocity, 0.0)).xyz;
-    ang = dot(vv.xy, vv.xy) > 1e-10 ? atan(vv.y, vv.x) - 1.5707963 : 0.0;
+    // Seen along its velocity (a jet flying toward/away from the camera) the screen direction is short and
+    // unstable: sprites splayed into a spiky star and flipped between frames (user 2026-09-29). Fade the alignment
+    // and the stretch out as the velocity turns toward the view axis, so end-on they become upright round puffs.
+    float along = length(vv) > 1e-5 ? length(vv.xy) / length(vv) : 0.0;
+    float w = smoothstep(0.25, 0.7, along);
+    vec2 dir = dot(vv.xy, vv.xy) > 1e-10 ? normalize(vv.xy) : vec2(0.0, 1.0);
+    // Blend directions (not angles, which wrap at ±pi): upright (0,1) end-on, the screen velocity side-on.
+    vec2 b = mix(vec2(0.0, 1.0), dir, w);
+    if (dot(b, b) < 1e-8) b = dir;
+    ang = atan(b.y, b.x) - 1.5707963;
+    stretch = mix(1.0, uStretch, w);
   }
+  vec2 p = vec2(position.x, (position.y + 0.5 - uPivot) * stretch);
   float c = cos(ang), s = sin(ang);
   vec2 r = vec2(c * p.x - s * p.y, s * p.x + c * p.y) * instanceMatrix[0][0];
   vec3 centre = (modelMatrix * vec4(instanceMatrix[3].xyz, 1.0)).xyz;
