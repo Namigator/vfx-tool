@@ -81,6 +81,13 @@
 - Mesh particles export (Sonnet implementer, meshBake.ts): rocks -> Slate Blocks, crystals/shards -> Wedges, orbs ->
   Balls, moved along baked (thinned, interpolated) sim paths; [RAN] Studio: earth-upheaval 66 pieces (EffectData 100 KB),
   ice-eruption 66 pieces (69 KB). Not seen visually.
+- ROBLOX POC DONE (user 2026-09-30: "I just wanted a POC and I guess we have it"). Test place F:/Dev2/RobloxGames/VFXLab
+  (Rojo project, VFXLab.rbxl; rojo serve port 34873; 12-effect gallery lanes, Q/E camera tour, F replay, R back,
+  1..= cast at mouse). Real sprite sheets uploaded to IntoToilet (work/roblox/asset-ids.json; SpellForge stand-ins in
+  asset-ids.spellforge-standins.json). [SAW via user screenshots] fireball good; flamethrower flames textured.
+  Roblox polish backlog (not requested now): flame tongues stand vertical instead of along the jet (check
+  VelocityParallel/EmissionDirection mapping); lightning ~1150 Beams; ground rings face camera; dissolve tips lost;
+  experience not yet published (user asked "create a new experience" - still open).
 - shot.ps1 url failed intermittently 2026-09-29 ("chrome produced no file") while Studio/agent runs were active; works
   again 2026-09-30 incl. &tick URLs. If it recurs: retry once, else use the in-app browser pane or cdp-eval.
 - USER REPORT 2026-09-29 (open): viewed from behind/in front of the fire (along the jet), the sprites move
