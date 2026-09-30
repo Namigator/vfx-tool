@@ -110,7 +110,10 @@ A **Material** node decides appearance for the renderer it feeds:
   (smoke, dust, water, dark things: overlapping sprites cover each other) vs cutout.
 - `tint`, `opacity`, `emission` (how much it glows / feeds bloom), `hueShift`, part `recolorFrom/To`.
 - Sprite sheets are **flipbooks** (4×4 animations) or **variant sets** (several different shapes, one per particle).
-  See [reference/sprites.md](reference/sprites.md).
+  Use one with `template: "SpriteTextured"` and `sprite: "<id>"` (e.g. `"flame-tongue-a"`); imported textures use
+  `textureAsset: "<assetId>"`. See [reference/sprites.md](reference/sprites.md).
+- Curve and colour-ramp parameters (size/opacity/colour over life) take JSON objects, not lists: see the "default"
+  note at the top of [reference/nodes.md](reference/nodes.md).
 - Extra looks: dissolve (burning edges), rim, UV scroll/distort, reflection/surface detail for lit meshes, liquid.
 
 ## 8. Glow

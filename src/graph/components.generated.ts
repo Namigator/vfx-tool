@@ -5946,7 +5946,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    },
    {
     "id": "length",
-    "label": "Ray length",
+    "label": "Ray stretch",
     "value": 14,
     "bindings": [
      {

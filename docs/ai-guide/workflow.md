@@ -37,7 +37,10 @@ Never claim an effect "looks good" from compile output or particle counts. Only 
 
 ## Cameras and backgrounds
 
-- Default framing fits the effect. For a specific angle pass `camera: { position, target, fov }` (metres).
+- Default framing fits the effect once, early in its life; it does **not** re-fit per tick. Effects that grow a
+  lot (crystals shooting up, an expanding ring, a charging orb) can be clipped at late ticks: that is content off
+  frame, not missing content. Pass `camera: { position, target, fov }` (metres) for those, or `orbit: { yaw, pitch,
+  distance: 1.5 }` to pull the automatic framing back.
 - Check effects from the **side**, from **behind the source** and from **in front of the target**: sprites that
   follow their velocity look different end-on.
 - `background: "light"` renders on a light floor: dark smoke vanishes on dark floors and faint additive glows vanish

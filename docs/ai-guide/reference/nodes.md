@@ -6,8 +6,9 @@
 Every node type in the registry (57 types, definition version 1), grouped by role. Node ids in a document are free-form; the **type** is what you pick. Set parameters with the MCP tools (see mcp-tools.md) using the parameter **id** and a value of the listed type and range.
 
 How to read the tables:
-- **Ports** carry typed connections: an output connects only to an input of the same port type (and unit). `connections: many` inputs accept several links (they are ordered); `one` accepts a single link. `required: yes` inputs must be connected or compile reports an error.
+- **Ports** carry typed connections: an output connects only to an input of the same port type (and unit). `connections: many` inputs accept several links (they are ordered); `one` accepts a single link. Outputs always fan out: one output (a particle chain, an event, a path set) can feed any number of inputs, e.g. the same Emitter particles into a renderer and into ParticleEvents. `required: yes` inputs must be connected or compile reports an error.
 - **Unit** values: meter, second, tick (60 per second), radian, metersPerSecond, metersPerSecondSquared, hertz, perSecond, linearGain, normalized (0..1), none. A connection must match the unit exactly (use ScalarMath/Constant with a Unit to convert).
+- **default** shows curves and gradients compactly (`curve normalized/linear: 0:1 1:0`, `gradient: 0:#FFFFFF 1:#FF8000`). The JSON you pass to vfx_set_params / vfx_add_node is: curve `{ "domain": "normalized", "interpolation": "linear", "keys": [{ "x": 0, "y": 1 }, { "x": 1, "y": 0 }] }` (2-16 keys, x ascending); gradient `{ "stops": [{ "position": 0, "color": { "srgb": "#FFFFFF", "alpha": 1 } }, { "position": 1, "color": { "srgb": "#FF8000", "alpha": 0 } }] }` (2-8 stops). Colours everywhere are `{ "srgb": "#RRGGBB", "alpha": 1 }`. `vfx_describe_node_type` shows the exact default JSON.
 - **range** is the accepted min..max (values outside are rejected, never clamped). Vector parameters list one bound for every component.
 - **drive**: number, integer, boolean, colour, vec2, vec3 and quaternion parameters are also implicit input ports named after the parameter; connect a signal node (Constant, RandomRange, ScalarMath, Oscillator, Time, EffectTimeCurve, PublicParameter) whose output unit and evaluation domain match. `domains` lists which signal domains the parameter accepts (constant = fixed; effectTime = varies over effect time; normalizedAge = varies over particle life; pathU = varies along a path). Integer parameters accept only constant sources. Curve/gradient parameters take a Curve/Gradient node (curveValue/gradientValue). Enum and string parameters cannot be driven.
 - **edit**: live = a change applies instantly while playing; resample = the effect is re-simulated after a change (still fast, but not per-frame).
@@ -99,11 +100,11 @@ A position in the effect: the document anchor "source", "target" or a custom anc
 
 None declared. (Number/boolean/colour/vector parameters can still be driven, see the Drive column.)
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `out` | Anchor | anchor | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `out` | Anchor | anchor | — |
 
 **Parameters**
 
@@ -123,13 +124,13 @@ Timing gate. Outputs a timeWindow (needed by continuous emitters, sprites, light
 |---|---|---|---|---|---|
 | `trigger` | Trigger | event | one | no | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `start` | Start | event | one | no | — |
-| `end` | End | event | one | no | — |
-| `window` | Window | timeWindow | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `start` | Start | event | — |
+| `end` | End | event | — |
+| `window` | Window | timeWindow | — |
 
 **Parameters**
 
@@ -153,11 +154,11 @@ An anchor moved by a fixed offset from another anchor (a floor point under the T
 |---|---|---|---|---|---|
 | `anchor` | Anchor | anchor | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `out` | Out | anchor | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `out` | Out | anchor | — |
 
 **Parameters**
 
@@ -178,11 +179,11 @@ Delays every event that passes through by a number of ticks (a second burst 20 t
 |---|---|---|---|---|---|
 | `events` | Events | event | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `event` | Event | event | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `event` | Event | event | — |
 
 **Parameters**
 
@@ -202,11 +203,11 @@ Combines several event outputs into one event stream.
 |---|---|---|---|---|---|
 | `events` | Events | event | many | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `event` | Event | event | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `event` | Event | event | — |
 
 **Parameters**
 
@@ -224,13 +225,13 @@ Signal source: effect seconds, seconds since the local window opened and the win
 |---|---|---|---|---|---|
 | `window` | Window | timeWindow | one | no | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `effectSeconds` | Effect seconds | scalarSignal | one | no | effectTime |
-| `localSeconds` | Local seconds | scalarSignal | one | no | effectTime |
-| `progress` | Progress | scalarSignal | one | no | effectTime |
+| id | label | type | domains |
+|---|---|---|---|
+| `effectSeconds` | Effect seconds | scalarSignal | effectTime |
+| `localSeconds` | Local seconds | scalarSignal | effectTime |
+| `progress` | Progress | scalarSignal | effectTime |
 
 **Parameters**
 
@@ -256,11 +257,11 @@ Creates particles. Continuous emission = Rate + a connected window with Burst 0.
 | `window` | Window | timeWindow | one | no | — |
 | `aim` | Aim | anchor | one | no | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `particles` | Particles | particles | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `particles` | Particles | particles | — |
 
 **Parameters**
 
@@ -297,11 +298,11 @@ Sets each new particle's size, starting rotation, spin and colour (random betwee
 |---|---|---|---|---|---|
 | `particles` | Particles | particles | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `particles` | Particles | particles | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `particles` | Particles | particles | — |
 
 **Parameters**
 
@@ -328,11 +329,11 @@ Constant world-space acceleration (negative Y falls, positive Y rises like smoke
 |---|---|---|---|---|---|
 | `particles` | Particles | particles | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `particles` | Particles | particles | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `particles` | Particles | particles | — |
 
 **Parameters**
 
@@ -353,11 +354,11 @@ Exponential velocity damping. Smoke, embers and event-born particles that inheri
 |---|---|---|---|---|---|
 | `particles` | Particles | particles | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `particles` | Particles | particles | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `particles` | Particles | particles | — |
 
 **Parameters**
 
@@ -378,11 +379,11 @@ Turbulence: noise-driven acceleration for flicker, curling smoke and wind. Appro
 |---|---|---|---|---|---|
 | `particles` | Particles | particles | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `particles` | Particles | particles | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `particles` | Particles | particles | — |
 
 **Parameters**
 
@@ -407,11 +408,11 @@ Pulls particles toward an anchor (charge-up motes, absorption). Particles closer
 | `particles` | Particles | particles | one | yes | — |
 | `anchor` | Anchor | anchor | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `particles` | Particles | particles | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `particles` | Particles | particles | — |
 
 **Parameters**
 
@@ -435,11 +436,11 @@ Swirls particles around an axis through an anchor (tornado, whirlpool, void): ta
 | `particles` | Particles | particles | one | yes | — |
 | `anchor` | Anchor | anchor | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `particles` | Particles | particles | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `particles` | Particles | particles | — |
 
 **Parameters**
 
@@ -463,12 +464,12 @@ Ground plane at y=0: particles kill, slide or bounce. Also outputs a `collision`
 |---|---|---|---|---|---|
 | `particles` | Particles | particles | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `particles` | Particles | particles | one | no | — |
-| `collision` | Collision | event | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `particles` | Particles | particles | — |
+| `collision` | Collision | event | — |
 
 **Parameters**
 
@@ -491,11 +492,11 @@ Size, opacity, colour and spin-speed over each particle's normalized life (0 = b
 |---|---|---|---|---|---|
 | `particles` | Particles | particles | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `particles` | Particles | particles | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `particles` | Particles | particles | — |
 
 **Parameters**
 
@@ -518,12 +519,12 @@ Turns particle birth/death into events so other things can happen where particle
 |---|---|---|---|---|---|
 | `particles` | Particles | particles | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `birth` | Birth | event | one | no | — |
-| `death` | Death | event | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `birth` | Birth | event | — |
+| `death` | Death | event | — |
 
 **Parameters**
 
@@ -546,11 +547,11 @@ A random number between Min and Max (deterministic per document seed and node). 
 
 None declared. (Number/boolean/colour/vector parameters can still be driven, see the Drive column.)
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `value` | Value | scalarSignal | one | no | constant |
+| id | label | type | domains |
+|---|---|---|---|
+| `value` | Value | scalarSignal | constant |
 
 **Parameters**
 
@@ -570,11 +571,11 @@ A fixed number to feed several parameters at once. Set Unit to match the paramet
 
 None declared. (Number/boolean/colour/vector parameters can still be driven, see the Drive column.)
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `value` | Value | scalarSignal | one | no | constant |
+| id | label | type | domains |
+|---|---|---|---|
+| `value` | Value | scalarSignal | constant |
 
 **Parameters**
 
@@ -593,11 +594,11 @@ A reusable curve (2-16 keys). Connect to any curve parameter (size/opacity over 
 
 None declared. (Number/boolean/colour/vector parameters can still be driven, see the Drive column.)
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `curve` | Curve | curveValue | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `curve` | Curve | curveValue | — |
 
 **Parameters**
 
@@ -615,11 +616,11 @@ A reusable colour ramp (2-8 stops). Connect to any gradient parameter so one ram
 
 None declared. (Number/boolean/colour/vector parameters can still be driven, see the Drive column.)
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `gradient` | Gradient | gradientValue | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `gradient` | Gradient | gradientValue | — |
 
 **Parameters**
 
@@ -637,11 +638,11 @@ Arithmetic on two numbers: add, subtract, multiply, divide, min, max, exp, power
 
 None declared. (Number/boolean/colour/vector parameters can still be driven, see the Drive column.)
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `value` | Value | scalarSignal | one | no | constant |
+| id | label | type | domains |
+|---|---|---|---|
+| `value` | Value | scalarSignal | constant |
 
 **Parameters**
 
@@ -663,11 +664,11 @@ Reads a published control (knob) of its own graph as a number signal, used insid
 
 None declared. (Number/boolean/colour/vector parameters can still be driven, see the Drive column.)
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `value` | Value | scalarSignal | one | no | constant |
+| id | label | type | domains |
+|---|---|---|---|
+| `value` | Value | scalarSignal | constant |
 
 **Parameters**
 
@@ -685,11 +686,11 @@ A curve over effect seconds producing a number signal (ramp a force in and out, 
 
 None declared. (Number/boolean/colour/vector parameters can still be driven, see the Drive column.)
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `value` | Value | scalarSignal | one | no | effectTime |
+| id | label | type | domains |
+|---|---|---|---|
+| `value` | Value | scalarSignal | effectTime |
 
 **Parameters**
 
@@ -707,11 +708,11 @@ A periodic signal (sine/triangle/square/saw) over effect time: flicker, pulses.
 
 None declared. (Number/boolean/colour/vector parameters can still be driven, see the Drive column.)
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `value` | Value | scalarSignal | one | no | effectTime |
+| id | label | type | domains |
+|---|---|---|---|
+| `value` | Value | scalarSignal | effectTime |
 
 **Parameters**
 
@@ -741,12 +742,12 @@ Moves an anchor along the first path of its set: `anchor` output follows the pat
 | `paths` | Paths | paths | one | yes | — |
 | `window` | Window | timeWindow | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `anchor` | Anchor | anchor | one | no | — |
-| `arrival` | Arrival | event | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `anchor` | Anchor | anchor | — |
+| `arrival` | Arrival | event | — |
 
 **Parameters**
 
@@ -769,11 +770,11 @@ Straight path from a start anchor to an end anchor.
 | `start` | Start | anchor | one | yes | — |
 | `end` | End | anchor | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `paths` | Paths | paths | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `paths` | Paths | paths | — |
 
 **Parameters**
 
@@ -794,11 +795,11 @@ Curved path between two anchors (arched stream, projectile arc). Arch controls t
 | `start` | Start | anchor | one | yes | — |
 | `end` | End | anchor | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `paths` | Paths | paths | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `paths` | Paths | paths | — |
 
 **Parameters**
 
@@ -821,11 +822,11 @@ Spiral path around the line between two anchors (swirling wind/energy strands).
 | `start` | Start | anchor | one | yes | — |
 | `end` | End | anchor | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `paths` | Paths | paths | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `paths` | Paths | paths | — |
 
 **Parameters**
 
@@ -850,11 +851,11 @@ Offsets, rotates and scales every path of a set.
 |---|---|---|---|---|---|
 | `paths` | Paths | paths | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `paths` | Paths | paths | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `paths` | Paths | paths | — |
 
 **Parameters**
 
@@ -876,11 +877,11 @@ Combines several path sets into one.
 |---|---|---|---|---|---|
 | `paths` | Paths | paths | many | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `paths` | Paths | paths | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `paths` | Paths | paths | — |
 
 **Parameters**
 
@@ -899,11 +900,11 @@ Creates paths between an anchor and live particles (tethers from a source to mot
 | `particles` | Particles | particles | one | yes | — |
 | `anchor` | Anchor | anchor | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `paths` | Paths | paths | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `paths` | Paths | paths | — |
 
 **Parameters**
 
@@ -925,11 +926,11 @@ Displaces path points randomly to make bolts and cracks. Wire between a path sou
 |---|---|---|---|---|---|
 | `paths` | Paths | paths | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `paths` | Paths | paths | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `paths` | Paths | paths | — |
 
 **Parameters**
 
@@ -952,12 +953,12 @@ Grows forking branches off a trunk path (lightning). Outputs the trunk and the b
 |---|---|---|---|---|---|
 | `paths` | Paths | paths | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `trunk` | Trunk | paths | one | no | — |
-| `branches` | Branches | paths | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `trunk` | Trunk | paths | — |
+| `branches` | Branches | paths | — |
 
 **Parameters**
 
@@ -989,11 +990,11 @@ Clips each path at a fraction of its length; animate the fraction (Time/ScalarMa
 |---|---|---|---|---|---|
 | `paths` | Paths | paths | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `paths` | Paths | paths | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `paths` | Paths | paths | — |
 
 **Parameters**
 
@@ -1014,11 +1015,11 @@ A star/burst of straight rays around a centre anchor (sphere, disc or cone distr
 | `center` | Center | anchor | one | yes | — |
 | `window` | Window | timeWindow | one | no | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `paths` | Paths | paths | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `paths` | Paths | paths | — |
 
 **Parameters**
 
@@ -1043,11 +1044,11 @@ A circle around a centre anchor (shockwave rings, ground circles).
 |---|---|---|---|---|---|
 | `center` | Center | anchor | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `paths` | Paths | paths | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `paths` | Paths | paths | — |
 
 **Parameters**
 
@@ -1077,11 +1078,11 @@ A closed ring at an anchor whose radius follows a curve over its window (shockwa
 | `material` | Material | material | one | yes | — |
 | `window` | Window | timeWindow | one | no | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `visual` | Visual | visual | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `visual` | Visual | visual | — |
 
 **Parameters**
 
@@ -1106,11 +1107,11 @@ Draws particles as camera-facing (or velocity-stretched) sprites using a Materia
 | `particles` | Particles | particles | one | yes | — |
 | `material` | Material | material | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `visual` | Visual | visual | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `visual` | Visual | visual | — |
 
 **Parameters**
 
@@ -1143,11 +1144,11 @@ Draws a tapered trail behind each particle (spark streaks). Needs its own (usual
 | `particles` | Particles | particles | one | yes | — |
 | `material` | Material | material | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `visual` | Visual | visual | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `visual` | Visual | visual | — |
 
 **Parameters**
 
@@ -1173,11 +1174,11 @@ Draws a trail behind a moving anchor (a projectile core from PathFollower).
 | `material` | Material | material | one | yes | — |
 | `window` | Window | timeWindow | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `visual` | Visual | visual | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `visual` | Visual | visual | — |
 
 **Parameters**
 
@@ -1202,11 +1203,11 @@ Draws particles as 3D meshes (rocks, shards, crystals, imported GLB) with orient
 | `particles` | Particles | particles | one | yes | — |
 | `material` | Material | material | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `visual` | Visual | visual | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `visual` | Visual | visual | — |
 
 **Parameters**
 
@@ -1240,11 +1241,11 @@ One static mesh at an anchor, pointing at Aim or along Direction (nozzles, legs,
 | `material` | Material | material | one | yes | — |
 | `window` | Window | timeWindow | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `visual` | Visual | visual | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `visual` | Visual | visual | — |
 
 **Parameters**
 
@@ -1275,11 +1276,11 @@ One sprite at an anchor over a window (a muzzle flash, an orb core), sized over 
 | `material` | Material | material | one | yes | — |
 | `window` | Window | timeWindow | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `visual` | Visual | visual | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `visual` | Visual | visual | — |
 
 **Parameters**
 
@@ -1308,11 +1309,11 @@ A light that follows an anchor during a window (colour, intensity, range, flicke
 | `anchor` | Anchor | anchor | one | yes | — |
 | `window` | Window | timeWindow | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `visual` | Visual | visual | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `visual` | Visual | visual | — |
 
 **Parameters**
 
@@ -1342,11 +1343,11 @@ Draws paths as camera-facing strips (beams, bolts, streams, rings). Width, end f
 | `material` | Material | material | one | yes | — |
 | `window` | Window | timeWindow | one | no | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `visual` | Visual | visual | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `visual` | Visual | visual | — |
 
 **Parameters**
 
@@ -1374,11 +1375,11 @@ Shading for a renderer: template (SpriteUnlit, SpriteTextured, RibbonUnlit, Mesh
 
 None declared. (Number/boolean/colour/vector parameters can still be driven, see the Drive column.)
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `material` | Material | material | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `material` | Material | material | — |
 
 **Parameters**
 
@@ -1439,11 +1440,11 @@ A brief full-screen colour flash when an event fires (bounded opacity; suppresse
 |---|---|---|---|---|---|
 | `trigger` | Trigger | event | many | no | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `presentation` | Presentation | presentation | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `presentation` | Presentation | presentation | — |
 
 **Parameters**
 
@@ -1465,11 +1466,11 @@ A short camera shake when an event fires.
 |---|---|---|---|---|---|
 | `trigger` | Trigger | event | many | no | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `presentation` | Presentation | presentation | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `presentation` | Presentation | presentation | — |
 
 **Parameters**
 
@@ -1496,11 +1497,11 @@ Sound synthesis graph. Documented for completeness; sound work is parked for now
 | `trigger` | Trigger | event | many | no | — |
 | `window` | Window | timeWindow | one | no | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `audio` | Audio | audio | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `audio` | Audio | audio | — |
 
 **Parameters**
 
@@ -1531,11 +1532,11 @@ Sound synthesis graph. Documented for completeness; sound work is parked for now
 |---|---|---|---|---|---|
 | `audio` | Audio | audio | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `audio` | Audio | audio | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `audio` | Audio | audio | — |
 
 **Parameters**
 
@@ -1558,11 +1559,11 @@ Sound synthesis graph. Documented for completeness; sound work is parked for now
 |---|---|---|---|---|---|
 | `audio` | Audio | audio | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `audio` | Audio | audio | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `audio` | Audio | audio | — |
 
 **Parameters**
 
@@ -1585,11 +1586,11 @@ Sound synthesis graph. Documented for completeness; sound work is parked for now
 |---|---|---|---|---|---|
 | `inputs` | Inputs | audio | many | no | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `audio` | Audio | audio | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `audio` | Audio | audio | — |
 
 **Parameters**
 
@@ -1609,11 +1610,11 @@ Sound synthesis graph. Documented for completeness; sound work is parked for now
 |---|---|---|---|---|---|
 | `audio` | Audio | audio | one | yes | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
-| id | label | type | connections | required | domains |
-|---|---|---|---|---|---|
-| `audio` | Audio | audio | one | no | — |
+| id | label | type | domains |
+|---|---|---|---|
+| `audio` | Audio | audio | — |
 
 **Parameters**
 
@@ -1637,7 +1638,7 @@ The single output of the effect: connect renderers to `visual` (and audio/presen
 | `audio` | Audio | audio | many | no | — |
 | `presentation` | Presentation | presentation | many | no | — |
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
 None.
 
@@ -1660,7 +1661,7 @@ Embeds another graph as one node (a component inserted as a group). Its ports co
 
 None declared. (Number/boolean/colour/vector parameters can still be driven, see the Drive column.)
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
 None.
 
@@ -1680,7 +1681,7 @@ Inside a group graph: a bridge that exposes an interface input of the group (Por
 
 None declared. (Number/boolean/colour/vector parameters can still be driven, see the Drive column.)
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
 None.
 
@@ -1700,7 +1701,7 @@ Inside a group graph: a bridge that exposes an interface output of the group (Po
 
 None declared. (Number/boolean/colour/vector parameters can still be driven, see the Drive column.)
 
-**Outputs**
+**Outputs** (each output can feed any number of inputs)
 
 None.
 

@@ -1023,7 +1023,7 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 | `ctl-holy-light-colour-flash` | Flash & rings colour | automatic | color | — | `#FFD98A` | — | live | picker (#RRGGBB) | ringmat.recolorTo |
 | `ctl-holy-light-colour-light` | Light colour | automatic | color | — | `#FFE2A0` | — | live | picker (#RRGGBB) | lamp.recolorTo |
 | `ctl-holy-light-rays` | Ray rate | knob | number | perSecond | `90` | 0..4096 | resample |  | rays.rate |
-| `ctl-holy-light-length` | Ray length | knob | number | — | `14` | 1..20 | live |  | raybb.stretchRatio |
+| `ctl-holy-light-length` | Ray stretch | knob | number | — | `14` | 1..20 | live |  | raybb.stretchRatio |
 | `ctl-holy-light-core` | Core size | knob | number | meter | `1.4` | 0.001..20 | live |  | core.size |
 | `ctl-holy-light-halo` | Halo size | knob | number | meter | `3` | 0.001..20 | live |  | halo.size |
 | `ctl-holy-light-light` | Light | knob | number | linearGain | `50` | 0..100 | live |  | lamp.intensity |
