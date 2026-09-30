@@ -102,11 +102,11 @@ The ones that matter most when building effects.
 
 | constant | value | meaning | defined in |
 |---|---|---|---|
-| `MAX_FILE_BYTES` | 5242880 | Documents larger than this (5 MiB) are rejected before reading the file contents. | src/PreviewV2.tsx:47 |
-| `MAX_MESH_INSTANCES` | 512 | Most mesh instances drawn per frame in the preview (hard limit). | src/render/PreviewViewport.ts:52 |
-| `MAX_MESH_TRIANGLES` | 250000 | Most mesh triangles drawn per frame in the preview (hard limit). | src/render/PreviewViewport.ts:52 |
-| `MAX_TRAIL_SAMPLES` | 65536 | Most trail vertices drawn per frame in the preview. | src/render/PreviewViewport.ts:52 |
-| `MAX_FRAME_SECONDS` | 0.25 | Largest wall-clock step fed to the clock per frame (tab switches must not jump the preview). | src/render/PreviewViewport.ts:54 |
+| `MAX_FILE_BYTES` | 5242880 | Documents larger than this (5 MiB) are rejected before reading the file contents. | src/PreviewV2.tsx:48 |
+| `MAX_MESH_INSTANCES` | 512 | Most mesh instances drawn per frame in the preview (hard limit). | src/render/PreviewViewport.ts:53 |
+| `MAX_MESH_TRIANGLES` | 250000 | Most mesh triangles drawn per frame in the preview (hard limit). | src/render/PreviewViewport.ts:53 |
+| `MAX_TRAIL_SAMPLES` | 65536 | Most trail vertices drawn per frame in the preview. | src/render/PreviewViewport.ts:53 |
+| `MAX_FRAME_SECONDS` | 0.25 | Largest wall-clock step fed to the clock per frame (tab switches must not jump the preview). | src/render/PreviewViewport.ts:55 |
 | `MAX_FRAMED_PARTICLES_PER_SAMPLE` | 512 | Most particle positions kept per system per sample tick (even stride), bounding framing cost. | src/render/pathFraming.ts:52 |
 
 ## Assets and import
@@ -149,6 +149,11 @@ The ones that matter most when building effects.
 
 | constant | value | meaning | defined in |
 |---|---|---|---|
+| `MAX_SHEET_SIDE` | 16384 | Longest side of an exported sprite sheet in pixels (above this common engines cannot use it as a texture). | src/export/media/layout.ts:11 |
+| `MAX_SHEET_PIXELS` | 67108864 | Most pixels (64 M) in one exported sprite sheet: keeps the PNG encode within browser memory. | src/export/media/layout.ts:13 |
+| `MAX_FRAME_SIDE` | 4096 | Largest frame width or height in pixels for exported media. | src/export/media/layout.ts:15 |
+| `MAX_FRAMES` | 1200 | Most frames one media export may contain (lower the fps or the tick range to fit). | src/export/media/layout.ts:17 |
+| `MAX_BUFFERED_BYTES` | 1200000000 | RGBA bytes kept in memory at once (GIF keeps every frame for its shared palette). | src/export/media/layout.ts:19 |
 | `MAX_MESH_PIECES` | 300 | Roblox export: most Parts one export may animate. | src/export/roblox/meshBake.ts:15 |
 | `MAX_SEQUENCE_KEYS` | 20 | Roblox export: NumberSequence/ColorSequence keypoint limit. | src/export/roblox/types.ts:11 |
 

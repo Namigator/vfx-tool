@@ -17,6 +17,7 @@ import { compilePathPreview } from './graph/toPaths.ts';
 import { createBlankDocument, createF01Document, createForcesDemoDocument } from './graph/fixtures.ts';
 import { TexturePanel } from './editor/TexturePanel.tsx';
 import { LibraryPanel } from './editor/LibraryPanel.tsx';
+import { ExportMediaDialog } from './editor/ExportMediaDialog.tsx';
 import { userComponentsText } from './editor/userComponentStore.ts';
 import { deleteAssetBytes, listAssetBytes, unusedAssetHashes, getAssetBytes, openProjectStorage, putAssetBytes } from './model/assetStore.ts';
 import { buildPack, readPack, type PackAsset } from './model/vfxpack.ts';
@@ -168,6 +169,7 @@ export default function PreviewV2() {
   const [followers, setFollowers] = useState<FollowerTravel[]>([]);
   const [mode, setMode] = useState<PreviewModeChoice['mode']>('points');
   const [glow, setGlow] = useState(true);
+  const [mediaOpen, setMediaOpen] = useState(false);
   const [syncSound, setSyncSound] = useState(true);
   const [looping, setLooping] = useState(false);
   /** 12 transport: playback speed and "New seed on cast" (preview-only; the saved seed never changes). */
@@ -853,6 +855,7 @@ export default function PreviewV2() {
           }); }} />
           <button type="button" onClick={downloadDocument} title="Download this effect as a .vfx.json file (recipe only; imported asset bytes not included)">Save .json</button>
           <button type="button" onClick={() => void downloadPack()} title="Download a portable .vfxpack: the effect plus its imported asset bytes and checksums">Export pack</button>
+          <button type="button" aria-pressed={mediaOpen} onClick={() => setMediaOpen(o => !o)} title="Render the effect to a sprite sheet, PNG sequence, GIF or video (MP4/WebM), frame by frame">Export media…</button>
           <button type="button" onClick={() => void downloadRoblox()} title="Download a Roblox model (.rbxmx: particle emitters, beams, lights and a player script) plus a report of what Roblox can't do">Export Roblox</button>
           <button type="button" onClick={keepProject} title="Keep a copy of this effect in the local project shelf (same name replaces)">Keep</button>
           <button type="button" onClick={() => {
@@ -897,6 +900,7 @@ export default function PreviewV2() {
           {jsonErrors.some(e => e.code === 'UNSUPPORTED_VERSION') && textDirty && (
             <button type="button" onClick={() => downloadText('effect-unsupported-version.json', text)} title="This file is from a version this editor cannot open; it was not changed or converted. Download it as-is.">Download the file as-is</button>
           )}
+          {mediaOpen && <ExportMediaDialog getDocument={() => historyRef.current!.snapshot()} getCameraPose={() => viewportRef.current?.cameraPose() ?? null} glow={glow} onNote={setFileNote} onClose={() => setMediaOpen(false)} />}
           {stagedPack && (
             <div className="pv2-banner" role="dialog" aria-label={`Open ${stagedPack.name}`}>
               <strong>Open pack {stagedPack.name}?</strong> Your current effect is autosaved first.

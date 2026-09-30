@@ -3,7 +3,7 @@
 
 # MCP tool reference
 
-All 49 tools of the VFX Studio MCP server (server name "vfx-studio"), in registration order, read from the running server's registry (mcp/server.ts). Parameters use JSON types; object parameters show their fields inline, `?` marks an optional field. Documents are addressed by id; every successful change is mirrored to work/mcp/<id>.json and the editor can open it. Tools reject invalid changes and leave the document unchanged.
+All 50 tools of the VFX Studio MCP server (server name "vfx-studio"), in registration order, read from the running server's registry (mcp/server.ts). Parameters use JSON types; object parameters show their fields inline, `?` marks an optional field. Documents are addressed by id; every successful change is mirrored to work/mcp/<id>.json and the editor can open it. Tools reject invalid changes and leave the document unchanged.
 
 ## Contents
 
@@ -54,6 +54,7 @@ All 49 tools of the VFX Studio MCP server (server name "vfx-studio"), in registr
 - [vfx_inspect_pack](#vfx_inspect_pack)
 - [vfx_preview_url](#vfx_preview_url)
 - [vfx_render_frames](#vfx_render_frames)
+- [vfx_export_media](#vfx_export_media)
 - [vfx_contact_sheet](#vfx_contact_sheet)
 - [vfx_compare_images](#vfx_compare_images)
 
@@ -518,6 +519,28 @@ Render effect frames to PNG with headless Chrome (needs the vite dev server) and
 | `camera` | object {position: array of any (min 3) (max 3), target: array of any (min 3) (max 3), fov?: number} | optional | — |
 | `solo` | array of string | optional | Show only these nodes (renderers, lights or whole components/Group nodes), like the editor Outline Solo. The effect is unchanged. |
 | `orbit` | object {yaw: number, pitch: number, distance?: number} | optional | Keep the automatic framing but orbit it (yaw/pitch degrees, distance multiplier); ignored with camera. |
+
+## vfx_export_media
+
+Render the effect to media for game engines or sharing: a sprite sheet (one PNG grid + a .json sidecar {columns, rows, frameCount, fps, frameWidth, frameHeight, durationTicks, loop}), a PNG sequence (.zip), an animated GIF, or an MP4 (H.264; falls back to WebM/VP9 when the browser cannot encode H.264) or WebM. Frames are rendered deterministically tick by tick in headless Chrome (needs the vite dev server), never recorded live. Sheets and sequences default to a TRANSPARENT background (additive glow and normal-blend smoke both come out right); GIF and video default to the dark arena (GIF has 1-bit alpha; video has none). The floor grid, floor and Source/Target markers are hidden. Camera: automatic framing that fits the WHOLE effect across every exported tick (default), optionally orbit, or an explicit camera pose. Writes work/mcp/media/<docId>.<ext> by default and returns a preview (the sheet scaled down, or a contact strip of frames). LOOK at the preview before claiming anything about the result.
+
+| parameter | type | required | description / constraints |
+|---|---|---|---|
+| `docId` | string | required | — |
+| `format` | "spritesheet" \| "png-sequence" \| "gif" \| "mp4" \| "webm" | required | — |
+| `path` | string | optional | Output file (project path; the extension follows the format). Default work/mcp/media/<docId>.<png\|zip\|gif\|mp4\|webm>. A sheet also writes the .json sidecar next to it. |
+| `size` | integer | optional | Square frame size in pixels (default 256; 512 is a good start for video). — minimum=16, maximum=4096 |
+| `width` | integer | optional | minimum=16, maximum=4096 |
+| `height` | integer | optional | minimum=16, maximum=4096 |
+| `fps` | number | optional | Frames per second; ticks are sampled every 60/fps (default 30; 20 for GIF, whose delays are whole centiseconds so it tops out near 50 fps). — minimum=1, maximum=120 |
+| `startTick` | integer | optional | minimum=0, maximum=9007199254740991 |
+| `endTick` | integer | optional | Tick range [startTick, endTick); default the whole effect. — minimum=1, maximum=9007199254740991 |
+| `columns` | integer | optional | Sprite sheet columns (default about the square root of the frame count). — minimum=1, maximum=64 |
+| `background` | "transparent" \| "dark" \| "light" | optional | transparent (default for sheet/PNG sequence) \| dark (default for GIF/video) \| light. Video cannot be transparent. |
+| `glow` | boolean | optional | Glow (bloom) on by default. |
+| `loop` | boolean | optional | Loop flag (GIF loop count, sheet sidecar). Default true. |
+| `camera` | object {position: array of any (min 3) (max 3), target: array of any (min 3) (max 3), fov?: number} | optional | Explicit camera pose; default is the automatic fit of the whole effect. |
+| `orbit` | object {yaw: number, pitch: number, distance?: number} | optional | Keep the automatic fit but look from another direction (yaw/pitch degrees, distance multiplier); ignored with camera. |
 
 ## vfx_contact_sheet
 

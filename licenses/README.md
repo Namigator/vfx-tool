@@ -10,6 +10,9 @@ All runtime libraries are MIT-licensed; their license texts are in this director
 | fflate | 0.8.3 | .vfxpack ZIP read/write (vetted 2026-09-27, see 27-GAP-AUDIT I11) | fflate-LICENSE.txt |
 | @modelcontextprotocol/sdk | 1.30.1 | MCP server for agents | modelcontextprotocol-sdk-LICENSE.txt |
 | zod | 4.6.5 | MCP tool argument schemas | zod-LICENSE.txt |
+| gifenc | 1.0.3 | animated GIF export (vetted 2026-09-30) | gifenc-LICENSE.txt |
+| mp4-muxer | 5.2.2 | MP4 container for exported video (vetted 2026-09-30) | mp4-muxer-LICENSE.txt |
+| webm-muxer | 5.1.4 | WebM container for exported video (vetted 2026-09-30) | webm-muxer-LICENSE.txt |
 
 Development-only: TypeScript (Apache-2.0), Vite (MIT), DefinitelyTyped declarations (MIT).
 

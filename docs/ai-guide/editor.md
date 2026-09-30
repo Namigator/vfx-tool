@@ -8,7 +8,7 @@ an MCP document in it.
 ## Layout
 
 ```
-┌ File bar: New · Open… · Save .json · Save as… · Keep · Export pack · Export Roblox · Undo/Redo · Library ┐
+┌ File bar: New · Open… · Save .json · Save as… · Keep · Export pack · Export media… · Export Roblox · Undo/Redo · Library ┐
 │ Library (left, toggle)  │  3D preview + play bar + timeline strip   │  Controls / Outline / Selected node   │
 │                         │  Graph editor (node canvas, below)        │  Imported assets / Diagnostics        │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -24,6 +24,7 @@ an MCP document in it.
 | **Save as…** | Keep a copy under a new name and continue on the copy. | — |
 | **Keep** | Store a copy on the local **Projects** shelf (same name replaces). Projects → Trash → Restore / Empty trash. | — |
 | **Export pack** | Portable `.vfxpack`: effect + imported files + checksums. | `vfx_export_pack` |
+| **Export media…** | Sprite sheet, PNG sequence, GIF or video: format, frame size, fps, background, camera (current view or fit the whole effect), glow; progress bar with Cancel ([export.md](export.md)). | `vfx_export_media` |
 | **Export Roblox** | `.rbxmx` model + a report of what Roblox can't do ([export.md](export.md)). | `vfx_export_roblox` |
 | **Undo / Redo** | Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z. | `vfx_undo`, `vfx_redo` |
 | **Import old effect** | Converts effects from the old editor (saved presets and the ten originals) into new editable copies. | `vfx_convert_legacy` |

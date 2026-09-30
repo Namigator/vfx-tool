@@ -8,6 +8,9 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { chromeEval } from './chromeEval.ts';
+import { MEDIA_FORMATS, mediaExtension, resolveMediaOptions, type MediaFormat } from '../src/export/media/layout.ts';
+import { compositeChecker } from '../src/export/media/matte.ts';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import type { Diagnostic, EffectDocumentV2, NodeDefinition, ParameterValue, Vec3 } from '../src/model/types.ts';
@@ -620,6 +623,73 @@ ${md}`);
     solo: z.array(z.string()).optional().describe('Show only these nodes (renderers, lights or whole components/Group nodes), like the editor Outline Solo. The effect is unchanged.'),
     orbit: z.object({ yaw: z.number(), pitch: z.number(), distance: z.number().min(0.2).max(5).optional() }).optional().describe('Keep the automatic framing but orbit it (yaw/pitch degrees, distance multiplier); ignored with camera.'),
   }, args => renderFrames(args));
+
+  // ---------- media export (sprite sheet / PNG sequence / GIF / video) ----------
+  type MediaPayload = { container: string; frameCount: number; width: number; height: number; fps: number; ticks: number[]; notes: string[]; timing: { renderMs: number; encodeMs: number }; sidecar: Record<string, unknown> | null; files: { name: string; mime: string; bytes: number; base64: string }[]; preview: { width: number; height: number; base64: string } };
+  tool('vfx_export_media', 'Render the effect to media for game engines or sharing: a sprite sheet (one PNG grid + a .json sidecar {columns, rows, frameCount, fps, frameWidth, frameHeight, durationTicks, loop}), a PNG sequence (.zip), an animated GIF, or an MP4 (H.264; falls back to WebM/VP9 when the browser cannot encode H.264) or WebM. Frames are rendered deterministically tick by tick in headless Chrome (needs the vite dev server), never recorded live. Sheets and sequences default to a TRANSPARENT background (additive glow and normal-blend smoke both come out right); GIF and video default to the dark arena (GIF has 1-bit alpha; video has none). The floor grid, floor and Source/Target markers are hidden. Camera: automatic framing that fits the WHOLE effect across every exported tick (default), optionally orbit, or an explicit camera pose. Writes work/mcp/media/<docId>.<ext> by default and returns a preview (the sheet scaled down, or a contact strip of frames). LOOK at the preview before claiming anything about the result.', {
+    docId: z.string(),
+    format: z.enum(MEDIA_FORMATS as unknown as [MediaFormat, ...MediaFormat[]]),
+    path: z.string().optional().describe('Output file (project path; the extension follows the format). Default work/mcp/media/<docId>.<png|zip|gif|mp4|webm>. A sheet also writes the .json sidecar next to it.'),
+    size: z.number().int().min(16).max(4096).optional().describe('Square frame size in pixels (default 256; 512 is a good start for video).'),
+    width: z.number().int().min(16).max(4096).optional(), height: z.number().int().min(16).max(4096).optional(),
+    fps: z.number().min(1).max(120).optional().describe('Frames per second; ticks are sampled every 60/fps (default 30; 20 for GIF, whose delays are whole centiseconds so it tops out near 50 fps).'),
+    startTick: z.number().int().min(0).optional(), endTick: z.number().int().min(1).optional().describe('Tick range [startTick, endTick); default the whole effect.'),
+    columns: z.number().int().min(1).max(64).optional().describe('Sprite sheet columns (default about the square root of the frame count).'),
+    background: z.enum(['transparent', 'dark', 'light']).optional().describe('transparent (default for sheet/PNG sequence) | dark (default for GIF/video) | light. Video cannot be transparent.'),
+    glow: z.boolean().optional().describe('Glow (bloom) on by default.'),
+    loop: z.boolean().optional().describe('Loop flag (GIF loop count, sheet sidecar). Default true.'),
+    camera: z.object({ position: z.tuple([z.number(), z.number(), z.number()]), target: z.tuple([z.number(), z.number(), z.number()]), fov: z.number().min(5).max(120).optional() }).optional().describe('Explicit camera pose; default is the automatic fit of the whole effect.'),
+    orbit: z.object({ yaw: z.number(), pitch: z.number(), distance: z.number().min(0.2).max(5).optional() }).optional().describe('Keep the automatic fit but look from another direction (yaw/pitch degrees, distance multiplier); ignored with camera.'),
+  }, async a => {
+    const d = getDoc(a.docId); persist(d);
+    const { docId, path, size, camera, orbit, ...rest } = a;
+    const request = { ...rest, ...(size ? { width: a.width ?? size, height: a.height ?? size } : {}), ...(camera ? { camera } : {}), ...(orbit && !camera ? { orbit } : {}), name: docId };
+    const checked = resolveMediaOptions(request, d.durationTicks);
+    if (!checked.ok) return bad(checked.message);
+    const chrome = options.chromePath ?? CHROME_CANDIDATES.find(p => p && existsSync(p));
+    if (!chrome) return bad('No Chrome/Edge found; set VFX_CHROME to its executable path.');
+    const url = new URL(`capture-media.html?doc=/work/mcp/${encodeURIComponent(docId)}.json`, editorUrl).href;
+    let r: MediaPayload;
+    try {
+      r = await chromeEval<MediaPayload>({ chrome, url, readyTitle: 'MEDIA READY', script: `return await window.__vfxMedia.run(${JSON.stringify(request)});`, gpu: process.env.VFX_MEDIA_GPU === '1' });
+    } catch (e) {
+      return bad(`Media export failed: ${e instanceof Error ? e.message : String(e)}\n(The vite dev server must be running at ${editorUrl}.)`);
+    }
+    const fmt = checked.options.format, ext = fmt === 'mp4' ? r.container : mediaExtension(fmt);
+    const stem = path ? safeProjectPath(path).replace(/\.[A-Za-z0-9]+$/, '') : safeProjectPath(`work/mcp/media/${docId}`);
+    const out = `${stem}.${ext}`;
+    mkdirSync(dirname(out), { recursive: true });
+    const written: string[] = [];
+    r.files.forEach((f, i) => {
+      const target = i === 0 ? out : `${stem}${f.name.slice(f.name.lastIndexOf('.'))}`;
+      if (i === 0 || !r.sidecar) { writeFileSync(target, Buffer.from(f.base64, 'base64')); written.push(`${target} (${f.bytes} bytes)`); }
+    });
+    // The sheet's sidecar names the image file that was really written.
+    const sidecar = r.sidecar ? { ...r.sidecar, image: out.split(/[\\/]/).pop() } : null;
+    if (sidecar) { writeFileSync(`${stem}.json`, JSON.stringify(sidecar, null, 2)); written.push(`${stem}.json`); }
+    const content: Content[] = [], previewPath = `${stem}.preview.png`;
+    let previewNote: string;
+    if (fmt === 'spritesheet') {
+      const img = decodePng(readFileSync(out)), shown = checked.options.background === 'transparent' ? { ...img, px: new Uint8Array(compositeChecker(img.px, img.w, img.h, 8)) } : img;
+      const k = Math.max(1, Math.ceil(Math.max(img.w, img.h) / 1024)), prev = encodePng(downscale(shown, k));
+      writeFileSync(previewPath, prev);
+      content.push({ type: 'image', data: prev.toString('base64'), mimeType: 'image/png' });
+      previewNote = `Preview (the sheet${checked.options.background === 'transparent' ? ' over a checkerboard' : ''}${k > 1 ? `, scaled 1/${k}` : ''}): ${previewPath}`;
+    } else {
+      writeFileSync(previewPath, Buffer.from(r.preview.base64, 'base64'));
+      content.push({ type: 'image', data: r.preview.base64, mimeType: 'image/png' });
+      previewNote = `Preview: a strip of ${Math.min(8, r.frameCount)} frames${checked.options.background === 'transparent' ? ' over a checkerboard' : ''}: ${previewPath}`;
+    }
+    const lines = [
+      `Exported ${r.frameCount} frame(s) of ${r.width}x${r.height} at ${r.fps} fps (ticks ${checked.options.startTick}..${checked.options.endTick}, one every ${(60 / r.fps).toFixed(2)} ticks) as ${fmt === 'mp4' ? r.container : fmt}; background ${checked.options.background}, glow ${checked.options.glow ? 'on' : 'off'}.`,
+      `Files: ${written.join(', ')}`,
+      ...(checked.layout ? [`Sheet ${checked.layout.width}x${checked.layout.height} px: ${checked.layout.columns} columns x ${checked.layout.rows} rows. Sidecar: ${JSON.stringify(sidecar)}`] : []),
+      ...r.notes.map(n => `Note: ${n}`),
+      `Rendered in ${(r.timing.renderMs / 1000).toFixed(1)} s, encoded in ${(r.timing.encodeMs / 1000).toFixed(1)} s. ${previewNote}`,
+    ];
+    content.unshift({ type: 'text', text: lines.join('\n') });
+    return { content };
+  });
 
   // WP-MCP2: one image over the whole timeline, and a side-by-side comparison of two captures.
   tool('vfx_contact_sheet', 'Render frames at evenly spaced ticks (or the given ticks) and return them as ONE grid image (a timeline strip). Saved to work/mcp/frames/<doc>-sheet.png.', {

@@ -14,6 +14,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 //
 // Path mode (setPathSource): a document with RibbonRenderer sinks is recompiled per tick by the caller's
 // compile function (pure, deterministic per tick, so scrubbing needs no replay). Each layer owns one
@@ -37,7 +38,7 @@ import { DEFAULT_MAX_LIVE_PARTICLES, PARTICLE_DT, ParticleSimulation, type Parti
 import { PlaybackClock } from '../runtime/clock.ts';
 import { DEFAULT_RIBBON_END_FADE, framePoints, RibbonGeometry, ribbonSoftness, ribbonWidthShape, type FramePointSet } from './RibbonGeometry.ts';
 import { pathViewDirection } from './pathView.ts';
-import { collectTimelineFrameSets, particleFrameSets } from './pathFraming.ts';
+import { appendFrameSets, collectTimelineFrameSets, currentParticleFrameSets, particleFrameSets } from './pathFraming.ts';
 import { layerRenderOrder } from './layerOrder.ts';
 
 /** Fraction of the preview half-extent path framing fills (leaves a margin, never clips). */
@@ -531,6 +532,7 @@ export class PreviewViewport {
   /** 08: HDR half-float target → bloom (strength .8, radius .45, threshold 1) → OutputPass (ACES + sRGB once). */
   #composer: EffectComposer | null = null;
   #bloom: UnrealBloomPass | null = null;
+  #outputPass: OutputPass | null = null;
   readonly #scene = new THREE.Scene();
   readonly #camera = new THREE.PerspectiveCamera(45, 1, 0.01, 200);
   readonly #controls: OrbitControls;
@@ -604,7 +606,8 @@ export class PreviewViewport {
         .replace('float v = luminance( texel.xyz );', 'float v = luminance( texel.xyz );\nif ( uGlowLimit > 0.0 && v > uGlowLimit ) { texel.rgb *= uGlowLimit / v; v = uGlowLimit; }');
       hp.needsUpdate = true;
       this.#composer.addPass(this.#bloom);
-      this.#composer.addPass(new OutputPass());
+      this.#outputPass = new OutputPass();
+      this.#composer.addPass(this.#outputPass);
       renderer.domElement.className = 'pv2-canvas';
       // WP24 context loss (driver reset, GPU memory pressure, too many tabs): keep the page alive, stop drawing,
       // and let three.js rebuild its GPU state when the browser restores the context; then redraw this tick.
@@ -1556,7 +1559,7 @@ export class PreviewViewport {
   #loop = (now: number): void => {
     if (this.#disposed) return;
     this.#raf = requestAnimationFrame(this.#loop);
-    if (this.#contextLost) return; // Nothing can be drawn until the browser restores the GPU context.
+    if (this.#exporting || this.#contextLost) return; // Offline export owns the renderer while it runs. // Nothing can be drawn until the browser restores the GPU context.
     const raw = this.#lastTime < 0 ? 0 : Math.max(0, (now - this.#lastTime) / 1000), dt = Math.min(MAX_FRAME_SECONDS, raw);
     // 07: a slow frame while playing (≥ 100 ms, i.e. under 10 fps) flags "Catching up"; no simulation tick is ever dropped.
     if (raw >= 0.1 && this.#clock?.playing && document.visibilityState === 'visible') this.#behindUntil = now + 1000;
@@ -1678,11 +1681,184 @@ export class PreviewViewport {
   get qualityProfile(): 'reference' | 'balanced' | 'economy' { return this.#profile; }
   #glowWanted = true;
 
+
+  // ---------- offline media export ----------
+  // Deterministic, not real time: the caller seeks a tick, renders it (one or several passes) and reads the pixels
+  // back. The live loop is parked while exporting; grid, floor and Source/Target markers are hidden.
+  #exporting = false;
+  #exportSize: { width: number; height: number } | null = null;
+  #exportSaved: { grid: boolean; ground: boolean; markers: boolean[]; background: number; bloom: boolean } | null = null;
+  #exportTarget: THREE.WebGLRenderTarget | null = null;
+  #exportQuad: FullScreenQuad | null = null;
+
+  /** Parks the live loop and switches to a fixed width x height render (pixel ratio 1) without floor, grid or markers. */
+  beginExport(width: number, height: number): void {
+    if (this.#disposed || this.#exporting) return;
+    this.#exporting = true;
+    this.#clock?.pause();
+    this.#exportSaved = { grid: this.#grid.visible, ground: this.#ground.visible, markers: this.#markers.map(m => m.visible), background: (this.#scene.background as THREE.Color).getHex(), bloom: this.#bloom?.enabled ?? false };
+    this.#grid.visible = false; this.#ground.visible = false;
+    for (const m of this.#markers) m.visible = false;
+    this.exportResize(width, height);
+    this.#exportQuad?.dispose();
+    this.#exportQuad = new FullScreenQuad(new THREE.ShaderMaterial({
+      uniforms: { tSrc: { value: null } },
+      vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+      fragmentShader: 'uniform sampler2D tSrc; varying vec2 vUv; void main() { gl_FragColor = texture2D(tSrc, vUv); }',
+      depthTest: false, depthWrite: false, blending: THREE.NoBlending,
+    }));
+  }
+
+  /** Changes the export render size (the auto-fit refinement renders small previews, then returns to the real size). */
+  exportResize(width: number, height: number): void {
+    if (!this.#exporting) return;
+    this.#exportSize = { width: Math.max(1, Math.round(width)), height: Math.max(1, Math.round(height)) };
+    this.#resize();
+    this.#exportTarget?.dispose();
+    this.#exportTarget = new THREE.WebGLRenderTarget(this.#exportSize.width, this.#exportSize.height, { type: THREE.FloatType, format: THREE.RGBAFormat, depthBuffer: false, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
+  }
+
+  /**
+   * Moves the camera in its view plane by (ndcX, ndcY) half-frames (x right, y up, measured at the target depth) and then
+   * dollies toward the target by `scale` (< 1 zooms in). The auto-fit refinement uses it to centre and fill the frame.
+   */
+  exportShiftZoom(ndcX: number, ndcY: number, scale: number): void {
+    const cam = this.#camera, target = this.#controls.target;
+    const offset = cam.position.clone().sub(target), dist = offset.length();
+    const halfH = dist * Math.tan((cam.fov * Math.PI) / 360), halfW = halfH * cam.aspect;
+    cam.updateMatrixWorld();
+    const right = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 0), up = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 1);
+    const shift = right.multiplyScalar(ndcX * halfW).add(up.multiplyScalar(ndcY * halfH));
+    target.add(shift);
+    const k = Math.min(1.6, Math.max(0.1, scale));
+    cam.position.copy(target).add(offset.multiplyScalar(k));
+    const d = dist * k;
+    cam.near = Math.max(1e-4, d / 1000); cam.far = Math.max(200, d * 10);
+    cam.updateProjectionMatrix();
+    this.#controls.update();
+    this.#userOrbited = true; this.#frameSets = null; this.#pathCamera = false;
+  }
+
+  endExport(): void {
+    if (!this.#exporting) return;
+    const s = this.#exportSaved;
+    this.#exporting = false;
+    this.#exportSize = null;
+    this.#exportTarget?.dispose(); this.#exportTarget = null;
+    (this.#exportQuad?.material as THREE.Material | undefined)?.dispose(); this.#exportQuad?.dispose(); this.#exportQuad = null;
+    if (s && !this.#disposed) {
+      this.#grid.visible = s.grid; this.#ground.visible = s.ground;
+      this.#markers.forEach((m, i) => { m.visible = s.markers[i] ?? s.grid; });
+      (this.#scene.background as THREE.Color).setHex(s.background);
+      if (this.#bloom) this.#bloom.enabled = s.bloom;
+      if (this.#outputPass) this.#outputPass.enabled = true;
+      if (this.#composer) this.#composer.renderToScreen = true;
+      this.#resize();
+    }
+  }
+
+  /** Current camera, for "use the editor's view" exports. */
+  cameraPose(): { position: Vec3; target: Vec3; fov: number } {
+    const p = this.#camera.position, t = this.#controls.target;
+    return { position: [p.x, p.y, p.z], target: [t.x, t.y, t.z], fov: this.#camera.fov };
+  }
+
+  /** True once every sprite atlas / imported texture the scene references has decoded (exports wait for this). */
+  texturesReady(): boolean {
+    for (const t of this.#textures.values()) if (!t.image) return false;
+    return true;
+  }
+
+  /** Lands on `tick` (deterministic replay) and returns false if the effect failed to simulate there. */
+  exportSeek(tick: number): boolean {
+    this.#failed = false;
+    this.seek(tick);
+    return !this.#failed;
+  }
+
+  /** Adds the world-space bounds of everything drawn at the current tick (particles and ribbons) to `out`. */
+  exportBounds(out: FramePointSet[]): void {
+    if (this.#plan) currentParticleFrameSets(this.#plan, this.#snapshots, out);
+    if (this.#pathPlan) appendFrameSets(this.#pathPlan, out);
+  }
+
+  /** Fits `sets` into the view from the current viewing direction (export "fit effect": sets cover every exported tick). */
+  exportFit(sets: FramePointSet[], fill = 0.9): boolean {
+    const cam = this.#camera, target = this.#controls.target, dir = cam.position.clone().sub(target);
+    const f = framePoints(sets, { viewDirection: [dir.x, dir.y, dir.z], fovDeg: cam.fov, aspect: cam.aspect, fill, minHalfExtent: 0.75 });
+    if (!f) return false;
+    target.set(f.target[0], f.target[1], f.target[2]);
+    cam.position.set(f.position[0], f.position[1], f.position[2]);
+    cam.near = Math.max(1e-4, f.distance / 1000);
+    cam.far = Math.max(200, f.distance * 10);
+    cam.updateProjectionMatrix();
+    this.#controls.update();
+    this.#frameSets = null; this.#userOrbited = true; this.#pathCamera = false;
+    return true;
+  }
+
+  /**
+   * One offline draw of the current tick, read back as float RGBA (rows top to bottom, width*height*4).
+   * `linear` skips the output transform (ACES + sRGB) and returns scene-linear HDR; otherwise the values are the
+   * display-referred 0..1 colours the editor shows. `background` is the scene colour in LINEAR units. `bloom` false
+   * draws without glow. `presentation` applies the camera shake of the effect; its screen flash is reported, not
+   * drawn (the caller blends it so transparent exports can leave it out).
+   */
+  exportRender(o: { background: readonly [number, number, number]; bloom: boolean; linear: boolean; presentation?: boolean }): { data: Float32Array; width: number; height: number; flash: { alpha: number; color: string } | null } {
+    const comp = this.#composer, size = this.#exportSize, rt = this.#exportTarget, quad = this.#exportQuad;
+    if (!comp || !size || !rt || !quad || !this.#exporting) throw new Error('exportRender needs beginExport() first.');
+    const { width, height } = size, bg = this.#scene.background as THREE.Color;
+    bg.setRGB(o.background[0], o.background[1], o.background[2]);
+    if (this.#bloom) this.#bloom.enabled = o.bloom && this.#glowWanted && this.#profile !== 'economy';
+    if (this.#outputPass) this.#outputPass.enabled = !o.linear;
+    comp.renderToScreen = false;
+    const t = this.#clock ? this.#clock.tick + this.#clock.alpha : 0;
+    if (this.#plan && this.#clock) this.#upload(0);
+    if (this.#pathPlan) this.#updateRibbons(); // Ribbons billboard toward the (possibly re-fitted) camera.
+    this.#effectTime.value = t * PARTICLE_DT;
+    this.#applySolo();
+    this.#applyHighlight();
+    const cam = this.#camera, savedPos = cam.position.clone(), savedQuat = cam.quaternion.clone();
+    let flash: { alpha: number; color: string } | null = null;
+    const pres = o.presentation && !this.#reducedMotion ? this.#presentation : null;
+    if (pres) {
+      let best = 0, color = '#ffffff';
+      for (const f of pres.flashes) { const u = (t - f.tick) / f.durationTicks; if (u >= 0 && u < 1) { const a = f.alpha * (1 - u); if (a > best) { best = a; color = f.color.srgb; } } }
+      if (best > 0) flash = { alpha: best, color };
+      for (const i of pres.impulses) {
+        const u = (t - i.tick) / i.durationTicks;
+        if (u < 0 || u >= 1) continue;
+        const k = (1 - u) * (1 - u), ts = t * PARTICLE_DT * 40;
+        cam.position.x += valueNoise4(i.seed, ts, 0.1, 0.2, 0) * i.translation * k;
+        cam.position.y += valueNoise4(i.seed + 1, ts, 0.3, 0.4, 0) * i.translation * k;
+        cam.position.z += valueNoise4(i.seed + 2, ts, 0.5, 0.6, 0) * i.translation * k;
+        cam.rotateZ(valueNoise4(i.seed + 3, ts, 0.7, 0.8, 0) * i.rotation * k);
+      }
+    }
+    this.#renderer.info.reset();
+    comp.render(0);
+    cam.position.copy(savedPos); cam.quaternion.copy(savedQuat);
+    // The composer leaves its final image in readBuffer (RenderPass/Bloom draw into it; OutputPass swaps it in).
+    (quad.material as THREE.ShaderMaterial).uniforms.tSrc.value = comp.readBuffer.texture;
+    const prev = this.#renderer.getRenderTarget();
+    this.#renderer.setRenderTarget(rt);
+    quad.render(this.#renderer);
+    const raw = new Float32Array(width * height * 4);
+    this.#renderer.readRenderTargetPixels(rt, 0, 0, width, height, raw);
+    this.#renderer.setRenderTarget(prev);
+    // WebGL rows run bottom to top.
+    const data = new Float32Array(raw.length), row = width * 4;
+    for (let y = 0; y < height; y++) data.set(raw.subarray((height - 1 - y) * row, (height - y) * row), y * row);
+    return { data, width, height, flash };
+  }
+
   #resize(): void {
     if (this.#disposed) return;
-    const w = Math.max(1, this.#container.clientWidth), h = Math.max(1, this.#container.clientHeight);
+    const ex = this.#exportSize;
+    const w = ex ? ex.width : Math.max(1, this.#container.clientWidth), h = ex ? ex.height : Math.max(1, this.#container.clientHeight);
     const dpr = window.devicePixelRatio || 1, p = this.#profile;
-    const cap = p === 'reference' ? Math.min(2, dpr) : p === 'balanced' ? Math.min(1.5, dpr, Math.sqrt((1920 * 1080) / (w * h))) : Math.min(1, Math.sqrt((1280 * 720) / (w * h)));
+    // Offline export renders exactly width x height device pixels.
+    const cap = ex ? 1 : p === 'reference' ? Math.min(2, dpr) : p === 'balanced' ? Math.min(1.5, dpr, Math.sqrt((1920 * 1080) / (w * h))) : Math.min(1, Math.sqrt((1280 * 720) / (w * h)));
     this.#renderer.setPixelRatio(Math.max(0.25, cap));
     this.#renderer.setSize(w, h, false);
     this.#composer?.setPixelRatio(this.#renderer.getPixelRatio());

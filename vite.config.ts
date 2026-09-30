@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 
 export default defineConfig({
   build: {
-    rollupOptions: { input: { main: resolve(__dirname, 'index.html'), capture: resolve(__dirname, 'capture.html') } },
+    rollupOptions: { input: { main: resolve(__dirname, 'index.html'), capture: resolve(__dirname, 'capture.html'), captureMedia: resolve(__dirname, 'capture-media.html') } },
     chunkSizeWarningLimit: 2000,
   },
   plugins: [{

@@ -76,3 +76,7 @@
 .pv2-mark-flash, .pv2-mark-shake { background: #ff7070; }
 .pv2-window { position: absolute; top: 2px; height: 4px; background: rgba(127, 180, 255, .35); border-radius: 2px; }
 .pv2-check { display: inline-flex; gap: 4px; align-items: center; font-size: 13px; }
+/* Export media dialog (same look as the pack banner). */
+.pv2-media-grid { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 8px 0; align-items: center; }
+.pv2-media-grid label { display: inline-flex; gap: 6px; align-items: center; }
+.pv2-media p { margin: 4px 0; }

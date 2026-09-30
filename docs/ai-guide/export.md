@@ -5,7 +5,7 @@
 | `.vfx.json` | The effect recipe (graph, knobs, anchors). Re-open in VFX Studio. | available |
 | `.vfxpack` | Portable: recipe + imported textures/models + checksums. Share with another person or machine. | available |
 | Roblox `.rbxmx` | A Roblox model with native emitters, beams, trails, lights and a player script. | available |
-| Video / sprite sheet / GIF | Rendered frames for any engine or for showing the effect. | planned (next) |
+| Sprite sheet / PNG sequence / GIF / MP4 / WebM | Rendered frames for any engine (flipbook textures) or for showing the effect. | available |
 | Unreal (Niagara) | | planned |
 | Unity | | planned |
 | Godot | | planned |
@@ -20,6 +20,27 @@
   packing, required capabilities, warnings and licences.
 - `vfx_open_pack { path, docId? }` / **Open…**: verifies paths and checksums (`CHECKSUM_MISMATCH` if the bytes were
   changed), restores the files and opens the effect.
+
+## Media: sprite sheets, PNG sequences, GIF, video
+
+`vfx_export_media { docId, format, ... }` or the editor's **Export media…** renders the effect frame by frame
+(deterministic, not a screen recording; floor, grid and markers left out). Files go to `work/mcp/media/<docId>.<ext>`.
+
+| format | output | typical use |
+|---|---|---|
+| `spritesheet` | one PNG grid + `.json` sidecar {columns, rows, frameCount, fps, frameWidth, frameHeight, durationTicks, loop, ...} | a flipbook texture for Unity / Unreal / Godot / any engine |
+| `png-sequence` | a .zip of numbered PNGs | compositing, engines that import sequences |
+| `gif` | looping animated GIF (dark background by default: GIF alpha is on/off only) | chat, docs, previews |
+| `mp4` / `webm` | H.264 video (WebM/VP9 if H.264 isn't available), solid background, no audio | showing the effect |
+
+- `background`: `transparent` (default for sheets and sequences) | `dark` | `light`. Transparency is exact for
+  glow and smoke as they look on a dark scene; screen flashes and camera shake only appear on solid backgrounds.
+- `fps` samples a tick every 60/fps (30 default, 20 for GIF). A 2 s effect at 30 fps = 60 frames. Keep sheets
+  small for games: 128–256 px frames, 15–30 fps, only the ticks you need (`startTick` / `endTick`).
+- Camera: by default fits the **whole** effect over all exported ticks; `orbit` looks from another side; `camera`
+  sets an exact pose. A long horizontal jet in a square frame leaves empty space: use `width`/`height` to match it.
+- Limits: frames ≤ 4096 px, sheets ≤ 16384 px per side, ≤ 1200 frames per export.
+- Look at the returned preview image before handing the file over.
 
 ## Roblox
 
