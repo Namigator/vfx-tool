@@ -41,6 +41,9 @@ import { PreviewViewport, type PreviewFrameInfo } from './render/PreviewViewport
 import { mergeDiagnostics } from './render/layerOrder.ts';
 import { timelineInfo, timelineLanes, type TimelineInfo } from './render/timeline.ts';
 import { TimelineStrip } from './editor/TimelineStrip.tsx';
+import { SplitPane } from './editor/SplitPane.tsx';
+import { MenuButton, OverlayMenu, type MenuItem } from './editor/MenuButton.tsx';
+import { IconUndo, IconRedo, IconPlay, IconPause, IconRestart, IconStepBack, IconStepForward, IconChevronDown, IconPanelLeft, IconPanelRight, IconPanelBottom, IconEye } from './editor/icons.tsx';
 import './preview-v2.css';
 
 const EMPTY_FRAME: PreviewFrameInfo = { tick: 0, durationTicks: 0, playing: false, suspended: false, live: 0, mode: 'none', sampleParticleId: '' };
@@ -183,12 +186,18 @@ export default function PreviewV2() {
   /** 06 Solo: preview-only mask of soloed nodes (never saved in the effect). */
   const [solo, setSolo] = useState<ReadonlySet<string>>(() => new Set());
   const toggleSolo = useCallback((id: string) => setSolo(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; }), []);
-  const [expanded, setExpanded] = useState(() => new URLSearchParams(window.location.search).get('expand') === '1');
   // 12 "Below 1024 px show a compact preview and 'Desktop authoring recommended'".
   const [narrow, setNarrow] = useState(() => window.innerWidth < 1024);
   useEffect(() => { const on = () => setNarrow(window.innerWidth < 1024); window.addEventListener('resize', on); return () => window.removeEventListener('resize', on); }, []);
   // 12 workspace: the library is a left panel at >= 1280 px and a toggled drawer below (closed in the watch-only ?view=1 page).
   const [libraryOpen, setLibraryOpen] = useState(() => window.innerWidth >= 1280 && new URLSearchParams(window.location.search).get('view') !== '1');
+  // Redesigned shell (2026-10): resizable panes, one compact top bar, tabbed right inspector.
+  const [rightOpen, setRightOpen] = useState(true);
+  const [graphOpen, setGraphOpen] = useState(true);
+  const [rightTab, setRightTab] = useState<'controls' | 'node' | 'outline' | 'assets' | 'sound' | 'diagnostics'>('controls');
+  const [showProjects, setShowProjects] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
+  const [nameEditing, setNameEditing] = useState(false);
   // Bumped by every document replacement; async file reads apply only if still the latest request.
   const generationRef = useRef(0);
   const mountedRef = useRef(false);
@@ -747,7 +756,7 @@ export default function PreviewV2() {
   const [renderStats, setRenderStats] = useState<ReturnType<PreviewViewport['renderStats']> | null>(null);
   useEffect(() => { const id = setInterval(() => { const v = viewportRef.current; if (v) setRenderStats(v.renderStats()); }, 1000); return () => clearInterval(id); }, []);
 
-  // Undo: Ctrl/Cmd+Z. Redo: Ctrl/Cmd+Shift+Z or Ctrl+Y. Suppressed in text inputs, textareas and contenteditable.
+  // Undo: Ctrl/Cmd+Z. Redo: Ctrl/Cmd+Shift+Z or Ctrl+Y. Ctrl/Cmd+S saves .json. Suppressed in text fields.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey) || e.altKey || isTextTarget(e.target)) return;
@@ -758,11 +767,26 @@ export default function PreviewV2() {
       } else if (k === 'y' && !e.shiftKey) {
         e.preventDefault();
         redo();
+      } else if (k === 's') {
+        e.preventDefault();
+        downloadDocument();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [undo, redo]);
+  }, [undo, redo, downloadDocument]);
+  // 5 "Space play/pause when focus isn't in a text field" — separate listener so it never fights Ctrl/Cmd combos.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== ' ' || e.ctrlKey || e.metaKey || e.altKey || isTextTarget(e.target)) return;
+      const vp = viewportRef.current;
+      if (!vp || !compiled) return;
+      e.preventDefault();
+      if (vp.isPlaying) { vp.pause(); stopSound(''); } else { vp.play(); if (syncSound && audioRef.current && speed === 1) void playSound(vp.currentTick); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [compiled, syncSound, speed, playSound, stopSound]);
 
   const graphId = canvasGraphId(doc);
   const graph = doc.graphs.find(g => g.id === graphId);
@@ -787,6 +811,18 @@ export default function PreviewV2() {
   useEffect(() => {
     if (selectedNodeId !== null && !selectedNode) setSelectedNodeId(null);
   }, [selectedNodeId, selectedNode]);
+  // 4 "selecting a node in the graph switches to Selected node": only when a node just became selected.
+  useEffect(() => {
+    if (selectedNodeId !== null) { setRightTab('node'); setRightOpen(true); }
+  }, [selectedNodeId]);
+  // Effect name editing: local draft while the field has focus, committed on blur/Enter (never one undo step per keystroke).
+  useEffect(() => { if (!nameEditing) setNameDraft(doc.name); }, [doc.name, nameEditing]);
+  const commitName = useCallback(() => {
+    setNameEditing(false);
+    const trimmed = nameDraft.trim();
+    if (trimmed && trimmed !== doc.name) onEdit('Rename effect', [{ op: 'set', path: ['name'], value: trimmed }]);
+    else setNameDraft(doc.name);
+  }, [nameDraft, doc.name, onEdit]);
 
   const onFile = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -835,57 +871,76 @@ export default function PreviewV2() {
   const disabled = !compiled || !!fatal || runtimeErrors.length > 0;
   const errors = diagnostics.filter(d => d.severity === 'error');
   const warnings = diagnostics.filter(d => d.severity !== 'error');
+  const diagCount = errors.length + warnings.length;
+  const isEmptyEffect = (graph?.nodes.length ?? 0) === 0;
+
+  const fileMenuItems: MenuItem[] = [
+    { label: 'New', title: 'Start a new blank effect (clears undo history — Keep or Save first)', onClick: () => { setShelfPick(''); replace(toText(createBlankDocument()), 'New blank effect'); } },
+    { label: 'Open…', title: 'Open a .vfx.json document or a .vfxpack', onClick: () => openInputRef.current?.click() },
+    { separator: true, label: '' },
+    { label: 'Save .json', title: 'Download this effect as a .vfx.json file (recipe only; imported asset bytes not included). Ctrl/Cmd+S.', onClick: downloadDocument },
+    {
+      label: 'Save as…', title: 'Save a copy under a new name and keep working on that copy', onClick: () => {
+        // 12 workflow 1 "Save As": keep the effect under a new name; the open effect continues as that copy.
+        const cur = historyRef.current!.snapshot(), name = window.prompt('Save this effect as (new name):', `${cur.name || 'effect'} copy`)?.trim();
+        if (!name) return;
+        onEdit(`Save as ${name}`, [{ op: 'set', path: ['name'], value: name }, { op: 'set', path: ['id'], value: `effect-${name.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40)}-${Date.now().toString(36)}`.replace(/-+/g, '-') }]);
+        const r = saveToShelf(projectsRef.current, { ...historyRef.current!.snapshot(), name });
+        if (r.ok) { setShelf(r.entries); setShelfPick(r.entries[0].name); setFileNote(`Saved as "${name}" in Projects; you are now editing "${name}".`); } else setFileNote(r.message);
+      },
+    },
+    { label: 'Keep', title: 'Keep a copy of this effect in the local project shelf (same name replaces)', onClick: keepProject },
+    { separator: true, label: '' },
+    { label: `Projects (${shelf.length}), trash (${trash.length}), import old effect…`, title: 'Open a saved project, restore from trash, or import an effect made with the old editor', onClick: () => setShowProjects(true) },
+  ];
+  const exportMenuItems: MenuItem[] = [
+    { label: 'Export pack', title: 'Download a portable .vfxpack: the effect plus its imported asset bytes and checksums', onClick: () => void downloadPack() },
+    { label: 'Export media…', title: 'Render the effect to a sprite sheet, PNG sequence, GIF or video (MP4/WebM), frame by frame', onClick: () => setMediaOpen(o => !o) },
+    { label: 'Export Roblox', title: "Download a Roblox model (.rbxmx: particle emitters, beams, lights and a player script) plus a report of what Roblox can't do", onClick: () => void downloadRoblox() },
+    { separator: true, label: '' },
+    // Slot for Unreal export: another agent is adding an `exportUnreal` helper + editor button in parallel.
+    // Once src/export/unreal/package.ts exposes it, wire it up the same way as downloadRoblox above:
+    //   import { exportUnreal } from './export/unreal/package.ts';
+    //   { label: 'Export Unreal', title: '…', onClick: () => void exportUnreal(historyRef.current!.snapshot()) },
+    { label: 'Export Unreal (coming soon)', note: true },
+  ];
 
   return (
     <div className="pv2">
-      <header className="pv2-header">
-        <strong>VFX Studio</strong>
-        <span className="pv2-note">{doc.name}</span>
-        <div className="pv2-history" role="group" aria-label="File">
-          {narrow && <span className="pv2-note" role="note">Desktop authoring recommended: this window is under 1024 px wide, so panels stack; previewing works.</span>}
-          <button type="button" aria-pressed={libraryOpen} onClick={() => setLibraryOpen(o => !o)} title="Show or hide the library: presets, components, assets and your saved blocks">Library</button>
-          <button type="button" onClick={() => { setShelfPick(''); replace(toText(createBlankDocument()), 'New blank effect'); }} title="Start a new blank effect (clears undo history — Keep or Save first)">New</button>
-          <button type="button" onClick={() => openInputRef.current?.click()} title="Open a .vfx.json document or a .vfxpack">Open…</button>
-          <input ref={openInputRef} type="file" accept=".json,application/json,.vfxpack" hidden onChange={e => { const f = e.currentTarget.files?.[0]; e.currentTarget.value = ''; if (!f) return; if (f.name.endsWith('.vfxpack')) void openPack(f); else void f.text().then(t => {
-            // A v1 recipe or v1 bundle is never opened as v2: offer an explicit converted copy instead.
-            let legacyRecipe: Recipe | null = null;
-            try { const j = JSON.parse(t); if (j && (j.schemaVersion === 1 || j.format === 'vfx-studio-bundle')) legacyRecipe = parseRecipe(t); } catch { /* not v1 */ }
-            if (legacyRecipe) { if (window.confirm(`"${f.name}" was made with the old editor. Import an editable copy? The file is not changed.`)) convertLegacy(legacyRecipe); return; }
-            replace(t, `Open ${f.name}`);
-          }); }} />
-          <button type="button" onClick={downloadDocument} title="Download this effect as a .vfx.json file (recipe only; imported asset bytes not included)">Save .json</button>
-          <button type="button" onClick={() => void downloadPack()} title="Download a portable .vfxpack: the effect plus its imported asset bytes and checksums">Export pack</button>
-          <button type="button" aria-pressed={mediaOpen} onClick={() => setMediaOpen(o => !o)} title="Render the effect to a sprite sheet, PNG sequence, GIF or video (MP4/WebM), frame by frame">Export media…</button>
-          <button type="button" onClick={() => void downloadRoblox()} title="Download a Roblox model (.rbxmx: particle emitters, beams, lights and a player script) plus a report of what Roblox can't do">Export Roblox</button>
-          <button type="button" onClick={keepProject} title="Keep a copy of this effect in the local project shelf (same name replaces)">Keep</button>
-          <button type="button" onClick={() => {
-            // 12 workflow 1 "Save As": keep the effect under a new name; the open effect continues as that copy.
-            const cur = historyRef.current!.snapshot(), name = window.prompt('Save this effect as (new name):', `${cur.name || 'effect'} copy`)?.trim();
-            if (!name) return;
-            // 12 "Save As names a separate document": a new name and a new document id.
-            onEdit(`Save as ${name}`, [{ op: 'set', path: ['name'], value: name }, { op: 'set', path: ['id'], value: `effect-${name.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40)}-${Date.now().toString(36)}`.replace(/-+/g, '-') }]);
-            const r = saveToShelf(projectsRef.current, { ...historyRef.current!.snapshot(), name });
-            if (r.ok) { setShelf(r.entries); setShelfPick(r.entries[0].name); setFileNote(`Saved as "${name}" in Projects; you are now editing "${name}".`); } else setFileNote(r.message);
-          }} title="Save a copy under a new name and keep working on that copy">Save as…</button>
-          <select aria-label="Projects" value={shelfPick} onChange={e => { const name = e.currentTarget.value; setShelfPick(name); const entry = shelf.find(s => s.name === name); if (entry) replace(entry.text, `Open project ${name}`); }}>
-            <option value="">Projects ({shelf.length})…</option>
-            {shelf.map(s => <option key={s.name} value={s.name}>{s.name} — {new Date(s.savedAt).toLocaleString()}</option>)}
-          </select>
-          <button type="button" disabled={!shelfPick} onClick={() => { setShelf(removeFromShelf(projectsRef.current, shelfPick)); setTrash(readTrash(projectsRef.current)); setFileNote(`Moved "${shelfPick}" to the trash`); setShelfPick(''); }} title="Move the chosen project to the trash (the open effect is untouched; restore it from Trash)">Remove</button>
-          {trash.length > 0 && <>
-            <select aria-label="Trash" value={trashPick} onChange={e => setTrashPick(e.currentTarget.value)}>
-              <option value="">Trash ({trash.length})…</option>
-              {trash.map(t => <option key={t.name} value={t.name}>{t.name} — removed {new Date(t.removedAt).toLocaleString()}</option>)}
-            </select>
-            <button type="button" disabled={!trashPick} onClick={() => { const r = restoreFromTrash(projectsRef.current, trashPick); if (r.ok) { setShelf(r.shelf); setTrash(r.trash); setFileNote(`Restored "${trashPick}" to projects`); setTrashPick(''); } else setFileNote(r.message); }} title="Put the chosen project back in Projects">Restore</button>
-            <button type="button" onClick={() => { if (window.confirm(`Permanently delete ${trash.length} project(s) in the trash?`)) { emptyTrash(projectsRef.current); setTrash([]); setTrashPick(''); setFileNote('Trash emptied'); } }} title="Permanently delete everything in the trash">Empty trash</button>
-          </>}
-          <select aria-label="Import old effect" value={legacyPick} onChange={e => setLegacyPick(e.currentTarget.value)} title="Effects made with the old editor: your saved presets and the ten originals. Importing makes a new editable copy; the original is never changed.">
-            <option value="">Import old effect ({legacy.length})…</option>
-            {legacy.map((r, i) => <option key={i} value={String(i)}>{r.name}</option>)}
-          </select>
-          <button type="button" disabled={legacyPick === ''} onClick={() => { const r = legacy[Number(legacyPick)]; if (r) convertLegacy(r); setLegacyPick(''); }} title="Build an editable copy of the chosen old effect and show what was converted">Import</button>
-          <span className="pv2-note" role="status" aria-live="polite">{saveStatus}</span>
+      <header className="pv2-topbar">
+        <div className="pv2-topbar-brand">
+          <strong className="pv2-appname">VFX Studio</strong>
+          {nameEditing ? (
+            <input
+              className="pv2-name-input" aria-label="Effect name" value={nameDraft} autoFocus
+              onChange={e => setNameDraft(e.currentTarget.value)}
+              onBlur={commitName}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commitName(); } else if (e.key === 'Escape') { setNameDraft(doc.name); setNameEditing(false); } }}
+            />
+          ) : (
+            <button type="button" className="pv2-name-display" title="Click to rename the effect" onClick={() => { setNameDraft(doc.name); setNameEditing(true); }}>{doc.name || 'Untitled effect'}</button>
+          )}
+        </div>
+        <nav className="pv2-topbar-menus" aria-label="Main menu">
+          <MenuButton label="File" items={fileMenuItems} />
+          <MenuButton label="Export" items={exportMenuItems} />
+        </nav>
+        <div className="pv2-topbar-panels" role="group" aria-label="Panels">
+          <button type="button" className="pv2-icon-btn" aria-pressed={libraryOpen} onClick={() => setLibraryOpen(o => !o)} title="Show or hide the library: presets, components, assets and your saved blocks" aria-label="Toggle library panel"><IconPanelLeft /></button>
+          <button type="button" className="pv2-icon-btn" aria-pressed={graphOpen} onClick={() => setGraphOpen(o => !o)} title="Show or hide the node graph editor" aria-label="Toggle graph panel"><IconPanelBottom /></button>
+          <button type="button" className="pv2-icon-btn" aria-pressed={rightOpen} onClick={() => setRightOpen(o => !o)} title="Show or hide the inspector panel" aria-label="Toggle inspector panel"><IconPanelRight /></button>
+        </div>
+        <div className="pv2-topbar-history" role="group" aria-label="History">
+          <button type="button" className="pv2-icon-btn" disabled={!historyFlags.canUndo} onClick={undo} title="Undo (Ctrl/Cmd+Z)" aria-label="Undo"><IconUndo /></button>
+          <button type="button" className="pv2-icon-btn" disabled={!historyFlags.canRedo} onClick={redo} title="Redo (Ctrl/Cmd+Shift+Z)" aria-label="Redo"><IconRedo /></button>
+        </div>
+        <div className="pv2-topbar-status" role="status" aria-live="polite">
+          {narrow && <span className="pv2-note" role="note">Desktop authoring recommended: under 1024 px wide, panels stack.</span>}
+          <span className="pv2-note">{saveStatus}</span>
+        </div>
+      </header>
+      {(stale || fileNote || (recoveredFromRef.current && typeof localStorage !== 'undefined' && localStorage.getItem(CORRUPT_KEY)) || (jsonErrors.some(e => e.code === 'UNSUPPORTED_VERSION') && textDirty) || stagedPack || migrationReport || mediaOpen || showProjects) && (
+        <div className="pv2-notices">
           {stale && (
             <span className="pv2-stale" role="alert">
               This effect was changed in another tab, so this tab stopped saving.
@@ -916,169 +971,245 @@ export default function PreviewV2() {
               <button type="button" onClick={() => setMigrationReport('')}>Close</button>
             </details>
           )}
-        </div>
-        <div className="pv2-history" role="group" aria-label="History">
-          <button type="button" disabled={!historyFlags.canUndo} onClick={undo} title="Undo (Ctrl/Cmd+Z)">Undo</button>
-          <button type="button" disabled={!historyFlags.canRedo} onClick={redo} title="Redo (Ctrl/Cmd+Shift+Z)">Redo</button>
-        </div>
-      </header>
-      <main className="pv2-main">
-        {libraryOpen && <LibraryPanel document={doc} graphId={graphId} onEdit={onEdit} onOpenNew={(t, label) => { setShelfPick(''); replace(t, label); }} onClose={() => setLibraryOpen(false)} />}
-        <section className={expanded ? 'pv2-stage pv2-expanded' : 'pv2-stage'}>
-          <div className="pv2-host" ref={hostRef} />
-          {fatal && <div className="pv2-overlay pv2-error" role="alert">{fatal}</div>}
-          {gpuLost && <div className="pv2-overlay pv2-error" role="alert">The 3D view lost the graphics device (a driver reset or too many open tabs). It comes back by itself; your effect and edits are safe.</div>}
-          {!fatal && !compiled && <div className="pv2-overlay">{lastGoodRef.current ? 'Preview paused: the graph needs attention (see diagnostics). Showing the last working version — stale.' : 'No preview: the document does not compile (see diagnostics).'}</div>}
-          {runtimeErrors.length > 0 && (
-            <div className="pv2-overlay pv2-error" role="alert">
-              Simulation stopped: {runtimeErrors.map(describe).join(' | ')}
-              {/* 12 "failure pauses and offers Retry preview" (the simulation runs on the main thread; this replays from tick 0). */}
-              <button type="button" onClick={() => { setRuntimeErrors([]); vp?.restart(); }} title="Run the preview again from the start (after a fix, or if the stop was a one-off)">Retry preview</button>
-            </div>
-          )}
-          <div className="pv2-transport">
-            <button type="button" disabled={disabled} onClick={() => { if (frame.playing) { vp?.pause(); stopSound(''); } else { vp?.play(); if (syncSound && audio && speed === 1) void playSound(frame.tick); } }}>
-              {frame.playing ? 'Pause' : frame.suspended ? 'Resume' : 'Play'}
-            </button>
-            <button type="button" disabled={disabled} onClick={() => { vp?.restart(); if (syncSound && audio && speed === 1) void playSound(0); else stopSound(''); }}>Restart</button>
-            {/* Viewport ResizeObserver refits path framing to the new size until the user orbits. */}
-            <button type="button" aria-pressed={expanded} onClick={() => setExpanded(e => !e)}>
-              {expanded ? 'Collapse preview' : 'Expand preview'}
-            </button>
-            <button type="button" aria-pressed={glow} title="Bloom glow on/off (inspect the effect without glow)" onClick={() => { const g = !glow; setGlow(g); vp?.setGlow(g); }}>{glow ? 'Glow on' : 'Glow off'}</button>
-            <button type="button" aria-pressed={looping} disabled={disabled} title="Replay from tick 0 when the effect ends" onClick={() => { const l = !looping; setLooping(l); vp?.setLoop(l); }}>{looping ? 'Loop on' : 'Loop off'}</button>
-            <button type="button" aria-pressed={syncSound} disabled={!audio} title="Play the effect's sound in sync with Play/Restart" onClick={() => { const s = !syncSound; setSyncSound(s); if (!s) stopSound(''); }}>{syncSound ? 'Sound on' : 'Sound off'}</button>
-            <select aria-label="Preview quality" defaultValue="balanced" title="Preview quality: Reference (sharpest), Balanced (default), Economy (fast, no glow). Only the preview changes, never the effect." onChange={e => vp?.setQualityProfile(e.currentTarget.value as 'reference' | 'balanced' | 'economy')}>
-              <option value="reference">Quality: Reference</option><option value="balanced">Quality: Balanced</option><option value="economy">Quality: Economy</option>
-            </select>
-            <button type="button" aria-pressed={reducedEffects} title="Reduced effects: no screen flashes or camera shake in the preview (the effect itself is unchanged)" onClick={() => { const r = !reducedEffects; setReducedEffects(r); vp?.setReducedEffects(r); }}>{reducedEffects ? 'Reduced effects on' : 'Reduced effects off'}</button>
-            <button type="button" title="Fit the whole effect in view again (after orbiting or zooming)" onClick={() => vp?.resetView()}>Reset camera</button>
-            <button type="button" aria-pressed={grid} title="Show or hide the floor grid and the Source/Target markers" onClick={() => { const g = !grid; setGrid(g); vp?.setGrid(g); }}>{grid ? 'Grid on' : 'Grid off'}</button>
-            <button type="button" aria-pressed={lightBg} title="Inspect on a light arena" onClick={() => { const l = !lightBg; setLightBg(l); vp?.setBackground(l ? 'light' : 'dark'); }}>{lightBg ? 'Light arena' : 'Dark arena'}</button>
-            <button type="button" disabled={disabled} title="One tick back" aria-label="Step back one tick" onClick={() => { vp?.seek(Math.max(0, frame.tick - 1)); stopSound(''); }}>◀</button>
-            <button type="button" disabled={disabled} title="One tick forward" aria-label="Step forward one tick" onClick={() => { vp?.seek(Math.min(frame.durationTicks, frame.tick + 1)); stopSound(''); }}>▶</button>
-            <select aria-label="Playback speed" value={speed} title="Preview playback speed (sound plays only at 1x)" onChange={e => { const v = Number(e.currentTarget.value); setSpeed(v); vp?.setSpeed(v); if (v !== 1) stopSound(''); }}>
-              <option value={0.25}>0.25x</option><option value={0.5}>0.5x</option><option value={1}>1x</option>
-            </select>
-            <label className="pv2-check" title="Preview only: every loop plays with a different random pattern; the saved effect keeps its seed">
-              <input type="checkbox" checked={newSeed} onChange={e => { setNewSeed(e.currentTarget.checked); if (!e.currentTarget.checked && seedOffsetRef.current) { seedOffsetRef.current = 0; compile(historyRef.current!.snapshot()); } }} /> New seed each loop
-            </label>
-            <div className="pv2-scrub">
-              <input
-                type="range" min={0} max={frame.durationTicks} step={1} value={frame.tick} disabled={disabled}
-                aria-label="Tick" onChange={e => { vp?.seek(Number(e.target.value)); stopSound(''); }}
-              />
-              {/* Event markers and the selected part's active window (12); decorative, the list is in the title. */}
-              <div className="pv2-marks" aria-hidden="true" title={timeline.markers.map(m => `${m.kind} ${m.nodeId} @ ${m.tick}`).join('\n')}>
-                {(() => { const w = selectedNodeId ? timeline.windows.get(selectedNodeId) ?? scheduleWindow(selectedNode) : undefined; return w && frame.durationTicks > 0 ? <span className="pv2-window" style={{ left: `${(100 * w[0]) / frame.durationTicks}%`, width: `${(100 * Math.max(1, w[1] - w[0])) / frame.durationTicks}%` }} /> : null; })()}
-                {frame.durationTicks > 0 && timeline.markers.map((m, i) => <span key={i} className={`pv2-mark pv2-mark-${m.kind}`} style={{ left: `${(100 * m.tick) / frame.durationTicks}%` }} />)}
+          {showProjects && (
+            <div className="pv2-banner" role="dialog" aria-label="Projects">
+              <strong>Projects</strong>
+              <div className="pv2-actions">
+                <select aria-label="Projects" value={shelfPick} onChange={e => { const name = e.currentTarget.value; setShelfPick(name); const entry = shelf.find(s => s.name === name); if (entry) replace(entry.text, `Open project ${name}`); }}>
+                  <option value="">Projects ({shelf.length})…</option>
+                  {shelf.map(s => <option key={s.name} value={s.name}>{s.name} — {new Date(s.savedAt).toLocaleString()}</option>)}
+                </select>
+                <button type="button" disabled={!shelfPick} onClick={() => { setShelf(removeFromShelf(projectsRef.current, shelfPick)); setTrash(readTrash(projectsRef.current)); setFileNote(`Moved "${shelfPick}" to the trash`); setShelfPick(''); }} title="Move the chosen project to the trash (the open effect is untouched; restore it from Trash)">Remove</button>
               </div>
+              {trash.length > 0 && (
+                <div className="pv2-actions">
+                  <select aria-label="Trash" value={trashPick} onChange={e => setTrashPick(e.currentTarget.value)}>
+                    <option value="">Trash ({trash.length})…</option>
+                    {trash.map(t => <option key={t.name} value={t.name}>{t.name} — removed {new Date(t.removedAt).toLocaleString()}</option>)}
+                  </select>
+                  <button type="button" disabled={!trashPick} onClick={() => { const r = restoreFromTrash(projectsRef.current, trashPick); if (r.ok) { setShelf(r.shelf); setTrash(r.trash); setFileNote(`Restored "${trashPick}" to projects`); setTrashPick(''); } else setFileNote(r.message); }} title="Put the chosen project back in Projects">Restore</button>
+                  <button type="button" onClick={() => { if (window.confirm(`Permanently delete ${trash.length} project(s) in the trash?`)) { emptyTrash(projectsRef.current); setTrash([]); setTrashPick(''); setFileNote('Trash emptied'); } }} title="Permanently delete everything in the trash">Empty trash</button>
+                </div>
+              )}
+              <div className="pv2-actions">
+                <select aria-label="Import old effect" value={legacyPick} onChange={e => setLegacyPick(e.currentTarget.value)} title="Effects made with the old editor: your saved presets and the ten originals. Importing makes a new editable copy; the original is never changed.">
+                  <option value="">Import old effect ({legacy.length})…</option>
+                  {legacy.map((r, i) => <option key={i} value={String(i)}>{r.name}</option>)}
+                </select>
+                <button type="button" disabled={legacyPick === ''} onClick={() => { const r = legacy[Number(legacyPick)]; if (r) convertLegacy(r); setLegacyPick(''); }} title="Build an editable copy of the chosen old effect and show what was converted">Import</button>
+              </div>
+              <button type="button" onClick={() => setShowProjects(false)}>Close</button>
             </div>
-            {/* Not a live region: per-frame tick changes must not be announced. Errors use role="alert". */}
-            <span className="pv2-readout" title={frame.sampleParticleId ? `Sample particle ${frame.sampleParticleId}` : undefined}>
-              {frame.suspended && <>Paused (tab hidden) · </>}
-              {frame.catchingUp && <span title="The preview is running slower than real time on this device; every simulation step is still computed">Catching up · </span>}
-              tick {frame.tick}/{frame.durationTicks} · {frame.live} {frame.mode === 'paths' ? 'paths' : frame.mode === 'mixed' ? 'particles + paths' : 'live'}
-            </span>
-          </div>
-          <TimelineStrip document={doc} lanes={lanes} tick={frame.tick} durationTicks={frame.durationTicks} selectedNodeId={selectedNodeId}
-            onEdit={onEdit} onSeek={t => { vp?.seek(Math.max(0, Math.min(frame.durationTicks, t))); stopSound(''); }}
-            onSelect={nodeId => { const cur = historyRef.current!.snapshot(); if (canvasGraphId(cur) !== cur.rootGraphId) onEdit('Show the effect', [{ op: 'set', path: ['editor', 'openedGraphId'], value: cur.rootGraphId }]); setSelectedNodeId(nodeId); }} />
-          {frame.sampleParticleId && (
-            <details className="pv2-tech">
-              <summary>Technical details</summary>
-              Sample particle ID: <code>{frame.sampleParticleId}</code>
-              {renderStats && <div className="pv2-muted">Last frame: {renderStats.calls} draw calls, {renderStats.triangles} triangles · {renderStats.width}×{renderStats.height} px (pixel ratio {renderStats.pixelRatio}) · {renderStats.geometries} geometries, {renderStats.materials} materials, {renderStats.textures} textures{renderStats.contextLost ? ' · GPU context lost' : ''}</div>}
-            </details>
           )}
-          <div className="pv2-graph" aria-label="Graph editor">
-            <GraphCanvas
-              document={doc}
-              graphId={graphId}
-              selectedNodeId={selectedNode ? selectedNode.id : undefined}
-              onSelectNode={setSelectedNodeId}
-              onEdit={onEdit}
-              soloed={solo}
-              onToggleSolo={toggleSolo}
+        </div>
+      )}
+      <input ref={openInputRef} type="file" accept=".json,application/json,.vfxpack" hidden onChange={e => { const f = e.currentTarget.files?.[0]; e.currentTarget.value = ''; if (!f) return; if (f.name.endsWith('.vfxpack')) void openPack(f); else void f.text().then(t => {
+        // A v1 recipe or v1 bundle is never opened as v2: offer an explicit converted copy instead.
+        let legacyRecipe: Recipe | null = null;
+        try { const j = JSON.parse(t); if (j && (j.schemaVersion === 1 || j.format === 'vfx-studio-bundle')) legacyRecipe = parseRecipe(t); } catch { /* not v1 */ }
+        if (legacyRecipe) { if (window.confirm(`"${f.name}" was made with the old editor. Import an editable copy? The file is not changed.`)) convertLegacy(legacyRecipe); return; }
+        replace(t, `Open ${f.name}`);
+      }); }} />
+      <main className="pv2-main">
+        <SplitPane
+          storageKey="library-rest" direction="row" defaultSize={260} min={180} max={480}
+          collapsed={libraryOpen ? false : 'first'} onToggleCollapse={() => setLibraryOpen(o => !o)} ariaLabel="Library panel"
+          first={<LibraryPanel document={doc} graphId={graphId} onEdit={onEdit} onOpenNew={(t, label) => { setShelfPick(''); replace(t, label); }} onClose={() => setLibraryOpen(false)} />}
+          second={
+            <SplitPane
+              storageKey="center-right" direction="row" defaultSize={380} min={280} max={640} sizedPane="second"
+              collapsed={rightOpen ? false : 'second'} onToggleCollapse={() => setRightOpen(o => !o)} ariaLabel="Inspector panel"
+              first={
+                <section className="pv2-center">
+                  <SplitPane
+                    storageKey="viewport-graph" direction="column" defaultSize={420} min={200}
+                    collapsed={graphOpen ? false : 'second'} onToggleCollapse={() => setGraphOpen(o => !o)} ariaLabel="Graph editor"
+                    first={
+                      <div className="pv2-viewport-pane">
+                        <div className="pv2-host" ref={hostRef} />
+                        <div className="pv2-view-overlay">
+                          <OverlayMenu label={<><IconEye /> View <IconChevronDown /></>} title="Viewport view options" align="right">
+                            <label className="pv2-check"><input type="checkbox" checked={glow} onChange={e => { const g = e.currentTarget.checked; setGlow(g); vp?.setGlow(g); }} /> Glow</label>
+                            <label className="pv2-check"><input type="checkbox" checked={grid} onChange={e => { const g = e.currentTarget.checked; setGrid(g); vp?.setGrid(g); }} /> Grid &amp; markers</label>
+                            <label className="pv2-check"><input type="checkbox" checked={lightBg} onChange={e => { const l = e.currentTarget.checked; setLightBg(l); vp?.setBackground(l ? 'light' : 'dark'); }} /> Light arena</label>
+                            <label className="pv2-check"><input type="checkbox" checked={reducedEffects} onChange={e => { const r = e.currentTarget.checked; setReducedEffects(r); vp?.setReducedEffects(r); }} /> Reduced effects</label>
+                            <label className="pv2-check"><input type="checkbox" checked={newSeed} onChange={e => { setNewSeed(e.currentTarget.checked); if (!e.currentTarget.checked && seedOffsetRef.current) { seedOffsetRef.current = 0; compile(historyRef.current!.snapshot()); } }} /> New seed each loop</label>
+                            <label className="pv2-menu-field">Quality
+                              <select aria-label="Preview quality" defaultValue="balanced" title="Preview quality: Reference (sharpest), Balanced (default), Economy (fast, no glow). Only the preview changes, never the effect." onChange={e => vp?.setQualityProfile(e.currentTarget.value as 'reference' | 'balanced' | 'economy')}>
+                                <option value="reference">Reference</option><option value="balanced">Balanced</option><option value="economy">Economy</option>
+                              </select>
+                            </label>
+                            <button type="button" onClick={() => vp?.resetView()} title="Fit the whole effect in view again (after orbiting or zooming)">Reset camera</button>
+                          </OverlayMenu>
+                        </div>
+                        {isEmptyEffect && compiled && <div className="pv2-empty-state">Empty effect. Open the Library and add a component to get started.</div>}
+                        {fatal && <div className="pv2-overlay pv2-error" role="alert">{fatal}</div>}
+                        {gpuLost && <div className="pv2-overlay pv2-error" role="alert">The 3D view lost the graphics device (a driver reset or too many open tabs). It comes back by itself; your effect and edits are safe.</div>}
+                        {!fatal && !compiled && <div className="pv2-overlay">{lastGoodRef.current ? 'Preview paused: the graph needs attention (see diagnostics). Showing the last working version — stale.' : 'No preview: the document does not compile (see diagnostics).'}</div>}
+                        {runtimeErrors.length > 0 && (
+                          <div className="pv2-overlay pv2-error" role="alert">
+                            Simulation stopped: {runtimeErrors.map(describe).join(' | ')}
+                            {/* 12 "failure pauses and offers Retry preview" (the simulation runs on the main thread; this replays from tick 0). */}
+                            <button type="button" onClick={() => { setRuntimeErrors([]); vp?.restart(); }} title="Run the preview again from the start (after a fix, or if the stop was a one-off)">Retry preview</button>
+                          </div>
+                        )}
+                        <div className="pv2-transport">
+                          <button type="button" className="pv2-icon-btn" disabled={disabled} aria-label={frame.playing ? 'Pause' : frame.suspended ? 'Resume' : 'Play'} title={`${frame.playing ? 'Pause' : 'Play'} (Space)`} onClick={() => { if (frame.playing) { vp?.pause(); stopSound(''); } else { vp?.play(); if (syncSound && audio && speed === 1) void playSound(frame.tick); } }}>
+                            {frame.playing ? <IconPause /> : <IconPlay />}
+                          </button>
+                          <button type="button" className="pv2-icon-btn" disabled={disabled} aria-label="Restart" title="Restart from tick 0" onClick={() => { vp?.restart(); if (syncSound && audio && speed === 1) void playSound(0); else stopSound(''); }}><IconRestart /></button>
+                          <button type="button" className="pv2-icon-btn" disabled={disabled} title="One tick back" aria-label="Step back one tick" onClick={() => { vp?.seek(Math.max(0, frame.tick - 1)); stopSound(''); }}><IconStepBack /></button>
+                          <button type="button" className="pv2-icon-btn" disabled={disabled} title="One tick forward" aria-label="Step forward one tick" onClick={() => { vp?.seek(Math.min(frame.durationTicks, frame.tick + 1)); stopSound(''); }}><IconStepForward /></button>
+                          <div className="pv2-scrub">
+                            <input
+                              type="range" min={0} max={frame.durationTicks} step={1} value={frame.tick} disabled={disabled}
+                              aria-label="Tick" onChange={e => { vp?.seek(Number(e.target.value)); stopSound(''); }}
+                            />
+                            {/* Event markers and the selected part's active window (12); decorative, the list is in the title. */}
+                            <div className="pv2-marks" aria-hidden="true" title={timeline.markers.map(m => `${m.kind} ${m.nodeId} @ ${m.tick}`).join('\n')}>
+                              {(() => { const w = selectedNodeId ? timeline.windows.get(selectedNodeId) ?? scheduleWindow(selectedNode) : undefined; return w && frame.durationTicks > 0 ? <span className="pv2-window" style={{ left: `${(100 * w[0]) / frame.durationTicks}%`, width: `${(100 * Math.max(1, w[1] - w[0])) / frame.durationTicks}%` }} /> : null; })()}
+                              {frame.durationTicks > 0 && timeline.markers.map((m, i) => <span key={i} className={`pv2-mark pv2-mark-${m.kind}`} style={{ left: `${(100 * m.tick) / frame.durationTicks}%` }} />)}
+                            </div>
+                          </div>
+                          {/* Not a live region: per-frame tick changes must not be announced. Errors use role="alert". */}
+                          <span className="pv2-readout" title={frame.sampleParticleId ? `Sample particle ${frame.sampleParticleId}` : undefined}>
+                            {frame.suspended && <>Paused (tab hidden) · </>}
+                            {frame.catchingUp && <span title="The preview is running slower than real time on this device; every simulation step is still computed">Catching up · </span>}
+                            tick {frame.tick}/{frame.durationTicks} · {frame.live} {frame.mode === 'paths' ? 'paths' : frame.mode === 'mixed' ? 'particles + paths' : 'live'}
+                          </span>
+                          <select aria-label="Playback speed" value={speed} title="Preview playback speed (sound plays only at 1x)" onChange={e => { const v = Number(e.currentTarget.value); setSpeed(v); vp?.setSpeed(v); if (v !== 1) stopSound(''); }}>
+                            <option value={0.25}>0.25x</option><option value={0.5}>0.5x</option><option value={1}>1x</option>
+                          </select>
+                          <button type="button" className="pv2-icon-btn" aria-pressed={looping} disabled={disabled} title="Replay from tick 0 when the effect ends" onClick={() => { const l = !looping; setLooping(l); vp?.setLoop(l); }}>↻</button>
+                          <button type="button" className="pv2-icon-btn" aria-pressed={syncSound} disabled={!audio} title="Play the effect's sound in sync with Play/Restart" onClick={() => { const s = !syncSound; setSyncSound(s); if (!s) stopSound(''); }}>{syncSound ? '🔊' : '🔇'}</button>
+                        </div>
+                        <TimelineStrip document={doc} lanes={lanes} tick={frame.tick} durationTicks={frame.durationTicks} selectedNodeId={selectedNodeId}
+                          onEdit={onEdit} onSeek={t => { vp?.seek(Math.max(0, Math.min(frame.durationTicks, t))); stopSound(''); }}
+                          onSelect={nodeId => { const cur = historyRef.current!.snapshot(); if (canvasGraphId(cur) !== cur.rootGraphId) onEdit('Show the effect', [{ op: 'set', path: ['editor', 'openedGraphId'], value: cur.rootGraphId }]); setSelectedNodeId(nodeId); }} />
+                        {frame.sampleParticleId && (
+                          <details className="pv2-tech">
+                            <summary>Technical details</summary>
+                            Sample particle ID: <code>{frame.sampleParticleId}</code>
+                            {renderStats && <div className="pv2-muted">Last frame: {renderStats.calls} draw calls, {renderStats.triangles} triangles · {renderStats.width}×{renderStats.height} px (pixel ratio {renderStats.pixelRatio}) · {renderStats.geometries} geometries, {renderStats.materials} materials, {renderStats.textures} textures{renderStats.contextLost ? ' · GPU context lost' : ''}</div>}
+                          </details>
+                        )}
+                      </div>
+                    }
+                    second={
+                      <div className="pv2-graph" aria-label="Graph editor">
+                        <GraphCanvas
+                          document={doc}
+                          graphId={graphId}
+                          selectedNodeId={selectedNode ? selectedNode.id : undefined}
+                          onSelectNode={setSelectedNodeId}
+                          onEdit={onEdit}
+                          soloed={solo}
+                          onToggleSolo={toggleSolo}
+                        />
+                      </div>
+                    }
+                  />
+                </section>
+              }
+              second={
+                <aside className="pv2-side">
+                  <div className="pv2-tabs" role="tablist" aria-label="Inspector">
+                    <button type="button" role="tab" aria-selected={rightTab === 'controls'} className="pv2-tab" onClick={() => setRightTab('controls')}>Controls</button>
+                    <button type="button" role="tab" aria-selected={rightTab === 'node'} className="pv2-tab" onClick={() => setRightTab('node')}>Selected node</button>
+                    <button type="button" role="tab" aria-selected={rightTab === 'outline'} className="pv2-tab" onClick={() => setRightTab('outline')}>Outline</button>
+                    <button type="button" role="tab" aria-selected={rightTab === 'assets'} className="pv2-tab" onClick={() => setRightTab('assets')}>Assets</button>
+                    <button type="button" role="tab" aria-selected={rightTab === 'sound'} className="pv2-tab" onClick={() => setRightTab('sound')}>Sound</button>
+                    <button type="button" role="tab" aria-selected={rightTab === 'diagnostics'} className="pv2-tab" onClick={() => setRightTab('diagnostics')}>
+                      Diagnostics{diagCount > 0 && <span className="pv2-badge">{diagCount}</span>}
+                    </button>
+                  </div>
+                  <div className="pv2-tabpanel">
+                    {rightTab === 'controls' && (
+                      <section aria-label="Controls">
+                        <ControlsPanel document={doc} onEdit={onEdit} followers={followers} tick={frame.tick} />
+                      </section>
+                    )}
+                    {rightTab === 'node' && (
+                      <section aria-label="Selected node">
+                        {selectedNode ? (
+                          <NodeInspector document={doc} graphId={graphId} nodeId={selectedNode.id} onEdit={onEdit} onSelectNode={setSelectedNodeId} />
+                        ) : (
+                          <p className="pv2-muted">No node selected. Select a node in the graph.</p>
+                        )}
+                      </section>
+                    )}
+                    {rightTab === 'outline' && (
+                      <section aria-label="Outline">
+                        <OutlinePanel document={doc} graphId={graphId} selectedNodeId={selectedNode ? selectedNode.id : undefined} onSelectNode={setSelectedNodeId} onEdit={onEdit}
+                          soloed={solo} onToggleSolo={toggleSolo} onClearSolo={() => setSolo(new Set())} />
+                      </section>
+                    )}
+                    {rightTab === 'assets' && (
+                      <section aria-label="Imported assets">
+                        <TexturePanel document={doc} graphId={graphId} selectedNodeId={selectedNode?.id} onEdit={onEdit} missingIds={missingAssets} onBytesRestored={() => setAssetCheck(n => n + 1)} />
+                        <button type="button" onClick={() => void cleanupAssets()} title="Remove imported image/model files that no effect, project, autosave revision, saved component or undo step uses (asks first, reports the space freed)">Clean up unused files</button>
+                        {missingAssets.length > 0 && <p className="pv2-warn" role="alert">Missing imported files on this device: {missingAssets.map(id => doc.assets.find(a => a.id === id)?.provenance.originalFilename ?? id).join(', ')}. Use Relink… next to each one under Imported assets.</p>}
+                      </section>
+                    )}
+                    {rightTab === 'sound' && (
+                      <section className="pv2-sound" aria-label="Sound audition">
+                        <p className="pv2-muted">Sound is parked (visuals first). This plays the document's rendered audio mix on its own, from the start.</p>
+                        <div className="pv2-actions">
+                          <button type="button" disabled={!audio} onClick={() => { void playSound(0); }}>Play sound</button>
+                          <button type="button" disabled={!audio} onClick={() => stopSound('Sound stopped.')}>Stop sound</button>
+                          <button type="button" disabled={!audio} onClick={downloadWav}>Download WAV</button>
+                        </div>
+                        {audio ? (
+                          <p className="pv2-muted">
+                            Mix: {(audio.mix.left.length / audio.mix.sampleRate).toFixed(2)} s stereo, {audio.mix.sampleRate} Hz
+                            {audio.mix.severeLimiting && <span className="pv2-warn"> · severe limiting (peak {audio.mix.prePeak.toFixed(2)})</span>}
+                          </p>
+                        ) : (
+                          <p className="pv2-muted">No valid sound: the document has no root audio, or its audio does not compile (see diagnostics).</p>
+                        )}
+                        <p className="pv2-muted" role="status" aria-live="polite">{soundStatus}</p>
+                      </section>
+                    )}
+                    {rightTab === 'diagnostics' && (
+                      <section aria-label="Diagnostics">
+                        {editMessages.length > 0 && (
+                          <ul className="pv2-diags" role="alert">
+                            {editMessages.map((m, i) => <li key={i} className="pv2-warn">{m}</li>)}
+                          </ul>
+                        )}
+                        <ul className="pv2-diags" role="status" aria-live="polite" aria-label="Diagnostics">
+                          {errors.map((d, i) => <li key={`e${i}`} className="pv2-error"><DiagText d={d} onFocus={focusDiagnostic} /></li>)}
+                          {warnings.map((d, i) => <li key={`w${i}`} className="pv2-warn"><DiagText d={d} onFocus={focusDiagnostic} /></li>)}
+                          {compiled && errors.length === 0 && <li className="pv2-ok">Compiled; loads paused at tick 0.</li>}
+                        </ul>
+                        <details className="pv2-advanced">
+                          <summary>Advanced: document JSON</summary>
+                          <div className="pv2-actions">
+                            <button type="button" onClick={() => { replace(text, 'Apply JSON'); }}>Apply JSON</button>
+                            <button type="button" onClick={() => fileRef.current?.click()}>Load file…</button>
+                            <input ref={fileRef} className="pv2-file-input" type="file" accept=".json,application/json" tabIndex={-1} aria-hidden="true" onChange={onFile} />
+                            <button type="button" onClick={resetF01}>Load test graph (F01)</button>
+                            <button type="button" onClick={loadLightningDemo}>Load lightning demo</button>
+                            {textDirty && <button type="button" onClick={revertText}>Revert text</button>}
+                          </div>
+                          <p className="pv2-muted">Apply, Load and Reset replace the document and clear undo history.</p>
+                          {textDirty && <p className="pv2-warn">JSON text has unapplied edits; graph changes are not reflected here until reverted.</p>}
+                          <textarea
+                            className="pv2-json" spellCheck={false} value={text} aria-label="Graph document JSON"
+                            onChange={e => { setText(e.target.value); setTextDirty(true); }}
+                          />
+                          <ul className="pv2-diags" role="status" aria-live="polite" aria-label="JSON diagnostics">
+                            {jsonErrors.map((d, i) => <li key={i} className={d.severity === 'error' ? 'pv2-error' : 'pv2-warn'}><DiagText d={d} onFocus={focusDiagnostic} /></li>)}
+                          </ul>
+                        </details>
+                      </section>
+                    )}
+                  </div>
+                </aside>
+              }
             />
-          </div>
-        </section>
-        <aside className="pv2-side">
-          <details className="pv2-panel" aria-label="Outline">
-            <summary className="pv2-heading">Outline (parts list)</summary>
-            <OutlinePanel document={doc} graphId={graphId} selectedNodeId={selectedNode ? selectedNode.id : undefined} onSelectNode={setSelectedNodeId} onEdit={onEdit}
-              soloed={solo} onToggleSolo={toggleSolo} onClearSolo={() => setSolo(new Set())} />
-          </details>
-          <section className="pv2-panel" aria-label="Controls">
-            <h2 className="pv2-heading">Controls</h2>
-            <ControlsPanel document={doc} onEdit={onEdit} followers={followers} tick={frame.tick} />
-          </section>
-          <section className="pv2-panel" aria-label="Selected node">
-            <h2 className="pv2-heading">Selected node</h2>
-            {selectedNode ? (
-              <NodeInspector document={doc} graphId={graphId} nodeId={selectedNode.id} onEdit={onEdit} onSelectNode={setSelectedNodeId} />
-            ) : (
-              <p className="pv2-muted">No node selected. Select a node in the graph.</p>
-            )}
-          </section>
-          <section className="pv2-panel" aria-label="Imported assets">
-            <h2 className="pv2-heading">Imported assets</h2>
-            <TexturePanel document={doc} graphId={graphId} selectedNodeId={selectedNode?.id} onEdit={onEdit} missingIds={missingAssets} onBytesRestored={() => setAssetCheck(n => n + 1)} />
-            <button type="button" onClick={() => void cleanupAssets()} title="Remove imported image/model files that no effect, project, autosave revision, saved component or undo step uses (asks first, reports the space freed)">Clean up unused files</button>
-            {missingAssets.length > 0 && <p className="pv2-warn" role="alert">Missing imported files on this device: {missingAssets.map(id => doc.assets.find(a => a.id === id)?.provenance.originalFilename ?? id).join(', ')}. Use Relink… next to each one under Imported assets.</p>}
-          </section>
-          <section className="pv2-panel pv2-sound" aria-label="Sound audition">
-            <h2 className="pv2-heading">Sound audition</h2>
-            <p className="pv2-muted">
-              Plays the document's rendered audio mix on its own, from the start. With Sound on, the preview's Play and
-              Restart also play it in sync from the current tick.
-            </p>
-            <div className="pv2-actions">
-              <button type="button" disabled={!audio} onClick={() => { void playSound(0); }}>Play sound</button>
-              <button type="button" disabled={!audio} onClick={() => stopSound('Sound stopped.')}>Stop sound</button>
-              <button type="button" disabled={!audio} onClick={downloadWav}>Download WAV</button>
-            </div>
-            {audio ? (
-              <p className="pv2-muted">
-                Mix: {(audio.mix.left.length / audio.mix.sampleRate).toFixed(2)} s stereo, {audio.mix.sampleRate} Hz
-                {audio.mix.severeLimiting && <span className="pv2-warn"> · severe limiting (peak {audio.mix.prePeak.toFixed(2)})</span>}
-              </p>
-            ) : (
-              <p className="pv2-muted">No valid sound: the document has no root audio, or its audio does not compile (see diagnostics).</p>
-            )}
-            <p className="pv2-muted" role="status" aria-live="polite">{soundStatus}</p>
-          </section>
-          {editMessages.length > 0 && (
-            <ul className="pv2-diags" role="alert">
-              {editMessages.map((m, i) => <li key={i} className="pv2-warn">{m}</li>)}
-            </ul>
-          )}
-          <ul className="pv2-diags" role="status" aria-live="polite" aria-label="Diagnostics">
-            {errors.map((d, i) => <li key={`e${i}`} className="pv2-error"><DiagText d={d} onFocus={focusDiagnostic} /></li>)}
-            {warnings.map((d, i) => <li key={`w${i}`} className="pv2-warn"><DiagText d={d} onFocus={focusDiagnostic} /></li>)}
-            {compiled && errors.length === 0 && <li className="pv2-ok">Compiled; loads paused at tick 0.</li>}
-          </ul>
-          <details className="pv2-advanced">
-            <summary>Advanced: document JSON</summary>
-            <div className="pv2-actions">
-              <button type="button" onClick={() => { replace(text, 'Apply JSON'); }}>Apply JSON</button>
-              <button type="button" onClick={() => fileRef.current?.click()}>Load file…</button>
-              <input ref={fileRef} className="pv2-file-input" type="file" accept=".json,application/json" tabIndex={-1} aria-hidden="true" onChange={onFile} />
-              <button type="button" onClick={resetF01}>Load test graph (F01)</button>
-              <button type="button" onClick={loadLightningDemo}>Load lightning demo</button>
-              {textDirty && <button type="button" onClick={revertText}>Revert text</button>}
-            </div>
-            <p className="pv2-muted">Apply, Load and Reset replace the document and clear undo history.</p>
-            {textDirty && <p className="pv2-warn">JSON text has unapplied edits; graph changes are not reflected here until reverted.</p>}
-            <textarea
-              className="pv2-json" spellCheck={false} value={text} aria-label="Graph document JSON"
-              onChange={e => { setText(e.target.value); setTextDirty(true); }}
-            />
-            <ul className="pv2-diags" role="status" aria-live="polite" aria-label="JSON diagnostics">
-              {jsonErrors.map((d, i) => <li key={i} className={d.severity === 'error' ? 'pv2-error' : 'pv2-warn'}><DiagText d={d} onFocus={focusDiagnostic} /></li>)}
-            </ul>
-          </details>
-        </aside>
+          }
+        />
       </main>
     </div>
   );
