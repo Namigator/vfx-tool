@@ -96,6 +96,14 @@
 - Post-release (user order): performance pass → timeline strip with component bars, then keyframed knobs →
   engine export → in-editor AI box that runs its own render→look→adjust loop → full AI guide → sound.
 
+## NOW (user 2026-09-30): AI GUIDE FIRST ("don't half-ass it"), THEN EXPORTS
+- AI guide = a complete guide to using VFX Studio (not Roblox/SpellForge): docs/ai-guide/ (hand-written concepts,
+  workflow, per-family recipes, look/quality, troubleshooting, export) + generated reference (nodes/params, components/
+  knobs, sprites, MCP tools) via tools/build-ai-guide.mjs; vfx_guide serves it. Fix the tool gaps agents hit.
+  Acceptance: a fresh agent with only the guide + MCP builds the reference flamethrower and the original lightning.
+- Then exports, user order: video / sprite sheet / GIF -> Unreal (Niagara) -> Unity -> Godot. Unity not installed
+  (ask before installing).
+
 ## RELEASE PLAN (user 2026-09-30): finish the product, publish it, then add features
 - Release order (user): (1) fire sprites look wrong viewed along the jet (front/behind); (2) Roblox flames stand
   vertical instead of along the jet - POC level only; (3) lightning: the BRANCHES off the main bolt are too big -
