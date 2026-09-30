@@ -101,6 +101,10 @@
   vertical instead of along the jet - POC level only; (3) lightning: the BRANCHES off the main bolt are too big -
   compare with the original lightning reference docs/v2-plan/references/original-lightning/lightning-arc.html.
   Then: user visual OK -> merge squad/vfx-v2 to main; production build + hosting (host not chosen yet).
+- Progress 2026-09-30: (1) DONE 0a87257 - velocity-aligned sprites fade to upright puffs viewed along the jet [SAW behind/
+  front/side]; (3) DONE fe40910 - lightning zigzag halved to the original's +-rough/2 (Jaggedness 0.55->0.3) [SAW];
+  (2) Roblox vertical flames: UNKNOWN how Roblox VelocityParallel orients the texture (docs silent). Cheap test when
+  the user allows screen control: set flame emitters' Rotation 90 in Studio and look. No computer use unless asked.
 - BACKLOGGED (not dropped): in-editor AI box. LATER: AI guide = a guide for using the TOOL itself (not Roblox or
   SpellForge), plus the tool-usability gaps the SpellForge agent found. LATER: sound - currently genuinely bad,
   sometimes hurts the user's ears (check loudness/limiting first).
