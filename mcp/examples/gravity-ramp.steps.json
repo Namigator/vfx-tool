@@ -1,0 +1,23 @@
+[
+  ["vfx_new_document", { "template": "blank", "id": "ramp" }],
+  ["vfx_set_document", { "docId": "ramp", "durationTicks": 150 }],
+  ["vfx_set_anchor", { "docId": "ramp", "anchorId": "src", "position": [0, 0.1, 0] }],
+  ["vfx_add_node", { "docId": "ramp", "type": "Anchor", "id": "a", "params": { "anchorId": "src" } }],
+  ["vfx_add_node", { "docId": "ramp", "type": "Schedule", "id": "on", "params": { "startTicks": 0, "durationTicks": 150, "mode": "window" } }],
+  ["vfx_add_node", { "docId": "ramp", "type": "Emitter", "id": "jet", "params": { "shape": "cone", "direction": [0.35, 1, 0], "coneAngle": 0.12, "radius": 0.03, "rate": 90, "burst": 0, "speedMin": 4, "speedMax": 5, "lifetimeMin": 1.1, "lifetimeMax": 1.3 } }],
+  ["vfx_add_node", { "docId": "ramp", "type": "InitialProperties", "id": "ip", "params": { "sizeMin": 0.03, "sizeMax": 0.05 } }],
+  ["vfx_add_node", { "docId": "ramp", "type": "Gravity", "id": "grav", "params": { "acceleration": [0, -9.81, 0] } }],
+  ["vfx_add_node", { "docId": "ramp", "type": "EffectTimeCurve", "id": "fadein", "params": { "curve": { "domain": "effectSeconds", "interpolation": "linear", "keys": [{ "x": 0.5, "y": 0 }, { "x": 1.5, "y": 1 }] } } }],
+  ["vfx_add_node", { "docId": "ramp", "type": "Material", "id": "m", "params": { "template": "SpriteTextured", "sprite": "spark-streak", "blend": "additive", "tint": { "srgb": "#80D8FF", "alpha": 1 } } }],
+  ["vfx_add_node", { "docId": "ramp", "type": "BillboardRenderer", "id": "bb", "params": { "alignment": "velocity", "stretchRatio": 4, "pivot": 0.8 } }],
+  ["vfx_connect", { "docId": "ramp", "from": "a.out", "to": "jet.anchor" }],
+  ["vfx_connect", { "docId": "ramp", "from": "on.window", "to": "jet.window" }],
+  ["vfx_connect", { "docId": "ramp", "from": "jet.particles", "to": "ip.particles" }],
+  ["vfx_connect", { "docId": "ramp", "from": "ip.particles", "to": "grav.particles" }],
+  ["vfx_connect", { "docId": "ramp", "from": "fadein.value", "to": "grav.strength" }],
+  ["vfx_connect", { "docId": "ramp", "from": "grav.particles", "to": "bb.particles" }],
+  ["vfx_connect", { "docId": "ramp", "from": "m.material", "to": "bb.material" }],
+  ["vfx_connect", { "docId": "ramp", "from": "bb.visual", "to": "node-output.visual" }],
+  ["vfx_compile", { "docId": "ramp" }, true],
+  ["vfx_render_frames", { "docId": "ramp", "ticks": [28, 140] }, true]
+]

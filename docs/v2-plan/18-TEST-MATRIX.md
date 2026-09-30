@@ -70,6 +70,7 @@ Use native Node tests for pure TypeScript. Use a permitted, connected browser au
 | T37 | Qualified latency/FPS/graph benchmarks, repeat runs, hardware metadata | R11 |
 | T38 | 100 casts, preset cycles, remount, resize, context loss and resource plateau | R11 |
 | T39 | Artist task: modify benchmark and build a new mixed effect without code | R02,R05 |
+| T40 | Model build test (A-05): fresh agent reproduces a standalone reference from Blank via UI only; gap log recorded | R02,R05,R06 |
 
 ## Test fixture policy
 

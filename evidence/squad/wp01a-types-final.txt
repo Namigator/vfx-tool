@@ -1,0 +1,5 @@
+src/model/canonical.ts(161,19): error TS2345: Argument of type '(e: EdgeDefinition, ei: number) => void' is not assignable to parameter of type '(value: unknown, index: number, array: unknown[]) => void'.
+  Types of parameters 'e' and 'value' are incompatible.
+    Type 'unknown' is not assignable to type 'EdgeDefinition'.
+TypeScript exit code: 1
+TypeScript exit code: 0

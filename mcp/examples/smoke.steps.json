@@ -1,0 +1,28 @@
+[
+  ["vfx_new_document", { "template": "blank", "id": "smoke" }],
+  ["vfx_set_document", { "docId": "smoke", "durationTicks": 300 }],
+  ["vfx_set_anchor", { "docId": "smoke", "anchorId": "source", "position": [0, 0.1, 0] }],
+  ["vfx_add_node", { "docId": "smoke", "type": "Schedule", "id": "sched", "params": { "startTicks": 0, "durationTicks": 240, "mode": "window" } }],
+  ["vfx_add_node", { "docId": "smoke", "type": "Emitter", "id": "em", "params": { "shape": "disc", "direction": [0, 1, 0], "radius": 0.25, "rate": 70, "burst": 0, "speedMin": 0.1, "speedMax": 0.3, "lifetimeMin": 2.5, "lifetimeMax": 3.5 } }],
+  ["vfx_add_node", { "docId": "smoke", "type": "InitialProperties", "id": "ip", "params": { "sizeMin": 0.25, "sizeMax": 0.4, "rotationMin": 0, "rotationMax": 0, "angularVelocityMin": 0, "angularVelocityMax": 0 } }],
+  ["vfx_add_node", { "docId": "smoke", "type": "Gravity", "id": "lift", "params": { "acceleration": [0.15, 0.9, 0] } }],
+  ["vfx_add_node", { "docId": "smoke", "type": "NoiseForce", "id": "swirl", "params": { "mode": "curl", "amplitude": 2.2, "frequency": 0.7, "evolution": 0.4 } }],
+  ["vfx_add_node", { "docId": "smoke", "type": "Drag", "id": "drag", "params": { "coefficient": 1.2 } }],
+  ["vfx_add_node", { "docId": "smoke", "type": "Material", "id": "mat", "params": { "blend": "normal", "opacity": 0.35 } }],
+  ["vfx_add_node", { "docId": "smoke", "type": "BillboardRenderer", "id": "bb", "params": {
+    "sizeOverLife": { "domain": "normalized", "interpolation": "linear", "keys": [{ "x": 0, "y": 0.5 }, { "x": 1, "y": 3 }] },
+    "opacityOverLife": { "domain": "normalized", "interpolation": "linear", "keys": [{ "x": 0, "y": 0 }, { "x": 0.15, "y": 1 }, { "x": 1, "y": 0 }] },
+    "colorOverLife": { "stops": [ { "position": 0, "color": { "srgb": "#8A8A8A", "alpha": 1 } }, { "position": 1, "color": { "srgb": "#3A3A40", "alpha": 1 } } ] } } }],
+  ["vfx_connect", { "docId": "smoke", "from": "node-source.out", "to": "em.anchor" }],
+  ["vfx_connect", { "docId": "smoke", "from": "sched.window", "to": "em.window" }],
+  ["vfx_connect", { "docId": "smoke", "from": "em.particles", "to": "ip.particles" }],
+  ["vfx_connect", { "docId": "smoke", "from": "ip.particles", "to": "lift.particles" }],
+  ["vfx_connect", { "docId": "smoke", "from": "lift.particles", "to": "swirl.particles" }],
+  ["vfx_connect", { "docId": "smoke", "from": "swirl.particles", "to": "drag.particles" }],
+  ["vfx_connect", { "docId": "smoke", "from": "drag.particles", "to": "bb.particles" }],
+  ["vfx_connect", { "docId": "smoke", "from": "mat.material", "to": "bb.material" }],
+  ["vfx_connect", { "docId": "smoke", "from": "bb.visual", "to": "node-output.visual" }],
+  ["vfx_compile", { "docId": "smoke" }, true],
+  ["vfx_sample_particles", { "docId": "smoke", "tick": 200, "show": 0 }, true],
+  ["vfx_preview_url", { "docId": "smoke" }, true]
+]

@@ -1,0 +1,300 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { COMPONENT_TEMPLATES, insertComponent } from '../src/graph/components.ts';
+import { grownDuration } from '../src/graph/truncation.ts';
+import { createBlankDocument, createF01Document } from '../src/graph/fixtures.ts';
+import { validateDocument } from '../src/model/document.ts';
+import { createRegistry } from '../src/graph/registry.ts';
+import { compileParticlePreview } from '../src/graph/toParticles.ts';
+import { compilePathPreview } from '../src/graph/toPaths.ts';
+
+const valid = (d: unknown) => { const v = validateDocument(d, { registry: createRegistry() }); if (!v.ok) assert.fail(JSON.stringify(v.errors.slice(0, 3))); return v.value; };
+const compiles = (d: unknown) => { const r = compileParticlePreview(d, { ribbonsHandled: true, audioHandled: true }); if (!r.ok) assert.fail(JSON.stringify(r.errors.slice(0, 3))); return r.value; };
+
+test('every component inserts into a blank document, validates and compiles', () => {
+  assert.ok(COMPONENT_TEMPLATES.length >= 7);
+  for (const c of COMPONENT_TEMPLATES) {
+    const { doc } = insertComponent(createBlankDocument(), c.id);
+    const p = compiles(valid(doc)), r = compilePathPreview(doc, 30, { audioHandled: true });
+    if (!r.ok) assert.fail(JSON.stringify(r.errors.slice(0, 3)));
+    assert.ok(p.layers.length + p.trails.length + r.value.layers.length > 0, `${c.id} draws something`);
+  }
+});
+
+test('components compose: two components and a repeat get unique ids and all compile together', () => {
+  let d = createF01Document();
+  const a = insertComponent(d, 'spark-burst'); d = a.doc;
+  const b = insertComponent(d, 'fireball'); d = b.doc;
+  const c = insertComponent(d, 'spark-burst'); d = c.doc;
+  assert.notEqual(a.prefix, c.prefix);
+  const p = compiles(valid(d));
+  assert.ok(p.systems.length >= 1 + 1 + 4 + 1, `systems: ${p.systems.length}`);
+  assert.equal(d.graphs[0].nodes.filter(n => n.type === 'EffectOutput').length, 1, 'shares the one output');
+  assert.ok(d.durationTicks >= 120);
+});
+
+test('components bind to the existing Source/Target anchor nodes and never mutate the input', () => {
+  const blank = createBlankDocument(), before = JSON.stringify(blank);
+  const { doc } = insertComponent(blank, 'flame-jet');
+  assert.equal(JSON.stringify(blank), before);
+  const g = doc.graphs[0];
+  assert.equal(g.nodes.filter(n => n.type === 'Anchor' && n.params.anchorId === 'source').length, 1);
+  assert.ok(g.edges.some(e => e.source.nodeId === 'node-source' && e.target.port === 'anchor'));
+  // Review 2026-09-29: parts pinned to a fixed document anchor stayed behind when Source/Target moved (the ground
+  // ring under Impact flash / Holy light). Every part must follow Source/Target (OffsetAnchor, Drop to ground).
+  for (const c of COMPONENT_TEMPLATES) assert.deepEqual(c.anchors, [], `${c.id} pins parts to its own fixed anchor`);
+  assert.throws(() => insertComponent(blank, 'nope'), /Unknown component/);
+});
+
+test('components publish bound knobs; changing a knob changes the compiled system', () => {
+  const { doc } = insertComponent(createBlankDocument(), 'fireball');
+  const knob = doc.controls.find(c => c.label === 'Impact sparks')!;
+  assert.ok(knob && knob.bindings[0].nodeId === 'fireball-boom' && knob.value === 120);
+  const burst = (d: typeof doc) => compiles(valid(d)).systems.find(s => s.descriptor.emitterId === 'fireball-boom')!.descriptor.bursts[0].count;
+  assert.equal(burst(doc), 120);
+  const more = structuredClone(doc); more.controls.find(c => c.id === knob.id)!.value = 400;
+  assert.equal(burst(more), 400);
+  const sizes = insertComponent(createBlankDocument(), 'flame-jet').doc;
+  const size = sizes.controls.find(c => c.label === 'Flame size')!;
+  size.value = 0.4;
+  const s = compiles(valid(sizes)).systems[0].descriptor.size;
+  assert.ok(Math.abs(s.max - 0.4) < 1e-9 && Math.abs(s.min - 0.25) < 1e-9, 'scaled binding drives sizeMin');
+  for (const c of COMPONENT_TEMPLATES) assert.ok(c.knobs.length >= 3, `${c.id} has knobs`);
+});
+
+test('sound-carrying components share one audio mix/output, so several can be combined', async () => {
+  const { compileAudio } = await import('../src/graph/toAudio.ts');
+  let d = createBlankDocument();
+  d = insertComponent(d, 'fireball').doc;
+  d = insertComponent(d, 'fireball').doc;
+  const g = d.graphs[0];
+  assert.equal(g.nodes.filter(n => n.type === 'AudioMix').length, 1);
+  assert.equal(g.nodes.filter(n => n.type === 'AudioOutput').length, 1);
+  const a = compileAudio(valid(d));
+  if (!a.ok) assert.fail(JSON.stringify(a.errors.slice(0, 3)));
+  assert.equal(a.value.kind === 'mix' && a.value.voices.length, 8, 'both fireballs contribute their four voices');
+});
+
+test('grouped insertion: one Group node in root, internals in a child graph, same compiled systems, knobs still drive it', () => {
+  for (const c of COMPONENT_TEMPLATES) {
+    const flat = insertComponent(createBlankDocument(), c.id).doc, g = insertComponent(createBlankDocument(), c.id, undefined, { group: true });
+    const doc = valid(g.doc);
+    assert.equal(g.groupNodeId, c.id);
+    assert.deepEqual(doc.graphs[0].nodes.map(n => n.type).filter(t => !t.startsWith('Audio')).sort(), ['Anchor', 'Anchor', 'EffectOutput', 'Group'], c.id);
+    const child = doc.graphs.find(x => x.id === `graph-${c.id}`)!;
+    assert.ok(child.nodes.some(n => n.type === 'GroupOutput'), c.id);
+    const a = compiles(flat), b = compiles(doc);
+    assert.equal(b.systems.length, a.systems.length, `${c.id} systems`);
+    assert.deepEqual(b.systems.map(s => s.descriptor.bursts.length + (s.descriptor.rate?.perSecond ?? 0)), a.systems.map(s => s.descriptor.bursts.length + (s.descriptor.rate?.perSecond ?? 0)), c.id);
+    const pf = compilePathPreview(flat, 30, { audioHandled: true }), pg = compilePathPreview(doc, 30, { audioHandled: true });
+    assert.ok(pf.ok && pg.ok && pf.value.layers.length === pg.value.layers.length, `${c.id} ribbons`);
+  }
+  const { doc } = insertComponent(createBlankDocument(), 'spark-burst', undefined, { group: true });
+  const knob = doc.controls.find(k => k.label === 'Sparks per burst')!;
+  assert.equal(knob.scopeGraphId, 'graph-spark-burst');
+  const count = (d: typeof doc) => compiles(valid(d)).systems[0].descriptor.bursts[0].count;
+  const more = structuredClone(doc); more.controls.find(k => k.id === knob.id)!.value = 77;
+  assert.notEqual(count(doc), 77);
+  assert.equal(count(more), 77);
+
+});
+
+test('grouped sound components: cues inside the group drive the root audio chain; the mix equals the flat insert', async () => {
+  const { compileAudio } = await import('../src/graph/toAudio.ts');
+  for (const c of COMPONENT_TEMPLATES.filter(t => t.nodes.some(n => n.type.startsWith('Audio')))) {
+    const a = compileAudio(insertComponent(createBlankDocument(), c.id).doc), b = compileAudio(insertComponent(createBlankDocument(), c.id, undefined, { group: true }).doc);
+    if (!a.ok || !b.ok) assert.fail(`${c.id}: ${JSON.stringify((!a.ok ? a : b as { errors: unknown[] }).errors?.slice(0, 2))}`);
+    assert.deepEqual([...b.value.mix.left], [...a.value.mix.left], c.id);
+  }
+});
+
+test('Start at knob delays every Schedule of a component together (keeps their spacing)', () => {
+  const { doc } = insertComponent(createBlankDocument(), 'fireball', undefined, { group: true });
+  const k = doc.controls.find(c => c.label === 'Start at')!;
+  assert.ok(k && k.value === 0 && k.bindings.length === 1); // flight only: the impact Schedule follows ball.arrival (event-triggered), so it moves with it
+  const later = structuredClone(doc); later.controls.find(c => c.id === k.id)!.value = 30; later.durationTicks = 200;
+  const ticks = (d: typeof doc) => compiles(valid(d)).systems.map(s => s.descriptor.bursts[0]?.tick ?? s.descriptor.rate?.startTick).filter(t => t !== undefined).sort((a, b) => a! - b!);
+  assert.deepEqual(ticks(later), ticks({ ...doc, durationTicks: 200 }).map(t => t! + 30));
+  for (const c of COMPONENT_TEMPLATES) assert.ok(insertComponent(createBlankDocument(), c.id).doc.controls.some(x => x.label === 'Start at'), c.id);
+});
+
+test('event-triggered Schedules: water splash/ripples follow the arrival, so the Travel time knob moves them all together', () => {
+  const { doc } = insertComponent(createBlankDocument(), 'water-stream', undefined, { group: true });
+  const travel = doc.controls.find(c => c.label === 'Travel time')!;
+  const ticks = (d: typeof doc) => { const p = compiles(valid(d)); return Object.fromEntries(p.systems.filter(s => /dropfloor|splash/.test(s.id)).map(s => [s.id.replace('water-stream-', ''), s.descriptor.bursts[0].tick])); };
+  assert.deepEqual(ticks(doc), { dropfloor: 48, splash: 48 });
+  const slow = structuredClone(doc); slow.controls.find(c => c.id === travel.id)!.value = 45; slow.durationTicks = 200;
+  assert.deepEqual(ticks(slow), { dropfloor: 63, splash: 63 });
+  const later = structuredClone(doc); later.controls.find(c => c.label === 'Start at')!.value = 20; later.durationTicks = 200;
+  assert.deepEqual(ticks(later), { dropfloor: 68, splash: 68 }, 'Start at shifts the arrival once, not twice');
+});
+
+test('number knobs can drive one axis of a vector; colour knobs copy a colour to every bound tint', async () => {
+  const { resolveParameters } = await import('../src/model/controls.ts');
+  const { doc } = insertComponent(createBlankDocument(), 'energy-bolt', undefined, { group: true });
+  const bend = doc.controls.find(c => c.label === 'Arc bend')!, accent = doc.controls.find(c => c.label === 'Accent colour')!;
+  assert.equal(bend.type, 'number');
+  assert.ok(Math.abs((bend.value as number) - 0.4) < 1e-3);
+  assert.equal(accent.type, 'color');
+  bend.value = 1;
+  accent.value = { srgb: '#33CC66', alpha: 1 };
+  valid(doc);
+  const res = resolveParameters(doc, createRegistry());
+  if (!res.ok) assert.fail(JSON.stringify(res.errors.slice(0, 3)));
+  const get = (suffix: string, param: string) => res.value.find(r => r.nodeId.endsWith(suffix) && r.parameter === param)!.value;
+  const sh = get('-arc', 'startHandle') as number[], eh = get('-arc', 'endHandle') as number[];
+  assert.ok(Math.abs(sh[1] - 4 / 3) < 1e-9 && Math.abs(eh[1] - 4 / 3) < 1e-9, 'y axis driven');
+  assert.equal(sh[0], 2.6); assert.equal(eh[0], -2.6); // other axes keep their literal
+  assert.deepEqual(get('-ringmat', 'tint'), { srgb: '#33CC66', alpha: 1 });
+  assert.deepEqual(get('-impactlight', 'color'), { srgb: '#33CC66', alpha: 1 });
+  compiles(doc);
+});
+
+test('axis bindings: a whole-parameter owner and an axis owner of the same parameter conflict', () => {
+  const { doc } = insertComponent(createBlankDocument(), 'energy-bolt', undefined, { group: true });
+  const bend = doc.controls.find(c => c.label === 'Arc bend')!;
+  doc.controls.push({ ...structuredClone(bend), id: 'ctl-extra', label: 'Extra', bindings: [{ nodeId: bend.bindings[0].nodeId, parameter: 'startHandle', axis: 1 }] });
+  const v = validateDocument(doc, { registry: createRegistry() });
+  assert.ok(!v.ok && v.errors.some(e => e.code === 'MULTIPLE_DRIVERS'));
+  doc.controls.pop();
+  bend.bindings[0] = { ...bend.bindings[0], axis: 5 };
+  const w = validateDocument(doc, { registry: createRegistry() });
+  assert.ok(!w.ok && w.errors.some(e => e.code === 'INVALID_VALUE'));
+});
+
+test('component lengths include their tails; shortening the effect afterwards is reported', async () => {
+  const { effectEndTick, truncationWarning } = await import('../src/graph/truncation.ts');
+  for (const id of ['smoke-plume', 'energy-bolt', 'spark-burst']) {
+    const { doc } = insertComponent(createBlankDocument(), id, undefined, { group: true });
+    assert.ok(effectEndTick(doc)! <= doc.durationTicks, `${id} fits (${effectEndTick(doc)} <= ${doc.durationTicks})`);
+    assert.equal(truncationWarning(doc), undefined);
+    const short = { ...doc, durationTicks: 60 };
+    assert.match(truncationWarning(short)!.message, /cut off/);
+  }
+});
+
+test('a fresh New effect adopts the first component designed layout; later inserts keep the anchors', () => {
+  const water = COMPONENT_TEMPLATES.find(c => c.id === 'water-stream')!;
+  assert.ok(water.layout);
+  const first = insertComponent(createBlankDocument(), 'water-stream', undefined, { group: true }).doc;
+  assert.deepEqual(first.anchors.find(a => a.id === 'target')!.position, water.layout!.target);
+  const second = insertComponent(first, 'energy-bolt', undefined, { group: true }).doc;
+  assert.deepEqual(second.anchors.find(a => a.id === 'target')!.position, water.layout!.target, 'second component does not move the stage');
+});
+
+test('ground parts follow a moved Target but stay on the ground (OffsetAnchor Drop to ground)', () => {
+  for (const [id, ring] of [['impact-flash', 'shockwave'], ['holy-light', 'halo']] as const) {
+    const { doc } = insertComponent(createBlankDocument(), id);
+    doc.anchors.find(a => a.id === 'target')!.position = [5, 2, 1];
+    const p = compileParticlePreview(doc, { audioHandled: true, ribbonsHandled: true });
+    if (!p.ok) assert.fail(JSON.stringify(p.errors));
+    const s = p.value.systems.find(x => x.id === `${id}-${ring}`)!;
+    assert.deepEqual(s.descriptor.sourcePosition, [5, 0.02, 1], `${id} ${ring}`);
+  }
+});
+
+test('a slower fireball (Travel ticks 120) keeps flying to the target, impacts on arrival and is not cut off', () => {
+  const doc = insertComponent(createBlankDocument(), 'fireball').doc;
+  const before = structuredClone(doc);
+  doc.controls.find(c => c.label === 'Travel ticks')!.value = 120;
+  const grow = grownDuration(before, doc);
+  assert.ok(grow !== undefined && grow >= 150, `effect lengthened (${grow})`);
+  doc.durationTicks = grow!;
+  const plan = compiles(valid(doc));
+  // The ball's trail emits until arrival (flight window follows the knob), not until the old tick 42.
+  const trail = plan.systems.find(s => s.descriptor.emitterId === 'fireball-trailem')!.descriptor;
+  assert.ok(trail.rate && trail.rate.endTick >= 120, `trail emits until ${trail.rate?.endTick}`);
+  // Impact sparks burst when the ball arrives (tick 120), not at the old fixed tick 40.
+  const boom = plan.systems.find(s => s.descriptor.emitterId === 'fireball-boom')!.descriptor;
+  assert.ok(boom.bursts[0].tick >= 119 && boom.bursts[0].tick <= 121, `impact at ${boom.bursts[0].tick}`);
+  // Unchanged knob or a shorter travel never lengthens the effect.
+  assert.equal(grownDuration(before, structuredClone(before)), undefined);
+});
+
+test('Colour: every component gets one knob that rotates all its material and light colours, shown as a picker of its swatch', async () => {
+  const { hueRotate } = await import('../src/graph/toParticles.ts');
+  assert.deepEqual(hueRotate({ srgb: '#FF8000', alpha: 1 }, 0), { srgb: '#FF8000', alpha: 1 });
+  const blue = hueRotate({ srgb: '#FF8000', alpha: 0.5 }, 180);
+  assert.ok(parseInt(blue.srgb.slice(5, 7), 16) > parseInt(blue.srgb.slice(1, 3), 16) && blue.alpha === 0.5, `orange turned bluish: ${blue.srgb}`);
+  for (const c of COMPONENT_TEMPLATES) {
+    const { doc } = insertComponent(createBlankDocument(), c.id);
+    const k = doc.controls.find(x => x.label === 'Colour');
+    assert.ok(k && k.bindings.length > 0 && k.bindings.every(b => b.parameter === 'hueShift') && /^#[0-9A-F]{6}$/.test(k.swatch ?? ''), c.id);
+  }
+  const { doc } = insertComponent(createBlankDocument(), 'flamethrower');
+  doc.controls.find(x => x.label === 'Colour')!.value = 180;
+  const plan = compiles(valid(doc));
+  assert.ok(plan.layers.length > 0 && plan.layers.every(l => l.hueShift === 180), 'every sprite layer carries the shift');
+  assert.ok(plan.lights.length > 0 && plan.lights.every(l => l.color.srgb !== '#FFFFFF'));
+});
+
+test('Colour pickers: a picked colour sets the wheel turn toward its hue; part pickers recolour only their part', async () => {
+  const { gradeOf, applyGrade, hueRotate, hueShiftToward, rgbToHsv } = await import('../src/graph/recolor.ts');
+  const hue = (hex: string) => rgbToHsv([1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255))[0];
+  const dist = (a: number, b: number) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
+  const orange = { srgb: '#FF8A30', alpha: 1 };
+  for (const pick of ['#2060FF', '#20FF40', '#FF20C0']) {
+    const d = hueShiftToward(orange, { srgb: pick, alpha: 1 });
+    assert.ok(dist(hue(hueRotate(orange, d).srgb), hue(pick)) < 8, `${pick}: turned by ${d}`);
+  }
+  assert.equal(hueShiftToward(orange, { srgb: '#808080', alpha: 1 }), 0, 'a grey pick leaves the colour');
+  // Grade: the swatch lands exactly on the pick; other tones keep their relation; grey swatches take the picked hue.
+  const g = gradeOf(orange, { srgb: '#3060FF', alpha: 1 })!;
+  const out = applyGrade(orange, g).srgb;
+  assert.ok([1, 3, 5].every(i => Math.abs(parseInt(out.slice(i, i + 2), 16) - parseInt('#3060FF'.slice(i, i + 2), 16)) <= 2), out);
+  assert.equal(gradeOf(orange, orange), undefined);
+  assert.equal(gradeOf({ srgb: '#808080', alpha: 0 }, orange), undefined, 'alpha 0 = off');
+  const smoke = applyGrade({ srgb: '#6A6A6A', alpha: 1 }, gradeOf({ srgb: '#707070', alpha: 1 }, { srgb: '#30A040', alpha: 1 }));
+  assert.ok(dist(hue(smoke.srgb), hue('#30A040')) < 4, `grey smoke turned green: ${smoke.srgb}`);
+
+  const { doc } = insertComponent(createBlankDocument(), 'flamethrower', undefined, { group: true });
+  const labels = doc.controls.filter(c => c.type === 'color').map(c => c.label);
+  for (const want of ['Flame colour', 'Embers colour', 'Smoke & dust colour', 'Light colour']) assert.ok(labels.includes(want), `${want} in ${labels}`);
+  const base = compiles(valid(doc));
+  assert.ok(base.layers.every(l => !l.grade), 'unchanged pickers grade nothing');
+  const smokeKnob = doc.controls.find(c => c.label === 'Smoke & dust colour')!;
+  smokeKnob.value = { srgb: '#30A040', alpha: 1 };
+  const plan = compiles(valid(doc));
+  const smokeIds = new Set(smokeKnob.bindings.map(b => b.nodeId));
+  const graded = plan.layers.filter(l => l.grade);
+  assert.ok(graded.length > 0, 'the smoke layer carries a grade');
+  const child = doc.graphs.find(gr => gr.id === 'graph-flamethrower')!;
+  const matOf = (rendererId: string) => child.edges.find(e => e.target.nodeId === rendererId && e.target.port === 'material')?.source.nodeId;
+  assert.ok(graded.every(l => smokeIds.has(matOf(l.nodeId)!)), 'only smoke layers are graded');
+  // Light colour recolours the lights at compile time.
+  doc.controls.find(c => c.label === 'Light colour')!.value = { srgb: '#40A0FF', alpha: 1 };
+  const lit = compiles(valid(doc));
+  assert.ok(lit.lights.every(l => dist(hue(l.color.srgb), hue('#40A0FF')) < 6), lit.lights.map(l => l.color.srgb).join());
+});
+
+test('PublicParameter inside a component reads the Group instance value (a parent knob bound to the group wins over the stored knob)', () => {
+  const { doc } = insertComponent(createBlankDocument(), 'spark-burst', undefined, { group: true });
+  const child = doc.graphs.find(g => g.id === 'graph-spark-burst')!;
+  doc.controls.push({ id: 'ctl-life', scopeGraphId: child.id, label: 'Life', type: 'number', unit: 'second', value: 0.9, default: 0.9, min: 0.1, max: 5, step: 0.01, section: 'Spark burst', description: '', editPolicy: 'resample', bindings: [] });
+  child.nodes.push({ id: 'pp', type: 'PublicParameter', definitionVersion: 1, label: 'pp', enabled: true, randomStreamId: 'rs-pp', params: { controlId: 'ctl-life' } });
+  child.edges.push({ id: 'e-pp', source: { nodeId: 'pp', port: 'value' }, target: { nodeId: 'spark-burst-em', port: 'lifetimeMax' }, order: 0 });
+  const life = (d: typeof doc) => compiles(valid(d)).systems.find(s => s.descriptor.emitterId === 'spark-burst-em')!.descriptor.lifetimeTicks.max;
+  assert.equal(life(doc), 54, 'stored knob value 0.9 s');
+  const over = structuredClone(doc);
+  // A parent (root) knob bound to the Group's exposed port drives the inner control (06 parent → group → internal).
+  over.controls.push({ id: 'ctl-root-life', scopeGraphId: over.rootGraphId, label: 'Root life', type: 'number', unit: 'second', value: 0.5, default: 0.5, min: 0.1, max: 5, step: 0.01, section: 'Main', description: '', editPolicy: 'resample', bindings: [{ nodeId: 'spark-burst', parameter: 'ctl-life' }] });
+  assert.equal(life(over), 30, 'the parent value 0.5 s reaches the PublicParameter inside the group');
+});
+
+test('12 workflow 2: a component can start on another part\'s event (Impact at the fireball\'s arrival) and follows it', async () => {
+  const { startComponentOnEvent, eventSources } = await import('../src/graph/components.ts');
+  let doc = insertComponent(createBlankDocument(), 'fireball', undefined, { group: true }).doc;
+  doc = insertComponent(doc, 'impact-flash', undefined, { group: true }).doc;
+  const events = eventSources(doc, doc.rootGraphId);
+  const impactStart = events.find(e => e.nodeId === 'fireball' && /impactwin/.test(e.port));
+  assert.ok(impactStart, `fireball exposes its impact event (got ${events.map(e => e.label).join(', ')})`);
+  const r = startComponentOnEvent(doc, 'impact-flash', impactStart!);
+  if (!r.ok) assert.fail(r.message);
+  const flashTick = (d: typeof doc) => compiles(valid(d)).presentation.flashes.find(f => f.nodeId.startsWith('impact-flash'))!.tick;
+  // impact-flash's own schedule started at tick 10; it is now 10 ticks after the fireball's impact (tick 40).
+  assert.equal(flashTick(r.doc), 50);
+  const slow = structuredClone(r.doc);
+  slow.controls.find(c => c.label === 'Travel ticks')!.value = 90; slow.durationTicks = 300;
+  assert.equal(flashTick(slow), 100, 'a slower fireball moves the impact with it');
+  assert.ok(r.doc.controls.some(c => c.label === 'Delay after event'));
+});

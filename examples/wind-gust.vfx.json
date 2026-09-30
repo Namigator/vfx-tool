@@ -1,0 +1,1656 @@
+{
+  "format": "vfx-studio",
+  "schemaVersion": 2,
+  "runtimeVersion": "2.0.0",
+  "id": "example-wind-gust",
+  "name": "Wind gust",
+  "tags": [],
+  "seed": 42,
+  "rootTransform": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "scale": 1
+  },
+  "anchors": [
+    {
+      "id": "source",
+      "name": "Source",
+      "position": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "id": "target",
+      "name": "Target",
+      "position": [
+        0,
+        1,
+        5
+      ]
+    }
+  ],
+  "durationTicks": 198,
+  "rootGraphId": "graph-root",
+  "graphs": [
+    {
+      "id": "graph-root",
+      "inputs": [],
+      "outputs": [],
+      "nodes": [
+        {
+          "id": "node-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Source",
+          "enabled": true,
+          "randomStreamId": "rs-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "node-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Target",
+          "enabled": true,
+          "randomStreamId": "rs-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "node-output",
+          "type": "EffectOutput",
+          "definitionVersion": 1,
+          "label": "Output",
+          "enabled": true,
+          "randomStreamId": "rs-output",
+          "params": {}
+        },
+        {
+          "id": "wind-gust",
+          "type": "Group",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust",
+          "params": {
+            "graphId": "graph-wind-gust"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "wind-gust-e-group-visual",
+          "source": {
+            "nodeId": "wind-gust",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "node-output",
+            "port": "visual"
+          },
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "graph-wind-gust",
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "visual",
+          "label": "Visual",
+          "type": "visual",
+          "cardinality": "many",
+          "required": false,
+          "direction": "output"
+        }
+      ],
+      "nodes": [
+        {
+          "id": "wind-gust-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "source",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "wind-gust-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "target",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "wind-gust-gust",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: gust",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-gust",
+          "params": {
+            "startTicks": 0,
+            "durationTicks": 138,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "wind-gust-envelope",
+          "type": "EffectTimeCurve",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: envelope",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-envelope",
+          "params": {
+            "curve": {
+              "domain": "effectSeconds",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.3,
+                  "y": 0.4
+                },
+                {
+                  "x": 0.5,
+                  "y": 1
+                },
+                {
+                  "x": 1.4667,
+                  "y": 0.85
+                },
+                {
+                  "x": 1.8,
+                  "y": 0.6
+                },
+                {
+                  "x": 2.3,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "wind-gust-helix0",
+          "type": "HelixPath",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: helix0",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-helix0",
+          "params": {
+            "radius": 0.44,
+            "turns": 1.5,
+            "phase": 0,
+            "spin": 3.2,
+            "taper": "both",
+            "samples": 72
+          }
+        },
+        {
+          "id": "wind-gust-ribmat0",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: ribmat0",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-ribmat0",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "smoke-puff",
+            "variant": 0,
+            "blend": "normal",
+            "tint": {
+              "srgb": "#76AAA6",
+              "alpha": 1
+            },
+            "emission": 0.15,
+            "uvScroll": [
+              -2.5,
+              0
+            ],
+            "uvDistort": 0.06
+          }
+        },
+        {
+          "id": "wind-gust-ribfade0",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: ribfade0",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-ribfade0",
+          "params": {
+            "operation": "multiply",
+            "b": 0.85,
+            "inputUnit": "normalized",
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "wind-gust-ribbon0",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: ribbon0",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-ribbon0",
+          "params": {
+            "width": 0.07700000000000001,
+            "endFade": 0.3,
+            "uvMode": "tile",
+            "uvTileLength": 1.4
+          }
+        },
+        {
+          "id": "wind-gust-helix1",
+          "type": "HelixPath",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: helix1",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-helix1",
+          "params": {
+            "radius": 0.495,
+            "turns": 1.5,
+            "phase": 1.941,
+            "spin": 4,
+            "taper": "both",
+            "samples": 72
+          }
+        },
+        {
+          "id": "wind-gust-ribmat1",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: ribmat1",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-ribmat1",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "smoke-puff",
+            "variant": 1,
+            "blend": "normal",
+            "tint": {
+              "srgb": "#8FBDB9",
+              "alpha": 1
+            },
+            "emission": 0.15,
+            "uvScroll": [
+              -2.875,
+              0
+            ],
+            "uvDistort": 0.06
+          }
+        },
+        {
+          "id": "wind-gust-ribfade1",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: ribfade1",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-ribfade1",
+          "params": {
+            "operation": "multiply",
+            "b": 0.77,
+            "inputUnit": "normalized",
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "wind-gust-ribbon1",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: ribbon1",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-ribbon1",
+          "params": {
+            "width": 0.11000000000000001,
+            "endFade": 0.3,
+            "uvMode": "tile",
+            "uvTileLength": 1.4
+          }
+        },
+        {
+          "id": "wind-gust-helix2",
+          "type": "HelixPath",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: helix2",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-helix2",
+          "params": {
+            "radius": 0.55,
+            "turns": 1.5,
+            "phase": 3.882,
+            "spin": 3.2,
+            "taper": "both",
+            "samples": 72
+          }
+        },
+        {
+          "id": "wind-gust-ribmat2",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: ribmat2",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-ribmat2",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "smoke-puff",
+            "variant": 2,
+            "blend": "normal",
+            "tint": {
+              "srgb": "#76AAA6",
+              "alpha": 1
+            },
+            "emission": 0.15,
+            "uvScroll": [
+              -3.25,
+              0
+            ],
+            "uvDistort": 0.06
+          }
+        },
+        {
+          "id": "wind-gust-ribfade2",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: ribfade2",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-ribfade2",
+          "params": {
+            "operation": "multiply",
+            "b": 0.69,
+            "inputUnit": "normalized",
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "wind-gust-ribbon2",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: ribbon2",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-ribbon2",
+          "params": {
+            "width": 0.14300000000000002,
+            "endFade": 0.3,
+            "uvMode": "tile",
+            "uvTileLength": 1.4
+          }
+        },
+        {
+          "id": "wind-gust-helix3",
+          "type": "HelixPath",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: helix3",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-helix3",
+          "params": {
+            "radius": 0.44,
+            "turns": 1.5,
+            "phase": 5.822,
+            "spin": 4,
+            "taper": "both",
+            "samples": 72
+          }
+        },
+        {
+          "id": "wind-gust-ribmat3",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: ribmat3",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-ribmat3",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "smoke-puff",
+            "variant": 3,
+            "blend": "normal",
+            "tint": {
+              "srgb": "#8FBDB9",
+              "alpha": 1
+            },
+            "emission": 0.15,
+            "uvScroll": [
+              -3.625,
+              0
+            ],
+            "uvDistort": 0.06
+          }
+        },
+        {
+          "id": "wind-gust-ribfade3",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: ribfade3",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-ribfade3",
+          "params": {
+            "operation": "multiply",
+            "b": 0.85,
+            "inputUnit": "normalized",
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "wind-gust-ribbon3",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: ribbon3",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-ribbon3",
+          "params": {
+            "width": 0.17600000000000002,
+            "endFade": 0.3,
+            "uvMode": "tile",
+            "uvTileLength": 1.4
+          }
+        },
+        {
+          "id": "wind-gust-streakwin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: streakwin",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-streakwin",
+          "params": {
+            "startTicks": 18,
+            "durationTicks": 90,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "wind-gust-streaks",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: streaks",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-streaks",
+          "params": {
+            "shape": "cone",
+            "coneAngle": 0.12,
+            "radius": 0.66,
+            "rate": 45,
+            "burst": 0,
+            "speedMin": 6,
+            "speedMax": 9,
+            "lifetimeMin": 0.3,
+            "lifetimeMax": 0.6,
+            "direction": [
+              1,
+              0,
+              0
+            ],
+            "rateOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.3
+                },
+                {
+                  "x": 0.15,
+                  "y": 1
+                },
+                {
+                  "x": 0.8,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "wind-gust-streakip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: streakip",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-streakip",
+          "params": {
+            "sizeMin": 0.02,
+            "sizeMax": 0.04
+          }
+        },
+        {
+          "id": "wind-gust-streakmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: streakmat",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-streakmat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "spark-streak",
+            "blend": "normal",
+            "tint": {
+              "srgb": "#88B8B4",
+              "alpha": 1
+            },
+            "opacity": 0.75,
+            "emission": 0.1
+          }
+        },
+        {
+          "id": "wind-gust-streakbb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: streakbb",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-streakbb",
+          "params": {
+            "alignment": "velocity",
+            "stretchRatio": 6,
+            "pivot": 0.7,
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.15,
+                  "y": 1
+                },
+                {
+                  "x": 0.8,
+                  "y": 0.6
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "wind-gust-wisps",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: wisps",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-wisps",
+          "params": {
+            "shape": "cone",
+            "coneAngle": 0.25,
+            "radius": 0.55,
+            "rate": 10,
+            "burst": 0,
+            "speedMin": 2,
+            "speedMax": 3.5,
+            "lifetimeMin": 0.9,
+            "lifetimeMax": 1.5,
+            "direction": [
+              1,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "id": "wind-gust-wispip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: wispip",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-wispip",
+          "params": {
+            "sizeMin": 0.35,
+            "sizeMax": 0.6,
+            "randomFrameStart": true,
+            "rotationMin": 0,
+            "rotationMax": 6.283,
+            "angularVelocityMin": -1,
+            "angularVelocityMax": 1
+          }
+        },
+        {
+          "id": "wind-gust-swirl",
+          "type": "Vortex",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: swirl",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-swirl",
+          "params": {
+            "axis": [
+              1,
+              0,
+              0
+            ],
+            "tangential": 2.5,
+            "inward": 0.2,
+            "falloff": 2,
+            "strength": 1
+          }
+        },
+        {
+          "id": "wind-gust-wispdrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: wispdrag",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-wispdrag",
+          "params": {
+            "coefficient": 0.6
+          }
+        },
+        {
+          "id": "wind-gust-wispmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: wispmat",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-wispmat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "smoke-puff",
+            "blend": "normal",
+            "tint": {
+              "srgb": "#B0CFCC",
+              "alpha": 1
+            },
+            "opacity": 0.12
+          }
+        },
+        {
+          "id": "wind-gust-wispbb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Wind: spiral gust: wispbb",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-wispbb",
+          "params": {
+            "flipbookMode": "overLife",
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.6
+                },
+                {
+                  "x": 1,
+                  "y": 1.6
+                }
+              ]
+            },
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.3,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "wind-gust-out-visual",
+          "type": "GroupOutput",
+          "definitionVersion": 1,
+          "label": "Out: visual",
+          "enabled": true,
+          "randomStreamId": "rs-wind-gust-out-visual",
+          "params": {
+            "portId": "visual"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "wind-gust-e-node-source-helix0",
+          "source": {
+            "nodeId": "wind-gust-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "wind-gust-helix0",
+            "port": "start"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-node-target-helix0",
+          "source": {
+            "nodeId": "wind-gust-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "wind-gust-helix0",
+            "port": "end"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-envelope-ribfade0",
+          "source": {
+            "nodeId": "wind-gust-envelope",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "wind-gust-ribfade0",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-ribfade0-ribmat0",
+          "source": {
+            "nodeId": "wind-gust-ribfade0",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "wind-gust-ribmat0",
+            "port": "opacity"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-helix0-ribbon0",
+          "source": {
+            "nodeId": "wind-gust-helix0",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "wind-gust-ribbon0",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-ribmat0-ribbon0",
+          "source": {
+            "nodeId": "wind-gust-ribmat0",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "wind-gust-ribbon0",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-gust-ribbon0",
+          "source": {
+            "nodeId": "wind-gust-gust",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "wind-gust-ribbon0",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-ribbon0-out-visual",
+          "source": {
+            "nodeId": "wind-gust-ribbon0",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "wind-gust-out-visual",
+            "port": "in"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-node-source-helix1",
+          "source": {
+            "nodeId": "wind-gust-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "wind-gust-helix1",
+            "port": "start"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-node-target-helix1",
+          "source": {
+            "nodeId": "wind-gust-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "wind-gust-helix1",
+            "port": "end"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-envelope-ribfade1",
+          "source": {
+            "nodeId": "wind-gust-envelope",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "wind-gust-ribfade1",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-ribfade1-ribmat1",
+          "source": {
+            "nodeId": "wind-gust-ribfade1",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "wind-gust-ribmat1",
+            "port": "opacity"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-helix1-ribbon1",
+          "source": {
+            "nodeId": "wind-gust-helix1",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "wind-gust-ribbon1",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-ribmat1-ribbon1",
+          "source": {
+            "nodeId": "wind-gust-ribmat1",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "wind-gust-ribbon1",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-gust-ribbon1",
+          "source": {
+            "nodeId": "wind-gust-gust",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "wind-gust-ribbon1",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-ribbon1-out-visual",
+          "source": {
+            "nodeId": "wind-gust-ribbon1",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "wind-gust-out-visual",
+            "port": "in"
+          },
+          "order": 1
+        },
+        {
+          "id": "wind-gust-e-node-source-helix2",
+          "source": {
+            "nodeId": "wind-gust-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "wind-gust-helix2",
+            "port": "start"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-node-target-helix2",
+          "source": {
+            "nodeId": "wind-gust-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "wind-gust-helix2",
+            "port": "end"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-envelope-ribfade2",
+          "source": {
+            "nodeId": "wind-gust-envelope",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "wind-gust-ribfade2",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-ribfade2-ribmat2",
+          "source": {
+            "nodeId": "wind-gust-ribfade2",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "wind-gust-ribmat2",
+            "port": "opacity"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-helix2-ribbon2",
+          "source": {
+            "nodeId": "wind-gust-helix2",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "wind-gust-ribbon2",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-ribmat2-ribbon2",
+          "source": {
+            "nodeId": "wind-gust-ribmat2",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "wind-gust-ribbon2",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-gust-ribbon2",
+          "source": {
+            "nodeId": "wind-gust-gust",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "wind-gust-ribbon2",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-ribbon2-out-visual",
+          "source": {
+            "nodeId": "wind-gust-ribbon2",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "wind-gust-out-visual",
+            "port": "in"
+          },
+          "order": 2
+        },
+        {
+          "id": "wind-gust-e-node-source-helix3",
+          "source": {
+            "nodeId": "wind-gust-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "wind-gust-helix3",
+            "port": "start"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-node-target-helix3",
+          "source": {
+            "nodeId": "wind-gust-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "wind-gust-helix3",
+            "port": "end"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-envelope-ribfade3",
+          "source": {
+            "nodeId": "wind-gust-envelope",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "wind-gust-ribfade3",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-ribfade3-ribmat3",
+          "source": {
+            "nodeId": "wind-gust-ribfade3",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "wind-gust-ribmat3",
+            "port": "opacity"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-helix3-ribbon3",
+          "source": {
+            "nodeId": "wind-gust-helix3",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "wind-gust-ribbon3",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-ribmat3-ribbon3",
+          "source": {
+            "nodeId": "wind-gust-ribmat3",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "wind-gust-ribbon3",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-gust-ribbon3",
+          "source": {
+            "nodeId": "wind-gust-gust",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "wind-gust-ribbon3",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-ribbon3-out-visual",
+          "source": {
+            "nodeId": "wind-gust-ribbon3",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "wind-gust-out-visual",
+            "port": "in"
+          },
+          "order": 3
+        },
+        {
+          "id": "wind-gust-e-node-source-streaks",
+          "source": {
+            "nodeId": "wind-gust-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "wind-gust-streaks",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-node-target-streaks",
+          "source": {
+            "nodeId": "wind-gust-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "wind-gust-streaks",
+            "port": "aim"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-streakwin-streaks",
+          "source": {
+            "nodeId": "wind-gust-streakwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "wind-gust-streaks",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-streaks-streakip",
+          "source": {
+            "nodeId": "wind-gust-streaks",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "wind-gust-streakip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-streakip-streakbb",
+          "source": {
+            "nodeId": "wind-gust-streakip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "wind-gust-streakbb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-streakmat-streakbb",
+          "source": {
+            "nodeId": "wind-gust-streakmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "wind-gust-streakbb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-streakbb-out-visual",
+          "source": {
+            "nodeId": "wind-gust-streakbb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "wind-gust-out-visual",
+            "port": "in"
+          },
+          "order": 4
+        },
+        {
+          "id": "wind-gust-e-node-source-wisps",
+          "source": {
+            "nodeId": "wind-gust-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "wind-gust-wisps",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-node-target-wisps",
+          "source": {
+            "nodeId": "wind-gust-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "wind-gust-wisps",
+            "port": "aim"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-streakwin-wisps",
+          "source": {
+            "nodeId": "wind-gust-streakwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "wind-gust-wisps",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-wisps-wispip",
+          "source": {
+            "nodeId": "wind-gust-wisps",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "wind-gust-wispip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-wispip-swirl",
+          "source": {
+            "nodeId": "wind-gust-wispip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "wind-gust-swirl",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-node-source-swirl",
+          "source": {
+            "nodeId": "wind-gust-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "wind-gust-swirl",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-swirl-wispdrag",
+          "source": {
+            "nodeId": "wind-gust-swirl",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "wind-gust-wispdrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-envelope-swirl",
+          "source": {
+            "nodeId": "wind-gust-envelope",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "wind-gust-swirl",
+            "port": "strength"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-wispdrag-wispbb",
+          "source": {
+            "nodeId": "wind-gust-wispdrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "wind-gust-wispbb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-wispmat-wispbb",
+          "source": {
+            "nodeId": "wind-gust-wispmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "wind-gust-wispbb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "wind-gust-e-wispbb-out-visual",
+          "source": {
+            "nodeId": "wind-gust-wispbb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "wind-gust-out-visual",
+            "port": "in"
+          },
+          "order": 5
+        }
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "id": "ctl-wind-gust-start-at",
+      "scopeGraphId": "graph-wind-gust",
+      "label": "Start at",
+      "type": "integer",
+      "unit": "tick",
+      "value": 0,
+      "default": 0,
+      "min": 0,
+      "max": 582,
+      "step": 1,
+      "section": "Wind: spiral gust",
+      "description": "Delays the whole component (60 ticks = 1 second) so it can play after another one.",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "wind-gust-gust",
+          "parameter": "startTicks"
+        },
+        {
+          "nodeId": "wind-gust-streakwin",
+          "parameter": "startTicks",
+          "offset": 18
+        }
+      ]
+    },
+    {
+      "id": "ctl-wind-gust-width",
+      "scopeGraphId": "graph-wind-gust",
+      "label": "Gust width",
+      "type": "number",
+      "unit": "meter",
+      "value": 0.44,
+      "default": 0.44,
+      "min": 0,
+      "max": 20,
+      "section": "Wind: spiral gust",
+      "description": "Wind: spiral gust: helix0.radius, helix1.radius, helix2.radius, helix3.radius",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "wind-gust-helix0",
+          "parameter": "radius"
+        },
+        {
+          "nodeId": "wind-gust-helix1",
+          "parameter": "radius"
+        },
+        {
+          "nodeId": "wind-gust-helix2",
+          "parameter": "radius"
+        },
+        {
+          "nodeId": "wind-gust-helix3",
+          "parameter": "radius"
+        }
+      ]
+    },
+    {
+      "id": "ctl-wind-gust-twist",
+      "scopeGraphId": "graph-wind-gust",
+      "label": "Twist",
+      "type": "number",
+      "unit": "none",
+      "value": 1.5,
+      "default": 1.5,
+      "min": -16,
+      "max": 16,
+      "section": "Wind: spiral gust",
+      "description": "Wind: spiral gust: helix0.turns, helix1.turns, helix2.turns, helix3.turns",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "wind-gust-helix0",
+          "parameter": "turns"
+        },
+        {
+          "nodeId": "wind-gust-helix1",
+          "parameter": "turns"
+        },
+        {
+          "nodeId": "wind-gust-helix2",
+          "parameter": "turns"
+        },
+        {
+          "nodeId": "wind-gust-helix3",
+          "parameter": "turns"
+        }
+      ]
+    },
+    {
+      "id": "ctl-wind-gust-streaks",
+      "scopeGraphId": "graph-wind-gust",
+      "label": "Streak density",
+      "type": "number",
+      "unit": "perSecond",
+      "value": 45,
+      "default": 45,
+      "min": 0,
+      "max": 4096,
+      "section": "Wind: spiral gust",
+      "description": "Wind: spiral gust: streaks.rate",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "wind-gust-streaks",
+          "parameter": "rate"
+        }
+      ]
+    },
+    {
+      "id": "ctl-wind-gust-wisps",
+      "scopeGraphId": "graph-wind-gust",
+      "label": "Wisp amount",
+      "type": "number",
+      "unit": "perSecond",
+      "value": 10,
+      "default": 10,
+      "min": 0,
+      "max": 4096,
+      "section": "Wind: spiral gust",
+      "description": "Wind: spiral gust: wisps.rate",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "wind-gust-wisps",
+          "parameter": "rate"
+        }
+      ]
+    },
+    {
+      "id": "ctl-wind-gust-speed",
+      "scopeGraphId": "graph-wind-gust",
+      "label": "Travel speed",
+      "type": "number",
+      "unit": "metersPerSecond",
+      "value": 9,
+      "default": 9,
+      "min": 0,
+      "max": 100,
+      "section": "Wind: spiral gust",
+      "description": "Wind: spiral gust: streaks.speedMax, streaks.speedMin ×0.67",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "wind-gust-streaks",
+          "parameter": "speedMax"
+        },
+        {
+          "nodeId": "wind-gust-streaks",
+          "parameter": "speedMin",
+          "scale": 0.67
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "editor": {
+    "graphs": {
+      "graph-root": {
+        "nodes": {
+          "node-source": {
+            "x": 0,
+            "y": 0
+          },
+          "node-target": {
+            "x": 0,
+            "y": 160
+          },
+          "node-output": {
+            "x": 1040,
+            "y": 0
+          },
+          "wind-gust": {
+            "x": -300,
+            "y": 320
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      },
+      "graph-wind-gust": {
+        "nodes": {
+          "wind-gust-gust": {
+            "x": 0,
+            "y": 0
+          },
+          "wind-gust-envelope": {
+            "x": 260,
+            "y": 0
+          },
+          "wind-gust-helix0": {
+            "x": 520,
+            "y": 0
+          },
+          "wind-gust-ribmat0": {
+            "x": 780,
+            "y": 0
+          },
+          "wind-gust-ribfade0": {
+            "x": 1040,
+            "y": 0
+          },
+          "wind-gust-ribbon0": {
+            "x": 1300,
+            "y": 0
+          },
+          "wind-gust-helix1": {
+            "x": 0,
+            "y": 170
+          },
+          "wind-gust-ribmat1": {
+            "x": 260,
+            "y": 170
+          },
+          "wind-gust-ribfade1": {
+            "x": 520,
+            "y": 170
+          },
+          "wind-gust-ribbon1": {
+            "x": 780,
+            "y": 170
+          },
+          "wind-gust-helix2": {
+            "x": 1040,
+            "y": 170
+          },
+          "wind-gust-ribmat2": {
+            "x": 1300,
+            "y": 170
+          },
+          "wind-gust-ribfade2": {
+            "x": 0,
+            "y": 340
+          },
+          "wind-gust-ribbon2": {
+            "x": 260,
+            "y": 340
+          },
+          "wind-gust-helix3": {
+            "x": 520,
+            "y": 340
+          },
+          "wind-gust-ribmat3": {
+            "x": 780,
+            "y": 340
+          },
+          "wind-gust-ribfade3": {
+            "x": 1040,
+            "y": 340
+          },
+          "wind-gust-ribbon3": {
+            "x": 1300,
+            "y": 340
+          },
+          "wind-gust-streakwin": {
+            "x": 0,
+            "y": 510
+          },
+          "wind-gust-streaks": {
+            "x": 260,
+            "y": 510
+          },
+          "wind-gust-streakip": {
+            "x": 520,
+            "y": 510
+          },
+          "wind-gust-streakmat": {
+            "x": 780,
+            "y": 510
+          },
+          "wind-gust-streakbb": {
+            "x": 1040,
+            "y": 510
+          },
+          "wind-gust-wisps": {
+            "x": 1300,
+            "y": 510
+          },
+          "wind-gust-wispip": {
+            "x": 0,
+            "y": 680
+          },
+          "wind-gust-swirl": {
+            "x": 260,
+            "y": 680
+          },
+          "wind-gust-wispdrag": {
+            "x": 520,
+            "y": 680
+          },
+          "wind-gust-wispmat": {
+            "x": 780,
+            "y": 680
+          },
+          "wind-gust-wispbb": {
+            "x": 1040,
+            "y": 680
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      }
+    },
+    "openedGraphId": "graph-root"
+  }
+}

@@ -1,0 +1,2582 @@
+{
+  "format": "vfx-studio",
+  "schemaVersion": 2,
+  "runtimeVersion": "2.0.0",
+  "id": "example-water-stream",
+  "name": "Water stream",
+  "tags": [],
+  "seed": 42,
+  "rootTransform": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "scale": 1
+  },
+  "anchors": [
+    {
+      "id": "source",
+      "name": "Source",
+      "position": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "id": "target",
+      "name": "Target",
+      "position": [
+        0,
+        1,
+        5
+      ]
+    }
+  ],
+  "durationTicks": 180,
+  "rootGraphId": "graph-root",
+  "graphs": [
+    {
+      "id": "graph-root",
+      "inputs": [],
+      "outputs": [],
+      "nodes": [
+        {
+          "id": "node-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Source",
+          "enabled": true,
+          "randomStreamId": "rs-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "node-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Target",
+          "enabled": true,
+          "randomStreamId": "rs-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "node-output",
+          "type": "EffectOutput",
+          "definitionVersion": 1,
+          "label": "Output",
+          "enabled": true,
+          "randomStreamId": "rs-output",
+          "params": {}
+        },
+        {
+          "id": "water-stream",
+          "type": "Group",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream",
+          "params": {
+            "graphId": "graph-water-stream"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "water-stream-e-group-visual",
+          "source": {
+            "nodeId": "water-stream",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "node-output",
+            "port": "visual"
+          },
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "graph-water-stream",
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "visual",
+          "label": "Visual",
+          "type": "visual",
+          "cardinality": "many",
+          "required": false,
+          "direction": "output"
+        }
+      ],
+      "nodes": [
+        {
+          "id": "water-stream-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "source",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "water-stream-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "target",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "water-stream-pool",
+          "type": "OffsetAnchor",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: pool",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-pool",
+          "params": {
+            "offset": [
+              0,
+              -0.03,
+              0
+            ]
+          }
+        },
+        {
+          "id": "water-stream-arc",
+          "type": "BezierPath",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: arc",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-arc",
+          "params": {
+            "startHandle": [
+              1.2,
+              2.4,
+              0
+            ],
+            "endHandle": [
+              -0.6,
+              2.16,
+              0
+            ],
+            "samples": 64
+          }
+        },
+        {
+          "id": "water-stream-reveal",
+          "type": "RevealPath",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: reveal",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-reveal",
+          "params": {}
+        },
+        {
+          "id": "water-stream-headwin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: headwin",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-headwin",
+          "params": {
+            "startTicks": 18,
+            "durationTicks": 30,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "water-stream-travelclock",
+          "type": "Time",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: travelclock",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-travelclock",
+          "params": {}
+        },
+        {
+          "id": "water-stream-flow",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: flow",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-flow",
+          "params": {
+            "startTicks": 18,
+            "durationTicks": 90,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "water-stream-bodyfade",
+          "type": "EffectTimeCurve",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: bodyfade",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-bodyfade",
+          "params": {
+            "curve": {
+              "domain": "effectSeconds",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0.3,
+                  "y": 0.42
+                },
+                {
+                  "x": 1.4,
+                  "y": 0.42
+                },
+                {
+                  "x": 1.8,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "water-stream-bodymat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: bodymat",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-bodymat",
+          "params": {
+            "blend": "normal",
+            "tint": {
+              "srgb": "#4F9CC8",
+              "alpha": 1
+            },
+            "emission": 0
+          }
+        },
+        {
+          "id": "water-stream-body",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: body",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-body",
+          "params": {
+            "width": 0.28,
+            "endFade": 0.08,
+            "widthOverPath": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.55
+                },
+                {
+                  "x": 0.5,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0.8
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "water-stream-lift",
+          "type": "PathTransform",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: lift",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-lift",
+          "params": {
+            "offset": [
+              0,
+              0.07840000000000001,
+              0
+            ]
+          }
+        },
+        {
+          "id": "water-stream-hlfade",
+          "type": "EffectTimeCurve",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: hlfade",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-hlfade",
+          "params": {
+            "curve": {
+              "domain": "effectSeconds",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0.3,
+                  "y": 0.55
+                },
+                {
+                  "x": 1.4,
+                  "y": 0.55
+                },
+                {
+                  "x": 1.8,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "water-stream-hlmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: hlmat",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-hlmat",
+          "params": {
+            "blend": "normal",
+            "tint": {
+              "srgb": "#E8F6FF",
+              "alpha": 1
+            },
+            "emission": 0.1
+          }
+        },
+        {
+          "id": "water-stream-highlight",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: highlight",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-highlight",
+          "params": {
+            "width": 0.035,
+            "endFade": 0.15
+          }
+        },
+        {
+          "id": "water-stream-coremat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: coremat",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-coremat",
+          "params": {
+            "blend": "normal",
+            "tint": {
+              "srgb": "#9CD4F0",
+              "alpha": 1
+            },
+            "emission": 0
+          }
+        },
+        {
+          "id": "water-stream-corefade",
+          "type": "EffectTimeCurve",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: corefade",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-corefade",
+          "params": {
+            "curve": {
+              "domain": "effectSeconds",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0.3,
+                  "y": 0.22
+                },
+                {
+                  "x": 1.4,
+                  "y": 0.22
+                },
+                {
+                  "x": 1.8,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "water-stream-core",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: core",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-core",
+          "params": {
+            "width": 0.12600000000000003,
+            "endFade": 0.1
+          }
+        },
+        {
+          "id": "water-stream-travelwin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: travelwin",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-travelwin",
+          "params": {
+            "startTicks": 18,
+            "durationTicks": 162,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "water-stream-head",
+          "type": "PathFollower",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: head",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-head",
+          "params": {
+            "durationTicks": 30,
+            "easing": "linear"
+          }
+        },
+        {
+          "id": "water-stream-headmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: headmat",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-headmat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "droplet",
+            "blend": "normal",
+            "tint": {
+              "srgb": "#BFE6FF",
+              "alpha": 1
+            },
+            "opacity": 0.8
+          }
+        },
+        {
+          "id": "water-stream-headsprite",
+          "type": "SpriteRenderer",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: headsprite",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-headsprite",
+          "params": {
+            "size": 0.18
+          }
+        },
+        {
+          "id": "water-stream-splashwin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: splashwin",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-splashwin",
+          "params": {
+            "startTicks": 0,
+            "durationTicks": 48,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "water-stream-splashmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: splashmat",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-splashmat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "foam",
+            "blend": "normal",
+            "tint": {
+              "srgb": "#DDF1FF",
+              "alpha": 1
+            },
+            "opacity": 0.65
+          }
+        },
+        {
+          "id": "water-stream-splash",
+          "type": "SpriteRenderer",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: splash",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-splash",
+          "params": {
+            "size": 1.2,
+            "sizeOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.3
+                },
+                {
+                  "x": 0.375,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 1.1
+                }
+              ]
+            },
+            "opacityOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.9
+                },
+                {
+                  "x": 0.375,
+                  "y": 0.6
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "water-stream-drops",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: drops",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-drops",
+          "params": {
+            "shape": "cone",
+            "direction": [
+              0,
+              1,
+              0
+            ],
+            "coneAngle": 1.3,
+            "radius": 0.08,
+            "burst": 140,
+            "rate": 0,
+            "speedMin": 1.5,
+            "speedMax": 4.5,
+            "lifetimeMin": 0.4,
+            "lifetimeMax": 1.2,
+            "useEventPosition": false
+          }
+        },
+        {
+          "id": "water-stream-dropip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: dropip",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-dropip",
+          "params": {
+            "sizeMin": 0.05,
+            "sizeMax": 0.14
+          }
+        },
+        {
+          "id": "water-stream-dropg",
+          "type": "Gravity",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: dropg",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-dropg",
+          "params": {
+            "acceleration": [
+              0,
+              -9.81,
+              0
+            ]
+          }
+        },
+        {
+          "id": "water-stream-dropfloor",
+          "type": "GroundCollision",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: dropfloor",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-dropfloor",
+          "params": {
+            "mode": "bounce",
+            "restitution": 0.25,
+            "maxBounces": 1
+          }
+        },
+        {
+          "id": "water-stream-dropmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: dropmat",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-dropmat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "droplet",
+            "blend": "normal",
+            "tint": {
+              "srgb": "#CFEBFF",
+              "alpha": 1
+            },
+            "opacity": 0.85,
+            "groundFade": 0.12
+          }
+        },
+        {
+          "id": "water-stream-dropbb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: dropbb",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-dropbb",
+          "params": {
+            "alignment": "velocity",
+            "stretchRatio": 1.6,
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 0.8,
+                  "y": 0.8
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "water-stream-foam",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: foam",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-foam",
+          "params": {
+            "shape": "disc",
+            "direction": [
+              0,
+              1,
+              0
+            ],
+            "radius": 0.6,
+            "burst": 24,
+            "rate": 0,
+            "speedMin": 0.1,
+            "speedMax": 0.5,
+            "lifetimeMin": 0.5,
+            "lifetimeMax": 1.1
+          }
+        },
+        {
+          "id": "water-stream-foamip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: foamip",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-foamip",
+          "params": {
+            "sizeMin": 0.25,
+            "sizeMax": 0.5,
+            "randomFrameStart": true,
+            "rotationMin": 0,
+            "rotationMax": 6.283
+          }
+        },
+        {
+          "id": "water-stream-foamdrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: foamdrag",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-foamdrag",
+          "params": {
+            "coefficient": 2.5
+          }
+        },
+        {
+          "id": "water-stream-foammat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: foammat",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-foammat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "foam",
+            "blend": "normal",
+            "tint": {
+              "srgb": "#EAF6FF",
+              "alpha": 1
+            },
+            "opacity": 0.35
+          }
+        },
+        {
+          "id": "water-stream-foambb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: foambb",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-foambb",
+          "params": {
+            "alignment": "worldAxis",
+            "worldAxis": [
+              0,
+              1,
+              0
+            ],
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.6
+                },
+                {
+                  "x": 1,
+                  "y": 1.4
+                }
+              ]
+            },
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.2,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "water-stream-ripplemat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ripplemat",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ripplemat",
+          "params": {
+            "blend": "normal",
+            "tint": {
+              "srgb": "#CFEAFF",
+              "alpha": 1
+            }
+          }
+        },
+        {
+          "id": "water-stream-ripwin0",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ripwin0",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ripwin0",
+          "params": {
+            "startTicks": 0,
+            "durationTicks": 60,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "water-stream-ring0",
+          "type": "RingPath",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ring0",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ring0",
+          "params": {
+            "radius": 2.2,
+            "samples": 96
+          }
+        },
+        {
+          "id": "water-stream-ringclock0",
+          "type": "Time",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ringclock0",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ringclock0",
+          "params": {}
+        },
+        {
+          "id": "water-stream-ringsize0",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ringsize0",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ringsize0",
+          "params": {
+            "operation": "max",
+            "b": 0.0909,
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "water-stream-ringdim0",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ringdim0",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ringdim0",
+          "params": {
+            "operation": "multiply",
+            "b": -0.3,
+            "inputUnit": "normalized",
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "water-stream-ringfade0",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ringfade0",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ringfade0",
+          "params": {
+            "operation": "add",
+            "b": 0.3,
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "water-stream-ringmat0",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ringmat0",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ringmat0",
+          "params": {
+            "blend": "normal",
+            "tint": {
+              "srgb": "#D6EEFF",
+              "alpha": 1
+            }
+          }
+        },
+        {
+          "id": "water-stream-ripple0",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ripple0",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ripple0",
+          "params": {
+            "width": 0.018,
+            "endFade": 0,
+            "orientation": "camera"
+          }
+        },
+        {
+          "id": "water-stream-ripwin1",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ripwin1",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ripwin1",
+          "params": {
+            "startTicks": 7,
+            "durationTicks": 60,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "water-stream-ring1",
+          "type": "RingPath",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ring1",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ring1",
+          "params": {
+            "radius": 2.2,
+            "samples": 96
+          }
+        },
+        {
+          "id": "water-stream-ringclock1",
+          "type": "Time",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ringclock1",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ringclock1",
+          "params": {}
+        },
+        {
+          "id": "water-stream-ringsize1",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ringsize1",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ringsize1",
+          "params": {
+            "operation": "max",
+            "b": 0.0909,
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "water-stream-ringdim1",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ringdim1",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ringdim1",
+          "params": {
+            "operation": "multiply",
+            "b": -0.22999999999999998,
+            "inputUnit": "normalized",
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "water-stream-ringfade1",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ringfade1",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ringfade1",
+          "params": {
+            "operation": "add",
+            "b": 0.23,
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "water-stream-ringmat1",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ringmat1",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ringmat1",
+          "params": {
+            "blend": "normal",
+            "tint": {
+              "srgb": "#D6EEFF",
+              "alpha": 1
+            }
+          }
+        },
+        {
+          "id": "water-stream-ripple1",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ripple1",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ripple1",
+          "params": {
+            "width": 0.018,
+            "endFade": 0,
+            "orientation": "camera"
+          }
+        },
+        {
+          "id": "water-stream-ripwin2",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ripwin2",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ripwin2",
+          "params": {
+            "startTicks": 15,
+            "durationTicks": 60,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "water-stream-ring2",
+          "type": "RingPath",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ring2",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ring2",
+          "params": {
+            "radius": 2.2,
+            "samples": 96
+          }
+        },
+        {
+          "id": "water-stream-ringclock2",
+          "type": "Time",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ringclock2",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ringclock2",
+          "params": {}
+        },
+        {
+          "id": "water-stream-ringsize2",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ringsize2",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ringsize2",
+          "params": {
+            "operation": "max",
+            "b": 0.0909,
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "water-stream-ringdim2",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ringdim2",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ringdim2",
+          "params": {
+            "operation": "multiply",
+            "b": -0.15999999999999998,
+            "inputUnit": "normalized",
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "water-stream-ringfade2",
+          "type": "ScalarMath",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ringfade2",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ringfade2",
+          "params": {
+            "operation": "add",
+            "b": 0.16,
+            "unit": "normalized"
+          }
+        },
+        {
+          "id": "water-stream-ringmat2",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ringmat2",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ringmat2",
+          "params": {
+            "blend": "normal",
+            "tint": {
+              "srgb": "#D6EEFF",
+              "alpha": 1
+            }
+          }
+        },
+        {
+          "id": "water-stream-ripple2",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "Water: arcing stream: ripple2",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-ripple2",
+          "params": {
+            "width": 0.018,
+            "endFade": 0,
+            "orientation": "camera"
+          }
+        },
+        {
+          "id": "water-stream-out-visual",
+          "type": "GroupOutput",
+          "definitionVersion": 1,
+          "label": "Out: visual",
+          "enabled": true,
+          "randomStreamId": "rs-water-stream-out-visual",
+          "params": {
+            "portId": "visual"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "water-stream-e-node-target-pool",
+          "source": {
+            "nodeId": "water-stream-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "water-stream-pool",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-node-source-arc",
+          "source": {
+            "nodeId": "water-stream-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "water-stream-arc",
+            "port": "start"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-node-target-arc",
+          "source": {
+            "nodeId": "water-stream-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "water-stream-arc",
+            "port": "end"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-headwin-travelclock",
+          "source": {
+            "nodeId": "water-stream-headwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "water-stream-travelclock",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-arc-reveal",
+          "source": {
+            "nodeId": "water-stream-arc",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "water-stream-reveal",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-travelclock-reveal",
+          "source": {
+            "nodeId": "water-stream-travelclock",
+            "port": "progress"
+          },
+          "target": {
+            "nodeId": "water-stream-reveal",
+            "port": "fraction"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-bodyfade-bodymat",
+          "source": {
+            "nodeId": "water-stream-bodyfade",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "water-stream-bodymat",
+            "port": "opacity"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-reveal-body",
+          "source": {
+            "nodeId": "water-stream-reveal",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "water-stream-body",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-bodymat-body",
+          "source": {
+            "nodeId": "water-stream-bodymat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "water-stream-body",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-flow-body",
+          "source": {
+            "nodeId": "water-stream-flow",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "water-stream-body",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-body-out-visual",
+          "source": {
+            "nodeId": "water-stream-body",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "water-stream-out-visual",
+            "port": "in"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-reveal-lift",
+          "source": {
+            "nodeId": "water-stream-reveal",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "water-stream-lift",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-hlfade-hlmat",
+          "source": {
+            "nodeId": "water-stream-hlfade",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "water-stream-hlmat",
+            "port": "opacity"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-lift-highlight",
+          "source": {
+            "nodeId": "water-stream-lift",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "water-stream-highlight",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-hlmat-highlight",
+          "source": {
+            "nodeId": "water-stream-hlmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "water-stream-highlight",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-flow-highlight",
+          "source": {
+            "nodeId": "water-stream-flow",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "water-stream-highlight",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-highlight-out-visual",
+          "source": {
+            "nodeId": "water-stream-highlight",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "water-stream-out-visual",
+            "port": "in"
+          },
+          "order": 1
+        },
+        {
+          "id": "water-stream-e-corefade-coremat",
+          "source": {
+            "nodeId": "water-stream-corefade",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "water-stream-coremat",
+            "port": "opacity"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-reveal-core",
+          "source": {
+            "nodeId": "water-stream-reveal",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "water-stream-core",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-coremat-core",
+          "source": {
+            "nodeId": "water-stream-coremat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "water-stream-core",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-flow-core",
+          "source": {
+            "nodeId": "water-stream-flow",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "water-stream-core",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-core-out-visual",
+          "source": {
+            "nodeId": "water-stream-core",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "water-stream-out-visual",
+            "port": "in"
+          },
+          "order": 2
+        },
+        {
+          "id": "water-stream-e-arc-head",
+          "source": {
+            "nodeId": "water-stream-arc",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "water-stream-head",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-travelwin-head",
+          "source": {
+            "nodeId": "water-stream-travelwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "water-stream-head",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-head-headsprite",
+          "source": {
+            "nodeId": "water-stream-head",
+            "port": "anchor"
+          },
+          "target": {
+            "nodeId": "water-stream-headsprite",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-headmat-headsprite",
+          "source": {
+            "nodeId": "water-stream-headmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "water-stream-headsprite",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-headwin-headsprite",
+          "source": {
+            "nodeId": "water-stream-headwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "water-stream-headsprite",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-headsprite-out-visual",
+          "source": {
+            "nodeId": "water-stream-headsprite",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "water-stream-out-visual",
+            "port": "in"
+          },
+          "order": 3
+        },
+        {
+          "id": "water-stream-e-head-splashwin",
+          "source": {
+            "nodeId": "water-stream-head",
+            "port": "arrival"
+          },
+          "target": {
+            "nodeId": "water-stream-splashwin",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-node-target-splash",
+          "source": {
+            "nodeId": "water-stream-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "water-stream-splash",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-splashmat-splash",
+          "source": {
+            "nodeId": "water-stream-splashmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "water-stream-splash",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-splashwin-splash",
+          "source": {
+            "nodeId": "water-stream-splashwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "water-stream-splash",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-splash-out-visual",
+          "source": {
+            "nodeId": "water-stream-splash",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "water-stream-out-visual",
+            "port": "in"
+          },
+          "order": 4
+        },
+        {
+          "id": "water-stream-e-node-target-drops",
+          "source": {
+            "nodeId": "water-stream-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "water-stream-drops",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-head-drops",
+          "source": {
+            "nodeId": "water-stream-head",
+            "port": "arrival"
+          },
+          "target": {
+            "nodeId": "water-stream-drops",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-drops-dropip",
+          "source": {
+            "nodeId": "water-stream-drops",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "water-stream-dropip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-dropip-dropg",
+          "source": {
+            "nodeId": "water-stream-dropip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "water-stream-dropg",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-dropg-dropfloor",
+          "source": {
+            "nodeId": "water-stream-dropg",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "water-stream-dropfloor",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-dropfloor-dropbb",
+          "source": {
+            "nodeId": "water-stream-dropfloor",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "water-stream-dropbb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-dropmat-dropbb",
+          "source": {
+            "nodeId": "water-stream-dropmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "water-stream-dropbb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-dropbb-out-visual",
+          "source": {
+            "nodeId": "water-stream-dropbb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "water-stream-out-visual",
+            "port": "in"
+          },
+          "order": 5
+        },
+        {
+          "id": "water-stream-e-pool-foam",
+          "source": {
+            "nodeId": "water-stream-pool",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "water-stream-foam",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-head-foam",
+          "source": {
+            "nodeId": "water-stream-head",
+            "port": "arrival"
+          },
+          "target": {
+            "nodeId": "water-stream-foam",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-foam-foamip",
+          "source": {
+            "nodeId": "water-stream-foam",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "water-stream-foamip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-foamip-foamdrag",
+          "source": {
+            "nodeId": "water-stream-foamip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "water-stream-foamdrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-foamdrag-foambb",
+          "source": {
+            "nodeId": "water-stream-foamdrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "water-stream-foambb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-foammat-foambb",
+          "source": {
+            "nodeId": "water-stream-foammat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "water-stream-foambb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-foambb-out-visual",
+          "source": {
+            "nodeId": "water-stream-foambb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "water-stream-out-visual",
+            "port": "in"
+          },
+          "order": 6
+        },
+        {
+          "id": "water-stream-e-head-ripwin0",
+          "source": {
+            "nodeId": "water-stream-head",
+            "port": "arrival"
+          },
+          "target": {
+            "nodeId": "water-stream-ripwin0",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ripwin0-ringclock0",
+          "source": {
+            "nodeId": "water-stream-ripwin0",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "water-stream-ringclock0",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ringclock0-ringsize0",
+          "source": {
+            "nodeId": "water-stream-ringclock0",
+            "port": "progress"
+          },
+          "target": {
+            "nodeId": "water-stream-ringsize0",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ringclock0-ringdim0",
+          "source": {
+            "nodeId": "water-stream-ringclock0",
+            "port": "progress"
+          },
+          "target": {
+            "nodeId": "water-stream-ringdim0",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ringdim0-ringfade0",
+          "source": {
+            "nodeId": "water-stream-ringdim0",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "water-stream-ringfade0",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-pool-ring0",
+          "source": {
+            "nodeId": "water-stream-pool",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "water-stream-ring0",
+            "port": "center"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ringsize0-ring0",
+          "source": {
+            "nodeId": "water-stream-ringsize0",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "water-stream-ring0",
+            "port": "radiusScale"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ringfade0-ringmat0",
+          "source": {
+            "nodeId": "water-stream-ringfade0",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "water-stream-ringmat0",
+            "port": "opacity"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ring0-ripple0",
+          "source": {
+            "nodeId": "water-stream-ring0",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "water-stream-ripple0",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ringmat0-ripple0",
+          "source": {
+            "nodeId": "water-stream-ringmat0",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "water-stream-ripple0",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ripwin0-ripple0",
+          "source": {
+            "nodeId": "water-stream-ripwin0",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "water-stream-ripple0",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ripple0-out-visual",
+          "source": {
+            "nodeId": "water-stream-ripple0",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "water-stream-out-visual",
+            "port": "in"
+          },
+          "order": 7
+        },
+        {
+          "id": "water-stream-e-head-ripwin1",
+          "source": {
+            "nodeId": "water-stream-head",
+            "port": "arrival"
+          },
+          "target": {
+            "nodeId": "water-stream-ripwin1",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ripwin1-ringclock1",
+          "source": {
+            "nodeId": "water-stream-ripwin1",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "water-stream-ringclock1",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ringclock1-ringsize1",
+          "source": {
+            "nodeId": "water-stream-ringclock1",
+            "port": "progress"
+          },
+          "target": {
+            "nodeId": "water-stream-ringsize1",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ringclock1-ringdim1",
+          "source": {
+            "nodeId": "water-stream-ringclock1",
+            "port": "progress"
+          },
+          "target": {
+            "nodeId": "water-stream-ringdim1",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ringdim1-ringfade1",
+          "source": {
+            "nodeId": "water-stream-ringdim1",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "water-stream-ringfade1",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-pool-ring1",
+          "source": {
+            "nodeId": "water-stream-pool",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "water-stream-ring1",
+            "port": "center"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ringsize1-ring1",
+          "source": {
+            "nodeId": "water-stream-ringsize1",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "water-stream-ring1",
+            "port": "radiusScale"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ringfade1-ringmat1",
+          "source": {
+            "nodeId": "water-stream-ringfade1",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "water-stream-ringmat1",
+            "port": "opacity"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ring1-ripple1",
+          "source": {
+            "nodeId": "water-stream-ring1",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "water-stream-ripple1",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ringmat1-ripple1",
+          "source": {
+            "nodeId": "water-stream-ringmat1",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "water-stream-ripple1",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ripwin1-ripple1",
+          "source": {
+            "nodeId": "water-stream-ripwin1",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "water-stream-ripple1",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ripple1-out-visual",
+          "source": {
+            "nodeId": "water-stream-ripple1",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "water-stream-out-visual",
+            "port": "in"
+          },
+          "order": 8
+        },
+        {
+          "id": "water-stream-e-head-ripwin2",
+          "source": {
+            "nodeId": "water-stream-head",
+            "port": "arrival"
+          },
+          "target": {
+            "nodeId": "water-stream-ripwin2",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ripwin2-ringclock2",
+          "source": {
+            "nodeId": "water-stream-ripwin2",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "water-stream-ringclock2",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ringclock2-ringsize2",
+          "source": {
+            "nodeId": "water-stream-ringclock2",
+            "port": "progress"
+          },
+          "target": {
+            "nodeId": "water-stream-ringsize2",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ringclock2-ringdim2",
+          "source": {
+            "nodeId": "water-stream-ringclock2",
+            "port": "progress"
+          },
+          "target": {
+            "nodeId": "water-stream-ringdim2",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ringdim2-ringfade2",
+          "source": {
+            "nodeId": "water-stream-ringdim2",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "water-stream-ringfade2",
+            "port": "a"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-pool-ring2",
+          "source": {
+            "nodeId": "water-stream-pool",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "water-stream-ring2",
+            "port": "center"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ringsize2-ring2",
+          "source": {
+            "nodeId": "water-stream-ringsize2",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "water-stream-ring2",
+            "port": "radiusScale"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ringfade2-ringmat2",
+          "source": {
+            "nodeId": "water-stream-ringfade2",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "water-stream-ringmat2",
+            "port": "opacity"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ring2-ripple2",
+          "source": {
+            "nodeId": "water-stream-ring2",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "water-stream-ripple2",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ringmat2-ripple2",
+          "source": {
+            "nodeId": "water-stream-ringmat2",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "water-stream-ripple2",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ripwin2-ripple2",
+          "source": {
+            "nodeId": "water-stream-ripwin2",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "water-stream-ripple2",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "water-stream-e-ripple2-out-visual",
+          "source": {
+            "nodeId": "water-stream-ripple2",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "water-stream-out-visual",
+            "port": "in"
+          },
+          "order": 9
+        }
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "id": "ctl-water-stream-start-at",
+      "scopeGraphId": "graph-water-stream",
+      "label": "Start at",
+      "type": "integer",
+      "unit": "tick",
+      "value": 0,
+      "default": 0,
+      "min": 0,
+      "max": 582,
+      "step": 1,
+      "section": "Water: arcing stream",
+      "description": "Delays the whole component (60 ticks = 1 second) so it can play after another one.",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "water-stream-headwin",
+          "parameter": "startTicks",
+          "offset": 18
+        },
+        {
+          "nodeId": "water-stream-flow",
+          "parameter": "startTicks",
+          "offset": 18
+        },
+        {
+          "nodeId": "water-stream-travelwin",
+          "parameter": "startTicks",
+          "offset": 18
+        }
+      ]
+    },
+    {
+      "id": "ctl-water-stream-width",
+      "scopeGraphId": "graph-water-stream",
+      "label": "Body width",
+      "type": "number",
+      "unit": "meter",
+      "value": 0.28,
+      "default": 0.28,
+      "min": 0.0022222222222222222,
+      "max": 10,
+      "section": "Water: arcing stream",
+      "description": "Water: arcing stream: body.width, core.width ×0.45",
+      "editPolicy": "live",
+      "bindings": [
+        {
+          "nodeId": "water-stream-body",
+          "parameter": "width"
+        },
+        {
+          "nodeId": "water-stream-core",
+          "parameter": "width",
+          "scale": 0.45
+        }
+      ]
+    },
+    {
+      "id": "ctl-water-stream-travel",
+      "scopeGraphId": "graph-water-stream",
+      "label": "Travel time",
+      "type": "integer",
+      "unit": "tick",
+      "value": 30,
+      "default": 30,
+      "min": 1,
+      "max": 600,
+      "step": 1,
+      "section": "Water: arcing stream",
+      "description": "Water: arcing stream: head.durationTicks, headwin.durationTicks",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "water-stream-head",
+          "parameter": "durationTicks"
+        },
+        {
+          "nodeId": "water-stream-headwin",
+          "parameter": "durationTicks"
+        }
+      ]
+    },
+    {
+      "id": "ctl-water-stream-droplets",
+      "scopeGraphId": "graph-water-stream",
+      "label": "Droplet amount",
+      "type": "integer",
+      "unit": "none",
+      "value": 140,
+      "default": 140,
+      "min": 0,
+      "max": 4096,
+      "step": 1,
+      "section": "Water: arcing stream",
+      "description": "Water: arcing stream: drops.burst",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "water-stream-drops",
+          "parameter": "burst"
+        }
+      ]
+    },
+    {
+      "id": "ctl-water-stream-foam",
+      "scopeGraphId": "graph-water-stream",
+      "label": "Foam amount",
+      "type": "integer",
+      "unit": "none",
+      "value": 24,
+      "default": 24,
+      "min": 0,
+      "max": 4096,
+      "step": 1,
+      "section": "Water: arcing stream",
+      "description": "Water: arcing stream: foam.burst",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "water-stream-foam",
+          "parameter": "burst"
+        }
+      ]
+    },
+    {
+      "id": "ctl-water-stream-splash",
+      "scopeGraphId": "graph-water-stream",
+      "label": "Splash size",
+      "type": "number",
+      "unit": "meter",
+      "value": 1.2,
+      "default": 1.2,
+      "min": 0.001,
+      "max": 20,
+      "section": "Water: arcing stream",
+      "description": "Water: arcing stream: splash.size",
+      "editPolicy": "live",
+      "bindings": [
+        {
+          "nodeId": "water-stream-splash",
+          "parameter": "size"
+        }
+      ]
+    },
+    {
+      "id": "ctl-water-stream-ripple",
+      "scopeGraphId": "graph-water-stream",
+      "label": "Ripple size",
+      "type": "number",
+      "unit": "meter",
+      "value": 2.2,
+      "default": 2.2,
+      "min": 0.001,
+      "max": 50,
+      "section": "Water: arcing stream",
+      "description": "Water: arcing stream: ring0.radius, ring1.radius, ring2.radius",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "water-stream-ring0",
+          "parameter": "radius"
+        },
+        {
+          "nodeId": "water-stream-ring1",
+          "parameter": "radius"
+        },
+        {
+          "nodeId": "water-stream-ring2",
+          "parameter": "radius"
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "editor": {
+    "graphs": {
+      "graph-root": {
+        "nodes": {
+          "node-source": {
+            "x": 0,
+            "y": 0
+          },
+          "node-target": {
+            "x": 0,
+            "y": 160
+          },
+          "node-output": {
+            "x": 1040,
+            "y": 0
+          },
+          "water-stream": {
+            "x": -300,
+            "y": 320
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      },
+      "graph-water-stream": {
+        "nodes": {
+          "water-stream-pool": {
+            "x": 0,
+            "y": 0
+          },
+          "water-stream-arc": {
+            "x": 260,
+            "y": 0
+          },
+          "water-stream-reveal": {
+            "x": 520,
+            "y": 0
+          },
+          "water-stream-headwin": {
+            "x": 780,
+            "y": 0
+          },
+          "water-stream-travelclock": {
+            "x": 1040,
+            "y": 0
+          },
+          "water-stream-flow": {
+            "x": 1300,
+            "y": 0
+          },
+          "water-stream-bodyfade": {
+            "x": 0,
+            "y": 170
+          },
+          "water-stream-bodymat": {
+            "x": 260,
+            "y": 170
+          },
+          "water-stream-body": {
+            "x": 520,
+            "y": 170
+          },
+          "water-stream-lift": {
+            "x": 780,
+            "y": 170
+          },
+          "water-stream-hlfade": {
+            "x": 1040,
+            "y": 170
+          },
+          "water-stream-hlmat": {
+            "x": 1300,
+            "y": 170
+          },
+          "water-stream-highlight": {
+            "x": 0,
+            "y": 340
+          },
+          "water-stream-coremat": {
+            "x": 260,
+            "y": 340
+          },
+          "water-stream-corefade": {
+            "x": 520,
+            "y": 340
+          },
+          "water-stream-core": {
+            "x": 780,
+            "y": 340
+          },
+          "water-stream-travelwin": {
+            "x": 1040,
+            "y": 340
+          },
+          "water-stream-head": {
+            "x": 1300,
+            "y": 340
+          },
+          "water-stream-headmat": {
+            "x": 0,
+            "y": 510
+          },
+          "water-stream-headsprite": {
+            "x": 260,
+            "y": 510
+          },
+          "water-stream-splashwin": {
+            "x": 520,
+            "y": 510
+          },
+          "water-stream-splashmat": {
+            "x": 780,
+            "y": 510
+          },
+          "water-stream-splash": {
+            "x": 1040,
+            "y": 510
+          },
+          "water-stream-drops": {
+            "x": 1300,
+            "y": 510
+          },
+          "water-stream-dropip": {
+            "x": 0,
+            "y": 680
+          },
+          "water-stream-dropg": {
+            "x": 260,
+            "y": 680
+          },
+          "water-stream-dropfloor": {
+            "x": 520,
+            "y": 680
+          },
+          "water-stream-dropmat": {
+            "x": 780,
+            "y": 680
+          },
+          "water-stream-dropbb": {
+            "x": 1040,
+            "y": 680
+          },
+          "water-stream-foam": {
+            "x": 1300,
+            "y": 680
+          },
+          "water-stream-foamip": {
+            "x": 0,
+            "y": 850
+          },
+          "water-stream-foamdrag": {
+            "x": 260,
+            "y": 850
+          },
+          "water-stream-foammat": {
+            "x": 520,
+            "y": 850
+          },
+          "water-stream-foambb": {
+            "x": 780,
+            "y": 850
+          },
+          "water-stream-ripplemat": {
+            "x": 1040,
+            "y": 850
+          },
+          "water-stream-ripwin0": {
+            "x": 1300,
+            "y": 850
+          },
+          "water-stream-ring0": {
+            "x": 0,
+            "y": 1020
+          },
+          "water-stream-ringclock0": {
+            "x": 260,
+            "y": 1020
+          },
+          "water-stream-ringsize0": {
+            "x": 520,
+            "y": 1020
+          },
+          "water-stream-ringdim0": {
+            "x": 780,
+            "y": 1020
+          },
+          "water-stream-ringfade0": {
+            "x": 1040,
+            "y": 1020
+          },
+          "water-stream-ringmat0": {
+            "x": 1300,
+            "y": 1020
+          },
+          "water-stream-ripple0": {
+            "x": 0,
+            "y": 1190
+          },
+          "water-stream-ripwin1": {
+            "x": 260,
+            "y": 1190
+          },
+          "water-stream-ring1": {
+            "x": 520,
+            "y": 1190
+          },
+          "water-stream-ringclock1": {
+            "x": 780,
+            "y": 1190
+          },
+          "water-stream-ringsize1": {
+            "x": 1040,
+            "y": 1190
+          },
+          "water-stream-ringdim1": {
+            "x": 1300,
+            "y": 1190
+          },
+          "water-stream-ringfade1": {
+            "x": 0,
+            "y": 1360
+          },
+          "water-stream-ringmat1": {
+            "x": 260,
+            "y": 1360
+          },
+          "water-stream-ripple1": {
+            "x": 520,
+            "y": 1360
+          },
+          "water-stream-ripwin2": {
+            "x": 780,
+            "y": 1360
+          },
+          "water-stream-ring2": {
+            "x": 1040,
+            "y": 1360
+          },
+          "water-stream-ringclock2": {
+            "x": 1300,
+            "y": 1360
+          },
+          "water-stream-ringsize2": {
+            "x": 0,
+            "y": 1530
+          },
+          "water-stream-ringdim2": {
+            "x": 260,
+            "y": 1530
+          },
+          "water-stream-ringfade2": {
+            "x": 520,
+            "y": 1530
+          },
+          "water-stream-ringmat2": {
+            "x": 780,
+            "y": 1530
+          },
+          "water-stream-ripple2": {
+            "x": 1040,
+            "y": 1530
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      }
+    },
+    "openedGraphId": "graph-root"
+  }
+}

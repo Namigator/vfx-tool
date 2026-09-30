@@ -1,0 +1,20 @@
+✔ F09 precedence: binding, connection, disconnect, unbind (4.9935ms)
+✔ defaults, deterministic order and control overrides (0.4666ms)
+✔ duplicate owners fail even when a connection masks them (0.5133ms)
+✔ duplicate connections fail (0.2485ms)
+✔ invalid affine, ranges, units and types (1.3932ms)
+✔ nonnumeric controls require identity mapping and exact types (0.503ms)
+✔ results do not alias document, default or control values (0.544ms)
+✔ nested Group overrides flow parent → group → internal (1.4552ms)
+✔ scope violations and reserved graphId (0.7823ms)
+✔ group instances must be independent; recursion rejected (0.4981ms)
+✔ missing references are diagnosed (0.6207ms)
+✔ resample policy propagates to driving controls without mutating metadata (0.3243ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 242.7811

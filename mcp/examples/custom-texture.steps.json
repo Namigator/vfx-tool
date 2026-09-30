@@ -1,0 +1,20 @@
+[
+  ["vfx_new_document", { "template": "blank", "id": "tex" }],
+  ["vfx_set_document", { "docId": "tex", "durationTicks": 120 }],
+  ["vfx_add_node", { "docId": "tex", "type": "Schedule", "id": "on", "params": { "startTicks": 0, "durationTicks": 120, "mode": "window" } }],
+  ["vfx_add_node", { "docId": "tex", "type": "Emitter", "id": "em", "params": { "shape": "sphere", "radius": 0.2, "rate": 40, "burst": 0, "speedMin": 0.6, "speedMax": 1.2, "lifetimeMin": 1.6, "lifetimeMax": 1.8 } }],
+  ["vfx_add_node", { "docId": "tex", "type": "InitialProperties", "id": "ip", "params": { "sizeMin": 0.35, "sizeMax": 0.5 } }],
+  ["vfx_add_node", { "docId": "tex", "type": "Material", "id": "mat", "params": { "blend": "normal" } }],
+  ["vfx_add_node", { "docId": "tex", "type": "BillboardRenderer", "id": "bb" }],
+  ["vfx_connect", { "docId": "tex", "from": "node-source.out", "to": "em.anchor" }],
+  ["vfx_connect", { "docId": "tex", "from": "on.window", "to": "em.window" }],
+  ["vfx_connect", { "docId": "tex", "from": "em.particles", "to": "ip.particles" }],
+  ["vfx_connect", { "docId": "tex", "from": "ip.particles", "to": "bb.particles" }],
+  ["vfx_connect", { "docId": "tex", "from": "mat.material", "to": "bb.material" }],
+  ["vfx_connect", { "docId": "tex", "from": "bb.visual", "to": "node-output.visual" }],
+  ["vfx_import_texture", { "docId": "tex", "path": "mcp/examples/assets/four-blobs.png", "rows": 2, "columns": 2, "materialId": "mat" }],
+  ["vfx_compile", { "docId": "tex" }, true],
+  ["vfx_export_pack", { "docId": "tex" }],
+  ["vfx_open_pack", { "path": "work/mcp/tex.vfxpack", "docId": "texpack" }],
+  ["vfx_render_frames", { "docId": "texpack", "ticks": [90] }, true]
+]

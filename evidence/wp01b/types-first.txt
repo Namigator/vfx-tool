@@ -1,0 +1,7 @@
+src/model/controls.ts(71,81): error TS2339: Property 'recordType' does not exist on type 'ColorValue | CurveValue | GradientValue | RegisteredRecordValue'.
+  Property 'recordType' does not exist on type 'ColorValue'.
+src/model/controls.ts(72,31): error TS2339: Property 'recordType' does not exist on type 'ColorValue | CurveValue | GradientValue | RegisteredRecordValue'.
+  Property 'recordType' does not exist on type 'ColorValue'.
+src/model/controls.ts(118,85): error TS2339: Property 'recordType' does not exist on type 'ColorValue | CurveValue | GradientValue | RegisteredRecordValue'.
+  Property 'recordType' does not exist on type 'ColorValue'.
+src/model/document.ts(13,31): error TS2305: Module '"./types.ts"' has no exported member 'ValueContext'.

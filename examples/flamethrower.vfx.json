@@ -1,0 +1,2958 @@
+{
+  "format": "vfx-studio",
+  "schemaVersion": 2,
+  "runtimeVersion": "2.0.0",
+  "id": "example-flamethrower",
+  "name": "Flamethrower",
+  "tags": [],
+  "seed": 42,
+  "rootTransform": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "scale": 1
+  },
+  "anchors": [
+    {
+      "id": "source",
+      "name": "Source",
+      "position": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "id": "target",
+      "name": "Target",
+      "position": [
+        0,
+        1,
+        5
+      ]
+    }
+  ],
+  "durationTicks": 242,
+  "rootGraphId": "graph-root",
+  "graphs": [
+    {
+      "id": "graph-root",
+      "inputs": [],
+      "outputs": [],
+      "nodes": [
+        {
+          "id": "node-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Source",
+          "enabled": true,
+          "randomStreamId": "rs-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "node-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Target",
+          "enabled": true,
+          "randomStreamId": "rs-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "node-output",
+          "type": "EffectOutput",
+          "definitionVersion": 1,
+          "label": "Output",
+          "enabled": true,
+          "randomStreamId": "rs-output",
+          "params": {}
+        },
+        {
+          "id": "flamethrower",
+          "type": "Group",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower",
+          "params": {
+            "graphId": "graph-flamethrower"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "flamethrower-e-group-visual",
+          "source": {
+            "nodeId": "flamethrower",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "node-output",
+            "port": "visual"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-group-presentation",
+          "source": {
+            "nodeId": "flamethrower",
+            "port": "presentation"
+          },
+          "target": {
+            "nodeId": "node-output",
+            "port": "presentation"
+          },
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "graph-flamethrower",
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "visual",
+          "label": "Visual",
+          "type": "visual",
+          "cardinality": "many",
+          "required": false,
+          "direction": "output"
+        },
+        {
+          "id": "presentation",
+          "label": "Presentation",
+          "type": "presentation",
+          "cardinality": "many",
+          "required": false,
+          "direction": "output"
+        }
+      ],
+      "nodes": [
+        {
+          "id": "flamethrower-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "source",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "flamethrower-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "target",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "flamethrower-emit",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: emit",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-emit",
+          "params": {
+            "startTicks": 12,
+            "durationTicks": 84,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "flamethrower-tonguea",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: tonguea",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-tonguea",
+          "params": {
+            "shape": "cone",
+            "coneAngle": 0.1047,
+            "radius": 0.02,
+            "rate": 210,
+            "burst": 0,
+            "speedMin": 8.5,
+            "speedMax": 11,
+            "lifetimeMin": 0.4,
+            "lifetimeMax": 0.75,
+            "rateOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.35
+                },
+                {
+                  "x": 0.04,
+                  "y": 1
+                },
+                {
+                  "x": 0.92,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "flamethrower-tongueaip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: tongueaip",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-tongueaip",
+          "params": {
+            "sizeMin": 0.22,
+            "sizeMax": 0.3,
+            "randomFrameStart": false
+          }
+        },
+        {
+          "id": "flamethrower-tongueadrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: tongueadrag",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-tongueadrag",
+          "params": {
+            "coefficient": 0.18
+          }
+        },
+        {
+          "id": "flamethrower-tongueanoise",
+          "type": "NoiseForce",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: tongueanoise",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-tongueanoise",
+          "params": {
+            "mode": "vector",
+            "amplitude": 3,
+            "frequency": 0.55,
+            "evolution": 0.8
+          }
+        },
+        {
+          "id": "flamethrower-tonguealift",
+          "type": "Gravity",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: tonguealift",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-tonguealift",
+          "params": {
+            "acceleration": [
+              0,
+              0.9,
+              0
+            ]
+          }
+        },
+        {
+          "id": "flamethrower-tongueamat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: tongueamat",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-tongueamat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "flame-tongue-a",
+            "blend": "normal",
+            "opacity": 0.62,
+            "dissolve": 0.6,
+            "dissolveStart": 0.5,
+            "dissolveSoftness": 0.12
+          }
+        },
+        {
+          "id": "flamethrower-tongueabb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: tongueabb",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-tongueabb",
+          "params": {
+            "alignment": "velocity",
+            "stretchRatio": 1.6,
+            "pivot": 0.38,
+            "flipbookMode": "overLife",
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 0.7,
+                  "y": 3.7
+                },
+                {
+                  "x": 1,
+                  "y": 2.2
+                }
+              ]
+            },
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.07,
+                  "y": 1
+                },
+                {
+                  "x": 0.55,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            },
+            "colorOverLife": {
+              "stops": [
+                {
+                  "position": 0,
+                  "color": {
+                    "srgb": "#FFFFFF",
+                    "alpha": 1
+                  }
+                },
+                {
+                  "position": 0.25,
+                  "color": {
+                    "srgb": "#FFE0A0",
+                    "alpha": 1
+                  }
+                },
+                {
+                  "position": 0.5,
+                  "color": {
+                    "srgb": "#FFA050",
+                    "alpha": 1
+                  }
+                },
+                {
+                  "position": 0.75,
+                  "color": {
+                    "srgb": "#C8501E",
+                    "alpha": 1
+                  }
+                },
+                {
+                  "position": 1,
+                  "color": {
+                    "srgb": "#5A1E0A",
+                    "alpha": 1
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "flamethrower-tongueb",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: tongueb",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-tongueb",
+          "params": {
+            "shape": "cone",
+            "coneAngle": 0.1047,
+            "radius": 0.02,
+            "rate": 210,
+            "burst": 0,
+            "speedMin": 8.5,
+            "speedMax": 11,
+            "lifetimeMin": 0.4,
+            "lifetimeMax": 0.75,
+            "rateOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.35
+                },
+                {
+                  "x": 0.04,
+                  "y": 1
+                },
+                {
+                  "x": 0.92,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "flamethrower-tonguebip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: tonguebip",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-tonguebip",
+          "params": {
+            "sizeMin": 0.22,
+            "sizeMax": 0.3,
+            "randomFrameStart": false
+          }
+        },
+        {
+          "id": "flamethrower-tonguebdrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: tonguebdrag",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-tonguebdrag",
+          "params": {
+            "coefficient": 0.18
+          }
+        },
+        {
+          "id": "flamethrower-tonguebnoise",
+          "type": "NoiseForce",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: tonguebnoise",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-tonguebnoise",
+          "params": {
+            "mode": "vector",
+            "amplitude": 3,
+            "frequency": 0.55,
+            "evolution": 0.8
+          }
+        },
+        {
+          "id": "flamethrower-tongueblift",
+          "type": "Gravity",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: tongueblift",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-tongueblift",
+          "params": {
+            "acceleration": [
+              0,
+              0.9,
+              0
+            ]
+          }
+        },
+        {
+          "id": "flamethrower-tonguebmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: tonguebmat",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-tonguebmat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "flame-tongue-b",
+            "blend": "normal",
+            "opacity": 0.62,
+            "dissolve": 0.6,
+            "dissolveStart": 0.5,
+            "dissolveSoftness": 0.12
+          }
+        },
+        {
+          "id": "flamethrower-tonguebbb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: tonguebbb",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-tonguebbb",
+          "params": {
+            "alignment": "velocity",
+            "stretchRatio": 1.6,
+            "pivot": 0.38,
+            "flipbookMode": "overLife",
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 0.7,
+                  "y": 3.7
+                },
+                {
+                  "x": 1,
+                  "y": 2.2
+                }
+              ]
+            },
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.07,
+                  "y": 1
+                },
+                {
+                  "x": 0.55,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            },
+            "colorOverLife": {
+              "stops": [
+                {
+                  "position": 0,
+                  "color": {
+                    "srgb": "#FFFFFF",
+                    "alpha": 1
+                  }
+                },
+                {
+                  "position": 0.25,
+                  "color": {
+                    "srgb": "#FFE0A0",
+                    "alpha": 1
+                  }
+                },
+                {
+                  "position": 0.5,
+                  "color": {
+                    "srgb": "#FFA050",
+                    "alpha": 1
+                  }
+                },
+                {
+                  "position": 0.75,
+                  "color": {
+                    "srgb": "#C8501E",
+                    "alpha": 1
+                  }
+                },
+                {
+                  "position": 1,
+                  "color": {
+                    "srgb": "#5A1E0A",
+                    "alpha": 1
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "flamethrower-accentmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: accentmat",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-accentmat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "flame-tongue-a",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#FFF2D0",
+              "alpha": 1
+            },
+            "opacity": 0.05
+          }
+        },
+        {
+          "id": "flamethrower-accentbb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: accentbb",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-accentbb",
+          "params": {
+            "alignment": "velocity",
+            "stretchRatio": 1.6,
+            "pivot": 0.38,
+            "flipbookMode": "overLife",
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.8
+                },
+                {
+                  "x": 0.45,
+                  "y": 2.2
+                },
+                {
+                  "x": 0.46,
+                  "y": 0
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            },
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.05,
+                  "y": 1
+                },
+                {
+                  "x": 0.45,
+                  "y": 0
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "flamethrower-core",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: core",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-core",
+          "params": {
+            "shape": "cone",
+            "coneAngle": 0.0524,
+            "radius": 0.015,
+            "rate": 130,
+            "burst": 0,
+            "speedMin": 10,
+            "speedMax": 13,
+            "lifetimeMin": 0.23333333333333334,
+            "lifetimeMax": 0.43333333333333335,
+            "rateOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.35
+                },
+                {
+                  "x": 0.04,
+                  "y": 1
+                },
+                {
+                  "x": 0.92,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "flamethrower-coreip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: coreip",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-coreip",
+          "params": {
+            "sizeMin": 0.15,
+            "sizeMax": 0.18
+          }
+        },
+        {
+          "id": "flamethrower-coredrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: coredrag",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-coredrag",
+          "params": {
+            "coefficient": 0.12
+          }
+        },
+        {
+          "id": "flamethrower-corenoise",
+          "type": "NoiseForce",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: corenoise",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-corenoise",
+          "params": {
+            "mode": "vector",
+            "amplitude": 1,
+            "frequency": 0.55,
+            "evolution": 0.8
+          }
+        },
+        {
+          "id": "flamethrower-coremat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: coremat",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-coremat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "flame-tongue-b",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#FFF6E0",
+              "alpha": 1
+            },
+            "opacity": 0.13
+          }
+        },
+        {
+          "id": "flamethrower-corebb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: corebb",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-corebb",
+          "params": {
+            "alignment": "velocity",
+            "stretchRatio": 1.9,
+            "pivot": 0.38,
+            "flipbookMode": "overLife",
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 0.4,
+                  "y": 3.4
+                },
+                {
+                  "x": 1,
+                  "y": 2
+                }
+              ]
+            },
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 0.6,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "flamethrower-smokeeva",
+          "type": "ParticleEvents",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: smokeeva",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-smokeeva",
+          "params": {
+            "probability": 0.08,
+            "maxEvents": 1024
+          }
+        },
+        {
+          "id": "flamethrower-embereva",
+          "type": "ParticleEvents",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: embereva",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-embereva",
+          "params": {
+            "probability": 0.1,
+            "maxEvents": 1024
+          }
+        },
+        {
+          "id": "flamethrower-smokeevb",
+          "type": "ParticleEvents",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: smokeevb",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-smokeevb",
+          "params": {
+            "probability": 0.08,
+            "maxEvents": 1024
+          }
+        },
+        {
+          "id": "flamethrower-emberevb",
+          "type": "ParticleEvents",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: emberevb",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-emberevb",
+          "params": {
+            "probability": 0.1,
+            "maxEvents": 1024
+          }
+        },
+        {
+          "id": "flamethrower-smoke",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: smoke",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-smoke",
+          "params": {
+            "shape": "sphere",
+            "radius": 0.05,
+            "burst": 1,
+            "rate": 0,
+            "speedMin": 0.2,
+            "speedMax": 0.6,
+            "lifetimeMin": 1,
+            "lifetimeMax": 1.9,
+            "useEventPosition": true,
+            "inheritVelocity": 0.35
+          }
+        },
+        {
+          "id": "flamethrower-smokeip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: smokeip",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-smokeip",
+          "params": {
+            "sizeMin": 0.35,
+            "sizeMax": 0.5,
+            "randomFrameStart": true,
+            "rotationMin": 0,
+            "rotationMax": 6.283,
+            "angularVelocityMin": -0.7,
+            "angularVelocityMax": 0.7
+          }
+        },
+        {
+          "id": "flamethrower-smokedrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: smokedrag",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-smokedrag",
+          "params": {
+            "coefficient": 1.2
+          }
+        },
+        {
+          "id": "flamethrower-smokelift",
+          "type": "Gravity",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: smokelift",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-smokelift",
+          "params": {
+            "acceleration": [
+              0,
+              1.6,
+              0
+            ]
+          }
+        },
+        {
+          "id": "flamethrower-smokenoise",
+          "type": "NoiseForce",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: smokenoise",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-smokenoise",
+          "params": {
+            "mode": "curl",
+            "amplitude": 2.2,
+            "frequency": 0.55,
+            "evolution": 0.6
+          }
+        },
+        {
+          "id": "flamethrower-smokemat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: smokemat",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-smokemat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "smoke-puff",
+            "blend": "normal",
+            "tint": {
+              "srgb": "#6A625A",
+              "alpha": 1
+            },
+            "opacity": 1,
+            "groundFade": 0.2
+          }
+        },
+        {
+          "id": "flamethrower-smokebb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: smokebb",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-smokebb",
+          "params": {
+            "flipbookMode": "overLife",
+            "sizeOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.45
+                },
+                {
+                  "x": 1,
+                  "y": 2.4
+                }
+              ]
+            },
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.15
+                },
+                {
+                  "x": 0.2,
+                  "y": 0.32
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "flamethrower-embers",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: embers",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-embers",
+          "params": {
+            "shape": "sphere",
+            "radius": 0.03,
+            "burst": 1,
+            "rate": 0,
+            "speedMin": 2,
+            "speedMax": 4,
+            "lifetimeMin": 0.5,
+            "lifetimeMax": 1.2,
+            "useEventPosition": true,
+            "inheritVelocity": 0.45
+          }
+        },
+        {
+          "id": "flamethrower-emberip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: emberip",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-emberip",
+          "params": {
+            "sizeMin": 0.012,
+            "sizeMax": 0.03
+          }
+        },
+        {
+          "id": "flamethrower-emberdrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: emberdrag",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-emberdrag",
+          "params": {
+            "coefficient": 1.1
+          }
+        },
+        {
+          "id": "flamethrower-embergrav",
+          "type": "Gravity",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: embergrav",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-embergrav",
+          "params": {
+            "acceleration": [
+              0,
+              -3.5,
+              0
+            ]
+          }
+        },
+        {
+          "id": "flamethrower-embernoise",
+          "type": "NoiseForce",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: embernoise",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-embernoise",
+          "params": {
+            "mode": "vector",
+            "amplitude": 4,
+            "frequency": 0.55,
+            "evolution": 1
+          }
+        },
+        {
+          "id": "flamethrower-embermat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: embermat",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-embermat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "spark-streak",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#FFC080",
+              "alpha": 1
+            },
+            "emission": 0.8
+          }
+        },
+        {
+          "id": "flamethrower-emberbb",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: emberbb",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-emberbb",
+          "params": {
+            "alignment": "velocity",
+            "stretchRatio": 3,
+            "pivot": 0.8,
+            "opacityOverLife": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            },
+            "colorOverLife": {
+              "stops": [
+                {
+                  "position": 0,
+                  "color": {
+                    "srgb": "#FFDC8C",
+                    "alpha": 1
+                  }
+                },
+                {
+                  "position": 1,
+                  "color": {
+                    "srgb": "#FF5A14",
+                    "alpha": 1
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "flamethrower-embertrailmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: embertrailmat",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-embertrailmat",
+          "params": {
+            "template": "SpriteUnlit",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#FF9040",
+              "alpha": 1
+            },
+            "opacity": 0.7
+          }
+        },
+        {
+          "id": "flamethrower-embertrail",
+          "type": "ParticleTrail",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: embertrail",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-embertrail",
+          "params": {
+            "history": 0.05,
+            "width": 0.012,
+            "endFade": 0.4
+          }
+        },
+        {
+          "id": "flamethrower-ignite",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: ignite",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-ignite",
+          "params": {
+            "startTicks": 12,
+            "durationTicks": 11,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "flamethrower-muzzle",
+          "type": "OffsetAnchor",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: muzzle",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-muzzle",
+          "params": {
+            "offset": [
+              0.25,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "id": "flamethrower-flashmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: flashmat",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-flashmat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "soft-glow",
+            "variant": 1,
+            "blend": "additive",
+            "tint": {
+              "srgb": "#FFE0A8",
+              "alpha": 1
+            },
+            "emission": 0.6
+          }
+        },
+        {
+          "id": "flamethrower-flash",
+          "type": "SpriteRenderer",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: flash",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-flash",
+          "params": {
+            "size": 0.9,
+            "sizeOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.35
+                },
+                {
+                  "x": 0.55,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 1
+                }
+              ]
+            },
+            "opacityOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 0.55,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "flamethrower-shake",
+          "type": "CameraImpulse",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: shake",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-shake",
+          "params": {
+            "durationTicks": 18,
+            "translation": 0.03,
+            "rotation": 0.004
+          }
+        },
+        {
+          "id": "flamethrower-lightwin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: lightwin",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-lightwin",
+          "params": {
+            "startTicks": 12,
+            "durationTicks": 114,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "flamethrower-lamp0",
+          "type": "OffsetAnchor",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: lamp0",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-lamp0",
+          "params": {
+            "offset": [
+              1.2,
+              0.3,
+              0
+            ]
+          }
+        },
+        {
+          "id": "flamethrower-light0",
+          "type": "PointLight",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: light0",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-light0",
+          "params": {
+            "color": {
+              "srgb": "#FF7A28",
+              "alpha": 1
+            },
+            "intensity": 16,
+            "range": 3.5,
+            "flicker": 0.25,
+            "flickerRate": 11,
+            "intensityOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.04,
+                  "y": 1
+                },
+                {
+                  "x": 0.73,
+                  "y": 0.95
+                },
+                {
+                  "x": 0.85,
+                  "y": 0.3
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "flamethrower-lamp1",
+          "type": "OffsetAnchor",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: lamp1",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-lamp1",
+          "params": {
+            "offset": [
+              3,
+              0.3,
+              0
+            ]
+          }
+        },
+        {
+          "id": "flamethrower-light1",
+          "type": "PointLight",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: light1",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-light1",
+          "params": {
+            "color": {
+              "srgb": "#FF7A28",
+              "alpha": 1
+            },
+            "intensity": 16,
+            "range": 3.5,
+            "flicker": 0.25,
+            "flickerRate": 11,
+            "intensityOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0.04,
+                  "y": 1
+                },
+                {
+                  "x": 0.73,
+                  "y": 0.95
+                },
+                {
+                  "x": 0.85,
+                  "y": 0.3
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "flamethrower-always",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: always",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-always",
+          "params": {
+            "startTicks": 0,
+            "durationTicks": 240,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "flamethrower-steel",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: steel",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-steel",
+          "params": {
+            "blend": "normal",
+            "tint": {
+              "srgb": "#3A2E26",
+              "alpha": 1
+            },
+            "roughness": 0.55,
+            "metalness": 0.4
+          }
+        },
+        {
+          "id": "flamethrower-barrel",
+          "type": "PropMesh",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: barrel",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-barrel",
+          "params": {
+            "mesh": "cylinder",
+            "size": 0.11,
+            "length": 1.1,
+            "pivot": "end"
+          }
+        },
+        {
+          "id": "flamethrower-legtop",
+          "type": "OffsetAnchor",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: legtop",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-legtop",
+          "params": {
+            "offset": [
+              -0.85,
+              -0.05,
+              0
+            ]
+          }
+        },
+        {
+          "id": "flamethrower-leg",
+          "type": "PropMesh",
+          "definitionVersion": 1,
+          "label": "Fire: flamethrower: leg",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-leg",
+          "params": {
+            "mesh": "cylinder",
+            "size": 0.06,
+            "length": 0.5,
+            "pivot": "start",
+            "direction": [
+              0,
+              -1,
+              0
+            ]
+          }
+        },
+        {
+          "id": "flamethrower-out-visual",
+          "type": "GroupOutput",
+          "definitionVersion": 1,
+          "label": "Out: visual",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-out-visual",
+          "params": {
+            "portId": "visual"
+          }
+        },
+        {
+          "id": "flamethrower-out-presentation",
+          "type": "GroupOutput",
+          "definitionVersion": 1,
+          "label": "Out: presentation",
+          "enabled": true,
+          "randomStreamId": "rs-flamethrower-out-presentation",
+          "params": {
+            "portId": "presentation"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "flamethrower-e-node-source-tonguea",
+          "source": {
+            "nodeId": "flamethrower-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "flamethrower-tonguea",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-node-target-tonguea",
+          "source": {
+            "nodeId": "flamethrower-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "flamethrower-tonguea",
+            "port": "aim"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-emit-tonguea",
+          "source": {
+            "nodeId": "flamethrower-emit",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "flamethrower-tonguea",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-tonguea-tongueaip",
+          "source": {
+            "nodeId": "flamethrower-tonguea",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-tongueaip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-tongueaip-tongueadrag",
+          "source": {
+            "nodeId": "flamethrower-tongueaip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-tongueadrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-tongueadrag-tongueanoise",
+          "source": {
+            "nodeId": "flamethrower-tongueadrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-tongueanoise",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-tongueanoise-tonguealift",
+          "source": {
+            "nodeId": "flamethrower-tongueanoise",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-tonguealift",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-tonguealift-tongueabb",
+          "source": {
+            "nodeId": "flamethrower-tonguealift",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-tongueabb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-tongueamat-tongueabb",
+          "source": {
+            "nodeId": "flamethrower-tongueamat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "flamethrower-tongueabb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-tongueabb-out-visual",
+          "source": {
+            "nodeId": "flamethrower-tongueabb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "flamethrower-out-visual",
+            "port": "in"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-node-source-tongueb",
+          "source": {
+            "nodeId": "flamethrower-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "flamethrower-tongueb",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-node-target-tongueb",
+          "source": {
+            "nodeId": "flamethrower-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "flamethrower-tongueb",
+            "port": "aim"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-emit-tongueb",
+          "source": {
+            "nodeId": "flamethrower-emit",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "flamethrower-tongueb",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-tongueb-tonguebip",
+          "source": {
+            "nodeId": "flamethrower-tongueb",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-tonguebip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-tonguebip-tonguebdrag",
+          "source": {
+            "nodeId": "flamethrower-tonguebip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-tonguebdrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-tonguebdrag-tonguebnoise",
+          "source": {
+            "nodeId": "flamethrower-tonguebdrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-tonguebnoise",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-tonguebnoise-tongueblift",
+          "source": {
+            "nodeId": "flamethrower-tonguebnoise",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-tongueblift",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-tongueblift-tonguebbb",
+          "source": {
+            "nodeId": "flamethrower-tongueblift",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-tonguebbb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-tonguebmat-tonguebbb",
+          "source": {
+            "nodeId": "flamethrower-tonguebmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "flamethrower-tonguebbb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-tonguebbb-out-visual",
+          "source": {
+            "nodeId": "flamethrower-tonguebbb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "flamethrower-out-visual",
+            "port": "in"
+          },
+          "order": 1
+        },
+        {
+          "id": "flamethrower-e-tonguealift-accentbb",
+          "source": {
+            "nodeId": "flamethrower-tonguealift",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-accentbb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-accentmat-accentbb",
+          "source": {
+            "nodeId": "flamethrower-accentmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "flamethrower-accentbb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-accentbb-out-visual",
+          "source": {
+            "nodeId": "flamethrower-accentbb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "flamethrower-out-visual",
+            "port": "in"
+          },
+          "order": 2
+        },
+        {
+          "id": "flamethrower-e-node-source-core",
+          "source": {
+            "nodeId": "flamethrower-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "flamethrower-core",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-node-target-core",
+          "source": {
+            "nodeId": "flamethrower-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "flamethrower-core",
+            "port": "aim"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-emit-core",
+          "source": {
+            "nodeId": "flamethrower-emit",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "flamethrower-core",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-core-coreip",
+          "source": {
+            "nodeId": "flamethrower-core",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-coreip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-coreip-coredrag",
+          "source": {
+            "nodeId": "flamethrower-coreip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-coredrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-coredrag-corenoise",
+          "source": {
+            "nodeId": "flamethrower-coredrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-corenoise",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-corenoise-corebb",
+          "source": {
+            "nodeId": "flamethrower-corenoise",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-corebb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-coremat-corebb",
+          "source": {
+            "nodeId": "flamethrower-coremat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "flamethrower-corebb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-corebb-out-visual",
+          "source": {
+            "nodeId": "flamethrower-corebb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "flamethrower-out-visual",
+            "port": "in"
+          },
+          "order": 3
+        },
+        {
+          "id": "flamethrower-e-tonguealift-smokeeva",
+          "source": {
+            "nodeId": "flamethrower-tonguealift",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-smokeeva",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-tonguealift-embereva",
+          "source": {
+            "nodeId": "flamethrower-tonguealift",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-embereva",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-tongueblift-smokeevb",
+          "source": {
+            "nodeId": "flamethrower-tongueblift",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-smokeevb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-tongueblift-emberevb",
+          "source": {
+            "nodeId": "flamethrower-tongueblift",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-emberevb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-smokeeva-smoke",
+          "source": {
+            "nodeId": "flamethrower-smokeeva",
+            "port": "death"
+          },
+          "target": {
+            "nodeId": "flamethrower-smoke",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-smokeevb-smoke",
+          "source": {
+            "nodeId": "flamethrower-smokeevb",
+            "port": "death"
+          },
+          "target": {
+            "nodeId": "flamethrower-smoke",
+            "port": "trigger"
+          },
+          "order": 1
+        },
+        {
+          "id": "flamethrower-e-smoke-smokeip",
+          "source": {
+            "nodeId": "flamethrower-smoke",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-smokeip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-smokeip-smokedrag",
+          "source": {
+            "nodeId": "flamethrower-smokeip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-smokedrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-smokedrag-smokelift",
+          "source": {
+            "nodeId": "flamethrower-smokedrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-smokelift",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-smokelift-smokenoise",
+          "source": {
+            "nodeId": "flamethrower-smokelift",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-smokenoise",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-smokenoise-smokebb",
+          "source": {
+            "nodeId": "flamethrower-smokenoise",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-smokebb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-smokemat-smokebb",
+          "source": {
+            "nodeId": "flamethrower-smokemat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "flamethrower-smokebb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-smokebb-out-visual",
+          "source": {
+            "nodeId": "flamethrower-smokebb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "flamethrower-out-visual",
+            "port": "in"
+          },
+          "order": 4
+        },
+        {
+          "id": "flamethrower-e-embereva-embers",
+          "source": {
+            "nodeId": "flamethrower-embereva",
+            "port": "death"
+          },
+          "target": {
+            "nodeId": "flamethrower-embers",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-emberevb-embers",
+          "source": {
+            "nodeId": "flamethrower-emberevb",
+            "port": "death"
+          },
+          "target": {
+            "nodeId": "flamethrower-embers",
+            "port": "trigger"
+          },
+          "order": 1
+        },
+        {
+          "id": "flamethrower-e-embers-emberip",
+          "source": {
+            "nodeId": "flamethrower-embers",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-emberip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-emberip-emberdrag",
+          "source": {
+            "nodeId": "flamethrower-emberip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-emberdrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-emberdrag-embergrav",
+          "source": {
+            "nodeId": "flamethrower-emberdrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-embergrav",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-embergrav-embernoise",
+          "source": {
+            "nodeId": "flamethrower-embergrav",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-embernoise",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-embernoise-emberbb",
+          "source": {
+            "nodeId": "flamethrower-embernoise",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-emberbb",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-embermat-emberbb",
+          "source": {
+            "nodeId": "flamethrower-embermat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "flamethrower-emberbb",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-emberbb-out-visual",
+          "source": {
+            "nodeId": "flamethrower-emberbb",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "flamethrower-out-visual",
+            "port": "in"
+          },
+          "order": 5
+        },
+        {
+          "id": "flamethrower-e-embernoise-embertrail",
+          "source": {
+            "nodeId": "flamethrower-embernoise",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "flamethrower-embertrail",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-embertrailmat-embertrail",
+          "source": {
+            "nodeId": "flamethrower-embertrailmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "flamethrower-embertrail",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-embertrail-out-visual",
+          "source": {
+            "nodeId": "flamethrower-embertrail",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "flamethrower-out-visual",
+            "port": "in"
+          },
+          "order": 6
+        },
+        {
+          "id": "flamethrower-e-node-source-muzzle",
+          "source": {
+            "nodeId": "flamethrower-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "flamethrower-muzzle",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-muzzle-flash",
+          "source": {
+            "nodeId": "flamethrower-muzzle",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "flamethrower-flash",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-flashmat-flash",
+          "source": {
+            "nodeId": "flamethrower-flashmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "flamethrower-flash",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-ignite-flash",
+          "source": {
+            "nodeId": "flamethrower-ignite",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "flamethrower-flash",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-flash-out-visual",
+          "source": {
+            "nodeId": "flamethrower-flash",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "flamethrower-out-visual",
+            "port": "in"
+          },
+          "order": 7
+        },
+        {
+          "id": "flamethrower-e-ignite-shake",
+          "source": {
+            "nodeId": "flamethrower-ignite",
+            "port": "start"
+          },
+          "target": {
+            "nodeId": "flamethrower-shake",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-shake-out-presentation",
+          "source": {
+            "nodeId": "flamethrower-shake",
+            "port": "presentation"
+          },
+          "target": {
+            "nodeId": "flamethrower-out-presentation",
+            "port": "in"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-node-source-lamp0",
+          "source": {
+            "nodeId": "flamethrower-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "flamethrower-lamp0",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-lamp0-light0",
+          "source": {
+            "nodeId": "flamethrower-lamp0",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "flamethrower-light0",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-lightwin-light0",
+          "source": {
+            "nodeId": "flamethrower-lightwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "flamethrower-light0",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-light0-out-visual",
+          "source": {
+            "nodeId": "flamethrower-light0",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "flamethrower-out-visual",
+            "port": "in"
+          },
+          "order": 8
+        },
+        {
+          "id": "flamethrower-e-node-source-lamp1",
+          "source": {
+            "nodeId": "flamethrower-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "flamethrower-lamp1",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-lamp1-light1",
+          "source": {
+            "nodeId": "flamethrower-lamp1",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "flamethrower-light1",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-lightwin-light1",
+          "source": {
+            "nodeId": "flamethrower-lightwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "flamethrower-light1",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-light1-out-visual",
+          "source": {
+            "nodeId": "flamethrower-light1",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "flamethrower-out-visual",
+            "port": "in"
+          },
+          "order": 9
+        },
+        {
+          "id": "flamethrower-e-node-source-barrel",
+          "source": {
+            "nodeId": "flamethrower-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "flamethrower-barrel",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-node-target-barrel",
+          "source": {
+            "nodeId": "flamethrower-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "flamethrower-barrel",
+            "port": "aim"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-steel-barrel",
+          "source": {
+            "nodeId": "flamethrower-steel",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "flamethrower-barrel",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-always-barrel",
+          "source": {
+            "nodeId": "flamethrower-always",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "flamethrower-barrel",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-barrel-out-visual",
+          "source": {
+            "nodeId": "flamethrower-barrel",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "flamethrower-out-visual",
+            "port": "in"
+          },
+          "order": 10
+        },
+        {
+          "id": "flamethrower-e-node-source-legtop",
+          "source": {
+            "nodeId": "flamethrower-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "flamethrower-legtop",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-legtop-leg",
+          "source": {
+            "nodeId": "flamethrower-legtop",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "flamethrower-leg",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-steel-leg",
+          "source": {
+            "nodeId": "flamethrower-steel",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "flamethrower-leg",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-always-leg",
+          "source": {
+            "nodeId": "flamethrower-always",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "flamethrower-leg",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "flamethrower-e-leg-out-visual",
+          "source": {
+            "nodeId": "flamethrower-leg",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "flamethrower-out-visual",
+            "port": "in"
+          },
+          "order": 11
+        }
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "id": "ctl-flamethrower-start-at",
+      "scopeGraphId": "graph-flamethrower",
+      "label": "Start at",
+      "type": "integer",
+      "unit": "tick",
+      "value": 0,
+      "default": 0,
+      "min": 0,
+      "max": 588,
+      "step": 1,
+      "section": "Fire: flamethrower",
+      "description": "Delays the whole component (60 ticks = 1 second) so it can play after another one.",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "flamethrower-emit",
+          "parameter": "startTicks",
+          "offset": 12
+        },
+        {
+          "nodeId": "flamethrower-ignite",
+          "parameter": "startTicks",
+          "offset": 12
+        },
+        {
+          "nodeId": "flamethrower-lightwin",
+          "parameter": "startTicks",
+          "offset": 12
+        },
+        {
+          "nodeId": "flamethrower-always",
+          "parameter": "startTicks"
+        }
+      ]
+    },
+    {
+      "id": "ctl-flamethrower-length",
+      "scopeGraphId": "graph-flamethrower",
+      "label": "Jet length (speed)",
+      "type": "number",
+      "unit": "metersPerSecond",
+      "value": 11,
+      "default": 11,
+      "min": 0,
+      "max": 100,
+      "section": "Fire: flamethrower",
+      "description": "Fire: flamethrower: tonguea.speedMax, tonguea.speedMin ×0.7727, tongueb.speedMax, tongueb.speedMin ×0.7727",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "flamethrower-tonguea",
+          "parameter": "speedMax"
+        },
+        {
+          "nodeId": "flamethrower-tonguea",
+          "parameter": "speedMin",
+          "scale": 0.7727
+        },
+        {
+          "nodeId": "flamethrower-tongueb",
+          "parameter": "speedMax"
+        },
+        {
+          "nodeId": "flamethrower-tongueb",
+          "parameter": "speedMin",
+          "scale": 0.7727
+        }
+      ]
+    },
+    {
+      "id": "ctl-flamethrower-width",
+      "scopeGraphId": "graph-flamethrower",
+      "label": "Flame width",
+      "type": "number",
+      "unit": "meter",
+      "value": 0.3,
+      "default": 0.3,
+      "min": 0.0013636983499249967,
+      "max": 20,
+      "section": "Fire: flamethrower",
+      "description": "Fire: flamethrower: tongueaip.sizeMax, tongueaip.sizeMin ×0.7333, tonguebip.sizeMax, tonguebip.sizeMin ×0.7333",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "flamethrower-tongueaip",
+          "parameter": "sizeMax"
+        },
+        {
+          "nodeId": "flamethrower-tongueaip",
+          "parameter": "sizeMin",
+          "scale": 0.7333
+        },
+        {
+          "nodeId": "flamethrower-tonguebip",
+          "parameter": "sizeMax"
+        },
+        {
+          "nodeId": "flamethrower-tonguebip",
+          "parameter": "sizeMin",
+          "scale": 0.7333
+        }
+      ]
+    },
+    {
+      "id": "ctl-flamethrower-density",
+      "scopeGraphId": "graph-flamethrower",
+      "label": "Flame density",
+      "type": "number",
+      "unit": "perSecond",
+      "value": 210,
+      "default": 210,
+      "min": 0,
+      "max": 4096,
+      "section": "Fire: flamethrower",
+      "description": "Fire: flamethrower: tonguea.rate, tongueb.rate",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "flamethrower-tonguea",
+          "parameter": "rate"
+        },
+        {
+          "nodeId": "flamethrower-tongueb",
+          "parameter": "rate"
+        }
+      ]
+    },
+    {
+      "id": "ctl-flamethrower-smoke",
+      "scopeGraphId": "graph-flamethrower",
+      "label": "Smoke amount",
+      "type": "number",
+      "unit": "normalized",
+      "value": 0.08,
+      "default": 0.08,
+      "min": 0,
+      "max": 1,
+      "section": "Fire: flamethrower",
+      "description": "Fire: flamethrower: smokeeva.probability, smokeevb.probability",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "flamethrower-smokeeva",
+          "parameter": "probability"
+        },
+        {
+          "nodeId": "flamethrower-smokeevb",
+          "parameter": "probability"
+        }
+      ]
+    },
+    {
+      "id": "ctl-flamethrower-embers",
+      "scopeGraphId": "graph-flamethrower",
+      "label": "Ember amount",
+      "type": "number",
+      "unit": "normalized",
+      "value": 0.1,
+      "default": 0.1,
+      "min": 0,
+      "max": 1,
+      "section": "Fire: flamethrower",
+      "description": "Fire: flamethrower: embereva.probability, emberevb.probability",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "flamethrower-embereva",
+          "parameter": "probability"
+        },
+        {
+          "nodeId": "flamethrower-emberevb",
+          "parameter": "probability"
+        }
+      ]
+    },
+    {
+      "id": "ctl-flamethrower-burn",
+      "scopeGraphId": "graph-flamethrower",
+      "label": "Burn time",
+      "type": "integer",
+      "unit": "tick",
+      "value": 84,
+      "default": 84,
+      "min": 1,
+      "max": 600,
+      "step": 1,
+      "section": "Fire: flamethrower",
+      "description": "Fire: flamethrower: emit.durationTicks",
+      "editPolicy": "resample",
+      "bindings": [
+        {
+          "nodeId": "flamethrower-emit",
+          "parameter": "durationTicks"
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "editor": {
+    "graphs": {
+      "graph-root": {
+        "nodes": {
+          "node-source": {
+            "x": 0,
+            "y": 0
+          },
+          "node-target": {
+            "x": 0,
+            "y": 160
+          },
+          "node-output": {
+            "x": 1040,
+            "y": 0
+          },
+          "flamethrower": {
+            "x": -300,
+            "y": 320
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      },
+      "graph-flamethrower": {
+        "nodes": {
+          "flamethrower-emit": {
+            "x": 0,
+            "y": 0
+          },
+          "flamethrower-tonguea": {
+            "x": 260,
+            "y": 0
+          },
+          "flamethrower-tongueaip": {
+            "x": 520,
+            "y": 0
+          },
+          "flamethrower-tongueadrag": {
+            "x": 780,
+            "y": 0
+          },
+          "flamethrower-tongueanoise": {
+            "x": 1040,
+            "y": 0
+          },
+          "flamethrower-tonguealift": {
+            "x": 1300,
+            "y": 0
+          },
+          "flamethrower-tongueamat": {
+            "x": 0,
+            "y": 170
+          },
+          "flamethrower-tongueabb": {
+            "x": 260,
+            "y": 170
+          },
+          "flamethrower-tongueb": {
+            "x": 520,
+            "y": 170
+          },
+          "flamethrower-tonguebip": {
+            "x": 780,
+            "y": 170
+          },
+          "flamethrower-tonguebdrag": {
+            "x": 1040,
+            "y": 170
+          },
+          "flamethrower-tonguebnoise": {
+            "x": 1300,
+            "y": 170
+          },
+          "flamethrower-tongueblift": {
+            "x": 0,
+            "y": 340
+          },
+          "flamethrower-tonguebmat": {
+            "x": 260,
+            "y": 340
+          },
+          "flamethrower-tonguebbb": {
+            "x": 520,
+            "y": 340
+          },
+          "flamethrower-accentmat": {
+            "x": 780,
+            "y": 340
+          },
+          "flamethrower-accentbb": {
+            "x": 1040,
+            "y": 340
+          },
+          "flamethrower-core": {
+            "x": 1300,
+            "y": 340
+          },
+          "flamethrower-coreip": {
+            "x": 0,
+            "y": 510
+          },
+          "flamethrower-coredrag": {
+            "x": 260,
+            "y": 510
+          },
+          "flamethrower-corenoise": {
+            "x": 520,
+            "y": 510
+          },
+          "flamethrower-coremat": {
+            "x": 780,
+            "y": 510
+          },
+          "flamethrower-corebb": {
+            "x": 1040,
+            "y": 510
+          },
+          "flamethrower-smokeeva": {
+            "x": 1300,
+            "y": 510
+          },
+          "flamethrower-embereva": {
+            "x": 0,
+            "y": 680
+          },
+          "flamethrower-smokeevb": {
+            "x": 260,
+            "y": 680
+          },
+          "flamethrower-emberevb": {
+            "x": 520,
+            "y": 680
+          },
+          "flamethrower-smoke": {
+            "x": 780,
+            "y": 680
+          },
+          "flamethrower-smokeip": {
+            "x": 1040,
+            "y": 680
+          },
+          "flamethrower-smokedrag": {
+            "x": 1300,
+            "y": 680
+          },
+          "flamethrower-smokelift": {
+            "x": 0,
+            "y": 850
+          },
+          "flamethrower-smokenoise": {
+            "x": 260,
+            "y": 850
+          },
+          "flamethrower-smokemat": {
+            "x": 520,
+            "y": 850
+          },
+          "flamethrower-smokebb": {
+            "x": 780,
+            "y": 850
+          },
+          "flamethrower-embers": {
+            "x": 1040,
+            "y": 850
+          },
+          "flamethrower-emberip": {
+            "x": 1300,
+            "y": 850
+          },
+          "flamethrower-emberdrag": {
+            "x": 0,
+            "y": 1020
+          },
+          "flamethrower-embergrav": {
+            "x": 260,
+            "y": 1020
+          },
+          "flamethrower-embernoise": {
+            "x": 520,
+            "y": 1020
+          },
+          "flamethrower-embermat": {
+            "x": 780,
+            "y": 1020
+          },
+          "flamethrower-emberbb": {
+            "x": 1040,
+            "y": 1020
+          },
+          "flamethrower-embertrailmat": {
+            "x": 1300,
+            "y": 1020
+          },
+          "flamethrower-embertrail": {
+            "x": 0,
+            "y": 1190
+          },
+          "flamethrower-ignite": {
+            "x": 260,
+            "y": 1190
+          },
+          "flamethrower-muzzle": {
+            "x": 520,
+            "y": 1190
+          },
+          "flamethrower-flashmat": {
+            "x": 780,
+            "y": 1190
+          },
+          "flamethrower-flash": {
+            "x": 1040,
+            "y": 1190
+          },
+          "flamethrower-shake": {
+            "x": 1300,
+            "y": 1190
+          },
+          "flamethrower-lightwin": {
+            "x": 0,
+            "y": 1360
+          },
+          "flamethrower-lamp0": {
+            "x": 260,
+            "y": 1360
+          },
+          "flamethrower-light0": {
+            "x": 520,
+            "y": 1360
+          },
+          "flamethrower-lamp1": {
+            "x": 780,
+            "y": 1360
+          },
+          "flamethrower-light1": {
+            "x": 1040,
+            "y": 1360
+          },
+          "flamethrower-always": {
+            "x": 1300,
+            "y": 1360
+          },
+          "flamethrower-steel": {
+            "x": 0,
+            "y": 1530
+          },
+          "flamethrower-barrel": {
+            "x": 260,
+            "y": 1530
+          },
+          "flamethrower-legtop": {
+            "x": 520,
+            "y": 1530
+          },
+          "flamethrower-leg": {
+            "x": 780,
+            "y": 1530
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      }
+    },
+    "openedGraphId": "graph-root"
+  }
+}

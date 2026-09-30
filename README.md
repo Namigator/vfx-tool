@@ -1,77 +1,80 @@
 # VFX Studio
 
-An early browser implementation of the Elemental VFX Studio plan. Everything for this project lives in `F:\Dev2\VFX-Tool`.
+A browser tool for building visual effects (spells, elements, impacts) as editable node graphs, with a
+deterministic 60 Hz simulation, a Three.js preview, ready-made components for ten elements, and an MCP server so
+AI agents can do everything the editor can. Everything lives in `F:\Dev2\VFX-Tool`.
 
-## Evidence and current limits
+## Start
 
-- [RAN] TypeScript compile and Vite production build pass.
-- [RAN] 46 tests pass: generation, seeded repeatability, lifecycle, validation, recipe and bundle round-trips, PCM audio, editor history/transport/numeric commits, and simulated Web Audio cleanup.
-- [PROXY] Ten effect generators and their 3D renderer are implemented. The current build has NOT been visually inspected: browser control reported no available browsers and the user's screenshot utilities are absent.
-- [UNVERIFIED] Browser interaction behavior, cross-browser rendering, and 60 FPS targets remain unverified.
-- [UNVERIFIED] Audio signals pass numerical checks, but the sounds have not been listened to. Actual audiovisual synchronization is unverified.
-- This is an early implementation, not the completed acceptance gate from PLAN.md. Engine exporters are not implemented.
+Double-click `Start-VFX.cmd` (keep its window open), then open **http://127.0.0.1:5174/** in Chrome or Edge.
+Effects made with the old editor open through **Import old effect** (an editable copy; the original is unchanged).
 
-## Launch
-
-Double-click `Start-VFX.cmd`, then visit **http://127.0.0.1:5174/** in Chrome, Edge, or another WebGL2 browser. Keep the launched terminal running while using the editor. A running development server may already be using that port.
-
-With Node available on PATH, these commands also work from this directory:
+Manual commands (Node 24+):
 
 ```text
-node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5174 --strictPort
-node node_modules/typescript/bin/tsc --noEmit
-node --experimental-strip-types --test tests/*.test.ts
-node node_modules/vite/bin/vite.js build
+node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5174 --strictPort   # dev server
+bash tools/gate.sh                                                                 # type-check + all tests
+node node_modules/vite/bin/vite.js build                                           # production build -> dist/
 ```
 
-Dependencies are installed and locked by `pnpm-lock.yaml`. Reinstall with `pnpm install --frozen-lockfile --ignore-scripts` if needed. The tested runtime is Node 24.3.0. No installation is needed for each launch. The `dist` directory contains a production build and must be served over HTTP; don't double-click its HTML file.
+`dist/` must be served over HTTP (e.g. `vite preview`), not opened as a file.
 
-## Editing
+## Using the editor
 
-- Select an element on the left; edit settings on the right.
-- Drag to orbit, scroll to zoom; Reset camera restores the initial view.
-- Play/pause, restart, advance one frame, or scrub the timeline. Space toggles playback when no control is focused.
-- Topology/timing changes restart a playing effect. When paused, the new recipe is sampled at the current time for comparison.
-- Slow motion and scrubbing are silent. Click Sound on to enable normal-speed audio after a user gesture.
-- Save preset stores a variation in this browser's local storage. It is not a filesystem backup. Up to 50 presets are retained; the editor refuses additional saves rather than silently dropping earlier entries.
-- Download JSON saves editable recipe data. Import JSON accepts those recipes and version-1 effect bundles.
-- Open Sound to download a PCM16 mono 48 kHz WAV, or a self-contained effect bundle containing recipe, WAV, and units/version manifest.
-- Bundle import restores authored controls and regenerates procedural sound. It does not ingest arbitrary external audio or execute code.
-- Undo/redo applies to authored recipe changes; one slider drag creates one undo entry. Camera movement is separate. Numeric fields commit on Enter or blur and revert invalid drafts.
+- **Library** (left, or the Library button): **Presets** open a ready-made effect as a new effect, **Components** and
+  **My Blocks** insert into the open one, **Assets** lists the included sprites and your imports. Search filters by
+  name, element or type.
+- **Add component** (below the preview): pick a ready-made effect (49 built-in, plus *My components*) and press
+  Insert. It arrives as one component box; its knobs appear under **Controls** on the right.
+- **Play / Restart / scrub** the timeline under the preview; ◀ ▶ step one tick, 0.25x/0.5x/1x speed, New seed each loop,
+  Reset camera, Grid on/off (also hides the Source/Target markers). Selecting a node dims everything it does not draw. **Glow**, **Dark/Light arena**, **Quality** and
+  **Reduced effects** only change the preview, never the effect.
+- **Start at** (every component) delays it, so parts play in sequence (charge → shot → impact).
+- **Graph**: drag nodes, connect ports, select a node to edit it on the right. Double-click a component (or Open
+  internals) to see inside; the breadcrumb goes back. Shift+click several nodes → **Group selection**. Select a
+  component → **Save as my component** to reuse it anywhere. Delete key removes the selection; Enter opens a component.
+  Ctrl+D duplicates, Ctrl+C/V copy and paste (also between effects), right-click for the menu (Duplicate with the same
+  random pattern, Delete and reconnect, Solo). Drag from a port into empty space to add a connected node.
+- **Inspector**: curve and gradient editors (drag points or type values), Disconnect / Unbind / Jump to driver on
+  driven fields, Reset block. An error in the list opens its node and field.
+- **Outline (parts list)** on the right lists the parts for keyboard/screen-reader use: select, switch on/off, open.
+- **Files**: Keep (project list in this browser), Projects, Remove (goes to Trash, restorable), Save .json, Open…,
+  Export pack (.vfxpack with imported images/models). Everything autosaves; the last five versions are kept. Two tabs
+  on the same effect never overwrite each other.
+- **Import old effect**: pick an effect made with the old editor (or open its file) and press **Import** — a new
+  editable copy is made and a report lists what was converted. The original is never changed.
+- **Imported assets**: import PNG/WebP/JPEG textures as colour, mask, normal map or noise (flipbook grid and playback
+  preview) and GLB models (with a picture and real size). **Add to effect** inserts a ready-made component that uses
+  the asset; **Use on selected Material/MeshRenderer** applies it to an existing part. Relink, Remove and Clean up
+  unused files keep the local library tidy.
 
-## Elements
+## For AI agents (MCP)
 
-Lightning arc; fire plume; ice shards; water arc and droplets; wind helix; earth rocks and dust; light rays; shadow vortex; poison cloud; energy projectile. `presets/` contains ten editable defaults and corresponding WAV files.
+`.mcp.json` registers the `vfx` server (`mcp/vfx-mcp-reload.mjs`, which restarts itself when the code changes). Its
+tools mirror every editor action (the map is in `STATE.md`, "Standing rule: MCP parity"): documents, nodes, edges,
+knobs, components, groups, user components, imports, packs, legacy conversion, undo/redo, compile (with event and
+tail reports), headless frame rendering (with camera, glow, lit/bright statistics), contact sheets, image comparison,
+particle sampling, audio rendering, and `vfx_guide` (authoring recipes per element, materials, curves and workflow tools).
+`node mcp/run-steps.mjs <file>` runs a scripted list of tool calls (see `mcp/examples/*.steps.json`).
 
-These are stylized procedural primitives. Particle motion is analytically sampled and repeated during the active phase, fading in decay. It is not persistent fluid, smoke, collision, destruction, or rigid-body simulation. Later visual review may require substantial art-direction changes.
+## Where things are
 
-## Structure
+- `src/model/` — document format, validation, controls/knobs, persistence, packs, legacy migration.
+- `src/graph/` — node registry, graph analysis, compilers (particles, paths, audio), components, grouping.
+- `src/runtime/` — deterministic particle and path simulation.
+- `src/render/` — preview viewport (particles, ribbons, meshes, lights, bloom), built-in meshes.
+- `src/editor/` + `src/PreviewV2.tsx` — the editor. `src/core/` — the old effect format, kept only so old effects can be imported.
+- `tools/` — sprite baker, component builder, per-element recipe generators, `gate.sh`.
+- `mcp/` — MCP server, examples, guide, image tools.
+- `docs/v2-plan/` — the plan; `27-GAP-AUDIT.md` tracks what was built with evidence; `evidence/` holds measurements.
+- `licenses/` — third-party licences (all MIT) and the note that every included asset is procedural.
 
-- `PLAN.md` — planned scope and acceptance gates.
-- `STATE.md` — latest status, limitations, next steps.
-- `src/core/types.ts` — portable data contracts and world-space primitives.
-- `src/core/recipe.ts` — typed settings, ranges, defaults, strict import validation.
-- `src/core/generator.ts` — seeded, 60 Hz sampled geometry for ten families; no renderer imports.
-- `src/core/bundle.ts` — portable recipe + audio package.
-- `src/render/Viewport.ts` — Three.js renderer, reusable geometry pools, particles, bloom, floor, orbit camera.
-- `src/audio/synth.ts` — deterministic waveform generation, WAV encoding, gesture-unlocked playback.
-- `src/App.tsx` — editor, playback, history, presets and diagnostics.
-- `tests/` — Node test suite.
-- `evidence/preset-metrics.json` — actual generated counts and audio statistics, explicitly not visual evidence.
-- `licenses/` — license notices for bundled production libraries.
+## Known limits
 
-## Portability boundary
-
-Recipes use meters, seconds, Y-up right-handed coordinates, hex sRGB colors, stable parameter keys, a seed, and schema/generator versions. No Three.js objects or shaders are saved. The browser converts this description into visuals. The family algorithms still need native implementation in a future engine adapter; JSON alone is not an engine-export implementation. The v1 schema exposes family parameters rather than a general editable node/layer graph.
-
-Glow and the floor are preview features. Fixed-tick sampling gives repeatability within the reference implementation; no pixel-identical rendering across devices or engines is claimed. Renderer pools have bounded capacities, and shape-count controls match the implemented per-family limits. Diagnostics show recent browser frame intervals, not GPU execution times or a hardware-qualified performance certification.
-
-See `TEST-WHEN-HOME.md` for a short manual test sequence. `evidence/cpu-sampling.json` records 30 configurations / 7200 sampled frames; it measures CPU geometry generation only, not GPU or browser frame rate.
-
-## Remaining acceptance work
-
-1. Connect a browser; capture all elements through their phases and at multiple angles; correct visual defects.
-2. Exercise numeric controls, pause/seek/restart, sound, history, preset save/reopen, JSON/bundle import and downloads in the actual UI.
-3. Listen to each sound and measure audiovisual synchronization.
-4. Run sustained, hardware-qualified frame-time and resource-lifetime checks. Inspect low/high parameter extremes and background/glow variants.
-5. Broaden schema/layer editability and compatibility fixtures only after the first end-to-end workflow is accepted.
+- Sound: the audio graph works (layered synthesis, filters, WAV export) but the effects' sounds were parked by the
+  user and have not been listened to or tuned.
+- Simulation runs on the main thread (measured < 1 ms per tick on average; a worker was not needed).
+- No engine exporters yet (Unity/Unreal/Godot); documents are engine-neutral JSON.
+- Performance figures in `docs/v2-plan/evidence/` are CPU costs on one machine (draw 1–8 ms, edit+compile p95 128 ms,
+  seek p95 85 ms); GPU time is not isolated and real fps needs a focused browser window.
+- Local particle space is not supported (world space only); refraction and liquid shading are preview enhancements.

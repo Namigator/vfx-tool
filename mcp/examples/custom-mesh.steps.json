@@ -1,0 +1,672 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "rocks"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "rocks",
+   "durationTicks": 150
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "rocks",
+   "anchorId": "target",
+   "position": [
+    0,
+    0.1,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "Schedule",
+   "id": "hit",
+   "params": {
+    "startTicks": 5,
+    "durationTicks": 1,
+    "mode": "once"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "Emitter",
+   "id": "debris",
+   "params": {
+    "shape": "cone",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "coneAngle": 0.7,
+    "radius": 0.3,
+    "burst": 36,
+    "rate": 0,
+    "speedMin": 3,
+    "speedMax": 7,
+    "lifetimeMin": 2,
+    "lifetimeMax": 2.4
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "InitialProperties",
+   "id": "rockip",
+   "params": {
+    "sizeMin": 0.08,
+    "sizeMax": 0.22,
+    "rotationMin": 0,
+    "rotationMax": 6.28,
+    "angularVelocityMin": -9,
+    "angularVelocityMax": 9,
+    "color": {
+     "srgb": "#8A6E55",
+     "alpha": 1
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "Gravity",
+   "id": "grav"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "Drag",
+   "id": "drag",
+   "params": {
+    "coefficient": 0.15
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "GroundCollision",
+   "id": "ground",
+   "params": {
+    "mode": "bounce",
+    "restitution": 0.25,
+    "friction": 0.7,
+    "maxBounces": 2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "Material",
+   "id": "rockmat",
+   "params": {
+    "blend": "normal"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "MeshRenderer",
+   "id": "rockmesh",
+   "params": {
+    "mesh": "rock-a",
+    "orientation": "tumble"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "Emitter",
+   "id": "dust",
+   "params": {
+    "shape": "disc",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "radius": 0.5,
+    "burst": 40,
+    "rate": 0,
+    "speedMin": 0.5,
+    "speedMax": 2,
+    "lifetimeMin": 1.2,
+    "lifetimeMax": 2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "InitialProperties",
+   "id": "dustip",
+   "params": {
+    "sizeMin": 0.5,
+    "sizeMax": 0.9,
+    "rotationMin": 0,
+    "rotationMax": 6.28,
+    "angularVelocityMin": -0.5,
+    "angularVelocityMax": 0.5,
+    "color": {
+     "srgb": "#8C7A66",
+     "alpha": 1
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "Gravity",
+   "id": "dustlift",
+   "params": {
+    "acceleration": [
+     0,
+     0.4,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "Drag",
+   "id": "dustdrag",
+   "params": {
+    "coefficient": 2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "Material",
+   "id": "dustmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "blend": "normal",
+    "opacity": 0.55
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "BillboardRenderer",
+   "id": "dustbb",
+   "params": {
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.6
+      },
+      {
+       "x": 1,
+       "y": 2.2
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.1,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "node-target.out",
+   "to": "debris.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "hit.start",
+   "to": "debris.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "debris.particles",
+   "to": "rockip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "rockip.particles",
+   "to": "grav.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "grav.particles",
+   "to": "drag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "drag.particles",
+   "to": "ground.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "ground.particles",
+   "to": "rockmesh.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "rockmat.material",
+   "to": "rockmesh.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "node-target.out",
+   "to": "dust.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "hit.start",
+   "to": "dust.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "dust.particles",
+   "to": "dustip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "dustip.particles",
+   "to": "dustlift.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "dustlift.particles",
+   "to": "dustdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "dustdrag.particles",
+   "to": "dustbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "dustmat.material",
+   "to": "dustbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "dustbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "rockmesh.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "AudioMix",
+   "id": "sfx-mix",
+   "params": {
+    "masterGain": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "AudioOutput",
+   "id": "sfx-out",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "AudioSource",
+   "id": "sfx-rumble",
+   "params": {
+    "source": "noise",
+    "noiseColor": "brown",
+    "durationTicks": 90,
+    "gain": 1.8
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "hit.start",
+   "to": "sfx-rumble.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "AudioFilter",
+   "id": "sfx-rumble-f",
+   "params": {
+    "mode": "lowpass",
+    "cutoffHz": 700,
+    "cutoffEndHz": 110,
+    "q": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "sfx-rumble.audio",
+   "to": "sfx-rumble-f.audio"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "AudioEnvelope",
+   "id": "sfx-rumble-e",
+   "params": {
+    "attack": 0.005,
+    "hold": 0.1,
+    "release": 1.2,
+    "curve": "exponential"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "sfx-rumble-f.audio",
+   "to": "sfx-rumble-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "sfx-rumble-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "AudioSource",
+   "id": "sfx-thump",
+   "params": {
+    "source": "chirp",
+    "chirpStartHz": 90,
+    "chirpEndHz": 32,
+    "chirpSweep": "exponential",
+    "durationTicks": 36,
+    "gain": 1.2
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "hit.start",
+   "to": "sfx-thump.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "AudioEnvelope",
+   "id": "sfx-thump-e",
+   "params": {
+    "attack": 0.002,
+    "hold": 0.03,
+    "release": 0.5,
+    "curve": "exponential"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "sfx-thump.audio",
+   "to": "sfx-thump-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "sfx-thump-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "AudioSource",
+   "id": "sfx-clatter",
+   "params": {
+    "source": "noise",
+    "noiseColor": "white",
+    "durationTicks": 70,
+    "gain": 0.35
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "hit.start",
+   "to": "sfx-clatter.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "AudioFilter",
+   "id": "sfx-clatter-f",
+   "params": {
+    "mode": "bandpass",
+    "cutoffHz": 1800,
+    "cutoffEndHz": 900,
+    "q": 1.5
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "sfx-clatter.audio",
+   "to": "sfx-clatter-f.audio"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "AudioEnvelope",
+   "id": "sfx-clatter-e",
+   "params": {
+    "attack": 0.02,
+    "hold": 0.3,
+    "release": 0.8,
+    "curve": "exponential"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "sfx-clatter-f.audio",
+   "to": "sfx-clatter-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "sfx-clatter-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "sfx-mix.audio",
+   "to": "sfx-out.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "sfx-out.audio",
+   "to": "node-output.audio"
+  }
+ ],
+ [
+  "vfx_import_mesh",
+  {
+   "docId": "rocks",
+   "path": "mcp/examples/assets/star.glb",
+   "rendererId": "rockmesh"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "rocks"
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "rocks",
+   "ticks": [
+    30
+   ]
+  },
+  true
+ ],
+ [
+  "vfx_render_audio",
+  {
+   "docId": "rocks"
+  },
+  true
+ ]
+]

@@ -1,0 +1,724 @@
+// VFX Studio MCP server (19-WORK-PACKAGES "Agent tooling", WP-MCP1 headless core). Tools wrap the same
+// pure modules the editor uses — registry, document validation, particle/path/audio compilers and the
+// particle runtime — so there is no MCP-only behaviour. Documents live in memory and are mirrored to
+// work/mcp/<id>.json after every successful change, which the editor opens via ?workspace=v2&doc=...
+import { hueShiftToward } from '../src/graph/recolor.ts';
+import { canKeyframe, controlValueAt } from '../src/graph/keyframes.ts';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { chromeEval } from './chromeEval.ts';
+import { MEDIA_FORMATS, mediaExtension, resolveMediaOptions, type MediaFormat } from '../src/export/media/layout.ts';
+import { compositeChecker } from '../src/export/media/matte.ts';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
+import type { Diagnostic, EffectDocumentV2, NodeDefinition, ParameterValue, Vec3 } from '../src/model/types.ts';
+import { validateDocument } from '../src/model/document.ts';
+import { createRegistry } from '../src/graph/registry.ts';
+import { createBlankDocument, createF01Document, createForcesDemoDocument, createL01Document } from '../src/graph/fixtures.ts';
+import { COMPONENT_TEMPLATES, eventSources, insertComponent, startComponentOnEvent } from '../src/graph/components.ts';
+import { assetComponent } from '../src/graph/assetComponent.ts';
+import { groupSelection } from '../src/graph/groupSelection.ts';
+import { insertUserComponent, saveGroupAsComponent, type UserComponent } from '../src/graph/userComponents.ts';
+import { grownDuration, truncationWarning } from '../src/graph/truncation.ts';
+import { describeFrameStats, pngFrameStats } from './frameStats.ts';
+import { guideText } from './guide.ts';
+import { decodePng, downscale, encodePng, grid, meanDifference, type Rgba } from './imageTools.ts';
+import { convertLegacyRecipe, formatMigrationReport } from '../src/model/migrate.ts';
+import { createRecipe, parseRecipe } from '../src/core/recipe.ts';
+import { FAMILIES } from '../src/core/types.ts';
+import { createL01AudioDocument } from '../src/graph/audioFixtures.ts';
+import { compileParticlePreview } from '../src/graph/toParticles.ts';
+import { compilePathPreview } from '../src/graph/toPaths.ts';
+import { robloxEffectFrom } from '../src/export/roblox/fromPlan.ts';
+import { writeRbxmx } from '../src/export/roblox/rbxmx.ts';
+import { effectPlayerSource } from '../src/export/roblox/playerSource.node.ts';
+import { reportMarkdown } from '../src/export/roblox/report.ts';
+import { timelineInfo, timelineLanes } from '../src/render/timeline.ts';
+import { compileAudio } from '../src/graph/toAudio.ts';
+import { sampleParticlesAtTick } from '../src/runtime/particles.ts';
+import { encodeWavPcm16Stereo } from '../src/audio/wav.ts';
+import { describePack, jsonExportWarning, pinBuiltins, referencedBuiltinSprites } from '../src/model/packBuiltins.ts';
+import { BUILTIN_SPRITES } from '../src/assets/builtinSprites.generated.ts';
+import type { SpriteSheet } from '../src/assets/spriteLibrary.ts';
+import { createTextureAsset, sha256Hex } from '../src/assets/importTexture.ts';
+import { hasRootAudio } from '../src/render/previewMode.ts';
+import { copySelection, duplicateSelection, parseClipboard, pasteSelection, removeAndReconnect } from '../src/editor/graphOps.ts';
+import { assetReferences, relinkVerdict, removeAssetPatches } from '../src/model/assetRefs.ts';
+import { unusedAssetHashes } from '../src/model/assetStore.ts';
+import { portabilityReport } from '../src/graph/portability.ts';
+import { createMeshAsset } from '../src/assets/importMesh.ts';
+import { buildPack, readPack, type PackAsset } from '../src/model/vfxpack.ts';
+
+export type VfxServerOptions = { root?: string; editorUrl?: string; chromePath?: string };
+
+const CHROME_CANDIDATES = [
+  process.env.VFX_CHROME, 'C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', '/usr/bin/google-chrome', '/usr/bin/chromium', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+];
+
+const TEMPLATES = ['blank', 'f01', 'forces', 'lightning', 'lightning-audio'] as const;
+const ID = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
+
+type Content = { type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string };
+type Result = { content: Content[]; isError?: boolean };
+const ok = (text: string): Result => ({ content: [{ type: 'text', text }] });
+const bad = (text: string): Result => ({ content: [{ type: 'text', text }], isError: true });
+const fmtErrors = (errors: Diagnostic[]) => errors.map(e => `- [${e.code}]${e.nodeId ? ` ${e.nodeId}` : ''}${e.fieldPath ? ` (${e.fieldPath})` : ''}: ${e.message}`).join('\n');
+
+export function createVfxServer(options: VfxServerOptions = {}): McpServer {
+  const root = resolve(options.root ?? process.cwd());
+  const editorUrl = options.editorUrl ?? 'http://127.0.0.1:5174/';
+  const registry = createRegistry();
+  const docs = new Map<string, EffectDocumentV2>();
+  const server = new McpServer({ name: 'vfx-studio', version: '0.1.0' });
+
+  const mirrorPath = (id: string) => join(root, 'work', 'mcp', `${id}.json`);
+  const persist = (d: EffectDocumentV2) => { mkdirSync(dirname(mirrorPath(d.id)), { recursive: true }); writeFileSync(mirrorPath(d.id), JSON.stringify(d, null, 2)); };
+  const getDoc = (id: string) => {
+    let d = docs.get(id);
+    // After an automatic server reload (mcp/vfx-mcp-reload.mjs) open documents come back from their mirror.
+    if (!d && /^[A-Za-z0-9_-]+$/.test(id) && existsSync(mirrorPath(id))) {
+      const v = validateDocument(JSON.parse(readFileSync(mirrorPath(id), 'utf8')), { registry });
+      if (v.ok) { d = v.value; docs.set(id, d); }
+    }
+    if (!d) throw new Error(`No open document "${id}". Open ones: ${[...docs.keys()].join(', ') || 'none'}.`);
+    return d;
+  };
+  const rootGraph = (d: EffectDocumentV2, graphId?: string) => {
+    const g = d.graphs.find(x => x.id === (graphId ?? d.rootGraphId));
+    if (!g) throw new Error(`Graph "${graphId}" not found.`);
+    return g;
+  };
+  /** Applies a mutation to a copy; commits only if the result passes structural validation. */
+  const mutate = (id: string, fn: (d: EffectDocumentV2) => string): Result => {
+    const next = structuredClone(getDoc(id));
+    const msg = fn(next);
+    const v = validateDocument(next, { registry });
+    if (!v.ok) return bad(`Rejected (document unchanged):\n${fmtErrors(v.errors)}`);
+    // Undo/redo like the editor: every committed change pushes the previous version (max 100 per document).
+    const past = undo.get(id) ?? [];
+    past.push(getDoc(id)); if (past.length > 100) past.shift();
+    undo.set(id, past); redo.delete(id);
+    docs.set(id, v.value); persist(v.value);
+    return ok(msg);
+  };
+  const undo = new Map<string, EffectDocumentV2[]>(), redo = new Map<string, EffectDocumentV2[]>();
+  const tool = <S extends z.ZodRawShape>(name: string, description: string, shape: S, fn: (a: z.infer<z.ZodObject<S>>) => Result | Promise<Result>) =>
+    server.registerTool(name, { description, inputSchema: shape }, (async (a: z.infer<z.ZodObject<S>>) => {
+      try { return await fn(a); } catch (e) { return bad(e instanceof Error ? e.message : String(e)); }
+    }) as never);
+
+  // ---------- catalog ----------
+  tool('vfx_list_node_types', 'List registered node types with their ports. Use vfx_describe_node_type for parameters.', { filter: z.string().optional() }, ({ filter }) => {
+    const lines = [...registry.values()].filter(s => !filter || s.type.toLowerCase().includes(filter.toLowerCase())).map(s =>
+      `${s.type}  in[${s.inputs.map(p => `${p.id}:${p.type}${p.required ? '!' : ''}`).join(', ')}]  out[${s.outputs.map(p => `${p.id}:${p.type}`).join(', ')}]`);
+    return ok(lines.join('\n'));
+  });
+  tool('vfx_describe_node_type', 'Parameters (id, type, unit, default, bounds, choices, description) and ports of one node type.', { type: z.string() }, ({ type }) => {
+    const s = [...registry.values()].find(x => x.type === type);
+    if (!s) return bad(`Unknown node type "${type}".`);
+    return ok(JSON.stringify({ type: s.type, disabledBehavior: s.disabledBehavior, inputs: s.inputs, outputs: s.outputs, parameters: s.parameters }, null, 1));
+  });
+
+  tool('vfx_guide', 'The VFX Studio guide. No arguments = index of chapters with one-line summaries. { topic } = a chapter (readme, concepts, workflow, look, troubleshooting, export, editor, recipes/<family>, reference/<name>) or one of the short topics (basics, glow, fire, smoke, sparks, beams, projectile, props, materials, values, tools). { topic, section } = only one "##" section of it. { node: "Emitter" } = that node type\'s entry (ports, parameters, ranges) from reference/nodes; { component: "flamethrower" } = that component\'s knobs. Read "readme", "concepts" and "workflow" before building; read the family recipe for what you are making.', {
+    topic: z.string().optional(), section: z.string().optional(), node: z.string().optional(), component: z.string().optional(),
+  }, ({ topic, section, node, component }) => ok(guideText({ topic, section, node, component })));
+
+  tool('vfx_convert_legacy', 'Convert an old (v1) effect into a NEW editable graph document (the v1 file is never changed), like the editor Legacy v1 > Convert a copy. Give a v1 recipe/bundle JSON path, or a family name for its v1 default. Returns the conversion report.', {
+    path: z.string().optional(), family: z.enum(FAMILIES).optional(), docId: z.string().regex(ID).optional(),
+  }, ({ path, family, docId }) => {
+    if (!path === !family) return bad('Give exactly one of path or family.');
+    const recipe = path ? parseRecipe(readFileSync(safeProjectPath(path), 'utf8')) : createRecipe(family!);
+    const { doc, report } = convertLegacyRecipe(recipe);
+    if (docId) doc.id = docId;
+    const v = validateDocument(doc, { registry });
+    if (!v.ok) return bad(`Conversion produced an invalid document:
+${fmtErrors(v.errors)}`);
+    docs.set(v.value.id, v.value); persist(v.value);
+    return ok(`Created "${v.value.id}". Mirror: work/mcp/${v.value.id}.json
+${formatMigrationReport(report)}`);
+  });
+
+  // ---------- documents ----------
+  tool('vfx_new_document', `Create an in-memory document from a template (${TEMPLATES.join(', ')}). "blank" has Source/Target anchors and an EffectOutput only. component="<id>" opens a preset: blank + that component as one Group (the editor Library's Presets → Open).`,
+    { template: z.enum(TEMPLATES), id: z.string().regex(ID).optional(), name: z.string().optional(), component: z.string().optional() }, ({ template, id, name, component }) => {
+      let fresh = template === 'blank' ? createBlankDocument('doc', 'Blank') : template === 'f01' ? createF01Document() : template === 'forces' ? createForcesDemoDocument()
+        : template === 'lightning' ? createL01Document() : createL01AudioDocument();
+      fresh.id = id ?? `doc-${template}-${docs.size + 1}`;
+      if (component) { try { fresh = { ...insertComponent(fresh, component, undefined, { group: true }).doc, id: fresh.id }; } catch (e) { return bad(e instanceof Error ? e.message : String(e)); } }
+      if (name) fresh.name = name; else if (template === 'blank') fresh.name = fresh.id;
+      const v = validateDocument(fresh, { registry });
+      if (!v.ok) return bad(fmtErrors(v.errors));
+      docs.set(fresh.id, v.value); persist(v.value);
+      return ok(`Created "${fresh.id}" from ${template}. Mirror: work/mcp/${fresh.id}.json`);
+    });
+  tool('vfx_open_document', 'Open a document JSON file (path relative to the project root) into memory.', { path: z.string() }, ({ path }) => {
+    const v = validateDocument(JSON.parse(readFileSync(resolve(root, path), 'utf8')), { registry });
+    if (!v.ok) return bad(fmtErrors(v.errors));
+    docs.set(v.value.id, v.value); persist(v.value);
+    return ok(`Opened "${v.value.id}".`);
+  });
+  tool('vfx_save_document', 'Write a document to a JSON file (path relative to the project root; default presets/<id>.vfx.json).', { docId: z.string(), path: z.string().optional() }, ({ docId, path }) => {
+    const p = resolve(root, path ?? join('presets', `${docId}.vfx.json`));
+    mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, JSON.stringify(getDoc(docId), null, 2));
+    const warn = jsonExportWarning(getDoc(docId));
+    return ok(`Saved ${p}${warn ? `\nWarning: ${warn}` : ''}`);
+  });
+  tool('vfx_get_document', 'Readable summary: anchors, nodes (non-default params) and edges. full=true returns the raw JSON.', { docId: z.string(), full: z.boolean().optional() }, ({ docId, full }) => {
+    const d = getDoc(docId);
+    if (full) return ok(JSON.stringify(d, null, 1));
+    const out = [`${d.id} "${d.name}" duration ${d.durationTicks} ticks, seed ${d.seed}`, 'anchors: ' + d.anchors.map(a => `${a.id}=${JSON.stringify(a.position)}`).join(' ')];
+    for (const g of d.graphs) {
+      out.push(`graph ${g.id}:`);
+      for (const n of g.nodes) out.push(`  ${n.id} ${n.type}${n.enabled ? '' : ' (disabled)'}${Object.keys(n.params).length ? ' ' + JSON.stringify(n.params) : ''}`);
+      for (const e of g.edges) out.push(`  ${e.id}: ${e.source.nodeId}.${e.source.port} -> ${e.target.nodeId}.${e.target.port}`);
+    }
+    return ok(out.join('\n'));
+  });
+  tool('vfx_set_document', 'Set document duration (ticks, 60/s), seed or name.', { docId: z.string(), durationTicks: z.number().int().optional(), seed: z.number().int().optional(), name: z.string().optional() }, a =>
+    mutate(a.docId, d => { if (a.durationTicks !== undefined) d.durationTicks = a.durationTicks; if (a.seed !== undefined) d.seed = a.seed; if (a.name !== undefined) d.name = a.name; return 'Updated document settings.'; }));
+  tool('vfx_set_anchor', 'Create or move a document anchor (world meters).', { docId: z.string(), anchorId: z.string().regex(ID), position: z.tuple([z.number(), z.number(), z.number()]), name: z.string().optional() }, a =>
+    mutate(a.docId, d => {
+      const ex = d.anchors.find(x => x.id === a.anchorId);
+      if (ex) { ex.position = a.position as Vec3; if (a.name) ex.name = a.name; return `Moved anchor ${a.anchorId}.`; }
+      d.anchors.push({ id: a.anchorId, name: a.name ?? a.anchorId, position: a.position as Vec3 }); return `Added anchor ${a.anchorId}.`;
+    }));
+
+  tool('vfx_undo', 'Undo the last change to a document (like the editor Undo).', { docId: z.string() }, ({ docId }) => {
+    const past = undo.get(docId) ?? [];
+    const prev = past.pop();
+    if (!prev) return bad('Nothing to undo.');
+    redo.set(docId, [...(redo.get(docId) ?? []), getDoc(docId)]);
+    docs.set(docId, prev); persist(prev);
+    return ok(`Undone (${past.length} more step(s) available).`);
+  });
+  tool('vfx_redo', 'Redo the last undone change (like the editor Redo).', { docId: z.string() }, ({ docId }) => {
+    const next = redo.get(docId)?.pop();
+    if (!next) return bad('Nothing to redo.');
+    undo.set(docId, [...(undo.get(docId) ?? []), getDoc(docId)]);
+    docs.set(docId, next); persist(next);
+    return ok('Redone.');
+  });
+  tool('vfx_list_documents', 'Documents open in memory plus saved files (work/mcp/*.json mirrors and presets/*.vfx.json), like the editor Projects list.', {}, () => {
+    const files = (dir: string, suffix: string) => { try { return readdirSync(join(root, dir)).filter(f => f.endsWith(suffix) && f !== 'user-components.json').map(f => `${dir}/${f}`); } catch { return []; } };
+    return ok([`open: ${[...docs.keys()].join(', ') || 'none'}`, ...files('work/mcp', '.json'), ...files('presets', '.vfx.json')].join('\n'));
+  });
+  tool('vfx_move_node', 'Place a node on the graph canvas (editor layout x/y), like dragging it in the editor.', { docId: z.string(), nodeId: z.string(), x: z.number(), y: z.number(), graphId: z.string().optional() }, a =>
+    mutate(a.docId, d => {
+      const g = rootGraph(d, a.graphId);
+      if (!g.nodes.some(n => n.id === a.nodeId)) throw new Error(`No node "${a.nodeId}" in graph ${g.id}.`);
+      (d.editor.graphs[g.id] ??= { nodes: {}, viewport: { x: 0, y: 0, zoom: 1 } }).nodes[a.nodeId] = { x: a.x, y: a.y };
+      return `Moved ${a.nodeId} to (${a.x}, ${a.y}).`;
+    }));
+
+  // ---------- components ----------
+  // Saved user components (editor: Save as my component). The MCP keeps them in work/mcp/user-components.json;
+  // the editor keeps its own in browser storage (documents and .vfxpack files carry inserted copies either way).
+  const userFile = () => join(root, 'work/mcp/user-components.json');
+  const readUser = (): UserComponent[] => { try { const v = JSON.parse(readFileSync(userFile(), 'utf8')); return Array.isArray(v) ? v : []; } catch { return []; } };
+  const writeUser = (l: UserComponent[]) => { mkdirSync(dirname(userFile()), { recursive: true }); writeFileSync(userFile(), JSON.stringify(l, null, 1)); };
+  tool('vfx_list_components', 'Ready-made, pre-wired components (the same list as the editor Add component menu), then saved user components as "user:<id>".', {}, () =>
+    ok([...COMPONENT_TEMPLATES.map(c => `${c.id}: ${c.label} — ${c.description} (${c.nodes.length} nodes)`), ...readUser().map(c => `user:${c.id}: ${c.name} — saved group (${c.graphs[0].nodes.length} nodes, ${c.controls.length} knobs)`)].join('\n')));
+  tool('vfx_save_group_component', 'Save a Group node (its internal graph, nested groups, knobs, used anchors/assets) as a reusable user component, like the editor\'s "Save as my component". Same name replaces.', {
+    docId: z.string(), groupNodeId: z.string(), name: z.string().min(1),
+  }, a => {
+    const r = saveGroupAsComponent(getDoc(a.docId), a.groupNodeId, a.name);
+    if (!r.ok) return bad(r.message);
+    writeUser([r.value, ...readUser().filter(c => c.name !== r.value.name)]);
+    return ok(`Saved "${r.value.name}" as user:${r.value.id}. Insert with vfx_add_component component "user:${r.value.id}".`);
+  });
+  tool('vfx_delete_user_component', 'Remove a saved user component (effects already using it keep their copies).', { id: z.string() }, ({ id }) => {
+    const key = id.replace(/^user:/, ''), l = readUser();
+    if (!l.some(c => c.id === key)) return bad(`No user component "${id}".`);
+    writeUser(l.filter(c => c.id !== key));
+    return ok(`Deleted user:${key}.`);
+  });
+  tool('vfx_group_nodes', 'Wrap nodes of one graph into a new Group, like the editor\'s Group selection: crossing links become interface ports, knobs that only drive those nodes move inside. Output, sound nodes and split knobs are refused.', {
+    docId: z.string(), nodeIds: z.array(z.string()).min(1), label: z.string().optional(), graphId: z.string().optional(),
+  }, a => { let info = ''; const r = mutate(a.docId, d => { const x = groupSelection(d, a.graphId ?? d.rootGraphId, a.nodeIds, a.label); if (!x.ok) throw new Error(x.message); info = `Group node "${x.groupNodeId}" wraps graph "${x.childGraphId}"`; Object.assign(d, x.doc); return ''; }); return r.isError ? r : ok(`${info}.`); });
+  tool('vfx_add_component', 'Insert a component, auto-wired to its Source/Target anchors and Output. Node ids are prefixed; returns the prefix. group=true wraps its visual nodes in one Group node (own graph "graph-<prefix>", knobs exposed on the Group; sound nodes stay in the root), like the editor. "user:<id>" inserts an independent copy of a saved user component as one Group.', {
+    docId: z.string(), component: z.string(), prefix: z.string().regex(ID).optional(), group: z.boolean().optional(),
+    startOn: z.string().optional().describe('Start the component when an event fires instead of at its own time: "nodeId.port" of an event output next to it (see vfx_list_events), e.g. "fireball.impactwin-start". Implies group=true.'),
+  }, a => { let used = '', gid: string | undefined; const r = mutate(a.docId, d => {
+    if (a.component.startsWith('user:')) {
+      const c = readUser().find(u => u.id === a.component.slice(5));
+      if (!c) throw new Error(`No user component "${a.component}". Use vfx_list_components.`);
+      const y = insertUserComponent(d, c); used = y.groupNodeId; gid = y.groupNodeId; Object.assign(d, y.doc); return '';
+    }
+    const x = insertComponent(d, a.component, a.prefix, { group: a.group === true || !!a.startOn }); used = x.prefix; gid = x.groupNodeId; let next = x.doc;
+    if (a.startOn && gid) {
+      const dot = a.startOn.lastIndexOf('.'), s = startComponentOnEvent(next, gid, { nodeId: a.startOn.slice(0, dot), port: a.startOn.slice(dot + 1) });
+      if (!s.ok) throw new Error(s.message);
+      next = s.doc;
+    }
+    Object.assign(d, next); return ''; }); return r.isError ? r : ok(`Inserted ${a.component} with prefix "${used}" (node ids "${used}-<node>")${gid ? `; Group node "${gid}" wraps graph "graph-${used}"` : ''}.`); });
+
+  tool('vfx_list_events', 'Event outputs in a graph that a component can start from (vfx_add_component startOn), like the editor\'s Add component → Start choice.', { docId: z.string(), graphId: z.string().optional() }, ({ docId, graphId }) => {
+    const d = getDoc(docId), list = eventSources(d, graphId ?? d.rootGraphId);
+    return ok(list.map(e => `${e.nodeId}.${e.port}  (${e.label})`).join('\n') || 'No event outputs in this graph.');
+  });
+  tool('vfx_list_controls', 'Published knobs (document controls) with value, bounds and what they drive.', { docId: z.string() }, ({ docId }) =>
+    ok(getDoc(docId).controls.map(c => `${c.id} [${c.section}] ${c.label} = ${JSON.stringify(c.value)}${c.swatch ? ` (colour picker, original ${c.swatch})` : ''} (${c.min ?? '-'}..${c.max ?? '-'} ${c.unit}) -> ${c.bindings.map(b => `${b.nodeId}.${b.parameter}${b.scale ? ' x' + b.scale : ''}`).join(', ')}${c.keys?.length ? ` keys: ${c.keys.map(k => `${k.tick}→${k.value}`).join(', ')}` : ''}`).join('\n') || 'No controls.'));
+  tool('vfx_set_control', 'Set a published knob by id or label (document validation enforces its bounds). Colour knobs take {srgb:"#RRGGBB",alpha}; the whole-component Colour knob takes degrees or a "#RRGGBB" colour (turned toward that hue); vector knobs take [x,y,z].', { docId: z.string(), control: z.string(), value: z.union([z.number(), z.boolean(), z.string(), z.array(z.number()), z.object({ srgb: z.string(), alpha: z.number() })]) }, a =>
+    mutate(a.docId, d => {
+      const c = d.controls.find(x => x.id === a.control) ?? d.controls.filter(x => x.label === a.control).at(-1);
+      if (!c) throw new Error(`No control "${a.control}". Use vfx_list_controls.`);
+      const before = structuredClone(d);
+      // A Colour knob (swatch) also takes a picked colour, like the editor's picker: the wheel turn toward its hue.
+      const picked = typeof a.value === 'string' ? a.value : typeof a.value === 'object' && !Array.isArray(a.value) ? a.value.srgb : undefined;
+      if (c.swatch && picked !== undefined) {
+        if (!/^#[0-9A-Fa-f]{6}$/.test(picked)) throw new Error(`"${c.label}" takes degrees or a #RRGGBB colour.`);
+        a.value = hueShiftToward({ srgb: c.swatch, alpha: 1 }, { srgb: picked.toUpperCase(), alpha: 1 });
+      }
+      c.value = a.value as never;
+      // Like the editor: a knob that pushes the effect's end past its duration lengthens it (never shortens).
+      const grow = grownDuration(before, d);
+      if (grow !== undefined) d.durationTicks = grow;
+      return `${c.label} = ${JSON.stringify(a.value)}${grow !== undefined ? ` (effect lengthened to ${grow} ticks so nothing is cut off)` : ''}`;
+    }));
+
+  tool('vfx_set_control_keys', 'Animate a number knob over the effect: keys are {tick, value} (ascending whole ticks 0..600, values within the knob bounds); the value between keys is linear, held before the first and after the last. An empty array stops animating (the knob keeps its value at tick 0). Timing knobs (Start at, Burn time, Travel...) cannot be animated.', { docId: z.string(), control: z.string(), keys: z.array(z.object({ tick: z.number().int(), value: z.number() })) }, a =>
+    mutate(a.docId, d => {
+      const c = d.controls.find(x => x.id === a.control) ?? d.controls.filter(x => x.label === a.control).at(-1);
+      if (!c) throw new Error(`No control "${a.control}". Use vfx_list_controls.`);
+      if (!canKeyframe(c)) throw new Error(`"${c.label}" cannot be animated: only number knobs that are not timing knobs (Start at, Burn time, Travel...) take keys.`);
+      if (a.keys.length === 0) { c.value = controlValueAt(c, 0) as never; delete c.keys; return `${c.label}: no longer animated, held at ${JSON.stringify(c.value)}`; }
+      c.keys = a.keys.map(k => ({ tick: k.tick, value: k.value }));
+      return `${c.label} animated: ${c.keys.map(k => `${k.tick}→${k.value}`).join(', ')}`;
+    }));
+
+  // ---------- graph editing ----------
+  tool('vfx_add_node', 'Add a node. Unspecified params use registry defaults. Returns the node id.', {
+    docId: z.string(), type: z.string(), id: z.string().regex(ID).optional(), label: z.string().optional(),
+    params: z.record(z.string(), z.unknown()).optional(), enabled: z.boolean().optional(), graphId: z.string().optional(),
+  }, a => mutate(a.docId, d => {
+    const spec = [...registry.values()].find(s => s.type === a.type);
+    if (!spec) throw new Error(`Unknown node type "${a.type}". Use vfx_list_node_types.`);
+    const g = rootGraph(d, a.graphId);
+    let id = a.id ?? `node-${a.type.toLowerCase()}`;
+    if (!a.id) for (let i = 2; g.nodes.some(n => n.id === id); i++) id = `node-${a.type.toLowerCase()}-${i}`;
+    if (g.nodes.some(n => n.id === id)) throw new Error(`Node id "${id}" already exists.`);
+    const node: NodeDefinition = { id, type: spec.type, definitionVersion: spec.definitionVersion, label: a.label ?? spec.type, enabled: a.enabled ?? true, randomStreamId: `rs-${id}`, params: (a.params ?? {}) as Record<string, ParameterValue> };
+    g.nodes.push(node);
+    const layout = d.editor.graphs[g.id]?.nodes;
+    if (layout) layout[id] = { x: 260 * (Object.keys(layout).length % 7), y: 180 * Math.floor(Object.keys(layout).length / 7) + 320 };
+    return `Added ${id} (${spec.type}).`;
+  }));
+  tool('vfx_remove_node', 'Remove a node and every edge touching it. reconnect=true joins its downstream connections to the same-typed upstream source (the editor menu item "Delete and reconnect").', { docId: z.string(), nodeId: z.string(), graphId: z.string().optional(), reconnect: z.boolean().optional() }, a => mutate(a.docId, d => {
+    if (a.reconnect) {
+      const r = removeAndReconnect(d, rootGraph(d, a.graphId).id, a.nodeId);
+      if (!r.ok) throw new Error(r.message);
+      Object.assign(d, r.doc);
+      return [`Removed ${a.nodeId}; ${r.newIds.length} connection(s) now bypass it.`, ...r.notes].join('\n');
+    }
+    const g = rootGraph(d, a.graphId);
+    if (!g.nodes.some(n => n.id === a.nodeId)) throw new Error(`No node "${a.nodeId}".`);
+    g.nodes = g.nodes.filter(n => n.id !== a.nodeId);
+    const before = g.edges.length;
+    g.edges = g.edges.filter(e => e.source.nodeId !== a.nodeId && e.target.nodeId !== a.nodeId);
+    delete d.editor.graphs[g.id]?.nodes[a.nodeId];
+    return `Removed ${a.nodeId} and ${before - g.edges.length} edge(s).`;
+  }));
+  tool('vfx_set_params', 'Merge parameter values into a node (null resets a param to its default); optionally set enabled/label.', {
+    docId: z.string(), nodeId: z.string(), params: z.record(z.string(), z.unknown()).optional(), enabled: z.boolean().optional(), label: z.string().optional(), graphId: z.string().optional(),
+  }, a => mutate(a.docId, d => {
+    const n = rootGraph(d, a.graphId).nodes.find(x => x.id === a.nodeId);
+    if (!n) throw new Error(`No node "${a.nodeId}".`);
+    for (const [k, v] of Object.entries(a.params ?? {})) { if (v === null) delete n.params[k]; else n.params[k] = v as ParameterValue; }
+    if (a.enabled !== undefined) n.enabled = a.enabled;
+    if (a.label !== undefined) n.label = a.label;
+    return `Updated ${a.nodeId}.`;
+  }));
+  tool('vfx_connect', 'Connect "nodeId.port" → "nodeId.port" (output to input).', { docId: z.string(), from: z.string(), to: z.string(), graphId: z.string().optional() }, a => mutate(a.docId, d => {
+    const split = (s: string) => { const i = s.lastIndexOf('.'); if (i < 1) throw new Error(`Expected "nodeId.port", got "${s}".`); return { nodeId: s.slice(0, i), port: s.slice(i + 1) }; };
+    const g = rootGraph(d, a.graphId), source = split(a.from), target = split(a.to);
+    const order = g.edges.filter(e => e.target.nodeId === target.nodeId && e.target.port === target.port).length;
+    let id = `edge-${source.nodeId}-${target.nodeId}`.replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 60);
+    for (let i = 2; g.edges.some(e => e.id === id); i++) id = `${id.replace(/-\d+$/, '')}-${i}`;
+    g.edges.push({ id, source, target, order });
+    return `Connected ${a.from} -> ${a.to} (${id}).`;
+  }));
+  tool('vfx_disconnect', 'Remove an edge by id, or every edge from "node.port" to "node.port".', { docId: z.string(), edgeId: z.string().optional(), from: z.string().optional(), to: z.string().optional(), graphId: z.string().optional() }, a => mutate(a.docId, d => {
+    const g = rootGraph(d, a.graphId), before = g.edges.length;
+    g.edges = g.edges.filter(e => !(a.edgeId ? e.id === a.edgeId : `${e.source.nodeId}.${e.source.port}` === a.from && `${e.target.nodeId}.${e.target.port}` === a.to));
+    if (g.edges.length === before) throw new Error('No matching edge.');
+    return `Removed ${before - g.edges.length} edge(s).`;
+  }));
+
+  // ---------- compile / simulate / listen ----------
+  tool('vfx_compile', 'Compile particles, paths (at tick 0) and audio; report diagnostics and a summary. Always run after editing.', { docId: z.string() }, ({ docId }) => {
+    const d = getDoc(docId), out: string[] = [];
+    const p = compileParticlePreview(d, { audioHandled: true, ribbonsHandled: true });
+    out.push(p.ok ? `particles OK: ${p.value.systems.length} system(s), ${p.value.layers.length} billboard layer(s), ${p.value.trails.length} trail layer(s)` + p.value.systems.map(s => `\n  ${s.id}: shape ${s.descriptor.shape}, ${s.descriptor.bursts.length} burst(s)${s.descriptor.rate ? `, rate ${s.descriptor.rate.perSecond}/s ticks ${s.descriptor.rate.startTick}-${s.descriptor.rate.endTick}` : ''}, ops [${s.descriptor.operators.map(o => o.kind).join(', ')}]`).join('') : `particles FAILED:\n${fmtErrors(p.errors)}`);
+    const r = compilePathPreview(d, 0, { audioHandled: true });
+    out.push(r.ok ? `paths OK at tick 0: ${r.value.layers.length} ribbon layer(s)` : `paths FAILED:\n${fmtErrors(r.errors)}`);
+    { const pr = portabilityReport(d); out.push(`portability: ${pr.approximations.length ? `may need approximation — ${pr.approximations.join('; ')}` : 'all portable intent'}; optional enhancements — ${pr.enhancements.join('; ')}`); }
+    const hasAudio = d.graphs.some(g => g.edges.some(e => e.target.nodeId === 'node-output' && e.target.port === 'audio'));
+    // Things a still frame cannot prove (A-05 gap): when flashes, camera shakes and lights happen.
+    if (p.ok) {
+      for (const f of p.value.presentation.flashes) out.push(`screen flash ${f.nodeId}: ticks ${f.tick}-${f.tick + f.durationTicks}, alpha ${f.alpha}, colour ${f.color.srgb}`);
+      for (const i of p.value.presentation.impulses) out.push(`camera shake ${i.nodeId}: ticks ${i.tick}-${i.tick + i.durationTicks}, translation ${i.translation} m, rotation ${i.rotation} rad`);
+      for (const l of p.value.lights) out.push(`light ${l.nodeId}: ticks ${l.startTick}-${l.endTick}, intensity ${l.intensity}, range ${l.range} m${l.track ? ', moving' : ''}`);
+    }
+    if (p.ok) for (const f of p.value.followers) out.push(`travel ${f.nodeId}: ${f.lengthMeters.toFixed(2)} m in ${f.travelTicks} ticks = ${(f.lengthMeters / (f.travelTicks / 60)).toFixed(1)} m/s (${f.speedMode ? 'speed' : 'duration'} mode)`);
+    const cut = truncationWarning(d);
+    if (cut) out.push(`WARNING: ${cut.message}`);
+    if (hasAudio) { const a = compileAudio(d); out.push(a.ok ? `audio OK: ${a.value.kind}, peak ${a.value.mix.postPeak.toFixed(3)}${a.value.mix.severeLimiting ? ' (SEVERE LIMITING)' : ''}` : `audio FAILED:\n${fmtErrors(a.errors)}`); }
+    return ok(out.join('\n'));
+  });
+  tool('vfx_list_timeline', 'One line per inserted component: its active tick span, Start at knob and length knob (Burn time / Travel ticks). Moving a component = vfx_set_control on its Start at; stretching it = its length control.', { docId: z.string() }, ({ docId }) => {
+    const d = getDoc(docId);
+    const p = compileParticlePreview(d, { audioHandled: true, ribbonsHandled: true });
+    if (!p.ok) return bad(fmtErrors(p.errors));
+    const r = compilePathPreview(d, 0, { audioHandled: true });
+    if (!r.ok) return bad(fmtErrors(r.errors));
+    const lanes = timelineLanes(d, timelineInfo(p.value, r.value).windows);
+    const knob = (i: number) => { const c = d.controls[i]!; return `${c.label} = ${JSON.stringify(c.value)} (control ${c.id})`; };
+    return ok(lanes.map(l => [`${l.label} [${l.prefix}]: ${l.span ? `ticks ${l.span[0]}-${l.span[1]}` : 'not visible'}`, ...(l.startControl !== undefined ? [knob(l.startControl)] : []), ...(l.lengthControl !== undefined ? [`length: ${knob(l.lengthControl)}`] : [])].join(' | ')).join('\n') || 'No components.');
+  });
+  tool('vfx_sample_particles', 'Simulate to a tick and report, per particle system, live count, bounding box, mean speed and the first few particles.', { docId: z.string(), tick: z.number().int().min(0), show: z.number().int().min(0).max(50).optional() }, ({ docId, tick, show }) => {
+    const p = compileParticlePreview(getDoc(docId), { audioHandled: true, ribbonsHandled: true });
+    if (!p.ok) return bad(fmtErrors(p.errors));
+    const out: string[] = [];
+    for (const s of p.value.systems) {
+      const r = sampleParticlesAtTick(s.descriptor, Math.min(tick, s.descriptor.durationTicks));
+      if (!r.ok) { out.push(`${s.id}: FAILED\n${fmtErrors(r.errors)}`); continue; }
+      const ps = r.value.particles, lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+      let speed = 0;
+      for (const q of ps) { for (let i = 0; i < 3; i++) { lo[i] = Math.min(lo[i], q.position[i]); hi[i] = Math.max(hi[i], q.position[i]); } speed += Math.hypot(...q.velocity); }
+      const f = (v: number[]) => `[${v.map(x => x.toFixed(2)).join(', ')}]`;
+      out.push(`${s.id}: ${ps.length} live, births total ${r.value.totalBirths}` + (ps.length ? `, bbox ${f(lo)}..${f(hi)}, mean speed ${(speed / ps.length).toFixed(2)} m/s` : ''));
+      for (const q of ps.slice(0, show ?? 3)) out.push(`  age ${q.ageTicks}/${q.lifetimeTicks} pos ${f(q.position)} vel ${f(q.velocity)} size ${q.size.toFixed(3)}`);
+    }
+    return ok(out.join('\n') || 'No particle systems.');
+  });
+  tool('vfx_render_audio', 'Render the root audio mix to a 48 kHz stereo WAV (default work/mcp/<id>.wav) and report peak/limiting.', { docId: z.string(), path: z.string().optional() }, ({ docId, path }) => {
+    const a = compileAudio(getDoc(docId));
+    if (!a.ok) return bad(fmtErrors(a.errors));
+    const m = a.value.mix, p = resolve(root, path ?? join('work', 'mcp', `${docId}.wav`));
+    mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, encodeWavPcm16Stereo(m.left, m.right, m.sampleRate));
+    return ok(`Wrote ${p}: ${(m.left.length / m.sampleRate).toFixed(2)} s, pre-peak ${m.prePeak.toFixed(3)}, post-peak ${m.postPeak.toFixed(3)}, limited ${(m.limitedFraction * 100).toFixed(1)}%${m.severeLimiting ? ' SEVERE' : ''}.`);
+  });
+  // ---------- assets and packs ----------
+  // Imported bytes live beside the mirrored documents (work/mcp/assets/<sha256>.<ext>), which is where the
+  // capture page and the editor's ?doc= loader look for a document's bundle assets.
+  const assetDir = join(root, 'work', 'mcp', 'assets');
+  const safeProjectPath = (p: string) => { const abs = resolve(root, p); if (!abs.startsWith(root)) throw new Error(`Path "${p}" is outside the project.`); return abs; };
+  tool('vfx_import_texture', 'Import a PNG/static WebP/JPEG (path relative to the project) as a document texture or flipbook asset (≤16 MiB, ≤4096 px; grid 1..16). Optionally set it on a Material: color/mask → template SpriteTextured + textureAsset; normal → normalAsset (lit meshes); noise → noiseAsset (dissolve pattern). Returns the asset id. vfx_add_asset_component then inserts a ready-made component using it.', {
+    docId: z.string(), path: z.string(), role: z.enum(['color', 'mask', 'normal', 'noise']).optional(), rows: z.number().int().min(1).max(16).optional(), columns: z.number().int().min(1).max(16).optional(), materialId: z.string().optional(),
+  }, async ({ docId, path, role, rows, columns, materialId }) => {
+    const bytes = new Uint8Array(readFileSync(safeProjectPath(path)));
+    const grid = (rows ?? 1) * (columns ?? 1) > 1 ? { rows: rows ?? 1, columns: columns ?? 1 } : undefined;
+    const r = await createTextureAsset(bytes, { filename: path.split(/[\\/]/).pop() ?? path, role: role ?? 'color', ...(grid ? { flipbook: grid } : {}) });
+    if (!r.ok) return bad(r.message);
+    const { asset, path: bundlePath } = r.value;
+    mkdirSync(assetDir, { recursive: true });
+    writeFileSync(join(root, 'work', 'mcp', bundlePath), bytes);
+    return mutate(docId, d => {
+      if (!d.assets.some(a => a.id === asset.id)) d.assets.push(asset);
+      if (materialId) {
+        const m = rootGraph(d).nodes.find(n => n.id === materialId);
+        if (!m || m.type !== 'Material') throw new Error(`"${materialId}" is not a Material in the root graph.`);
+        if (asset.colorSpace === 'normal') m.params.normalAsset = asset.id;
+        else if (asset.colorSpace === 'noise') m.params.noiseAsset = asset.id;
+        else { m.params.template = 'SpriteTextured'; m.params.textureAsset = asset.id; }
+      }
+      return `Imported ${asset.provenance.originalFilename} as ${asset.kind} ${asset.width}×${asset.height} (id ${asset.id})${materialId ? `; set on ${materialId}` : ''}.`;
+    });
+  });
+  // 10 parity: the editor's asset list "Add to effect".
+  tool('vfx_add_asset_component', 'Insert the ready-made component for an imported asset (the editor\'s "Add to effect"), as one Group node: color texture/flipbook → rising sprites; mask → glowing additive sprites; normal → lit rocks using it as a normal map; noise → dissolving puffs using it as the pattern; mesh → a tumbling burst of that model. Import alone never changes the graph.', {
+    docId: z.string(), assetId: z.string(),
+  }, ({ docId, assetId }) => { let info = ''; const r = mutate(docId, d => {
+    const a = d.assets.find(x => x.id === assetId);
+    if (!a) throw new Error(`No asset "${assetId}" in this document (vfx_get_document lists assets).`);
+    const t = assetComponent(a);
+    if (typeof t === 'string') throw new Error(t);
+    const x = insertComponent(d, t, undefined, { group: true });
+    info = `Added "${t.label}" as Group "${x.groupNodeId}" (knobs: ${t.knobs.map(k => k.label).join(', ')}).`;
+    Object.assign(d, x.doc); return '';
+  }); return r.isError ? r : ok(info); });
+  // 12 parity: Duplicate / Copy / Paste (the editor's Ctrl+D / Ctrl+C / Ctrl+V).
+  const applyWhole = (docId: string, label: string, next: EffectDocumentV2) => mutate(docId, d => { Object.assign(d, structuredClone(next)); return label; });
+  tool('vfx_duplicate_nodes', 'Duplicate nodes (like the editor Ctrl+D): fresh ids and random streams, internal wiring kept; a Group becomes an independent copy of its component. preservePattern=true keeps the random streams (same sampled pattern, distinct ids), like the editor menu item "Duplicate, same random pattern".', { docId: z.string(), nodeIds: z.array(z.string()).min(1), graphId: z.string().optional(), preservePattern: z.boolean().optional() }, ({ docId, nodeIds, graphId, preservePattern }) => {
+    const d = getDoc(docId), r = duplicateSelection(d, graphId ?? d.rootGraphId, nodeIds, { preservePattern });
+    return r.ok ? applyWhole(docId, `Duplicated as: ${r.newIds.join(', ')}${r.notes.length ? `\n${r.notes.join('\n')}` : ''}`, r.doc) : bad(r.message);
+  });
+  tool('vfx_copy_nodes', 'Copy nodes as the editor clipboard JSON (like Ctrl+C); paste it with vfx_paste_nodes into this or another document.', { docId: z.string(), nodeIds: z.array(z.string()).min(1), graphId: z.string().optional() }, ({ docId, nodeIds, graphId }) => {
+    const d = getDoc(docId), r = copySelection(d, graphId ?? d.rootGraphId, nodeIds);
+    return r.ok ? ok(JSON.stringify(r.value)) : bad(r.message);
+  });
+  tool('vfx_paste_nodes', 'Paste clipboard JSON from vfx_copy_nodes (or the editor) into a graph (like Ctrl+V); validated, refused rather than partly applied.', { docId: z.string(), json: z.string(), graphId: z.string().optional() }, ({ docId, json, graphId }) => {
+    const c = parseClipboard(json);
+    if (!c.ok) return bad(c.message);
+    const d = getDoc(docId), r = pasteSelection(d, graphId ?? d.rootGraphId, c.value);
+    return r.ok ? applyWhole(docId, `Pasted: ${r.newIds.join(', ')}${r.notes.length ? `\n${r.notes.join('\n')}` : ''}`, r.doc) : bad(r.message);
+  });
+  tool('vfx_cleanup_assets', 'Delete imported asset files in work/mcp/assets that nothing references (open documents, their undo/redo, every work/mcp/*.json and presets/*.vfx.json, saved user components) — like the editor Clean up unused files. dryRun=true only lists them.', { dryRun: z.boolean().optional() }, ({ dryRun }) => {
+    if (!existsSync(assetDir)) return ok('No asset folder.');
+    const texts: string[] = [...docs.values(), ...undo.values(), ...redo.values()].map(v => JSON.stringify(v));
+    for (const dir of [join(root, 'work', 'mcp'), join(root, 'presets')]) if (existsSync(dir)) for (const f of readdirSync(dir)) if (f.endsWith('.json')) texts.push(readFileSync(join(dir, f), 'utf8'));
+    texts.push(JSON.stringify(readUser()));
+    const files = readdirSync(assetDir).filter(f => /^[0-9a-f]{64}\./.test(f));
+    const unused = new Set(unusedAssetHashes(files.map(f => f.slice(0, 64)), texts));
+    const gone = files.filter(f => unused.has(f.slice(0, 64)));
+    let bytes = 0;
+    for (const f of gone) { bytes += statSync(join(assetDir, f)).size; if (!dryRun) rmSync(join(assetDir, f)); }
+    return ok(gone.length ? `${dryRun ? 'Would remove' : 'Removed'} ${gone.length} unused file(s), ${(bytes / 1024).toFixed(0)} KiB: ${gone.join(', ')}` : `No unused asset files (${files.length} in use).`);
+  });
+  tool('vfx_remove_asset', 'Remove an imported asset from a document (like the editor Remove). Refused while nodes still use it; the refusal lists them.', { docId: z.string(), assetId: z.string() }, ({ docId, assetId }) => {
+    const r = removeAssetPatches(getDoc(docId), assetId);
+    if (!r.ok) return bad(`Cannot remove: ${r.message}`);
+    return mutate(docId, d => { d.assets = d.assets.filter(x => x.id !== assetId); return `Removed asset ${assetId}.`; });
+  });
+  tool('vfx_relink_asset', 'Restore a missing imported asset from a project file (like the editor Relink…). The file must be the original (same SHA-256); a different file is only used with replace=true, which imports it as a NEW asset and points every use at it.', {
+    docId: z.string(), assetId: z.string(), path: z.string(), replace: z.boolean().optional(),
+  }, async ({ docId, assetId, path, replace }) => {
+    const d = getDoc(docId), asset = d.assets.find(x => x.id === assetId);
+    if (!asset) return bad(`Asset ${assetId} is not in this document.`);
+    const bytes = new Uint8Array(readFileSync(safeProjectPath(path)));
+    mkdirSync(assetDir, { recursive: true });
+    if (relinkVerdict(asset, await sha256Hex(bytes)) === 'same') {
+      if (asset.source.kind === 'bundle') writeFileSync(join(root, 'work', 'mcp', asset.source.path), bytes);
+      return ok(`Relinked ${asset.provenance.originalFilename}: the file is the original.`);
+    }
+    if (!replace) return bad(`${path} is not the original ${asset.provenance.originalFilename} (different content). Pass replace=true to use it as a new asset.`);
+    const fb = asset.interpretation.flipbook, name = path.split(/[\/]/).pop() ?? path;
+    const r = asset.kind === 'mesh' ? await createMeshAsset(bytes, name, asset.interpretation.mesh?.importScale ?? 1)
+      : await createTextureAsset(bytes, { filename: name, role: asset.colorSpace === 'mask' ? 'mask' : 'color', ...(fb ? { flipbook: { rows: fb.rows, columns: fb.columns, frameCount: fb.frameCount, ...(fb.cells ? { cells: fb.cells } : {}) } } : {}) });
+    if (!r.ok) return bad(r.message);
+    writeFileSync(join(root, 'work', 'mcp', r.value.path), bytes);
+    const uses = assetReferences(d, assetId).length;
+    return mutate(docId, doc => {
+      for (const g of doc.graphs) for (const n of g.nodes) for (const [k, v] of Object.entries(n.params)) if (v === assetId) n.params[k] = r.value.asset.id;
+      doc.assets = [...doc.assets.filter(x => x.id !== assetId && x.id !== r.value.asset.id), r.value.asset];
+      return `Replaced ${asset.provenance.originalFilename} with ${name} (new asset ${r.value.asset.id}; ${uses} use(s) updated).`;
+    });
+  });
+  tool('vfx_import_mesh', 'Import a self-contained .glb (project path; ≤20 MiB, ≤50k triangles, no animation/cameras/lights) as a mesh asset; optionally set it on a MeshRenderer (meshAsset). By default the model is fitted to ≈1 m; with MeshRenderer importedSize "real" it keeps file units × importScale meters. Particle size × Scale multiplies either.', {
+    docId: z.string(), path: z.string(), rendererId: z.string().optional(), importScale: z.number().positive().max(1000).optional(),
+  }, async ({ docId, path, rendererId, importScale }) => {
+    const bytes = new Uint8Array(readFileSync(safeProjectPath(path)));
+    const r = await createMeshAsset(bytes, path.split(/[\\/]/).pop() ?? path, importScale ?? 1);
+    if (!r.ok) return bad(r.message);
+    const { asset, path: bundlePath, summary } = r.value;
+    mkdirSync(assetDir, { recursive: true });
+    writeFileSync(join(root, 'work', 'mcp', bundlePath), bytes);
+    return mutate(docId, d => {
+      if (!d.assets.some(a => a.id === asset.id)) d.assets.push(asset);
+      if (rendererId) {
+        const m = rootGraph(d).nodes.find(n => n.id === rendererId);
+        if (!m || m.type !== 'MeshRenderer') throw new Error(`"${rendererId}" is not a MeshRenderer in the root graph.`);
+        m.params.meshAsset = asset.id;
+      }
+      return `Imported ${asset.provenance.originalFilename} (${summary.triangles} triangles, id ${asset.id})${rendererId ? `; set on ${rendererId}` : ''}.`;
+    });
+  });
+  /** Reads, verifies and validates a pack, and pins included sprites that changed since it was packed (nothing is written). */
+  const stagePack = async (file: string) => {
+    const r = await readPack(new Uint8Array(readFileSync(file)));
+    if (!r.ok) return { ok: false as const, message: `Pack rejected: ${r.message}` };
+    const v = validateDocument(r.value.document, { registry });
+    if (!v.ok) return { ok: false as const, message: `Pack document is invalid:\n${fmtErrors(v.errors)}` };
+    const current = new Map<string, string>();
+    for (const b of r.value.builtins) {
+      const sheet = BUILTIN_SPRITES.find(x => x.id === b.id), f = sheet ? join(root, 'assets', 'sprites', sheet.file) : '';
+      if (f && existsSync(f)) current.set(b.id, await sha256Hex(new Uint8Array(readFileSync(f))));
+    }
+    const pinned = await pinBuiltins(v.value, r.value.builtins, id => current.get(id));
+    if (!pinned.ok) return { ok: false as const, message: pinned.message };
+    const summary = describePack(pinned.doc, r.value.manifest, { importedFiles: r.value.assets.length, builtins: r.value.builtins.length, pinned: pinned.pinned.map(p => p.id), mixWav: !!r.value.mixWav, notices: r.value.notices, warnings: v.warnings.map(w => w.message) });
+    return { ok: true as const, read: r.value, doc: pinned.doc, pinned: pinned.pinned, summary };
+  };
+
+  tool('vfx_export_roblox', 'Export the effect for Roblox: a .rbxmx model (ParticleEmitters, Beams, PointLights + an EffectPlayer script that replays the timeline) and a conversion report (.md) listing what was approximated or left out. Textures use rbxassetid ids from work/roblox/asset-ids.json (sheet file -> id) when present; missing ids fall back to the fire/smoke/sparkles textures (flipbook off). The report (.md, next to the model) lists every approximation and missing texture. In game, aim it with EffectPlayer.play(model, nil, {source, target, speed|travelTime, scale}); the returned handle has setTarget(pos) (follow a moving target) and hit(pos) (jump to the impact now). See the guide chapter export. Default path work/roblox/<docId>.rbxmx.', {
+    docId: z.string(), path: z.string().optional(),
+  }, ({ docId, path }) => {
+    const d = getDoc(docId);
+    const r = robloxEffectFrom(d);
+    if (!r.ok) return bad(r.message);
+    const idsFile = join(root, 'work', 'roblox', 'asset-ids.json');
+    const assetIds: Record<string, string> = existsSync(idsFile) ? JSON.parse(readFileSync(idsFile, 'utf8')) : {};
+    const out = safeProjectPath(path ?? `work/roblox/${docId}.rbxmx`);
+    mkdirSync(dirname(out), { recursive: true });
+    writeFileSync(out, writeRbxmx(r.value, { assetIds, playerSource: effectPlayerSource() }));
+    const md = reportMarkdown(r.value, assetIds);
+    writeFileSync(out.replace(/\.rbxmx$/i, '') + '.report.md', md);
+    const e = r.value, dropped = e.report.filter(x => x.level === 'dropped').length, approx = e.report.filter(x => x.level === 'approximated').length;
+    return ok(`Wrote ${out} (${e.emitters.length} emitters, ${e.beams.length} beam layers, ${e.lights.length} lights; ${approx} approximations, ${dropped} left out; textures ${e.textures.filter(t => assetIds[t]).length}/${e.textures.length} uploaded) and its .report.md.
+
+${md}`);
+  });
+  tool('vfx_export_pack', 'Write a portable .vfxpack (effect + imported asset bytes + manifest checksums) to a project path (default work/mcp/<id>.vfxpack). draft=true allows missing asset bytes.', {
+    docId: z.string(), path: z.string().optional(), draft: z.boolean().optional(),
+  }, async ({ docId, path, draft }) => {
+    const d = getDoc(docId), bytes = new Map<string, PackAsset>();
+    for (const a of d.assets) {
+      if (a.source.kind !== 'bundle') continue;
+      const f = join(root, 'work', 'mcp', a.source.path);
+      if (existsSync(f)) bytes.set(a.sha256, { sha256: a.sha256, mime: a.mime, bytes: new Uint8Array(readFileSync(f)) });
+    }
+    // Included-library sprites the effect draws and the rendered sound mix travel inside the pack (13-PERSISTENCE).
+    const builtins = referencedBuiltinSprites(d).flatMap(id => {
+      const sheet = BUILTIN_SPRITES.find(x => x.id === id);
+      return sheet ? [{ id, sheet: structuredClone(sheet) as SpriteSheet, bytes: new Uint8Array(readFileSync(join(root, 'assets', 'sprites', sheet.file))) }] : [];
+    });
+    const audio = hasRootAudio(d) ? compileAudio(d) : undefined;
+    const mixWav = audio?.ok ? encodeWavPcm16Stereo(audio.value.mix.left, audio.value.mix.right, audio.value.mix.sampleRate) : undefined;
+    const r = await buildPack(d, bytes, { draft: draft === true, tool: 'vfx-studio-mcp', builtins, ...(mixWav ? { mixWav } : {}) });
+    if (!r.ok) return bad(r.message);
+    const out = safeProjectPath(path ?? `work/mcp/${docId}.vfxpack`);
+    mkdirSync(dirname(out), { recursive: true }); writeFileSync(out, r.value);
+    return ok(`Wrote ${out} (${r.value.length} bytes).`);
+  });
+  tool('vfx_open_pack', 'Open a .vfxpack (project path): verifies paths and checksums, restores asset bytes, validates the document and opens it under its document id (or docId).', {
+    path: z.string(), docId: z.string().regex(ID).optional(),
+  }, async ({ path, docId }) => {
+    const staged = await stagePack(safeProjectPath(path));
+    if (!staged.ok) return bad(staged.message);
+    const d = { ...staged.doc, id: docId ?? staged.doc.id };
+    mkdirSync(assetDir, { recursive: true });
+    for (const a of staged.read.assets) { const ref = d.assets.find(x => x.sha256 === a.sha256); if (ref && ref.source.kind === 'bundle') writeFileSync(join(root, 'work', 'mcp', ref.source.path), a.bytes); }
+    for (const p of staged.pinned) writeFileSync(join(root, 'work', 'mcp', p.path), p.bytes);
+    docs.set(d.id, d); persist(d);
+    return ok(`Opened "${d.id}".\n${staged.summary.join('\n')}`);
+  });
+
+  tool('vfx_inspect_pack', 'Check a .vfxpack without opening it (like the editor\'s preview before Import): name, contents, included sprites that changed since it was packed, sound mix, required capabilities, warnings and licences.', { path: z.string() }, async ({ path }) => {
+    const staged = await stagePack(safeProjectPath(path));
+    return staged.ok ? ok(staged.summary.join('\n')) : bad(staged.message);
+  });
+
+  tool('vfx_preview_url', 'URL that opens this document in the running editor (vite dev server) for visual inspection.', { docId: z.string() }, ({ docId }) => {
+    persist(getDoc(docId));
+    return ok(`${editorUrl}?workspace=v2&doc=/work/mcp/${encodeURIComponent(docId)}.json`);
+  });
+  type RenderArgs = { docId: string; ticks: number[]; width?: number; height?: number; glow?: boolean; background?: 'dark' | 'light'; solo?: string[]; orbit?: { yaw: number; pitch: number; distance?: number }; camera?: { position: [number, number, number]; target: [number, number, number]; fov?: number } };
+  const renderFrames = ({ docId, ticks, width, height, glow, background, camera, solo, orbit }: RenderArgs): Result => {
+    const d = getDoc(docId); persist(d);
+    const chrome = options.chromePath ?? CHROME_CANDIDATES.find(p => p && existsSync(p));
+    if (!chrome) return bad('No Chrome/Edge found; set VFX_CHROME to its executable path.');
+    const dir = join(root, 'work', 'mcp', 'frames'); mkdirSync(dir, { recursive: true });
+    const content: Content[] = [], paths: string[] = [], stats: string[] = [];
+    for (const tick of ticks) {
+      const out = join(dir, `${docId}-t${tick}${background === 'light' ? '-light' : ''}.png`), profile = mkdtempSync(join(tmpdir(), 'vfx-chrome-'));
+      rmSync(out, { force: true });
+      const url = new URL(`capture.html?doc=/work/mcp/${encodeURIComponent(docId)}.json&tick=${tick}&label=1${glow === false ? '&glow=0' : ''}${background === 'light' ? '&bg=light' : ''}${solo?.length ? `&solo=${solo.map(encodeURIComponent).join(',')}` : ''}${orbit && !camera ? `&orbit=${orbit.yaw},${orbit.pitch},${orbit.distance ?? 1}` : ''}${camera ? `&cam=${camera.position.join(',')}&look=${camera.target.join(',')}${camera.fov ? `&fov=${camera.fov}` : ''}` : ''}`, editorUrl).href;
+      spawnSync(chrome, ['--headless=new', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--hide-scrollbars', '--no-first-run', '--no-default-browser-check',
+        `--user-data-dir=${profile}`, `--window-size=${width ?? 960},${height ?? 540}`, '--virtual-time-budget=6000', `--screenshot=${out}`, url], { timeout: 90_000, stdio: 'ignore' });
+      rmSync(profile, { recursive: true, force: true });
+      if (!existsSync(out)) return bad(`Chrome produced no image for tick ${tick}. Is the dev server running at ${editorUrl}?`);
+      const bytes = readFileSync(out);
+      content.push({ type: 'image', data: bytes.toString('base64'), mimeType: 'image/png' }); paths.push(out);
+      stats.push(describeFrameStats(tick, pngFrameStats(bytes)));
+    }
+    content.unshift({ type: 'text', text: `Rendered ${ticks.length} frame(s): ${paths.join(', ')}\n${stats.join('\n')}` });
+    return { content };
+  };
+  tool('vfx_render_frames', 'Render effect frames to PNG with headless Chrome (needs the vite dev server) and return the images. Look at them before claiming anything about the visual result. Glow (bloom) is on by default and is tuned per effect on the EffectOutput node (glowStrength, glowRadius, glowThreshold, glowLimit — see vfx_describe_node_type EffectOutput); glow:false shows the raw shapes.', {
+    docId: z.string(), ticks: z.array(z.number().int().min(0)).min(1).max(8), width: z.number().int().min(160).max(1920).optional(), height: z.number().int().min(120).max(1080).optional(), glow: z.boolean().optional(), background: z.enum(['dark', 'light']).optional(),
+    camera: z.object({ position: z.tuple([z.number(), z.number(), z.number()]), target: z.tuple([z.number(), z.number(), z.number()]), fov: z.number().min(5).max(120).optional() }).optional(),
+    solo: z.array(z.string()).optional().describe('Show only these nodes (renderers, lights or whole components/Group nodes), like the editor Outline Solo. The effect is unchanged.'),
+    orbit: z.object({ yaw: z.number(), pitch: z.number(), distance: z.number().min(0.2).max(5).optional() }).optional().describe('Keep the automatic framing but orbit it (yaw/pitch degrees, distance multiplier); ignored with camera.'),
+  }, args => renderFrames(args));
+
+  // ---------- media export (sprite sheet / PNG sequence / GIF / video) ----------
+  type MediaPayload = { container: string; frameCount: number; width: number; height: number; fps: number; ticks: number[]; notes: string[]; timing: { renderMs: number; encodeMs: number }; sidecar: Record<string, unknown> | null; files: { name: string; mime: string; bytes: number; base64: string }[]; preview: { width: number; height: number; base64: string } };
+  tool('vfx_export_media', 'Render the effect to media for game engines or sharing: a sprite sheet (one PNG grid + a .json sidecar {columns, rows, frameCount, fps, frameWidth, frameHeight, durationTicks, loop}), a PNG sequence (.zip), an animated GIF, or an MP4 (H.264; falls back to WebM/VP9 when the browser cannot encode H.264) or WebM. Frames are rendered deterministically tick by tick in headless Chrome (needs the vite dev server), never recorded live. Sheets and sequences default to a TRANSPARENT background (additive glow and normal-blend smoke both come out right); GIF and video default to the dark arena (GIF has 1-bit alpha; video has none). The floor grid, floor and Source/Target markers are hidden. Camera: automatic framing that fits the WHOLE effect across every exported tick (default), optionally orbit, or an explicit camera pose. Writes work/mcp/media/<docId>.<ext> by default and returns a preview (the sheet scaled down, or a contact strip of frames). LOOK at the preview before claiming anything about the result.', {
+    docId: z.string(),
+    format: z.enum(MEDIA_FORMATS as unknown as [MediaFormat, ...MediaFormat[]]),
+    path: z.string().optional().describe('Output file (project path; the extension follows the format). Default work/mcp/media/<docId>.<png|zip|gif|mp4|webm>. A sheet also writes the .json sidecar next to it.'),
+    size: z.number().int().min(16).max(4096).optional().describe('Square frame size in pixels (default 256; 512 is a good start for video).'),
+    width: z.number().int().min(16).max(4096).optional(), height: z.number().int().min(16).max(4096).optional(),
+    fps: z.number().min(1).max(120).optional().describe('Frames per second; ticks are sampled every 60/fps (default 30; 20 for GIF, whose delays are whole centiseconds so it tops out near 50 fps).'),
+    startTick: z.number().int().min(0).optional(), endTick: z.number().int().min(1).optional().describe('Tick range [startTick, endTick); default the whole effect.'),
+    columns: z.number().int().min(1).max(64).optional().describe('Sprite sheet columns (default about the square root of the frame count).'),
+    background: z.enum(['transparent', 'dark', 'light']).optional().describe('transparent (default for sheet/PNG sequence) | dark (default for GIF/video) | light. Video cannot be transparent.'),
+    glow: z.boolean().optional().describe('Glow (bloom) on by default.'),
+    loop: z.boolean().optional().describe('Loop flag (GIF loop count, sheet sidecar). Default true.'),
+    camera: z.object({ position: z.tuple([z.number(), z.number(), z.number()]), target: z.tuple([z.number(), z.number(), z.number()]), fov: z.number().min(5).max(120).optional() }).optional().describe('Explicit camera pose; default is the automatic fit of the whole effect.'),
+    orbit: z.object({ yaw: z.number(), pitch: z.number(), distance: z.number().min(0.2).max(5).optional() }).optional().describe('Keep the automatic fit but look from another direction (yaw/pitch degrees, distance multiplier); ignored with camera.'),
+  }, async a => {
+    const d = getDoc(a.docId); persist(d);
+    const { docId, path, size, camera, orbit, ...rest } = a;
+    const request = { ...rest, ...(size ? { width: a.width ?? size, height: a.height ?? size } : {}), ...(camera ? { camera } : {}), ...(orbit && !camera ? { orbit } : {}), name: docId };
+    const checked = resolveMediaOptions(request, d.durationTicks);
+    if (!checked.ok) return bad(checked.message);
+    const chrome = options.chromePath ?? CHROME_CANDIDATES.find(p => p && existsSync(p));
+    if (!chrome) return bad('No Chrome/Edge found; set VFX_CHROME to its executable path.');
+    const url = new URL(`capture-media.html?doc=/work/mcp/${encodeURIComponent(docId)}.json`, editorUrl).href;
+    let r: MediaPayload;
+    try {
+      r = await chromeEval<MediaPayload>({ chrome, url, readyTitle: 'MEDIA READY', script: `return await window.__vfxMedia.run(${JSON.stringify(request)});`, gpu: process.env.VFX_MEDIA_GPU === '1' });
+    } catch (e) {
+      return bad(`Media export failed: ${e instanceof Error ? e.message : String(e)}\n(The vite dev server must be running at ${editorUrl}.)`);
+    }
+    const fmt = checked.options.format, ext = fmt === 'mp4' ? r.container : mediaExtension(fmt);
+    const stem = path ? safeProjectPath(path).replace(/\.[A-Za-z0-9]+$/, '') : safeProjectPath(`work/mcp/media/${docId}`);
+    const out = `${stem}.${ext}`;
+    mkdirSync(dirname(out), { recursive: true });
+    const written: string[] = [];
+    r.files.forEach((f, i) => {
+      const target = i === 0 ? out : `${stem}${f.name.slice(f.name.lastIndexOf('.'))}`;
+      if (i === 0 || !r.sidecar) { writeFileSync(target, Buffer.from(f.base64, 'base64')); written.push(`${target} (${f.bytes} bytes)`); }
+    });
+    // The sheet's sidecar names the image file that was really written.
+    const sidecar = r.sidecar ? { ...r.sidecar, image: out.split(/[\\/]/).pop() } : null;
+    if (sidecar) { writeFileSync(`${stem}.json`, JSON.stringify(sidecar, null, 2)); written.push(`${stem}.json`); }
+    const content: Content[] = [], previewPath = `${stem}.preview.png`;
+    let previewNote: string;
+    if (fmt === 'spritesheet') {
+      const img = decodePng(readFileSync(out)), shown = checked.options.background === 'transparent' ? { ...img, px: new Uint8Array(compositeChecker(img.px, img.w, img.h, 8)) } : img;
+      const k = Math.max(1, Math.ceil(Math.max(img.w, img.h) / 1024)), prev = encodePng(downscale(shown, k));
+      writeFileSync(previewPath, prev);
+      content.push({ type: 'image', data: prev.toString('base64'), mimeType: 'image/png' });
+      previewNote = `Preview (the sheet${checked.options.background === 'transparent' ? ' over a checkerboard' : ''}${k > 1 ? `, scaled 1/${k}` : ''}): ${previewPath}`;
+    } else {
+      writeFileSync(previewPath, Buffer.from(r.preview.base64, 'base64'));
+      content.push({ type: 'image', data: r.preview.base64, mimeType: 'image/png' });
+      previewNote = `Preview: a strip of ${Math.min(8, r.frameCount)} frames${checked.options.background === 'transparent' ? ' over a checkerboard' : ''}: ${previewPath}`;
+    }
+    const lines = [
+      `Exported ${r.frameCount} frame(s) of ${r.width}x${r.height} at ${r.fps} fps (ticks ${checked.options.startTick}..${checked.options.endTick}, one every ${(60 / r.fps).toFixed(2)} ticks) as ${fmt === 'mp4' ? r.container : fmt}; background ${checked.options.background}, glow ${checked.options.glow ? 'on' : 'off'}.`,
+      `Files: ${written.join(', ')}`,
+      ...(checked.layout ? [`Sheet ${checked.layout.width}x${checked.layout.height} px: ${checked.layout.columns} columns x ${checked.layout.rows} rows. Sidecar: ${JSON.stringify(sidecar)}`] : []),
+      ...r.notes.map(n => `Note: ${n}`),
+      `Rendered in ${(r.timing.renderMs / 1000).toFixed(1)} s, encoded in ${(r.timing.encodeMs / 1000).toFixed(1)} s. ${previewNote}`,
+    ];
+    content.unshift({ type: 'text', text: lines.join('\n') });
+    return { content };
+  });
+
+  // WP-MCP2: one image over the whole timeline, and a side-by-side comparison of two captures.
+  tool('vfx_contact_sheet', 'Render frames at evenly spaced ticks (or the given ticks) and return them as ONE grid image (a timeline strip). Saved to work/mcp/frames/<doc>-sheet.png.', {
+    docId: z.string(), count: z.number().int().min(2).max(16).optional(), ticks: z.array(z.number().int().min(0)).min(2).max(16).optional(), columns: z.number().int().min(1).max(8).optional(),
+    glow: z.boolean().optional(), background: z.enum(['dark', 'light']).optional(), solo: z.array(z.string()).optional(),
+    camera: z.object({ position: z.tuple([z.number(), z.number(), z.number()]), target: z.tuple([z.number(), z.number(), z.number()]), fov: z.number().min(5).max(120).optional() }).optional(),
+    name: z.string().regex(/^[A-Za-z0-9_-]{1,40}$/).optional().describe('Saves to work/mcp/frames/<doc>-<name>.png instead of <doc>-sheet.png (keep several sheets of one effect).'),
+    orbit: z.object({ yaw: z.number(), pitch: z.number(), distance: z.number().min(0.2).max(5).optional() }).optional().describe('Keep the automatic framing but orbit it: yaw degrees around the effect, pitch degrees above the horizon, distance multiplier.'),
+  }, async ({ docId, count, ticks, columns, glow, background, solo, camera, name, orbit }) => {
+    const d = getDoc(docId), n = count ?? 8;
+    const list = ticks ?? Array.from({ length: n }, (_, i) => Math.round((i / (n - 1)) * (d.durationTicks - 1)));
+    const frames: Rgba[] = [];
+    for (let i = 0; i < list.length; i += 8) {
+      const r = await renderFrames({ docId, ticks: list.slice(i, i + 8), width: 480, height: 270, ...(glow === false ? { glow } : {}), ...(background ? { background } : {}), ...(solo?.length ? { solo } : {}), ...(camera ? { camera } : {}), ...(orbit ? { orbit } : {}) });
+      if (r.isError) return r;
+      for (const c of r.content) if (c.type === 'image') frames.push(decodePng(Buffer.from(c.data, 'base64')));
+    }
+    const sheet = grid(frames, columns ?? 4), out = join(root, 'work', 'mcp', 'frames', `${docId}-${name ?? 'sheet'}.png`), bytes = encodePng(sheet);
+    writeFileSync(out, bytes);
+    return { content: [{ type: 'text', text: `Contact sheet of ticks ${list.join(', ')}: ${out}` }, { type: 'image', data: bytes.toString('base64'), mimeType: 'image/png' }] };
+  });
+  tool('vfx_compare_images', 'Put two PNGs side by side (project paths, e.g. a reference frame and your render) and report their mean colour difference (0 = identical, 255 = opposite). Saved to work/mcp/frames/compare.png.', {
+    a: z.string(), b: z.string(),
+  }, ({ a, b }) => {
+    const A = decodePng(readFileSync(safeProjectPath(a))), B = decodePng(readFileSync(safeProjectPath(b)));
+    const k = Math.max(1, Math.ceil(Math.max(A.w, B.w) / 800));
+    const side = grid([downscale(A, k), downscale(B, k)], 2), out = join(root, 'work', 'mcp', 'frames', 'compare.png'), bytes = encodePng(side);
+    mkdirSync(dirname(out), { recursive: true }); writeFileSync(out, bytes);
+    return { content: [{ type: 'text', text: `Left: ${a}\nRight: ${b}\nMean colour difference ${meanDifference(A, B).toFixed(1)} / 255 (size ${A.w}x${A.h} vs ${B.w}x${B.h}). Saved ${out}` }, { type: 'image', data: bytes.toString('base64'), mimeType: 'image/png' }] };
+  });
+  return server;
+}

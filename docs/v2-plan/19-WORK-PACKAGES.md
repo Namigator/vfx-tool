@@ -61,6 +61,20 @@ Each family package includes data graph, reusable components, source/provenance 
 | WP26 Final visual/audio review | WP25 | Full ten-family/default/variant evidence matrix and user review | Gates B–G; T25,T34–T36,T39 |
 | WP27 Delivery | WP26 | Runnable build, docs, assets/licenses, package examples, evidence index and known limits | Clean launch/fresh-storage import; all requirements mapped |
 
+## Agent tooling (MCP)
+
+| Package | Depends | Deliverable | Exit |
+| --- | --- | --- | --- |
+| WP-MCP1 Headless core | WP02,WP03 | stdio MCP server over the pure modules: registry/catalog listing, document create/open/save, add/remove/connect/set-param nodes, compile with diagnostics, simulate/sample particles at tick, render audio to WAV | Agent builds F01 + forces demo end-to-end via tools only; tests |
+| WP-MCP2 Visual loop | WP-MCP1,WP04 | render effect frame(s) at given ticks/camera to PNG via headless browser; contact sheet over a timeline; compare two captures | Agent returns images it has actually inspected |
+| WP-MCP3 Authoring parity | WP07,WP08 | components/templates, published controls, group/expand, asset import, bundle export — everything the UI can do | A-05 model build test can run through MCP as well as UI |
+
+MCP tools call the same compile/runtime code as the editor; no MCP-only behaviour.
+
+## Capability floor (gate before WP10+ artistic work)
+
+Family tuning (WP10 onward) may not resume until these catalog items are registered, compiled, simulated/rendered and covered by tests, with at least one captured preview each: Emitter shapes cone/sphere/disc/box and speed ranges plus aim anchor; Gravity, Drag, NoiseForce; InitialProperties rotation/angular velocity; colour/size/opacity over life; velocity-aligned stretched billboards; textured flipbook material with the included library conforming to 10-ASSETS; GroundCollision and ParticleEvents child emission; ParticleTrail, SpriteRenderer, PointLight; Curve and RandomRange; PathFollower with arrival event. Track status in [27 Gap audit](27-GAP-AUDIT.md). Rationale: the lightning benchmark was tuned on a point-only runtime, which produced effect-specific work instead of reusable capability.
+
 ## Scope discipline
 
 Do not add exporters, shader programming, networking or an AI assistant while these packages are incomplete. Do not perform repeated broad refactors without a failing test or measured constraint. If one capability proves impossible within WebGL2 limits, record the concrete failure and its effect on acceptance; do not weaken the requirement silently.

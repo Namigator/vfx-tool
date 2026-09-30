@@ -1,0 +1,1593 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "icecluster"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "icecluster",
+   "durationTicks": 192,
+   "seed": 42
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "icecluster",
+   "anchorId": "source",
+   "position": [
+    -3,
+    1.3,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "icecluster",
+   "anchorId": "target",
+   "position": [
+    0,
+    0,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Schedule",
+   "id": "charge",
+   "params": {
+    "startTicks": 0,
+    "durationTicks": 24,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Schedule",
+   "id": "erupt",
+   "params": {
+    "startTicks": 24,
+    "durationTicks": 66,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Schedule",
+   "id": "fracture",
+   "params": {
+    "startTicks": 90,
+    "durationTicks": 60,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "OffsetAnchor",
+   "id": "chest",
+   "params": {
+    "offset": [
+     0,
+     0.4,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "node-target.out",
+   "to": "chest.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Emitter",
+   "id": "motes",
+   "params": {
+    "shape": "sphere",
+    "radius": 1.5,
+    "burst": 20,
+    "rate": 0,
+    "speedMin": 0,
+    "speedMax": 0.1,
+    "lifetimeMin": 0.4,
+    "lifetimeMax": 0.4
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "InitialProperties",
+   "id": "moteip",
+   "params": {
+    "sizeMin": 0.04,
+    "sizeMax": 0.07
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Attract",
+   "id": "motepull",
+   "params": {
+    "acceleration": 20,
+    "softRadius": 0.15,
+    "killRadius": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Material",
+   "id": "motemat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#BFEAFF",
+     "alpha": 1
+    },
+    "emission": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "BillboardRenderer",
+   "id": "motebb"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "chest.out",
+   "to": "motes.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "charge.start",
+   "to": "motes.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "motes.particles",
+   "to": "moteip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "moteip.particles",
+   "to": "motepull.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "chest.out",
+   "to": "motepull.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "motepull.particles",
+   "to": "motebb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "motemat.material",
+   "to": "motebb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "motebb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Material",
+   "id": "icemat",
+   "params": {
+    "blend": "normal",
+    "tint": {
+     "srgb": "#4E94BE",
+     "alpha": 1
+    },
+    "roughness": 0.08,
+    "metalness": 0.05,
+    "emission": 0,
+    "opacity": 0.88,
+    "reflection": 0.6,
+    "surfaceDetail": 0.3,
+    "detailScale": 3,
+    "colorVariation": 0.45,
+    "rim": 0.25,
+    "rimColor": {
+     "srgb": "#CFF4FF",
+     "alpha": 1
+    },
+    "rimPower": 3
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Emitter",
+   "id": "shardsa",
+   "params": {
+    "shape": "disc",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "radius": 0.55,
+    "burst": 4,
+    "rate": 0,
+    "speedMin": 0,
+    "speedMax": 0,
+    "lifetimeMin": 1.1,
+    "lifetimeMax": 1.1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "InitialProperties",
+   "id": "shardsaip",
+   "params": {
+    "sizeMin": 0.2,
+    "sizeMax": 0.45
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "MeshRenderer",
+   "id": "shardsamesh",
+   "params": {
+    "mesh": "crystal",
+    "orientation": "upright",
+    "pivot": "base",
+    "tilt": 0.18,
+    "scaleY": 6,
+    "lit": true,
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.6060606060606061,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 1
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "node-target.out",
+   "to": "shardsa.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "erupt.start",
+   "to": "shardsa.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "shardsa.particles",
+   "to": "shardsaip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "shardsaip.particles",
+   "to": "shardsamesh.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "icemat.material",
+   "to": "shardsamesh.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "shardsamesh.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Emitter",
+   "id": "shardsb",
+   "params": {
+    "shape": "disc",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "radius": 0.55,
+    "burst": 3,
+    "rate": 0,
+    "speedMin": 0,
+    "speedMax": 0,
+    "lifetimeMin": 1.1,
+    "lifetimeMax": 1.1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "InitialProperties",
+   "id": "shardsbip",
+   "params": {
+    "sizeMin": 0.2,
+    "sizeMax": 0.45
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "MeshRenderer",
+   "id": "shardsbmesh",
+   "params": {
+    "mesh": "crystal-b",
+    "orientation": "upright",
+    "pivot": "base",
+    "tilt": 0.18,
+    "scaleY": 4.8,
+    "lit": true,
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.6060606060606061,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 1
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "node-target.out",
+   "to": "shardsb.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "erupt.start",
+   "to": "shardsb.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "shardsb.particles",
+   "to": "shardsbip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "shardsbip.particles",
+   "to": "shardsbmesh.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "icemat.material",
+   "to": "shardsbmesh.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "shardsbmesh.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Emitter",
+   "id": "shardsc",
+   "params": {
+    "shape": "disc",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "radius": 0.55,
+    "burst": 3,
+    "rate": 0,
+    "speedMin": 0,
+    "speedMax": 0,
+    "lifetimeMin": 1.1,
+    "lifetimeMax": 1.1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "InitialProperties",
+   "id": "shardscip",
+   "params": {
+    "sizeMin": 0.2,
+    "sizeMax": 0.45
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "MeshRenderer",
+   "id": "shardscmesh",
+   "params": {
+    "mesh": "shard",
+    "orientation": "upright",
+    "pivot": "base",
+    "tilt": 0.18,
+    "scaleY": 3.6,
+    "lit": true,
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.6060606060606061,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 1
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "node-target.out",
+   "to": "shardsc.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "erupt.start",
+   "to": "shardsc.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "shardsc.particles",
+   "to": "shardscip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "shardscip.particles",
+   "to": "shardscmesh.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "icemat.material",
+   "to": "shardscmesh.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "shardscmesh.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Schedule",
+   "id": "lightwin",
+   "params": {
+    "startTicks": 24,
+    "durationTicks": 96,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "OffsetAnchor",
+   "id": "lamp",
+   "params": {
+    "offset": [
+     1.6,
+     3.6,
+     2.6
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "node-target.out",
+   "to": "lamp.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "PointLight",
+   "id": "light",
+   "params": {
+    "color": {
+     "srgb": "#CFEFFF",
+     "alpha": 1
+    },
+    "intensity": 16,
+    "range": 9,
+    "intensityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.1,
+       "y": 1
+      },
+      {
+       "x": 0.7,
+       "y": 0.9
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "lamp.out",
+   "to": "light.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "lightwin.window",
+   "to": "light.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "light.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Schedule",
+   "id": "ringwin",
+   "params": {
+    "startTicks": 24,
+    "durationTicks": 40,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Time",
+   "id": "ringclock"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "ringwin.window",
+   "to": "ringclock.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "RingPath",
+   "id": "ring",
+   "params": {
+    "radius": 1.5,
+    "samples": 96
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "ScalarMath",
+   "id": "ringsize",
+   "params": {
+    "operation": "max",
+    "b": 0.13,
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "ScalarMath",
+   "id": "ringdim",
+   "params": {
+    "operation": "multiply",
+    "b": -0.5,
+    "inputUnit": "normalized",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "ScalarMath",
+   "id": "ringfade",
+   "params": {
+    "operation": "add",
+    "b": 0.5,
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "ringclock.progress",
+   "to": "ringsize.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "ringclock.progress",
+   "to": "ringdim.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "ringdim.value",
+   "to": "ringfade.a"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "OffsetAnchor",
+   "id": "floor",
+   "params": {
+    "offset": [
+     0,
+     0.02,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "node-target.out",
+   "to": "floor.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Material",
+   "id": "ringmat",
+   "params": {
+    "blend": "normal",
+    "tint": {
+     "srgb": "#DDF4FF",
+     "alpha": 1
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "RibbonRenderer",
+   "id": "ringrib",
+   "params": {
+    "width": 0.03,
+    "endFade": 0
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "floor.out",
+   "to": "ring.center"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "ringsize.value",
+   "to": "ring.radiusScale"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "ringfade.value",
+   "to": "ringmat.opacity"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "ring.paths",
+   "to": "ringrib.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "ringmat.material",
+   "to": "ringrib.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "ringwin.window",
+   "to": "ringrib.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "ringrib.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Emitter",
+   "id": "frags",
+   "params": {
+    "shape": "sphere",
+    "radius": 0.33,
+    "burst": 24,
+    "rate": 0,
+    "speedMin": 1,
+    "speedMax": 3,
+    "lifetimeMin": 0.75,
+    "lifetimeMax": 1.2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "InitialProperties",
+   "id": "fragip",
+   "params": {
+    "sizeMin": 0.05,
+    "sizeMax": 0.12,
+    "angularVelocityMin": -6,
+    "angularVelocityMax": 6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Gravity",
+   "id": "fragg",
+   "params": {
+    "acceleration": [
+     0,
+     -9.81,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "GroundCollision",
+   "id": "fragfloor",
+   "params": {
+    "mode": "bounce",
+    "restitution": 0.3,
+    "friction": 0.4,
+    "maxBounces": 2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "MeshRenderer",
+   "id": "fragmesh",
+   "params": {
+    "mesh": "shard",
+    "orientation": "tumble",
+    "lit": true,
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.7,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "chest.out",
+   "to": "frags.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "fracture.start",
+   "to": "frags.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "frags.particles",
+   "to": "fragip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "fragip.particles",
+   "to": "fragg.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "fragg.particles",
+   "to": "fragfloor.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "fragfloor.particles",
+   "to": "fragmesh.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "icemat.material",
+   "to": "fragmesh.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "fragmesh.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Emitter",
+   "id": "frost",
+   "params": {
+    "shape": "sphere",
+    "radius": 0.8,
+    "burst": 12,
+    "rate": 0,
+    "speedMin": 0.3,
+    "speedMax": 0.8,
+    "lifetimeMin": 0.8,
+    "lifetimeMax": 1.4
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "InitialProperties",
+   "id": "frostip",
+   "params": {
+    "sizeMin": 0.4,
+    "sizeMax": 0.7,
+    "randomFrameStart": true,
+    "rotationMin": 0,
+    "rotationMax": 6.283
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Gravity",
+   "id": "frostlift",
+   "params": {
+    "acceleration": [
+     0,
+     0.5,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Drag",
+   "id": "frostdrag",
+   "params": {
+    "coefficient": 1.2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Material",
+   "id": "frostmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "blend": "normal",
+    "tint": {
+     "srgb": "#DDEFF8",
+     "alpha": 1
+    },
+    "opacity": 1,
+    "groundFade": 0.3
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "BillboardRenderer",
+   "id": "frostbb",
+   "params": {
+    "flipbookMode": "overLife",
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.7
+      },
+      {
+       "x": 1,
+       "y": 1.6
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.2,
+       "y": 0.35
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "chest.out",
+   "to": "frost.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "fracture.start",
+   "to": "frost.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "frost.particles",
+   "to": "frostip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "frostip.particles",
+   "to": "frostlift.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "frostlift.particles",
+   "to": "frostdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "frostdrag.particles",
+   "to": "frostbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "frostmat.material",
+   "to": "frostbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "frostbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Emitter",
+   "id": "vapour",
+   "params": {
+    "shape": "disc",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "radius": 0.7150000000000001,
+    "burst": 0,
+    "rate": 20,
+    "speedMin": 0.05,
+    "speedMax": 0.25,
+    "lifetimeMin": 1,
+    "lifetimeMax": 1.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "InitialProperties",
+   "id": "vapourip",
+   "params": {
+    "sizeMin": 0.5,
+    "sizeMax": 0.95,
+    "randomFrameStart": true,
+    "rotationMin": 0,
+    "rotationMax": 6.283
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Gravity",
+   "id": "vapourlift",
+   "params": {
+    "acceleration": [
+     0,
+     0.6,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Material",
+   "id": "vapourmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "blend": "normal",
+    "tint": {
+     "srgb": "#DDEFF8",
+     "alpha": 1
+    },
+    "opacity": 1,
+    "groundFade": 0.05
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "OffsetAnchor",
+   "id": "vapourbase",
+   "params": {
+    "offset": [
+     0,
+     0.15,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "node-target.out",
+   "to": "vapourbase.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Drag",
+   "id": "vapourdrag",
+   "params": {
+    "coefficient": 1.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "BillboardRenderer",
+   "id": "vapourbb",
+   "params": {
+    "flipbookMode": "overLife",
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.6
+      },
+      {
+       "x": 1,
+       "y": 1.5
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.3,
+       "y": 0.38
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "vapourbase.out",
+   "to": "vapour.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "erupt.window",
+   "to": "vapour.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "vapour.particles",
+   "to": "vapourip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "vapourip.particles",
+   "to": "vapourlift.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "vapourlift.particles",
+   "to": "vapourdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "vapourdrag.particles",
+   "to": "vapourbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "vapourmat.material",
+   "to": "vapourbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "vapourbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "Material",
+   "id": "glintmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "spark-streak",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#E8F8FF",
+     "alpha": 1
+    },
+    "emission": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icecluster",
+   "type": "BillboardRenderer",
+   "id": "glintbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 2,
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.5
+      },
+      {
+       "x": 1,
+       "y": 0.3
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.6
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "fragfloor.particles",
+   "to": "glintbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "glintmat.material",
+   "to": "glintbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icecluster",
+   "from": "glintbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "icecluster"
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "icecluster",
+   "ticks": [
+    16,
+    44,
+    70,
+    102,
+    170
+   ]
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "icecluster",
+   "ticks": [
+    70
+   ],
+   "background": "light"
+  },
+  true
+ ]
+]

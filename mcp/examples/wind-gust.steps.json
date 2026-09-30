@@ -1,0 +1,1055 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "wind"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "wind",
+   "durationTicks": 180,
+   "seed": 42
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "wind",
+   "anchorId": "source",
+   "position": [
+    -3,
+    1.1,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "wind",
+   "anchorId": "target",
+   "position": [
+    3,
+    1.1,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "Schedule",
+   "id": "gust",
+   "params": {
+    "startTicks": 0,
+    "durationTicks": 138,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "EffectTimeCurve",
+   "id": "envelope",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.3,
+       "y": 0.4
+      },
+      {
+       "x": 0.5,
+       "y": 1
+      },
+      {
+       "x": 1.4667,
+       "y": 0.85
+      },
+      {
+       "x": 1.8,
+       "y": 0.6
+      },
+      {
+       "x": 2.3,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "HelixPath",
+   "id": "helix0",
+   "params": {
+    "radius": 0.44,
+    "turns": 1.5,
+    "phase": 0,
+    "spin": 3.2,
+    "taper": "both",
+    "samples": 72
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "node-source.out",
+   "to": "helix0.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "node-target.out",
+   "to": "helix0.end"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "Material",
+   "id": "ribmat0",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "variant": 0,
+    "blend": "normal",
+    "tint": {
+     "srgb": "#5A948F",
+     "alpha": 1
+    },
+    "emission": 0.25,
+    "uvScroll": [
+     -2.5,
+     0
+    ],
+    "uvDistort": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "ScalarMath",
+   "id": "ribfade0",
+   "params": {
+    "operation": "multiply",
+    "b": 0.85,
+    "inputUnit": "normalized",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "envelope.value",
+   "to": "ribfade0.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "ribfade0.value",
+   "to": "ribmat0.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "RibbonRenderer",
+   "id": "ribbon0",
+   "params": {
+    "width": 0.10500000000000001,
+    "endFade": 0.3,
+    "uvMode": "tile",
+    "uvTileLength": 1.4
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "helix0.paths",
+   "to": "ribbon0.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "ribmat0.material",
+   "to": "ribbon0.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "gust.window",
+   "to": "ribbon0.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "ribbon0.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "HelixPath",
+   "id": "helix1",
+   "params": {
+    "radius": 0.495,
+    "turns": 1.5,
+    "phase": 1.941,
+    "spin": 4,
+    "taper": "both",
+    "samples": 72
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "node-source.out",
+   "to": "helix1.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "node-target.out",
+   "to": "helix1.end"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "Material",
+   "id": "ribmat1",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "variant": 1,
+    "blend": "normal",
+    "tint": {
+     "srgb": "#6FA9A4",
+     "alpha": 1
+    },
+    "emission": 0.25,
+    "uvScroll": [
+     -2.875,
+     0
+    ],
+    "uvDistort": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "ScalarMath",
+   "id": "ribfade1",
+   "params": {
+    "operation": "multiply",
+    "b": 0.77,
+    "inputUnit": "normalized",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "envelope.value",
+   "to": "ribfade1.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "ribfade1.value",
+   "to": "ribmat1.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "RibbonRenderer",
+   "id": "ribbon1",
+   "params": {
+    "width": 0.15000000000000002,
+    "endFade": 0.3,
+    "uvMode": "tile",
+    "uvTileLength": 1.4
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "helix1.paths",
+   "to": "ribbon1.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "ribmat1.material",
+   "to": "ribbon1.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "gust.window",
+   "to": "ribbon1.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "ribbon1.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "HelixPath",
+   "id": "helix2",
+   "params": {
+    "radius": 0.55,
+    "turns": 1.5,
+    "phase": 3.882,
+    "spin": 3.2,
+    "taper": "both",
+    "samples": 72
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "node-source.out",
+   "to": "helix2.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "node-target.out",
+   "to": "helix2.end"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "Material",
+   "id": "ribmat2",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "variant": 2,
+    "blend": "normal",
+    "tint": {
+     "srgb": "#5A948F",
+     "alpha": 1
+    },
+    "emission": 0.25,
+    "uvScroll": [
+     -3.25,
+     0
+    ],
+    "uvDistort": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "ScalarMath",
+   "id": "ribfade2",
+   "params": {
+    "operation": "multiply",
+    "b": 0.69,
+    "inputUnit": "normalized",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "envelope.value",
+   "to": "ribfade2.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "ribfade2.value",
+   "to": "ribmat2.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "RibbonRenderer",
+   "id": "ribbon2",
+   "params": {
+    "width": 0.195,
+    "endFade": 0.3,
+    "uvMode": "tile",
+    "uvTileLength": 1.4
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "helix2.paths",
+   "to": "ribbon2.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "ribmat2.material",
+   "to": "ribbon2.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "gust.window",
+   "to": "ribbon2.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "ribbon2.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "HelixPath",
+   "id": "helix3",
+   "params": {
+    "radius": 0.44,
+    "turns": 1.5,
+    "phase": 5.822,
+    "spin": 4,
+    "taper": "both",
+    "samples": 72
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "node-source.out",
+   "to": "helix3.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "node-target.out",
+   "to": "helix3.end"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "Material",
+   "id": "ribmat3",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "variant": 3,
+    "blend": "normal",
+    "tint": {
+     "srgb": "#6FA9A4",
+     "alpha": 1
+    },
+    "emission": 0.25,
+    "uvScroll": [
+     -3.625,
+     0
+    ],
+    "uvDistort": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "ScalarMath",
+   "id": "ribfade3",
+   "params": {
+    "operation": "multiply",
+    "b": 0.85,
+    "inputUnit": "normalized",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "envelope.value",
+   "to": "ribfade3.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "ribfade3.value",
+   "to": "ribmat3.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "RibbonRenderer",
+   "id": "ribbon3",
+   "params": {
+    "width": 0.24,
+    "endFade": 0.3,
+    "uvMode": "tile",
+    "uvTileLength": 1.4
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "helix3.paths",
+   "to": "ribbon3.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "ribmat3.material",
+   "to": "ribbon3.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "gust.window",
+   "to": "ribbon3.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "ribbon3.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "Schedule",
+   "id": "streakwin",
+   "params": {
+    "startTicks": 18,
+    "durationTicks": 90,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "Emitter",
+   "id": "streaks",
+   "params": {
+    "shape": "cone",
+    "coneAngle": 0.12,
+    "radius": 0.66,
+    "rate": 45,
+    "burst": 0,
+    "speedMin": 6,
+    "speedMax": 9,
+    "lifetimeMin": 0.3,
+    "lifetimeMax": 0.6,
+    "direction": [
+     1,
+     0,
+     0
+    ],
+    "rateOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.3
+      },
+      {
+       "x": 0.15,
+       "y": 1
+      },
+      {
+       "x": 0.8,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "InitialProperties",
+   "id": "streakip",
+   "params": {
+    "sizeMin": 0.02,
+    "sizeMax": 0.04
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "Material",
+   "id": "streakmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "spark-streak",
+    "blend": "normal",
+    "tint": {
+     "srgb": "#88B8B4",
+     "alpha": 1
+    },
+    "opacity": 0.75,
+    "emission": 0.1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "BillboardRenderer",
+   "id": "streakbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 6,
+    "pivot": 0.7,
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.15,
+       "y": 1
+      },
+      {
+       "x": 0.8,
+       "y": 0.6
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "node-source.out",
+   "to": "streaks.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "node-target.out",
+   "to": "streaks.aim"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "streakwin.window",
+   "to": "streaks.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "streaks.particles",
+   "to": "streakip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "streakip.particles",
+   "to": "streakbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "streakmat.material",
+   "to": "streakbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "streakbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "Emitter",
+   "id": "wisps",
+   "params": {
+    "shape": "cone",
+    "coneAngle": 0.25,
+    "radius": 0.55,
+    "rate": 10,
+    "burst": 0,
+    "speedMin": 2,
+    "speedMax": 3.5,
+    "lifetimeMin": 0.9,
+    "lifetimeMax": 1.5,
+    "direction": [
+     1,
+     0,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "InitialProperties",
+   "id": "wispip",
+   "params": {
+    "sizeMin": 0.35,
+    "sizeMax": 0.6,
+    "randomFrameStart": true,
+    "rotationMin": 0,
+    "rotationMax": 6.283,
+    "angularVelocityMin": -1,
+    "angularVelocityMax": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "Vortex",
+   "id": "swirl",
+   "params": {
+    "axis": [
+     1,
+     0,
+     0
+    ],
+    "tangential": 2.5,
+    "inward": 0.2,
+    "falloff": 2,
+    "strength": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "Drag",
+   "id": "wispdrag",
+   "params": {
+    "coefficient": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "Material",
+   "id": "wispmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "blend": "normal",
+    "tint": {
+     "srgb": "#9CC4C0",
+     "alpha": 1
+    },
+    "opacity": 0.2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "wind",
+   "type": "BillboardRenderer",
+   "id": "wispbb",
+   "params": {
+    "flipbookMode": "overLife",
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.6
+      },
+      {
+       "x": 1,
+       "y": 1.6
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.3,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "node-source.out",
+   "to": "wisps.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "node-target.out",
+   "to": "wisps.aim"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "streakwin.window",
+   "to": "wisps.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "wisps.particles",
+   "to": "wispip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "wispip.particles",
+   "to": "swirl.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "node-source.out",
+   "to": "swirl.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "swirl.particles",
+   "to": "wispdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "envelope.value",
+   "to": "swirl.strength"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "wispdrag.particles",
+   "to": "wispbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "wispmat.material",
+   "to": "wispbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "wind",
+   "from": "wispbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "wind"
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "wind",
+   "ticks": [
+    12,
+    40,
+    80,
+    125,
+    170
+   ]
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "wind",
+   "ticks": [
+    60
+   ],
+   "background": "light"
+  },
+  true
+ ]
+]

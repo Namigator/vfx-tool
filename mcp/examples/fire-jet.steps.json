@@ -1,0 +1,1605 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "firejet"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "firejet",
+   "durationTicks": 216,
+   "seed": 42
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "firejet",
+   "anchorId": "source",
+   "position": [
+    -3,
+    1.2,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "firejet",
+   "anchorId": "target",
+   "position": [
+    3,
+    1.1,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Schedule",
+   "id": "emit",
+   "params": {
+    "startTicks": 12,
+    "durationTicks": 84,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Schedule",
+   "id": "ignite",
+   "params": {
+    "startTicks": 12,
+    "durationTicks": 6,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Material",
+   "id": "ignitemat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFE9B0",
+     "alpha": 1
+    },
+    "emission": 1.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "SpriteRenderer",
+   "id": "ignition",
+   "params": {
+    "size": 0.4,
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.37
+      },
+      {
+       "x": 1,
+       "y": 1
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "node-source.out",
+   "to": "ignition.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "ignitemat.material",
+   "to": "ignition.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "ignite.window",
+   "to": "ignition.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "ignition.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Emitter",
+   "id": "core",
+   "params": {
+    "shape": "cone",
+    "radius": 0.035,
+    "burst": 0,
+    "rateOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.2
+      },
+      {
+       "x": 0.1,
+       "y": 1
+      },
+      {
+       "x": 0.8,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    },
+    "coneAngle": 0.06,
+    "rate": 140,
+    "speedMin": 9,
+    "speedMax": 12,
+    "lifetimeMin": 0.3,
+    "lifetimeMax": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "node-source.out",
+   "to": "core.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "node-target.out",
+   "to": "core.aim"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "emit.window",
+   "to": "core.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "InitialProperties",
+   "id": "coreip",
+   "params": {
+    "sizeMin": 0.1,
+    "sizeMax": 0.14,
+    "randomFrameStart": true
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Drag",
+   "id": "coredrag",
+   "params": {
+    "coefficient": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "NoiseForce",
+   "id": "corenoise",
+   "params": {
+    "mode": "curl",
+    "amplitude": 3.5,
+    "frequency": 0.7,
+    "evolution": 1.1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Gravity",
+   "id": "corelift",
+   "params": {
+    "acceleration": [
+     0,
+     0.8,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "coreip.particles",
+   "to": "coredrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "coredrag.particles",
+   "to": "corenoise.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "corenoise.particles",
+   "to": "corelift.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "core.particles",
+   "to": "coreip.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Material",
+   "id": "coremat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "flame-tongue-b",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFF1C8",
+     "alpha": 1
+    },
+    "opacity": 0.3,
+    "emission": 0.2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "BillboardRenderer",
+   "id": "corebb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 2.2,
+    "pivot": 0.25,
+    "flipbookMode": "overLife",
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1.2
+      },
+      {
+       "x": 0.4,
+       "y": 4
+      },
+      {
+       "x": 1,
+       "y": 0.2
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.08,
+       "y": 1
+      },
+      {
+       "x": 0.6,
+       "y": 0.5
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    },
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFFFFF",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.5,
+       "color": {
+        "srgb": "#FFE08A",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#FF9A40",
+        "alpha": 0.5
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "corelift.particles",
+   "to": "corebb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "coremat.material",
+   "to": "corebb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "corebb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Emitter",
+   "id": "tonguea",
+   "params": {
+    "shape": "cone",
+    "radius": 0.035,
+    "burst": 0,
+    "rateOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.2
+      },
+      {
+       "x": 0.1,
+       "y": 1
+      },
+      {
+       "x": 0.8,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    },
+    "coneAngle": 0.1,
+    "rate": 210,
+    "speedMin": 7,
+    "speedMax": 10,
+    "lifetimeMin": 0.4,
+    "lifetimeMax": 0.75
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "node-source.out",
+   "to": "tonguea.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "node-target.out",
+   "to": "tonguea.aim"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "emit.window",
+   "to": "tonguea.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "InitialProperties",
+   "id": "tongueaip",
+   "params": {
+    "sizeMin": 0.1,
+    "sizeMax": 0.16,
+    "randomFrameStart": true
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "tonguea.particles",
+   "to": "tongueaip.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Drag",
+   "id": "tongueadrag",
+   "params": {
+    "coefficient": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "NoiseForce",
+   "id": "tongueanoise",
+   "params": {
+    "mode": "curl",
+    "amplitude": 3.5,
+    "frequency": 0.7,
+    "evolution": 1.1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Gravity",
+   "id": "tonguealift",
+   "params": {
+    "acceleration": [
+     0,
+     1.6,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "tongueaip.particles",
+   "to": "tongueadrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "tongueadrag.particles",
+   "to": "tongueanoise.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "tongueanoise.particles",
+   "to": "tonguealift.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Material",
+   "id": "tongueamat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "flame-tongue-a",
+    "blend": "additive",
+    "opacity": 0.11,
+    "emission": 0,
+    "dissolve": 0.85,
+    "dissolveStart": 0.45,
+    "dissolveSoftness": 0.1,
+    "dissolveEdge": 0.04,
+    "dissolveEdgeColor": {
+     "srgb": "#FFB040",
+     "alpha": 1
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "BillboardRenderer",
+   "id": "tongueabb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 1.5,
+    "pivot": 0.3,
+    "flipbookMode": "overLife",
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.45,
+       "y": 2.6
+      },
+      {
+       "x": 1,
+       "y": 1.56
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.06,
+       "y": 1
+      },
+      {
+       "x": 0.6,
+       "y": 0.75
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    },
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFF6D8",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.25,
+       "color": {
+        "srgb": "#FFC05A",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.6,
+       "color": {
+        "srgb": "#F0602A",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#6A1808",
+        "alpha": 0.4
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "tonguealift.particles",
+   "to": "tongueabb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "tongueamat.material",
+   "to": "tongueabb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "tongueabb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Emitter",
+   "id": "tongueb",
+   "params": {
+    "shape": "cone",
+    "radius": 0.035,
+    "burst": 0,
+    "rateOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.2
+      },
+      {
+       "x": 0.1,
+       "y": 1
+      },
+      {
+       "x": 0.8,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    },
+    "coneAngle": 0.1,
+    "rate": 210,
+    "speedMin": 7,
+    "speedMax": 10,
+    "lifetimeMin": 0.4,
+    "lifetimeMax": 0.75
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "node-source.out",
+   "to": "tongueb.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "node-target.out",
+   "to": "tongueb.aim"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "emit.window",
+   "to": "tongueb.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "InitialProperties",
+   "id": "tonguebip",
+   "params": {
+    "sizeMin": 0.1,
+    "sizeMax": 0.16,
+    "randomFrameStart": true
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "tongueb.particles",
+   "to": "tonguebip.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Drag",
+   "id": "tonguebdrag",
+   "params": {
+    "coefficient": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "NoiseForce",
+   "id": "tonguebnoise",
+   "params": {
+    "mode": "curl",
+    "amplitude": 3.5,
+    "frequency": 0.7,
+    "evolution": 1.1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Gravity",
+   "id": "tongueblift",
+   "params": {
+    "acceleration": [
+     0,
+     1.6,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "tonguebip.particles",
+   "to": "tonguebdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "tonguebdrag.particles",
+   "to": "tonguebnoise.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "tonguebnoise.particles",
+   "to": "tongueblift.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Material",
+   "id": "tonguebmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "flame-tongue-b",
+    "blend": "additive",
+    "opacity": 0.11,
+    "emission": 0,
+    "dissolve": 0.85,
+    "dissolveStart": 0.45,
+    "dissolveSoftness": 0.1,
+    "dissolveEdge": 0.04,
+    "dissolveEdgeColor": {
+     "srgb": "#FFB040",
+     "alpha": 1
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "BillboardRenderer",
+   "id": "tonguebbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 1.5,
+    "pivot": 0.3,
+    "flipbookMode": "overLife",
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.45,
+       "y": 2.6
+      },
+      {
+       "x": 1,
+       "y": 1.56
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.06,
+       "y": 1
+      },
+      {
+       "x": 0.6,
+       "y": 0.75
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    },
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFF6D8",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.25,
+       "color": {
+        "srgb": "#FFC05A",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.6,
+       "color": {
+        "srgb": "#F0602A",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#6A1808",
+        "alpha": 0.4
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "tongueblift.particles",
+   "to": "tonguebbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "tonguebmat.material",
+   "to": "tonguebbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "tonguebbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Emitter",
+   "id": "embers",
+   "params": {
+    "shape": "cone",
+    "radius": 0.035,
+    "burst": 0,
+    "rateOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.2
+      },
+      {
+       "x": 0.1,
+       "y": 1
+      },
+      {
+       "x": 0.8,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    },
+    "coneAngle": 0.35,
+    "rate": 40,
+    "speedMin": 3,
+    "speedMax": 6,
+    "lifetimeMin": 0.5,
+    "lifetimeMax": 1.2
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "node-source.out",
+   "to": "embers.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "node-target.out",
+   "to": "embers.aim"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "emit.window",
+   "to": "embers.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "InitialProperties",
+   "id": "emberip",
+   "params": {
+    "sizeMin": 0.015,
+    "sizeMax": 0.035
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Gravity",
+   "id": "emberlift",
+   "params": {
+    "acceleration": [
+     0,
+     1.8,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Drag",
+   "id": "emberdrag",
+   "params": {
+    "coefficient": 1.1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "NoiseForce",
+   "id": "embernoise",
+   "params": {
+    "mode": "curl",
+    "amplitude": 2.5,
+    "frequency": 1.4,
+    "evolution": 1.5
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "embers.particles",
+   "to": "emberip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "emberip.particles",
+   "to": "emberlift.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "emberlift.particles",
+   "to": "emberdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "emberdrag.particles",
+   "to": "embernoise.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Material",
+   "id": "embermat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "spark-streak",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFB060",
+     "alpha": 1
+    },
+    "emission": 1.2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "BillboardRenderer",
+   "id": "emberbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 3,
+    "pivot": 0.8,
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.7,
+       "y": 0.8
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Material",
+   "id": "embertrailmat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FF8A30",
+     "alpha": 1
+    },
+    "emission": 0.8,
+    "opacity": 0.7
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "ParticleTrail",
+   "id": "embertrail",
+   "params": {
+    "history": 0.08,
+    "width": 0.01,
+    "endFade": 0.4
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "embernoise.particles",
+   "to": "emberbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "embermat.material",
+   "to": "emberbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "emberbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "embernoise.particles",
+   "to": "embertrail.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "embertrailmat.material",
+   "to": "embertrail.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "embertrail.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Emitter",
+   "id": "smoke",
+   "params": {
+    "shape": "cone",
+    "radius": 0.035,
+    "burst": 0,
+    "rateOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.2
+      },
+      {
+       "x": 0.1,
+       "y": 1
+      },
+      {
+       "x": 0.8,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    },
+    "coneAngle": 0.15000000000000002,
+    "rate": 18,
+    "speedMin": 4.8999999999999995,
+    "speedMax": 7,
+    "lifetimeMin": 1,
+    "lifetimeMax": 1.9
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "node-source.out",
+   "to": "smoke.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "node-target.out",
+   "to": "smoke.aim"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "emit.window",
+   "to": "smoke.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "InitialProperties",
+   "id": "smokeip",
+   "params": {
+    "sizeMin": 0.2,
+    "sizeMax": 0.3,
+    "randomFrameStart": true,
+    "rotationMin": 0,
+    "rotationMax": 6.283,
+    "angularVelocityMin": -0.4,
+    "angularVelocityMax": 0.4
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Drag",
+   "id": "smokedrag",
+   "params": {
+    "coefficient": 1.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Gravity",
+   "id": "smokelift",
+   "params": {
+    "acceleration": [
+     0,
+     1.4,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "NoiseForce",
+   "id": "smokenoise",
+   "params": {
+    "mode": "curl",
+    "amplitude": 1.2,
+    "frequency": 0.5,
+    "evolution": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "smoke.particles",
+   "to": "smokeip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "smokeip.particles",
+   "to": "smokedrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "smokedrag.particles",
+   "to": "smokelift.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "smokelift.particles",
+   "to": "smokenoise.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Material",
+   "id": "smokemat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "smoke-puff",
+    "blend": "normal",
+    "tint": {
+     "srgb": "#8A8078",
+     "alpha": 1
+    },
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "BillboardRenderer",
+   "id": "smokebb",
+   "params": {
+    "flipbookMode": "overLife",
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 4
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.05
+      },
+      {
+       "x": 0.35,
+       "y": 0.25
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "smokenoise.particles",
+   "to": "smokebb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "smokemat.material",
+   "to": "smokebb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "smokebb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "Schedule",
+   "id": "lightwin",
+   "params": {
+    "startTicks": 12,
+    "durationTicks": 104,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "PointLight",
+   "id": "light",
+   "params": {
+    "color": {
+     "srgb": "#FF8A3A",
+     "alpha": 1
+    },
+    "intensity": 35,
+    "range": 6,
+    "flicker": 0.3,
+    "flickerRate": 10,
+    "intensityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.06,
+       "y": 1
+      },
+      {
+       "x": 0.8076923076923077,
+       "y": 0.9
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "node-source.out",
+   "to": "light.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "lightwin.window",
+   "to": "light.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "light.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "firejet"
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "firejet",
+   "ticks": [
+    14,
+    54,
+    126
+   ]
+  },
+  true
+ ]
+]

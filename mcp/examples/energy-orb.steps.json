@@ -1,0 +1,1649 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "energyorb"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "energyorb",
+   "durationTicks": 180,
+   "seed": 42
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "energyorb",
+   "anchorId": "source",
+   "position": [
+    -4,
+    1.4,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "energyorb",
+   "anchorId": "target",
+   "position": [
+    4,
+    0.3,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Schedule",
+   "id": "charge",
+   "params": {
+    "startTicks": 0,
+    "durationTicks": 30,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Emitter",
+   "id": "gather",
+   "params": {
+    "shape": "sphere",
+    "radius": 1.2,
+    "burst": 24,
+    "rate": 0,
+    "speedMin": 0,
+    "speedMax": 0.1,
+    "lifetimeMin": 0.5,
+    "lifetimeMax": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "InitialProperties",
+   "id": "gatherip",
+   "params": {
+    "sizeMin": 0.03,
+    "sizeMax": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Attract",
+   "id": "gatherpull",
+   "params": {
+    "acceleration": 12,
+    "softRadius": 0.12,
+    "killRadius": 0.05
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Material",
+   "id": "motemat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#F2F0F6",
+     "alpha": 1
+    },
+    "emission": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "BillboardRenderer",
+   "id": "gatherbb"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "node-source.out",
+   "to": "gather.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "charge.start",
+   "to": "gather.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "gather.particles",
+   "to": "gatherip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "gatherip.particles",
+   "to": "gatherpull.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "node-source.out",
+   "to": "gatherpull.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "gatherpull.particles",
+   "to": "gatherbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "motemat.material",
+   "to": "gatherbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "gatherbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Material",
+   "id": "coremat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFFFFF",
+     "alpha": 1
+    },
+    "emission": 1.4
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Material",
+   "id": "halomat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#9B6BFF",
+     "alpha": 1
+    },
+    "opacity": 0.35,
+    "emission": 0.4
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "SpriteRenderer",
+   "id": "chargecore",
+   "params": {
+    "size": 0.3,
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.27
+      },
+      {
+       "x": 1,
+       "y": 1
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.3
+      },
+      {
+       "x": 1,
+       "y": 1
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "SpriteRenderer",
+   "id": "chargehalo",
+   "params": {
+    "size": 0.9,
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.2
+      },
+      {
+       "x": 1,
+       "y": 1
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 1,
+       "y": 0.8
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "node-source.out",
+   "to": "chargecore.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "coremat.material",
+   "to": "chargecore.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "charge.window",
+   "to": "chargecore.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "chargecore.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "node-source.out",
+   "to": "chargehalo.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "halomat.material",
+   "to": "chargehalo.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "charge.window",
+   "to": "chargehalo.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "chargehalo.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "BezierPath",
+   "id": "arc",
+   "params": {
+    "startHandle": [
+     2.6,
+     0.9333333333333332,
+     0
+    ],
+    "endHandle": [
+     -2.6,
+     0.9333333333333332,
+     0
+    ],
+    "samples": 64
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "node-source.out",
+   "to": "arc.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "node-target.out",
+   "to": "arc.end"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Schedule",
+   "id": "flight",
+   "params": {
+    "startTicks": 30,
+    "durationTicks": 150,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "PathFollower",
+   "id": "ball",
+   "params": {
+    "durationTicks": 56,
+    "easing": "linear",
+    "speed": 0
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "arc.paths",
+   "to": "ball.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "flight.window",
+   "to": "ball.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Schedule",
+   "id": "corewin",
+   "params": {
+    "startTicks": 30,
+    "durationTicks": 58,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "SpriteRenderer",
+   "id": "core",
+   "params": {
+    "size": 0.38
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "SpriteRenderer",
+   "id": "halo",
+   "params": {
+    "size": 1,
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.8
+      },
+      {
+       "x": 1,
+       "y": 0.8
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ball.anchor",
+   "to": "core.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "coremat.material",
+   "to": "core.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "corewin.window",
+   "to": "core.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "core.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ball.anchor",
+   "to": "halo.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "halomat.material",
+   "to": "halo.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "corewin.window",
+   "to": "halo.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "halo.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "PointLight",
+   "id": "balllight",
+   "params": {
+    "color": {
+     "srgb": "#9B6BFF",
+     "alpha": 1
+    },
+    "intensity": 18,
+    "range": 4
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ball.anchor",
+   "to": "balllight.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "corewin.window",
+   "to": "balllight.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "balllight.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Material",
+   "id": "trailmat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#F0EEF4",
+     "alpha": 1
+    },
+    "emission": 0.5,
+    "opacity": 0.55
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "MotionTrail",
+   "id": "trail",
+   "params": {
+    "history": 0.18,
+    "maxPoints": 64,
+    "width": 0.2,
+    "endFade": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Material",
+   "id": "sheathmat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#9B6BFF",
+     "alpha": 1
+    },
+    "emission": 0.4,
+    "opacity": 0.45
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "MotionTrail",
+   "id": "sheath",
+   "params": {
+    "history": 0.144,
+    "maxPoints": 64,
+    "width": 0.52,
+    "endFade": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ball.anchor",
+   "to": "trail.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "trailmat.material",
+   "to": "trail.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "flight.window",
+   "to": "trail.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "trail.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ball.anchor",
+   "to": "sheath.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "sheathmat.material",
+   "to": "sheath.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "flight.window",
+   "to": "sheath.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "sheath.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Emitter",
+   "id": "accents",
+   "params": {
+    "shape": "sphere",
+    "radius": 0.45599999999999996,
+    "rate": 40,
+    "burst": 0,
+    "speedMin": 0.1,
+    "speedMax": 0.4,
+    "lifetimeMin": 0.08,
+    "lifetimeMax": 0.2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "InitialProperties",
+   "id": "accentip",
+   "params": {
+    "sizeMin": 0.025,
+    "sizeMax": 0.05
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "BillboardRenderer",
+   "id": "accentbb",
+   "params": {
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ball.anchor",
+   "to": "accents.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "corewin.window",
+   "to": "accents.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "accents.particles",
+   "to": "accentip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "accentip.particles",
+   "to": "accentbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "motemat.material",
+   "to": "accentbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "accentbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Emitter",
+   "id": "shed",
+   "params": {
+    "shape": "sphere",
+    "radius": 0.05,
+    "rate": 80,
+    "burst": 0,
+    "speedMin": 0.2,
+    "speedMax": 0.8,
+    "lifetimeMin": 0.3,
+    "lifetimeMax": 0.7
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "InitialProperties",
+   "id": "shedip",
+   "params": {
+    "sizeMin": 0.02,
+    "sizeMax": 0.035
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "NoiseForce",
+   "id": "shednoise",
+   "params": {
+    "mode": "curl",
+    "amplitude": 0.8,
+    "frequency": 1.2,
+    "evolution": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Drag",
+   "id": "sheddrag",
+   "params": {
+    "coefficient": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Material",
+   "id": "shedmat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#9B6BFF",
+     "alpha": 1
+    },
+    "emission": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "ParticleTrail",
+   "id": "shedtrail",
+   "params": {
+    "history": 0.15,
+    "maxPoints": 10,
+    "width": 0.015,
+    "endFade": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ball.anchor",
+   "to": "shed.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "corewin.window",
+   "to": "shed.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "shed.particles",
+   "to": "shedip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "shedip.particles",
+   "to": "shednoise.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "shednoise.particles",
+   "to": "sheddrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "sheddrag.particles",
+   "to": "shedtrail.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "shedmat.material",
+   "to": "shedtrail.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "shedtrail.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Schedule",
+   "id": "flashwin",
+   "params": {
+    "startTicks": 0,
+    "durationTicks": 18,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Schedule",
+   "id": "ringwin",
+   "params": {
+    "startTicks": 0,
+    "durationTicks": 36,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Schedule",
+   "id": "lightwin",
+   "params": {
+    "startTicks": 0,
+    "durationTicks": 30,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ball.arrival",
+   "to": "flashwin.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ball.arrival",
+   "to": "ringwin.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ball.arrival",
+   "to": "lightwin.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "SpriteRenderer",
+   "id": "flash",
+   "params": {
+    "size": 2.4,
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.4
+      },
+      {
+       "x": 0.15,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 1.2
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.3,
+       "y": 0.6
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    },
+    "colorOverWindow": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFFFFF",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#8C8C8C",
+        "alpha": 1
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "node-target.out",
+   "to": "flash.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "coremat.material",
+   "to": "flash.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "flashwin.window",
+   "to": "flash.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "flash.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "SpriteRenderer",
+   "id": "flashglow",
+   "params": {
+    "size": 4.32,
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.5
+      },
+      {
+       "x": 0.2,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 1.3
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "node-target.out",
+   "to": "flashglow.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "halomat.material",
+   "to": "flashglow.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "flashwin.window",
+   "to": "flashglow.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "flashglow.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "PointLight",
+   "id": "impactlight",
+   "params": {
+    "color": {
+     "srgb": "#9B6BFF",
+     "alpha": 1
+    },
+    "intensity": 50,
+    "range": 6,
+    "intensityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "node-target.out",
+   "to": "impactlight.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "lightwin.window",
+   "to": "impactlight.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "impactlight.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Time",
+   "id": "ringclock"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ringwin.window",
+   "to": "ringclock.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "ScalarMath",
+   "id": "ringsize",
+   "params": {
+    "operation": "max",
+    "b": 0.0556,
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "ScalarMath",
+   "id": "ringdim",
+   "params": {
+    "operation": "multiply",
+    "b": -0.8,
+    "inputUnit": "normalized",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "ScalarMath",
+   "id": "ringfade",
+   "params": {
+    "operation": "add",
+    "b": 0.8,
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ringclock.progress",
+   "to": "ringsize.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ringclock.progress",
+   "to": "ringdim.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ringdim.value",
+   "to": "ringfade.a"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "RingPath",
+   "id": "ring",
+   "params": {
+    "radius": 3.6,
+    "samples": 96
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Material",
+   "id": "ringmat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#9B6BFF",
+     "alpha": 1
+    },
+    "emission": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "RibbonRenderer",
+   "id": "ringrib",
+   "params": {
+    "width": 0.03,
+    "endFade": 0
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "node-target.out",
+   "to": "ring.center"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ringsize.value",
+   "to": "ring.radiusScale"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ringfade.value",
+   "to": "ringmat.opacity"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ring.paths",
+   "to": "ringrib.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ringmat.material",
+   "to": "ringrib.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ringwin.window",
+   "to": "ringrib.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ringrib.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Emitter",
+   "id": "burst",
+   "params": {
+    "shape": "sphere",
+    "radius": 0.08,
+    "burst": 150,
+    "rate": 0,
+    "speedMin": 2,
+    "speedMax": 6,
+    "lifetimeMin": 0.3,
+    "lifetimeMax": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "InitialProperties",
+   "id": "burstip",
+   "params": {
+    "sizeMin": 0.02,
+    "sizeMax": 0.04
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Drag",
+   "id": "burstdrag",
+   "params": {
+    "coefficient": 2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Gravity",
+   "id": "burstg",
+   "params": {
+    "acceleration": [
+     0,
+     -3,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "Material",
+   "id": "burstmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "spark-streak",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#9B6BFF",
+     "alpha": 1
+    },
+    "emission": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "BillboardRenderer",
+   "id": "burstbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 4,
+    "pivot": 0.8,
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFFFFF",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.4,
+       "color": {
+        "srgb": "#D0D0D0",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#707070",
+        "alpha": 0
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "node-target.out",
+   "to": "burst.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "ball.arrival",
+   "to": "burst.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "burst.particles",
+   "to": "burstip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "burstip.particles",
+   "to": "burstdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "burstdrag.particles",
+   "to": "burstg.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "burstg.particles",
+   "to": "burstbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "burstmat.material",
+   "to": "burstbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "burstbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "energyorb"
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "energyorb",
+   "ticks": [
+    20,
+    58,
+    85,
+    90,
+    106,
+    170
+   ]
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "energyorb",
+   "ticks": [
+    88
+   ],
+   "glow": false
+  },
+  true
+ ]
+]

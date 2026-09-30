@@ -1,0 +1,1691 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "broad"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "broad",
+   "durationTicks": 180,
+   "seed": 42
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "broad",
+   "anchorId": "source",
+   "position": [
+    -3,
+    1.5,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "broad",
+   "anchorId": "target",
+   "position": [
+    3,
+    0.05,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "OffsetAnchor",
+   "id": "pool",
+   "params": {
+    "offset": [
+     0,
+     -0.03,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "node-target.out",
+   "to": "pool.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "BezierPath",
+   "id": "arc",
+   "params": {
+    "startHandle": [
+     1.2,
+     1.1,
+     0
+    ],
+    "endHandle": [
+     -0.6,
+     0.9900000000000001,
+     0
+    ],
+    "samples": 64
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "node-source.out",
+   "to": "arc.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "node-target.out",
+   "to": "arc.end"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "RevealPath",
+   "id": "reveal"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Schedule",
+   "id": "headwin",
+   "params": {
+    "startTicks": 18,
+    "durationTicks": 24,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Time",
+   "id": "travelclock"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "headwin.window",
+   "to": "travelclock.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "arc.paths",
+   "to": "reveal.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "travelclock.progress",
+   "to": "reveal.fraction"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Schedule",
+   "id": "flow",
+   "params": {
+    "startTicks": 18,
+    "durationTicks": 90,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "EffectTimeCurve",
+   "id": "bodyfade",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0.3,
+       "y": 0.42
+      },
+      {
+       "x": 1.4,
+       "y": 0.42
+      },
+      {
+       "x": 1.8,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Material",
+   "id": "bodymat",
+   "params": {
+    "blend": "normal",
+    "tint": {
+     "srgb": "#D8EEF8",
+     "alpha": 1
+    },
+    "emission": 0,
+    "liquid": 0.85
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "bodyfade.value",
+   "to": "bodymat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "RibbonRenderer",
+   "id": "body",
+   "params": {
+    "width": 0.32,
+    "endFade": 0.08,
+    "widthOverPath": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.55
+      },
+      {
+       "x": 0.5,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0.8
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "reveal.paths",
+   "to": "body.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "bodymat.material",
+   "to": "body.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "flow.window",
+   "to": "body.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "body.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "PathTransform",
+   "id": "lift",
+   "params": {
+    "offset": [
+     0,
+     0.08960000000000001,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "reveal.paths",
+   "to": "lift.paths"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "EffectTimeCurve",
+   "id": "hlfade",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0.3,
+       "y": 0.55
+      },
+      {
+       "x": 1.4,
+       "y": 0.55
+      },
+      {
+       "x": 1.8,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Material",
+   "id": "hlmat",
+   "params": {
+    "blend": "normal",
+    "tint": {
+     "srgb": "#E8F6FF",
+     "alpha": 1
+    },
+    "emission": 0.1
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "hlfade.value",
+   "to": "hlmat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "RibbonRenderer",
+   "id": "highlight",
+   "params": {
+    "width": 0.035,
+    "endFade": 0.15
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "lift.paths",
+   "to": "highlight.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "hlmat.material",
+   "to": "highlight.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "flow.window",
+   "to": "highlight.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "highlight.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Material",
+   "id": "coremat",
+   "params": {
+    "blend": "normal",
+    "tint": {
+     "srgb": "#E6F4FB",
+     "alpha": 1
+    },
+    "emission": 0,
+    "opacity": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "EffectTimeCurve",
+   "id": "corefade",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0.3,
+       "y": 0.22
+      },
+      {
+       "x": 1.4,
+       "y": 0.22
+      },
+      {
+       "x": 1.8,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "corefade.value",
+   "to": "coremat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "RibbonRenderer",
+   "id": "core",
+   "params": {
+    "width": 0.14400000000000002,
+    "endFade": 0.1
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "reveal.paths",
+   "to": "core.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "coremat.material",
+   "to": "core.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "flow.window",
+   "to": "core.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "core.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Schedule",
+   "id": "travelwin",
+   "params": {
+    "startTicks": 18,
+    "durationTicks": 162,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "PathFollower",
+   "id": "head",
+   "params": {
+    "durationTicks": 24,
+    "easing": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "arc.paths",
+   "to": "head.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "travelwin.window",
+   "to": "head.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Material",
+   "id": "headmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "droplet",
+    "blend": "normal",
+    "tint": {
+     "srgb": "#F2F9FD",
+     "alpha": 1
+    },
+    "opacity": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "SpriteRenderer",
+   "id": "headsprite",
+   "params": {
+    "size": 0.18
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "head.anchor",
+   "to": "headsprite.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "headmat.material",
+   "to": "headsprite.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "headwin.window",
+   "to": "headsprite.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "headsprite.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Schedule",
+   "id": "splashwin",
+   "params": {
+    "startTicks": 0,
+    "durationTicks": 48,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "head.arrival",
+   "to": "splashwin.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Material",
+   "id": "splashmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "foam",
+    "blend": "normal",
+    "tint": {
+     "srgb": "#DDF1FF",
+     "alpha": 1
+    },
+    "opacity": 0.65
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "SpriteRenderer",
+   "id": "splash",
+   "params": {
+    "size": 1.9,
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.3
+      },
+      {
+       "x": 0.375,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 1.1
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.9
+      },
+      {
+       "x": 0.375,
+       "y": 0.6
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "node-target.out",
+   "to": "splash.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "splashmat.material",
+   "to": "splash.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "splashwin.window",
+   "to": "splash.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "splash.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Emitter",
+   "id": "drops",
+   "params": {
+    "shape": "cone",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "coneAngle": 1.3,
+    "radius": 0.08,
+    "burst": 190,
+    "rate": 0,
+    "speedMin": 2,
+    "speedMax": 5.5,
+    "lifetimeMin": 0.4,
+    "lifetimeMax": 1.2,
+    "useEventPosition": false
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "InitialProperties",
+   "id": "dropip",
+   "params": {
+    "sizeMin": 0.07,
+    "sizeMax": 0.18
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Gravity",
+   "id": "dropg",
+   "params": {
+    "acceleration": [
+     0,
+     -9.81,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "GroundCollision",
+   "id": "dropfloor",
+   "params": {
+    "mode": "kill"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Material",
+   "id": "dropmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "droplet",
+    "blend": "normal",
+    "tint": {
+     "srgb": "#F2F9FD",
+     "alpha": 1
+    },
+    "opacity": 0.85,
+    "groundFade": 0.12
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "BillboardRenderer",
+   "id": "dropbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 1.6,
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.8,
+       "y": 0.8
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "node-target.out",
+   "to": "drops.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "head.arrival",
+   "to": "drops.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "drops.particles",
+   "to": "dropip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "dropip.particles",
+   "to": "dropg.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "dropg.particles",
+   "to": "dropfloor.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "dropfloor.particles",
+   "to": "dropbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "dropmat.material",
+   "to": "dropbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "dropbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Emitter",
+   "id": "foam",
+   "params": {
+    "shape": "disc",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "radius": 0.6,
+    "burst": 36,
+    "rate": 0,
+    "speedMin": 0.1,
+    "speedMax": 0.5,
+    "lifetimeMin": 0.5,
+    "lifetimeMax": 1.1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "InitialProperties",
+   "id": "foamip",
+   "params": {
+    "sizeMin": 0.25,
+    "sizeMax": 0.5,
+    "randomFrameStart": true,
+    "rotationMin": 0,
+    "rotationMax": 6.283
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Drag",
+   "id": "foamdrag",
+   "params": {
+    "coefficient": 2.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Material",
+   "id": "foammat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "foam",
+    "blend": "normal",
+    "tint": {
+     "srgb": "#EAF6FF",
+     "alpha": 1
+    },
+    "opacity": 0.35
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "BillboardRenderer",
+   "id": "foambb",
+   "params": {
+    "alignment": "worldAxis",
+    "worldAxis": [
+     0,
+     1,
+     0
+    ],
+    "sizeOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.6
+      },
+      {
+       "x": 1,
+       "y": 1.4
+      }
+     ]
+    },
+    "opacityOverLife": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.2,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "pool.out",
+   "to": "foam.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "head.arrival",
+   "to": "foam.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "foam.particles",
+   "to": "foamip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "foamip.particles",
+   "to": "foamdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "foamdrag.particles",
+   "to": "foambb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "foammat.material",
+   "to": "foambb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "foambb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Material",
+   "id": "ripplemat",
+   "params": {
+    "blend": "normal",
+    "tint": {
+     "srgb": "#CFEAFF",
+     "alpha": 1
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Schedule",
+   "id": "ripwin0",
+   "params": {
+    "startTicks": 0,
+    "durationTicks": 60,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "head.arrival",
+   "to": "ripwin0.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "RingPath",
+   "id": "ring0",
+   "params": {
+    "radius": 3.2,
+    "samples": 96
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Time",
+   "id": "ringclock0"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ripwin0.window",
+   "to": "ringclock0.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "ScalarMath",
+   "id": "ringsize0",
+   "params": {
+    "operation": "max",
+    "b": 0.0625,
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "ScalarMath",
+   "id": "ringdim0",
+   "params": {
+    "operation": "multiply",
+    "b": -0.18,
+    "inputUnit": "normalized",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "ScalarMath",
+   "id": "ringfade0",
+   "params": {
+    "operation": "add",
+    "b": 0.18,
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ringclock0.progress",
+   "to": "ringsize0.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ringclock0.progress",
+   "to": "ringdim0.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ringdim0.value",
+   "to": "ringfade0.a"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Material",
+   "id": "ringmat0",
+   "params": {
+    "blend": "normal",
+    "tint": {
+     "srgb": "#D6EEFF",
+     "alpha": 1
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "RibbonRenderer",
+   "id": "ripple0",
+   "params": {
+    "width": 0.018,
+    "endFade": 0,
+    "orientation": "camera"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "pool.out",
+   "to": "ring0.center"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ringsize0.value",
+   "to": "ring0.radiusScale"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ringfade0.value",
+   "to": "ringmat0.opacity"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ring0.paths",
+   "to": "ripple0.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ringmat0.material",
+   "to": "ripple0.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ripwin0.window",
+   "to": "ripple0.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ripple0.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Schedule",
+   "id": "ripwin1",
+   "params": {
+    "startTicks": 7,
+    "durationTicks": 60,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "head.arrival",
+   "to": "ripwin1.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "RingPath",
+   "id": "ring1",
+   "params": {
+    "radius": 3.2,
+    "samples": 96
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Time",
+   "id": "ringclock1"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ripwin1.window",
+   "to": "ringclock1.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "ScalarMath",
+   "id": "ringsize1",
+   "params": {
+    "operation": "max",
+    "b": 0.0625,
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "ScalarMath",
+   "id": "ringdim1",
+   "params": {
+    "operation": "multiply",
+    "b": -0.13999999999999999,
+    "inputUnit": "normalized",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "ScalarMath",
+   "id": "ringfade1",
+   "params": {
+    "operation": "add",
+    "b": 0.14,
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ringclock1.progress",
+   "to": "ringsize1.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ringclock1.progress",
+   "to": "ringdim1.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ringdim1.value",
+   "to": "ringfade1.a"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Material",
+   "id": "ringmat1",
+   "params": {
+    "blend": "normal",
+    "tint": {
+     "srgb": "#D6EEFF",
+     "alpha": 1
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "RibbonRenderer",
+   "id": "ripple1",
+   "params": {
+    "width": 0.018,
+    "endFade": 0,
+    "orientation": "camera"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "pool.out",
+   "to": "ring1.center"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ringsize1.value",
+   "to": "ring1.radiusScale"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ringfade1.value",
+   "to": "ringmat1.opacity"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ring1.paths",
+   "to": "ripple1.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ringmat1.material",
+   "to": "ripple1.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ripwin1.window",
+   "to": "ripple1.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ripple1.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Schedule",
+   "id": "ripwin2",
+   "params": {
+    "startTicks": 15,
+    "durationTicks": 60,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "head.arrival",
+   "to": "ripwin2.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "RingPath",
+   "id": "ring2",
+   "params": {
+    "radius": 3.2,
+    "samples": 96
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Time",
+   "id": "ringclock2"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ripwin2.window",
+   "to": "ringclock2.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "ScalarMath",
+   "id": "ringsize2",
+   "params": {
+    "operation": "max",
+    "b": 0.0625,
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "ScalarMath",
+   "id": "ringdim2",
+   "params": {
+    "operation": "multiply",
+    "b": -0.09999999999999999,
+    "inputUnit": "normalized",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "ScalarMath",
+   "id": "ringfade2",
+   "params": {
+    "operation": "add",
+    "b": 0.1,
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ringclock2.progress",
+   "to": "ringsize2.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ringclock2.progress",
+   "to": "ringdim2.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ringdim2.value",
+   "to": "ringfade2.a"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "Material",
+   "id": "ringmat2",
+   "params": {
+    "blend": "normal",
+    "tint": {
+     "srgb": "#D6EEFF",
+     "alpha": 1
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "broad",
+   "type": "RibbonRenderer",
+   "id": "ripple2",
+   "params": {
+    "width": 0.018,
+    "endFade": 0,
+    "orientation": "camera"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "pool.out",
+   "to": "ring2.center"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ringsize2.value",
+   "to": "ring2.radiusScale"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ringfade2.value",
+   "to": "ringmat2.opacity"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ring2.paths",
+   "to": "ripple2.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ringmat2.material",
+   "to": "ripple2.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ripwin2.window",
+   "to": "ripple2.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "broad",
+   "from": "ripple2.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "broad"
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "broad",
+   "ticks": [
+    30,
+    45,
+    60,
+    110
+   ]
+  },
+  true
+ ]
+]

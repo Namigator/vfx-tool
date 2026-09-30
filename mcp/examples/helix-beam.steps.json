@@ -1,0 +1,396 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "helix"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "helix",
+   "durationTicks": 120
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "helix",
+   "anchorId": "source",
+   "position": [
+    -2.5,
+    1.2,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "helix",
+   "anchorId": "target",
+   "position": [
+    2.5,
+    1.2,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "helix",
+   "type": "Schedule",
+   "id": "on",
+   "params": {
+    "startTicks": 5,
+    "durationTicks": 100,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "helix",
+   "type": "HelixPath",
+   "id": "strandA",
+   "params": {
+    "radius": 0.35,
+    "turns": 4,
+    "phase": 0,
+    "spin": 6,
+    "taper": "both",
+    "samples": 96
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "helix",
+   "type": "HelixPath",
+   "id": "strandB",
+   "params": {
+    "radius": 0.35,
+    "turns": 4,
+    "phase": 3.14159,
+    "spin": 6,
+    "taper": "both",
+    "samples": 96
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "helix",
+   "type": "LinePath",
+   "id": "axis",
+   "params": {
+    "samples": 2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "helix",
+   "type": "Material",
+   "id": "strandmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "electric-arc",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#6FD8FF",
+     "alpha": 1
+    },
+    "emission": 0.6,
+    "uvScroll": [
+     -1.5,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "helix",
+   "type": "RibbonRenderer",
+   "id": "ribA",
+   "params": {
+    "width": 0.16,
+    "endFade": 0.1,
+    "uvMode": "tile",
+    "uvTileLength": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "helix",
+   "type": "RibbonRenderer",
+   "id": "ribB",
+   "params": {
+    "width": 0.16,
+    "endFade": 0.1,
+    "uvMode": "tile",
+    "uvTileLength": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "helix",
+   "type": "Material",
+   "id": "coremat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#DFF6FF",
+     "alpha": 1
+    },
+    "emission": 0.4,
+    "opacity": 0.35
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "helix",
+   "type": "RibbonRenderer",
+   "id": "core",
+   "params": {
+    "width": 0.12,
+    "endFade": 0.12
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "helix",
+   "type": "Material",
+   "id": "hazemat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#2E7BFF",
+     "alpha": 1
+    },
+    "opacity": 0.1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "helix",
+   "type": "RibbonRenderer",
+   "id": "haze",
+   "params": {
+    "width": 0.9,
+    "endFade": 0.2
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "node-source.out",
+   "to": "strandA.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "node-target.out",
+   "to": "strandA.end"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "node-source.out",
+   "to": "strandB.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "node-target.out",
+   "to": "strandB.end"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "node-source.out",
+   "to": "axis.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "node-target.out",
+   "to": "axis.end"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "strandA.paths",
+   "to": "ribA.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "strandB.paths",
+   "to": "ribB.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "axis.paths",
+   "to": "core.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "axis.paths",
+   "to": "haze.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "strandmat.material",
+   "to": "ribA.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "strandmat.material",
+   "to": "ribB.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "coremat.material",
+   "to": "core.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "hazemat.material",
+   "to": "haze.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "on.window",
+   "to": "ribA.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "on.window",
+   "to": "ribB.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "on.window",
+   "to": "core.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "on.window",
+   "to": "haze.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "haze.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "core.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "ribA.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "helix",
+   "from": "ribB.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "helix"
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "helix",
+   "ticks": [
+    40
+   ]
+  },
+  true
+ ]
+]

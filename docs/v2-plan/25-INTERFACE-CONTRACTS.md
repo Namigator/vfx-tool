@@ -63,7 +63,7 @@ Identifiers are stable lowerCamelCase. Parameter-driven input ports have the sam
 | BranchPath | in: paths; out: trunk,branches |
 | PathFollower | in: paths,window; out: anchor,arrival |
 | ParticlePaths | in: particles,anchor; out: paths |
-| Emitter | in: anchor optional,paths optional,trigger optional,window optional; out: particles |
+| Emitter | in: anchor optional,paths optional,trigger optional,window optional,aim optional; out: particles |
 | Particle modifiers | in: particles; out: particles |
 | Attract/Vortex | also in: target anchor |
 | GroundCollision | also out: collisions |

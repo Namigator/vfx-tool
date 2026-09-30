@@ -1,0 +1,2353 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "thinfork"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "thinfork",
+   "durationTicks": 144,
+   "seed": 2
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "thinfork",
+   "anchorId": "source",
+   "position": [
+    -5.1,
+    1.65,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "thinfork",
+   "anchorId": "target",
+   "position": [
+    4.5,
+    0.1,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "OffsetAnchor",
+   "id": "floor",
+   "params": {
+    "offset": [
+     0,
+     -0.08,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "node-target.out",
+   "to": "floor.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Schedule",
+   "id": "charge",
+   "params": {
+    "startTicks": 0,
+    "durationTicks": 24,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Material",
+   "id": "chargecoremat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#DDF2FF",
+     "alpha": 1
+    },
+    "emission": 2.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Material",
+   "id": "chargehalomat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#3F7BFF",
+     "alpha": 1
+    },
+    "opacity": 0.9,
+    "emission": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "SpriteRenderer",
+   "id": "chargecore",
+   "params": {
+    "size": 0.34,
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.14
+      },
+      {
+       "x": 1,
+       "y": 1
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.2
+      },
+      {
+       "x": 1,
+       "y": 1
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "SpriteRenderer",
+   "id": "chargehalo",
+   "params": {
+    "size": 1.4,
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.14
+      },
+      {
+       "x": 1,
+       "y": 1
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 1,
+       "y": 0.8
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "node-source.out",
+   "to": "chargecore.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "chargecoremat.material",
+   "to": "chargecore.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "charge.window",
+   "to": "chargecore.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "chargecore.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "node-source.out",
+   "to": "chargehalo.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "chargehalomat.material",
+   "to": "chargehalo.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "charge.window",
+   "to": "chargehalo.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "chargehalo.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Emitter",
+   "id": "motes",
+   "params": {
+    "shape": "sphere",
+    "radius": 1.5,
+    "burst": 27,
+    "rate": 0,
+    "speedMin": 0,
+    "speedMax": 0.2,
+    "lifetimeMin": 0.4,
+    "lifetimeMax": 0.4
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "InitialProperties",
+   "id": "moteip",
+   "params": {
+    "sizeMin": 0.03,
+    "sizeMax": 0.05
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Attract",
+   "id": "pull",
+   "params": {
+    "acceleration": 18.75,
+    "softRadius": 0.2,
+    "killRadius": 0.08
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Material",
+   "id": "motemat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#9FD8FF",
+     "alpha": 1
+    },
+    "emission": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "BillboardRenderer",
+   "id": "motebb"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "node-source.out",
+   "to": "motes.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "charge.start",
+   "to": "motes.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "motes.particles",
+   "to": "moteip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "moteip.particles",
+   "to": "pull.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "node-source.out",
+   "to": "pull.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "pull.particles",
+   "to": "motebb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "motemat.material",
+   "to": "motebb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "motebb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "ParticlePaths",
+   "id": "tethers",
+   "params": {
+    "maxCount": 4,
+    "samples": 10
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "JaggedPath",
+   "id": "tetherjag",
+   "params": {
+    "amplitude": 0.06,
+    "regenerationHz": 24,
+    "samples": 10
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Material",
+   "id": "tethermat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#CFEBFF",
+     "alpha": 1
+    },
+    "emission": 0.6,
+    "opacity": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "RibbonRenderer",
+   "id": "tetherrib",
+   "params": {
+    "width": 0.012,
+    "endFade": 0.15
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "pull.particles",
+   "to": "tethers.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "node-source.out",
+   "to": "tethers.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "tethers.paths",
+   "to": "tetherjag.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "tetherjag.paths",
+   "to": "tetherrib.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "tethermat.material",
+   "to": "tetherrib.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "charge.window",
+   "to": "tetherrib.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "tetherrib.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Schedule",
+   "id": "strike",
+   "params": {
+    "startTicks": 24,
+    "durationTicks": 26,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "BezierPath",
+   "id": "base",
+   "params": {
+    "startHandle": [
+     2.4,
+     0.56,
+     0
+    ],
+    "endHandle": [
+     -2.4,
+     0.56,
+     0
+    ],
+    "samples": 48
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "node-source.out",
+   "to": "base.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "node-target.out",
+   "to": "base.end"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "JaggedPath",
+   "id": "trunk",
+   "params": {
+    "amplitude": 0.3,
+    "regenerationHz": 24,
+    "samples": 42
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "BranchPath",
+   "id": "branches",
+   "params": {
+    "count": 14,
+    "attachmentMin": 0.12,
+    "attachmentMax": 0.88,
+    "lengthMin": 0.3,
+    "lengthMax": 1.4,
+    "opacityMin": 0.12,
+    "opacityMax": 0.3,
+    "widthMin": 0.1,
+    "widthMax": 0.2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "BranchPath",
+   "id": "forks",
+   "params": {
+    "count": 6,
+    "lengthMin": 0.3,
+    "lengthMax": 1,
+    "opacityMin": 0.15,
+    "opacityMax": 0.15,
+    "widthMin": 0.15,
+    "widthMax": 0.25
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "JaggedPath",
+   "id": "branchjag",
+   "params": {
+    "amplitude": 0.14,
+    "regenerationHz": 24,
+    "samples": 14
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "JaggedPath",
+   "id": "forkjag",
+   "params": {
+    "amplitude": 0.08,
+    "regenerationHz": 24,
+    "samples": 10
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "MergePaths",
+   "id": "boltpaths"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "RevealPath",
+   "id": "reveal"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "EffectTimeCurve",
+   "id": "revealcurve",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0.4,
+       "y": 0
+      },
+      {
+       "x": 0.43343333333333334,
+       "y": 1
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "base.paths",
+   "to": "trunk.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "trunk.paths",
+   "to": "branches.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "branches.branches",
+   "to": "branchjag.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "branchjag.paths",
+   "to": "forks.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "forks.branches",
+   "to": "forkjag.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "trunk.paths",
+   "to": "boltpaths.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "branchjag.paths",
+   "to": "boltpaths.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "forkjag.paths",
+   "to": "boltpaths.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "boltpaths.paths",
+   "to": "reveal.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "revealcurve.value",
+   "to": "reveal.fraction"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "JaggedPath",
+   "id": "filA",
+   "params": {
+    "amplitude": 0.18,
+    "regenerationHz": 24,
+    "samples": 48
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "JaggedPath",
+   "id": "filB",
+   "params": {
+    "amplitude": 0.28,
+    "regenerationHz": 24,
+    "samples": 48
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "MergePaths",
+   "id": "filaments"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "RevealPath",
+   "id": "filreveal"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "base.paths",
+   "to": "filA.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "base.paths",
+   "to": "filB.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "filA.paths",
+   "to": "filaments.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "filB.paths",
+   "to": "filaments.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "filaments.paths",
+   "to": "filreveal.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "revealcurve.value",
+   "to": "filreveal.fraction"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Time",
+   "id": "clock"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "strike.window",
+   "to": "clock.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "ScalarMath",
+   "id": "decay",
+   "params": {
+    "operation": "multiply",
+    "b": -5,
+    "inputUnit": "second",
+    "unit": "none"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "ScalarMath",
+   "id": "expo",
+   "params": {
+    "operation": "exp",
+    "unit": "none"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Oscillator",
+   "id": "flicker",
+   "params": {
+    "waveform": "sine",
+    "frequency": 30.557749073643905,
+    "phase": 0.7769003705424353,
+    "min": 0.72,
+    "max": 1,
+    "unit": "none"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "ScalarMath",
+   "id": "envelope",
+   "params": {
+    "operation": "multiply",
+    "inputUnit": "none",
+    "unit": "none"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "clock.localSeconds",
+   "to": "decay.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "decay.value",
+   "to": "expo.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "expo.value",
+   "to": "envelope.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "flicker.value",
+   "to": "envelope.b"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Material",
+   "id": "coremat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFFFFF",
+     "alpha": 1
+    },
+    "emission": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "ScalarMath",
+   "id": "corelevel",
+   "params": {
+    "operation": "multiply",
+    "b": 1,
+    "inputUnit": "none",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "envelope.value",
+   "to": "corelevel.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "corelevel.value",
+   "to": "coremat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "RibbonRenderer",
+   "id": "corerib",
+   "params": {
+    "width": 0.013,
+    "endFade": 0.04
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "reveal.paths",
+   "to": "corerib.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "coremat.material",
+   "to": "corerib.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "strike.window",
+   "to": "corerib.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "corerib.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Material",
+   "id": "innermat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#7FD6FF",
+     "alpha": 1
+    },
+    "emission": 0.15
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "ScalarMath",
+   "id": "innerlevel",
+   "params": {
+    "operation": "multiply",
+    "b": 0.65,
+    "inputUnit": "none",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "envelope.value",
+   "to": "innerlevel.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "innerlevel.value",
+   "to": "innermat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "RibbonRenderer",
+   "id": "innerrib",
+   "params": {
+    "width": 0.035,
+    "endFade": 0.04
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "reveal.paths",
+   "to": "innerrib.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "innermat.material",
+   "to": "innerrib.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "strike.window",
+   "to": "innerrib.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "innerrib.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Material",
+   "id": "outermat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#2F7BFF",
+     "alpha": 1
+    },
+    "emission": 0
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "ScalarMath",
+   "id": "outerlevel",
+   "params": {
+    "operation": "multiply",
+    "b": 0.17,
+    "inputUnit": "none",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "envelope.value",
+   "to": "outerlevel.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "outerlevel.value",
+   "to": "outermat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "RibbonRenderer",
+   "id": "outerrib",
+   "params": {
+    "width": 0.0925,
+    "endFade": 0.04
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "reveal.paths",
+   "to": "outerrib.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "outermat.material",
+   "to": "outerrib.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "strike.window",
+   "to": "outerrib.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "outerrib.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Material",
+   "id": "halomat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#1A3A9A",
+     "alpha": 1
+    },
+    "emission": 0
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "ScalarMath",
+   "id": "halolevel",
+   "params": {
+    "operation": "multiply",
+    "b": 0.07,
+    "inputUnit": "none",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "envelope.value",
+   "to": "halolevel.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "halolevel.value",
+   "to": "halomat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "RibbonRenderer",
+   "id": "halorib",
+   "params": {
+    "width": 0.215,
+    "endFade": 0.04
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "reveal.paths",
+   "to": "halorib.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "halomat.material",
+   "to": "halorib.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "strike.window",
+   "to": "halorib.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "halorib.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Material",
+   "id": "filcoremat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#DDF2FF",
+     "alpha": 1
+    },
+    "emission": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "ScalarMath",
+   "id": "filcorelevel",
+   "params": {
+    "operation": "multiply",
+    "b": 0.32,
+    "inputUnit": "none",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "envelope.value",
+   "to": "filcorelevel.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "filcorelevel.value",
+   "to": "filcoremat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "RibbonRenderer",
+   "id": "filcorerib",
+   "params": {
+    "width": 0.01,
+    "endFade": 0.04
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "filreveal.paths",
+   "to": "filcorerib.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "filcoremat.material",
+   "to": "filcorerib.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "strike.window",
+   "to": "filcorerib.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "filcorerib.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Material",
+   "id": "filoutermat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#3F8CFF",
+     "alpha": 1
+    },
+    "emission": 0
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "ScalarMath",
+   "id": "filouterlevel",
+   "params": {
+    "operation": "multiply",
+    "b": 0.054400000000000004,
+    "inputUnit": "none",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "envelope.value",
+   "to": "filouterlevel.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "filouterlevel.value",
+   "to": "filoutermat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "RibbonRenderer",
+   "id": "filouterrib",
+   "params": {
+    "width": 0.06,
+    "endFade": 0.04
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "filreveal.paths",
+   "to": "filouterrib.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "filoutermat.material",
+   "to": "filouterrib.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "strike.window",
+   "to": "filouterrib.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "filouterrib.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Schedule",
+   "id": "impact",
+   "params": {
+    "startTicks": 26,
+    "durationTicks": 36,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Material",
+   "id": "sparkmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#CFEFFF",
+     "alpha": 1
+    },
+    "emission": 1.2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Material",
+   "id": "sparktrailmat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#9FD8FF",
+     "alpha": 1
+    },
+    "emission": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Emitter",
+   "id": "srcsparks",
+   "params": {
+    "burst": 25,
+    "rate": 0,
+    "lifetimeMin": 0.18333333333333332,
+    "lifetimeMax": 1.1833333333333333,
+    "shape": "sphere",
+    "radius": 0.05,
+    "speedMin": 1.5,
+    "speedMax": 6.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "InitialProperties",
+   "id": "srcsparksip",
+   "params": {
+    "sizeMin": 0.02,
+    "sizeMax": 0.035
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Gravity",
+   "id": "srcsparksg",
+   "params": {
+    "acceleration": [
+     0,
+     -10,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "GroundCollision",
+   "id": "srcsparksfloor",
+   "params": {
+    "mode": "bounce",
+    "restitution": 0.3
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "ParticleTrail",
+   "id": "srcsparkstrail",
+   "params": {
+    "history": 0.06666666666666667,
+    "width": 0.012,
+    "endFade": 0.3
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "BillboardRenderer",
+   "id": "srcsparksbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 2
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "node-source.out",
+   "to": "srcsparks.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "strike.start",
+   "to": "srcsparks.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "srcsparks.particles",
+   "to": "srcsparksip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "srcsparksip.particles",
+   "to": "srcsparksg.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "srcsparksg.particles",
+   "to": "srcsparksfloor.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "srcsparksfloor.particles",
+   "to": "srcsparkstrail.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "sparktrailmat.material",
+   "to": "srcsparkstrail.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "srcsparkstrail.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "srcsparksfloor.particles",
+   "to": "srcsparksbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "sparkmat.material",
+   "to": "srcsparksbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "srcsparksbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Emitter",
+   "id": "hitsparks",
+   "params": {
+    "burst": 35,
+    "rate": 0,
+    "lifetimeMin": 0.18333333333333332,
+    "lifetimeMax": 1.1833333333333333,
+    "shape": "cone",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "coneAngle": 1.4,
+    "radius": 0.05,
+    "speedMin": 1,
+    "speedMax": 6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "InitialProperties",
+   "id": "hitsparksip",
+   "params": {
+    "sizeMin": 0.02,
+    "sizeMax": 0.035
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Gravity",
+   "id": "hitsparksg",
+   "params": {
+    "acceleration": [
+     0,
+     -10,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "GroundCollision",
+   "id": "hitsparksfloor",
+   "params": {
+    "mode": "bounce",
+    "restitution": 0.3
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "ParticleTrail",
+   "id": "hitsparkstrail",
+   "params": {
+    "history": 0.06666666666666667,
+    "width": 0.012,
+    "endFade": 0.3
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "BillboardRenderer",
+   "id": "hitsparksbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 2
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "node-target.out",
+   "to": "hitsparks.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "impact.start",
+   "to": "hitsparks.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "hitsparks.particles",
+   "to": "hitsparksip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "hitsparksip.particles",
+   "to": "hitsparksg.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "hitsparksg.particles",
+   "to": "hitsparksfloor.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "hitsparksfloor.particles",
+   "to": "hitsparkstrail.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "sparktrailmat.material",
+   "to": "hitsparkstrail.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "hitsparkstrail.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "hitsparksfloor.particles",
+   "to": "hitsparksbb.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "sparkmat.material",
+   "to": "hitsparksbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "hitsparksbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Material",
+   "id": "impcoremat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFFFFF",
+     "alpha": 1
+    },
+    "emission": 1.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Material",
+   "id": "imphalomat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "soft-glow",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#2F6BFF",
+     "alpha": 1
+    },
+    "opacity": 0.7
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "SpriteRenderer",
+   "id": "impcore",
+   "params": {
+    "size": 0.35,
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.08,
+       "y": 0.55
+      },
+      {
+       "x": 0.25,
+       "y": 0.18
+      },
+      {
+       "x": 0.6,
+       "y": 0.03
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "SpriteRenderer",
+   "id": "imphalo",
+   "params": {
+    "size": 1.4,
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.8
+      },
+      {
+       "x": 0.12,
+       "y": 0.35
+      },
+      {
+       "x": 0.4,
+       "y": 0.08
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "node-target.out",
+   "to": "impcore.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "impcoremat.material",
+   "to": "impcore.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "impact.window",
+   "to": "impcore.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "impcore.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "node-target.out",
+   "to": "imphalo.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "imphalomat.material",
+   "to": "imphalo.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "impact.window",
+   "to": "imphalo.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "imphalo.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "PointLight",
+   "id": "light",
+   "params": {
+    "color": {
+     "srgb": "#8FC8FF",
+     "alpha": 1
+    },
+    "intensity": 25,
+    "range": 6,
+    "intensityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.15,
+       "y": 0.35
+      },
+      {
+       "x": 0.5,
+       "y": 0.08
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "floor.out",
+   "to": "light.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "impact.window",
+   "to": "light.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "light.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Schedule",
+   "id": "ripplewin",
+   "params": {
+    "startTicks": 26,
+    "durationTicks": 96,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "RingPath",
+   "id": "ripple",
+   "params": {
+    "radius": 4,
+    "samples": 96
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "EffectTimeCurve",
+   "id": "ripplesize",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0.43333333333333335,
+       "y": 0.0375
+      },
+      {
+       "x": 0.9333333333333333,
+       "y": 0.55
+      },
+      {
+       "x": 2.033333333333333,
+       "y": 1
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "EffectTimeCurve",
+   "id": "ripplefade",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0.43333333333333335,
+       "y": 0.6
+      },
+      {
+       "x": 0.8333333333333334,
+       "y": 0.22
+      },
+      {
+       "x": 1.3333333333333335,
+       "y": 0.06
+      },
+      {
+       "x": 2.033333333333333,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "Material",
+   "id": "ripplemat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#5FA8FF",
+     "alpha": 1
+    },
+    "emission": 0.3
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "RibbonRenderer",
+   "id": "ripplerib",
+   "params": {
+    "width": 0.05,
+    "endFade": 0
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "floor.out",
+   "to": "ripple.center"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "ripplesize.value",
+   "to": "ripple.radiusScale"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "ripplefade.value",
+   "to": "ripplemat.opacity"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "ripple.paths",
+   "to": "ripplerib.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "ripplemat.material",
+   "to": "ripplerib.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "ripplewin.window",
+   "to": "ripplerib.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "ripplerib.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "ScreenFlash",
+   "id": "flash",
+   "params": {
+    "color": {
+     "srgb": "#CFE6FF",
+     "alpha": 1
+    },
+    "alpha": 0.13,
+    "durationTicks": 4
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "CameraImpulse",
+   "id": "shake",
+   "params": {
+    "durationTicks": 6,
+    "translation": 0.03,
+    "rotation": 0.006
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "strike.start",
+   "to": "flash.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "strike.start",
+   "to": "shake.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "flash.presentation",
+   "to": "node-output.presentation"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "shake.presentation",
+   "to": "node-output.presentation"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "thinfork"
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "thinfork",
+   "ticks": [
+    22,
+    25,
+    27,
+    40,
+    80
+   ]
+  },
+  true
+ ]
+]

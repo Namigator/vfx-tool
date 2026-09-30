@@ -1,0 +1,409 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "pulse"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "pulse",
+   "durationTicks": 120
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "pulse",
+   "anchorId": "source",
+   "position": [
+    -2.5,
+    1.2,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "pulse",
+   "anchorId": "target",
+   "position": [
+    2.5,
+    1.2,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "pulse",
+   "type": "Schedule",
+   "id": "on",
+   "params": {
+    "startTicks": 5,
+    "durationTicks": 100,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "pulse",
+   "type": "HelixPath",
+   "id": "strandA",
+   "params": {
+    "radius": 0.35,
+    "turns": 4,
+    "phase": 0,
+    "spin": 6,
+    "taper": "both",
+    "samples": 96
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "pulse",
+   "type": "HelixPath",
+   "id": "strandB",
+   "params": {
+    "radius": 0.35,
+    "turns": 4,
+    "phase": 3.14159,
+    "spin": 6,
+    "taper": "both",
+    "samples": 96
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "pulse",
+   "type": "LinePath",
+   "id": "axis",
+   "params": {
+    "samples": 2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "pulse",
+   "type": "Material",
+   "id": "strandmat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#7FE0FF",
+     "alpha": 1
+    },
+    "emission": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "pulse",
+   "type": "RibbonRenderer",
+   "id": "ribA",
+   "params": {
+    "width": 0.07,
+    "endFade": 0.1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "pulse",
+   "type": "RibbonRenderer",
+   "id": "ribB",
+   "params": {
+    "width": 0.07,
+    "endFade": 0.1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "pulse",
+   "type": "Material",
+   "id": "coremat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFFFFF",
+     "alpha": 1
+    },
+    "emission": 0.8,
+    "opacity": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "pulse",
+   "type": "RibbonRenderer",
+   "id": "core",
+   "params": {
+    "width": 0.12,
+    "endFade": 0.12
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "pulse",
+   "type": "Material",
+   "id": "hazemat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#2E7BFF",
+     "alpha": 1
+    },
+    "opacity": 0.1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "pulse",
+   "type": "RibbonRenderer",
+   "id": "haze",
+   "params": {
+    "width": 0.9,
+    "endFade": 0.2
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "node-source.out",
+   "to": "strandA.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "node-target.out",
+   "to": "strandA.end"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "node-source.out",
+   "to": "strandB.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "node-target.out",
+   "to": "strandB.end"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "node-source.out",
+   "to": "axis.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "node-target.out",
+   "to": "axis.end"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "strandA.paths",
+   "to": "ribA.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "strandB.paths",
+   "to": "ribB.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "axis.paths",
+   "to": "core.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "axis.paths",
+   "to": "haze.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "strandmat.material",
+   "to": "ribA.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "strandmat.material",
+   "to": "ribB.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "coremat.material",
+   "to": "core.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "hazemat.material",
+   "to": "haze.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "on.window",
+   "to": "ribA.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "on.window",
+   "to": "ribB.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "on.window",
+   "to": "core.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "on.window",
+   "to": "haze.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "haze.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "core.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "ribA.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "ribB.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "pulse",
+   "type": "Oscillator",
+   "id": "osc",
+   "params": {
+    "waveform": "square",
+    "frequency": 2,
+    "min": 0.05,
+    "max": 1
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "pulse",
+   "from": "osc.value",
+   "to": "coremat.opacity"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "pulse"
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "pulse",
+   "ticks": [
+    30,
+    45
+   ]
+  },
+  true
+ ]
+]

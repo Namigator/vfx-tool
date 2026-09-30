@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "vfx": {
+      "command": "node",
+      "args": ["mcp/vfx-mcp-reload.mjs"]
+    }
+  }
+}

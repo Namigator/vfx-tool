@@ -39,6 +39,8 @@ Narrow stream: half body width, faster travel, fewer smaller droplets and almost
 Broad splash: short body, wide arrival sheet, larger droplets and wide ripples.
 Both retain a cohesive liquid silhouette.
 
+Quality reference (non-normative): `docs/v2-plan/references/standalone-water/water.html`. Physics notes accepted by the user: specular is one continuous half-vector line on the stream, instability grows with distance from the source, stream thickens where it slows, ripples only on standing water. User verdict: still "computer generated" — canvas2D ceiling; realism needs the SurfaceTranslucent material with scene refraction/environment reflection (STATE backlog).
+
 ## Acceptance
 
 Inspect with glow disabled; water must not look electrical. Body remains connected during travel; splash is tied to arrival; no pop through the floor or opaque card edges. Check close-up transparent intersections, side view, dark/light arena and no-refraction fallback. Record the known alpha-sorting limitations if visible; severe default artifacts fail. Sound must identify arrival without masking the quieter flowing tail.

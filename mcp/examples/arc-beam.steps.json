@@ -1,0 +1,486 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "beam"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "beam",
+   "durationTicks": 90
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "beam",
+   "anchorId": "source",
+   "position": [
+    -2.5,
+    1.2,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "beam",
+   "anchorId": "target",
+   "position": [
+    2.5,
+    1.2,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "LinePath",
+   "id": "line",
+   "params": {
+    "samples": 48
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "JaggedPath",
+   "id": "jag",
+   "params": {
+    "amplitude": 0.18,
+    "regenerationHz": 20,
+    "samples": 48
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "Schedule",
+   "id": "on",
+   "params": {
+    "startTicks": 5,
+    "durationTicks": 70,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "Material",
+   "id": "arcmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "electric-arc",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#B8E2FF",
+     "alpha": 1
+    },
+    "emission": 1.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "RibbonRenderer",
+   "id": "core",
+   "params": {
+    "width": 0.6,
+    "endFade": 0.08
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "Material",
+   "id": "glowmat",
+   "params": {
+    "blend": "additive",
+    "tint": {
+     "srgb": "#3A7BFF",
+     "alpha": 1
+    },
+    "opacity": 0.35
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "RibbonRenderer",
+   "id": "halo",
+   "params": {
+    "width": 0.35,
+    "endFade": 0.1
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "node-source.out",
+   "to": "line.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "node-target.out",
+   "to": "line.end"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "line.paths",
+   "to": "jag.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "jag.paths",
+   "to": "core.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "line.paths",
+   "to": "halo.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "arcmat.material",
+   "to": "core.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "glowmat.material",
+   "to": "halo.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "on.window",
+   "to": "core.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "on.window",
+   "to": "halo.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "halo.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "core.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "AudioMix",
+   "id": "sfx-mix",
+   "params": {
+    "masterGain": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "AudioOutput",
+   "id": "sfx-out",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "AudioSource",
+   "id": "sfx-buzz",
+   "params": {
+    "source": "oscillator",
+    "waveform": "saw",
+    "frequencyHz": 110,
+    "durationTicks": 70,
+    "gain": 0.4
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "on.start",
+   "to": "sfx-buzz.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "AudioFilter",
+   "id": "sfx-buzz-f",
+   "params": {
+    "mode": "bandpass",
+    "cutoffHz": 900,
+    "cutoffEndHz": 1300,
+    "q": 2
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "sfx-buzz.audio",
+   "to": "sfx-buzz-f.audio"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "AudioEnvelope",
+   "id": "sfx-buzz-e",
+   "params": {
+    "attack": 0.02,
+    "hold": 1,
+    "release": 0.12,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "sfx-buzz-f.audio",
+   "to": "sfx-buzz-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "sfx-buzz-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "AudioSource",
+   "id": "sfx-crackle",
+   "params": {
+    "source": "noise",
+    "noiseColor": "white",
+    "durationTicks": 70,
+    "gain": 0.45
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "on.start",
+   "to": "sfx-crackle.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "AudioFilter",
+   "id": "sfx-crackle-f",
+   "params": {
+    "mode": "highpass",
+    "cutoffHz": 3000,
+    "cutoffEndHz": 3500,
+    "q": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "sfx-crackle.audio",
+   "to": "sfx-crackle-f.audio"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "AudioEnvelope",
+   "id": "sfx-crackle-e",
+   "params": {
+    "attack": 0.01,
+    "hold": 1,
+    "release": 0.12,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "sfx-crackle-f.audio",
+   "to": "sfx-crackle-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "sfx-crackle-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "AudioSource",
+   "id": "sfx-zap",
+   "params": {
+    "source": "chirp",
+    "chirpStartHz": 3000,
+    "chirpEndHz": 300,
+    "chirpSweep": "exponential",
+    "durationTicks": 12,
+    "gain": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "on.start",
+   "to": "sfx-zap.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "AudioEnvelope",
+   "id": "sfx-zap-e",
+   "params": {
+    "attack": 0.001,
+    "hold": 0.02,
+    "release": 0.15,
+    "curve": "exponential"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "sfx-zap.audio",
+   "to": "sfx-zap-e.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "sfx-zap-e.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "sfx-mix.audio",
+   "to": "sfx-out.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "sfx-out.audio",
+   "to": "node-output.audio"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "beam"
+  },
+  true
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "beam",
+   "ticks": [
+    30
+   ]
+  },
+  true
+ ],
+ [
+  "vfx_render_audio",
+  {
+   "docId": "beam"
+  },
+  true
+ ]
+]
