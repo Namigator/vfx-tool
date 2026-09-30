@@ -4,6 +4,7 @@
 // Each layer is one camera-facing instanced quad mesh with a fixed 8192-instance pool, allocated once per
 // plan; uploads write into those existing GPU instance buffers. Not allocation-free: each advanced tick
 // takes a fresh ParticleSimulation snapshot (new particle state objects). No bloom, textures or sound.
+import { spriteUrl } from '../assets/spriteUrl.ts';
 import * as THREE from 'three';
 import { ASSET_FILE_PREFIX } from '../assets/importTexture.ts';
 import { whenAssetUrl } from '../assets/assetUrls.ts';
@@ -882,7 +883,7 @@ export class PreviewViewport {
 
   #noiseTexture(): THREE.Texture {
     if (!this.#noiseTex) {
-      this.#noiseTex = new THREE.TextureLoader().load('/assets/sprites/dissolve-noise.png', () => { if (!this.#disposed) this.#emitFrame(true); });
+      this.#noiseTex = new THREE.TextureLoader().load(spriteUrl('dissolve-noise.png'), () => { if (!this.#disposed) this.#emitFrame(true); });
       this.#noiseTex.wrapS = this.#noiseTex.wrapT = THREE.RepeatWrapping;
     }
     return this.#noiseTex;
@@ -919,7 +920,7 @@ export class PreviewViewport {
         tex.image = img; tex.needsUpdate = true; this.#emitFrame(true);
       }));
     } else if (!t) {
-      t = new THREE.TextureLoader().load(`/assets/sprites/${file}`, () => { if (!this.#disposed) this.#emitFrame(true); });
+      t = new THREE.TextureLoader().load(spriteUrl(file), () => { if (!this.#disposed) this.#emitFrame(true); });
     }
     if (!this.#textures.has(file)) {
       t.colorSpace = THREE.SRGBColorSpace;

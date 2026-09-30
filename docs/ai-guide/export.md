@@ -6,7 +6,7 @@
 | `.vfxpack` | Portable: recipe + imported textures/models + checksums. Share with another person or machine. | available |
 | Roblox `.rbxmx` | A Roblox model with native emitters, beams, trails, lights and a player script. | available |
 | Sprite sheet / PNG sequence / GIF / MP4 / WebM | Rendered frames for any engine (flipbook textures) or for showing the effect. | available |
-| Unreal (Niagara) | | planned |
+| Unreal (Niagara) | A folder package (IR + textures + docs) imported by the VfxStudioImporter plugin into a NiagaraSystem. | available |
 | Unity | | planned |
 | Godot | | planned |
 
@@ -120,6 +120,79 @@ checks trails and mesh parts. It needs Studio installed.
 1. Workspace → right-click → **Insert from File** → the `.rbxmx`.
 2. Move the model to where the effect happens.
 3. Preview: enable the model's **Demo** script and press Play. In your game: `require(model.EffectPlayer).play(model, …)`.
+
+## Unreal Engine (Niagara)
+
+`vfx_export_unreal { docId, path? }` (default `work/unreal/<docId>/`) or the editor's **Export Unreal** writes a
+**folder package** (the editor button zips it):
+
+- `effect.json`: the engine-neutral IR — emitters (rate/bursts/shape/forces/curves), ribbons (path layers), lights.
+- `Textures/*.png`: the sprite sheets the effect uses.
+- `README.md`: import steps (below).
+- `report.md`: every approximation or drop versus the VFX Studio preview.
+
+### Units and axes
+
+VFX Studio authors in **metres**, right-handed, **+Y up**. Unreal uses **centimetres**, left-handed, **+Z up**. The
+exporter applies the same axis swap Unreal's own FBX/glTF importers use for a right-handed Y-up source:
+
+```
+ue.X = src.X * 100
+ue.Y = src.Z * 100
+ue.Z = src.Y * 100      (our up -> Unreal's up)
+```
+
+Keep X, swap Y and Z, scale metres to centimetres. This also flips handedness correctly (a right-handed source
+becomes Unreal's left-handed frame), so shapes and windings come through unmirrored. The one place this needs a
+manual check is a **signed rotation about a single axis** — a vortex/curl force's swirl direction: the exporter keeps
+the authored sign, and the report flags every vortex export so you can flip the axis in Niagara if the swirl looks
+mirrored. The imported NiagaraSystem is authored at its own local origin (0,0,0); place the actor where you want the
+effect to play.
+
+### Importing it: the VfxStudioImporter plugin
+
+The plugin lives in the VFX-Tool repo at `integrations/unreal/VfxStudioImporter/` (source only: `.uplugin` +
+`Build.cs` + C++, no binaries checked in).
+
+1. Copy `integrations/unreal/VfxStudioImporter/` into `<YourProject>/Plugins/VfxStudioImporter/`.
+2. Open the project (or regenerate project files and build first if your workflow needs that) so the editor compiles
+   and loads the plugin module.
+3. Import a package:
+   - **Commandlet** (headless, scriptable): `UnrealEditor-Cmd.exe <Project>.uproject -run=VfxStudioImport -Package="<path to the export folder>" -Dest=/Game/VFXStudio/<name>`
+   - **Python console / editor utility script**: `unreal.VfxNiagaraImporter.import_package(package_dir, dest_path)`
+4. The importer reads `effect.json`, imports the textures, creates one Material Instance per blend-mode/texture
+   combination from a material the plugin builds once (TextureSampleParameter2D, a flipbook/SubUV node when the IR
+   has one, ParticleColor, additive vs translucent variants), chooses a stock Niagara emitter template per IR emitter
+   (`effect.json` emitter field `suggestedTemplate`: Fountain, SimpleSpriteBurst, Minimal, Ribbon or Light) and sets
+   its module inputs (rate, lifetime, speed, size/colour/opacity-over-life curves, drag, Curl Noise Force, spawn
+   shape), then compiles and saves one `NiagaraSystem` (`NS_<name>`) with one emitter per IR emitter.
+5. Drag the system into a level, or spawn it at runtime with `UNiagaraFunctionLibrary::SpawnSystemAtLocation`. The
+   system plays once by default (no loop); a future pass can expose a loop toggle per the system's own loop settings.
+
+### What changes in Unreal (the report lists it per effect)
+
+Niagara has far fewer hard limits than Roblox (no 20-key curve cap, no beam-segment budget), so most approximations
+are about **feature mapping** rather than a runtime ceiling:
+
+| VFX Studio | In Unreal (Niagara) |
+|---|---|
+| Turbulence / curl noise | **kept**: Niagara Curl Noise Force (Roblox drops this) |
+| Drag, gravity/acceleration, attraction, vortex | **kept**: Drag, gravity, Point Attraction Force, Vortex/curl force |
+| Ground collision | Niagara Collision module against a ground plane |
+| Over-life curves (size/colour/opacity) | full key set (no 20-key cap) |
+| Keyframed knobs (a value that changes mid-effect) | exported at its tick-0 value — out of scope this pass |
+| Trails behind many particles | stretched velocity-aligned sprites, same as Roblox (a true per-particle Ribbon trail is a heavier follow-up) |
+| Mesh particles (rocks, crystals, shards, orbs) | **not exported** this pass — a report item naming what was dropped |
+| Dissolve, sprite rim glow, ribbon texture distortion | left out (would need a custom material) |
+| Screen flash, camera shake | left out (add a UE Camera Shake / post-process on impact if needed) |
+| Light flicker | baked as its average intensity |
+
+### Headless visual verification
+
+`node tools/unreal-check.mjs <package-dir>` builds the plugin into a test project, imports the package, saves a test
+level (camera + NiagaraActor + dark floor) and launches `UnrealEditor.exe -game -RenderOffscreen -unattended` to
+capture a mid-life frame via `HighResShot`, then quits. See the script and `work/unreal/` for output PNGs and its own
+honesty notes — headless UE rendering is the least proven part of this exporter (see STATE.md "Unreal export").
 
 ## Choosing what to build for export
 

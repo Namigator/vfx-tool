@@ -2,6 +2,7 @@
 // graph document with a controlled graph canvas below it. DocumentHistory owns the authoritative document;
 // React holds an owned snapshot of it plus diagnostics and tick. Particle state lives in the viewport, never
 // in React state. Only semantic changes recompile, so moving nodes does not reset the simulation.
+import { spriteUrl } from './assets/spriteUrl.ts';
 import { soloMask } from './graph/solo.ts';
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import type { Diagnostic, EffectDocumentV2 } from './model/types.ts';
@@ -429,7 +430,7 @@ export default function PreviewV2() {
     const builtins: EmbeddedBuiltin[] = [];
     for (const id of referencedBuiltinSprites(d)) {
       const sheet = BUILTIN_SPRITES.find(x => x.id === id);
-      const res = sheet ? await fetch(`/assets/sprites/${sheet.file}`).catch(() => null) : null;
+      const res = sheet ? await fetch(spriteUrl(sheet.file)).catch(() => null) : null;
       if (sheet && res?.ok) builtins.push({ id, sheet: structuredClone(sheet) as SpriteSheet, bytes: new Uint8Array(await res.arrayBuffer()) });
     }
     const audio = hasRootAudio(d) ? compileAudio(d) : undefined;
@@ -475,6 +476,23 @@ export default function PreviewV2() {
     setFileNote(`Roblox export: ${e.emitters.length} emitters, ${e.beams.length} beam layers, ${e.lights.length} lights. ${left} feature(s) left out${missing ? `, ${missing} texture(s) not uploaded yet` : ''} - see the report file.`);
   }, []);
 
+  /** Unreal (Niagara) export: logic lives in editor/exportUnreal.ts (exportUnrealZip); this just downloads the zip. */
+  const downloadUnreal = useCallback(async () => {
+    setFileNote('Exporting for Unreal…');
+    try {
+      const { exportUnrealZip } = await import('./editor/exportUnreal.ts');
+      const { blob, fileName, summary } = await exportUnrealZip(historyRef.current!.snapshot());
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = fileName;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      setFileNote(summary);
+    } catch (err) {
+      setFileNote(err instanceof Error ? err.message : String(err));
+    }
+  }, []);
+
   /**
    * Opens a .vfxpack in two steps (13 "Stage ... then Import commits atomically"): checksums, paths and the document
    * are verified and a summary is shown; nothing is stored until Import. Changed included sprites are pinned.
@@ -488,7 +506,7 @@ export default function PreviewV2() {
     if (!v.ok) { setFileNote(`Pack rejected: its effect is invalid (${v.errors[0]?.message ?? 'unknown error'}).`); return; }
     const current = new Map<string, string>();
     for (const b of r.value.builtins) {
-      const sheet = BUILTIN_SPRITES.find(x => x.id === b.id), res = sheet ? await fetch(`/assets/sprites/${sheet.file}`).catch(() => null) : null;
+      const sheet = BUILTIN_SPRITES.find(x => x.id === b.id), res = sheet ? await fetch(spriteUrl(sheet.file)).catch(() => null) : null;
       if (res?.ok) current.set(b.id, await sha256Hex(new Uint8Array(await res.arrayBuffer())));
     }
     const pinned = await pinBuiltins(v.value, r.value.builtins, id => current.get(id));
@@ -857,6 +875,7 @@ export default function PreviewV2() {
           <button type="button" onClick={() => void downloadPack()} title="Download a portable .vfxpack: the effect plus its imported asset bytes and checksums">Export pack</button>
           <button type="button" aria-pressed={mediaOpen} onClick={() => setMediaOpen(o => !o)} title="Render the effect to a sprite sheet, PNG sequence, GIF or video (MP4/WebM), frame by frame">Export media…</button>
           <button type="button" onClick={() => void downloadRoblox()} title="Download a Roblox model (.rbxmx: particle emitters, beams, lights and a player script) plus a report of what Roblox can't do">Export Roblox</button>
+          <button type="button" onClick={() => void downloadUnreal()} title="Download an Unreal Engine (Niagara) export package (.zip: effect.json IR, textures, README, report) for the VfxStudioImporter plugin">Export Unreal</button>
           <button type="button" onClick={keepProject} title="Keep a copy of this effect in the local project shelf (same name replaces)">Keep</button>
           <button type="button" onClick={() => {
             // 12 workflow 1 "Save As": keep the effect under a new name; the open effect continues as that copy.

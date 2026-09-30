@@ -10,9 +10,13 @@ export default defineConfig({
     rollupOptions: { input: { main: resolve(__dirname, 'index.html'), capture: resolve(__dirname, 'capture.html'), captureMedia: resolve(__dirname, 'capture-media.html') } },
     chunkSizeWarningLimit: 2000,
   },
-  plugins: [{
-    name: 'copy-sprite-library',
-    apply: 'build',
-    closeBundle() { cpSync(resolve(__dirname, 'assets/sprites'), resolve(__dirname, 'dist/assets/sprites'), { recursive: true }); },
-  }],
+  plugins: (() => {
+    let outDir = resolve(__dirname, 'dist');
+    return [{
+      name: 'copy-sprite-library',
+      apply: 'build' as const,
+      configResolved(c: { root: string; build: { outDir: string } }) { outDir = resolve(c.root, c.build.outDir); },
+      closeBundle() { cpSync(resolve(__dirname, 'assets/sprites'), resolve(outDir, 'assets/sprites'), { recursive: true }); },
+    }];
+  })(),
 });

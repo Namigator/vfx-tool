@@ -138,7 +138,13 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     if (p === 'rate.perSecond') continue;
     report.push({ level: 'approximated', item: layer.nodeId, message: `The keyframed value ${p} is exported at its tick-0 value (mid-effect Niagara parameter animation is out of scope this pass).` });
   }
-  const template: UeEmitter['suggestedTemplate'] = d.bursts.length && !d.rate ? 'SimpleSpriteBurst' : (acceleration.some(a => a !== 0) || shape.kind !== 'point') ? 'Fountain' : 'Minimal';
+  // Confirmed against real UE 5.8 templates (2026-10-01 enumeration via FNiagaraStackGraphUtilities::GetStackFunctionInputs):
+  // Fountain always has a SpawnRate module (continuous spawn); SimpleSpriteBurst has SpawnBurst_Instantaneous but no
+  // SpawnRate; Minimal has NEITHER (InitializeParticle/ParticleState only) -- it cannot spawn anything on its own, so
+  // it is only picked for an emitter with no rate and no bursts (should not occur for a real component; the plugin
+  // reports it so it's never a silent empty system).
+  const template: UeEmitter['suggestedTemplate'] = !d.rate && d.bursts.length ? 'SimpleSpriteBurst' : (d.rate ? 'Fountain' : 'Minimal');
+  if (template === 'Minimal') report.push({ level: 'approximated', item: layer.nodeId, message: 'No continuous rate or burst found; the Minimal template has no spawn module, so this emitter needs a SpawnRate or Burst module added by hand in Niagara.' });
   return {
     name,
     suggestedTemplate: template,

@@ -35,6 +35,8 @@ import { robloxEffectFrom } from '../src/export/roblox/fromPlan.ts';
 import { writeRbxmx } from '../src/export/roblox/rbxmx.ts';
 import { effectPlayerSource } from '../src/export/roblox/playerSource.node.ts';
 import { reportMarkdown } from '../src/export/roblox/report.ts';
+import { unrealEffectFrom } from '../src/export/unreal/fromPlan.ts';
+import { buildUnrealPackage } from '../src/export/unreal/package.ts';
 import { timelineInfo, timelineLanes } from '../src/render/timeline.ts';
 import { compileAudio } from '../src/graph/toAudio.ts';
 import { sampleParticlesAtTick } from '../src/runtime/particles.ts';
@@ -551,6 +553,31 @@ ${formatMigrationReport(report)}`);
 
 ${md}`);
   });
+  tool('vfx_export_unreal', 'Export the effect for Unreal Engine (Niagara): a folder package (default work/unreal/<docId>/) with effect.json (engine-neutral IR: emitters, ribbons, lights, curves — units cm, +Z up; see effect.json report.scale for the axis mapping), Textures/*.png (library sheets used), README.md (import steps) and report.md (every approximation or drop versus the VFX Studio preview). Unlike Roblox, Niagara keeps turbulence/curl-noise, drag, attraction and vortex; it drops screen flash/camera shake and mesh particles this pass. Import with the VfxStudioImporter plugin in integrations/unreal/VfxStudioImporter (copy into <Project>/Plugins, then run the VfxStudioImport commandlet or the Python import_package call — see README.md). See the guide chapter export.', {
+    docId: z.string(), path: z.string().optional(),
+  }, ({ docId, path }) => {
+    const d = getDoc(docId);
+    const r = unrealEffectFrom(d);
+    if (!r.ok) return bad(r.message);
+    const e = r.value;
+    const outDir = safeProjectPath(path ?? `work/unreal/${docId}`);
+    mkdirSync(outDir, { recursive: true });
+    const textureBytes = new Map<string, Uint8Array>();
+    for (const t of e.textures) {
+      const f = join(root, 'assets', 'sprites', t);
+      if (existsSync(f)) textureBytes.set(t, new Uint8Array(readFileSync(f)));
+    }
+    const files = buildUnrealPackage(e, textureBytes);
+    for (const f of files) {
+      const dest = join(outDir, ...f.path.split('/'));
+      mkdirSync(dirname(dest), { recursive: true });
+      writeFileSync(dest, f.bytes as string | Uint8Array);
+    }
+    const dropped = e.report.filter(x => x.level === 'dropped').length, approx = e.report.filter(x => x.level === 'approximated').length;
+    const missingTex = e.textures.filter(t => !textureBytes.has(t));
+    return ok(`Wrote ${outDir}/ (effect.json, README.md, report.md, ${files.length - 3} texture file(s)). ${e.emitters.length} emitters, ${e.ribbons.length} ribbon layers, ${e.lights.length} lights; ${approx} approximations, ${dropped} left out.${missingTex.length ? ` Missing texture bytes (not in assets/sprites): ${missingTex.join(', ')}.` : ''}`);
+  });
+
   tool('vfx_export_pack', 'Write a portable .vfxpack (effect + imported asset bytes + manifest checksums) to a project path (default work/mcp/<id>.vfxpack). draft=true allows missing asset bytes.', {
     docId: z.string(), path: z.string().optional(), draft: z.boolean().optional(),
   }, async ({ docId, path, draft }) => {

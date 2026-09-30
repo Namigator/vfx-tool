@@ -2,6 +2,7 @@
 // Presets open a ready-made effect as a new effect; Components and My Blocks insert into the open effect (one
 // undoable edit, as one Group node); Assets lists the included sprite library and this effect's imported assets
 // (imported ones can be added with Add to effect). Thumbnails are marked pending until visually accepted (12).
+import { spriteUrl } from '../assets/spriteUrl.ts';
 import { useMemo, useState } from 'react';
 import { BUILTIN_SPRITES } from '../assets/builtinSprites.generated.ts';
 import { assetComponent } from '../graph/assetComponent.ts';
@@ -93,7 +94,7 @@ export function LibraryPanel({ document: doc, graphId, onEdit, onOpenNew, onClos
           })}
           {BUILTIN_SPRITES.filter(s => match(s.id, s.kind, 'included sprite')).map(s => (
             <li key={s.id} className="lib-row">
-              <img className="lib-thumb" src={`/assets/sprites/${s.file}`} alt="" loading="lazy" />
+              <img className="lib-thumb" src={spriteUrl(s.file)} alt="" loading="lazy" />
               <div className="lib-text"><strong>{s.id}</strong><span className="pv2-muted">included {s.kind} · {s.columns}×{s.rows}</span></div>
             </li>
           ))}

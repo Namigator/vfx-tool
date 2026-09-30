@@ -3,7 +3,7 @@
 
 # MCP tool reference
 
-All 50 tools of the VFX Studio MCP server (server name "vfx-studio"), in registration order, read from the running server's registry (mcp/server.ts). Parameters use JSON types; object parameters show their fields inline, `?` marks an optional field. Documents are addressed by id; every successful change is mirrored to work/mcp/<id>.json and the editor can open it. Tools reject invalid changes and leave the document unchanged.
+All 51 tools of the VFX Studio MCP server (server name "vfx-studio"), in registration order, read from the running server's registry (mcp/server.ts). Parameters use JSON types; object parameters show their fields inline, `?` marks an optional field. Documents are addressed by id; every successful change is mirrored to work/mcp/<id>.json and the editor can open it. Tools reject invalid changes and leave the document unchanged.
 
 ## Contents
 
@@ -49,6 +49,7 @@ All 50 tools of the VFX Studio MCP server (server name "vfx-studio"), in registr
 - [vfx_relink_asset](#vfx_relink_asset)
 - [vfx_import_mesh](#vfx_import_mesh)
 - [vfx_export_roblox](#vfx_export_roblox)
+- [vfx_export_unreal](#vfx_export_unreal)
 - [vfx_export_pack](#vfx_export_pack)
 - [vfx_open_pack](#vfx_open_pack)
 - [vfx_inspect_pack](#vfx_inspect_pack)
@@ -463,6 +464,15 @@ Import a self-contained .glb (project path; ≤20 MiB, ≤50k triangles, no anim
 ## vfx_export_roblox
 
 Export the effect for Roblox: a .rbxmx model (ParticleEmitters, Beams, PointLights + an EffectPlayer script that replays the timeline) and a conversion report (.md) listing what was approximated or left out. Textures use rbxassetid ids from work/roblox/asset-ids.json (sheet file -> id) when present; missing ids fall back to the fire/smoke/sparkles textures (flipbook off). The report (.md, next to the model) lists every approximation and missing texture. In game, aim it with EffectPlayer.play(model, nil, {source, target, speed|travelTime, scale}); the returned handle has setTarget(pos) (follow a moving target) and hit(pos) (jump to the impact now). See the guide chapter export. Default path work/roblox/<docId>.rbxmx.
+
+| parameter | type | required | description / constraints |
+|---|---|---|---|
+| `docId` | string | required | — |
+| `path` | string | optional | — |
+
+## vfx_export_unreal
+
+Export the effect for Unreal Engine (Niagara): a folder package (default work/unreal/<docId>/) with effect.json (engine-neutral IR: emitters, ribbons, lights, curves — units cm, +Z up; see effect.json report.scale for the axis mapping), Textures/*.png (library sheets used), README.md (import steps) and report.md (every approximation or drop versus the VFX Studio preview). Unlike Roblox, Niagara keeps turbulence/curl-noise, drag, attraction and vortex; it drops screen flash/camera shake and mesh particles this pass. Import with the VfxStudioImporter plugin in integrations/unreal/VfxStudioImporter (copy into <Project>/Plugins, then run the VfxStudioImport commandlet or the Python import_package call — see README.md). See the guide chapter export.
 
 | parameter | type | required | description / constraints |
 |---|---|---|---|
