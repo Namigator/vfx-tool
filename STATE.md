@@ -355,3 +355,8 @@ Sprite library: `node tools/bake-sprites.mjs` → assets/sprites/ (flame-tongue-
 - [RAN] Override-to-lockfile comparison and diff whitespace check passed; frozen lockfile-only validation passed on available host pnpm 10.15.1.
 - [UNVERIFIED] GitHub pnpm 11 install remains unrun; sandbox pnpm 11 validation was blocked by registry EACCES despite offline flag. No new dependencies installed.
 
+
+## 2026-10-01 deployment credential blocker
+- [RAN] GitHub CLI repository secret listing for Namigator/vfx-tool returned zero secrets. Deploy workflow already passes secrets.DEPLOY_TOKEN; the deployment action receives an empty token.
+- Required next step: repository owner adds the Site Manager deploy key as repository Actions secret DEPLOY_TOKEN, then reruns the failed deploy job. Do not put the key in source or chat.
+
