@@ -337,3 +337,15 @@ Sprite library: `node tools/bake-sprites.mjs` → assets/sprites/ (flame-tongue-
 - Commit rule (2026-09-29): `git add …; bash tools/gate-commit.sh "msg"` (checks the gate's real exit code — piping
   gate.sh into tail once let a tsc failure through, fixed in ee17c39). After ANY change under src/render/ also run
   `node tools/render-smoke.mjs` (tests cannot compile GLSL; a missing varying once blanked every billboard).
+
+## 2026-09-30 evening: AI guide + exports
+- AI guide DONE (docs/ai-guide: 7 chapters, 13 recipes, generated reference via `npm run guide`, vfx_guide serves it).
+  Acceptance: fresh agent guide+MCP only built flamethrower 7/10, lightning 7/10 from scratch [SAW]; its gaps fixed (f46c8c3).
+- Media export DONE (2d09513): sprite sheet/PNG seq/GIF/MP4/WebM, editor Export media + vfx_export_media.
+- Roblox flame rotation 90 DONE (ad13b19), user-chosen in Studio.
+- Unreal: spike 1 (work/unreal-spike, F:/Dev2/UnrealVFXLab) = Python can create a blank NiagaraSystem + import textures,
+  but cannot set emitter module inputs (protected in 5.8); headless screenshot via AutomationLibrary crashes.
+  Decision: try a C++ editor plugin that builds systems via NiagaraEditor APIs (spike 2 running); fallback = hand-made
+  generic templates driven by User Parameters (needs the user/computer use once).
+- Open task chip: vfx_render_frames occasionally hangs to the 1800 s client timeout.
+- Next after Unreal: Unity (ask before installing), then Godot.
