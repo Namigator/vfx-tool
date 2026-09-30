@@ -96,6 +96,14 @@
 - Post-release (user order): performance pass → timeline strip with component bars, then keyframed knobs →
   engine export → in-editor AI box that runs its own render→look→adjust loop → full AI guide → sound.
 
+## RELEASE PLAN (user 2026-09-30): finish the product, publish it, then add features
+- DROPPED: in-editor AI box (rabbit hole; MCP already covers it; original plan said no runtime AI).
+- LATER (after publishing): option A = AI guide + fix the SpellForge agent's usability gaps; sound (parked).
+- Release checklist (proposed, user to confirm order): (1) fire sprites wrong viewed along the jet (user report);
+  (2) Roblox flames stand vertical; (3) visual polish the user flagged: scaly flames, lightning haze, faint additive
+  effects on light floors; (4) user visual OK -> merge squad/vfx-v2 to main; (5) production build + hosting choice.
+  Optional: sub-group component internals, realistic water.
+
 ## Direction (user decision 2026-09-26) — tool first, presets second
 - Stop polishing individual effects feature-by-feature. Build **generic, reusable building blocks** first; presets are assembled from them afterwards, never hand-special-cased.
 - Ease of use is the product. This is the plan's own Simple view + component templates + published knobs (01, 12) — not a new concept; the failure was execution order (see 27-GAP-AUDIT). Reusable **layer types** (e.g. Flame jet, Smoke, Sparks, Glow, Bolt, Ring) that expose their own big knobs (reach, spread, turbulence, lift, size, heat colour, density), sitting on top of the node graph (graph stays as "advanced"). Per-preset published controls alone are not enough.
