@@ -33,6 +33,8 @@ export type GraphCanvasProps = {
   /** 06 Solo (preview-only): shown and toggled on node cards. */
   soloed?: ReadonlySet<string>;
   onToggleSolo?: (id: string) => void;
+  /** Changes when the surrounding layout changes size a lot (maximize/restore); the graph refits to the new space. */
+  refitKey?: string;
 };
 
 type CardData = {
@@ -147,7 +149,7 @@ function NodeCard({ data, selected }: NodeProps<CardNode>) {
 
 const nodeTypes = { card: NodeCard };
 
-function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, soloed, onToggleSolo }: GraphCanvasProps) {
+function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, soloed, onToggleSolo, refitKey }: GraphCanvasProps) {
   const [componentId, setComponentId] = useState('');
   /** 12: when the inserted component starts — its own time ("") or an event "nodeId\u0000port" next to it. */
   const [startOn, setStartOn] = useState('');
@@ -195,6 +197,14 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
     fittedKey.current = viewKey;
     void flow.fitView({ padding: 0.1 });
   }, [nodesInitialized, paneSized, viewKey, flow]);
+  // Maximize/restore: refit after the pane has taken its new size.
+  const lastRefit = useRef(refitKey);
+  useEffect(() => {
+    if (lastRefit.current === refitKey) return;
+    lastRefit.current = refitKey;
+    const t = setTimeout(() => void flow.fitView({ padding: 0.12, duration: 200 }), 60);
+    return () => clearTimeout(t);
+  }, [refitKey, flow]);
 
   const toggleAdvanced = useCallback((nodeId: string) => {
     setAdvancedNodes(prev => {

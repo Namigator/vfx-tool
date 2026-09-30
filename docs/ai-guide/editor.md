@@ -23,7 +23,7 @@ an MCP document in it.
 Every splitter (Library↔rest, centre↔Inspector, viewport↔graph) drags to resize, has a minimum size, and
 double-clicking it (or the matching top-bar icon button) collapses/expands that pane. Sizes persist per
 browser (`localStorage`). The right side is a tab strip, not a long scroll — **Controls** is the default tab;
-selecting a node in the graph switches to **Selected node** automatically; **Diagnostics** shows an error/warning
+selecting a node in the graph switches to **Node** automatically; **Issues** (diagnostics) shows an error/warning
 count badge. An empty effect shows "Open the Library and add a component to get started" in the viewport.
 
 Keyboard: Space toggles Play/Pause (when focus isn't in a text field), Ctrl/Cmd+Z / Ctrl/Cmd+Shift+Z undo/redo,
@@ -34,12 +34,12 @@ Ctrl/Cmd+S downloads `.vfx.json`, Esc closes an open menu.
 | Control | Does | MCP |
 |---|---|---|
 | **Effect name** (click to edit) | Renames the open effect. | — |
-| **File menu** → New | Blank effect (clears undo history; Keep or Save first). | `vfx_new_document` |
-| **File menu** → Open… | Open a `.vfx.json` or a `.vfxpack` (a pack is inspected first: contents, licences, warnings). | `vfx_open_document`, `vfx_inspect_pack`, `vfx_open_pack` |
-| **File menu** → Save .json | Download the effect as `.vfx.json` (recipe only, imported asset bytes not included). Also Ctrl/Cmd+S. | `vfx_save_document` |
-| **File menu** → Save as… | Keep a copy under a new name and continue on the copy. | — |
-| **File menu** → Keep | Store a copy on the local **Projects** shelf (same name replaces). | — |
-| **File menu** → Projects… | Opens a panel: Projects (open) → Trash (restore / empty) → Import old effect (converts old-editor presets and the ten originals into new editable copies). | `vfx_list_documents`, `vfx_convert_legacy` |
+| **Top bar** → New | Blank effect (clears undo history; Keep or Save first). | `vfx_new_document` |
+| **Top bar** → Open… | Open a `.vfx.json` or a `.vfxpack` (a pack is inspected first: contents, licences, warnings). | `vfx_open_document`, `vfx_inspect_pack`, `vfx_open_pack` |
+| **Top bar** → Save .json | Download the effect as `.vfx.json` (recipe only, imported asset bytes not included). Also Ctrl/Cmd+S. | `vfx_save_document` |
+| **Top bar** → Save as… | Keep a copy under a new name and continue on the copy. | — |
+| **Top bar** → Keep | Store a copy on the local **Projects** shelf (same name replaces). | — |
+| **Top bar** → Projects… | Opens a panel: Projects (open) → Trash (restore / empty) → Import old effect (converts old-editor presets and the ten originals into new editable copies). | `vfx_list_documents`, `vfx_convert_legacy` |
 | **Export menu** → Export pack | Portable `.vfxpack`: effect + imported files + checksums. | `vfx_export_pack` |
 | **Export menu** → Export media… | Sprite sheet, PNG sequence, GIF or video: format, frame size, fps, background, camera (current view or fit the whole effect), glow; progress bar with Cancel ([export.md](export.md)). | `vfx_export_media` |
 | **Export menu** → Export Roblox | `.rbxmx` model + a report of what Roblox can't do ([export.md](export.md)). | `vfx_export_roblox` |
@@ -76,10 +76,10 @@ One bar per component. Drag a bar to change its **Start at**; drag its right edg
 time, Duration...) when it has one; click to select. Keyframed knobs show their keys as ticks on the lane.
 [`vfx_list_timeline`, `vfx_set_control`]
 
-## Right inspector (tabs: Controls · Selected node · Outline · Assets · Sound · Diagnostics)
+## Right inspector (tabs: Controls · Node · Outline · Assets · Issues · Sound)
 
 The right side is a tab strip, not a long scroll. **Controls** is the tab shown by default; clicking a node in the
-graph (or the Outline tab) switches automatically to **Selected node**; **Diagnostics** carries a badge with the
+graph (or the Outline tab) switches automatically to **Node**; **Issues** (diagnostics) carries a badge with the
 current error/warning count. **Sound** (audio audition) is parked behind its own tab since sound work is parked.
 
 ### Controls tab
@@ -145,3 +145,15 @@ The **Advanced: document JSON** panel (Apply JSON / Load file… / Revert text) 
 
 An advanced panel that shows the effect's JSON; **Apply JSON** validates and applies edits, **Revert text** drops
 them. [`vfx_get_document`]
+
+## Layout: resizing, collapsing, maximizing
+
+- **Top bar layout switch — Preview · Split · Graph.** *Split* shows everything. *Graph* gives the graph the whole
+  centre (the inspector stays, so you can edit the selected node) with a small floating preview in the corner
+  (+ / − changes its size, × hides it, **Preview** in the graph's corner brings it back). *Preview* gives the 3D view
+  the whole centre. **Ctrl+Space** maximizes the panel under the pointer and restores it again (as in Blender); the
+  ⤢ button in the corner of the 3D view and of the graph does the same.
+- **Borders between panels** can be dragged. Drag a border far past a panel's minimum to hide that panel; the
+  panel buttons in the top bar bring it back. Double-click a border to reset that panel's size. With a border
+  focused, arrow keys resize (Shift = bigger steps) and Enter hides/shows. Sizes and the layout are remembered.
+- On narrower windows the less-used file actions (Save as…, Projects…, Import old…) fold into **More**.

@@ -89,18 +89,45 @@
 .pv2-split-pane { min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
 .pv2-split-row > .pv2-split-pane { flex: 1 1 auto; }
 .pv2-split-column > .pv2-split-pane { flex: 1 1 auto; }
-.pv2-splitter { flex: none; background: var(--pv2-border); position: relative; z-index: 5; touch-action: none; }
-.pv2-split-row > .pv2-splitter { width: 5px; cursor: col-resize; }
-.pv2-split-column > .pv2-splitter { height: 5px; cursor: row-resize; }
-.pv2-splitter:hover, .pv2-splitter:focus-visible { background: var(--pv2-accent); }
-.pv2-splitter::after { content: ''; position: absolute; inset: -3px; } /* wider hit target without a wider visible line */
+.pv2-splitter { flex: none; background: var(--pv2-border); position: relative; z-index: 5; touch-action: none; transition: background-color .12s ease; }
+.pv2-split-row > .pv2-splitter { width: 1px; cursor: col-resize; }
+.pv2-split-column > .pv2-splitter { height: 1px; cursor: row-resize; }
+/* 9 px invisible grab area around a 1 px line (the usual editor splitter: thin to look at, easy to hit). */
+.pv2-split-row > .pv2-splitter::after { content: ''; position: absolute; top: 0; bottom: 0; left: -4px; right: -4px; }
+.pv2-split-column > .pv2-splitter::after { content: ''; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px; }
+.pv2-splitter:hover, .pv2-splitter:focus-visible, .pv2-splitter:active { background: var(--pv2-accent); box-shadow: 0 0 0 1px var(--pv2-accent); outline: none; }
+.pv2-splitter.pv2-splitter-collapsing { background: var(--pv2-warn); box-shadow: 0 0 0 2px var(--pv2-warn); }
 
 .pv2-center { flex: 1; min-width: 0; min-height: 0; display: flex; }
 .pv2-center > .pv2-split { flex: 1; }
 .pv2-viewport-pane { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative; overflow: hidden; }
 .pv2-host { position: relative; flex: 1; min-height: 0; overflow: hidden; }
 .pv2-canvas { display: block; width: 100%; height: 100%; }
-.pv2-view-overlay { position: absolute; top: 10px; right: 10px; z-index: 20; }
+.pv2-view-overlay { position: absolute; top: 10px; right: 10px; z-index: 20; display: flex; gap: 6px; align-items: flex-start; }
+.pv2-max-btn { background: rgba(20, 24, 32, .85); }
+
+/* ---------- Layout modes (top bar: Preview / Split / Graph; Ctrl+Space) ---------- */
+.pv2-segmented { display: inline-flex; border: 1px solid var(--pv2-border-strong); border-radius: var(--pv2-radius-sm); overflow: hidden; flex: none; }
+.pv2 .pv2-segmented button { border: none; border-radius: 0; min-height: 28px; padding: 2px 12px; background: transparent; color: var(--pv2-text-muted); }
+.pv2 .pv2-segmented button + button { border-left: 1px solid var(--pv2-border-strong); }
+.pv2 .pv2-segmented button[aria-pressed=true] { background: var(--pv2-accent); color: #0b1020; font-weight: 600; }
+.pv2-graph-corner { position: absolute; top: 8px; right: 8px; z-index: 12; display: flex; gap: 6px; }
+.pv2-center { position: relative; }
+/* Graph focus: the graph takes the whole centre; the 3D view floats as a mini preview (kept mounted, so the
+   simulation and camera survive the switch). */
+.pv2-layout-graph > .pv2-split > .pv2-splitter { display: none; }
+.pv2-layout-graph > .pv2-split > .pv2-split-second { flex: 1 1 auto !important; height: auto !important; }
+.pv2-layout-graph > .pv2-split > .pv2-split-first { position: absolute; right: 14px; bottom: 14px; z-index: 30; width: 360px; height: 250px; flex: none;
+  border: 1px solid var(--pv2-border-strong); border-radius: var(--pv2-radius); box-shadow: 0 10px 30px rgba(0,0,0,.55); background: var(--pv2-bg); }
+.pv2-pip-s > .pv2-split > .pv2-split-first { width: 260px; height: 190px; }
+.pv2-pip-l > .pv2-split > .pv2-split-first { width: 520px; height: 350px; }
+.pv2-pip-hidden > .pv2-split > .pv2-split-first { visibility: hidden; pointer-events: none; }
+.pv2-layout-graph .pv2-view-overlay, .pv2-layout-graph .tl-root, .pv2-layout-graph .pv2-tech, .pv2-layout-graph .pv2-empty-state,
+.pv2-layout-graph .pv2-transport .pv2-readout, .pv2-layout-graph .pv2-transport select, .pv2-layout-graph .pv2-transport .pv2-icon-btn:nth-child(n+3) { display: none; }
+.pv2-layout-graph .pv2-transport { padding: 4px 6px; gap: 4px; }
+.pv2-pip-bar { order: -1; display: flex; align-items: center; gap: 4px; padding: 2px 4px 2px 10px; font-size: 12px; color: var(--pv2-text-muted); background: var(--pv2-bg-raised); border-bottom: 1px solid var(--pv2-border); }
+.pv2-pip-bar span { flex: 1; }
+.pv2 .pv2-pip-btn { min-width: 24px; min-height: 22px; padding: 0 4px; font-size: 14px; line-height: 1; }
 .pv2-empty-state { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; color: var(--pv2-text-muted); font-size: 15px; pointer-events: none; z-index: 5; }
 .pv2-overlay { position: absolute; top: 12px; left: 12px; right: 100px; padding: 8px 10px; background: rgba(20, 24, 32, .9); border: 1px solid var(--pv2-border-strong); border-radius: var(--pv2-radius-sm); z-index: 15; }
 
@@ -124,7 +151,9 @@
 
 /* ---------- Right inspector: tabs ---------- */
 .pv2-side { width: 100%; height: 100%; display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--pv2-border); background: var(--pv2-bg-raised); }
-.pv2-tabs { display: flex; flex-wrap: wrap; gap: 2px; padding: 6px 6px 0; border-bottom: 1px solid var(--pv2-border); flex: none; }
+.pv2-tabs { display: flex; flex-wrap: nowrap; gap: 0; padding: 6px 4px 0; border-bottom: 1px solid var(--pv2-border); flex: none; overflow-x: auto; scrollbar-width: none; }
+.pv2-tabs::-webkit-scrollbar { display: none; }
+.pv2 .pv2-tabs .pv2-tab { flex: none; padding: 6px 8px; white-space: nowrap; }
 .pv2-tab { background: transparent; border: 1px solid transparent; border-bottom: none; border-radius: var(--pv2-radius-sm) var(--pv2-radius-sm) 0 0; padding: 6px 10px; font-size: 12px; color: var(--pv2-text-muted); min-height: 28px; }
 .pv2-tab:hover { color: var(--pv2-text); background: var(--pv2-bg-control); }
 .pv2-tab[aria-selected="true"] { color: var(--pv2-text); background: var(--pv2-bg-panel); border-color: var(--pv2-border); }
@@ -173,4 +202,20 @@
   .pv2-split-row > .pv2-split-pane.pv2-split-first { width: auto !important; height: auto; max-height: 40vh; }
   .pv2-transport { flex-wrap: wrap; }
   .pv2-transport input[type=range] { min-width: 100px; }
+}
+
+/* Visible file toolbar in the top bar (compact, wraps to icons-free labels only). */
+.pv2-topbar-menus { display: flex; align-items: center; gap: 4px; flex-wrap: nowrap; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.pv2-topbar-menus::-webkit-scrollbar { display: none; }
+.pv2 .pv2-tool-btn { min-height: 28px; padding: 2px 10px; white-space: nowrap; flex: none; }
+.pv2-topbar-sep { width: 1px; align-self: stretch; margin: 4px 4px; background: var(--pv2-border-strong); flex: none; }
+
+.pv2-tool-more { display: none; }
+@media (max-width: 1500px) {
+  .pv2 .pv2-tool-secondary { display: none; }
+  .pv2-tool-more { display: inline-flex; }
+  .pv2-segmented button { padding: 2px 8px; }
+}
+@media (max-width: 1150px) {
+  .pv2-topbar-panels { display: none; }
 }

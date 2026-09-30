@@ -43,3 +43,9 @@ export function IconEye(p: SVGProps<SVGSVGElement>) {
 export function IconGear(p: SVGProps<SVGSVGElement>) {
   return <svg {...base} {...p}><circle cx="8" cy="8" r="2.2" /><path d="M8 2v1.6M8 12.4V14M14 8h-1.6M3.6 8H2M12.1 3.9l-1.1 1.1M5 10l-1.1 1.1M12.1 12.1L11 11M5 6L3.9 4.9" /></svg>;
 }
+export function IconMaximize(p: SVGProps<SVGSVGElement>) {
+  return <svg {...base} {...p}><path d="M9.5 2.5H13.5V6.5M6.5 13.5H2.5V9.5M13.5 2.5L9 7M2.5 13.5L7 9" /></svg>;
+}
+export function IconRestoreSplit(p: SVGProps<SVGSVGElement>) {
+  return <svg {...base} {...p}><path d="M13.5 6.5H9.5V2.5M2.5 9.5H6.5V13.5M9.5 6.5L14 2M6.5 9.5L2 14" /></svg>;
+}

@@ -44,7 +44,7 @@ import { timelineInfo, timelineLanes, type TimelineInfo } from './render/timelin
 import { TimelineStrip } from './editor/TimelineStrip.tsx';
 import { SplitPane } from './editor/SplitPane.tsx';
 import { MenuButton, OverlayMenu, type MenuItem } from './editor/MenuButton.tsx';
-import { IconUndo, IconRedo, IconPlay, IconPause, IconRestart, IconStepBack, IconStepForward, IconChevronDown, IconPanelLeft, IconPanelRight, IconPanelBottom, IconEye } from './editor/icons.tsx';
+import { IconUndo, IconRedo, IconPlay, IconPause, IconRestart, IconStepBack, IconStepForward, IconChevronDown, IconPanelLeft, IconPanelRight, IconPanelBottom, IconEye, IconMaximize, IconRestoreSplit } from './editor/icons.tsx';
 import './preview-v2.css';
 
 const EMPTY_FRAME: PreviewFrameInfo = { tick: 0, durationTicks: 0, playing: false, suspended: false, live: 0, mode: 'none', sampleParticleId: '' };
@@ -195,6 +195,16 @@ export default function PreviewV2() {
   // Redesigned shell (2026-10): resizable panes, one compact top bar, tabbed right inspector.
   const [rightOpen, setRightOpen] = useState(true);
   const [graphOpen, setGraphOpen] = useState(true);
+  // Layout modes (like Blender's maximize area, Ctrl+Space): 'split' = everything; 'graph' = the graph fills the
+  // centre with a small floating preview (the inspector stays for editing nodes); 'preview' = the 3D view fills it.
+  const [layout, setLayoutState] = useState<'split' | 'graph' | 'preview'>(() => {
+    try { const v = localStorage.getItem('pv2-layout'); return v === 'graph' || v === 'preview' ? v : 'split'; } catch { return 'split'; }
+  });
+  const setLayout = useCallback((l: 'split' | 'graph' | 'preview') => {
+    setLayoutState(l);
+    try { localStorage.setItem('pv2-layout', l); } catch { /* private mode */ }
+  }, []);
+  const [pip, setPip] = useState<'s' | 'm' | 'l' | 'hidden'>('m');
   const [rightTab, setRightTab] = useState<'controls' | 'node' | 'outline' | 'assets' | 'sound' | 'diagnostics'>('controls');
   const [showProjects, setShowProjects] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
@@ -788,6 +798,13 @@ export default function PreviewV2() {
       } else if (k === 's') {
         e.preventDefault();
         downloadDocument();
+      } else if (e.key === ' ' && !e.shiftKey) {
+        // Ctrl+Space maximizes the panel under the pointer (graph or 3D view); again restores the split layout.
+        e.preventDefault();
+        const over = document.querySelectorAll(':hover');
+        const el = over[over.length - 1] as Element | undefined;
+        const want = el?.closest('.pv2-graph') ? 'graph' : el?.closest('.pv2-viewport-pane') ? 'preview' : 'graph';
+        setLayoutState(cur => { const next = cur === 'split' ? want : 'split'; try { localStorage.setItem('pv2-layout', next); } catch { /* */ } return next; });
       }
     };
     window.addEventListener('keydown', onKey);
@@ -935,13 +952,36 @@ export default function PreviewV2() {
           )}
         </div>
         <nav className="pv2-topbar-menus" aria-label="Main menu">
-          <MenuButton label="File" items={fileMenuItems} />
+          {/* File actions stay visible as a toolbar (user 2026-10-01: the old header's buttons were missed). */}
+          {fileMenuItems.filter(i => !i.separator && i.onClick).map(i => {
+            const secondary = i.label === 'Save as…' || i.label.startsWith('Projects');
+            return (
+              <button key={i.label} type="button" className={`pv2-tool-btn${secondary ? ' pv2-tool-secondary' : ''}`} title={i.title} onClick={i.onClick}>
+                {i.label.startsWith('Projects') ? `Projects (${shelf.length})…` : i.label}
+              </button>
+            );
+          })}
+          <button type="button" className="pv2-tool-btn pv2-tool-secondary" title="Import an effect made with the old editor (a new editable copy; the original is never changed)" onClick={() => setShowProjects(true)}>Import old…</button>
+          {/* On narrower windows the less-used file actions fold into More (CSS shows one or the other). */}
+          <span className="pv2-tool-more"><MenuButton label="More" items={[
+            ...fileMenuItems.filter(i => i.label === 'Save as…' || i.label.startsWith('Projects')),
+            { label: 'Import old effect…', title: 'Import an effect made with the old editor', onClick: () => setShowProjects(true) },
+          ]} /></span>
+          <span className="pv2-topbar-sep" aria-hidden="true" />
           <MenuButton label="Export" items={exportMenuItems} />
         </nav>
         <div className="pv2-topbar-panels" role="group" aria-label="Panels">
           <button type="button" className="pv2-icon-btn" aria-pressed={libraryOpen} onClick={() => setLibraryOpen(o => !o)} title="Show or hide the library: presets, components, assets and your saved blocks" aria-label="Toggle library panel"><IconPanelLeft /></button>
           <button type="button" className="pv2-icon-btn" aria-pressed={graphOpen} onClick={() => setGraphOpen(o => !o)} title="Show or hide the node graph editor" aria-label="Toggle graph panel"><IconPanelBottom /></button>
           <button type="button" className="pv2-icon-btn" aria-pressed={rightOpen} onClick={() => setRightOpen(o => !o)} title="Show or hide the inspector panel" aria-label="Toggle inspector panel"><IconPanelRight /></button>
+        </div>
+        <div className="pv2-segmented" role="group" aria-label="Layout">
+          {(['preview', 'split', 'graph'] as const).map(l => (
+            <button key={l} type="button" aria-pressed={layout === l} onClick={() => setLayout(l)}
+              title={l === 'split' ? 'Everything: library, 3D view over graph, inspector' : l === 'graph' ? 'Graph focus: the graph fills the centre with a mini preview; the inspector stays (Ctrl+Space over the graph)' : '3D view focus: the preview fills the centre; the inspector stays (Ctrl+Space over the 3D view)'}>
+              {l === 'split' ? 'Split' : l === 'graph' ? 'Graph' : 'Preview'}
+            </button>
+          ))}
         </div>
         <div className="pv2-topbar-history" role="group" aria-label="History">
           <button type="button" className="pv2-icon-btn" disabled={!historyFlags.canUndo} onClick={undo} title="Undo (Ctrl/Cmd+Z)" aria-label="Undo"><IconUndo /></button>
@@ -1025,22 +1065,30 @@ export default function PreviewV2() {
       }); }} />
       <main className="pv2-main">
         <SplitPane
-          storageKey="library-rest" direction="row" defaultSize={260} min={180} max={480}
-          collapsed={libraryOpen ? false : 'first'} onToggleCollapse={() => setLibraryOpen(o => !o)} ariaLabel="Library panel"
+          storageKey="library-rest" direction="row" defaultSize={260} min={170} otherMin={420}
+          collapsed={libraryOpen && layout === 'split' ? false : 'first'} onToggleCollapse={() => setLibraryOpen(o => !o)} ariaLabel="Library panel"
           first={<LibraryPanel document={doc} graphId={graphId} onEdit={onEdit} onOpenNew={(t, label) => { setShelfPick(''); replace(t, label); }} onClose={() => setLibraryOpen(false)} />}
           second={
             <SplitPane
-              storageKey="center-right" direction="row" defaultSize={380} min={280} max={640} sizedPane="second"
+              storageKey="center-right" direction="row" defaultSize={360} min={240} otherMin={320} sizedPane="second"
               collapsed={rightOpen ? false : 'second'} onToggleCollapse={() => setRightOpen(o => !o)} ariaLabel="Inspector panel"
               first={
-                <section className="pv2-center">
+                <section className={`pv2-center pv2-layout-${layout}${layout === 'graph' ? ` pv2-pip-${pip}` : ''}`}>
                   <SplitPane
-                    storageKey="viewport-graph" direction="column" defaultSize={420} min={200}
-                    collapsed={graphOpen ? false : 'second'} onToggleCollapse={() => setGraphOpen(o => !o)} ariaLabel="Graph editor"
+                    storageKey="viewport-graph2" direction="column" defaultSize={Math.round(Math.max(200, (window.innerHeight - 110) * 0.42))} min={140} otherMin={120} sizedPane="second"
+                    collapsed={layout === 'graph' ? false : layout === 'preview' || !graphOpen ? 'second' : false} onToggleCollapse={() => setGraphOpen(o => !o)} ariaLabel="Graph editor"
                     first={
                       <div className="pv2-viewport-pane">
                         <div className="pv2-host" ref={hostRef} />
+                        {layout === 'graph' && (
+                          <div className="pv2-pip-bar">
+                            <span>Preview</span>
+                            <button type="button" className="pv2-icon-btn pv2-pip-btn" title="Mini preview size (small / medium / large)" aria-label="Change mini preview size" onClick={() => setPip(p => (p === 's' ? 'm' : p === 'm' ? 'l' : 's'))}>{pip === 'l' ? '−' : '+'}</button>
+                            <button type="button" className="pv2-icon-btn pv2-pip-btn" title="Hide the mini preview (bring it back with the Preview button at the bottom right)" aria-label="Hide mini preview" onClick={() => setPip('hidden')}>×</button>
+                          </div>
+                        )}
                         <div className="pv2-view-overlay">
+                          <button type="button" className="pv2-icon-btn pv2-max-btn" aria-pressed={layout === 'preview'} title={layout === 'preview' ? 'Restore the split layout (Ctrl+Space)' : 'Maximize the 3D view (Ctrl+Space)'} aria-label={layout === 'preview' ? 'Restore layout' : 'Maximize 3D view'} onClick={() => setLayout(layout === 'preview' ? 'split' : 'preview')}>{layout === 'preview' ? <IconRestoreSplit /> : <IconMaximize />}</button>
                           <OverlayMenu label={<><IconEye /> View <IconChevronDown /></>} title="Viewport view options" align="right">
                             <label className="pv2-check"><input type="checkbox" checked={glow} onChange={e => { const g = e.currentTarget.checked; setGlow(g); vp?.setGlow(g); }} /> Glow</label>
                             <label className="pv2-check"><input type="checkbox" checked={grid} onChange={e => { const g = e.currentTarget.checked; setGrid(g); vp?.setGrid(g); }} /> Grid &amp; markers</label>
@@ -1110,6 +1158,10 @@ export default function PreviewV2() {
                     }
                     second={
                       <div className="pv2-graph" aria-label="Graph editor">
+                        <div className="pv2-graph-corner">
+                          {layout === 'graph' && pip === 'hidden' && <button type="button" onClick={() => setPip('m')} title="Show the mini preview again">Preview</button>}
+                          <button type="button" className="pv2-icon-btn pv2-max-btn" aria-pressed={layout === 'graph'} title={layout === 'graph' ? 'Restore the split layout (Ctrl+Space)' : 'Maximize the graph: the graph fills the centre, a mini preview floats in the corner, the inspector stays (Ctrl+Space)'} aria-label={layout === 'graph' ? 'Restore layout' : 'Maximize graph'} onClick={() => setLayout(layout === 'graph' ? 'split' : 'graph')}>{layout === 'graph' ? <IconRestoreSplit /> : <IconMaximize />}</button>
+                        </div>
                         <GraphCanvas
                           document={doc}
                           graphId={graphId}
@@ -1118,6 +1170,7 @@ export default function PreviewV2() {
                           onEdit={onEdit}
                           soloed={solo}
                           onToggleSolo={toggleSolo}
+                          refitKey={layout}
                         />
                       </div>
                     }
@@ -1128,13 +1181,13 @@ export default function PreviewV2() {
                 <aside className="pv2-side">
                   <div className="pv2-tabs" role="tablist" aria-label="Inspector">
                     <button type="button" role="tab" aria-selected={rightTab === 'controls'} className="pv2-tab" onClick={() => setRightTab('controls')}>Controls</button>
-                    <button type="button" role="tab" aria-selected={rightTab === 'node'} className="pv2-tab" onClick={() => setRightTab('node')}>Selected node</button>
+                    <button type="button" role="tab" aria-selected={rightTab === 'node'} className="pv2-tab" title="The node selected in the graph" onClick={() => setRightTab('node')}>Node</button>
                     <button type="button" role="tab" aria-selected={rightTab === 'outline'} className="pv2-tab" onClick={() => setRightTab('outline')}>Outline</button>
                     <button type="button" role="tab" aria-selected={rightTab === 'assets'} className="pv2-tab" onClick={() => setRightTab('assets')}>Assets</button>
-                    <button type="button" role="tab" aria-selected={rightTab === 'sound'} className="pv2-tab" onClick={() => setRightTab('sound')}>Sound</button>
-                    <button type="button" role="tab" aria-selected={rightTab === 'diagnostics'} className="pv2-tab" onClick={() => setRightTab('diagnostics')}>
-                      Diagnostics{diagCount > 0 && <span className="pv2-badge">{diagCount}</span>}
+                    <button type="button" role="tab" aria-selected={rightTab === 'diagnostics'} className="pv2-tab" title="Diagnostics: errors and warnings from the last compile" onClick={() => setRightTab('diagnostics')}>
+                      Issues{diagCount > 0 && <span className="pv2-badge">{diagCount}</span>}
                     </button>
+                    <button type="button" role="tab" aria-selected={rightTab === 'sound'} className="pv2-tab" title="Sound audition (sound is parked)" onClick={() => setRightTab('sound')}>Sound</button>
                   </div>
                   <div className="pv2-tabpanel">
                     {rightTab === 'controls' && (
