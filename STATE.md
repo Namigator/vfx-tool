@@ -105,6 +105,8 @@
   front/side]; (3) DONE fe40910 - lightning zigzag halved to the original's +-rough/2 (Jaggedness 0.55->0.3) [SAW];
   (2) Roblox vertical flames: UNKNOWN how Roblox VelocityParallel orients the texture (docs silent). Cheap test when
   the user allows screen control: set flame emitters' Rotation 90 in Studio and look. No computer use unless asked.
+- Production build [RAN+SAW] 2026-09-30: npm run build -> dist/ 6.6 MB static site (sprites included); served with
+  vite preview it loads, inserts Flamethrower and renders with textures/knobs/timeline. Ready for any static host.
 - BACKLOGGED (not dropped): in-editor AI box. LATER: AI guide = a guide for using the TOOL itself (not Roblox or
   SpellForge), plus the tool-usability gaps the SpellForge agent found. LATER: sound - currently genuinely bad,
   sometimes hurts the user's ears (check loudness/limiting first).
