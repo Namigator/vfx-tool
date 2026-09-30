@@ -32,13 +32,13 @@ Note: the editor's undo/redo patch errors (src/editor/history.ts) reuse a few of
 
 The file or a node definition has a schema/runtime/definition version this build does not support. Re-create the node or update the tool.
 
-Emitted from 5 site(s) in 3 file(s):
+Emitted from 6 site(s) in 3 file(s):
 
 | file | sites | representative message |
 |---|---|---|
 | `src/graph/signature.ts` | 1 | Node "…" version … does not match registered version …. |
 | `src/model/document.ts` | 3 | Schema version … is not supported (expected …); opened read-only for recovery. |
-| `src/PreviewV2.tsx` | 1 | This file is from a version this editor cannot open; it was not changed or converted. Download it as-is. |
+| `src/PreviewV2.tsx` | 2 | This file is from a version this editor cannot open; it was not changed or converted. Download it as-is. |
 
 ## UNKNOWN_NODE
 

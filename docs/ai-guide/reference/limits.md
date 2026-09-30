@@ -102,11 +102,11 @@ The ones that matter most when building effects.
 
 | constant | value | meaning | defined in |
 |---|---|---|---|
-| `MAX_FILE_BYTES` | 5242880 | Documents larger than this (5 MiB) are rejected before reading the file contents. | src/PreviewV2.tsx:48 |
-| `MAX_MESH_INSTANCES` | 512 | Most mesh instances drawn per frame in the preview (hard limit). | src/render/PreviewViewport.ts:53 |
-| `MAX_MESH_TRIANGLES` | 250000 | Most mesh triangles drawn per frame in the preview (hard limit). | src/render/PreviewViewport.ts:53 |
-| `MAX_TRAIL_SAMPLES` | 65536 | Most trail vertices drawn per frame in the preview. | src/render/PreviewViewport.ts:53 |
-| `MAX_FRAME_SECONDS` | 0.25 | Largest wall-clock step fed to the clock per frame (tab switches must not jump the preview). | src/render/PreviewViewport.ts:55 |
+| `MAX_FILE_BYTES` | 5242880 | Documents larger than this (5 MiB) are rejected before reading the file contents. | src/PreviewV2.tsx:52 |
+| `MAX_MESH_INSTANCES` | 512 | Most mesh instances drawn per frame in the preview (hard limit). | src/render/PreviewViewport.ts:54 |
+| `MAX_MESH_TRIANGLES` | 250000 | Most mesh triangles drawn per frame in the preview (hard limit). | src/render/PreviewViewport.ts:54 |
+| `MAX_TRAIL_SAMPLES` | 65536 | Most trail vertices drawn per frame in the preview. | src/render/PreviewViewport.ts:54 |
+| `MAX_FRAME_SECONDS` | 0.25 | Largest wall-clock step fed to the clock per frame (tab switches must not jump the preview). | src/render/PreviewViewport.ts:56 |
 | `MAX_FRAMED_PARTICLES_PER_SAMPLE` | 512 | Most particle positions kept per system per sample tick (even stride), bounding framing cost. | src/render/pathFraming.ts:52 |
 
 ## Assets and import
