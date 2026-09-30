@@ -219,3 +219,16 @@
 @media (max-width: 1150px) {
   .pv2-topbar-panels { display: none; }
 }
+
+/* ---------- Tutorial (guided tour) ---------- */
+.tut-root { position: fixed; inset: 0; z-index: 1000; }
+.tut-dim { position: fixed; inset: 0; background: rgba(4, 6, 10, .62); }
+.tut-spot { position: fixed; border-radius: 8px; box-shadow: 0 0 0 9999px rgba(4, 6, 10, .62); outline: 2px solid var(--pv2-accent); pointer-events: none; transition: top .18s ease, left .18s ease, width .18s ease, height .18s ease; }
+.tut-card { position: fixed; background: var(--pv2-bg-panel); border: 1px solid var(--pv2-border-strong); border-radius: 10px; padding: 14px 16px; box-shadow: 0 16px 40px rgba(0,0,0,.6); color: var(--pv2-text); }
+.tut-card h2 { margin: 2px 0 6px; font-size: 16px; }
+.tut-card p { margin: 0 0 12px; line-height: 1.45; color: var(--pv2-text); font-size: 13.5px; }
+.tut-count { font-size: 11px; color: var(--pv2-text-muted); text-transform: uppercase; letter-spacing: .05em; }
+.tut-actions { display: flex; gap: 6px; align-items: center; }
+.tut-spacer { flex: 1; }
+.pv2 .tut-next { background: var(--pv2-accent); color: #0b1020; border-color: var(--pv2-accent); font-weight: 600; }
+.pv2 .pv2-tutorial-btn { flex: none; }

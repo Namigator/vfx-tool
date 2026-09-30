@@ -42,6 +42,7 @@ import { PreviewViewport, type PreviewFrameInfo } from './render/PreviewViewport
 import { mergeDiagnostics } from './render/layerOrder.ts';
 import { timelineInfo, timelineLanes, type TimelineInfo } from './render/timeline.ts';
 import { TimelineStrip } from './editor/TimelineStrip.tsx';
+import { Tutorial } from './editor/Tutorial.tsx';
 import { SplitPane } from './editor/SplitPane.tsx';
 import { MenuButton, OverlayMenu, type MenuItem } from './editor/MenuButton.tsx';
 import { IconUndo, IconRedo, IconPlay, IconPause, IconRestart, IconStepBack, IconStepForward, IconChevronDown, IconPanelLeft, IconPanelRight, IconPanelBottom, IconEye, IconMaximize, IconRestoreSplit } from './editor/icons.tsx';
@@ -205,6 +206,7 @@ export default function PreviewV2() {
     try { localStorage.setItem('pv2-layout', l); } catch { /* private mode */ }
   }, []);
   const [pip, setPip] = useState<'s' | 'm' | 'l' | 'hidden'>('m');
+  const [tutorialOpen, setTutorialOpen] = useState(false);
   const [rightTab, setRightTab] = useState<'controls' | 'node' | 'outline' | 'assets' | 'sound' | 'diagnostics'>('controls');
   const [showProjects, setShowProjects] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
@@ -987,6 +989,7 @@ export default function PreviewV2() {
           <button type="button" className="pv2-icon-btn" disabled={!historyFlags.canUndo} onClick={undo} title="Undo (Ctrl/Cmd+Z)" aria-label="Undo"><IconUndo /></button>
           <button type="button" className="pv2-icon-btn" disabled={!historyFlags.canRedo} onClick={redo} title="Redo (Ctrl/Cmd+Shift+Z)" aria-label="Redo"><IconRedo /></button>
         </div>
+        <button type="button" className="pv2-tool-btn pv2-tutorial-btn" onClick={() => setTutorialOpen(true)} title="A short guided tour of the editor (about 2 minutes)">Tutorial</button>
         <div className="pv2-topbar-status" role="status" aria-live="polite">
           {narrow && <span className="pv2-note" role="note">Desktop authoring recommended: under 1024 px wide, panels stack.</span>}
           <span className="pv2-note">{saveStatus}</span>
@@ -1063,6 +1066,24 @@ export default function PreviewV2() {
         if (legacyRecipe) { if (window.confirm(`"${f.name}" was made with the old editor. Import an editable copy? The file is not changed.`)) convertLegacy(legacyRecipe); return; }
         replace(t, `Open ${f.name}`);
       }); }} />
+      {tutorialOpen && <Tutorial onClose={() => setTutorialOpen(false)} steps={[
+        { title: 'Welcome to VFX Studio', body: 'You build effects (fire, lightning, spells) by stacking ready-made parts and turning their knobs. Underneath, every part is a node graph you can open and change. This tour shows where everything is. Use Next (or →), Back (←), and Esc to leave at any time.',
+          prepare: () => { setLayout('split'); setLibraryOpen(true); setRightOpen(true); setGraphOpen(true); } },
+        { title: 'The Library', target: '.lib-root', body: 'Presets open a complete effect. Components add one ready-made part (a lightning strike, a flame jet, an impact) to the effect you have open: press "Add to effect". Search by name or element. Try adding "Lightning strike" after the tour.',
+          prepare: () => { setLayout('split'); setLibraryOpen(true); } },
+        { title: 'The 3D view', target: '.pv2-host', body: 'Drag to orbit, right-drag to pan, scroll to zoom. The green marker is the Source (where the effect starts, e.g. the caster) and the orange one is the Target (where it goes). Drag them and everything follows.' },
+        { title: 'View options', target: '.pv2-view-overlay', body: 'View ▾ switches glow, the grid, a light arena and preview quality. None of these change the effect itself. The ⤢ button fills the screen with the 3D view.' },
+        { title: 'Playback', target: '.pv2-transport', body: 'Play or pause with Space. Restart, step one tick back or forward, scrub the timeline, and slow down to 0.25× to study fast moments. 60 ticks = 1 second.' },
+        { title: 'Timeline', target: '.tl-root', body: 'One bar per component. Drag a bar to make that part start later (e.g. the impact after the projectile); drag its right edge to make it last longer.' },
+        { title: 'Controls', target: '.pv2-side', body: 'Every component has a few big knobs: size, speed, density, colour. The ◇ button next to a knob adds a keyframe at the current time, so the knob can change during the effect. Colour turns the whole part around the colour wheel; the pickers set exact colours.',
+          prepare: () => { setRightOpen(true); setRightTab('controls'); } },
+        { title: 'The node graph', target: '.pv2-graph', body: 'This is how the effect is built: nodes connected from outputs (right dots) to inputs (left dots). Double-click a component to open its internals. Click a node to edit it in the Node tab, which also explains what the node and each setting do.',
+          prepare: () => { setGraphOpen(true); } },
+        { title: 'Adding nodes', target: '.gc-add', body: 'Pick a node type here, grouped by role. Hover an entry, or pick it, to read what it does, then press Add and connect it. Right-click a node for duplicate, delete, group and more.' },
+        { title: 'Focus on what you are doing', target: '.pv2-segmented', body: 'Split shows everything. Graph gives the graph the whole centre (with a small floating preview) while the inspector stays for editing nodes. Preview gives the 3D view the whole centre. Ctrl+Space does the same for the panel under the mouse. Drag the borders between panels to resize them; drag a border all the way to hide a panel.' },
+        { title: 'Save and export', target: '.pv2-topbar-menus', body: 'Keep stores the effect in this browser (Projects), Save .json downloads it, Open loads one. Export makes a sprite sheet, GIF or video, a Roblox model, or an Unreal package.' },
+        { title: 'That is the tour', body: 'Quick start: Library → Components → add "Lightning strike", press Space, then drag the Target marker and turn the Branches and Jaggedness knobs. Press Tutorial in the top bar any time to see this again.' },
+      ]} />}
       <main className="pv2-main">
         <SplitPane
           storageKey="library-rest" direction="row" defaultSize={260} min={170} otherMin={420}

@@ -3,6 +3,8 @@
 // until Enter/blur, so typing never recompiles the graph. Precedence mirrors model/controls.ts:
 // connection > control binding > stored literal > registry default. Driven fields are read-only and are never
 // written; resetting deletes the stored override so the registry default applies again.
+import { nodeDoc, paramDoc } from '../graph/nodeDocs.ts';
+import { COMPONENT_TEMPLATES } from '../graph/components.ts';
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactElement } from 'react';
 import type { EffectDocumentV2, NodeDefinition, NodeSpec, ParameterSpec, ParameterValue, Unit, ColorValue, CurveValue, GradientValue } from '../model/types.ts';
 import { MAX_LABEL_CODE_POINTS } from '../model/types.ts';
@@ -89,6 +91,25 @@ export default function NodeInspector({ document: doc, graphId, nodeId, onEdit, 
         Enabled
       </label>
       {protectedNode && <p className="ni-muted">{node.type} nodes are protected and cannot be disabled.</p>}
+      {(() => {
+        // A component inserted as a group: show the component's own description (group ids are the component id,
+        // possibly with a numeric suffix when inserted twice).
+        if (node.type !== 'Group') return null;
+        const c = [...COMPONENT_TEMPLATES].sort((x, y) => y.id.length - x.id.length).find(t => node.id === t.id || node.id.startsWith(`${t.id}-`));
+        return c ? (
+          <div className="ni-doc" role="note">
+            <strong>{c.label}</strong> <span className="ni-doc-cat">component</span>
+            <p>{c.description}</p>
+            <p>Turn its knobs in the Controls tab; double-click the box (or Open internals) to see and edit the nodes inside.</p>
+          </div>
+        ) : null;
+      })()}
+      {(() => { const d = node.type === 'Group' && COMPONENT_TEMPLATES.some(t => node.id === t.id || node.id.startsWith(`${t.id}-`)) ? undefined : nodeDoc(node.type); return d ? (
+        <div className="ni-doc" role="note">
+          <strong>{node.type}</strong> <span className="ni-doc-cat">{d.category}</span>
+          <p>{plainDoc(d.text)}</p>
+        </div>
+      ) : null; })()}
       <p className="ni-muted"><code>{node.type}@{node.definitionVersion}</code> · <code>{node.id}</code></p>
       {(() => { const pt = nodePortability(node.type, node.params); return (
         <p className={`ni-port ni-port-${pt.class}`} title="16-PORTABILITY: how this part is expected to carry over to a future engine export (an authoring contract, not a tested engine feature)">
@@ -97,7 +118,7 @@ export default function NodeInspector({ document: doc, graphId, nodeId, onEdit, 
       {!spec ? (
         <p className="ni-unsupported" role="note">Unknown node type; parameters cannot be edited.</p>
       ) : node.type === 'Group' ? (
-        <p className="ni-unsupported" role="note">Group exposed controls are edited from public controls, not supported in this inspector yet.</p>
+        <p className="ni-muted" role="note">This component's settings are its knobs in the Controls tab.</p>
       ) : spec.parameters.length === 0 ? (
         <p className="ni-muted">This node has no parameters.</p>
       ) : (
@@ -176,7 +197,7 @@ function ParamRow({ doc, node, spec, eff, stored, structural, onSet, onReset, on
   };
 
   const range = rangeText(spec);
-  const help = [spec.description, range && `Range: ${range}.`].filter(Boolean).join(' ');
+  const help = [plainDoc(paramDoc(node.type, spec.id, spec.description)), range && `Range: ${range}.`].filter(Boolean).join(' ');
   const common = { id, disabled: readOnly, 'aria-describedby': helpId, 'aria-invalid': !!error };
 
   let control: ReactElement;
@@ -371,4 +392,9 @@ function ColorDraft({ value, onCommit, onError, ...rest }: DraftBase & {
       />
     </div>
   );
+}
+
+/** The shared docs are written as Markdown for the AI guide; show them as plain text here. */
+function plainDoc(text: string): string {
+  return text.replace(/`([^`]*)`/g, '$1').replace(/\*\*([^*]*)\*\*/g, '$1');
 }

@@ -157,3 +157,12 @@ them. [`vfx_get_document`]
   panel buttons in the top bar bring it back. Double-click a border to reset that panel's size. With a border
   focused, arrow keys resize (Shift = bigger steps) and Enter hides/shows. Sizes and the layout are remembered.
 - On narrower windows the less-used file actions (Save as…, Projects…, Import old…) fold into **More**.
+
+## Help inside the editor
+
+- **Tutorial** (top bar): a short guided tour that spotlights each part of the editor in turn. It only runs when
+  you press it; Esc leaves, ←/→ step.
+- **Node tab:** selecting a node shows what it does and, under every setting, what that setting means (the same
+  text as [reference/nodes.md](reference/nodes.md)). Selecting a component box shows the component's description.
+- **Add node** is grouped by role; hover an entry (or pick it) to read what it does. Hovering a node's type in the
+  graph shows the same description.

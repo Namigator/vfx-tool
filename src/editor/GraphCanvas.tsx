@@ -3,6 +3,7 @@
 // events never mutate it. Only the in-progress drag preview and edge selection are local state.
 // Keyboard (12): Delete, Enter opens a group, Ctrl/Cmd+D duplicate, Ctrl/Cmd+G group, Ctrl/Cmd+C/V copy/paste, Escape
 // clears the selection (then goes up a level), F fits. Drag on empty canvas box-selects; middle/right drag or Space pans.
+import { NODE_CATEGORIES, NODE_INFO, nodeDoc } from '../graph/nodeDocs.ts';
 import { COMPONENT_TEMPLATES, componentPlacement, eventSources, getComponent, insertComponent, startComponentOnEvent } from '../graph/components.ts';
 import { groupSelection } from '../graph/groupSelection.ts';
 import { insertUserComponent, saveGroupAsComponent } from '../graph/userComponents.ts';
@@ -116,7 +117,7 @@ function NodeCard({ data, selected }: NodeProps<CardNode>) {
     <div className={`gc-card${selected ? ' gc-selected' : ''}${node.enabled ? '' : ' gc-disabled'}`}>
       <div className="gc-card-head">
         <span className="gc-title">{node.label || node.id}</span>
-        <span className="gc-type">{node.type}{locked ? ' 🔒' : ''}</span>
+        <span className="gc-type" title={docText(node.type)}>{node.type}{locked ? ' 🔒' : ''}</span>
         {data.onToggleSolo && canSolo(node.type) && (
           <button type="button" className="gc-solo nodrag nopan" aria-pressed={data.solo} onClick={() => data.onToggleSolo!(node.id)}
             title="Solo: show only soloed parts in the preview (does not change the effect)">S</button>
@@ -562,13 +563,18 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
             title="Wraps the selected nodes into one Group. Shift+click nodes to select several.">Group selection{groupIds.length > 1 ? ` (${groupIds.length})` : ''}</button>
           <label className="gc-add">
             <span>Add node</span>
-            <select value={addType} onChange={e => setAddType(e.target.value)}>
+            <select value={addType} onChange={e => setAddType(e.target.value)} title={addType ? docText(addable.find(s => registryKey(s.type, s.definitionVersion) === addType)?.type ?? '') : 'Pick a node type; hover an entry to read what it does'}>
               <option value="">Choose…</option>
-              {addable.map(s => <option key={registryKey(s.type, s.definitionVersion)} value={registryKey(s.type, s.definitionVersion)}>{s.type}</option>)}
+              {/* Grouped by role, each entry carries its description (the same text as the inspector and the AI guide). */}
+              {NODE_CATEGORIES.map(([cat], ci) => {
+                const list = addable.filter(s => (NODE_INFO[s.type]?.[0] ?? NODE_CATEGORIES.length - 1) === ci);
+                return list.length ? <optgroup key={cat} label={cat}>{list.map(s => <option key={registryKey(s.type, s.definitionVersion)} value={registryKey(s.type, s.definitionVersion)} title={docText(s.type)}>{s.type}</option>)}</optgroup> : null;
+              })}
               <option value="" disabled>Group (not available yet)</option>
             </select>
           </label>
           <button type="button" onClick={addNode} disabled={!addType}>Add</button>
+          {addType && <span className="gc-add-doc">{docText(addable.find(s => registryKey(s.type, s.definitionVersion) === addType)?.type ?? '').split('. ')[0]}.</span>}
           <label className="gc-add">
             <span>Add component</span>
             <select value={componentId} onChange={e => setComponentId(e.target.value)} disabled={graphId !== doc.rootGraphId}>
@@ -704,4 +710,9 @@ export default function GraphCanvas(props: GraphCanvasProps) {
       <Canvas {...props} />
     </ReactFlowProvider>
   );
+}
+
+/** Plain-text description of a node type for tooltips (the shared docs use Markdown backticks). */
+function docText(type: string): string {
+  return (nodeDoc(type)?.text ?? '').replace(/`([^`]*)`/g, '$1');
 }

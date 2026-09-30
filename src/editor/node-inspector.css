@@ -45,3 +45,6 @@
 .ni-port-core { color: #8fd18f; }
 .ni-port-approximation { color: #e8c170; }
 .ni-port-enhancement { color: #9aa4b8; }
+.ni-doc { margin: 0 0 6px; padding: 8px 10px; border: 1px solid #2c3a55; border-left: 3px solid #7fb4ff; border-radius: 6px; background: #121a28; font-size: 13px; }
+.ni-doc p { margin: 4px 0 0; color: #c3cad6; line-height: 1.4; }
+.ni-doc-cat { margin-left: 6px; font-size: 11px; color: #8a92a3; text-transform: uppercase; letter-spacing: .04em; }
