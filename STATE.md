@@ -349,3 +349,9 @@ Sprite library: `node tools/bake-sprites.mjs` → assets/sprites/ (flame-tongue-
   generic templates driven by User Parameters (needs the user/computer use once).
 - Open task chip: vfx_render_frames occasionally hangs to the 1800 s client timeout.
 - Next after Unreal: Unity (ask before installing), then Godot.
+
+## 2026-10-01 CI pnpm setup repair
+- [PROXY] Migrated all 19 unchanged pnpm.overrides from package.json to pnpm-workspace.yaml for pnpm 11; setup now requires the lockfile and redundant pnpm ci step removed.
+- [RAN] Override-to-lockfile comparison and diff whitespace check passed; frozen lockfile-only validation passed on available host pnpm 10.15.1.
+- [UNVERIFIED] GitHub pnpm 11 install remains unrun; sandbox pnpm 11 validation was blocked by registry EACCES despite offline flag. No new dependencies installed.
+
