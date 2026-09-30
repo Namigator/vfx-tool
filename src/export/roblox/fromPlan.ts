@@ -16,6 +16,7 @@ import {
 } from './types.ts';
 
 const S = STUDS_PER_METER;
+const VELOCITY_PARALLEL_ROTATION = 90;
 const r3 = (x: number) => Math.round(x * 1000) / 1000;
 const r2 = (x: number) => Math.round(x * 100) / 100;
 const deg = (rad: number) => (rad * 180) / Math.PI;
@@ -179,7 +180,10 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     orientation: velocityAligned ? 'VelocityParallel' : 'FacingCamera',
     // Velocity-aligned sprites ignore spin in the editor (the direction of travel sets their angle); a roll here
     // turned flame tongues into spiky stars (user 2026-09-30). No spin = upright.
-    rotation: spin && !velocityAligned ? [r3(deg(spin.rotation.min)), r3(deg(spin.rotation.max))] : [0, 0],
+    // VelocityParallel lays the texture's side along the motion; +90 puts its top (flame tip, streak head) there
+    // (checked in Studio 2026-09-30: the flamethrower's tongues flow along the jet at 90, stand upright at 0).
+    rotation: velocityAligned ? [VELOCITY_PARALLEL_ROTATION, VELOCITY_PARALLEL_ROTATION]
+      : spin ? [r3(deg(spin.rotation.min)), r3(deg(spin.rotation.max))] : [0, 0],
     rotSpeed: spin && !velocityAligned ? [r3(deg(spin.angularVelocity.min)), r3(deg(spin.angularVelocity.max))] : [0, 0],
     zOffset: 0,
     lockedToPart: d.attachToSource === true,
@@ -381,6 +385,8 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
       const speed = (em.speed[0] + em.speed[1]) / 2, size = Math.max(0.01, em.size[0]?.v ?? 0.1);
       const s = r3(Math.min(3, Math.max(0.5, Math.log2(1 + (speed * t.historyTicks) / TICKS_PER_SECOND / size))));
       em.orientation = 'VelocityParallel';
+      em.rotation = [VELOCITY_PARALLEL_ROTATION, VELOCITY_PARALLEL_ROTATION];
+      em.rotSpeed = [0, 0];
       em.squash = [{ t: 0, v: s, e: 0 }, { t: 1, v: s, e: 0 }];
       report.push({ level: 'approximated', item: t.nodeId, message: 'Trails behind many particles become stretched, velocity-aligned particles (Roblox cannot trail every particle).' });
     } else report.push({ level: 'dropped', item: t.nodeId, message: 'A trail on particles with no visible sprite cannot be exported.' });

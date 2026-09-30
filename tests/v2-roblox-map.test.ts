@@ -25,7 +25,12 @@ test('Roblox map: flamethrower becomes emitters with rate windows, event bursts,
   assert.equal(tongue.flipbook?.layout, 'Grid4x4');
   assert.equal(tongue.textureKey, 'flame-tongue-a.png');
   assert.ok(tongue.speed[1] > 20, `speed in studs/s (${tongue.speed})`);
+  // velocity-parallel sprites are turned 90 degrees so flame tips point along the jet (seen in Studio 2026-09-30)
+  assert.equal(tongue.orientation, 'VelocityParallel');
+  assert.deepEqual(tongue.rotation, [90, 90]);
+  assert.deepEqual(tongue.rotSpeed, [0, 0]);
   for (const em of e.emitters) {
+    if (em.orientation === 'VelocityParallel') assert.deepEqual(em.rotation, [90, 90], em.name);
     for (const seq of [em.size, em.transparency, em.color]) {
       assert.ok(seq.length >= 2 && seq.length <= MAX_SEQUENCE_KEYS && seq[0].t === 0 && seq[seq.length - 1].t === 1, em.name);
     }
