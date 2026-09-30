@@ -89,7 +89,13 @@ to the effect, flicker 0.2–0.3 for fire. The preview caps active lights (see [
   `?t=<sec>` freezes a frame).
 - Lightning: `docs/v2-plan/references/original-lightning/lightning-arc.html` — thin bright core, fine zigzag
   (±0.3 m), hair-thin faint branches.
-Render your effect at a matched camera and compare side by side with `vfx_compare_images`.
+Both references are HTML pages, not images: open them through the dev server (e.g.
+`http://127.0.0.1:5174/docs/v2-plan/references/standalone-flamethrower/flamethrower.html?t=1`) and take a PNG
+screenshot, then render your effect at a matched camera and compare with `vfx_compare_images` (PNG only;
+`lightning-preview.png` next to the lightning page is really a JPEG and is refused).
+The included `flamethrower` and `lightning-strike` components are tuned to these references: when your own build
+falls short, `vfx_describe_node_type` plus a render of the component side by side is the fastest way to see what
+differs.
 
 ## 10. Common wrong looks → cause
 

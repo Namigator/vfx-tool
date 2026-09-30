@@ -6,6 +6,7 @@ export type Rgba = { w: number; h: number; px: Uint8Array };
 
 export function decodePng(png: Uint8Array): Rgba {
   const b = Buffer.from(png);
+  if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) throw new Error('This file is a JPEG (whatever its extension); only PNG images can be compared. Render or screenshot the reference as PNG first.');
   if (b.length < 33 || b.readUInt32BE(0) !== 0x89504e47) throw new Error('Not a PNG file.');
   let w = 0, h = 0, depth = 0, type = 0, interlace = 0;
   const idat: Buffer[] = [];

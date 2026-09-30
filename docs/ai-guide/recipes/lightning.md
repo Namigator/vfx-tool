@@ -48,6 +48,11 @@ Plus two smaller pieces: `arc-beam` (a re-rolling jagged arc + glow ribbon Sourc
 for a sustained "tesla coil" beam) and `charge-tethers` (motes pulled to Source with jagged tethers — the charge-up
 half of a strike, usable alone as an "electric aura" loop).
 
+**Charge-up for a from-scratch bolt:** you don't have to build it by hand. Add the charge half as a component in
+front of your own discharge: `vfx_add_component { docId, component: "charge-tethers", group: true }`, keep its
+Start at 0, and start your strike Schedule (`startTicks`) at about 24 ticks, when the tethers peak. Check
+tick ~12 (motes gathering) as well as the discharge ticks.
+
 ```
 vfx_new_document { template: "blank", id: "bolt", component: "lightning-strike" }
 vfx_compile { docId: "bolt" }
@@ -114,8 +119,34 @@ vfx_render_frames { docId: "bolt2", ticks: [25, 30, 60] }
 ```
 
 (Add `inner` at width ×2.7 the core and `halo` at ×16.5 for the full four-pass look; drive each pass's `Material.opacity`
-from the shared decay-envelope chain — `Time` → `ScalarMath multiply(-3)` → `ScalarMath exp` → multiply by an
-`Oscillator(sine, 96/π Hz, min 0.72, max 1)` — instead of a flat value, or the flash reads like a static neon tube.
+from the decay envelope below instead of a flat value, or the flash reads like a static neon tube.)
+
+**Decay envelope** `exp(-3t) · flicker` (t = seconds since the strike window opened). Exact calls, as used by the
+included lightning components. The `unit` / `inputUnit` values matter: every link must carry the same unit, and
+`Material.opacity` wants `normalized`, so the last node converts (`unit: "normalized"`). Missing them gives
+`TYPE_MISMATCH … Unit none of "value" does not match unit normalized …`.
+
+```
+vfx_add_node { docId: "bolt2", type: "Time", id: "clock" }
+vfx_connect  { docId: "bolt2", from: "strike.window", to: "clock.window" }
+vfx_add_node { docId: "bolt2", type: "ScalarMath", id: "decay",    params: { operation: "multiply", b: -3, inputUnit: "second", unit: "none" } }
+vfx_add_node { docId: "bolt2", type: "ScalarMath", id: "expo",     params: { operation: "exp", unit: "none" } }
+vfx_add_node { docId: "bolt2", type: "Oscillator", id: "flicker",  params: { waveform: "sine", frequency: 30.56, min: 0.72, max: 1, unit: "none" } }
+vfx_add_node { docId: "bolt2", type: "ScalarMath", id: "envelope", params: { operation: "multiply", inputUnit: "none", unit: "none" } }
+vfx_connect  { docId: "bolt2", from: "clock.localSeconds", to: "decay.a" }
+vfx_connect  { docId: "bolt2", from: "decay.value",   to: "expo.a" }
+vfx_connect  { docId: "bolt2", from: "expo.value",    to: "envelope.a" }
+vfx_connect  { docId: "bolt2", from: "flicker.value", to: "envelope.b" }
+# one per pass: scale the envelope by the pass's base opacity and convert to normalized
+vfx_add_node { docId: "bolt2", type: "ScalarMath", id: "corelevel", params: { operation: "multiply", b: 1, inputUnit: "none", unit: "normalized" } }
+vfx_connect  { docId: "bolt2", from: "envelope.value",  to: "corelevel.a" }
+vfx_connect  { docId: "bolt2", from: "corelevel.value", to: "coremat.opacity" }
+```
+
+Base opacities per pass: core 1, inner 0.65, outer 0.17, halo 0.07. Use `-5` instead of `-3` in `decay` for a
+faster, thinner strike, `-2.5` for a heavy one.
+
+(
 Add sparks with `Emitter` (burst, `shape: "sphere"`/`"cone"`, `speedMin/Max` a few m/s) → `Gravity` → `GroundCollision
 { mode: "bounce" }` → `BillboardRenderer { alignment: "velocity", stretchRatio: 2 }`, triggered off `strike.start` /
 an `impact` Schedule's `.start`.)
