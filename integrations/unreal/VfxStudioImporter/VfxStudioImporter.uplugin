@@ -1,0 +1,23 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1",
+	"FriendlyName": "VFX Studio Importer",
+	"Description": "Imports VFX Studio Unreal export packages (effect.json + Textures/) into a NiagaraSystem: headless commandlet (-run=VfxStudioImport) or Python (unreal.VfxNiagaraImporter.import_package). See F:/Dev2/VFX-Tool/docs/ai-guide/export.md (Unreal section).",
+	"Category": "Other",
+	"CreatedBy": "VFX Studio",
+	"CanContainContent": false,
+	"IsBetaVersion": true,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "VfxStudioImporter",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{ "Name": "Niagara", "Enabled": true },
+		{ "Name": "EditorScriptingUtilities", "Enabled": true }
+	]
+}
