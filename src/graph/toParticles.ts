@@ -37,11 +37,11 @@ import type { DescriptorTrack } from '../runtime/particles.ts';
 import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { createRegistry } from './registry.ts';
-import { followerTravel, scheduleStart, TimingError, type TimingContext } from './eventTiming.ts';
+import { followerTravels, scheduleStart, TimingError, type TimingContext } from './eventTiming.ts';
 import { dataTextureFile, isTexturedTemplate, materialSheet, MATERIAL_TEMPLATE_IDS, templateLitsMeshes, templateParam } from './materialSprite.ts';
 import { lifeCurveError, OPACITY_OVER_LIFE_BOUNDS, SIZE_OVER_LIFE_BOUNDS } from '../render/billboardLife.ts';
 import { BUILTIN_SPRITES } from '../assets/builtinSprites.generated.ts';
-import { compilePathPreview, probePathLength } from './toPaths.ts';
+import { compilePathPreview, probePathLength, probePathLengths } from './toPaths.ts';
 import { ease, pointAtArcFraction, type Easing } from '../runtime/paths.ts';
 import type { FlipbookMode, SpriteSheet } from '../assets/spriteLibrary.ts';
 
@@ -160,7 +160,13 @@ export type ParticlePreviewPlan = {
   followers: FollowerTravel[];
 };
 
-export type FollowerTravel = { nodeId: string; startTick: number; travelTicks: number; lengthMeters: number; speedMode: boolean };
+export type FollowerTravel = {
+  nodeId: string; startTick: number; travelTicks: number; lengthMeters: number; speedMode: boolean;
+  /** How many paths it walks (travelTicks / lengthMeters describe the first). */
+  pathCount: number;
+  /** Per path, in path order: travel ticks and length in metres. */
+  travels: number[]; lengths: number[];
+};
 
 export const MAX_ACTIVE_LIGHTS = 4;
 export const DEFAULT_PREVIEW_SIZE = { min: 0.08, max: 0.16 } as const;
@@ -257,6 +263,7 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
     raw: (id, p) => { const x = nodes.get(id); return x ? rawParam(x, p) as number : fail('MISSING_REFERENCE', `Node "${id}" is not in the expanded graph.`, id); },
     source: (nodeId, port) => { const c = into(nodeId, port)[0]; return c && c.source.kind === 'node' ? { nodeId: c.source.nodeId, port: c.source.port } : undefined; },
     pathLength: (nodeId, port, tick) => probePathLength(input, nodeId, port, tick),
+    pathLengths: (nodeId, port, tick) => probePathLengths(input, nodeId, port, tick),
   };
   /** 09 material templates fix some Material fields (materialSprite.templateParam); everything else is as authored. */
   const rawParam = (n: ExpandedNode, id: string): ParameterValue => {
@@ -471,50 +478,68 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
   };
 
   /**
-   * 05 PathFollower: position along the first path of its input set, sampled per tick from the window start
-   * (probe compiles of the path graph), eased over durationTicks, held at the end until the window closes.
+   * 05 PathFollower: it walks EVERY path of its input set. One Track per path (same window and easing), sampled per
+   * tick from the window start (probe compiles of the path graph), eased over that path's travel ticks, held at the end
+   * until the window closes. Duration mode: every path takes the authored travel ticks; speed mode: each path's own
+   * length / speed, so arrivals can differ.
    */
   type Track = { startTick: number; positions: Vec3[]; arrivalTick: number; arrivalPos: Vec3; lengthMeters: number; speedMode: boolean };
-  const tracks = new Map<string, Track | null>();
-  const followerTrack = (f: ExpandedNode): Track | undefined => {
+  const tracks = new Map<string, Track[]>();
+  const followerTracks = (f: ExpandedNode): Track[] => {
     const fid = f.node.id;
-    if (tracks.has(fid)) return tracks.get(fid) ?? undefined;
-    tracks.set(fid, null);
-    if (!f.effectiveEnabled) return undefined;
+    const cached = tracks.get(fid);
+    if (cached) return cached;
+    tracks.set(fid, []);
+    if (!f.effectiveEnabled) return [];
     noDrivenParams(f, ['paths', 'window']);
     const ws = into(fid, 'window');
     if (ws.length !== 1) return fail('MISSING_REFERENCE', `PathFollower "${fid}" needs a Schedule window.`, fid);
     const s = scheduleOf(ws[0], fid, 'window');
-    if (!s) return undefined;
+    if (!s) return [];
     const start = num(s, 'startTicks'), end = Math.min(doc.durationTicks, start + num(s, 'durationTicks'));
     const ps = into(fid, 'paths');
     if (ps.length !== 1 || ps[0].source.kind !== 'node') return fail('MISSING_REFERENCE', `PathFollower "${fid}" needs one connected path source.`, fid);
-    let travel: number;
-    try { travel = followerTravel(timing, fid, start); } catch (e) {
+    let travels: number[];
+    try { travels = followerTravels(timing, fid, start); } catch (e) {
       if (e instanceof TimingError) return fail('INVALID_VALUE', e.message, e.nodeId);
       throw e;
     }
     const src = ps[0].source, easing = param(f, 'easing') as Easing;
-    const positions: Vec3[] = [];
-    let last: Vec3 | undefined;
+    const travelOf = (i: number) => travels[Math.min(i, travels.length - 1)];
+    const slowest = Math.max(...travels);
+    const all: Vec3[][] = [];
+    const last: (Vec3 | undefined)[] = [];
     for (let tk = start; tk < end; tk++) {
-      const u = (tk - start) / travel;
-      if (u <= 1 || !last) {
+      if (tk - start <= slowest || !last.length) {
         const r = compilePathPreview(input, tk, { audioHandled: true, probe: { nodeId: src.nodeId, port: src.port } });
-        if (!r.ok) { errors.push(...r.errors.map(e => ({ ...e, nodeId: e.nodeId ?? fid }))); return undefined; }
-        const path = r.value.probe?.[0];
-        if (!path || path.points.length === 0) return fail('MISSING_REFERENCE', `PathFollower "${fid}" path source produced no path at tick ${tk}.`, fid);
-        last = pointAtArcFraction(path.points, ease(easing, Math.min(1, u)));
+        if (!r.ok) { errors.push(...r.errors.map(e => ({ ...e, nodeId: e.nodeId ?? fid }))); return []; }
+        const probe = r.value.probe ?? [];
+        if (!last.length && (!probe.length || probe.some(p => p.points.length === 0))) return fail('MISSING_REFERENCE', `PathFollower "${fid}" path source produced no path at tick ${tk}.`, fid);
+        if (!last.length) probe.forEach(() => { last.push(undefined); all.push([]); });
+        for (let i = 0; i < last.length; i++) {
+          const path = probe[i];
+          const u = (tk - start) / travelOf(i);
+          if (path && path.points.length && (u <= 1 || !last[i])) last[i] = pointAtArcFraction(path.points, ease(easing, Math.min(1, u)));
+        }
       }
-      positions.push([last[0], last[1], last[2]]);
+      last.forEach((l, i) => { if (l) all[i].push([l[0], l[1], l[2]]); });
     }
-    if (!positions.length) return undefined;
-    let lengthMeters = 0;
-    try { lengthMeters = probePathLength(input, src.nodeId, src.port, start); } catch (e) { if (!(e instanceof TimingError)) throw e; }
-    const t: Track = { startTick: start, positions, arrivalTick: start + travel, arrivalPos: positions[Math.min(travel, positions.length - 1)], lengthMeters, speedMode: num(f, 'speed') > 0 };
-    tracks.set(fid, t);
-    return t;
+    if (!all.length || !all[0].length) return [];
+    let lengths: number[] = [];
+    try { lengths = probePathLengths(input, src.nodeId, src.port, start); } catch (e) { if (!(e instanceof TimingError)) throw e; }
+    const out = all.map((positions, i): Track => {
+      const travel = travelOf(i);
+      return { startTick: start, positions, arrivalTick: start + travel, arrivalPos: positions[Math.min(travel, positions.length - 1)], lengthMeters: lengths[i] ?? 0, speedMode: num(f, 'speed') > 0 };
+    });
+    tracks.set(fid, out);
+    return out;
   };
+  /** The moving sources an anchor input resolves to: every path track of a PathFollower, or none. */
+  const tracksOf = (anchorNode: ExpandedNode | undefined): Track[] => anchorNode?.node.type === 'PathFollower' ? followerTracks(anchorNode) : [];
+  const trackData = (t: Track) => ({ startTick: t.startTick, positions: t.positions.map(p => [...p] as Vec3) });
+  /** Descriptor fields for a moving source: first track, plus the rest when the follower walks several paths. */
+  const trackFields = (tks: Track[]): Pick<ParticleEmitterDescriptor, 'sourceTrack' | 'extraSourceTracks'> =>
+    tks.length ? { sourceTrack: trackData(tks[0]), ...(tks.length > 1 ? { extraSourceTracks: tks.slice(1).map(trackData) } : {}) } : {};
 
   /**
    * Child emission (05 ParticleEvents, GroundCollision.collision): the parent chain is compiled and
@@ -574,7 +599,8 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
     const triggerSources = into(id, 'trigger').flatMap(c => routeEvents(c, id, 'trigger')).map(r => sourceNode(r.c.source, r.consumer, 'trigger'));
     const eventOnly = triggerSources.length > 0 && into(id, 'window').length === 0 && param(em, 'useEventPosition') === true
       && triggerSources.every(s => s.node.type === 'ParticleEvents' || s.node.type === 'GroundCollision' || s.node.type === 'PathFollower');
-    const track = anchorNode?.node.type === 'PathFollower' ? followerTrack(anchorNode) : undefined;
+    const tks = tracksOf(anchorNode);
+    const track = tks[0];
     const sp = anchorNode && !track ? staticAnchor(anchorNode) : undefined;
     if (track) { /* Moving source: positions come from the follower track. */ } else if (!sp) {
       if (!eventOnly && shape !== 'path') report('MISSING_REFERENCE', 'Emitter needs an enabled Anchor (or OffsetAnchor) referencing an existing document anchor on its anchor input (Schedule events carry no position; particle events do when Use event position is on).', id);
@@ -587,13 +613,18 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
     for (const { c, delay, consumer } of into(id, 'trigger').flatMap(c => routeEvents(c, id, 'trigger'))) {
       const src = sourceNode(c.source, consumer, 'trigger');
       if (src.node.type === 'PathFollower') {
-        const t = followerTrack(src);
-        const at = t ? t.arrivalTick + delay : duration;
-        if (!t || at >= duration || burst <= 0) continue;
-        const key = JSON.stringify(['arrival', src.node.randomStreamId, at]);
-        if (seen.has(key)) continue;
-        seen.add(key);
-        bursts.push({ tick: at, eventRandomKey: key, count: burst, ...(param(em, 'useEventPosition') === true ? { position: [...t.arrivalPos] as Vec3 } : {}) });
+        // One arrival event per path, each at its own tick and position.
+        const arrivals = followerTracks(src);
+        for (const [i, t] of arrivals.entries()) {
+          const at = t.arrivalTick + delay;
+          if (at >= duration || burst <= 0) continue;
+          const key = JSON.stringify(arrivals.length > 1 ? ['arrival', src.node.randomStreamId, at, i] : ['arrival', src.node.randomStreamId, at]);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          const usePos = param(em, 'useEventPosition') === true;
+          // Emitter riding the same follower: path i's arrival bursts from path i's source only.
+          bursts.push({ tick: at, eventRandomKey: key, count: burst, ...(usePos ? { position: [...t.arrivalPos] as Vec3 } : anchorNode === src && arrivals.length > 1 ? { track: i } : {}) });
+        }
         continue;
       }
       if (src.node.type === 'ParticleEvents' || src.node.type === 'GroundCollision') {
@@ -732,7 +763,7 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
       operators,
     };
     if (rate) d.rate = rate;
-    if (track) { d.sourcePosition = [...track.positions[0]] as Vec3; d.sourceTrack = { startTick: track.startTick, positions: track.positions.map(p => [...p] as Vec3) }; }
+    if (track) { d.sourcePosition = [...track.positions[0]] as Vec3; Object.assign(d, trackFields(tks)); }
     if (chain.initial) {
       const ip = chain.initial, r = [num(ip, 'rotationMin'), num(ip, 'rotationMax')], w = [num(ip, 'angularVelocityMin'), num(ip, 'angularVelocityMax')];
       if (r[0] > r[1]) report('INVALID_VALUE', 'InitialProperties rotationMin must be <= rotationMax.', ip.node.id, 'rotationMax');
@@ -800,7 +831,7 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
         if (!mat || mat.node.type !== 'Material' || !mat.effectiveEnabled) { fail('MISSING_REFERENCE', `Required input "material" of "${tid}" needs an enabled Material.`, tid); }
         const m = mat as ExpandedNode;
         const an = into(tid, 'anchor'), anchorNode = an.length === 1 ? sourceNode(an[0].source, tid, 'anchor') : undefined;
-        const track = anchorNode?.node.type === 'PathFollower' ? followerTrack(anchorNode) : undefined;
+        const mtks = tracksOf(anchorNode), track = mtks[0];
         const ap = anchorNode ? staticAnchor(anchorNode) : undefined;
         if (!ap && !track) { fail('MISSING_REFERENCE', `MotionTrail "${tid}" needs an enabled Anchor or PathFollower.`, tid); }
         const ws = into(tid, 'window');
@@ -815,7 +846,7 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
           sourcePosition: track ? [...track.positions[0]] as Vec3 : [q[0] + transform.position[0], q[1] + transform.position[1], q[2] + transform.position[2]],
           initialVelocity: { kind: 'vector', value: [0, 0, 0] }, bursts: [{ tick: start, eventRandomKey: scheduleEventRandomKey(s.node.randomStreamId, start, 0), count: 1 }],
           lifetimeTicks: { min: len, max: len }, size: { min: 0, max: 0 }, operators: [],
-          ...(track ? { sourceTrack: { startTick: track.startTick, positions: track.positions.map(p => [...p] as Vec3) }, attachToSource: true } : {}),
+          ...(track ? { ...trackFields(mtks), attachToSource: true } : {}),
         };
         const v = validateParticleDescriptor(withTracks(d));
         if (!v.ok) { errors.push(...v.errors.map(e => ({ ...e, nodeId: tid }))); continue; }
@@ -867,9 +898,9 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
         const lid = b.node.id;
         noDrivenParams(b, ['anchor', 'window']);
         const an = into(lid, 'anchor'), anchorNode = an.length === 1 ? sourceNode(an[0].source, lid, 'anchor') : undefined;
-        const ltrack = anchorNode?.node.type === 'PathFollower' ? followerTrack(anchorNode) : undefined;
+        const ltracks = tracksOf(anchorNode);
         const ap = anchorNode ? staticAnchor(anchorNode) : undefined;
-        if (!ap && !ltrack) { fail('MISSING_REFERENCE', `PointLight "${lid}" needs an enabled Anchor (or PathFollower) referencing an existing document anchor.`, lid); }
+        if (!ap && !ltracks.length) { fail('MISSING_REFERENCE', `PointLight "${lid}" needs an enabled Anchor (or PathFollower) referencing an existing document anchor.`, lid); }
         const ws = into(lid, 'window');
         if (ws.length !== 1) { fail('MISSING_REFERENCE', `PointLight "${lid}" needs a Schedule window.`, lid); }
         const s = scheduleOf(ws[0], lid, 'window');
@@ -879,12 +910,13 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
         const curve = param(b, 'intensityOverWindow') as CurveValue, cerr = lifeCurveError(curve, { min: 0, max: 1 });
         if (cerr !== undefined) report('INVALID_VALUE', `PointLight "${lid}" intensityOverWindow: ${cerr}`, lid, 'intensityOverWindow');
         const scale = transform.scale, a = (ap ?? [0, 0, 0]) as Vec3, q = rotate(transform.rotation, [a[0] * scale, a[1] * scale, a[2] * scale]);
-        lights.push({
-          ...(ltrack ? { track: { startTick: ltrack.startTick, positions: ltrack.positions.map(p => [...p] as Vec3) } } : {}),
+        // A follower over several paths: one light per path (the light budget below counts each).
+        for (const [li, ltrack] of (ltracks.length ? ltracks : [undefined]).entries()) lights.push({
+          ...(ltrack ? { track: trackData(ltrack) } : {}),
           nodeId: lid, position: [q[0] + transform.position[0], q[1] + transform.position[1], q[2] + transform.position[2]], color: hueRotate(applyGrade(param(b, 'color') as ColorValue, gradeFor(b)), num(b, 'hueShift')),
           intensity: num(b, 'intensity'), range: num(b, 'range') * scale, startTick: start, endTick: Math.min(doc.durationTicks, start + num(s, 'durationTicks')),
           intensityOverWindow: structuredClone(curve), flicker: num(b, 'flicker'), flickerRate: num(b, 'flickerRate'),
-          seed: sampleUnit({ documentSeed: doc.seed, randomStreamId: b.node.randomStreamId, eventRandomKey: 'light', entityOrdinal: 0, propertyKey: 'flicker', sampleOrdinal: 0 }) * 4294967296 >>> 0,
+          seed: sampleUnit({ documentSeed: doc.seed, randomStreamId: b.node.randomStreamId, eventRandomKey: li > 0 ? `light@t${li}` : 'light', entityOrdinal: 0, propertyKey: 'flicker', sampleOrdinal: 0 }) * 4294967296 >>> 0,
         });
         continue;
       }
@@ -949,7 +981,7 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
         if (!mat || mat.node.type !== 'Material' || !mat.effectiveEnabled) { fail('MISSING_REFERENCE', `Required input "material" of "${sid}" needs an enabled Material.`, sid); }
         const m = mat as ExpandedNode;
         const an = into(sid, 'anchor'), anchorNode = an.length === 1 ? sourceNode(an[0].source, sid, 'anchor') : undefined;
-        const strack = anchorNode?.node.type === 'PathFollower' ? followerTrack(anchorNode) : undefined;
+        const stks = tracksOf(anchorNode), strack = stks[0];
         const ap = anchorNode ? staticAnchor(anchorNode) : undefined;
         if (!ap && !strack) { fail('MISSING_REFERENCE', `SpriteRenderer "${sid}" needs an enabled Anchor (or PathFollower) referencing an existing document anchor.`, sid); }
         const ws = into(sid, 'window');
@@ -968,7 +1000,7 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
           lifetimeTicks: { min: len, max: len }, size: { min: num(b, 'size') * scale, max: num(b, 'size') * scale }, operators: [],
           ...(rot !== 0 || spin !== 0 ? { spin: { rotation: { min: rot, max: rot }, angularVelocity: { min: spin, max: spin } } } : {}),
         };
-        if (strack) { d.sourcePosition = [...strack.positions[0]] as Vec3; d.sourceTrack = { startTick: strack.startTick, positions: strack.positions.map(p => [...p] as Vec3) }; d.attachToSource = true; }
+        if (strack) { d.sourcePosition = [...strack.positions[0]] as Vec3; Object.assign(d, trackFields(stks)); d.attachToSource = true; }
         const v = validateParticleDescriptor(withTracks(d));
         if (!v.ok) { errors.push(...v.errors.map(e => ({ ...e, nodeId: sid }))); continue; }
         systems.push({ id: sid, descriptor: v.value });
@@ -1114,7 +1146,7 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
         if (s.node.type === 'Schedule') {
           const repeat = param(s, 'mode') === 'repeat', n = repeat ? num(s, 'repeatCount') : 1;
           for (let k = 0; k < n; k++) ticks.push(num(s, 'startTicks') + k * (repeat ? num(s, 'repeatIntervalTicks') : 0) + (port === 'end' ? num(s, 'durationTicks') : 0) + delay);
-        } else if (s.node.type === 'PathFollower') { const tr = followerTrack(s); if (tr) ticks.push(tr.arrivalTick + delay); }
+        } else if (s.node.type === 'PathFollower') { for (const t of new Set(followerTracks(s).map(tr => tr.arrivalTick + delay))) ticks.push(t); } // One per distinct arrival tick.
         else fail('UNKNOWN_NODE', `${p.node.type} "${p.node.id}" trigger from ${s.node.type} is not supported; use a Schedule or PathFollower arrival.`, p.node.id);
       }
       for (const tick of ticks) {
@@ -1136,10 +1168,22 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
   const followers: FollowerTravel[] = [];
   for (const n of nodes.values()) {
     if (n.node.type !== 'PathFollower' || !n.effectiveEnabled) continue;
-    const t = followerTrack(n);
-    if (t) followers.push({ nodeId: n.node.id, startTick: t.startTick, travelTicks: t.arrivalTick - t.startTick, lengthMeters: t.lengthMeters, speedMode: t.speedMode });
+    const tks = followerTracks(n), t = tks[0];
+    if (t) followers.push({ nodeId: n.node.id, startTick: t.startTick, travelTicks: t.arrivalTick - t.startTick, lengthMeters: t.lengthMeters, speedMode: t.speedMode, pathCount: tks.length, travels: tks.map(k => k.arrivalTick - k.startTick), lengths: tks.map(k => k.lengthMeters) });
   }
   if (errors.length) return { ok: false, errors };
+  // A Schedule started by a follower's arrival starts at the FIRST arrival when the paths arrive at different ticks.
+  for (const sc of nodes.values()) {
+    if (sc.node.type !== 'Schedule' || !sc.effectiveEnabled) continue;
+    try {
+      for (const c of into(sc.node.id, 'trigger')) for (const r of routeEvents(c, sc.node.id, 'trigger')) {
+        const f = sourceNode(r.c.source, r.consumer, 'trigger');
+        if (f.node.type !== 'PathFollower' || !f.effectiveEnabled || (r.c.source.kind === 'node' && r.c.source.port !== 'arrival')) continue;
+        const arrivals = followerTracks(f).map(t => t.arrivalTick);
+        if (new Set(arrivals).size > 1) warnings.push({ code: 'INVALID_VALUE', severity: 'warning', nodeId: f.node.id, message: `PathFollower "${f.node.id}" has ${arrivals.length} arrivals at different ticks; the triggered schedule "${sc.node.id}" starts at the first (tick ${Math.min(...arrivals)}).` });
+      }
+    } catch (e) { if (!(e instanceof Fail)) throw e; }
+  }
   return { ok: true, value: { durationTicks: doc.durationTicks, systems, layers, trails, lights, meshes, presentation, followers }, warnings };
 }
 
@@ -1149,12 +1193,13 @@ function checkBudget(descriptors: ParticleEmitterDescriptor[], duration: number)
   let total = 0;
   for (const d of descriptors) {
     const births = new Array<number>(duration).fill(0);
-    for (const b of d.bursts) births[b.tick] += b.count;
+    const nt = 1 + (d.extraSourceTracks?.length ?? 0); // Every track emits the full amount.
+    for (const b of d.bursts) births[b.tick] += b.count * (b.position || b.track !== undefined ? 1 : nt);
     if (d.rate) {
       let emitted = 0, eligible = 0;
       for (let t = d.rate.startTick; t < d.rate.endTick; t++) {
         const due = Math.floor((++eligible * d.rate.perSecond) / TICKS_PER_SECOND);
-        births[t] += due - emitted;
+        births[t] += (due - emitted) * nt;
         emitted = due;
       }
     }

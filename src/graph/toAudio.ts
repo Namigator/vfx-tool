@@ -38,7 +38,7 @@ import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { createRegistry } from './registry.ts';
 import { scheduleStart, TimingError, type TimingContext } from './eventTiming.ts';
-import { probePathLength } from './toPaths.ts';
+import { probePathLength, probePathLengths } from './toPaths.ts';
 
 type PreparedVoice = {
   sourceNodeId: string; scheduleNodeId: string; cueTick: number; startTick: number; startSample: number;
@@ -125,6 +125,7 @@ export function compileAudio(input: unknown): ValidationResult<AudioCompilePlan>
     raw: (id, p) => { const x = nodes.get(id); return x ? rawParam(x, p) as number : fail('MISSING_REFERENCE', `Node "${id}" is not in the expanded graph.`, id); },
     source: (nodeId, port) => { const c = into(nodeId, port)[0]; return c && c.source.kind === 'node' ? { nodeId: c.source.nodeId, port: c.source.port } : undefined; },
     pathLength: (nodeId, port, tick) => probePathLength(input, nodeId, port, tick),
+    pathLengths: (nodeId, port, tick) => probePathLengths(input, nodeId, port, tick),
   };
   const rawParam = (n: ExpandedNode, id: string): ParameterValue => {
     const v = params.get(`${n.node.id}\u0000${id}`);

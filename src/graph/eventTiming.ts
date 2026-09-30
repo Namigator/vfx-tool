@@ -9,6 +9,8 @@ export type TimingContext = {
   source(nodeId: string, port: string): { nodeId: string; port: string } | undefined;
   /** World-space arc length of the first path of `nodeId.port` at `tick` (PathFollower speed mode). */
   pathLength?(nodeId: string, port: string, tick: number): number;
+  /** World-space arc length of EVERY path of `nodeId.port` at `tick`, in path order (PathFollower speed mode). */
+  pathLengths?(nodeId: string, port: string, tick: number): number[];
 };
 
 /** Longest travel a PathFollower may resolve to (matches its Travel ticks maximum). */
@@ -20,12 +22,21 @@ export const MAX_TRAVEL_TICKS = 600;
  * keeps the speed and the arrival (and everything it triggers) moves with it.
  */
 export function followerTravel(ctx: TimingContext, followerId: string, startTick: number): number {
+  return Math.min(...followerTravels(ctx, followerId, startTick));
+}
+
+/**
+ * Travel ticks of each path the follower walks (it follows every path of its set). Duration mode: one value, the
+ * same for all paths. Speed mode: one value per path (its own length ÷ speed), so arrivals can differ.
+ * `followerTravel` is the earliest of these.
+ */
+export function followerTravels(ctx: TimingContext, followerId: string, startTick: number): number[] {
   const speed = ctx.raw(followerId, 'speed');
-  if (!(speed > 0)) return ctx.raw(followerId, 'durationTicks');
+  if (!(speed > 0)) return [ctx.raw(followerId, 'durationTicks')];
   const p = ctx.source(followerId, 'paths');
-  if (!p || !ctx.pathLength) throw new TimingError(`PathFollower "${followerId}" needs a connected path to travel at a speed.`, followerId);
-  const len = ctx.pathLength(p.nodeId, p.port, startTick);
-  return Math.max(1, Math.min(MAX_TRAVEL_TICKS, Math.round((len / speed) * 60)));
+  if (!p || !(ctx.pathLengths || ctx.pathLength)) throw new TimingError(`PathFollower "${followerId}" needs a connected path to travel at a speed.`, followerId);
+  const lens = ctx.pathLengths ? ctx.pathLengths(p.nodeId, p.port, startTick) : [ctx.pathLength!(p.nodeId, p.port, startTick)];
+  return (lens.length ? lens : [0]).map(len => Math.max(1, Math.min(MAX_TRAVEL_TICKS, Math.round((len / speed) * 60))));
 }
 
 export class TimingError extends Error {
@@ -52,7 +63,7 @@ export function eventTick(ctx: TimingContext, nodeId: string, port: string, dept
     const w = ctx.source(nodeId, 'window');
     if (!w || ctx.type(w.nodeId) !== 'Schedule') throw new TimingError(`PathFollower "${nodeId}" needs a Schedule window to time its arrival.`, nodeId);
     const start = scheduleStart(ctx, w.nodeId, depth + 1);
-    return start + followerTravel(ctx, nodeId, start);
+    return start + followerTravel(ctx, nodeId, start); // Several paths: the earliest arrival.
   }
   if (type === 'EventDelay') {
     const s = ctx.source(nodeId, 'events');

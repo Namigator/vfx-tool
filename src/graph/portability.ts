@@ -27,7 +27,7 @@ export const NODE_PORTABILITY: Record<string, Portability> = {
   MeshRenderer: P('core', 'static-mesh-instances'), PropMesh: P('core', 'static-mesh-instances'),
   PointLight: P('core', 'lights'),
   PathFollower: P('core', 'path-branch-ribbon'), LinePath: P('core', 'path-branch-ribbon'), BezierPath: P('core', 'path-branch-ribbon'),
-  HelixPath: P('core', 'path-branch-ribbon'), PathTransform: P('core', 'path-branch-ribbon'), MergePaths: P('core', 'path-branch-ribbon'),
+  HelixPath: P('core', 'path-branch-ribbon'), PathTransform: P('core', 'path-branch-ribbon'), MergePaths: P('core', 'path-branch-ribbon'), PathSplitter: P('core', 'path-branch-ribbon'),
   RingPath: P('core', 'path-branch-ribbon'), RadialPath: P('core', 'path-branch-ribbon'), RevealPath: P('core', 'path-branch-ribbon'),
   ParticlePaths: P('approximation', 'path-branch-ribbon'), JaggedPath: P('approximation', 'path-branch-ribbon', 'custom-noise-motion'),
   BranchPath: P('approximation', 'path-branch-ribbon', 'arbitrary-branching'),

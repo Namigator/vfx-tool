@@ -87,6 +87,9 @@ The ones that matter most when building effects.
 | `MAX_EMISSION_PATH_POINTS` | 4096 | Most path vertices an Emitter with shape "path" can spawn along. | src/runtime/particles.ts |
 | `MAX_TRACKS` | 64 | Most keyframed (animated) values per item (implementation limit). | src/runtime/particles.ts |
 | `MAX_TRACK_KEYS` | 64 | Most keys per animated value (implementation limit). | src/runtime/particles.ts |
+| `MAX_SOURCE_TRACKS` | 256 | Most moving sources one emitter may have (PathFollower paths): the first plus up to 255 more. | src/runtime/particles.ts |
+| `MAX_SPLIT_INDEX` | 255 | PathSplitter: highest From/Offset index. | src/runtime/pathSplit.ts |
+| `MAX_SPLIT_COUNT` | 256 | PathSplitter: most paths to pick (Count) and widest Step. | src/runtime/pathSplit.ts |
 | `MIN_PATH_SAMPLES` | 2 | Fewest vertices per path. | src/runtime/paths.ts |
 | `MAX_PATH_SAMPLES` | 128 | Most vertices per path (path resolution cap). | src/runtime/paths.ts |
 | `MIN_RADIAL_COUNT` | 1 | RadialPath: fewest rays. | src/runtime/radial.ts |

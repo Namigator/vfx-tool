@@ -472,9 +472,9 @@ function pathFollower(): NodeSpec {
     ],
     outputs: [port({ id: 'anchor', label: 'Anchor', type: 'anchor' }), port({ id: 'arrival', label: 'Arrival', type: 'event' })],
     parameters: [
-      param({ id: 'durationTicks', label: 'Travel ticks', type: 'integer', unit: 'tick', default: 30, min: 1, max: 600, step: 1, description: 'Ticks to travel the first path of the set from start to end; arrival fires then. Holds at the end until the window closes.' }),
+      param({ id: 'durationTicks', label: 'Travel ticks', type: 'integer', unit: 'tick', default: 30, min: 1, max: 600, step: 1, description: 'Ticks every path of the set takes from start to end; arrival fires then. Holds at the end until the window closes.' }),
       param({ id: 'easing', label: 'Easing', type: 'enum', unit: 'none', default: 'linear', choices: ['linear', 'easeIn', 'easeOut', 'easeInOut'] }),
-      param({ id: 'speed', label: 'Speed', type: 'number', unit: 'metersPerSecond', default: 0, min: 0, max: 200, description: '0 = travel for Travel ticks. Above 0: travel ticks = path length ÷ speed (rounded to ticks), so a farther Target takes longer at the same speed.' }),
+      param({ id: 'speed', label: 'Speed', type: 'number', unit: 'metersPerSecond', default: 0, min: 0, max: 200, description: '0 = travel for Travel ticks. Above 0: travel ticks = path length ÷ speed (rounded to ticks, per path), so a farther Target, or a longer path, takes longer at the same speed.' }),
     ],
     disabledBehavior: 'empty',
   });
@@ -541,6 +541,27 @@ function pathTransformNode(): NodeSpec {
       param({ id: 'rotation', label: 'Rotation', type: 'quaternion', unit: 'none', default: [0, 0, 0, 1], min: -1, max: 1, description: 'About each path\'s first point (xyzw).' }),
       param({ id: 'scale', label: 'Scale', type: 'number', unit: 'none', default: 1, min: 0.01, max: 20 }),
     ],
+    disabledBehavior: 'bypass',
+    bypass: { input: 'paths', output: 'paths' },
+  });
+}
+
+/** PathSplitter: decides which paths of a set go on (`paths`) and which are left behind (`rest`); see runtime/pathSplit.ts. */
+function pathSplitterNode(): NodeSpec {
+  return node('PathSplitter', {
+    inputs: [pathsIn()],
+    outputs: [
+      port({ id: 'paths', label: 'Chosen', type: 'paths' }),
+      port({ id: 'rest', label: 'Rest', type: 'paths' }),
+    ],
+    parameters: [
+      param({ id: 'mode', label: 'Mode', type: 'enum', unit: 'none', default: 'range', choices: ['range', 'everyNth', 'random', 'longest', 'shortest'], description: 'range: Count paths starting at From. everyNth: every Step-th path starting at Offset. random: Count paths picked at random (same pick every time; change the random stream of the node or the document seed for another pick). longest / shortest: the Count longest / shortest paths.' }),
+      param({ id: 'from', label: 'From', type: 'integer', unit: 'none', default: 0, min: 0, max: 255, step: 1, description: 'range mode: index of the first chosen path (0 = the first path).' }),
+      param({ id: 'count', label: 'Count', type: 'integer', unit: 'none', default: 1, min: 1, max: 256, step: 1, description: 'range, random, longest and shortest modes: how many paths go on.' }),
+      param({ id: 'step', label: 'Step', type: 'integer', unit: 'none', default: 2, min: 1, max: 256, step: 1, description: 'everyNth mode: take every Step-th path (2 = every other one).' }),
+      param({ id: 'offset', label: 'Offset', type: 'integer', unit: 'none', default: 0, min: 0, max: 255, step: 1, description: 'everyNth mode: index of the first chosen path.' }),
+    ],
+    // Disabled: every path goes on (the Rest output is empty).
     disabledBehavior: 'bypass',
     bypass: { input: 'paths', output: 'paths' },
   });
@@ -1050,7 +1071,7 @@ function bridge(type: 'GroupInput' | 'GroupOutput'): NodeSpec {
 export function createRegistry(): Map<string, NodeSpec> {
   const specs = [
     anchor(), schedule(), emitter(), initialProperties(), gravity(), drag(), noiseForce(), attract(), vortex(), groundCollision(), randomRange(), constantNode(), overLife(), ringRenderer(), curveNode(), gradientNode(), scalarMath(), publicParameter(), offsetAnchor(), eventDelay(), mergeEvents(), particleEvents(), material(), billboardRenderer(), particleTrail(), motionTrail(), meshRenderer(), propMesh(), spriteRenderer(), pointLight(), pathFollower(), screenFlash(), cameraImpulse(),
-    linePath(), bezierPath(), helixPathNode(), pathTransformNode(), mergePathsNode(), particlePathsNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(), oscillator(), timeNode(),
+    linePath(), bezierPath(), helixPathNode(), pathTransformNode(), pathSplitterNode(), mergePathsNode(), particlePathsNode(), jaggedPath(), branchPath(), revealPath(), radialPath(), ringPath(), ribbonRenderer(), effectTimeCurve(), oscillator(), timeNode(),
     audioSource(), audioEnvelope(), audioFilter(), audioMix(), audioOutput(),
     effectOutput(), group(), bridge('GroupInput'), bridge('GroupOutput'),
   ];

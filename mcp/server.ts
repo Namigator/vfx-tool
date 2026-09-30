@@ -364,7 +364,7 @@ ${formatMigrationReport(report)}`);
       for (const i of p.value.presentation.impulses) out.push(`camera shake ${i.nodeId}: ticks ${i.tick}-${i.tick + i.durationTicks}, translation ${i.translation} m, rotation ${i.rotation} rad`);
       for (const l of p.value.lights) out.push(`light ${l.nodeId}: ticks ${l.startTick}-${l.endTick}, intensity ${l.intensity}, range ${l.range} m${l.track ? ', moving' : ''}`);
     }
-    if (p.ok) for (const f of p.value.followers) out.push(`travel ${f.nodeId}: ${f.lengthMeters.toFixed(2)} m in ${f.travelTicks} ticks = ${(f.lengthMeters / (f.travelTicks / 60)).toFixed(1)} m/s (${f.speedMode ? 'speed' : 'duration'} mode)`);
+    if (p.ok) for (const f of p.value.followers) out.push(f.pathCount > 1 ? `travel ${f.nodeId}: follows ${f.pathCount} paths (${f.speedMode ? 'speed' : 'duration'} mode), arrivals at ticks ${[...new Set(f.travels.map(t => f.startTick + t))].sort((x, y) => x - y).join(', ')}` : `travel ${f.nodeId}: ${f.lengthMeters.toFixed(2)} m in ${f.travelTicks} ticks = ${(f.lengthMeters / (f.travelTicks / 60)).toFixed(1)} m/s (${f.speedMode ? 'speed' : 'duration'} mode)`);
     const cut = truncationWarning(d);
     if (cut) out.push(`WARNING: ${cut.message}`);
     if (hasAudio) { const a = compileAudio(d); out.push(a.ok ? `audio OK: ${a.value.kind}, peak ${a.value.mix.postPeak.toFixed(3)}${a.value.mix.severeLimiting ? ' (SEVERE LIMITING)' : ''}` : `audio FAILED:\n${fmtErrors(a.errors)}`); }

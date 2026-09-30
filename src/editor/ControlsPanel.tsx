@@ -142,7 +142,12 @@ function TravelReadout({ doc, followers }: { doc: EffectDocumentV2; followers: F
   return (
     <fieldset className="cp-section">
       <legend>Projectile travel</legend>
-      {followers.map(f => (
+      {followers.map(f => f.pathCount > 1 ? (
+        <div key={f.nodeId} className="cp-travel">
+          {label(f.nodeId)}: follows {f.pathCount} paths, {Math.min(...f.lengths).toFixed(2)}{Math.max(...f.lengths) - Math.min(...f.lengths) > 0.005 ? `-${Math.max(...f.lengths).toFixed(2)}` : ''} m each, arriving at {Math.min(...f.travels) === Math.max(...f.travels) ? `${f.travels[0]} ticks` : `${Math.min(...f.travels)}-${Math.max(...f.travels)} ticks`} after start
+          {f.speedMode ? ' (speed mode: each path takes its own length / speed)' : ' (duration mode: every path takes the same time)'}
+        </div>
+      ) : (
         <div key={f.nodeId} className="cp-travel">
           {label(f.nodeId)}: {f.lengthMeters.toFixed(2)} m in {f.travelTicks} ticks ({(f.travelTicks / 60).toFixed(2)} s) = {(f.lengthMeters / (f.travelTicks / 60)).toFixed(1)} m/s
           {f.speedMode ? ' (speed mode: moving the Target keeps this speed)' : ' (duration mode: moving the Target changes the speed)'}

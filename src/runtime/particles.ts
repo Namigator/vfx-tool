@@ -63,6 +63,8 @@ export type ParticleBurst = {
   velocity?: Vec3;
   /** Added to each sampled birth velocity (05 inherit velocity: parent event velocity × fraction). */
   addVelocity?: Vec3;
+  /** Several source tracks only: spawn from this one track (index 0 = sourceTrack, k = extraSourceTracks[k-1]) instead of from every track. */
+  track?: number;
 };
 
 /** Active window startTick <= tick < endTick. */
@@ -93,6 +95,8 @@ export type DescriptorTrack = { path: (string | number)[]; keys: [number, number
 /** Bounds on keyframed tracks per descriptor, and on keys per track (implementation limits). */
 const MAX_TRACKS = 64;
 const MAX_TRACK_KEYS = 64;
+/** Most moving sources one emitter may have (PathFollower paths): the first plus up to 255 more. */
+export const MAX_SOURCE_TRACKS = 256;
 
 export type ParticleEmitterDescriptor = {
   documentSeed: number;
@@ -109,6 +113,12 @@ export type ParticleEmitterDescriptor = {
   spin?: ParticleSpin;
   /** Moving source (PathFollower): world position at tick startTick+i; clamps outside the range. Replaces sourcePosition. */
   sourceTrack?: { startTick: number; positions: Vec3[] };
+  /**
+   * More moving sources beyond `sourceTrack` (PathFollower over several paths). Every birth (rate and bursts without a
+   * position or `track`) is made once per track (sourceTrack first, then these), each track emitting the full authored
+   * amount. Track k>0 uses the random key `<key>@t<k>`, so the first track's randomness is identical to a single-source emitter.
+   */
+  extraSourceTracks?: { startTick: number; positions: Vec3[] }[];
   /** Particles stay attached to the track position (e.g. a projectile core sprite) instead of integrating motion. */
   attachToSource?: boolean;
   bursts: ParticleBurst[];
@@ -151,6 +161,8 @@ export type ParticleState = {
   rotation?: number;
   /** Present only when the descriptor has spin. Radians per second. */
   angularVelocity?: number;
+  /** Source track index it was born on; present only for tracks after the first. */
+  track?: number;
   /** Present once the particle has touched a ground operator's plane. */
   bounces?: number;
   /** Set when the particle came to rest on the ground plane (its resting contact was recorded). */
@@ -329,7 +341,7 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
   const e: Diagnostic[] = [];
   if (!isObj(input)) return { ok: false, errors: [err('INVALID_VALUE', 'Particle descriptor must be an object.', 'descriptor')] };
   const p = 'descriptor';
-  checkKeys(input, ['documentSeed', 'durationTicks', 'emitterId', 'randomStreamId', 'shape', 'sourcePosition', 'initialVelocity', 'emission', 'spin', 'sourceTrack', 'attachToSource', 'bursts', 'rate', 'lifetimeTicks', 'size', 'operators', 'animation'], p, e);
+  checkKeys(input, ['documentSeed', 'durationTicks', 'emitterId', 'randomStreamId', 'shape', 'sourcePosition', 'initialVelocity', 'emission', 'spin', 'sourceTrack', 'extraSourceTracks', 'attachToSource', 'bursts', 'rate', 'lifetimeTicks', 'size', 'operators', 'animation'], p, e);
   if (!isUint32(input.documentSeed)) e.push(err('INVALID_VALUE', 'documentSeed must be uint32.', `${p}.documentSeed`));
   const duration = input.durationTicks;
   const durationOk = isTickInt(duration, 1, MAX_DURATION_TICKS);
@@ -387,7 +399,7 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
       if (!(i in arr)) { e.push(err('INVALID_VALUE', 'bursts must not be sparse (hole at this index).', bp)); continue; }
       const b = arr[i];
       if (!isObj(b)) { e.push(err('INVALID_VALUE', 'Burst must be an object.', bp)); continue; }
-      checkKeys(b, ['tick', 'eventRandomKey', 'count', 'position', 'velocity', 'addVelocity'], bp, e);
+      checkKeys(b, ['tick', 'eventRandomKey', 'count', 'position', 'velocity', 'addVelocity', 'track'], bp, e);
       let ok = true;
       if (!isTickInt(b.tick, 0, maxTick - 1)) { ok = false; e.push(err('INVALID_VALUE', 'Burst tick must be an integer in [0, durationTicks).', `${bp}.tick`)); }
       if (typeof b.eventRandomKey !== 'string') { ok = false; e.push(err('INVALID_VALUE', 'eventRandomKey must be a string.', `${bp}.eventRandomKey`)); }
@@ -398,11 +410,13 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
       if (b.position !== undefined && !isVec3(b.position)) { ok = false; e.push(err('INVALID_VALUE', 'Burst position must be a finite vec3.', `${bp}.position`)); }
       if (b.velocity !== undefined && !isVec3(b.velocity)) { ok = false; e.push(err('INVALID_VALUE', 'Burst velocity must be a finite vec3.', `${bp}.velocity`)); }
       if (b.addVelocity !== undefined && !isVec3(b.addVelocity)) { ok = false; e.push(err('INVALID_VALUE', 'Burst addVelocity must be a finite vec3.', `${bp}.addVelocity`)); }
+      if (b.track !== undefined && !isTickInt(b.track, 0, MAX_SOURCE_TRACKS - 1)) { ok = false; e.push(err('INVALID_VALUE', `Burst track must be an integer 0..${MAX_SOURCE_TRACKS - 1}.`, `${bp}.track`)); }
       if (!ok) continue;
       const out: ParticleBurst = { tick: b.tick as number, eventRandomKey: b.eventRandomKey as string, count: b.count as number };
       if (b.position !== undefined) out.position = cloneVec(b.position as Vec3);
       if (b.velocity !== undefined) out.velocity = cloneVec(b.velocity as Vec3);
       if (b.addVelocity !== undefined) out.addVelocity = cloneVec(b.addVelocity as Vec3);
+      if (b.track !== undefined) out.track = b.track as number;
       bursts.push(out);
     }
   }
@@ -463,6 +477,14 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
     const st = input.sourceTrack, sp = `${p}.sourceTrack`;
     if (!isObj(st) || !isTickInt(st.startTick, 0, MAX_DURATION_TICKS) || !Array.isArray(st.positions) || st.positions.length < 1 || st.positions.length > MAX_DURATION_TICKS + 1 || !st.positions.every(isVec3)) e.push(err('INVALID_VALUE', 'sourceTrack must be {startTick, positions: 1..601 finite vec3}.', sp));
     else sourceTrack = { startTick: st.startTick as number, positions: (st.positions as Vec3[]).map(cloneVec) };
+  }
+  let extraSourceTracks: ParticleEmitterDescriptor['extraSourceTracks'];
+  if (input.extraSourceTracks !== undefined) {
+    const xs = input.extraSourceTracks, xp = `${p}.extraSourceTracks`;
+    const okTrack = (t: unknown) => isObj(t) && isTickInt(t.startTick, 0, MAX_DURATION_TICKS) && Array.isArray(t.positions) && t.positions.length >= 1 && t.positions.length <= MAX_DURATION_TICKS + 1 && t.positions.every(isVec3);
+    if (!sourceTrack) e.push(err('INVALID_VALUE', 'extraSourceTracks needs a sourceTrack (the first track).', xp));
+    else if (!Array.isArray(xs) || xs.length < 1 || xs.length > MAX_SOURCE_TRACKS - 1 || !xs.every(okTrack)) e.push(err('INVALID_VALUE', `extraSourceTracks must be 1..${MAX_SOURCE_TRACKS - 1} tracks of {startTick, positions: 1..601 finite vec3}.`, xp));
+    else extraSourceTracks = (xs as { startTick: number; positions: Vec3[] }[]).map(t => ({ startTick: t.startTick, positions: t.positions.map(cloneVec) }));
   }
   if (input.attachToSource !== undefined && typeof input.attachToSource !== 'boolean') e.push(err('INVALID_VALUE', 'attachToSource must be boolean.', `${p}.attachToSource`));
 
@@ -538,6 +560,7 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
   if (emission) d.emission = emission;
   if (spin) d.spin = spin;
   if (sourceTrack) d.sourceTrack = sourceTrack;
+  if (extraSourceTracks) d.extraSourceTracks = extraSourceTracks;
   if (input.attachToSource === true) d.attachToSource = true;
   if (input.animation !== undefined) {
     const ae: Diagnostic[] = [];
@@ -743,7 +766,7 @@ export class ParticleSimulation {
       v[2] = (v[2] + pz * dt) * dragFactor;
       x[0] += v[0] * dt; x[1] += v[1] * dt; x[2] += v[2] * dt;
       if (d.attachToSource && d.sourceTrack) {
-        const a = this.#source(n), b = this.#source(n - 1);
+        const a = this.#source(n, p.track ?? 0), b = this.#source(n - 1, p.track ?? 0);
         x[0] = a[0]; x[1] = a[1]; x[2] = a[2];
         v[0] = (a[0] - b[0]) / dt; v[1] = (a[1] - b[1]) / dt; v[2] = (a[2] - b[2]) / dt;
       }
@@ -792,8 +815,8 @@ export class ParticleSimulation {
   }
 
   /** Source position at tick n: the track (clamped) or the fixed sourcePosition. */
-  #source(n: number): Vec3 {
-    const t = this.#cur.sourceTrack;
+  #source(n: number, track = 0): Vec3 {
+    const t = track > 0 ? this.#cur.extraSourceTracks?.[track - 1] : this.#cur.sourceTrack;
     if (!t) return this.#cur.sourcePosition;
     return t.positions[Math.max(0, Math.min(t.positions.length - 1, n - t.startTick))];
   }
@@ -864,8 +887,9 @@ export class ParticleSimulation {
     return [[base[0] + off[0], base[1] + off[1], base[2] + off[2]], vel];
   }
 
-  #birth(n: number, emission: 'burst' | 'rate', burstIndex: number, eventRandomKey: string, entityOrdinal: number, basePosition: Vec3, fixedVelocity: Vec3 | undefined, fallbackVelocity: Vec3, addVelocity?: Vec3): boolean {
+  #birth(n: number, emission: 'burst' | 'rate', burstIndex: number, eventRandomKey: string, entityOrdinal: number, basePosition: Vec3, fixedVelocity: Vec3 | undefined, fallbackVelocity: Vec3, addVelocity?: Vec3, track = 0): boolean {
     const d = this.#cur;
+    if (track > 0) eventRandomKey = `${eventRandomKey}@t${track}`;
     if (this.#totalBirths >= this.limits.maxTotalBirths) {
       this.#failure = [{ ...err('BUDGET_EXCEEDED', `Emitter exceeded ${this.limits.maxTotalBirths} total births at tick ${n}; emitter stopped (no silent truncation).`), nodeId: d.emitterId }];
       return false;
@@ -880,12 +904,13 @@ export class ParticleSimulation {
       : d.size.min + this.#sample(eventRandomKey, entityOrdinal, PARTICLE_PROPERTY_KEYS.size) * (d.size.max - d.size.min);
     const [position, velocity] = this.#kinematics(eventRandomKey, entityOrdinal, basePosition, fixedVelocity, fallbackVelocity);
     if (addVelocity) { velocity[0] += addVelocity[0]; velocity[1] += addVelocity[1]; velocity[2] += addVelocity[2]; }
-    const id = emission === 'burst' ? burstParticleId(d.emitterId, eventRandomKey, entityOrdinal) : `${d.emitterId}:rate:${entityOrdinal}`;
+    const id = emission === 'burst' ? burstParticleId(d.emitterId, eventRandomKey, entityOrdinal) : `${d.emitterId}:rate:${track > 0 ? `t${track}:` : ''}${entityOrdinal}`;
     this.#particles.push({
       id, emission, burstIndex, entityOrdinal, eventRandomKey,
       parentRandomKey: this.#parentKey(eventRandomKey, entityOrdinal),
       birthTick: n, lifetimeTicks: lifetime, ageTicks: 0, size,
       position: cloneVec(position), velocity: cloneVec(velocity),
+      ...(track > 0 ? { track } : {}),
     });
     if (d.spin) {
       const p = this.#particles[this.#particles.length - 1], K = PARTICLE_PROPERTY_KEYS;
@@ -903,12 +928,17 @@ export class ParticleSimulation {
     const d = this.#cur;
     const iv = d.initialVelocity;
     const baseVelocity: Vec3 = iv.kind === 'vector' ? cloneVec(iv.value) : [iv.speed, 0, 0];
+    const tracks = 1 + (d.extraSourceTracks?.length ?? 0);
     while (this.#burstCursor < d.bursts.length && d.bursts[this.#burstCursor].tick === n) {
       const bi = this.#burstCursor++;
       const b = d.bursts[bi];
-      const pos = b.position ?? this.#source(n);
-      for (let i = 0; i < b.count; i++) {
-        if (!this.#birth(n, 'burst', bi, b.eventRandomKey, i, pos, b.velocity, baseVelocity, b.addVelocity)) return;
+      // A burst with an explicit position spawns once; a burst for one track spawns on it; otherwise once per track.
+      const from = b.track !== undefined ? b.track : 0, to = b.track !== undefined || b.position ? from : tracks - 1;
+      for (let k = from; k <= to; k++) {
+        const pos = b.position ?? this.#source(n, k);
+        for (let i = 0; i < b.count; i++) {
+          if (!this.#birth(n, 'burst', bi, b.eventRandomKey, i, pos, b.velocity, baseVelocity, b.addVelocity, k)) return;
+        }
       }
     }
     const r = d.rate;
@@ -927,7 +957,7 @@ export class ParticleSimulation {
       } else due = Math.floor((this.#rateEligibleTicks * r.perSecond) / TICKS_PER_SECOND);
       while (this.#rateEmitted < due) {
         const k = this.#rateEmitted;
-        if (!this.#birth(n, 'rate', -1, RATE_EVENT_RANDOM_KEY, k, this.#source(n), undefined, baseVelocity)) return;
+        for (let t = 0; t < tracks; t++) if (!this.#birth(n, 'rate', -1, RATE_EVENT_RANDOM_KEY, k, this.#source(n, t), undefined, baseVelocity, undefined, t)) return;
         this.#rateEmitted++;
       }
     }

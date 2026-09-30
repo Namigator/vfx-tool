@@ -35,6 +35,7 @@ import { bezierPath, jaggedPath, linePath, revealPath, type PathData, helixPath,
 import { branchPaths, type BranchCountMode } from '../runtime/branches.ts';
 import { radialPaths, type RadialMode } from '../runtime/radial.ts';
 import { ringPath } from '../runtime/ring.ts';
+import { splitPaths, type SplitMode } from '../runtime/pathSplit.ts';
 import { evaluateCurve } from '../runtime/curves.ts';
 import { EFFECT_TIME_NODES } from './effectTime.ts';
 import { evalSignal, isTimeVarying, SignalError, type SignalContext } from './signals.ts';
@@ -168,15 +169,22 @@ let lengthProbeDepth = 0;
  * TimingError when the path cannot be evaluated or depends on its own follower (probe nesting > 4).
  */
 export function probePathLength(input: unknown, nodeId: string, port: string, tick: number): number {
+  return probePathLengths(input, nodeId, port, tick)[0] ?? 0;
+}
+
+/** World-space arc length of every path of `nodeId.port` at `tick`, in path order (see probePathLength). */
+export function probePathLengths(input: unknown, nodeId: string, port: string, tick: number): number[] {
   if (lengthProbeDepth > 4) throw new TimingError(`Path "${nodeId}" depends on its own follower's timing.`, nodeId);
   lengthProbeDepth++;
   try {
     const r = compilePathPreview(input, tick, { audioHandled: true, probe: { nodeId, port } });
     if (!r.ok) throw new TimingError(r.errors[0]?.message ?? `Path "${nodeId}" could not be evaluated.`, r.errors[0]?.nodeId ?? nodeId);
-    const pts = r.value.probe?.[0]?.points ?? [];
-    let len = 0;
-    for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1], pts[i][2] - pts[i - 1][2]);
-    return len;
+    return (r.value.probe ?? []).map(path => {
+      const pts = path.points;
+      let len = 0;
+      for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1], pts[i][2] - pts[i - 1][2]);
+      return len;
+    });
   } finally { lengthProbeDepth--; }
 }
 
@@ -240,6 +248,7 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
     raw: (id, p) => { const x = nodes.get(id); return x ? rawParam(x, p) as number : fail('MISSING_REFERENCE', `Node "${id}" is not in the expanded graph.`, id); },
     source: (nodeId, port) => { const c = into(nodeId, port)[0]; return c && c.source.kind === 'node' ? { nodeId: c.source.nodeId, port: c.source.port } : undefined; },
     pathLength: (nodeId, port, tick) => probePathLength(input, nodeId, port, tick),
+    pathLengths: (nodeId, port, tick) => probePathLengths(input, nodeId, port, tick),
   };
   /** 09 material templates fix some Material fields (materialSprite.templateParam); everything else is as authored. */
   const rawParam = (n: ExpandedNode, id: string): ParameterValue => {
@@ -435,6 +444,17 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
         const q = param(n, 'rotation') as [number, number, number, number], ql = Math.hypot(q[0], q[1], q[2], q[3]) || 1;
         const qn: [number, number, number, number] = [q[0] / ql, q[1] / ql, q[2] / ql, q[3] / ql];
         out = new Map([['paths', guard(id, () => input.map(p => transformPath(p, param(n, 'offset') as Vec3, qn, num(n, 'scale'))))]]);
+        break;
+      }
+      case 'PathSplitter': {
+        const input = pathsInto(id, 'paths');
+        if (!on) { out = new Map([['paths', input], ['rest', []]]); break; } // Bypass: every path goes on.
+        noDrivenParams(n, MODIFIER_PORTS);
+        const r = guard(id, () => splitPaths(input, {
+          documentSeed: doc.seed, randomStreamId: n.node.randomStreamId, mode: param(n, 'mode') as SplitMode,
+          from: num(n, 'from'), count: num(n, 'count'), step: num(n, 'step'), offset: num(n, 'offset'),
+        }));
+        out = new Map([['paths', r.chosen], ['rest', r.rest]]);
         break;
       }
       case 'ParticlePaths': {

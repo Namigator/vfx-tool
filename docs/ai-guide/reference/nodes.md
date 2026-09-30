@@ -3,7 +3,7 @@
 
 # Node reference
 
-Every node type in the registry (57 types, definition version 1), grouped by role. Node ids in a document are free-form; the **type** is what you pick. Set parameters with the MCP tools (see mcp-tools.md) using the parameter **id** and a value of the listed type and range.
+Every node type in the registry (58 types, definition version 1), grouped by role. Node ids in a document are free-form; the **type** is what you pick. Set parameters with the MCP tools (see mcp-tools.md) using the parameter **id** and a value of the listed type and range.
 
 How to read the tables:
 - **Ports** carry typed connections: an output connects only to an input of the same port type (and unit). `connections: many` inputs accept several links (they are ordered); `one` accepts a single link. Outputs always fan out: one output (a particle chain, an event, a path set) can feed any number of inputs, e.g. the same Emitter particles into a renderer and into ParticleEvents. `required: yes` inputs must be connected or compile reports an error.
@@ -52,6 +52,7 @@ How to read the tables:
   - [BezierPath](#bezierpath)
   - [HelixPath](#helixpath)
   - [PathTransform](#pathtransform)
+  - [PathSplitter](#pathsplitter)
   - [MergePaths](#mergepaths)
   - [ParticlePaths](#particlepaths)
   - [JaggedPath](#jaggedpath)
@@ -731,7 +732,7 @@ Curves in space (beams, bolts, rings, projectile routes): generators, modifiers 
 
 ### PathFollower
 
-Moves an anchor along the first path of its set: `anchor` output follows the path (carry a glowing core, emitters, lights, trails on it), `arrival` event fires when it gets there (trigger impact schedules/bursts so impacts land exactly on time). Give Travel ticks or a Speed.
+Moves along every path of its set at once: the `anchor` output follows each path (carry a glowing core, emitters, lights, trails on it) and everything attached is repeated per path (5 paths = 5 projectiles, each emitting the full rate). The `arrival` event fires once per path when it gets there (trigger impact bursts so each impact lands exactly on time; a Schedule started by the arrival starts at the first one). Give Travel ticks or a Speed (speed mode: each path takes its own length / speed). Use PathSplitter in front of it to choose which paths.
 
 - Category: Paths; portability: core; disabled = produces nothing; definition version 1.
 
@@ -753,9 +754,9 @@ Moves an anchor along the first path of its set: `anchor` output follows the pat
 
 | id | label | type | unit | default | range | choices | edit | domains | drive | description |
 |---|---|---|---|---|---|---|---|---|---|---|
-| `durationTicks` | Travel ticks | integer | tick | `30` | 1..600 step 1 | — | resample | constant | scalarSignal | Ticks to travel the first path of the set from start to end; arrival fires then. Holds at the end until the window closes. |
+| `durationTicks` | Travel ticks | integer | tick | `30` | 1..600 step 1 | — | resample | constant | scalarSignal | Ticks every path of the set takes from start to end; arrival fires then. Holds at the end until the window closes. |
 | `easing` | Easing | enum | — | `linear` | — | linear, easeIn, easeOut, easeInOut | resample | constant | — | Speed profile of the travel: linear, easeIn (slow start), easeOut (slow end), easeInOut. |
-| `speed` | Speed | number | metersPerSecond | `0` | 0..200 | — | resample | constant | scalarSignal | 0 = travel for Travel ticks. Above 0: travel ticks = path length ÷ speed (rounded to ticks), so a farther Target takes longer at the same speed. |
+| `speed` | Speed | number | metersPerSecond | `0` | 0..200 | — | resample | constant | scalarSignal | 0 = travel for Travel ticks. Above 0: travel ticks = path length ÷ speed (rounded to ticks, per path), so a farther Target, or a longer path, takes longer at the same speed. |
 
 ### LinePath
 
@@ -864,6 +865,35 @@ Offsets, rotates and scales every path of a set.
 | `offset` | Offset | vec3 | meter | `[0, 0, 0]` | -100..100 | — | resample | constant | vec3Signal | Translation applied to every path (m). |
 | `rotation` | Rotation | quaternion | — | `[0, 0, 0, 1]` | -1..1 | — | resample | constant | quaternionSignal | About each path's first point (xyzw). |
 | `scale` | Scale | number | — | `1` | 0.01..20 | — | resample | constant | scalarSignal | Uniform scale of every path. |
+
+### PathSplitter
+
+Decides which paths of a set go on and which are left behind. `paths` = the chosen ones (kept in their original order), `rest` = all the others. Modes: range (a few in a row), everyNth (every other one...), random (a fixed random pick), longest / shortest. Works anywhere paths flow: into a PathFollower (only the chosen ones fly), a renderer, or a modifier.
+
+- Category: Paths; portability: core; disabled = passes its input straight through (paths -> paths); definition version 1.
+
+**Inputs**
+
+| id | label | type | connections | required | domains |
+|---|---|---|---|---|---|
+| `paths` | Paths | paths | one | yes | — |
+
+**Outputs** (each output can feed any number of inputs)
+
+| id | label | type | domains |
+|---|---|---|---|
+| `paths` | Chosen | paths | — |
+| `rest` | Rest | paths | — |
+
+**Parameters**
+
+| id | label | type | unit | default | range | choices | edit | domains | drive | description |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `mode` | Mode | enum | — | `range` | — | range, everyNth, random, longest, shortest | resample | constant | — | range: Count paths starting at From. everyNth: every Step-th path starting at Offset. random: Count paths picked at random (same pick every time; change the random stream of the node or the document seed for another pick). longest / shortest: the Count longest / shortest paths. |
+| `from` | From | integer | — | `0` | 0..255 step 1 | — | resample | constant | scalarSignal | range mode: index of the first chosen path (0 = the first path). |
+| `count` | Count | integer | — | `1` | 1..256 step 1 | — | resample | constant | scalarSignal | range, random, longest and shortest modes: how many paths go on. |
+| `step` | Step | integer | — | `2` | 1..256 step 1 | — | resample | constant | scalarSignal | everyNth mode: take every Step-th path (2 = every other one). |
+| `offset` | Offset | integer | — | `0` | 0..255 step 1 | — | resample | constant | scalarSignal | everyNth mode: index of the first chosen path. |
 
 ### MergePaths
 

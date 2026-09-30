@@ -60,7 +60,7 @@ Emitted from 21 site(s) in 7 file(s):
 
 A parameter or field value is malformed or out of range (min > max, zero direction, wrong type, bad id, disabled protected node). Message names the field path.
 
-Emitted from 228 site(s) in 13 file(s):
+Emitted from 232 site(s) in 13 file(s):
 
 | file | sites | representative message |
 |---|---|---|
@@ -68,7 +68,7 @@ Emitted from 228 site(s) in 13 file(s):
 | `src/graph/keyframes.ts` | 1 | Keyframed knob(s) … change the effect's structure or timing over time (……), which cannot be animated. Remove the keys from knobs that set counts, start times or lengths. |
 | `src/graph/signature.ts` | 4 | "…" nodes cannot be disabled; enable this node. |
 | `src/graph/toAudio.ts` | 18 | Input "…" of "…" receives a literal group default; only node connections are supported here. |
-| `src/graph/toParticles.ts` | 26 | Value chain through "…" is too deep. |
+| `src/graph/toParticles.ts` | 27 | Value chain through "…" is too deep. |
 | `src/graph/toPaths.ts` | 13 | effectTick must be a nonnegative integer; got …. |
 | `src/model/controls.ts` | 9 | Control ID "…" is reserved for the Group graph reference. |
 | `src/model/document.ts` | 62 | Unknown field(s) in …: …. |
@@ -76,7 +76,7 @@ Emitted from 228 site(s) in 13 file(s):
 | `src/PreviewV2.tsx` | 4 | …: JSON parse error: …. The current document was kept. |
 | `src/render/previewMode.ts` | 2 | RibbonRenderer "…" orientation "…" is not supported by the preview; use "camera". |
 | `src/render/PreviewViewport.ts` | 2 | Path preview failed at tick …: … |
-| `src/runtime/particles.ts` | 81 | Unsupported field "…" (not implemented in the point particle core). |
+| `src/runtime/particles.ts` | 84 | Unsupported field "…" (not implemented in the point particle core). |
 
 ## DUPLICATE_ID
 

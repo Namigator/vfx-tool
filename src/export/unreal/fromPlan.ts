@@ -248,6 +248,8 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
     else usedBy.set(layer.systemId, layer.nodeId);
     emitters.push(emitterFrom(layer, d, origin, plan.value.durationTicks, unique(layer.nodeId), report));
   }
+  // A PathFollower over several paths makes one source per path in the editor; the export keeps the first path's route.
+  for (const s of plan.value.systems) if (s.descriptor.extraSourceTracks?.length) report.push({ level: 'approximated', item: s.id, message: `Follows ${1 + s.descriptor.extraSourceTracks.length} paths in the editor; exported the first path only.` });
   if (plan.value.trails.length) report.push({ level: 'approximated', item: 'trails', message: `${plan.value.trails.length} trail layer(s) exported as velocity-stretched sprites on the parent emitter (Niagara Ribbon-per-particle trails are a heavier engine feature left for hand-tuning).` });
   if (plan.value.meshes.length) report.push({ level: 'dropped', item: 'meshes', message: `${plan.value.meshes.length} mesh-particle layer(s) are not exported; see report for manual Niagara Mesh Renderer setup (out of scope this pass — "meshes -> report item unless cheap" per spec).` });
   if (plan.value.presentation.flashes.length) report.push({ level: 'dropped', item: 'presentation', message: 'Screen flashes are not exported (add a post-process/camera-shake Blueprint on impact if needed).' });

@@ -356,6 +356,8 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
   }
   // Trails: one particle riding a moving source → a native Roblox Trail; trails behind many particles → stretched
   // velocity-aligned particles on that system's emitter (Roblox cannot trail every particle).
+  // A PathFollower over several paths makes one source per path in the editor; the player follows one route.
+  for (const s of plan.value.systems) if (s.descriptor.extraSourceTracks?.length) report.push({ level: 'approximated', item: s.id, message: `Follows ${1 + s.descriptor.extraSourceTracks.length} paths in the editor; exported the first path only.` });
   const trails: RbxTrail[] = [];
   const emitterBySystem = new Map(plan.value.layers.map((l, i) => [l.systemId, emitters[i]] as const).filter(([, e]) => !!e));
   for (const t of plan.value.trails) {

@@ -115,6 +115,33 @@ Note `flight.window`/`corewin.window` open at `startTicks: 0` here for simplicit
 at the charge-end tick and derives `impactwin`/ring/light Schedules' start from the same tick plus a small offset —
 do that once you add a charge phase, so nothing shows before the core actually launches.
 
+## Several projectiles at once: RadialPath → PathSplitter → PathFollower
+
+A `PathFollower` follows **every** path it is given, and everything riding its `anchor` is repeated per path, so a
+volley is just a path set: `RadialPath` (one ray per projectile) → `PathSplitter` (optional: pick which rays fly) →
+`PathFollower`. `arrival` fires once per ray, at that ray's own end.
+
+```
+vfx_add_node { docId: "volley", type: "RadialPath", id: "rays", params: { mode: "disc", count: 5, lengthMin: 2.5, lengthMax: 4 } }
+vfx_connect { docId: "volley", from: "node-source.out", to: "rays.center" }
+vfx_add_node { docId: "volley", type: "PathSplitter", id: "pick", params: { mode: "range", from: 0, count: 2 } }   # optional: only 2 of the 5 fly
+vfx_connect { docId: "volley", from: "rays.paths", to: "pick.paths" }
+vfx_add_node { docId: "volley", type: "Schedule", id: "flight", params: { startTicks: 20, durationTicks: 60, mode: "window" } }
+vfx_add_node { docId: "volley", type: "PathFollower", id: "fly", params: { durationTicks: 40 } }   # or speed: 4 -> each ray takes its own length / speed
+vfx_connect { docId: "volley", from: "pick.paths", to: "fly.paths" }        # or "rays.paths" for all 5
+vfx_connect { docId: "volley", from: "flight.window", to: "fly.window" }
+# streak: an Emitter (rate 60) on fly.anchor is a full-rate streak behind EACH projectile
+vfx_connect { docId: "volley", from: "fly.anchor", to: "streak.anchor" }
+# impacts: fly.arrival -> an Emitter with useEventPosition: true = one burst at each ray's end, at its own tick
+vfx_connect { docId: "volley", from: "fly.arrival", to: "impact.trigger" }
+```
+
+Choosing with `PathSplitter`: `everyNth` (step 2) gives every other ray, `random` (count 3) a fixed random pick
+(change the node's random stream or the document seed for another), `longest` / `shortest` the 1..N extremes. The
+`rest` output carries the paths that were not chosen (e.g. draw them as dim cracks while the chosen ones fly). Check
+`vfx_compile`: it lists `follows 5 paths … arrivals at ticks …`. More than 4 point lights on a volley hits the light
+budget (one light per path): use a shared glow sprite instead.
+
 ## Variants
 
 | Variant | Change | Example |

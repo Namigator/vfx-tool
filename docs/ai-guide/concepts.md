@@ -47,13 +47,23 @@ Paths are a parallel world for beams, bolts, streams and rings:
 ```
 LinePath / BezierPath / RingPath / HelixPath / RadialPath
       ▼ paths
-JaggedPath (lightning zigzag) · BranchPath (side branches) · RevealPath (grow over time) · MergePaths
+JaggedPath (lightning zigzag) · BranchPath (side branches) · RevealPath (grow over time) · MergePaths · PathSplitter
       ▼ paths
 RibbonRenderer ◄── Material  ──► EffectOutput.visual
 ```
 
 A particle chain can also *follow* a path (`PathFollower` moves an anchor along it: projectiles) or be *born along*
 it (Emitter shape `path`: sparks along a bolt).
+
+A path node outputs a *set* of paths (RadialPath with 5 rays = 5 paths), and `PathFollower` follows **all of them at
+once**: everything attached to its `anchor` (emitters, sprites, trails, lights) is repeated per path, each emitting the
+full authored rate or burst, and its `arrival` event fires once per path at that path's own end. In speed mode each
+path takes its own length ÷ speed, so arrivals can differ; a Schedule started by the arrival starts at the first one
+(a warning tells you when they differ). Point lights count against the light limit once per path. Put a
+**`PathSplitter`** in front to decide who goes and who is left behind: modes `range` (Count paths from From),
+`everyNth` (every Step-th from Offset), `random` (a fixed, seeded pick), `longest` / `shortest`. Its `paths` output
+is the chosen ones (original order kept) and `rest` is everyone else; it works anywhere paths flow, not only before a
+follower. Exports (Roblox, Unreal) keep the first path only and say so in their report.
 
 ## 3. Time: schedules, windows and events
 

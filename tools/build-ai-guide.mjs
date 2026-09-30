@@ -376,6 +376,7 @@ const CURATED = {
   MAX_SHELF: 'Most projects on the browser shelf.',
   MAX_REVISIONS: 'Prior revisions kept besides the latest draft.',
   MAX_PLAYBACK_SPEED: 'Fastest preview playback speed multiplier.', MIN_PLAYBACK_SPEED: 'Slowest preview playback speed multiplier.',
+  MAX_SPLIT_INDEX: 'PathSplitter: highest From/Offset index.', MAX_SPLIT_COUNT: 'PathSplitter: most paths to pick (Count) and widest Step.',
   MAX_RADIAL_COUNT: 'RadialPath: most rays.', MIN_RADIAL_COUNT: 'RadialPath: fewest rays.',
   MAX_RING_SAMPLES: 'RingPath/RingRenderer: most segments.', MIN_RING_SAMPLES: 'Fewest segments.',
   MAX_RING_RADIUS: 'Largest ring radius (m).', MIN_RING_RADIUS: 'Smallest ring radius (m).',

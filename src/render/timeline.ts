@@ -23,7 +23,7 @@ export function timelineInfo(points: ParticlePreviewPlan | null, paths: PathPrev
     for (const t of points.trails) { const w = sysWindow.get(t.systemId); if (w) widen(t.nodeId, w[0], w[1] + t.historyTicks); }
     for (const m of points.meshes) { const w = sysWindow.get(m.systemId); if (w) widen(m.nodeId, w[0], w[1]); }
     for (const l of points.lights) widen(l.nodeId, l.startTick, l.endTick);
-    for (const f of points.followers) markers.push({ tick: f.startTick + f.travelTicks, kind: 'arrival', nodeId: f.nodeId });
+    for (const f of points.followers) for (const t of new Set(f.travels)) markers.push({ tick: f.startTick + t, kind: 'arrival', nodeId: f.nodeId }); // One per distinct arrival tick.
     for (const f of points.presentation.flashes) markers.push({ tick: f.tick, kind: 'flash', nodeId: f.nodeId });
     for (const i of points.presentation.impulses) markers.push({ tick: i.tick, kind: 'shake', nodeId: i.nodeId });
     for (const [id, w] of sysWindow) if (!windows.has(id)) windows.set(id, w);
