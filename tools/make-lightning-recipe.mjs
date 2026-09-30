@@ -50,7 +50,7 @@ wire('pull.particles', 'tethers.particles'); wire('node-source.out', 'tethers.an
 wire('tetherjag.paths', 'tetherrib.paths'); wire('tethermat.material', 'tetherrib.material'); wire('charge.window', 'tetherrib.window'); out('tetherrib');
 
 // ---- Discharge (tick 24, 39 ticks): bowed jagged trunk + branches + forks, revealed over 2 ticks ----
-// Zigzag amplitudes match the original lightning (docs/v2-plan/references/original-lightning): its offsets are
+// Zigzag amplitudes match the original lightning (docs/references/original-lightning): its offsets are
 // (random-.5)*rough = +-rough/2, JaggedPath's are +-amplitude, so amplitude = rough/2 (user 2026-09-30: main-line jags too big).
 add('Schedule', 'strike', { startTicks: C, durationTicks: V.active, mode: 'window' });
 add('BezierPath', 'base', { startHandle: [2.4, 0.56, 0], endHandle: [-2.4, 0.56, 0], samples: 48 });

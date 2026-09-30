@@ -1,5 +1,5 @@
 // Ceiling test for A-05 (user question "tool issue or model issue?"): the standalone flamethrower
-// (docs/v2-plan/references/standalone-flamethrower) ported layer by layer onto generic tool nodes, by hand, to see
+// (docs/references/standalone-flamethrower) ported layer by layer onto generic tool nodes, by hand, to see
 // how close the tool can get. Layers follow the standalone: normal-blend cooling tongue body (420/s, 6° cone,
 // stretched ×3), faint additive accent, narrow additive core, smoke and embers born where tongues die, nozzle,
 // floor light, ignition flash. Run: node tools/make-flamethrower-recipe.mjs && node mcp/run-steps.mjs mcp/examples/flamethrower.steps.json

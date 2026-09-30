@@ -1,1 +1,0 @@
-TypeScript command: node node_modules/typescript/bin/tsc --noEmit. Exit code: 0 (recorded by manager from the preceding combined test run).

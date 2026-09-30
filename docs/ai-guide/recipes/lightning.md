@@ -1,7 +1,7 @@
 # Lightning
 
 Charge at Source → a branching jagged bolt to Target, revealed in 1–2 ticks → sparks at both ends → impact glow,
-ground light, ripple, flash and shake. The quality bar is `docs/v2-plan/references/original-lightning/lightning-arc.html`:
+ground light, ripple, flash and shake. The quality bar is `docs/references/original-lightning/lightning-arc.html`:
 **thin bright core, fine zigzag (±0.3 m), hair-thin faint branches** — not a thick cartoon bolt.
 
 ## What makes lightning read right

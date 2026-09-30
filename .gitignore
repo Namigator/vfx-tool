@@ -7,3 +7,24 @@ work/
 locks/
 graphify-out/
 .env
+
+# Internal working notes, planning history and agent/squad files (kept locally, not published)
+STATE.md
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+PLAN.md
+REVIEW.md
+SQUAD.md
+TEST-WHEN-HOME.md
+review.html
+Start-ClaudeSquad.ps1
+Start-ClaudeLogin.ps1
+tools/squad-agent.ps1
+docs/v2-plan/
+docs/implementation/
+evidence/
+docs/ai-guide/_*.md
+docs/ai-guide/recipes/_*.md
+.claude/
+.codex/
