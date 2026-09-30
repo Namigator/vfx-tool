@@ -174,6 +174,27 @@ function partItem(refs: Refs, name: string, size: Vec3, pos: Vec3, dir: Vec3, ch
   ], children);
 }
 
+/**
+ * Textures not uploaded yet fall back to a Roblox built-in particle texture of the same kind (every game can use
+ * rbxasset:// textures), and their flipbook is switched off: slicing a single soft image into a 4×4 grid is what made
+ * un-uploaded flames render as hard-edged squares (user 2026-09-30 "fire looks like shit").
+ */
+export function builtinFallback(key: string): string {
+  const k = key.toLowerCase();
+  if (/flame|fire|ember/.test(k)) return 'rbxasset://textures/particles/fire_main.dds';
+  if (/smoke|dust|cloud|puff|wisp|vapou?r|fog/.test(k)) return 'rbxasset://textures/particles/smoke_main.dds';
+  return DEFAULT_TEXTURE;
+}
+function withFallbacks(effect: RobloxEffect, ids: Record<string, string> = {}): { effect: RobloxEffect; ids: Record<string, string> } {
+  const all = { ...ids };
+  const missing = (key?: string) => key !== undefined && !ids[key];
+  for (const key of effect.textures) if (!ids[key]) all[key] = builtinFallback(key);
+  return {
+    ids: all,
+    effect: { ...effect, emitters: effect.emitters.map(e => (missing(e.textureKey) && e.flipbook ? { ...e, flipbook: undefined } : e)) },
+  };
+}
+
 function textureUrl(key: string | undefined, ids?: Record<string, string>): string {
   const id = key !== undefined ? ids?.[key] : undefined;
   if (!id) return DEFAULT_TEXTURE;
@@ -431,7 +452,9 @@ EffectPlayer.play(model, nil, { loop = true })
 
 // ---------- main ----------
 
-export function writeRbxmx(effect: RobloxEffect, opts: WriteOptions): string {
+export function writeRbxmx(input: RobloxEffect, options: WriteOptions): string {
+  const fb = withFallbacks(input, options.assetIds);
+  const effect = fb.effect, opts = { ...options, assetIds: fb.ids };
   const refs = new Refs();
   const nameE = uniqueNamer();
   const nameB = uniqueNamer();

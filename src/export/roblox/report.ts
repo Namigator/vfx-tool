@@ -9,7 +9,7 @@ export function reportMarkdown(e: RobloxEffect, assetIds: Record<string, string>
   const missing = e.textures.filter(t => !assetIds[t]);
   lines.push('## Textures', '');
   if (!e.textures.length) lines.push('None (plain round particles).');
-  for (const t of e.textures) lines.push(`- ${t}: ${assetIds[t] ? (/^[a-z]+:\/\//i.test(assetIds[t]) ? assetIds[t] : `rbxassetid://${assetIds[t]}`) : 'NOT UPLOADED - shows the default Roblox sparkle until uploaded'}`);
+  for (const t of e.textures) lines.push(`- ${t}: ${assetIds[t] ? (/^[a-z]+:\/\//i.test(assetIds[t]) ? assetIds[t] : `rbxassetid://${assetIds[t]}`) : 'NOT UPLOADED - uses a Roblox built-in particle texture (fire, smoke or sparkles) without animation until uploaded'}`);
   if (missing.length) lines.push('', `${missing.length} texture(s) still need uploading to Roblox.`);
   const groups: [string, string][] = [['dropped', 'Not available in Roblox (left out)'], ['approximated', 'Approximated'], ['info', 'Notes']];
   for (const [level, title] of groups) {

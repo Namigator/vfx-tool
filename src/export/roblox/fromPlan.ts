@@ -177,8 +177,10 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     brightness: r3(1 + layer.emission),
     ...flipbookOf(layer, (life[0] + life[1]) / 2, report),
     orientation: velocityAligned ? 'VelocityParallel' : 'FacingCamera',
-    rotation: spin ? [r3(deg(spin.rotation.min)), r3(deg(spin.rotation.max))] : [0, 360],
-    rotSpeed: spin ? [r3(deg(spin.angularVelocity.min)), r3(deg(spin.angularVelocity.max))] : [0, 0],
+    // Velocity-aligned sprites ignore spin in the editor (the direction of travel sets their angle); a roll here
+    // turned flame tongues into spiky stars (user 2026-09-30). No spin = upright.
+    rotation: spin && !velocityAligned ? [r3(deg(spin.rotation.min)), r3(deg(spin.rotation.max))] : [0, 0],
+    rotSpeed: spin && !velocityAligned ? [r3(deg(spin.angularVelocity.min)), r3(deg(spin.angularVelocity.max))] : [0, 0],
     zOffset: 0,
     lockedToPart: d.attachToSource === true,
     rate: rateTrack(d, duration),
