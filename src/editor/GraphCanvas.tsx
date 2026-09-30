@@ -126,6 +126,8 @@ function NodeCard({ data, selected }: NodeProps<CardNode>) {
           <input type="checkbox" checked={node.enabled} disabled={protectedEnable} onChange={onChange} aria-label={`Enable ${node.label || node.id}`} />
         </label>
       </div>
+      {/* One-line note: what this node does (full text in the Node tab and on hover). */}
+      {(() => { const note = cardNote(node); return note ? <div className="gc-note" title={note.full}>{note.short}</div> : null; })()}
       {summary(node) && <div className="gc-summary">{summary(node)}</div>}
       {signature ? (
         <div className="gc-ports">
@@ -715,4 +717,13 @@ export default function GraphCanvas(props: GraphCanvasProps) {
 /** Plain-text description of a node type for tooltips (the shared docs use Markdown backticks). */
 function docText(type: string): string {
   return (nodeDoc(type)?.text ?? '').replace(/`([^`]*)`/g, '$1');
+}
+
+/** Short note for a node card: the component's description for a component box, else the node type's description. */
+function cardNote(node: { type: string; id: string }): { short: string; full: string } | undefined {
+  const comp = node.type === GROUP_NODE_TYPE ? [...COMPONENT_TEMPLATES].sort((x, y) => y.id.length - x.id.length).find(t => node.id === t.id || node.id.startsWith(`${t.id}-`)) : undefined;
+  const full = comp ? comp.description : docText(node.type);
+  if (!full) return undefined;
+  const first = full.split(/(?<=[.!?])\s/)[0];
+  return { short: first.length > 90 ? `${first.slice(0, 88).trimEnd()}…` : first, full };
 }
