@@ -10,7 +10,7 @@ import { insertUserComponent, saveGroupAsComponent } from '../graph/userComponen
 import { removeUserComponent, saveUserComponent, useUserComponents } from './userComponentStore.ts';
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import {
-  Handle, Panel, Position, ReactFlow, ReactFlowProvider, useNodesInitialized, useReactFlow,
+  Handle, Panel, SelectionMode, Position, ReactFlow, ReactFlowProvider, useNodesInitialized, useReactFlow,
   type Connection, type Edge, type EdgeChange, type Node, type NodeChange, type NodeProps, type Viewport,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -21,7 +21,6 @@ import { registryKey } from '../model/controls.ts';
 import { createRegistry } from '../graph/registry.ts';
 import { GROUP_NODE_TYPE, resolveSignature, type ResolvedSignature } from '../graph/signature.ts';
 import { analyzeGraph } from '../graph/analyze.ts';
-import { resolveSelection } from './selection.ts';
 import { copySelection, duplicateSelection, parseClipboard, pasteSelection, removeAndReconnect } from './graphOps.ts';
 import { canSolo } from '../graph/solo.ts';
 
@@ -164,6 +163,11 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
   const [selectedEdges, setSelectedEdges] = useState<ReadonlySet<string>>(new Set());
   /** Extra nodes picked with Shift+click (for Group selection); the inspector keeps showing the primary node. */
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
+  // Everything currently selected (picked + the inspector's node), kept in a ref so rapid change batches chain.
+  const selectionRef = useRef<ReadonlySet<string>>(new Set());
+  selectionRef.current = new Set([...picked, ...(selectedNodeId ? [selectedNodeId] : [])]);
+  /** The selection as it was when the pointer went down (before React Flow's own click handling changed it). */
+  const clickBaseRef = useRef<ReadonlySet<string>>(new Set());
   const [notice, setNotice] = useState<{ kind: 'error' | 'info'; lines: string[] } | null>(null);
   const [addType, setAddType] = useState('');
   /** Context menu (right click) or the Add-connected-node chooser, at a pane position. */
@@ -276,12 +280,20 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
         setMeasured(prev => prev[c.id]?.width === d.width && prev[c.id]?.height === d.height ? prev : { ...prev, [c.id]: { width: d.width, height: d.height } });
       }
     }
-    // Box selection (drag on empty canvas) selects several nodes at once: they become the Group/Duplicate set.
-    const boxed = changes.flatMap(c => (c.type === 'select' && c.selected ? [c.id] : []));
-    if (boxed.length > 1) setPicked(new Set(boxed));
-    // Resolve the whole batch once so select/deselect ordering cannot end in a spurious null.
-    const next = resolveSelection(changes, selectedNodeId);
-    if (next !== undefined) onSelectNode(next);
+    // Selection: React Flow reports every select/deselect (click, Ctrl/Shift+click toggle, box drag growing and
+    // shrinking). Apply them to one running set so consecutive batches chain even before React re-renders; the
+    // inspector's primary node stays the same while it is still selected, else the most recently added one.
+    const sel = changes.filter((c): c is Extract<NodeChange<CardNode>, { type: 'select' }> => c.type === 'select');
+    if (sel.length) {
+      const cur = new Set(selectionRef.current);
+      for (const c of sel) { if (c.selected) cur.add(c.id); else cur.delete(c.id); }
+      selectionRef.current = cur;
+      setPicked(cur.size > 1 ? cur : new Set());
+      const keep = selectedNodeId !== undefined && cur.has(selectedNodeId);
+      const added = sel.filter(c => c.selected).map(c => c.id);
+      const primary = keep ? selectedNodeId : (added.at(-1) ?? [...cur].at(-1) ?? null);
+      if (primary !== (selectedNodeId ?? null)) onSelectNode(primary ?? null);
+    }
   }, [onSelectNode, selectedNodeId]);
 
   const onEdgesChange = useCallback((changes: EdgeChange[]) => {
@@ -562,7 +574,7 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
           <button type="button" onClick={deleteSelection} disabled={!canDelete}
             title="Deletes the selected node with its connections, and any selected connections.">Delete selection</button>
           <button type="button" onClick={groupPicked} disabled={groupIds.length === 0}
-            title="Wraps the selected nodes into one Group. Shift+click nodes to select several.">Group selection{groupIds.length > 1 ? ` (${groupIds.length})` : ''}</button>
+            title="Wraps the selected nodes into one Group. Select several with Ctrl/Shift+click or by dragging a box on empty canvas.">Group selection{groupIds.length > 1 ? ` (${groupIds.length})` : ''}</button>
           <label className="gc-add">
             <span>Add node</span>
             <select value={addType} onChange={e => setAddType(e.target.value)} title={addType ? docText(addable.find(s => registryKey(s.type, s.definitionVersion) === addType)?.type ?? '') : 'Pick a node type; hover an entry to read what it does'}>
@@ -615,7 +627,7 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
               : <strong key={t.id}>{t.label}</strong>)}
           </nav>
         )}
-      <div className="gc-flow" ref={wrapper} onKeyDown={e => {
+      <div className="gc-flow" ref={wrapper} onPointerDownCapture={() => { clickBaseRef.current = selectionRef.current; }} onKeyDown={e => {
         // 12 keyboard equivalents: Delete/Backspace removes the selection, Enter opens a selected group.
         const t = e.target as HTMLElement;
         if (t.closest('input, textarea, select, [contenteditable="true"]')) return;
@@ -635,14 +647,18 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
         onNodeDragStop={onNodeDragStop} onConnect={onConnect}
         onNodeDoubleClick={(_, n) => { const def = graph.nodes.find(x => x.id === n.id); if (def?.type === GROUP_NODE_TYPE) openGraph(def.params.graphId as string, `Open ${def.label}`); }}
         onPaneClick={() => { setMenu(null); onSelectNode(null); setSelectedEdges(new Set()); setPicked(new Set()); }}
-        onNodeClick={(e, n) => setPicked(prev => {
-          if (!e.shiftKey) return new Set();
-          const next = new Set(prev);
-          if (selectedNodeId && selectedNodeId !== n.id) next.add(selectedNodeId); // The node selected before the Shift+click stays picked.
-          if (next.has(n.id) && prev.has(n.id)) next.delete(n.id); else next.add(n.id);
-          return next;
-        })}
-        deleteKeyCode={null} multiSelectionKeyCode={null} selectionKeyCode={null}
+        onNodeClick={(e, n) => {
+          // Ctrl/Cmd/Shift+click toggles the node in the selection. Decided from the click itself (React Flow only
+          // sees a held key), and computed from the selection before the click, so it is right either way.
+          if (!(e.ctrlKey || e.metaKey || e.shiftKey)) return;
+          const cur = new Set(clickBaseRef.current);
+          if (cur.has(n.id)) cur.delete(n.id); else cur.add(n.id);
+          selectionRef.current = cur;
+          setPicked(cur.size > 1 ? cur : new Set());
+          const primary = cur.has(n.id) ? n.id : selectedNodeId !== undefined && cur.has(selectedNodeId) ? selectedNodeId : ([...cur].at(-1) ?? null);
+          onSelectNode(primary);
+        }}
+        deleteKeyCode={null} multiSelectionKeyCode={MULTI_SELECT_KEYS} selectionKeyCode={null} selectionMode={SelectionMode.Partial}
         selectionOnDrag panOnDrag={[1, 2]} panActivationKeyCode="Space"
         onNodeContextMenu={(e, n) => { e.preventDefault(); const r = wrapper.current!.getBoundingClientRect(); onSelectNode(n.id); setMenu({ x: e.clientX - r.left, y: e.clientY - r.top, flow: flow.screenToFlowPosition({ x: e.clientX, y: e.clientY }), nodeId: n.id }); }}
         onPaneContextMenu={e => { e.preventDefault(); const r = wrapper.current!.getBoundingClientRect(); setMenu({ x: e.clientX - r.left, y: e.clientY - r.top, flow: flow.screenToFlowPosition({ x: e.clientX, y: e.clientY }) }); }}
@@ -727,3 +743,6 @@ function cardNote(node: { type: string; id: string }): { short: string; full: st
   const first = full.split(/(?<=[.!?])\s/)[0];
   return { short: first.length > 90 ? `${first.slice(0, 88).trimEnd()}…` : first, full };
 }
+
+/** Ctrl (Windows/Linux), Cmd (macOS) or Shift + click toggles a node in the selection. */
+const MULTI_SELECT_KEYS = ['Control', 'Meta', 'Shift'];
