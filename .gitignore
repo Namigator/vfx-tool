@@ -6,3 +6,4 @@ work/
 .squad/
 locks/
 graphify-out/
+.env
