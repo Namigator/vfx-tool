@@ -390,7 +390,7 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
   if (plan.value.presentation.impulses.length) report.push({ level: 'dropped', item: 'presentation', message: 'Camera shake is not exported.' });
   const lights = plan.value.lights.map(l => lightFrom(l, origin, plan.value.durationTicks, report));
   const beams = beamsFrom(doc, origin, report);
-  report.push({ level: 'info', item: 'scale', message: `1 m = ${r3(S)} studs; the effect origin (model pivot) is the floor point under the Source anchor, so the effect starts ${r3(src[1] * S)} studs above it. Target positions are baked (moving the target in Roblox does not re-aim the effect).` });
+  report.push({ level: 'info', item: 'scale', message: `1 m = ${r3(S)} studs; the effect origin (model pivot) is the floor point under the Source anchor, so the effect starts ${r3(src[1] * S)} studs above it. Without source/target options it plays exactly as authored; with them it re-aims (see targeting).` });
   const textures = [...new Set([...emitters.map(e => e.textureKey), ...beams.map(b => b.textureKey)].filter((x): x is string => !!x))];
   const rel = (p: readonly number[]): Vec3 => [r3((p[0] - origin[0]) * S), r3((p[1] - origin[1]) * S), r3((p[2] - origin[2]) * S)];
   const tgt = doc.anchors.find(a => a.id === 'target')?.position ?? src;

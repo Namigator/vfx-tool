@@ -119,7 +119,9 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
     return ok(JSON.stringify({ type: s.type, disabledBehavior: s.disabledBehavior, inputs: s.inputs, outputs: s.outputs, parameters: s.parameters }, null, 1));
   });
 
-  tool('vfx_guide', 'Authoring know-how per topic (basics, glow, fire, smoke, sparks, beams, projectile, props): proven parameter ranges and layer recipes from the built-in effects. Read "basics" and "glow" before building; read the element topic you are making.', { topic: z.string().optional() }, ({ topic }) => ok(guideText(topic)));
+  tool('vfx_guide', 'The VFX Studio guide. No arguments = index of chapters with one-line summaries. { topic } = a chapter (readme, concepts, workflow, look, troubleshooting, export, editor, recipes/<family>, reference/<name>) or one of the short topics (basics, glow, fire, smoke, sparks, beams, projectile, props, materials, values, tools). { topic, section } = only one "##" section of it. { node: "Emitter" } = that node type\'s entry (ports, parameters, ranges) from reference/nodes; { component: "flamethrower" } = that component\'s knobs. Read "readme", "concepts" and "workflow" before building; read the family recipe for what you are making.', {
+    topic: z.string().optional(), section: z.string().optional(), node: z.string().optional(), component: z.string().optional(),
+  }, ({ topic, section, node, component }) => ok(guideText({ topic, section, node, component })));
 
   tool('vfx_convert_legacy', 'Convert an old (v1) effect into a NEW editable graph document (the v1 file is never changed), like the editor Legacy v1 > Convert a copy. Give a v1 recipe/bundle JSON path, or a family name for its v1 default. Returns the conversion report.', {
     path: z.string().optional(), family: z.enum(FAMILIES).optional(), docId: z.string().regex(ID).optional(),
@@ -528,7 +530,7 @@ ${formatMigrationReport(report)}`);
     return { ok: true as const, read: r.value, doc: pinned.doc, pinned: pinned.pinned, summary };
   };
 
-  tool('vfx_export_roblox', 'Export the effect for Roblox: a .rbxmx model (ParticleEmitters, Beams, PointLights + an EffectPlayer script that replays the timeline) and a conversion report (.md) listing what was approximated or left out. Textures use rbxassetid ids from work/roblox/asset-ids.json (sheet file -> id) when present; missing ones show the default Roblox sparkle. Default path work/roblox/<docId>.rbxmx.', {
+  tool('vfx_export_roblox', 'Export the effect for Roblox: a .rbxmx model (ParticleEmitters, Beams, PointLights + an EffectPlayer script that replays the timeline) and a conversion report (.md) listing what was approximated or left out. Textures use rbxassetid ids from work/roblox/asset-ids.json (sheet file -> id) when present; missing ids fall back to the fire/smoke/sparkles textures (flipbook off). The report (.md, next to the model) lists every approximation and missing texture. In game, aim it with EffectPlayer.play(model, nil, {source, target, speed|travelTime, scale}); the returned handle has setTarget(pos) (follow a moving target) and hit(pos) (jump to the impact now). See the guide chapter export. Default path work/roblox/<docId>.rbxmx.', {
     docId: z.string(), path: z.string().optional(),
   }, ({ docId, path }) => {
     const d = getDoc(docId);

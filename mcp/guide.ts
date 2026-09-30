@@ -1,6 +1,11 @@
 // vfx_guide: authoring know-how distilled from the ten element families built with this tool (A-05 finding:
 // fresh agents had every capability but not the recipes — e.g. a continuous flame jet needs many small, faint,
-// stretched additive tongues, not a few big bright ones). Plain text, one topic per entry, no source code.
+// stretched additive tongues, not a few big bright ones).
+// Plain text, one topic per entry, no source code. These short topics are the fallback; the full guide (docs/ai-guide)
+// is served by guideText below.
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export const GUIDE: Record<string, string> = {
   basics: `BASICS
@@ -86,8 +91,149 @@ export const GUIDE: Record<string, string> = {
 - Looking: vfx_render_frames / vfx_contact_sheet accept orbit {yaw, pitch, distance}, camera, solo [node ids] and background "light". Look at the images before claiming anything.`,
 };
 
-export function guideText(topic?: string): string {
-  if (!topic) return `Topics: ${Object.keys(GUIDE).join(', ')}. Call vfx_guide with a topic. Start with "basics" and "glow".`;
-  const t = GUIDE[topic.toLowerCase()];
-  return t ?? `Unknown topic "${topic}". Topics: ${Object.keys(GUIDE).join(', ')}.`;
+// ---------------------------------------------------------------- docs/ai-guide lookup
+const GUIDE_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'docs', 'ai-guide');
+const MAX_WHOLE_REFERENCE = 30_000;
+
+/** Chapters in reading order with a one-line summary for the index. */
+export const CHAPTERS: Array<[string, string]> = [
+  ['readme', 'Guide index, reading order and the five rules.'],
+  ['concepts', 'The mental model: documents, node graph, time (schedules, windows, events), anchors, components and knobs, keyframes, materials, glow.'],
+  ['workflow', 'The build, compile, render, look, adjust loop with exact tool calls and a worked example.'],
+  ['look', 'What makes effects read well (blending, colour, scale, motion, timing, layering) and the common wrong looks with causes.'],
+  ['troubleshooting', 'Every diagnostic code, frequent messages and an "it looks wrong" table.'],
+  ['export', '.vfx.json, .vfxpack and Roblox export: aiming API, textures, what changes.'],
+  ['editor', 'Where everything is in the editor, with the matching MCP tool for each action.'],
+];
+export const REFERENCES: Array<[string, string]> = [
+  ['nodes', 'Every node type: ports, parameters with units, ranges, defaults (look up one with { node }).'],
+  ['components', 'Every included component and its knobs (look up one with { component }).'],
+  ['sprites', 'The included sprite library: grids, flipbook/variant sets, usage.'],
+  ['mcp-tools', 'Every MCP tool and its arguments.'],
+  ['diagnostics', 'Every error code, what it means and where it is raised.'],
+  ['limits', 'Hard limits and budgets (particles, duration, lights, paths, import sizes).'],
+];
+const SHORT_SUMMARIES: Record<string, string> = {
+  basics: 'graph shape and timing in five lines', glow: 'additive blending, bloom settings', fire: 'the proven flamethrower build, number by number',
+  smoke: 'smoke, dust, clouds', sparks: 'sparks, embers, debris, stone, ice, water', beams: 'beams, bolts, rings (ribbons)', projectile: 'projectiles and event timing',
+  props: 'PropMesh and meshes', materials: 'Material templates, hue shift, recolour, dissolve, lit meshes', values: 'curves, gradients, over-life',
+  tools: 'tool workflow cheat sheet (components, assets, editing, timeline, keyframes)',
+};
+
+const readGuide = (rel: string): string | undefined => {
+  const p = join(GUIDE_DIR, ...rel.split('/'));
+  return existsSync(p) ? readFileSync(p, 'utf8').replace(/\r\n/g, '\n') : undefined;
+};
+const recipeNames = (): string[] => {
+  const d = join(GUIDE_DIR, 'recipes');
+  return existsSync(d) ? readdirSync(d).filter(n => n.endsWith('.md')).map(n => n.slice(0, -3)).sort() : [];
+};
+const firstLine = (text: string): string => {
+  const lines = text.split('\n');
+  const h1 = lines.findIndex(l => /^# /.test(l));
+  for (const l of lines.slice(h1 + 1)) if (l.trim() && !l.startsWith('#') && !l.startsWith('>') && !l.startsWith('<!--')) return l.trim().slice(0, 160);
+  return '';
+};
+
+interface Heading { level: number; title: string; start: number; end: number }
+function headings(text: string): Heading[] {
+  const lines = text.split('\n');
+  const out: Heading[] = [];
+  let fence = false;
+  lines.forEach((l, i) => {
+    if (/^```/.test(l)) fence = !fence;
+    const m = !fence && l.match(/^(#{1,4}) (.+?)\s*$/);
+    if (m) out.push({ level: m[1].length, title: m[2], start: i, end: lines.length });
+  });
+  for (let i = 0; i < out.length; i++) for (let j = i + 1; j < out.length; j++) if (out[j].level <= out[i].level) { out[i].end = out[j].start; break; }
+  return out;
+}
+const slugOf = (t: string) => t.toLowerCase().replace(/^\d+\.\s*/, '').replace(/[^a-z0-9 _-]/g, '').trim().replace(/ +/g, '-');
+const slice = (text: string, h: Heading) => text.split('\n').slice(h.start, h.end).join('\n').trim();
+
+/** Sections of `text` whose heading matches (exact slug/title/number first, then prefix, then substring). */
+function findSection(text: string, query: string, minLevel = 2, maxLevel = 3): Heading[] {
+  const q = query.trim().toLowerCase().replace(/^#+\s*/, '');
+  const qs = slugOf(q);
+  const hs = headings(text).filter(h => h.level >= minLevel && h.level <= maxLevel);
+  const num = (h: Heading) => h.title.match(/^(\d+)\./)?.[1];
+  const exact = hs.filter(h => h.title.toLowerCase() === q || slugOf(h.title) === qs || num(h) === q.replace(/\.$/, ''));
+  if (exact.length) return exact;
+  const prefix = hs.filter(h => slugOf(h.title).startsWith(qs));
+  if (prefix.length) return prefix;
+  return hs.filter(h => slugOf(h.title).includes(qs));
+}
+
+function outline(text: string, maxLevel: number): string {
+  return headings(text).filter(h => h.level >= 2 && h.level <= maxLevel).map(h => `${'  '.repeat(h.level - 2)}- ${h.title}`).join('\n');
+}
+
+function indexText(): string {
+  const rec = recipeNames();
+  const lines = ['VFX Studio guide. Call vfx_guide with { topic } for a chapter, { topic, section } for one section, { node } or { component } for one reference entry.', '', 'Chapters (docs/ai-guide):'];
+  for (const [n, sum] of CHAPTERS) lines.push(`- ${n}: ${sum}`);
+  lines.push('', 'Recipes per family (topic "recipes/<family>"):');
+  if (rec.length) for (const r of rec) { const t = readGuide(`recipes/${r}.md`); lines.push(`- recipes/${r}${t ? `: ${firstLine(t)}` : ''}`); }
+  else lines.push('- (not written yet)');
+  lines.push('', 'Reference (generated from the code; topic "reference/<name>"):');
+  for (const [n, sum] of REFERENCES) lines.push(`- reference/${n}: ${sum}`);
+  lines.push('', 'Short topics (older quick notes with exact numbers):');
+  for (const k of Object.keys(GUIDE)) { const name = k === 'workflow' ? 'tools' : k; lines.push(`- ${name}: ${SHORT_SUMMARIES[name] ?? ''}`); }
+  lines.push('', 'Start with "readme", then "concepts" and "workflow". Look at rendered frames (vfx_render_frames) before judging an effect.');
+  return lines.join('\n');
+}
+
+function entry(file: string, label: string, key: string): string {
+  const text = readGuide(`reference/${file}`);
+  if (!text) return `The reference file docs/ai-guide/reference/${file} is missing. Run \`npm run guide\`.`;
+  const hs = headings(text).filter(h => h.level === 3);
+  const k = key.trim().toLowerCase();
+  const hit = hs.find(h => h.title.toLowerCase() === k) ?? hs.find(h => slugOf(h.title) === slugOf(k));
+  if (hit) return slice(text, hit);
+  const names = hs.map(h => h.title);
+  const near = names.filter(n => n.toLowerCase().includes(k) || k.includes(n.toLowerCase()));
+  return `No ${label} "${key}". ${near.length ? `Did you mean: ${near.slice(0, 12).join(', ')}? ` : ''}All ${label}s: ${names.join(', ')}.`;
+}
+
+function chapterText(rel: string, section: string | undefined, isRef: boolean): string {
+  const text = readGuide(`${rel === 'readme' ? 'README' : rel}.md`);
+  if (!text) return `No chapter "${rel}" (docs/ai-guide/${rel}.md does not exist${rel.startsWith('recipes/') ? ' yet; recipes are still being written' : ''}). Call vfx_guide with no arguments for the index.`;
+  if (section) {
+    const hs = findSection(text, section);
+    if (!hs.length) return `No section "${section}" in ${rel}. Sections:\n${outline(text, isRef ? 3 : 2)}`;
+    return hs.slice(0, 6).map(h => slice(text, h)).join('\n\n');
+  }
+  if (isRef && text.length > MAX_WHOLE_REFERENCE) {
+    const per = rel.endsWith('nodes') ? ', or { node: "<type>" }' : rel.endsWith('components') ? ', or { component: "<id>" }' : '';
+    return `${rel} is large (${Math.round(text.length / 1000)} kB). Ask for one part with { topic: "${rel}", section: "<heading>" }${per}. Sections:\n${outline(text, per ? 3 : 2)}`;
+  }
+  return text;
+}
+
+export interface GuideQuery { topic?: string; section?: string; node?: string; component?: string }
+
+/** Serves docs/ai-guide (index, chapters, sections, node/component entries) with the old short topics as fallback. Never throws. */
+export function guideText(arg?: string | GuideQuery): string {
+  const q: GuideQuery = typeof arg === 'string' ? { topic: arg } : arg ?? {};
+  try {
+    if (q.node) return entry('nodes.md', 'node type', q.node);
+    if (q.component) return entry('components.md', 'component', q.component);
+    if (!q.topic) return indexText();
+    const raw = q.topic.trim().toLowerCase().replace(/\.md$/, '').replace(/^docs\/ai-guide\//, '').replace(/\\/g, '/');
+    if (raw === 'index') return indexText();
+    if (raw === 'tools') return GUIDE.workflow;
+    if (raw !== 'workflow' && GUIDE[raw]) return GUIDE[raw] + (q.section ? '\n\n(Short topics have no sections; see the chapters in the index.)' : '');
+    if (raw === 'recipes') {
+      const r = recipeNames();
+      return r.length ? `Recipe chapters: ${r.map(n => `recipes/${n}`).join(', ')}.` : 'Recipes are not written yet. Use the short topics (fire, smoke, sparks, beams, projectile, props) and reference/components.';
+    }
+    if (CHAPTERS.some(([n]) => n === raw)) return chapterText(raw, q.section, false);
+    if (raw.startsWith('recipes/')) return chapterText(raw, q.section, false);
+    const ref = raw.replace(/^reference\//, '');
+    if (REFERENCES.some(([n]) => n === ref)) return chapterText(`reference/${ref}`, q.section, true);
+    const names = [...CHAPTERS.map(c => c[0]), ...recipeNames().map(n => `recipes/${n}`), ...REFERENCES.map(r => `reference/${r[0]}`), ...Object.keys(GUIDE).filter(k => k !== 'workflow'), 'tools'];
+    return `Unknown topic "${q.topic}". Topics: ${names.join(', ')}. Call vfx_guide with no arguments for the index.`;
+  } catch (e) {
+    return `The guide could not be read (${e instanceof Error ? e.message : String(e)}). Call vfx_guide with no arguments for the index.`;
+  }
 }
