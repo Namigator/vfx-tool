@@ -50,10 +50,12 @@ wire('pull.particles', 'tethers.particles'); wire('node-source.out', 'tethers.an
 wire('tetherjag.paths', 'tetherrib.paths'); wire('tethermat.material', 'tetherrib.material'); wire('charge.window', 'tetherrib.window'); out('tetherrib');
 
 // ---- Discharge (tick 24, 39 ticks): bowed jagged trunk + branches + forks, revealed over 2 ticks ----
+// Zigzag amplitudes match the original lightning (docs/v2-plan/references/original-lightning): its offsets are
+// (random-.5)*rough = +-rough/2, JaggedPath's are +-amplitude, so amplitude = rough/2 (user 2026-09-30: main-line jags too big).
 add('Schedule', 'strike', { startTicks: C, durationTicks: V.active, mode: 'window' });
 add('BezierPath', 'base', { startHandle: [2.4, 0.56, 0], endHandle: [-2.4, 0.56, 0], samples: 48 });
 wire('node-source.out', 'base.start'); wire('node-target.out', 'base.end');
-add('JaggedPath', 'trunk', { amplitude: 0.55, regenerationHz: 24, samples: 42 });
+add('JaggedPath', 'trunk', { amplitude: 0.3, regenerationHz: 24, samples: 42 });
 add('BranchPath', 'branches', { count: V.branches.count, attachmentMin: 0.12, attachmentMax: 0.88, lengthMin: V.branches.len[0], lengthMax: V.branches.len[1], opacityMin: V.branches.op[0], opacityMax: V.branches.op[1], widthMin: V.branches.w[0], widthMax: V.branches.w[1] });
 add('BranchPath', 'forks', { count: V.forks, lengthMin: 0.3, lengthMax: 1, opacityMin: 0.15, opacityMax: 0.15, widthMin: 0.15, widthMax: 0.25 });
 add('JaggedPath', 'branchjag', { amplitude: 0.14, regenerationHz: 24, samples: 14 });
@@ -65,8 +67,8 @@ wire('base.paths', 'trunk.paths'); wire('trunk.paths', 'branches.paths'); wire('
 wire('trunk.paths', 'boltpaths.paths'); wire('branchjag.paths', 'boltpaths.paths'); wire('forkjag.paths', 'boltpaths.paths');
 wire('boltpaths.paths', 'reveal.paths'); wire('revealcurve.value', 'reveal.fraction');
 // Secondary filaments: two independent jagged chains on the same base, opacity scale .32.
-add('JaggedPath', 'filA', { amplitude: 0.36, regenerationHz: 24, samples: 48 });
-add('JaggedPath', 'filB', { amplitude: 0.56, regenerationHz: 24, samples: 48 });
+add('JaggedPath', 'filA', { amplitude: 0.18, regenerationHz: 24, samples: 48 });
+add('JaggedPath', 'filB', { amplitude: 0.28, regenerationHz: 24, samples: 48 });
 add('MergePaths', 'filaments');
 add('RevealPath', 'filreveal');
 wire('base.paths', 'filA.paths'); wire('base.paths', 'filB.paths'); wire('filA.paths', 'filaments.paths'); wire('filB.paths', 'filaments.paths');

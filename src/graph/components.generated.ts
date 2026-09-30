@@ -7056,7 +7056,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "trunk",
     "type": "JaggedPath",
     "params": {
-     "amplitude": 0.55,
+     "amplitude": 0.3,
      "regenerationHz": 24,
      "samples": 42
     }
@@ -7139,7 +7139,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "filA",
     "type": "JaggedPath",
     "params": {
-     "amplitude": 0.36,
+     "amplitude": 0.18,
      "regenerationHz": 24,
      "samples": 48
     }
@@ -7148,7 +7148,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "filB",
     "type": "JaggedPath",
     "params": {
-     "amplitude": 0.56,
+     "amplitude": 0.28,
      "regenerationHz": 24,
      "samples": 48
     }
@@ -8327,7 +8327,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    {
     "id": "jagged",
     "label": "Jaggedness",
-    "value": 0.55,
+    "value": 0.3,
     "bindings": [
      {
       "node": "trunk",
@@ -8625,7 +8625,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "trunk",
     "type": "JaggedPath",
     "params": {
-     "amplitude": 0.55,
+     "amplitude": 0.3,
      "regenerationHz": 24,
      "samples": 42
     }
@@ -8708,7 +8708,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "filA",
     "type": "JaggedPath",
     "params": {
-     "amplitude": 0.36,
+     "amplitude": 0.18,
      "regenerationHz": 24,
      "samples": 48
     }
@@ -8717,7 +8717,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "filB",
     "type": "JaggedPath",
     "params": {
-     "amplitude": 0.56,
+     "amplitude": 0.28,
      "regenerationHz": 24,
      "samples": 48
     }
@@ -9896,7 +9896,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    {
     "id": "jagged",
     "label": "Jaggedness",
-    "value": 0.55,
+    "value": 0.3,
     "bindings": [
      {
       "node": "trunk",
@@ -10194,7 +10194,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "trunk",
     "type": "JaggedPath",
     "params": {
-     "amplitude": 0.55,
+     "amplitude": 0.3,
      "regenerationHz": 24,
      "samples": 42
     }
@@ -10277,7 +10277,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "filA",
     "type": "JaggedPath",
     "params": {
-     "amplitude": 0.36,
+     "amplitude": 0.18,
      "regenerationHz": 24,
      "samples": 48
     }
@@ -10286,7 +10286,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "filB",
     "type": "JaggedPath",
     "params": {
-     "amplitude": 0.56,
+     "amplitude": 0.28,
      "regenerationHz": 24,
      "samples": 48
     }
@@ -11465,7 +11465,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    {
     "id": "jagged",
     "label": "Jaggedness",
-    "value": 0.55,
+    "value": 0.3,
     "bindings": [
      {
       "node": "trunk",

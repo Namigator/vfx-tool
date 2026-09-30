@@ -553,7 +553,7 @@
    "type": "JaggedPath",
    "id": "trunk",
    "params": {
-    "amplitude": 0.55,
+    "amplitude": 0.3,
     "regenerationHz": 24,
     "samples": 42
    }
@@ -748,7 +748,7 @@
    "type": "JaggedPath",
    "id": "filA",
    "params": {
-    "amplitude": 0.36,
+    "amplitude": 0.18,
     "regenerationHz": 24,
     "samples": 48
    }
@@ -761,7 +761,7 @@
    "type": "JaggedPath",
    "id": "filB",
    "params": {
-    "amplitude": 0.56,
+    "amplitude": 0.28,
     "regenerationHz": 24,
     "samples": 48
    }
