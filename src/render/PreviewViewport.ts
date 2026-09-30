@@ -992,10 +992,12 @@ export class PreviewViewport {
   setMarkers(points: readonly { position: readonly [number, number, number]; kind: 'source' | 'target' | 'other' }[]): void {
     for (const m of this.#markers) { this.#scene.remove(m); m.geometry.dispose(); (m.material as THREE.Material).dispose(); }
     this.#markers = points.map(pt => {
-      const mesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.06), new THREE.MeshBasicMaterial({ color: pt.kind === 'source' ? 0x6fd48f : pt.kind === 'target' ? 0xffa060 : 0x9aa4b8, wireframe: true, depthWrite: false }));
+      // Drawn on top of everything (no depth test): an anchor at or just under floor height (a Target on the ground)
+      // must stay visible from every angle, not vanish under the floor.
+      const mesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.09), new THREE.MeshBasicMaterial({ color: pt.kind === 'source' ? 0x6fd48f : pt.kind === 'target' ? 0xffa060 : 0x9aa4b8, wireframe: true, depthWrite: false, depthTest: false, transparent: true, opacity: 0.9 }));
       mesh.position.set(pt.position[0], pt.position[1], pt.position[2]);
       mesh.visible = this.#grid.visible;
-      mesh.renderOrder = -1;
+      mesh.renderOrder = 1000;
       this.#scene.add(mesh);
       return mesh;
     });
