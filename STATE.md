@@ -97,12 +97,15 @@
   engine export → in-editor AI box that runs its own render→look→adjust loop → full AI guide → sound.
 
 ## RELEASE PLAN (user 2026-09-30): finish the product, publish it, then add features
-- DROPPED: in-editor AI box (rabbit hole; MCP already covers it; original plan said no runtime AI).
-- LATER (after publishing): option A = AI guide + fix the SpellForge agent's usability gaps; sound (parked).
-- Release checklist (proposed, user to confirm order): (1) fire sprites wrong viewed along the jet (user report);
-  (2) Roblox flames stand vertical; (3) visual polish the user flagged: scaly flames, lightning haze, faint additive
-  effects on light floors; (4) user visual OK -> merge squad/vfx-v2 to main; (5) production build + hosting choice.
-  Optional: sub-group component internals, realistic water.
+- Release order (user): (1) fire sprites look wrong viewed along the jet (front/behind); (2) Roblox flames stand
+  vertical instead of along the jet - POC level only; (3) lightning: the BRANCHES off the main bolt are too big -
+  compare with the original lightning reference docs/v2-plan/references/original-lightning/lightning-arc.html.
+  Then: user visual OK -> merge squad/vfx-v2 to main; production build + hosting (host not chosen yet).
+- BACKLOGGED (not dropped): in-editor AI box. LATER: AI guide = a guide for using the TOOL itself (not Roblox or
+  SpellForge), plus the tool-usability gaps the SpellForge agent found. LATER: sound - currently genuinely bad,
+  sometimes hurts the user's ears (check loudness/limiting first).
+- CORRECTION: the older note "L01 lightning blooms into a wide haze" was never the user's words; their lightning
+  feedback is the branch size above.
 
 ## Direction (user decision 2026-09-26) — tool first, presets second
 - Stop polishing individual effects feature-by-feature. Build **generic, reusable building blocks** first; presets are assembled from them afterwards, never hand-special-cased.
@@ -122,7 +125,7 @@
 - Landed since the audit: emitter shapes/speed/aim; Gravity, Drag, NoiseForce, Attract, Vortex, GroundCollision; colour/size/opacity over life, spin, velocity stretch + pivot, worldAxis alignment; textured flipbooks (library to 10-ASSETS); ParticleEvents child emission; ParticleTrail, MotionTrail, SpriteRenderer, PointLight, MeshRenderer (procedural rocks/shards); PathFollower (projectiles), HelixPath, PathTransform; rateOverWindow; value nodes RandomRange/Constant/ScalarMath (per-instance unit, chainable, once per cast); EventDelay + MergeEvents (emitter, presentation and audio triggers); Emitter.inheritVelocity; ScreenFlash + CameraImpulse (reduced-motion aware); textured ribbons; bloom + ACES; light/dark arena; AudioEnvelope + AudioFilter, repeat-schedule audio, AV-synced Play/Loop; persistence slice; 48 components with knobs and layered SFX (Add component + Controls panel); MCP with 25 tools incl. headless frames, texture import and .vfxpack export/open.
 - Evidence recipes: mcp/examples/*.steps.json (run: node mcp/run-steps.mjs <file>; frames land in work/mcp/frames/). Components are generated from them: node tools/build-components.mjs.
 - AV sync: editor Play/Restart start the mix at the current tick (800 samples/tick), Pause/scrub stop it; Sound on/off toggle. [RAN] status in browser; not listened to.
-- Open for the user: L01 lightning now blooms into a wide haze (emission tuned pre-bloom); water realism backlog; flame look still slightly scaly vs standalone reference.
+- Open for the user: lightning branches too big vs original (see RELEASE PLAN); water realism backlog; flame look still slightly scaly vs standalone reference.
 
 ## MCP (agent tooling)
 - .mcp.json registers server `vfx` → node --experimental-strip-types --no-warnings mcp/vfx-mcp.ts (loads in a NEW Claude Code session). Tools: vfx_list_node_types, vfx_describe_node_type, vfx_new_document (blank/f01/forces/lightning/lightning-audio), vfx_open/save/get/set_document, vfx_set_anchor, vfx_add/remove_node, vfx_set_params, vfx_connect/disconnect, vfx_compile, vfx_sample_particles, vfx_render_audio, vfx_preview_url, vfx_list_components, vfx_add_component, vfx_list_controls, vfx_set_control, vfx_render_frames (PNG via headless Chrome → /capture.html?doc=…&tick=…[&glow=0]; needs the vite dev server; frames in work/mcp/frames/).
