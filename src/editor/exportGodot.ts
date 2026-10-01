@@ -17,6 +17,7 @@ export async function exportGodotZip(doc: EffectDocumentV2): Promise<GodotExport
     [`${g.name}/README.md`]: enc.encode(godotReadme(g)),
     [`${g.name}/report.md`]: enc.encode(godotReportMarkdown(g)),
   };
+  for (const f of g.files) files[`${g.name}/${f.path}`] = enc.encode(f.text);
   let missing = 0;
   for (const t of g.textures) {
     const res = await fetch(spriteUrl(t)).catch(() => null);

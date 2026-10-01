@@ -209,16 +209,19 @@ function ribbonsFrom(doc: EffectDocumentV2, origin: readonly number[], report: U
       let b = layers.get(l.nodeId);
       if (!b) { b = ribbonLayer(l, report); layers.set(l.nodeId, b); }
       const wCurve = compileLifeCurve(l.widthOverPath);
-      const first = l.active ? l.paths[0] : undefined;
-      const points: Vec3Width[] = first ? first.points.map((q, i, arr) => {
+      const toPoints = (path: (typeof l.paths)[number]): Vec3Width[] => path.points.map((q, i, arr) => {
         const u = arr.length > 1 ? i / (arr.length - 1) : 0;
         const p = toUe([q[0] - origin[0], q[1] - origin[1], q[2] - origin[2]]);
-        return [p[0], p[1], p[2], r3(l.width * first.widthScale * sampleLifeCurve(wCurve, u) * CM_PER_METER)];
-      }) : [];
-      const key = JSON.stringify(points);
+        return [r3(p[0]), r3(p[1]), r3(p[2]), r3(l.width * path.widthScale * sampleLifeCurve(wCurve, u) * CM_PER_METER)];
+      });
+      const live = l.active ? l.paths.filter(p => p.points.length >= 2) : [];
+      const points: Vec3Width[] = live.length ? toPoints(live[0]) : [];
+      const layerAlpha = Math.min(1, l.opacity * l.color.alpha);
+      const paths = live.map(p => ({ points: toPoints(p), alpha: r3(Math.min(1, layerAlpha * p.opacityScale)) }));
+      const key = JSON.stringify(paths);
       if (key === b.last) continue;
       b.last = key;
-      b.frames.push({ tick, points });
+      b.frames.push({ tick, points, paths });
     }
   }
   const out = [...layers.values()].map(({ last: _l, ...b }) => b);
@@ -234,6 +237,7 @@ function ribbonLayer(l: PathPreviewLayer, report: UeReportItem[]): UeRibbon & { 
   return {
     name: safeName(l.nodeId), color: { t: 0, r: r3(rgb[0]), g: r3(rgb[1]), b: r3(rgb[2]), a: r3(Math.min(1, l.opacity * l.color.alpha)) },
     blend: l.blend === 'additive' ? 'additive' : 'translucent',
+    endFade: r3(l.endFade),
     ...(l.sprite ? { textureFile: l.sprite.sheet.file } : {}),
     widthCm: r3(Math.max(0.1, l.uvTileLength * CM_PER_METER)),
     frames: [], last: '',

@@ -590,6 +590,7 @@ ${md}`);
     writeFileSync(join(outDir, `${g.name}.tscn`), g.tscn);
     writeFileSync(join(outDir, 'README.md'), godotReadme(g));
     writeFileSync(join(outDir, 'report.md'), godotReportMarkdown(g));
+    for (const f of g.files) writeFileSync(join(outDir, f.path), f.text);
     const missing: string[] = [];
     for (const t of g.textures) {
       const f = join(root, 'assets', 'sprites', t);

@@ -202,7 +202,7 @@ the script does not judge it.
 ## Godot 4
 
 `vfx_export_godot { docId, path? }` (default `work/godot/<docId>/`) or the editor's **Export → Export Godot** (a zip)
-writes `<name>.tscn`, `Textures/*.png`, `README.md` and `report.md`.
+writes `<name>.tscn`, `Textures/*.png`, `README.md` and `report.md`, plus `ribbons.json` + `vfx_ribbons.gd` when the effect has beams. (When exporting a Godot game, add `*.json` to the export filter so the beam data is packed.)
 
 - Copy the folder into your project as `res://vfx_studio/<name>/` (the scene's texture paths point there) and instance
   the scene where the effect starts: its origin is the **Source** anchor. It plays once on load; call
@@ -222,7 +222,8 @@ writes `<name>.tscn`, `Textures/*.png`, `README.md` and `report.md`.
 | Curl noise | turbulence with a small influence (check the look) |
 | Velocity-aligned sprites | Align Y with no billboard (no stretch) |
 | Burning-edge dissolve, rim glow | left out: tongues show crisp edges |
-| Beams/ribbons (lightning, streams), mesh particles, attraction, vortex, ground collision | not exported yet (report.md) |
+| Beams/ribbons (lightning, streams, rings) | every path (trunk + branches) with its flicker/decay, baked per frame in `ribbons.json`, drawn by the bundled `vfx_ribbons.gd` as camera-facing strips; no texture scrolling/distortion |
+| Mesh particles, attraction, vortex, ground collision | not exported yet (report.md) |
 | Screen flash, camera shake | left out |
 
 `node tools/godot-check.mjs <package-dir> [seconds]` builds a throwaway Godot project (camera, floor, glow), imports

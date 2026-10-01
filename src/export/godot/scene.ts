@@ -6,10 +6,13 @@
 // stock templates, Godot's ParticleProcessMaterial takes size, colour and alpha over life as curves directly, so those
 // export exactly. Timing (when each emitter runs, when bursts fire, a moving source, light intensity) lives in one
 // "play" animation that autoplays. The scene origin is the Source anchor.
-import type { UeEmitter, UeLight, UnrealEffect } from '../unreal/types.ts';
+import type { UeEmitter, UeLight, UeRibbon, UnrealEffect } from '../unreal/types.ts';
+import { VFX_RIBBONS_GD } from './vfx_ribbons.gd.ts';
 
 export type GodotReportItem = { level: 'approximated' | 'dropped' | 'info'; item: string; message: string };
-export type GodotScene = { name: string; tscn: string; textures: string[]; report: GodotReportItem[]; resPath: string };
+export type GodotScene = { name: string; tscn: string; textures: string[]; report: GodotReportItem[]; resPath: string;
+  /** Extra text files of the package (beams: ribbons.json + vfx_ribbons.gd), relative to the package folder. */
+  files: { path: string; text: string }[] };
 
 type V3 = [number, number, number];
 /** Unreal IR (cm, x, y=our z, z=our y) -> Godot (m, x, y up, z). */
@@ -22,9 +25,10 @@ const nodeName = (s: string) => s.replace(/[^A-Za-z0-9_]/g, '_') || 'Emitter';
 
 class Resources {
   ext: string[] = []; sub: string[] = []; private ids = new Map<string, string>(); private count = 0;
-  extTexture(path: string): string {
+  extTexture(path: string): string { return this.extOf('Texture2D', path); }
+  extOf(type: string, path: string): string {
     const key = `ext:${path}`;
-    if (!this.ids.has(key)) { const id = `${this.ids.size + 1}_tex`; this.ids.set(key, id); this.ext.push(`[ext_resource type="Texture2D" path=${str(path)} id="${id}"]`); }
+    if (!this.ids.has(key)) { const id = `${this.ids.size + 1}_${type === 'Script' ? 'script' : 'tex'}`; this.ids.set(key, id); this.ext.push(`[ext_resource type="${type}" path=${str(path)} id="${id}"]`); }
     return `ExtResource("${this.ids.get(key)}")`;
   }
   add(type: string, body: string[]): string {
@@ -166,7 +170,15 @@ export function godotSceneFrom(e: UnrealEffect, resRoot = `res://vfx_studio/${e.
   const nodes = [`[node name=${str(nodeName(e.name))} type="Node3D"]`];
   for (const em of e.emitters) nodes.push(emitterNode(res, em, `${resRoot}/Textures`, duration, tracks, report));
   for (const l of e.lights) nodes.push(lightNode(l, duration, tracks));
-  if (e.ribbons.length) report.push({ level: 'dropped', item: 'ribbons', message: `${e.ribbons.length} beam/ribbon layer(s) (lightning, streams) are not exported to Godot yet.` });
+  const files: GodotScene['files'] = [];
+  if (e.ribbons.length) {
+    // Beams: baked per-tick geometry (every path: trunk + branches, with its flicker/decay opacity) drawn by a small
+    // script as camera-facing strips, synced to the "play" animation.
+    files.push({ path: 'ribbons.json', text: ribbonsJson(e.ribbons, `${resRoot}/Textures`) }, { path: 'vfx_ribbons.gd', text: VFX_RIBBONS_GD });
+    const script = res.extOf('Script', `${resRoot}/vfx_ribbons.gd`);
+    nodes.push(`[node name="Ribbons" type="Node3D" parent="."]\nscript = ${script}\ndata_path = ${str(`${resRoot}/ribbons.json`)}`);
+    report.push({ level: 'info', item: 'ribbons', message: `${e.ribbons.length} beam/ribbon layer(s) are drawn by vfx_ribbons.gd from ribbons.json (baked per frame, camera-facing strips; no texture scrolling or distortion).` });
+  }
   // Carry the Unreal IR's own notes that still apply (meshes, flashes, keyframes, many bursts, multi-path...).
   for (const r of e.report) if (!/Niagara|Unreal|importer|UE 5|Shape Location/i.test(r.message)) report.push(r);
   report.push({ level: 'info', item: 'scale', message: 'Godot uses metres and +Y up like VFX Studio; the scene origin is the Source anchor. The "play" animation autoplays; call $AnimationPlayer.play("play") to fire it again.' });
@@ -180,7 +192,7 @@ export function godotSceneFrom(e: UnrealEffect, resRoot = `res://vfx_studio/${e.
   nodes.push(`[node name="AnimationPlayer" type="AnimationPlayer" parent="."]\nlibraries = {\n&"": ${lib}\n}\nautoplay = &"play"`);
   const tscn = [`[gd_scene load_steps=${res.ext.length + res.sub.length + 1} format=3]`, '', ...res.ext, ...(res.ext.length ? [''] : []),
     ...res.sub.flatMap(s => [s, '']), ...nodes.flatMap(x => [x, ''])].join('\n');
-  return { name: e.name, tscn, textures: e.textures, report, resPath: resRoot };
+  return { name: e.name, tscn, textures: e.textures, report, resPath: resRoot, files };
 }
 
 export function godotReportMarkdown(g: GodotScene): string {
@@ -203,5 +215,27 @@ export function godotReadme(g: GodotScene): string {
     `2. Open the project; Godot imports the textures.`,
     `3. Instance \`${g.name}.tscn\` where the effect should start (its origin is the caster / nozzle). It plays once on load;`,
     '   call `$AnimationPlayer.play("play")` on the instance to play it again.',
-    '', 'Size, colour and fade over each particle\'s life are exact (Godot curves). See report.md for what changed.', ''].join('\n');
+    '', 'Size, colour and fade over each particle\'s life are exact (Godot curves). Beams (if any) are drawn by vfx_ribbons.gd',
+    'from ribbons.json: when exporting a game, add *.json to the export resource filter. See report.md for what changed.', ''].join('\n');
+}
+
+/** Ribbon layers as compact JSON for vfx_ribbons.gd: Godot metres (+Y up), flat [x, y, z, width] per point. */
+function ribbonsJson(ribbons: UeRibbon[], texRoot: string): string {
+  const r = (x: number) => Math.round(x * 1000) / 1000;
+  const layers = ribbons.map(b => ({
+    name: b.name,
+    // Per-path alpha already includes the layer opacity: the layer colour carries RGB only.
+    color: [b.color.r, b.color.g, b.color.b, 1],
+    additive: b.blend === 'additive',
+    endFade: b.endFade ?? 0,
+    ...(b.textureFile ? { texture: `${texRoot}/${b.textureFile}` } : {}),
+    frames: b.frames.map(f => ({
+      tick: f.tick,
+      paths: (f.paths ?? (f.points.length ? [{ points: f.points, alpha: 1 }] : [])).map(p => ({
+        a: p.alpha,
+        p: p.points.flatMap(q => [r(q[0] / 100), r(q[2] / 100), r(q[1] / 100), r(q[3] / 100)]),
+      })),
+    })),
+  }));
+  return JSON.stringify({ format: 'vfx-studio-ribbons', version: 1, ticksPerSecond: 60, layers });
 }

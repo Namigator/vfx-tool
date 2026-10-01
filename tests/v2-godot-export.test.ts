@@ -55,6 +55,18 @@ test('Godot: a burst emitter is one-shot; report and readme explain what changed
   assert.match(g.tscn, /explosiveness = 1\.0/);
   assert.ok(godotReadme(g).includes('res://vfx_studio/impact_flash/'));
   assert.match(godotReportMarkdown(g), /# Godot export: impact_flash/);
-  const { g: bolt } = scene('lightning-strike');
-  assert.ok(bolt.report.some(r => r.item === 'ribbons' && r.level === 'dropped'));
+});
+
+test('Godot: beams ship as ribbons.json + vfx_ribbons.gd (every path with its per-frame opacity), driven by a Ribbons node', () => {
+  const { ir, g } = scene('lightning-strike');
+  assert.deepEqual(g.files.map(f => f.path).sort(), ['ribbons.json', 'vfx_ribbons.gd']);
+  assert.match(g.tscn, /\[node name="Ribbons" type="Node3D" parent="\."\]\nscript = ExtResource\("[^"]+"\)\ndata_path = "res:\/\/vfx_studio\/lightning_strike\/ribbons\.json"/);
+  const data = JSON.parse(g.files.find(f => f.path === 'ribbons.json')!.text);
+  assert.equal(data.layers.length, ir.ribbons.length);
+  const core = data.layers.find((l: { name: string }) => l.name.includes('corerib'));
+  const mid = core.frames[Math.floor(core.frames.length / 2)];
+  assert.ok(mid.paths.length > 5, `trunk + branches, got ${mid.paths.length}`);
+  assert.ok(new Set(core.frames.map((f: { paths: { a: number }[] }) => f.paths[0]?.a)).size > 3, 'opacity flickers/decays over frames');
+  assert.equal(mid.paths[0].p.length % 4, 0);
+  assert.match(g.files.find(f => f.path === 'vfx_ribbons.gd')!.text, /^extends Node3D/);
 });

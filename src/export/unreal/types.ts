@@ -115,8 +115,12 @@ export type UeRibbon = {
   blend: UeBlendMode;
   textureFile?: string;
   widthCm: number;
-  /** Per-tick geometry: list of [x,y,z,widthCm] points in Unreal cm (empty = hidden this tick). */
-  frames: { tick: number; points: Vec3Width[] }[];
+  /** Fraction (0..0.5) of each path's length over which both ends taper and fade. */
+  endFade?: number;
+  /** Per-tick geometry: `points` = the first path as [x,y,z,widthCm] in Unreal cm (empty = hidden this tick);
+   *  `paths` = every path of the layer (trunk + branches...) with its opacity at that tick (layer opacity x the
+   *  path's own opacity, e.g. a flickering, decaying bolt). Frames are stored only when something changed. */
+  frames: { tick: number; points: Vec3Width[]; paths?: { points: Vec3Width[]; alpha: number }[] }[];
 };
 export type Vec3Width = [number, number, number, number];
 
