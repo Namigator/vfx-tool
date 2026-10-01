@@ -694,13 +694,13 @@ export class PreviewViewport {
   setPlan(plan: ParticlePreviewPlan): void {
     if (this.#disposed) return;
     this.#clearLayers();
-    if (this.#pathCamera) this.#resetCamera(); // Point preview never inherits the path framing.
+    // Edits keep the camera (re-framed after the rebuild unless the user orbited); a new document starts from default.
+    if (!this.#framedOnce) this.#resetCamera();
     this.#clock = new PlaybackClock({ durationTicks: plan.durationTicks, speed: this.#speed });
     this.#failed = false;
     this.#suspended = false;
     this.#addPointLayers(plan);
-    const sets = particleFrameSets(plan);
-    if (sets.length) { this.#frameSets = sets; this.#fitSets = sets; this.#framePaths(); }
+    this.#scheduleFraming(() => particleFrameSets(plan));
     this.#replayTo(0);
   }
 
@@ -711,7 +711,7 @@ export class PreviewViewport {
   setPathSource(plan: PathPreviewPlan, compile: PathCompile): void {
     if (this.#disposed) return;
     this.#clearLayers();
-    this.#resetCamera();
+    if (!this.#framedOnce) this.#resetCamera();
     this.#plan = null;
     this.#clock = new PlaybackClock({ durationTicks: plan.durationTicks, speed: this.#speed });
     this.#failed = false;
@@ -728,12 +728,12 @@ export class PreviewViewport {
   setMixedSource(points: ParticlePreviewPlan, paths: PathPreviewPlan, compile: PathCompile): void {
     if (this.#disposed) return;
     this.#clearLayers();
-    this.#resetCamera();
+    if (!this.#framedOnce) this.#resetCamera();
     this.#clock = new PlaybackClock({ durationTicks: Math.max(points.durationTicks, paths.durationTicks), speed: this.#speed });
     this.#failed = false;
     this.#suspended = false;
     this.#addPointLayers(points);
-    this.#beginPathSource(paths, compile, particleFrameSets(points));
+    this.#beginPathSource(paths, compile, () => particleFrameSets(points));
     this.#replayTo(0);
   }
 
@@ -945,20 +945,47 @@ export class PreviewViewport {
    * Frames paths sampled across the effect timeline (fixed during playback) and uploads tick 0;
    * the caller owns the clock (set before this call) and emits the frame.
    */
-  #beginPathSource(plan: PathPreviewPlan, compile: PathCompile, extra: FramePointSet[] = []): void {
+  #beginPathSource(plan: PathPreviewPlan, compile: PathCompile, extra: () => FramePointSet[] = () => []): void {
     this.#pathCompile = compile;
     const duration = this.#clock ? this.#clock.durationTicks : plan.durationTicks;
-    const sets: FramePointSet[] = [...collectTimelineFrameSets(plan, duration, compile), ...extra];
-    this.#frameSets = sets.length ? sets : null;
-    this.#fitSets = this.#frameSets;
-    // Broadside initial view until the user orbits; later edits keep their orbit direction.
-    if (sets.length && !this.#userOrbited) {
+    this.#scheduleFraming(() => [...collectTimelineFrameSets(plan, duration, compile), ...extra()], sets => {
+      // Broadside initial view until the user orbits; later edits keep their orbit direction.
       const cam = this.#camera, target = this.#controls.target;
       const d = pathViewDirection(sets.map(s => s.points));
       cam.position.set(target.x + d[0], target.y + d[1], target.z + d[2]);
-    }
-    this.#framePaths();
+    });
     this.#applyPathPlan(plan);
+  }
+
+  /**
+   * Camera framing samples the whole effect timeline (a full replay of every system, ~50-60 ms per edit on a
+   * flamethrower or lightning strike). The first plan is framed at once (captures and first paint need it); after
+   * that, an edit's re-framing runs once the rebuilt preview is on screen, and not at all while the user holds their
+   * own camera (Reset view computes it on demand).
+   */
+  #framingToken = 0;
+  #fitLazy: (() => FramePointSet[]) | null = null;
+  #framedOnce = false;
+  #scheduleFraming(compute: () => FramePointSet[], aim?: (sets: FramePointSet[]) => void): void {
+    const token = ++this.#framingToken;
+    let memo: FramePointSet[] | null = null;
+    const get = () => (memo ??= compute());
+    this.#fitLazy = get;
+    this.#frameSets = null;
+    const run = () => {
+      if (token !== this.#framingToken || this.#disposed || this.#userOrbited) return;
+      const sets = get();
+      if (!sets.length) return;
+      this.#frameSets = sets;
+      aim?.(sets);
+      this.#framePaths();
+      this.#framedOnce = true;
+      this.#emitFrame(true);
+    };
+    if (this.#userOrbited) return;
+    if (!this.#framedOnce) { run(); return; }
+    const idle = (globalThis as { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+    if (idle) idle(run, { timeout: 250 }); else setTimeout(run, 30);
   }
 
   /**
@@ -991,10 +1018,16 @@ export class PreviewViewport {
   }
 
   /** 08 "Reset camera fits those bounds": re-frames the whole effect (all ticks) from the current direction. */
-  #fitSets: FramePointSet[] | null = null;
+  /** A different document was loaded: its first plan is framed from the default view straight away. */
+  newDocument(): void {
+    this.#framedOnce = false;
+    this.#resetCamera();
+  }
+
   resetView(): void {
     this.#userOrbited = false;
-    if (this.#fitSets?.length) { this.#frameSets = this.#fitSets; this.#framePaths(); } else this.#resetCamera();
+    const sets = this.#fitLazy?.() ?? [];
+    if (sets.length) { this.#frameSets = sets; this.#framePaths(); } else this.#resetCamera();
     this.#emitFrame(true);
   }
 

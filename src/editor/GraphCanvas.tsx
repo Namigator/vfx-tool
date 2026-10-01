@@ -21,6 +21,7 @@ import { registryKey } from '../model/controls.ts';
 import { createRegistry } from '../graph/registry.ts';
 import { GROUP_NODE_TYPE, resolveSignature, type ResolvedSignature } from '../graph/signature.ts';
 import { analyzeGraph } from '../graph/analyze.ts';
+import { prepareDocument } from '../graph/prepare.ts';
 import { copySelection, duplicateSelection, parseClipboard, pasteSelection, removeAndReconnect } from './graphOps.ts';
 import { canSolo } from '../graph/solo.ts';
 
@@ -226,7 +227,7 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
   const layout = doc.editor.graphs[graphId];
 
   // Current-document analysis, used for per-node issue badges only (drag never triggers it).
-  const analysis = useMemo(() => analyzeGraph(doc, { registry }), [doc]);
+  const analysis = useMemo(() => prepareDocument(doc).analysis, [doc]); // shared with the preview compile
   const issuesByNode = useMemo(() => {
     const m = new Map<string, Diagnostic[]>();
     const list = analysis.ok ? analysis.warnings : analysis.errors;

@@ -1,5 +1,5 @@
 // Graph-to-audio compiler, first slice (WP04 audio core, claude-model). Pure compiler:
-// createRegistry → analyzeGraph → expandGroups → one renderVoice() → mixStereo(). No DOM, React, Three,
+// prepareDocument (registry → analyzeGraph → expandGroups, shared) → one renderVoice() → mixStereo(). No DOM, React, Three,
 // Web Audio device or live playback. The input is never mutated (analysis works on a clone).
 //
 // Scope is deliberately narrow: exactly one enabled root-level Schedule.start → AudioSource.trigger →
@@ -34,9 +34,8 @@ import {
   type ChirpSweep, type NoiseColor, type OscillatorWaveform, type SynthSource, type VoiceSpec,
 } from '../audio/synthesis.ts';
 import { assertMixBudget, MAX_MIX_FRAMES, MAX_MIX_INPUTS, mixStereo, type MixResult } from '../audio/mix.ts';
-import { analyzeGraph } from './analyze.ts';
-import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
-import { createRegistry } from './registry.ts';
+import { prepareDocument } from './prepare.ts';
+import { type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { scheduleStart, scheduleStarts, TimingError, type TimingContext } from './eventTiming.ts';
 import { probePathLength, probePathLengths } from './toPaths.ts';
 
@@ -80,11 +79,9 @@ const AUDIO_MODIFIERS = ['AudioEnvelope', 'AudioFilter'];
 class Fail extends Error {}
 
 export function compileAudio(input: unknown): ValidationResult<AudioCompilePlan> {
-  const registry = createRegistry();
-  const analysis = analyzeGraph(input, { registry });
+  const { registry, analysis, expansion } = prepareDocument(input); // shared with the visual compilers
   if (!analysis.ok) return analysis;
-  const expansion = expandGroups(analysis.value);
-  if (!expansion.ok) return expansion;
+  if (!expansion?.ok) return expansion!;
   const warnings = [...analysis.warnings, ...expansion.warnings];
   const doc = analysis.value.document;
   const x: ExpandedGraph = expansion.value;

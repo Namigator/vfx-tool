@@ -2,12 +2,10 @@
 // React or Three. The path compiler skips BillboardRenderer sinks and the point compiler skips
 // RibbonRenderer sinks only with `ribbonsHandled`, so mixed documents must run both compilers.
 import type { Diagnostic, EffectDocumentV2 } from '../model/types.ts';
-import { analyzeGraph } from '../graph/analyze.ts';
+import { prepareDocument } from '../graph/prepare.ts';
 import { createL01Document } from '../graph/fixtures.ts';
 import { createL01AudioDocument } from '../graph/audioFixtures.ts';
 import { EFFECT_OUTPUT_NODE_TYPE } from '../model/document.ts';
-import { expandGroups } from '../graph/expand.ts';
-import { createRegistry } from '../graph/registry.ts';
 import type { PathPreviewLayer } from '../graph/toPaths.ts';
 
 export type PreviewModeChoice =
@@ -22,10 +20,8 @@ export type PreviewModeChoice =
  * `points` so the point compiler reports their errors as before.
  */
 export function choosePreviewMode(doc: unknown): PreviewModeChoice {
-  const analysis = analyzeGraph(doc, { registry: createRegistry() });
-  if (!analysis.ok) return { mode: 'points' };
-  const expansion = expandGroups(analysis.value);
-  if (!expansion.ok) return { mode: 'points' };
+  const { analysis, expansion } = prepareDocument(doc); // shared with the compilers (one analysis per edit)
+  if (!analysis.ok || !expansion?.ok) return { mode: 'points' };
   const x = expansion.value;
   const nodes = new Map(x.nodes.map(n => [n.node.id, n]));
   const ribbons: string[] = [], billboards: string[] = [];

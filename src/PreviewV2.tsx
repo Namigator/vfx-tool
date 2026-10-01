@@ -248,7 +248,16 @@ export default function PreviewV2() {
    */
   const lastGoodRef = useRef(false);
   const pauseStale = () => { const vp = viewportRef.current; if (lastGoodRef.current) vp?.pause(); else vp?.clearPlan(); };
+  /** The "parts are cut off" check compiles the effect again with a longer duration (~80 ms on big effects): it runs
+   *  after the rebuilt preview is on screen and is dropped if another edit arrives first. */
+  const cutRevRef = useRef(0);
+  const deferCut = (d: EffectDocumentV2, rev: number) => {
+    const run = () => { if (rev !== cutRevRef.current) return; const cut = truncationWarning(d); if (cut) setDiagnostics(prev => [...prev, cut]); };
+    const idle = (globalThis as { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+    if (idle) idle(run, { timeout: 500 }); else setTimeout(run, 50);
+  };
   const compile = useCallback((authored: EffectDocumentV2) => {
+    const cutRev = ++cutRevRef.current;
     // New seed on cast (preview-only): each loop plays a different random pattern; the document keeps its seed.
     const d = seedOffsetRef.current ? { ...authored, seed: (authored.seed + seedOffsetRef.current * 7919) >>> 0 } : authored;
     const vp = viewportRef.current;
@@ -291,8 +300,8 @@ export default function PreviewV2() {
         return;
       }
       const style = ribbonStyleDiagnostics(d, first.value.layers);
-      const cut = truncationWarning(d);
-      setDiagnostics(mergeDiagnostics(audioWarnings, points.warnings, first.warnings, style, cut ? [cut] : []));
+      setDiagnostics(mergeDiagnostics(audioWarnings, points.warnings, first.warnings, style));
+      deferCut(d, cutRev);
       if (style.some(s => s.severity === 'error')) {
         pauseStale();
         setCompiled(false);
@@ -315,8 +324,8 @@ export default function PreviewV2() {
       }
       const style = ribbonStyleDiagnostics(d, first.value.layers);
       const blocked = style.some(s => s.severity === 'error');
-      const cut = truncationWarning(d);
-      setDiagnostics([...audioWarnings, ...first.warnings, ...style, ...(cut ? [cut] : [])]);
+      setDiagnostics([...audioWarnings, ...first.warnings, ...style]);
+      deferCut(d, cutRev);
       if (blocked) {
         pauseStale();
         setCompiled(false);
@@ -334,8 +343,8 @@ export default function PreviewV2() {
       fail([...result.errors, ...audioWarnings]);
       return;
     }
-    const cut = truncationWarning(d);
-    setDiagnostics([...audioWarnings, ...result.warnings, ...(cut ? [cut] : [])]);
+    setDiagnostics([...audioWarnings, ...result.warnings]);
+    deferCut(d, cutRev);
     setCompiled(true); lastGoodRef.current = true;
     setFollowers(result.value.followers);
     setTimeline(timelineInfo(result.value, null));
@@ -727,6 +736,7 @@ export default function PreviewV2() {
     }
     historyRef.current = next;
     lastGoodRef.current = false; // A different document never shows the previous one's preview as stale.
+    viewportRef.current?.newDocument(); // ...and is framed afresh instead of keeping the previous camera.
     setJsonErrors(valid.warnings);
     setEditMessages([]);
     setTextDirty(false);
