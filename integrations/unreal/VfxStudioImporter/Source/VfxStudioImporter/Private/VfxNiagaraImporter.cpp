@@ -568,6 +568,7 @@ namespace
 		UNiagaraGraph* Graph = Source ? Source->NodeGraph : nullptr;
 		OverrideLiteral(Graph, TEXT("SpawnBurst_Instantaneous"), TEXT("Spawn Count"), FNiagaraTypeDefinition::GetIntDef(), TEXT("1"));
 		OverrideLiteral(Graph, TEXT("SpawnBurst_Instantaneous"), TEXT("Spawn Time"), F, FloatLit(On / 60.0));
+		SetStaticSwitch(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Mode"), TEXT("NewEnumerator1")); // Random: reads Min/Max (SimpleSpriteBurst ships Direct Set)
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Min"), F, FloatLit(Life));
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Max"), F, FloatLit(Life));
 		const TArray<TSharedPtr<FJsonValue>>* LightPos = nullptr;
@@ -614,6 +615,7 @@ namespace
 		const double Life = FMath::Max(1, S.Life) / 60.0;
 		OverrideLiteral(Graph, TEXT("SpawnBurst_Instantaneous"), TEXT("Spawn Count"), FNiagaraTypeDefinition::GetIntDef(), TEXT("1"));
 		OverrideLiteral(Graph, TEXT("SpawnBurst_Instantaneous"), TEXT("Spawn Time"), F, FloatLit(S.Start / 60.0));
+		SetStaticSwitch(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Mode"), TEXT("NewEnumerator1")); // Random: reads Min/Max (SimpleSpriteBurst ships Direct Set)
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Min"), F, FloatLit(Life));
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Max"), F, FloatLit(Life));
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Color"), FNiagaraTypeDefinition::GetColorDef(), ColorLit(S.Color));
@@ -680,6 +682,22 @@ namespace
 		return Fn;
 	}
 
+	/** Logs a module node's inputs, static-switch pins and their enum entries (to find what a stock module offers). */
+	void LogModule(UNiagaraNodeFunctionCall* Fn)
+	{
+		TArray<FNiagaraVariable> Inputs;
+		FNiagaraStackGraphUtilities::GetStackFunctionInputs(*Fn, Inputs, FCompileConstantResolver(), FNiagaraStackGraphUtilities::ENiagaraGetStackFunctionInputPinsOptions::ModuleInputsOnly);
+		FString Text;
+		for (const FNiagaraVariable& V : Inputs) Text += FString::Printf(TEXT("[%s:%s] "), *V.GetName().ToString(), *V.GetType().GetName());
+		for (UEdGraphPin* Pin : Fn->Pins)
+		{
+			Text += FString::Printf(TEXT("{%s='%s'} "), *Pin->PinName.ToString(), *Pin->DefaultValue);
+			if (const UEnum* En = Cast<UEnum>(Pin->PinType.PinSubCategoryObject.Get()))
+				for (int32 k = 0; k < En->NumEnums() - 1; k++) Text += FString::Printf(TEXT("<%s=%s>"), *En->GetNameStringByIndex(k), *En->GetDisplayNameTextByIndex(k).ToString());
+		}
+		UE_LOG(LogVfxImporter, Warning, TEXT("MODULE %s: %s"), *Fn->GetFunctionName(), *Text);
+	}
+
 	/** Turbulence, attraction, swirl and ground collision: stock force/collision modules in the update stack. */
 	void ApplyForces(FVersionedNiagaraEmitterData* Data, const TSharedPtr<FJsonObject>& E)
 	{
@@ -687,6 +705,28 @@ namespace
 		const auto V3 = FNiagaraTypeDefinition::GetVec3Def();
 		const auto P3 = FNiagaraTypeDefinition::GetPositionDef();
 		const TSharedPtr<FJsonObject>* O = nullptr;
+		// Size over life, exact: Scale Sprite Size (its default "Uniform Curve" mode) scales the birth size by a curve of
+		// normalized age; the birth size itself is set by ApplyEmitterOverrides.
+		const TArray<TSharedPtr<FJsonValue>>* SizeKeys = nullptr;
+		if (E->TryGetArrayField(TEXT("sizeOverLife"), SizeKeys) && SizeKeys->Num() > 1)
+			if (UNiagaraNodeFunctionCall* Fn = AddForceModule(Data, TEXT("/Niagara/Modules/Update/Size/ScaleSpriteSize.ScaleSpriteSize")))
+			{
+				const double SMid = FMath::Max(0.001, (E->GetNumberField(TEXT("sizeCmMin")) + E->GetNumberField(TEXT("sizeCmMax"))) / 2.0);
+				const double Birth = FMath::Max(0.001, SampleKeys(SizeKeys, 0.0, TEXT("v"), SMid));
+				const FNiagaraParameterHandle Handle = FNiagaraParameterHandle::CreateAliasedModuleParameterHandle(FNiagaraParameterHandle::CreateModuleParameterHandle(FName(TEXT("Uniform Curve Sprite Scale"))), Fn);
+				UEdGraphPin& Pin = FNiagaraStackGraphUtilities::GetOrCreateStackFunctionInputOverridePin(*Fn, Handle, FNiagaraTypeDefinition(UNiagaraDataInterfaceCurve::StaticClass()), FGuid(), FGuid());
+				if (Pin.LinkedTo.Num()) Pin.BreakAllPinLinks();
+				UNiagaraDataInterface* DI = nullptr;
+				FNiagaraStackGraphUtilities::SetDataInterfaceValueForFunctionInput(Pin, UNiagaraDataInterfaceCurve::StaticClass(), Handle.GetParameterHandleString().ToString(), DI);
+				if (UNiagaraDataInterfaceCurve* Curve = Cast<UNiagaraDataInterfaceCurve>(DI))
+				{
+					Curve->Modify();
+					Curve->Curve.Reset();
+					for (const auto& K : *SizeKeys) { const auto Ko = K->AsObject(); Curve->Curve.AddKey(Ko->GetNumberField(TEXT("t")), Ko->GetNumberField(TEXT("v")) / Birth); }
+					Curve->UpdateLUT();
+					UE_LOG(LogVfxImporter, Display, TEXT("    ScaleSpriteSize: size curve over life (%d keys, relative to birth size %.1f cm)"), SizeKeys->Num(), Birth);
+				}
+			}
 		if (E->TryGetObjectField(TEXT("noise"), O))
 			if (UNiagaraNodeFunctionCall* Fn = AddForceModule(Data, TEXT("/Niagara/Modules/Update/Forces/CurlNoiseForce.CurlNoiseForce")))
 			{
@@ -739,13 +779,16 @@ namespace
 		const auto V3 = FNiagaraTypeDefinition::GetVec3Def();
 		const auto Col = FNiagaraTypeDefinition::GetColorDef();
 
+		SetStaticSwitch(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Mode"), TEXT("NewEnumerator1")); // Random: reads Min/Max (SimpleSpriteBurst ships Direct Set)
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Min"), F, FloatLit(E->GetNumberField(TEXT("lifetimeSecMin"))));
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Max"), F, FloatLit(E->GetNumberField(TEXT("lifetimeSecMax"))));
 		// Size over life: no stock size-curve module, so use the life-average size (flames grow x3.7; the birth size alone
 		// draws them far too small). sizeOverLife values are absolute cm around the min/max midpoint.
 		const double SMin = E->GetNumberField(TEXT("sizeCmMin")), SMax = E->GetNumberField(TEXT("sizeCmMax")), SMid = FMath::Max(0.001, (SMin + SMax) / 2.0);
 		const TArray<TSharedPtr<FJsonValue>>* SizeKeys = nullptr; E->TryGetArrayField(TEXT("sizeOverLife"), SizeKeys);
-		const double SizeScale = AverageKeys(SizeKeys, SMid) / SMid;
+		// With a size curve (Scale Sprite Size, added in ApplyForces) particles are born at the curve's first value;
+		// without one, the life-average size.
+		const double SizeScale = (SizeKeys && SizeKeys->Num() > 1 ? SampleKeys(SizeKeys, 0.0, TEXT("v"), SMid) : AverageKeys(SizeKeys, SMid)) / SMid;
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Sprite Size Min"), V2, Vec2Lit(SMin * SizeScale, SMin * SizeScale));
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Sprite Size Max"), V2, Vec2Lit(SMax * SizeScale, SMax * SizeScale));
 		// The stock templates size sprites in "uniform" mode, which reads these instead of the Vector2 pair above.

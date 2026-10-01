@@ -180,7 +180,7 @@ What the importer actually builds today (seen in UE 5.8 on the flamethrower, lig
 | Many bursts (smoke/embers born at flame deaths) | a steady rate with the same total over the bursts' span |
 | Lifetime, speed, direction, gravity/acceleration, drag | kept |
 | Opacity over life | **exact**: written into the templates' Scale Alpha curve |
-| Size over life | its life-average size (no stock size-curve module) |
+| Size over life | **exact**: a Scale Sprite Size module with a size curve over life (particles are born at the curve's first size) |
 | Colour over life | **exact**: Scale Color in its RGBA colour-curve mode (colour and opacity per life) |
 | Flipbook sheets | the first frame of the sheet |
 | Velocity-stretched sprites | velocity-aligned sprites (no stretch) |
