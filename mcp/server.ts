@@ -37,6 +37,7 @@ import { effectPlayerSource } from '../src/export/roblox/playerSource.node.ts';
 import { reportMarkdown } from '../src/export/roblox/report.ts';
 import { unrealEffectFrom } from '../src/export/unreal/fromPlan.ts';
 import { buildUnrealPackage } from '../src/export/unreal/package.ts';
+import { godotReadme, godotReportMarkdown, godotSceneFrom } from '../src/export/godot/scene.ts';
 import { timelineInfo, timelineLanes } from '../src/render/timeline.ts';
 import { compileAudio } from '../src/graph/toAudio.ts';
 import { sampleParticlesAtTick } from '../src/runtime/particles.ts';
@@ -577,7 +578,28 @@ ${formatMigrationReport(report)}`);
 
 ${md}`);
   });
-  tool('vfx_export_unreal', 'Export the effect for Unreal Engine (Niagara): a folder package (default work/unreal/<docId>/) with effect.json (engine-neutral IR: emitters, ribbons, lights, curves — units cm, +Z up; see effect.json report.scale for the axis mapping), Textures/*.png (library sheets used), README.md (import steps) and report.md (every approximation or drop versus the VFX Studio preview). Unlike Roblox, Niagara keeps turbulence/curl-noise, drag, attraction and vortex; it drops screen flash/camera shake and mesh particles this pass. Import with the VfxStudioImporter plugin in integrations/unreal/VfxStudioImporter (copy into <Project>/Plugins, then run the VfxStudioImport commandlet or the Python import_package call — see README.md). See the guide chapter export.', {
+  tool('vfx_export_godot', 'Export the effect for Godot 4: a folder (default work/godot/<docId>/) with <name>.tscn (GPUParticles3D emitters + an autoplaying AnimationPlayer for timing, bursts, moving sources and light intensity; size/colour/alpha over life as exact Godot curves), Textures/*.png, README.md and report.md. Copy the folder to res://vfx_studio/<name>/ in a Godot project and instance the scene at the caster (its origin is the Source anchor). Beams/ribbons, meshes, attraction, vortex and collision are not exported yet (listed in report.md).', {
+    docId: z.string(), path: z.string().optional(),
+  }, ({ docId, path }) => {
+    const d = getDoc(docId);
+    const r = unrealEffectFrom(d);
+    if (!r.ok) return bad(r.message);
+    const g = godotSceneFrom(r.value);
+    const outDir = safeProjectPath(path ?? `work/godot/${docId}`);
+    mkdirSync(join(outDir, 'Textures'), { recursive: true });
+    writeFileSync(join(outDir, `${g.name}.tscn`), g.tscn);
+    writeFileSync(join(outDir, 'README.md'), godotReadme(g));
+    writeFileSync(join(outDir, 'report.md'), godotReportMarkdown(g));
+    const missing: string[] = [];
+    for (const t of g.textures) {
+      const f = join(root, 'assets', 'sprites', t);
+      if (existsSync(f)) writeFileSync(join(outDir, 'Textures', t), readFileSync(f)); else missing.push(t);
+    }
+    const counts = (lvl: string) => g.report.filter(x => x.level === lvl).length;
+    return ok(`Wrote ${outDir}/ (${g.name}.tscn, README.md, report.md, ${g.textures.length - missing.length} texture(s)). ${r.value.emitters.length} emitters, ${r.value.lights.length} lights; ${counts('approximated')} approximations, ${counts('dropped')} left out.${missing.length ? ` Missing textures: ${missing.join(', ')}.` : ''}`);
+  });
+
+  tool('vfx_export_unreal', 'Export the effect for Unreal Engine (Niagara): a folder package (default work/unreal/<docId>/) with effect.json (engine-neutral IR: emitters, ribbons, lights, curves — units cm, +Z up; see effect.json report.scale for the axis mapping), Textures/*.png (library sheets used), README.md (import steps) and report.md (every approximation or drop versus the VFX Studio preview). Today the importer applies rates, bursts, lifetime, speed/direction, gravity, drag, exact opacity over life, life-average size and colour, first flipbook frame and velocity alignment; curl noise, attraction, vortex, collision, ribbons and lights stay in effect.json only (report.md lists everything). Import with the VfxStudioImporter plugin in integrations/unreal/VfxStudioImporter (copy into <Project>/Plugins, then run the VfxStudioImport commandlet or the Python import_package call — see README.md). See the guide chapter export.', {
     docId: z.string(), path: z.string().optional(),
   }, ({ docId, path }) => {
     const d = getDoc(docId);

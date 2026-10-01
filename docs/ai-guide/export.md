@@ -7,8 +7,8 @@
 | Roblox `.rbxmx` | A Roblox model with native emitters, beams, trails, lights and a player script. | available |
 | Sprite sheet / PNG sequence / GIF / MP4 / WebM | Rendered frames for any engine (flipbook textures) or for showing the effect. | available |
 | Unreal (Niagara) | A folder package (IR + textures + docs) imported by the VfxStudioImporter plugin into a NiagaraSystem. | available |
-| Unity | | planned |
-| Godot | | planned |
+| Unity | | planned (needs Unity installed) |
+| Godot 4 (`.tscn`) | GPUParticles3D scene with exact life curves, timing animation, lights. | available |
 
 ## Recipe and pack
 
@@ -198,6 +198,35 @@ same length and shape as the VFX Studio preview, but redder and without glow):
 windowed editor kept off-screen (`tools/unreal-capture.py`: waits for shaders, places the system at Source height,
 simulates `VFX_UE_SECONDS` = 1.0 s, captures through a SceneCapture2D) to `work/unreal/<name>.png`. Read the image;
 the script does not judge it.
+
+## Godot 4
+
+`vfx_export_godot { docId, path? }` (default `work/godot/<docId>/`) or the editor's **Export → Export Godot** (a zip)
+writes `<name>.tscn`, `Textures/*.png`, `README.md` and `report.md`.
+
+- Copy the folder into your project as `res://vfx_studio/<name>/` (the scene's texture paths point there) and instance
+  the scene where the effect starts: its origin is the **Source** anchor. It plays once on load; call
+  `$AnimationPlayer.play("play")` to play it again.
+- Godot uses metres and +Y up like VFX Studio, so positions and directions carry over unchanged.
+- Each emitter is a `GPUParticles3D` with a `ParticleProcessMaterial`: spawn shape, direction/spread, speed, gravity,
+  lifetime, spin, flipbook animation. **Size, colour and opacity over life are exact** (Godot curves and colour ramps).
+  An `AnimationPlayer` ("play", autoplay) switches emitters on and off, scales the rate over time (`amount_ratio`),
+  fires bursts (one-shot, explosive), moves moving sources (projectiles) and animates light intensity (`OmniLight3D`).
+
+| VFX Studio | In Godot 4 |
+|---|---|
+| Size / colour / opacity over life | exact |
+| Rate over time, one burst, moving source, light intensity | exact timing (animation tracks) |
+| Many bursts | a steady rate over their span (same total) |
+| Drag | damping matched at launch speed (Godot damping is constant) |
+| Curl noise | turbulence with a small influence (check the look) |
+| Velocity-aligned sprites | Align Y with no billboard (no stretch) |
+| Burning-edge dissolve, rim glow | left out: tongues show crisp edges |
+| Beams/ribbons (lightning, streams), mesh particles, attraction, vortex, ground collision | not exported yet (report.md) |
+| Screen flash, camera shake | left out |
+
+`node tools/godot-check.mjs <package-dir> [seconds]` builds a throwaway Godot project (camera, floor, glow), imports
+the package and renders frames with Godot's movie writer to `work/godot/<name>.png` (Godot: `VFX_GODOT`). Read it.
 
 ## Choosing what to build for export
 

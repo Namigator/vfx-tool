@@ -515,6 +515,22 @@ export default function PreviewV2() {
       setFileNote(err instanceof Error ? err.message : String(err));
     }
   }, []);
+  /** Godot 4 export: logic in editor/exportGodot.ts; this just downloads the zip. */
+  const downloadGodot = useCallback(async () => {
+    setFileNote('Exporting for Godot…');
+    try {
+      const { exportGodotZip } = await import('./editor/exportGodot.ts');
+      const { blob, fileName, summary } = await exportGodotZip(historyRef.current!.snapshot());
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = fileName;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      setFileNote(summary);
+    } catch (err) {
+      setFileNote(err instanceof Error ? err.message : String(err));
+    }
+  }, []);
 
   /**
    * Opens a .vfxpack in two steps (13 "Stage ... then Import commits atomically"): checksums, paths and the document
@@ -948,6 +964,7 @@ export default function PreviewV2() {
     { label: 'Export media…', title: 'Render the effect to a sprite sheet, PNG sequence, GIF or video (MP4/WebM), frame by frame', onClick: () => setMediaOpen(o => !o) },
     { label: 'Export Roblox', title: "Download a Roblox model (.rbxmx: particle emitters, beams, lights and a player script) plus a report of what Roblox can't do", onClick: () => void downloadRoblox() },
     { label: 'Export Unreal', title: 'Download an Unreal Engine (Niagara) export package (.zip: effect.json IR, textures, README, report) for the VfxStudioImporter plugin', onClick: () => void downloadUnreal() },
+    { label: 'Export Godot', title: 'Download a Godot 4 scene (.tscn with GPUParticles3D emitters and an autoplaying AnimationPlayer) plus textures, README and a report, as a .zip', onClick: () => void downloadGodot() },
   ];
 
   return (

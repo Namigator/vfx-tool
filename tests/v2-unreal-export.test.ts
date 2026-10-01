@@ -107,3 +107,17 @@ test('Unreal package: a texture with no supplied bytes is left out of the file l
   const files = buildUnrealPackage(e, new Map());
   assert.ok(!files.some(f => f.path.startsWith('Textures/')), 'no texture files without bytes');
 });
+
+test('Unreal IR: colour over life keeps the authored colours (flamethrower tongue: white -> #FFE0A0 -> #FFA050)', async () => {
+  const { createBlankDocument } = await import('../src/graph/fixtures.ts');
+  const { insertComponent } = await import('../src/graph/components.ts');
+  const { unrealEffectFrom } = await import('../src/export/unreal/fromPlan.ts');
+  const d = insertComponent(createBlankDocument('colours', 'colours'), 'flamethrower', undefined, { group: true }).doc;
+  const r = unrealEffectFrom(d);
+  assert.ok(r.ok);
+  const tongue = r.value.emitters.find(e => e.name.includes('tongueabb'))!;
+  const at = (t: number) => tongue.colorOverLife.find(k => Math.abs(k.t - t) < 1e-6)!;
+  assert.deepEqual([at(0).r, at(0).g, at(0).b], [1, 1, 1]);
+  assert.ok(Math.abs(at(0.25).g - 0xe0 / 255) < 0.01 && Math.abs(at(0.25).b - 0xa0 / 255) < 0.01, JSON.stringify(at(0.25)));
+  assert.ok(Math.abs(at(0.5).g - 0xa0 / 255) < 0.01 && Math.abs(at(0.5).b - 0x50 / 255) < 0.01, JSON.stringify(at(0.5)));
+});

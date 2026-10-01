@@ -40,7 +40,7 @@ function colourSequences(layer: Pick<ParticlePreviewLayer, 'color' | 'opacity' |
     const life = { srgb: '', alpha: 1 } as const; // placeholder shape not used; compute sRGB directly below
     void life;
     const srgb: [number, number, number] = [linToSrgb(out[0]), linToSrgb(out[1]), linToSrgb(out[2])];
-    const asColorValue = { srgb: srgb.map(c => Math.round(Math.min(1, Math.max(0, c)) * 255).toString(16).padStart(2, '0')).join('').toUpperCase(), alpha: 1 };
+    const asColorValue = { srgb: '#' + srgb.map(c => Math.round(Math.min(1, Math.max(0, c)) * 255).toString(16).padStart(2, '0')).join('').toUpperCase(), alpha: 1 };
     const c = hueRotate(applyGrade(multiplyColors(asColorValue, layer.color), layer.grade), layer.hueShift ?? 0);
     const rgb = [1, 3, 5].map(i => parseInt(c.srgb.slice(i, i + 2), 16) / 255);
     colorOverLife.push({ t, r: r3(rgb[0]), g: r3(rgb[1]), b: r3(rgb[2]), a: 1 });

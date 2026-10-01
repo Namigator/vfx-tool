@@ -44,6 +44,7 @@ Ctrl/Cmd+S downloads `.vfx.json`, Esc closes an open menu.
 | **Export menu** → Export media… | Sprite sheet, PNG sequence, GIF or video: format, frame size, fps, background, camera (current view or fit the whole effect), glow; progress bar with Cancel ([export.md](export.md)). | `vfx_export_media` |
 | **Export menu** → Export Roblox | `.rbxmx` model + a report of what Roblox can't do ([export.md](export.md)). | `vfx_export_roblox` |
 | **Export menu** → Export Unreal | Unreal Engine (Niagara) package as a .zip: effect.json, textures, README and a report, for the VfxStudioImporter plugin ([export.md](export.md)). | `vfx_export_unreal` |
+| **Export menu** → Export Godot | Godot 4 scene (.tscn) + textures, README and a report, as a .zip ([export.md](export.md)). | `vfx_export_godot` |
 | **Panel toggle icons** | Show/hide Library, Graph and Inspector (same as double-clicking their splitter). | — |
 | **Undo / Redo icons** | Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z. | `vfx_undo`, `vfx_redo` |
 
