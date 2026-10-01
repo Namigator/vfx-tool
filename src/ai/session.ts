@@ -80,7 +80,7 @@ export async function runAiSession(o: AiSessionOptions): Promise<AiSessionResult
   let draft = structuredClone(o.document), frames: AiFrame[] = [], summary = '', valid = aiDraftErrors(draft).length === 0;
   let ticks = [0, Math.floor(draft.durationTicks / 3), Math.floor(draft.durationTicks * 2 / 3)];
   const system = systemPrompt() + '\nThe companion attaches local VFX documentation and an index of topic IDs. Use it as reference data; MCP examples describe behaviour, they do not grant tool access. To read more, return guideTopics:["topic ID", ...] (at most six) with done:false. Do not replace the edit JSON format with guide examples.', messages: AiMessage[] = [];
-  let guideTopics: string[] = [];
+  let guideTopics: string[] = [], edited = false;
   let feedback = valid ? '' : `Current document needs repair: ${aiDraftErrors(draft).slice(0, 12).join('\n')}`;
   if (valid) { o.onProgress?.('Rendering the current effect…'); frames = await o.render(structuredClone(draft), ticks, o.signal); }
   checkAbort(o.signal);
@@ -94,8 +94,7 @@ export async function runAiSession(o: AiSessionOptions): Promise<AiSessionResult
     messages.push({ role: 'assistant', text: reply.text });
     let response: any;
     try {
-      response = parseModelJson(reply.text);
-      if (!response || typeof response.summary !== 'string' || response.summary.length > 8000 || typeof response.done !== 'boolean' || !Array.isArray(response.patches) || !Array.isArray(response.ticks) || response.ticks.length > 3 || response.ticks.some((t: unknown) => !Number.isInteger(t) || (t as number) < 0 || (t as number) > MAX_DURATION_TICKS)) throw new Error('Return the documented JSON fields and at most 3 whole ticks inside the effect.');
+      response = normalizeModelReply(parseModelJson(reply.text));
       if (response.guideTopics !== undefined && (!Array.isArray(response.guideTopics) || response.guideTopics.length > 6 || response.guideTopics.some((t: unknown) => typeof t !== 'string' || t.length > 160))) throw new Error('Request at most six guide topic IDs from the documentation index.');
       guideTopics = response.guideTopics ?? [];
       const components = response.components ?? [];
@@ -116,18 +115,48 @@ export async function runAiSession(o: AiSessionOptions): Promise<AiSessionResult
       }
       let candidate = structuredClone(draft);
       for (const c of components) candidate = insertComponent(candidate, c.id, c.prefix, { group: true }).doc;
-      candidate = aiApplyPatches(candidate, response.patches);
+      let partial = '';
+      try { candidate = aiApplyPatches(candidate, response.patches); }
+      catch (e) {
+        // Keep the longest valid leading part of a large edit instead of losing the whole round (building an effect
+        // from scratch takes many interdependent patches; one bad one used to throw all of them away).
+        const best = longestValidPrefix(candidate, response.patches);
+        if (!best) throw e;
+        candidate = best.document;
+        partial = `Applied the first ${best.count} of ${response.patches.length} patches; the rest were rejected: ${e instanceof Error ? e.message.split('\n').slice(0, 4).join(' / ') : 'invalid'}. Continue from this document.`;
+      }
       if (response.ticks.some((t: number) => t > candidate.durationTicks)) throw new Error('Requested frame tick is outside the edited effect duration.');
       checkAbort(o.signal);
       ticks = response.ticks.length ? response.ticks : ticks.map(t => Math.min(t, candidate.durationTicks));
       o.onProgress?.(`Round ${round}: rendering the edited draft…`);
       const newFrames = await o.render(structuredClone(candidate), ticks, o.signal); checkAbort(o.signal);
-      draft = candidate; frames = newFrames; summary = response.summary; valid = true;
-      feedback = 'These frames show your latest changes. Inspect them now; only finish with done:true and no edits after reviewing this version.';
+      draft = candidate; frames = newFrames; summary = response.summary || summary; valid = true; edited = true;
+      feedback = partial || 'These frames show your latest changes. Inspect them now; only finish with done:true and no edits after reviewing this version.';
+      if (partial) o.onProgress?.(`Round ${round}: kept part of the edit, sending the rest back for repair…`);
     } catch (e) { checkAbort(o.signal); feedback = `Rejected change; document unchanged. ${e instanceof Error ? e.message : 'Invalid model output'}`; o.onProgress?.(`Round ${round}: sending diagnostics back for repair…`); }
   }
-  if (!valid || !summary) throw new Error(`No valid result within ${o.maxRounds} rounds. ${feedback}`);
-  return { document: draft, summary: `${summary}\nRound limit reached. The model has not completed a final review of this draft.`, frames, rounds: o.maxRounds, visuallyReviewed: false };
+  // Round limit: hand over the best valid draft reached so far (unfinished), rather than nothing.
+  if (!valid || !edited) throw new Error(`No valid result within ${o.maxRounds} rounds. ${feedback}`);
+  return { document: draft, summary: `${summary || 'Partial draft.'}\nUnfinished: the round limit was reached; the model has not completed a final review of this draft. Apply it to keep the progress, or run again (more rounds) to continue from it.${feedback.startsWith('Rejected') ? `\nLast problem: ${feedback.slice(0, 400)}` : ''}`, frames, rounds: o.maxRounds, visuallyReviewed: false };
+}
+
+/** Tolerates small format slips (missing fields, extra or fractional ticks) instead of rejecting the whole round; only
+ *  an unreadable patches list is an error. */
+export function normalizeModelReply(r: unknown): { summary: string; done: boolean; patches: Patch[]; components?: unknown; ticks: number[]; guideTopics?: unknown } {
+  if (!r || typeof r !== 'object') throw new Error('Return one JSON object with summary, patches, ticks and done.');
+  const o = r as Record<string, unknown>;
+  const patches = o.patches === undefined ? [] : o.patches;
+  if (!Array.isArray(patches)) throw new Error('"patches" must be an array of patch objects.');
+  const ticks = (Array.isArray(o.ticks) ? o.ticks : []).map(Number).filter(t => Number.isFinite(t)).map(t => Math.max(0, Math.min(MAX_DURATION_TICKS, Math.round(t)))).slice(0, 3);
+  return { summary: typeof o.summary === 'string' ? o.summary.slice(0, 8000) : '', done: o.done === true, patches: patches as Patch[], components: o.components, ticks, guideTopics: o.guideTopics };
+}
+
+/** The longest leading run of `patches` that applies and compiles (null when not even the first one does). */
+export function longestValidPrefix(document: EffectDocumentV2, patches: Patch[]): { document: EffectDocumentV2; count: number } | null {
+  for (let n = patches.length - 1; n >= 1; n--) {
+    try { return { document: aiApplyPatches(document, patches.slice(0, n)), count: n }; } catch { /* shorter */ }
+  }
+  return null;
 }
 
 /**

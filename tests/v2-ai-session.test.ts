@@ -79,3 +79,15 @@ test('AI edits that remove or rename a node keep the editor layout valid (the mo
   assert.ok(layout['node-sched2'], 'the new node gets a position');
   assert.ok(d.editor.graphs[g.id].nodes['node-schedule'], 'the original document is untouched');
 });
+
+test('format slips are tolerated and a partly invalid edit keeps its valid leading patches', async () => {
+  const { normalizeModelReply, longestValidPrefix } = await import('../src/ai/session.ts');
+  // Missing done/summary, 5 fractional ticks: accepted, ticks trimmed to 3 whole ones.
+  const r = normalizeModelReply({ patches: [], ticks: [1.6, 10, 20, 30, 40] });
+  assert.deepEqual(r.ticks, [2, 10, 20]); assert.equal(r.done, false); assert.equal(r.summary, '');
+  assert.throws(() => normalizeModelReply({ patches: 'oops' }), /array/);
+  // Two good edits then a bad one: the first two are kept.
+  const d = createF01Document();
+  const best = longestValidPrefix(d, [{ op: 'set', path: ['name'], value: 'A' }, { op: 'set', path: ['durationTicks'], value: 200 }, { op: 'set', path: ['durationTicks'], value: -5 }]);
+  assert.equal(best?.count, 2); assert.equal(best?.document.name, 'A'); assert.equal(best?.document.durationTicks, 200);
+});
