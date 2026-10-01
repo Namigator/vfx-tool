@@ -49,6 +49,13 @@
 .gc-menu button:hover:not(:disabled), .gc-menu button:focus-visible { background: #24304a; }
 .gc-menu button:disabled { opacity: .45; cursor: default; }
 .gc-menu-title { font-size: 12px; color: #8a92a3; padding: 4px 8px; }
+/* Touch: a held finger opens our menu, not the browser's text/image callout; menu rows are finger-sized. */
+.gc-flow { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+@media (pointer: coarse) {
+  .gc-menu { min-width: 220px; max-height: 70vh; }
+  .gc-menu button, .pv2 .gc-menu button { min-height: 44px; font-size: 15px; padding: 8px 12px; justify-content: flex-start; background: none; border: 0; border-radius: 4px; }
+  .pv2 .gc-menu .gc-menu-close { border-top: 1px solid #2a3140; border-radius: 0; }
+}
 .gc-menu .gc-menu-close { color: #8a92a3; border-top: 1px solid #2a3140; margin-top: 2px; }
 .gc-summary { font-size: 11px; color: #9aa4b8; padding: 0 8px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .gc-solo { font-size: 10px; padding: 0 4px; line-height: 16px; border-radius: 3px; background: #1d2433; color: #8a92a3; border: 1px solid #2a3140; cursor: pointer; }

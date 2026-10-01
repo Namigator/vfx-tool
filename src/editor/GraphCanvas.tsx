@@ -155,6 +155,11 @@ function NodeCard({ data, selected }: NodeProps<CardNode>) {
 
 const nodeTypes = { card: NodeCard };
 
+/** Hold time (ms) that turns a touch into a long-press (the platform convention is about 500 ms). */
+const LONG_PRESS_MS = 500;
+/** Finger movement (px) that turns a would-be long-press into a drag or pan. */
+const LONG_PRESS_SLOP_PX = 10;
+
 function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, soloed, onToggleSolo, refitKey, documentEpoch = 0 }: GraphCanvasProps) {
   const [componentId, setComponentId] = useState('');
   /** 12: when the inserted component starts — its own time ("") or an event "nodeId\u0000port" next to it. */
@@ -176,6 +181,46 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
   const [addType, setAddType] = useState('');
   /** Context menu (right click) or the Add-connected-node chooser, at a pane position. */
   const [menu, setMenu] = useState<{ x: number; y: number; flow: { x: number; y: number }; nodeId?: string; from?: { nodeId: string; port: string; side: 'source' | 'target'; portType: string } } | null>(null);
+  /** The node / canvas menu at a screen point (right-click on desktop, long-press on touch screens). */
+  const openMenuAt = useCallback((clientX: number, clientY: number, nodeId?: string) => {
+    const r = wrapper.current!.getBoundingClientRect();
+    if (nodeId) onSelectNode(nodeId);
+    setMenu({ x: clientX - r.left, y: clientY - r.top, flow: flow.screenToFlowPosition({ x: clientX, y: clientY }), ...(nodeId ? { nodeId } : {}) });
+  }, [flow, onSelectNode]);
+  // Long-press (touch): the phone's right-click. A finger held still for LONG_PRESS_MS on a node or the canvas opens
+  // the same menu; moving it (drag / pan), a second finger (pinch) or lifting it early cancels. The tap that ends a
+  // long-press is swallowed so it does not close the menu it just opened.
+  const pressRef = useRef<{ timer: number; id: number; x: number; y: number } | null>(null);
+  const pressFiredRef = useRef(false);
+  const cancelPress = () => { if (pressRef.current) { clearTimeout(pressRef.current.timer); pressRef.current = null; } };
+  const onTouchPressStart = (e: React.PointerEvent) => {
+    if (e.pointerType !== 'touch') return;
+    if (pressRef.current) { cancelPress(); return; } // a second finger: pinch zoom, not a press
+    const target = e.target as Element;
+    if (target.closest('.react-flow__handle, .gc-menu, input, select, textarea, button, a')) return;
+    const nodeId = target.closest('.react-flow__node')?.getAttribute('data-id') ?? undefined;
+    const x = e.clientX, y = e.clientY;
+    pressFiredRef.current = false;
+    pressRef.current = { id: e.pointerId, x, y, timer: window.setTimeout(() => {
+      pressRef.current = null;
+      pressFiredRef.current = true;
+      try { navigator.vibrate?.(12); } catch { /* not allowed */ }
+      openMenuAt(x, y, nodeId);
+    }, LONG_PRESS_MS) };
+  };
+  const onTouchPressMove = (e: React.PointerEvent) => {
+    const p = pressRef.current;
+    if (p && p.id === e.pointerId && Math.hypot(e.clientX - p.x, e.clientY - p.y) > LONG_PRESS_SLOP_PX) cancelPress();
+  };
+  useEffect(() => () => cancelPress(), []);
+  // Keep the menu inside the graph area (it opens at the finger, often near an edge on a phone).
+  const menuRef = useCallback((el: HTMLDivElement | null) => {
+    const host = wrapper.current;
+    if (!el || !host) return;
+    const maxX = host.clientWidth - el.offsetWidth - 4, maxY = host.clientHeight - el.offsetHeight - 4;
+    el.style.left = `${Math.max(4, Math.min(el.offsetLeft, maxX))}px`;
+    el.style.top = `${Math.max(4, Math.min(el.offsetTop, maxY))}px`;
+  }, []);
   const [advancedNodes, setAdvancedNodes] = useState<ReadonlySet<string>>(new Set());
   const nodesInitialized = useNodesInitialized();
   // The camera is local preview state, never authored/undoable. It is seeded from the saved layout once per
@@ -625,7 +670,10 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
               : <strong key={t.id}>{t.label}</strong>)}
           </nav>
         )}
-      <div className="gc-flow" ref={wrapper} onPointerDownCapture={() => { clickBaseRef.current = selectionRef.current; }} onKeyDown={e => {
+      <div className="gc-flow" ref={wrapper} onPointerDownCapture={e => { clickBaseRef.current = selectionRef.current; onTouchPressStart(e); }}
+        onPointerMoveCapture={onTouchPressMove} onPointerUpCapture={cancelPress} onPointerCancelCapture={cancelPress}
+        onClickCapture={e => { if (pressFiredRef.current) { pressFiredRef.current = false; e.stopPropagation(); e.preventDefault(); } }}
+        onKeyDown={e => {
         // 12 keyboard equivalents: Delete/Backspace removes the selection, Enter opens a selected group.
         const t = e.target as HTMLElement;
         if (t.closest('input, textarea, select, [contenteditable="true"]')) return;
@@ -658,8 +706,8 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
         }}
         deleteKeyCode={null} multiSelectionKeyCode={MULTI_SELECT_KEYS} selectionKeyCode={null} selectionMode={SelectionMode.Partial}
         selectionOnDrag panOnDrag={[1, 2]} panActivationKeyCode="Space"
-        onNodeContextMenu={(e, n) => { e.preventDefault(); const r = wrapper.current!.getBoundingClientRect(); onSelectNode(n.id); setMenu({ x: e.clientX - r.left, y: e.clientY - r.top, flow: flow.screenToFlowPosition({ x: e.clientX, y: e.clientY }), nodeId: n.id }); }}
-        onPaneContextMenu={e => { e.preventDefault(); const r = wrapper.current!.getBoundingClientRect(); setMenu({ x: e.clientX - r.left, y: e.clientY - r.top, flow: flow.screenToFlowPosition({ x: e.clientX, y: e.clientY }) }); }}
+        onNodeContextMenu={(e, n) => { e.preventDefault(); openMenuAt(e.clientX, e.clientY, n.id); }}
+        onPaneContextMenu={e => { e.preventDefault(); openMenuAt(e.clientX, e.clientY); }}
         onConnectEnd={(e, st) => {
           if (st.isValid || st.toHandle || !st.fromHandle || !st.fromNode) return;
           const pt = 'changedTouches' in e ? e.changedTouches[0] : e, r = wrapper.current!.getBoundingClientRect();
@@ -683,9 +731,11 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
       {menu && (() => {
         const n = menu.nodeId ? graph.nodes.find(x => x.id === menu.nodeId) : undefined;
         const close = () => setMenu(null);
-        const item = (label: string, fn: () => void, disabled = false) => <button type="button" role="menuitem" disabled={disabled} onClick={() => { close(); fn(); }}>{label}</button>;
+        // Touch screens have no keyboard shortcuts: drop the "(Ctrl+D)" hints there.
+        const touch = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+        const item = (label: string, fn: () => void, disabled = false) => <button type="button" role="menuitem" disabled={disabled} onClick={() => { close(); fn(); }}>{touch ? label.replace(/\s+\([^)]*\)$/, '') : label}</button>;
         return (
-          <div className="gc-menu" role="menu" style={{ left: menu.x, top: menu.y }} onKeyDown={e => { if (e.key === 'Escape') close(); }}>
+          <div className="gc-menu" role="menu" ref={menuRef} style={{ left: menu.x, top: menu.y }} onKeyDown={e => { if (e.key === 'Escape') close(); }}>
             {menu.from ? (
               <>
                 <div className="gc-menu-title">Add a node connected to {menu.from.port} ({menu.from.portType})</div>
