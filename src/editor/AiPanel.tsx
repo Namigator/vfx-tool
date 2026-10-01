@@ -59,7 +59,7 @@ export default function AiPanel({ document: doc, onEdit }: Props) {
       }
     } catch (e) {
       if (controller.signal.aborted) setStatus('Cancelled. Your effect was not changed.');
-      else setStatus(e instanceof Error && e.name !== 'TypeError' ? e.message : 'Cannot reach the AI companion. Start it, then check the URL, pairing token and allowed site.');
+      else setStatus(e instanceof Error && e.name !== 'TypeError' ? e.message : 'Cannot reach the AI companion. Check that pnpm ai:server is running (keep its window open) and the URL and pairing token match what it printed. On the public site, Chrome must also be allowed to reach apps on this device: answer Allow to its prompt, or click the icon left of the address, Site settings, and allow access to apps on this device (local network).');
     } finally { if (abort.current === controller) { setBusy(false); abort.current = null; } }
   };
   const apply = () => {

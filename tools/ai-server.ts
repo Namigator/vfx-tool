@@ -14,7 +14,11 @@ export function createAiServer(options: { token: string; origins: string[]; requ
     if (!origin || !origins.has(origin)) { send(403, { error: 'Browser origin is not allowed by this companion.' }); return; }
     res.setHeader('Access-Control-Allow-Origin', origin); res.setHeader('Vary', 'Origin');
     if (req.method === 'OPTIONS') {
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST'); res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type'); res.writeHead(204); res.end(); return;
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST'); res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+      // Chrome's Private Network Access: a public site (https://demo.xpo.dev) may only call this local companion if the
+      // preflight says so; without it the browser blocks the request before it is sent ("Cannot reach the AI companion").
+      if (req.headers['access-control-request-private-network'] === 'true') res.setHeader('Access-Control-Allow-Private-Network', 'true');
+      res.writeHead(204); res.end(); return;
     }
     const auth = Buffer.from(req.headers.authorization ?? '');
     if (auth.length !== expected.length || !timingSafeEqual(auth, expected)) { send(401, { error: 'Pair this browser with the companion token.' }); return; }
