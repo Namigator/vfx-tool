@@ -1071,7 +1071,7 @@ export default function PreviewV2() {
           prepare: () => { setLayout('split'); setLibraryOpen(true); setRightOpen(true); setGraphOpen(true); } },
         { title: 'The Library', target: '.lib-root', body: 'Presets open a complete effect. Components add one ready-made part (a lightning strike, a flame jet, an impact) to the effect you have open: press "Add to effect". Search by name or element. Try adding "Lightning strike" after the tour.',
           prepare: () => { setLayout('split'); setLibraryOpen(true); } },
-        { title: 'The 3D view', target: '.pv2-host', body: 'Drag to orbit, right-drag to pan, scroll to zoom. The green marker is the Source (where the effect starts, e.g. the caster) and the orange one is the Target (where it goes). Drag them and everything follows.' },
+        { title: 'The 3D view', target: '.pv2-host', body: 'Drag to orbit, right-drag to pan, scroll to zoom. The green marker is the Source (where the effect starts, e.g. the caster) and the orange one is the Target (where it goes). Change their X/Y/Z positions under Controls → Source & Target.' },
         { title: 'View options', target: '.pv2-view-overlay', body: 'View ▾ switches glow, the grid, a light arena and preview quality. None of these change the effect itself. The ⤢ button fills the screen with the 3D view.' },
         { title: 'Playback', target: '.pv2-transport', body: 'Play or pause with Space. Restart, step one tick back or forward, scrub the timeline, and slow down to 0.25× to study fast moments. 60 ticks = 1 second.' },
         { title: 'Timeline', target: '.tl-root', body: 'One bar per component. Drag a bar to make that part start later (e.g. the impact after the projectile); drag its right edge to make it last longer.' },
@@ -1082,7 +1082,7 @@ export default function PreviewV2() {
         { title: 'Adding nodes', target: '.gc-add', body: 'Pick a node type here, grouped by role. Hover an entry, or pick it, to read what it does, then press Add and connect it. Right-click a node for duplicate, delete, group and more.' },
         { title: 'Focus on what you are doing', target: '.pv2-segmented', body: 'Split shows everything. Graph gives the graph the whole centre (with a small floating preview) while the inspector stays for editing nodes. Preview gives the 3D view the whole centre. Ctrl+Space does the same for the panel under the mouse. Drag the borders between panels to resize them; drag a border all the way to hide a panel.' },
         { title: 'Save and export', target: '.pv2-topbar-menus', body: 'Keep stores the effect in this browser (Projects), Save .json downloads it, Open loads one. Export makes a sprite sheet, GIF or video, a Roblox model, or an Unreal package.' },
-        { title: 'That is the tour', body: 'Quick start: Library → Components → add "Lightning strike", press Space, then drag the Target marker and turn the Branches and Jaggedness knobs. Press Tutorial in the top bar any time to see this again.' },
+        { title: 'That is the tour', body: 'Quick start: Library → Components → add "Lightning strike", press Space, then change Target under Controls → Source & Target and turn the Branches and Jaggedness knobs. Press Tutorial in the top bar any time to see this again.' },
       ]} />}
       <main className="pv2-main">
         <SplitPane

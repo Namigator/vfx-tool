@@ -157,12 +157,40 @@ function TravelReadout({ doc, followers }: { doc: EffectDocumentV2; followers: F
   );
 }
 
+function AnchorCoordinate({ value, label, onCommit }: { value: number; label: string; onCommit: (value: number) => void }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const commit = () => {
+    if (draft === null) return;
+    const number = Number(draft);
+    setDraft(null);
+    if (draft.trim() && Number.isFinite(number) && number !== value) onCommit(number);
+  };
+  return <input className="cp-num" type="number" step="any" aria-label={label} value={draft ?? String(value)}
+    onChange={e => setDraft(e.currentTarget.value)} onBlur={commit}
+    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } if (e.key === 'Escape') setDraft(null); }} />;
+}
+
 export function ControlsPanel({ document: doc, onEdit, followers = [], tick = 0 }: Props) {
   const all = doc.controls.map((c, i) => [c, i] as const);
-  if (!all.length) return <p className="pv2-muted">No published controls. Insert a component (Add component) to get its knobs.</p>;
   const sections = [...new Set(all.map(([c]) => c.section))];
   return (
     <div className="cp-root">
+      <fieldset className="cp-section">
+        <legend>Source &amp; Target</legend>
+        <p className="pv2-muted">Position in metres: X sideways, Y height, Z depth.</p>
+        {doc.anchors.map((anchor, index) => (anchor.id === 'source' || anchor.id === 'target') && (
+          <div className="cp-row cp-row-value" key={anchor.id}>
+            <span className="cp-label">{anchor.id === 'source' ? 'Source' : 'Target'}</span>
+            <span className="cp-vec">{anchor.position.map((value, axis) => (
+              <label key={axis} style={{ minWidth: 0, flex: 1 }}>{'XYZ'[axis]}
+                <AnchorCoordinate key={`${anchor.id}-${axis}-${value}`} value={value} label={`${anchor.id === 'source' ? 'Source' : 'Target'} ${'XYZ'[axis]}`}
+                  onCommit={next => onEdit(`Move ${anchor.id} ${'XYZ'[axis]}`, [{ op: 'set', path: ['anchors', index, 'position', axis], value: next }])} />
+              </label>
+            ))}</span>
+          </div>
+        ))}
+      </fieldset>
+      {!all.length && <p className="pv2-muted">No published controls. Insert a component (Add component) to get its knobs.</p>}
       {sections.map(s => (
         <fieldset key={s} className="cp-section">
           <legend>{s}</legend>
