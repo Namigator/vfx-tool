@@ -767,3 +767,14 @@ test('09 material templates: DarkVolumeSprite (normal blend, no emission, textur
   const l = plan(d).layers[0];
   assert.deepEqual([l.blend, l.emission, l.depthTest, !!l.sprite], ['normal', 0, false, true]);
 });
+
+test('a Schedule triggered by a repeating cue re-fires on every occurrence (not only the first)', () => {
+  const p = plan(f01(d => {
+    Object.assign(find(d, 'node-schedule').params, { mode: 'repeat', startTicks: 5, repeatIntervalTicks: 30, repeatCount: 3 });
+    root(d).nodes.push(node('node-relay', 'Schedule', { mode: 'once', startTicks: 2 }));
+    root(d).edges.push(edge('edge-relay', 'node-schedule', 'start', 'node-relay', 'trigger'));
+    root(d).edges[0].source.nodeId = 'node-relay';
+  }));
+  assert.deepEqual(p.systems[0].descriptor.bursts.map(b => b.tick), [7, 37, 67]);
+  assert.equal(new Set(p.systems[0].descriptor.bursts.map(b => b.eventRandomKey)).size, 3, 'distinct random keys per occurrence');
+});

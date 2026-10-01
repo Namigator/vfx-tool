@@ -11,7 +11,12 @@ export type TimingContext = {
   pathLength?(nodeId: string, port: string, tick: number): number;
   /** World-space arc length of EVERY path of `nodeId.port` at `tick`, in path order (PathFollower speed mode). */
   pathLengths?(nodeId: string, port: string, tick: number): number[];
+  /** A Schedule's mode ('once' | 'window' | 'repeat'); needed to list every occurrence of its events. */
+  mode?(scheduleId: string): string;
 };
+
+/** Most event occurrences resolved for one consumer (matches the burst-event budget). */
+export const MAX_EVENT_OCCURRENCES = 1024;
 
 /** Longest travel a PathFollower may resolve to (matches its Travel ticks maximum). */
 export const MAX_TRAVEL_TICKS = 600;
@@ -49,6 +54,41 @@ export function scheduleStart(ctx: TimingContext, scheduleId: string, depth = 0)
   const base = ctx.raw(scheduleId, 'startTicks');
   const t = ctx.source(scheduleId, 'trigger');
   return t ? base + eventTick(ctx, t.nodeId, t.port, depth + 1) : base;
+}
+
+/**
+ * Every start of a Schedule: its authored start alone, or (triggered) its start after EACH occurrence of the trigger
+ * event - a Schedule started by a repeating cue, several path arrivals or a delayed chain re-fires every time.
+ */
+export function scheduleStarts(ctx: TimingContext, scheduleId: string, depth = 0): number[] {
+  const base = ctx.raw(scheduleId, 'startTicks');
+  const t = ctx.source(scheduleId, 'trigger');
+  return t ? eventTicks(ctx, t.nodeId, t.port, depth + 1).map(x => base + x) : [base];
+}
+
+/** Every occurrence tick of `nodeId.port`, ascending, unique, at most MAX_EVENT_OCCURRENCES. */
+export function eventTicks(ctx: TimingContext, nodeId: string, port: string, depth = 0): number[] {
+  if (depth > 16) throw new TimingError(`Event timing through "${nodeId}" is nested too deeply (or cyclic).`, nodeId);
+  const type = ctx.type(nodeId);
+  let out: number[];
+  if (type === 'Schedule') {
+    const repeat = ctx.mode?.(nodeId) === 'repeat';
+    const count = repeat ? Math.max(1, ctx.raw(nodeId, 'repeatCount')) : 1, interval = repeat ? ctx.raw(nodeId, 'repeatIntervalTicks') : 0;
+    const end = port === 'end' ? ctx.raw(nodeId, 'durationTicks') : 0;
+    out = scheduleStarts(ctx, nodeId, depth + 1).flatMap(s => Array.from({ length: count }, (_, k) => s + k * interval + end));
+  } else if (type === 'PathFollower' && port === 'arrival') {
+    const w = ctx.source(nodeId, 'window');
+    if (!w || ctx.type(w.nodeId) !== 'Schedule') throw new TimingError(`PathFollower "${nodeId}" needs a Schedule window to time its arrival.`, nodeId);
+    out = scheduleStarts(ctx, w.nodeId, depth + 1).flatMap(s => followerTravels(ctx, nodeId, s).map(tr => s + tr));
+  } else if (type === 'EventDelay') {
+    const s = ctx.source(nodeId, 'events');
+    if (!s) throw new TimingError(`EventDelay "${nodeId}" has no input event.`, nodeId);
+    const d = ctx.raw(nodeId, 'delayTicks');
+    out = eventTicks(ctx, s.nodeId, s.port, depth + 1).map(t => t + d);
+  } else {
+    throw new TimingError(`A Schedule trigger from ${type ?? 'an unknown node'} "${nodeId}" is not supported; use a Schedule, PathFollower arrival or EventDelay.`, nodeId);
+  }
+  return [...new Set(out)].sort((a, b) => a - b).slice(0, MAX_EVENT_OCCURRENCES);
 }
 
 /** Tick of the first occurrence of `nodeId.port` (an event output). */

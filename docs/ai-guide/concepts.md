@@ -73,7 +73,8 @@ follower. Exports (Roblox, Unreal) keep the first path only and say so in their 
   **bursts** (Emitter `burst` + `trigger`), flashes and camera shakes.
 - **Event-relative timing:** connect an event into `Schedule.trigger` and the schedule starts *relative to that
   event*. This is how impacts follow arrivals: `PathFollower.arrival → Schedule.trigger`, so if the projectile
-  travels longer, the impact moves with it automatically.
+  travels longer, the impact moves with it automatically. A triggered Schedule re-fires on **every** occurrence of its trigger (a repeating cue, several path
+  arrivals, an EventDelay chain): bursts, flashes and sound cues happen each time. Continuous windows follow the first one.
 - **Particle events:** `ParticleEvents` turns particle births/deaths into events (sparks where flames die, smoke
   where embers land); `GroundCollision` emits collision events.
 - Particles have **ages**: over-life curves use the normalized age 0→1 (birth→death), which is why size, opacity

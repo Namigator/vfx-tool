@@ -37,7 +37,7 @@ import type { DescriptorTrack } from '../runtime/particles.ts';
 import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { createRegistry } from './registry.ts';
-import { followerTravels, scheduleStart, TimingError, type TimingContext } from './eventTiming.ts';
+import { followerTravels, scheduleStart, scheduleStarts, TimingError, type TimingContext } from './eventTiming.ts';
 import { dataTextureFile, isTexturedTemplate, materialSheet, MATERIAL_TEMPLATE_IDS, templateLitsMeshes, templateParam } from './materialSprite.ts';
 import { lifeCurveError, OPACITY_OVER_LIFE_BOUNDS, SIZE_OVER_LIFE_BOUNDS } from '../render/billboardLife.ts';
 import { BUILTIN_SPRITES } from '../assets/builtinSprites.generated.ts';
@@ -265,6 +265,15 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
     source: (nodeId, port) => { const c = into(nodeId, port)[0]; return c && c.source.kind === 'node' ? { nodeId: c.source.nodeId, port: c.source.port } : undefined; },
     pathLength: (nodeId, port, tick) => probePathLength(input, nodeId, port, tick),
     pathLengths: (nodeId, port, tick) => probePathLengths(input, nodeId, port, tick),
+    mode: id => { const x = nodes.get(id); return x ? String(rawParam(x, 'mode')) : ''; },
+  };
+  /** Every start of a Schedule (several when its trigger event happens several times). */
+  const startsOf = (s: ExpandedNode): number[] => {
+    if (!into(s.node.id, 'trigger').length) return [num(s, 'startTicks')];
+    try { return scheduleStarts(timing, s.node.id); } catch (e) {
+      if (e instanceof TimingError) return fail('INVALID_VALUE', e.message, e.nodeId);
+      throw e;
+    }
   };
   /** 09 material templates fix some Material fields (materialSprite.templateParam); everything else is as authored. */
   const rawParam = (n: ExpandedNode, id: string): ParameterValue => {
@@ -642,18 +651,22 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
       }
       const s = scheduleOf(c, consumer, 'trigger');
       if (!s) continue;
-      const start = num(s, 'startTicks'), len = num(s, 'durationTicks');
+      const len = num(s, 'durationTicks');
       const repeat = param(s, 'mode') === 'repeat';
       const count = repeat ? num(s, 'repeatCount') : 1;
       const interval = repeat ? num(s, 'repeatIntervalTicks') : 0;
       const port = c.source.kind === 'node' ? c.source.port : '';
-      for (let k = 0; k < count; k++) {
-        const tick = start + k * interval + (port === 'end' ? len : 0) + delay;
-        if (tick >= duration) break; // Document end (inclusive) empties all outputs.
-        const key = scheduleEventRandomKey(s.node.randomStreamId, tick, k);
-        if (seen.has(key)) { report('DUPLICATE_ID', `Schedule "${s.node.id}" event at tick ${tick} reaches Emitter "${id}" more than once; distinct event IDs are not implemented yet.`, id); continue; }
-        seen.add(key);
-        if (burst > 0) bursts.push({ tick, eventRandomKey: key, count: burst });
+      // A triggered Schedule re-fires for every occurrence of its trigger (k counts across all of them).
+      let k = 0;
+      for (const start of startsOf(s)) {
+        for (let r = 0; r < count; r++, k++) {
+          const tick = start + r * interval + (port === 'end' ? len : 0) + delay;
+          if (tick >= duration) break; // Document end (inclusive) empties all outputs.
+          const key = scheduleEventRandomKey(s.node.randomStreamId, tick, k);
+          if (seen.has(key)) { report('DUPLICATE_ID', `Schedule "${s.node.id}" event at tick ${tick} reaches Emitter "${id}" more than once; distinct event IDs are not implemented yet.`, id); continue; }
+          seen.add(key);
+          if (burst > 0) bursts.push({ tick, eventRandomKey: key, count: burst });
+        }
       }
     }
 
@@ -1147,7 +1160,7 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
         if (!s.effectiveEnabled) continue;
         if (s.node.type === 'Schedule') {
           const repeat = param(s, 'mode') === 'repeat', n = repeat ? num(s, 'repeatCount') : 1;
-          for (let k = 0; k < n; k++) ticks.push(num(s, 'startTicks') + k * (repeat ? num(s, 'repeatIntervalTicks') : 0) + (port === 'end' ? num(s, 'durationTicks') : 0) + delay);
+          for (const start of startsOf(s)) for (let k = 0; k < n; k++) ticks.push(start + k * (repeat ? num(s, 'repeatIntervalTicks') : 0) + (port === 'end' ? num(s, 'durationTicks') : 0) + delay);
         } else if (s.node.type === 'PathFollower') { for (const t of new Set(followerTracks(s).map(tr => tr.arrivalTick + delay))) ticks.push(t); } // One per distinct arrival tick.
         else fail('UNKNOWN_NODE', `${p.node.type} "${p.node.id}" trigger from ${s.node.type} is not supported; use a Schedule or PathFollower arrival.`, p.node.id);
       }

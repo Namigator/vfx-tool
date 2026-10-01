@@ -71,6 +71,7 @@ The ones that matter most when building effects.
 
 | constant | value | meaning | defined in |
 |---|---|---|---|
+| `MAX_EVENT_OCCURRENCES` | 1024 | Most occurrences of one event a triggered Schedule re-fires on (repeating cues, several arrivals). | src/graph/eventTiming.ts |
 | `MAX_TRAVEL_TICKS` | 600 | Longest PathFollower travel (600 ticks). | src/graph/eventTiming.ts |
 | `MAX_TRACKS_PER_ITEM` | 64 | Most values one keyframed item may animate at once. | src/graph/keyframes.ts |
 | `MAX_BRANCH_COUNT` | 64 | Most branches BranchPath grows. | src/graph/registry.ts |

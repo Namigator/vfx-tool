@@ -37,7 +37,7 @@ import { assertMixBudget, MAX_MIX_FRAMES, MAX_MIX_INPUTS, mixStereo, type MixRes
 import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { createRegistry } from './registry.ts';
-import { scheduleStart, TimingError, type TimingContext } from './eventTiming.ts';
+import { scheduleStart, scheduleStarts, TimingError, type TimingContext } from './eventTiming.ts';
 import { probePathLength, probePathLengths } from './toPaths.ts';
 
 type PreparedVoice = {
@@ -126,6 +126,7 @@ export function compileAudio(input: unknown): ValidationResult<AudioCompilePlan>
     source: (nodeId, port) => { const c = into(nodeId, port)[0]; return c && c.source.kind === 'node' ? { nodeId: c.source.nodeId, port: c.source.port } : undefined; },
     pathLength: (nodeId, port, tick) => probePathLength(input, nodeId, port, tick),
     pathLengths: (nodeId, port, tick) => probePathLengths(input, nodeId, port, tick),
+    mode: id => { const x = nodes.get(id); return x ? String(rawParam(x, 'mode')) : ''; },
   };
   const rawParam = (n: ExpandedNode, id: string): ParameterValue => {
     const v = params.get(`${n.node.id}\u0000${id}`);
@@ -212,13 +213,22 @@ export function compileAudio(input: unknown): ValidationResult<AudioCompilePlan>
   /** Cues of one Schedule.start; a routed cue at/after the document end is dropped, a direct one is an error. */
   const scheduleCues = (sched: ExpandedNode, delay: number, routed: boolean): Cue[] => {
     noDrivenParams(sched, []);
-    const repeat = param(sched, 'mode') === 'repeat', firstCue = num(sched, 'startTicks'), interval = num(sched, 'repeatIntervalTicks');
-    const count = Math.max(1, Math.min(repeat ? num(sched, 'repeatCount') : 1, repeat ? Math.ceil((doc.durationTicks - firstCue) / Math.max(1, interval)) : 1));
+    const repeat = param(sched, 'mode') === 'repeat', interval = num(sched, 'repeatIntervalTicks');
+    // A triggered Schedule re-fires for every occurrence of its trigger event (k counts across all of them).
+    let starts: number[];
+    try { starts = into(sched.node.id, 'trigger').length ? scheduleStarts(timing, sched.node.id) : [num(sched, 'startTicks')]; } catch (e) {
+      if (e instanceof TimingError) return fail('INVALID_VALUE', e.message, e.nodeId);
+      throw e;
+    }
     const out: Cue[] = [];
-    for (let k = 0; k < count; k++) {
-      const cueTick = firstCue + (repeat ? k * interval : 0) + delay;
-      if (cueTick >= doc.durationTicks && routed) break;
-      out.push({ sched, k, cueTick });
+    let k = 0;
+    for (const firstCue of starts) {
+      const count = Math.max(1, Math.min(repeat ? num(sched, 'repeatCount') : 1, repeat ? Math.ceil((doc.durationTicks - firstCue) / Math.max(1, interval)) : 1));
+      for (let r = 0; r < count; r++, k++) {
+        const cueTick = firstCue + (repeat ? r * interval : 0) + delay;
+        if (cueTick >= doc.durationTicks && (routed || starts.length > 1)) break;
+        out.push({ sched, k, cueTick });
+      }
     }
     return out;
   };
