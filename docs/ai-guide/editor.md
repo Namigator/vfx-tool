@@ -168,3 +168,7 @@ them. [`vfx_get_document`]
   text as [reference/nodes.md](reference/nodes.md)). Selecting a component box shows the component's description.
 - **Add node** is grouped by role; hover an entry (or pick it) to read what it does. Hovering a node's type in the
   graph shows the same description.
+
+### Particle budget
+
+Controls → Effect settings → Live particle budget sets the maximum particles alive at once across an effect. It defaults to 30,000 and accepts whole numbers from 1 to 65,536. Enter or leaving the field commits; Escape cancels. The setting saves with the effect and supports Undo. Higher budgets increase playback and seeking costs. Through MCP, set `particleBudget` on the root `EffectOutput` with `vfx_set_params`. The separate 65,536 births-per-cast limit still applies.

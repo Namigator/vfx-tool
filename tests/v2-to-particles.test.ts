@@ -36,6 +36,17 @@ const countAt = (p: ParticlePreviewPlan, tick: number, i = 0) => {
 };
 const set = (id: string, params: NodeDefinition['params']) => (d: EffectDocumentV2) => Object.assign(find(d, id).params, params);
 
+test('ScreenFlash receives every Schedule start repeat at a 20-tick interval', () => {
+  const p = plan(f01(d => {
+    d.durationTicks = 600;
+    set('node-schedule', { mode: 'repeat', durationTicks: 600, repeatIntervalTicks: 20, repeatCount: 30 })(d);
+    root(d).nodes.push(node('flash', 'ScreenFlash', { durationTicks: 3 }));
+    root(d).edges.push(edge('flash-trigger', 'node-schedule', 'start', 'flash', 'trigger'));
+    root(d).edges.push(edge('flash-output', 'flash', 'presentation', 'node-output', 'presentation'));
+  }));
+  assert.deepEqual(p.presentation.flashes.map(f => f.tick), Array.from({ length: 30 }, (_, i) => i * 20));
+});
+
 test('F01 graph compiles to one point system and one billboard layer with exact tick 0/59/60 counts', () => {
   const p = plan(f01());
   assert.equal(p.durationTicks, 120);
@@ -186,10 +197,29 @@ test('aggregate budget rejects excessive total births and live particles', () =>
   })));
   assert.ok(total.some(e => e.code === 'BUDGET_EXCEEDED' && /total/.test(e.message)));
   const live = errorsOf(compileParticlePreview(f01(d => {
+    set('node-output', { particleBudget: 8192 })(d);
     set('node-emitter', { burst: 4096 })(d);
     set('node-schedule', { mode: 'repeat', repeatIntervalTicks: 1, repeatCount: 3 })(d);
   })));
   assert.ok(live.some(e => e.code === 'BUDGET_EXCEEDED' && /alive/.test(e.message)));
+});
+
+test('saved particle budget permits more than 8192 particles and rejects its own limit', () => {
+  const d = f01(d => {
+    set('node-emitter', { burst: 4096 })(d);
+    set('node-schedule', { mode: 'repeat', repeatIntervalTicks: 1, repeatCount: 6 })(d);
+  });
+  const p = plan(d);
+  assert.equal(p.particleBudget, 30000);
+  assert.equal(countAt(p, 5), 24576);
+  set('node-output', { particleBudget: 24000 })(d);
+  assert.ok(errorsOf(compileParticlePreview(d)).some(e => e.code === 'BUDGET_EXCEEDED' && /24000/.test(e.message)));
+  set('node-output', { particleBudget: 40000 })(d);
+  assert.equal(plan(d).particleBudget, 40000);
+  for (const particleBudget of [0, 65537, 1.5]) {
+    set('node-output', { particleBudget })(d);
+    assert.ok(errorsOf(compileParticlePreview(d)).some(e => e.code === 'INVALID_VALUE'));
+  }
 });
 
 test('color multiplies in linear RGB and alphas multiply', () => {

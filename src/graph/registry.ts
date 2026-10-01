@@ -1038,6 +1038,7 @@ function effectOutput(): NodeSpec {
     // 08 glow (bloom) of this effect: A-05 gap — many overlapping additive layers bloomed into a halo that
     // hid the flame shapes and nothing could tame it. Defaults are the 08 values.
     parameters: [
+      param({ id: 'particleBudget', label: 'Live particle budget', type: 'integer', unit: 'none', default: 30000, min: 1, max: 65536, step: 1, description: 'Maximum particles alive across this effect. Higher budgets can increase simulation, rendering and seek costs.' }),
       param({ id: 'glowStrength', label: 'Glow strength', type: 'number', unit: 'none', default: 0.8, min: 0, max: 3, editPolicy: 'live', description: 'How strong the bloom halo around bright parts is (0 = no glow).' }),
       param({ id: 'glowRadius', label: 'Glow radius', type: 'number', unit: 'normalized', default: 0.45, min: 0, max: 1, editPolicy: 'live', description: 'How far the halo spreads (lower = tighter glow hugging the shapes).' }),
       param({ id: 'glowThreshold', label: 'Glow threshold', type: 'number', unit: 'none', default: 1, min: 0, max: 8, editPolicy: 'live', description: 'Brightness above which things glow.' }),

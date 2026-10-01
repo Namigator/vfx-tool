@@ -1,7 +1,7 @@
 // V2 graph preview viewport (WP03-PREVIEW-ADAPTER.md "Visual route"). Point particles only: consumes a
 // compiled ParticlePreviewPlan, never a graph document. One ParticleSimulation per plan system, driven by
 // PlaybackClock fixed ticks; scrubbing replays from tick 0 so any tick is reproduced deterministically.
-// Each layer is one camera-facing instanced quad mesh with a fixed 8192-instance pool, allocated once per
+// Each layer is one camera-facing instanced quad mesh with a budget-sized instance pool, allocated once per
 // plan; uploads write into those existing GPU instance buffers. Not allocation-free: each advanced tick
 // takes a fresh ParticleSimulation snapshot (new particle state objects). No bloom, textures or sound.
 import { spriteUrl } from '../assets/spriteUrl.ts';
@@ -737,7 +737,10 @@ export class PreviewViewport {
     this.#replayTo(0);
   }
 
+  #poolSize = 30000;
+
   #addPointLayers(plan: ParticlePreviewPlan): void {
+    this.#poolSize = plan.particleBudget ?? 30000;
     this.#plan = plan;
     this.#presentation = plan.presentation ?? null;
     for (const layer of plan.meshes ?? []) {
@@ -757,9 +760,9 @@ export class PreviewViewport {
       if (material instanceof THREE.MeshStandardMaterial && surface && surface.reflection > 0) { material.envMap = this.#environment(); material.envMapIntensity = surface.reflection; }
       if (layer.normalMap && material instanceof THREE.MeshStandardMaterial) material.normalMap = this.#dataTexture(layer.normalMap, false);
       patchMeshShader(material, layer.rim, surface?.detail ?? 0, surface?.detailScale ?? 4);
-      const mesh = new THREE.InstancedMesh(geometry, material, PREVIEW_POOL_SIZE);
+      const mesh = new THREE.InstancedMesh(geometry, material, this.#poolSize);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(PREVIEW_POOL_SIZE * 3).fill(1), 3);
+      mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(this.#poolSize * 3).fill(1), 3);
       mesh.count = 0;
       mesh.frustumCulled = false;
       mesh.renderOrder = layerRenderOrder(layer.renderOrderOffset, layer.visualOrder);
@@ -788,11 +791,11 @@ export class PreviewViewport {
       const material = materialFor(VERTEX, FRAGMENT, layer);
       // Per-layer geometry: the per-instance opacity attribute cannot live on the shared quad.
       const geometry = this.#quad.clone();
-      const lifeOpacity = new THREE.InstancedBufferAttribute(new Float32Array(PREVIEW_POOL_SIZE).fill(1), 1);
+      const lifeOpacity = new THREE.InstancedBufferAttribute(new Float32Array(this.#poolSize).fill(1), 1);
       lifeOpacity.setUsage(THREE.DynamicDrawUsage);
       geometry.setAttribute('lifeOpacity', lifeOpacity);
       for (const [name, size, fill] of [['lifeColor', 3, 1], ['spinAngle', 1, 0], ['worldVelocity', 3, 0], ['cell', 1, 0], ['cellMix', 2, 0], ['lifeSeed', 2, 0]] as const) {
-        const attr = new THREE.InstancedBufferAttribute(new Float32Array(PREVIEW_POOL_SIZE * size).fill(fill), size);
+        const attr = new THREE.InstancedBufferAttribute(new Float32Array(this.#poolSize * size).fill(fill), size);
         attr.setUsage(THREE.DynamicDrawUsage);
         geometry.setAttribute(name, attr);
       }
@@ -825,7 +828,7 @@ export class PreviewViewport {
       material.uniforms.uGrid = { value: new THREE.Vector2(sheet?.columns ?? 1, sheet?.rows ?? 1) };
       material.uniforms.uInset = { value: new THREE.Vector2(0.5 / (sheet?.cell[0] ?? 1), 0.5 / (sheet?.cell[1] ?? 1)) };
       material.uniforms.uTex = { value: sheet ? this.#spriteTexture(sheet.file) : null };
-      const mesh = new THREE.InstancedMesh(geometry, material, PREVIEW_POOL_SIZE);
+      const mesh = new THREE.InstancedMesh(geometry, material, this.#poolSize);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       mesh.count = 0;
       mesh.frustumCulled = false;
@@ -1377,7 +1380,7 @@ export class PreviewViewport {
         let sim: ParticleSimulation;
         if (cp) sim = cp.clone();
         else {
-          const created = ParticleSimulation.create(s.descriptor);
+          const created = ParticleSimulation.create(s.descriptor, { maxLiveParticles: this.#poolSize });
           if (!created.ok) return this.#fail(created.errors.map(e => ({ ...e, nodeId: e.nodeId ?? s.id })));
           sim = created.value;
           this.#checkpoint(s.id, sim);
@@ -1426,7 +1429,7 @@ export class PreviewViewport {
   #updateMeshes(alpha: number): void {
     const step = alpha * PARTICLE_DT, q = new THREE.Quaternion(), qYaw = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), mtx = new THREE.Matrix4(), axis = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), col = new THREE.Color();
     for (const m of this.#meshes) {
-      const ps = this.#snapshots.get(m.layer.systemId) ?? [], n = Math.min(ps.length, PREVIEW_POOL_SIZE);
+      const ps = this.#snapshots.get(m.layer.systemId) ?? [], n = Math.min(ps.length, this.#poolSize);
       // 15 hard limits: 512 mesh instances and 250k visible triangles; an error, never a silent cap.
       const tris = n * ((m.mesh.geometry.index ? m.mesh.geometry.index.count : m.mesh.geometry.getAttribute('position').count) / 3);
       if (n > MAX_MESH_INSTANCES || tris > MAX_MESH_TRIANGLES) {
@@ -1555,7 +1558,7 @@ export class PreviewViewport {
     const step = alpha * PARTICLE_DT;
     for (const l of this.#layers) {
       const particles = this.#snapshots.get(l.layer.systemId);
-      const n = particles ? Math.min(particles.length, PREVIEW_POOL_SIZE) : 0;
+      const n = particles ? Math.min(particles.length, this.#poolSize) : 0;
       const m = l.mesh.instanceMatrix.array as Float32Array;
       const opAttr = l.mesh.geometry.getAttribute('lifeOpacity') as THREE.InstancedBufferAttribute;
       const op = opAttr.array as Float32Array;

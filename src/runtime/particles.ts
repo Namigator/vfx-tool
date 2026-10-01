@@ -10,7 +10,7 @@ import { noiseAcceleration, type NoiseFieldSeeds } from './noise.ts';
 
 export const PARTICLE_DT = 1 / TICKS_PER_SECOND;
 /** plan15 hard limits. */
-export const DEFAULT_MAX_LIVE_PARTICLES = 8192;
+export const DEFAULT_MAX_LIVE_PARTICLES = 65536;
 export const DEFAULT_MAX_TOTAL_BIRTHS = 65536;
 /** Bound on authored burst events per emitter descriptor (implementation limit, not a plan15 figure). */
 export const DEFAULT_MAX_BURST_EVENTS = 1024;

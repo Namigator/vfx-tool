@@ -22,7 +22,7 @@ The ones that matter most when building effects.
 
 | limit | value | meaning |
 |---|---|---|
-| Live particles at once | 8192 | Peak of (rate x lifetime + bursts alive); checked at compile (BUDGET_EXCEEDED). |
+| Live particles at once | 30000 default; configurable 1–65536 | Set Controls → Effect settings → Live particle budget, or root EffectOutput.particleBudget through MCP. Peak checked across all systems at compile. |
 | Particles born per effect | 65536 | Total births over the whole effect. |
 | Burst events per emitter | 1024 | Trigger events considered by one emitter. |
 | Effect duration | 600 ticks (10 s) | Minimum 1 tick; longer is rejected. |
@@ -79,7 +79,7 @@ The ones that matter most when building effects.
 | `MAX_PREVIEW_POINTS` | 262144 | Most path vertices per preview frame. | src/graph/toPaths.ts |
 | `MIN_PLAYBACK_SPEED` | 0.25 | Slowest preview playback speed multiplier. | src/runtime/clock.ts |
 | `MAX_PLAYBACK_SPEED` | 4 | Fastest preview playback speed multiplier. | src/runtime/clock.ts |
-| `DEFAULT_MAX_LIVE_PARTICLES` | 8192 | Most particles alive at once across the whole effect (BUDGET_EXCEEDED at compile: "Preview could keep up to N particles alive"). Reduce burst, rate or lifetime. | src/runtime/particles.ts |
+| `DEFAULT_MAX_LIVE_PARTICLES` | 65536 | Runtime ceiling. The saved root EffectOutput.particleBudget sets the effect-wide limit: 30000 default, configurable 1–65536 in Controls → Effect settings. | src/runtime/particles.ts |
 | `DEFAULT_MAX_TOTAL_BIRTHS` | 65536 | Most particles born in total over the whole effect (all emitters). | src/runtime/particles.ts |
 | `DEFAULT_MAX_BURST_EVENTS` | 1024 | Default cap on burst events considered by the particle simulation. | src/runtime/particles.ts |
 | `MAX_DRAG_COEFFICIENT` | 100 | Simulation cap on the Drag coefficient. | src/runtime/particles.ts |

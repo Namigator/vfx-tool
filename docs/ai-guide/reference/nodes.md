@@ -1676,6 +1676,7 @@ None.
 
 | id | label | type | unit | default | range | choices | edit | domains | drive | description |
 |---|---|---|---|---|---|---|---|---|---|---|
+| `particleBudget` | Live particle budget | integer | — | `30000` | 1..65536 step 1 | — | resample | constant | scalarSignal | Maximum particles alive across this effect. Higher budgets can increase simulation, rendering and seek costs. |
 | `glowStrength` | Glow strength | number | — | `0.8` | 0..3 | — | live | constant | scalarSignal | How strong the bloom halo around bright parts is (0 = no glow). |
 | `glowRadius` | Glow radius | number | normalized | `0.45` | 0..1 | — | live | constant | scalarSignal | How far the halo spreads (lower = tighter glow hugging the shapes). |
 | `glowThreshold` | Glow threshold | number | — | `1` | 0..8 | — | live | constant | scalarSignal | Brightness above which things glow. |

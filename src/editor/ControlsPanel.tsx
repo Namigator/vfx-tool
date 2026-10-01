@@ -185,6 +185,21 @@ export function ControlsPanel({ document: doc, onEdit, followers = [], tick = 0 
   return (
     <div className="cp-root">
       <fieldset className="cp-section">
+        <legend>Effect settings</legend>
+        <label>Live particle budget <input type="number" aria-label="Live particle budget" min={1} max={65536} step={1}
+          key={String(doc.graphs.find(g => g.id === doc.rootGraphId)?.nodes.find(n => n.type === 'EffectOutput')?.params.particleBudget ?? 30000)}
+          defaultValue={Number(doc.graphs.find(g => g.id === doc.rootGraphId)?.nodes.find(n => n.type === 'EffectOutput')?.params.particleBudget ?? 30000)}
+          onBlur={e => {
+            const gi = doc.graphs.findIndex(g => g.id === doc.rootGraphId), ni = doc.graphs[gi]?.nodes.findIndex(n => n.type === 'EffectOutput') ?? -1;
+            const n = Number(e.currentTarget.value);
+            const previous = Number(doc.graphs[gi]?.nodes[ni]?.params.particleBudget ?? 30000);
+            if (!e.currentTarget.value.trim() || !Number.isInteger(n) || n < 1 || n > 65536 || ni < 0) { e.currentTarget.value = String(previous); return; }
+            if (n !== previous) onEdit('Set live particle budget', [{ op: 'set', path: ['graphs', gi, 'nodes', ni, 'params', 'particleBudget'], value: n }]);
+          }} onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') { e.currentTarget.value = String(doc.graphs.find(g => g.id === doc.rootGraphId)?.nodes.find(n => n.type === 'EffectOutput')?.params.particleBudget ?? 30000); e.currentTarget.blur(); } }} />
+        </label>
+        <p className="pv2-muted">Particles alive at once across this effect. Default 30,000; maximum 65,536. Higher values can slow playback and seeking.</p>
+      </fieldset>
+      <fieldset className="cp-section">
         <legend>Anchors</legend>
         <p className="pv2-muted">Position in metres: X sideways, Y height, Z depth.</p>
         <p className="pv2-muted">Double-click / double-tap a marker in the 3D view, then drag. Escape cancels.</p>

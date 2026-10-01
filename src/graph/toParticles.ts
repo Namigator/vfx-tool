@@ -156,6 +156,7 @@ export type ParticlePreviewPlan = {
   lights: PointLightLayer[];
   meshes: MeshLayer[];
   presentation: PresentationPlan;
+  particleBudget?: number;
   /** Every enabled PathFollower's resolved travel (shown next to the knobs: distance, ticks, actual speed). */
   followers: FollowerTravel[];
 };
@@ -372,6 +373,7 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
     report('INVALID_VALUE', `Exposed control "${d.controlId}" of Group "${d.groupNodeId}" is driven by a connection; control expressions are not supported by the point preview yet.`, d.groupNodeId);
   }
   const outputId = x.rootOutputNodeId;
+  const particleBudget = Number(nodes.get(outputId)?.node.params.particleBudget ?? 30000);
   for (const port of options.audioHandled === true ? [] : ['audio']) {
     if (into(outputId, port).length) report('INVALID_VALUE', `EffectOutput.${port} is connected, but ${port} output is not supported by the point preview yet.`, outputId);
   }
@@ -1161,7 +1163,7 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
   }
 
   if (!errors.length) {
-    const budget = checkBudget(systems.map(s => s.descriptor), doc.durationTicks);
+    const budget = checkBudget(systems.map(s => s.descriptor), doc.durationTicks, particleBudget);
     if (budget) errors.push(budget);
   }
   if (errors.length) return { ok: false, errors };
@@ -1184,11 +1186,11 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
       }
     } catch (e) { if (!(e instanceof Fail)) throw e; }
   }
-  return { ok: true, value: { durationTicks: doc.durationTicks, systems, layers, trails, lights, meshes, presentation, followers }, warnings };
+  return { ok: true, value: { durationTicks: doc.durationTicks, systems, layers, trails, lights, meshes, presentation, followers, particleBudget }, warnings };
 }
 
 /** Aggregate worst case over all systems: total births and live particles at any tick (plan15 caps). */
-function checkBudget(descriptors: ParticleEmitterDescriptor[], duration: number): Diagnostic | undefined {
+function checkBudget(descriptors: ParticleEmitterDescriptor[], duration: number, particleBudget: number): Diagnostic | undefined {
   const live = new Array<number>(duration).fill(0);
   let total = 0;
   for (const d of descriptors) {
@@ -1213,8 +1215,8 @@ function checkBudget(descriptors: ParticleEmitterDescriptor[], duration: number)
     return { code: 'BUDGET_EXCEEDED', severity: 'error', message: `Preview would birth up to ${total} particles in total; the limit is ${DEFAULT_MAX_TOTAL_BIRTHS}. Reduce burst, rate or repeats.` };
   }
   const peak = Math.max(0, ...live);
-  if (peak > DEFAULT_MAX_LIVE_PARTICLES) {
-    return { code: 'BUDGET_EXCEEDED', severity: 'error', message: `Preview could keep up to ${peak} particles alive at once; the limit is ${DEFAULT_MAX_LIVE_PARTICLES}. Reduce burst, rate or lifetime.` };
+  if (peak > particleBudget) {
+    return { code: 'BUDGET_EXCEEDED', severity: 'error', message: `Preview could keep up to ${peak} particles alive at once; the limit is ${particleBudget}. Increase Live particle budget in Effect settings, or reduce burst, rate or lifetime.` };
   }
   return undefined;
 }

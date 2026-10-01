@@ -356,67 +356,61 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
 
   const deleteSelection = useCallback(() => {
     if (!graph) return;
-    const node = selectedNodeId ? graph.nodes.find(n => n.id === selectedNodeId) : undefined;
-    if (node && isLocked(node)) {
-      setNotice({ kind: 'error', lines: [`${node.type} is protected and cannot be deleted.`] });
-      return;
+    const selected = graph.nodes.filter(n => selectionRef.current.has(n.id));
+    const removable = selected.filter(n => !isLocked(n));
+    const groups = removable.filter(n => n.type === GROUP_NODE_TYPE);
+    const gone = new Set(removable.map(n => n.id));
+    for (const group of groups) for (const n of graph.nodes) {
+      if (n.id.startsWith(`${group.id}-`) && n.type.startsWith('Audio')) gone.add(n.id);
     }
-    if (node && node.type === GROUP_NODE_TYPE) {
-      // A component Group owns its graph: remove the Group, its wires, its graph (if no other Group uses it),
-      // that graph's layout and the controls scoped to it, as one undoable edit.
-      const childId = node.params.graphId as string;
-      const shared = doc.graphs.some(g => g.nodes.some(n => n !== node && n.type === GROUP_NODE_TYPE && n.params.graphId === childId));
-      // The component's sound chain lives beside the Group (prefixed ids); it goes too, except a mix/output
-      // that other nodes still feed.
-      const gone = new Set([node.id]);
-      for (const n of graph.nodes) if (n.id.startsWith(`${node.id}-`) && n.type.startsWith('Audio')) gone.add(n.id);
-      for (let changed = true; changed;) {
-        changed = false;
-        for (const id of [...gone]) {
-          const n = graph.nodes.find(x => x.id === id)!;
-          if ((n.type === 'AudioMix' || n.type === 'AudioOutput') && graph.edges.some(e => e.target.nodeId === id && !gone.has(e.source.nodeId))) { gone.delete(id); changed = true; }
-        }
-      }
-      const graphs = doc.graphs.filter(g => shared || g.id !== childId).map(g => g.id !== graph.id ? g : { ...g, nodes: g.nodes.filter(n => !gone.has(n.id)), edges: g.edges.filter(e => !gone.has(e.source.nodeId) && !gone.has(e.target.nodeId)) });
-      const editorGraphs = { ...doc.editor.graphs };
-      if (!shared) delete editorGraphs[childId];
-      if (editorGraphs[graphId]) { const nodes = { ...editorGraphs[graphId].nodes }; for (const id of gone) delete nodes[id]; editorGraphs[graphId] = { ...editorGraphs[graphId], nodes }; }
-      setNotice(null);
-      onEdit(`Delete group ${node.label}`, [
-        { op: 'set', path: ['graphs'], value: graphs },
-        { op: 'set', path: ['controls'], value: doc.controls.filter(c => (shared || c.scopeGraphId !== childId) && !c.bindings.some(b => gone.has(b.nodeId))) },
-        { op: 'set', path: ['editor', 'graphs'], value: editorGraphs },
-      ]);
-      onSelectNode(null);
-      return;
-    }
-    if (node) {
-      const bound = doc.controls.filter(ctl => ctl.bindings.some(b => b.nodeId === node.id));
-      if (bound.length) {
-        setNotice({ kind: 'error', lines: [`${node.id} is bound by control(s) ${bound.map(ctl => ctl.id).join(', ')}; remove those bindings first.`] });
-        return;
+    // Shared audio sinks survive while an unremoved source still feeds them.
+    for (let changed = true; changed;) {
+      changed = false;
+      for (const id of [...gone]) {
+        const n = graph.nodes.find(x => x.id === id)!;
+        if (!selectionRef.current.has(id) && (n.type === 'AudioMix' || n.type === 'AudioOutput') && graph.edges.some(e => e.target.nodeId === id && !gone.has(e.source.nodeId))) { gone.delete(id); changed = true; }
       }
     }
-    const edgeIdx = graph.edges
-      .map((e, i) => ({ e, i }))
-      .filter(({ e }) => selectedEdges.has(e.id) || (node && (e.source.nodeId === node.id || e.target.nodeId === node.id)))
-      .map(({ i }) => i)
-      .sort((a, b) => b - a);
-    if (!node && edgeIdx.length === 0) {
-      setNotice({ kind: 'info', lines: ['Nothing selected to delete.'] });
+    const bound = removable.filter(n => n.type !== GROUP_NODE_TYPE && doc.controls.some(c => c.bindings.some(b => b.nodeId === n.id)));
+    if (bound.length) {
+      setNotice({ kind: 'error', lines: [`${bound.map(n => n.label).join(', ')} are bound by published controls; remove those bindings first.`] });
       return;
     }
-    const patches: HistoryPatch[] = edgeIdx.map(i => ({ op: 'splice', path: ['graphs', gi, 'edges'], index: i, deleteCount: 1, insert: [] }));
-    if (node) {
-      patches.push({ op: 'splice', path: ['graphs', gi, 'nodes'], index: graph.nodes.indexOf(node), deleteCount: 1, insert: [] });
-      if (layout && Object.hasOwn(layout.nodes, node.id)) patches.push({ op: 'delete', path: ['editor', 'graphs', graphId, 'nodes', node.id] });
+    const removedEdges = graph.edges.filter(e => selectedEdges.has(e.id) || gone.has(e.source.nodeId) || gone.has(e.target.nodeId));
+    if (!gone.size && !removedEdges.length) {
+      setNotice({ kind: 'info', lines: [selected.length ? 'Selected nodes are protected and cannot be deleted.' : 'Nothing selected to delete.'] });
+      return;
     }
-    setNotice(null);
-    setSelectedEdges(new Set());
-    onEdit(node ? `Delete ${node.id}${edgeIdx.length ? ` and ${edgeIdx.length} connection(s)` : ''}` : `Delete ${edgeIdx.length} connection(s)`, patches);
-    if (node) onSelectNode(null);
-  }, [doc, graph, gi, graphId, layout, selectedNodeId, selectedEdges, onEdit, onSelectNode]);
-
+    let graphs = doc.graphs.map(g => g.id !== graphId ? g : { ...g, nodes: g.nodes.filter(n => !gone.has(n.id)), edges: g.edges.filter(e => !removedEdges.includes(e)) });
+    // Remove owned child graphs only when no surviving Group uses them, including nested groups.
+    const candidates = new Set(groups.map(n => n.params.graphId as string));
+    const removedGraphs = new Set<string>();
+    for (let changed = true; changed;) {
+      changed = false;
+      for (const id of candidates) {
+        if (id === doc.rootGraphId || removedGraphs.has(id) || graphs.some(g => g.nodes.some(n => n.type === GROUP_NODE_TYPE && n.params.graphId === id))) continue;
+        const child = graphs.find(g => g.id === id);
+        for (const n of child?.nodes ?? []) if (n.type === GROUP_NODE_TYPE) candidates.add(n.params.graphId as string);
+        graphs = graphs.filter(g => g.id !== id);
+        removedGraphs.add(id); changed = true;
+      }
+    }
+    const editorGraphs = { ...doc.editor.graphs };
+    for (const id of removedGraphs) delete editorGraphs[id];
+    if (editorGraphs[graphId]) {
+      const nodes = { ...editorGraphs[graphId].nodes };
+      for (const id of gone) delete nodes[id];
+      editorGraphs[graphId] = { ...editorGraphs[graphId], nodes };
+    }
+    const controls = doc.controls.filter(c => !removedGraphs.has(c.scopeGraphId) && !c.bindings.some(b => gone.has(b.nodeId) || doc.graphs.some(g => removedGraphs.has(g.id) && g.nodes.some(n => n.id === b.nodeId))));
+    onEdit(`Delete ${removable.length} node(s) and ${removedEdges.length} connection(s)`, [
+      { op: 'set', path: ['graphs'], value: graphs },
+      { op: 'set', path: ['controls'], value: controls },
+      { op: 'set', path: ['editor', 'graphs'], value: editorGraphs },
+    ]);
+    selectionRef.current = new Set(); setPicked(new Set()); setSelectedEdges(new Set()); onSelectNode(null);
+    setNotice(selected.some(isLocked) ? { kind: 'info', lines: ['Protected nodes were kept.'] } : null);
+  }, [doc, graph, graphId, selectedEdges, onEdit, onSelectNode]);
   const addable = useMemo(() => [...registry.values()].filter(s => s.disabledBehavior !== 'protected' && s.type !== GROUP_NODE_TYPE), []);
 
   const addNode = useCallback(() => {
@@ -481,7 +475,7 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
     setComponentId('');
     setStartOn('');
   };
-  const canDelete = (selectedNode !== undefined && !isLocked(selectedNode)) || selectedEdges.size > 0;
+  const canDelete = graph?.nodes.some(n => (picked.has(n.id) || n.id === selectedNodeId) && !isLocked(n)) || selectedEdges.size > 0;
   /** Nodes Group selection would wrap: the Shift+click picks plus the primary selected node. */
   const groupIds = [...new Set([...picked, ...(selectedNodeId ? [selectedNodeId] : [])])].filter(id => graph?.nodes.some(n => n.id === id));
   const groupPicked = () => {

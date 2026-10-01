@@ -233,7 +233,8 @@ test('hard limits report BUDGET_EXCEEDED, never truncate', () => {
 
   const events = validateParticleDescriptor(base({ bursts: [{ tick: 0, eventRandomKey: 'a', count: 1 }, { tick: 0, eventRandomKey: 'b', count: 1 }] }), { maxBurstEvents: 1 });
   assert.ok(!events.ok && events.errors.some((e) => e.code === 'BUDGET_EXCEEDED'));
-  assert.equal(ParticleSimulation.create(base(), { maxLiveParticles: 9000 }).ok, false);
+  assert.equal(ParticleSimulation.create(base(), { maxLiveParticles: 9000 }).ok, true);
+  assert.equal(ParticleSimulation.create(base(), { maxLiveParticles: 65537 }).ok, false);
 });
 
 test('hard limits: burst+rate share budget on the same tick; exact boundary is allowed', () => {
