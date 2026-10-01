@@ -48,7 +48,9 @@ export async function requestAi(request: AiRequest, options: { signal?: AbortSig
   if (signal.aborted) throw new Error('AI request cancelled.');
   let response: Response;
   try { response = await (options.fetch ?? fetch)(root + path, { method: 'POST', headers, body: JSON.stringify(body), signal, redirect: 'error' }); }
-  catch { if (signal.aborted) throw new Error(options.signal?.aborted ? 'AI request cancelled.' : `Model request timed out after ${MODEL_TIMEOUT_MS / 1000} seconds.`); throw new Error('Cannot reach the model endpoint. Check its URL, network and certificate.'); }
+  catch { if (signal.aborted) throw new Error(options.signal?.aborted ? 'AI request cancelled.' : `Model request timed out after ${MODEL_TIMEOUT_MS / 1000} seconds.`); // A plain-http address of a server that redirects to https fails here (redirects are refused): say so.
+    if (/^http:\/\//.test(root) && !/^http:\/\/(127\.0\.0\.1|localhost|\[::1\])[:/]/.test(root + '/')) throw new Error(`Cannot reach the model endpoint over plain http (${root}). If the server uses https, change the API base URL to start with https:// (Open WebUI: https://<server>/api).`);
+    throw new Error('Cannot reach the model endpoint. Check its URL, network and certificate.'); }
   if (!response.ok) throw new Error(`Model returned HTTP ${response.status}. Check credentials, model ID and server availability.`);
   const reader = response.body?.getReader();
   if (!reader) throw new Error('Model returned an empty response.');
