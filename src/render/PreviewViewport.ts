@@ -79,6 +79,8 @@ export type PreviewViewportCallbacks = {
   onContextLost?: (lost: boolean) => void;
   /** Loop mode wrapped playback back to tick 0 (same seed); e.g. restart synced sound. */
   onLoop?: () => void;
+  /** One undoable anchor move, reported in world coordinates after releasing the pointer. */
+  onAnchorMove?: (id: string, position: [number, number, number]) => void;
 };
 
 /** Particle IDs are only unique per emitter; namespace them by system when crossing systems. */
@@ -666,6 +668,12 @@ export class PreviewViewport {
     this.#grid = grid!;
     this.#ground = ground!;
     this.#observer = observer!;
+    renderer.domElement.addEventListener('pointerdown', this.#anchorDown, true);
+    renderer.domElement.addEventListener('pointermove', this.#anchorMove, true);
+    renderer.domElement.addEventListener('pointerup', this.#anchorUp, true);
+    renderer.domElement.addEventListener('pointercancel', this.#anchorCancel, true);
+    renderer.domElement.addEventListener('lostpointercapture', this.#anchorCancel, true);
+    window.addEventListener('keydown', this.#anchorKey);
     document.addEventListener('visibilitychange', this.#onVisibility);
     this.#resize();
     this.#raf = requestAnimationFrame(this.#loop);
@@ -989,13 +997,107 @@ export class PreviewViewport {
 
   /** 08 arena markers for Source/Target (world positions); hidden together with the grid. */
   #markers: THREE.Mesh[] = [];
-  setMarkers(points: readonly { position: readonly [number, number, number]; kind: 'source' | 'target' | 'other' }[]): void {
+  #armedAnchor: string | null = null;
+  #anchorTap: { id: string; time: number; x: number; y: number } | null = null;
+  #anchorPress: { id: string; pointer: number; x: number; y: number } | null = null;
+  #anchorDrag: { id: string; pointer: number; start: THREE.Vector3; plane: THREE.Plane; offset: THREE.Vector3; current: THREE.Vector3 } | null = null;
+
+  #pickAnchor(e: PointerEvent): THREE.Mesh | undefined {
+    const r = this.#renderer.domElement.getBoundingClientRect();
+    let best: THREE.Mesh | undefined, distance = 22;
+    for (const marker of this.#markers) {
+      if (!marker.visible || !marker.userData.anchorId) continue;
+      const p = marker.position.clone().project(this.#camera);
+      if (p.z < -1 || p.z > 1) continue;
+      const d = Math.hypot(e.clientX - r.left - (p.x + 1) * r.width / 2, e.clientY - r.top - (1 - p.y) * r.height / 2);
+      if (d < distance) { best = marker; distance = d; }
+    }
+    return best;
+  }
+
+  #anchorRay(e: PointerEvent): THREE.Ray {
+    const r = this.#renderer.domElement.getBoundingClientRect(), ray = new THREE.Raycaster();
+    ray.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, 1 - (e.clientY - r.top) / r.height * 2), this.#camera);
+    return ray.ray;
+  }
+
+  #armAnchor(id: string | null): void {
+    this.#armedAnchor = id;
+    this.#renderer.domElement.style.cursor = id ? 'grab' : '';
+    for (const marker of this.#markers) marker.scale.setScalar(marker.userData.anchorId === id ? 1.8 : 1);
+  }
+
+  #anchorDown = (e: PointerEvent): void => {
+    if (!e.isPrimary || e.button !== 0 || !this.#callbacks.onAnchorMove) return;
+    const marker = this.#pickAnchor(e);
+    if (!marker) { this.#armAnchor(null); this.#anchorTap = null; return; }
+    const id = marker.userData.anchorId as string, tap = this.#anchorTap;
+    this.#anchorPress = { id, pointer: e.pointerId, x: e.clientX, y: e.clientY };
+    if (this.#armedAnchor !== id && !(tap?.id === id && performance.now() - tap.time < 450 && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) < 22)) return;
+    this.#armAnchor(id);
+    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(this.#camera.getWorldDirection(new THREE.Vector3()), marker.position);
+    const hit = this.#anchorRay(e).intersectPlane(plane, new THREE.Vector3());
+    if (!hit) return;
+    this.#anchorDrag = { id, pointer: e.pointerId, start: marker.position.clone(), current: marker.position.clone(), plane, offset: marker.position.clone().sub(hit) };
+    this.#controls.enabled = false;
+    this.#frameSets = null;
+    this.#userOrbited = true;
+    this.#renderer.domElement.style.cursor = 'grabbing';
+    this.#renderer.domElement.setPointerCapture(e.pointerId);
+    e.preventDefault(); e.stopImmediatePropagation();
+  };
+
+  #anchorMove = (e: PointerEvent): void => {
+    const drag = this.#anchorDrag;
+    if (!drag || drag.pointer !== e.pointerId) return;
+    const hit = this.#anchorRay(e).intersectPlane(drag.plane, new THREE.Vector3());
+    if (hit) {
+      drag.current.copy(hit).add(drag.offset);
+      this.#markers.find(m => m.userData.anchorId === drag.id)?.position.copy(drag.current);
+    }
+    e.preventDefault(); e.stopImmediatePropagation();
+  };
+
+  #finishAnchor(cancel: boolean): void {
+    const drag = this.#anchorDrag;
+    if (!drag) return;
+    this.#anchorDrag = null;
+    this.#anchorPress = null;
+    this.#anchorTap = null;
+    this.#controls.enabled = true;
+    this.#renderer.domElement.style.cursor = this.#armedAnchor ? 'grab' : '';
+    if (this.#renderer.domElement.hasPointerCapture(drag.pointer)) this.#renderer.domElement.releasePointerCapture(drag.pointer);
+    if (cancel) this.#markers.find(m => m.userData.anchorId === drag.id)?.position.copy(drag.start);
+    else if (drag.start.distanceToSquared(drag.current) > 1e-10) this.#callbacks.onAnchorMove?.(drag.id, drag.current.toArray() as [number, number, number]);
+  }
+
+  #anchorUp = (e: PointerEvent): void => {
+    if (this.#anchorDrag?.pointer === e.pointerId) {
+      this.#anchorMove(e);
+      this.#finishAnchor(false);
+      e.stopImmediatePropagation();
+    } else if (this.#anchorPress?.pointer === e.pointerId) {
+      const press = this.#anchorPress;
+      this.#anchorTap = Math.hypot(e.clientX - press.x, e.clientY - press.y) < 8 ? { id: press.id, time: performance.now(), x: e.clientX, y: e.clientY } : null;
+      this.#anchorPress = null;
+    }
+  };
+  #anchorCancel = (e: PointerEvent): void => {
+    if (this.#anchorDrag?.pointer === e.pointerId) this.#finishAnchor(true);
+    // OrbitControls releases capture after an ordinary tap. Preserve that tap for the second one.
+    if (e.type === 'pointercancel') { this.#anchorPress = null; this.#anchorTap = null; }
+  };
+  #anchorKey = (e: KeyboardEvent): void => { if (e.key === 'Escape') { this.#finishAnchor(true); this.#armAnchor(null); } };
+  setMarkers(points: readonly { position: readonly [number, number, number]; kind: 'source' | 'target' | 'other'; id?: string; color?: string }[]): void {
     for (const m of this.#markers) { this.#scene.remove(m); m.geometry.dispose(); (m.material as THREE.Material).dispose(); }
     this.#markers = points.map(pt => {
       // Drawn on top of everything (no depth test): an anchor at or just under floor height (a Target on the ground)
       // must stay visible from every angle, not vanish under the floor.
-      const mesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.09), new THREE.MeshBasicMaterial({ color: pt.kind === 'source' ? 0x6fd48f : pt.kind === 'target' ? 0xffa060 : 0x9aa4b8, wireframe: true, depthWrite: false, depthTest: false, transparent: true, opacity: 0.9 }));
+      const mesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.09), new THREE.MeshBasicMaterial({ color: pt.color ?? (pt.kind === 'source' ? 0x6fd48f : pt.kind === 'target' ? 0xffa060 : 0x9aa4b8), wireframe: true, depthWrite: false, depthTest: false, transparent: true, opacity: 0.9 }));
       mesh.position.set(pt.position[0], pt.position[1], pt.position[2]);
+      mesh.userData.anchorKind = pt.kind;
+      mesh.userData.anchorId = pt.id ?? (pt.kind === 'other' ? undefined : pt.kind);
+      mesh.scale.setScalar(mesh.userData.anchorId === this.#armedAnchor ? 1.8 : 1);
       mesh.visible = this.#grid.visible;
       mesh.renderOrder = 1000;
       this.#scene.add(mesh);
@@ -1109,6 +1211,9 @@ export class PreviewViewport {
   dispose(): void {
     if (this.#disposed) return;
     this.#disposed = true;
+    this.#finishAnchor(true);
+    window.removeEventListener('keydown', this.#anchorKey);
+    for (const [event, handler] of [['pointerdown', this.#anchorDown], ['pointermove', this.#anchorMove], ['pointerup', this.#anchorUp], ['pointercancel', this.#anchorCancel], ['lostpointercapture', this.#anchorCancel]] as const) this.#renderer.domElement.removeEventListener(event, handler, true);
     document.removeEventListener('visibilitychange', this.#onVisibility);
     cancelAnimationFrame(this.#raf);
     this.#observer.disconnect();

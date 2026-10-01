@@ -8,6 +8,7 @@ import type { Patch as HistoryPatch } from './history.ts';
 import type { FollowerTravel } from '../graph/toParticles.ts';
 import { hueRotate, hueShiftToward } from '../graph/recolor.ts';
 import { canKeyframe, controlValueAt, removeKeyAt, setKeyAt } from '../graph/keyframes.ts';
+import { anchorColor } from './anchorColor.ts';
 
 const UNIT_LABEL: Record<string, string> = { meter: 'm', second: 's', tick: 'ticks', radian: 'rad', metersPerSecond: 'm/s', metersPerSecondSquared: 'm/s²', hertz: 'Hz', perSecond: '/s', linearGain: '×', normalized: '', none: '' };
 
@@ -173,17 +174,33 @@ function AnchorCoordinate({ value, label, onCommit }: { value: number; label: st
 export function ControlsPanel({ document: doc, onEdit, followers = [], tick = 0 }: Props) {
   const all = doc.controls.map((c, i) => [c, i] as const);
   const sections = [...new Set(all.map(([c]) => c.section))];
+  const custom = doc.anchors.filter(a => a.id !== 'source' && a.id !== 'target');
+  const addAnchor = () => {
+    let n = 1;
+    while (doc.anchors.some(a => a.id === `anchor-${n}`)) n++;
+    const source = doc.anchors.find(a => a.id === 'source')?.position ?? [0, 1, 0];
+    onEdit(`Add Anchor ${n}`, [{ op: 'splice', path: ['anchors'], index: doc.anchors.length, deleteCount: 0,
+      insert: [{ id: `anchor-${n}`, name: `Anchor ${n}`, position: [source[0] + n * 0.6, source[1], source[2] + 0.6] }] }]);
+  };
   return (
     <div className="cp-root">
       <fieldset className="cp-section">
-        <legend>Source &amp; Target</legend>
+        <legend>Anchors</legend>
         <p className="pv2-muted">Position in metres: X sideways, Y height, Z depth.</p>
-        {doc.anchors.map((anchor, index) => (anchor.id === 'source' || anchor.id === 'target') && (
+        <p className="pv2-muted">Double-click / double-tap a marker in the 3D view, then drag. Escape cancels.</p>
+        <button type="button" onClick={addAnchor}>Add anchor</button>
+        {doc.anchors.map((anchor, index) => (
           <div className="cp-row cp-row-value" key={anchor.id}>
-            <span className="cp-label">{anchor.id === 'source' ? 'Source' : 'Target'}</span>
+            <span className="cp-label" style={{ color: anchorColor(anchor.id, custom.findIndex(a => a.id === anchor.id)) }}>
+              {anchor.id === 'source' ? 'Source' : anchor.id === 'target' ? 'Target' : (
+                <input type="text" key={`${anchor.id}-${anchor.name}`} defaultValue={anchor.name} aria-label={`${anchor.id} name`} title={`Anchor ID: ${anchor.id}. Select this anchor in an Anchor node to connect it to an effect.`}
+                  style={{ width: '100%', color: 'inherit' }} onBlur={e => { const name = e.currentTarget.value.trim(); if (name && name !== anchor.name) onEdit(`Rename ${anchor.id}`, [{ op: 'set', path: ['anchors', index, 'name'], value: name }]); else e.currentTarget.value = anchor.name; }}
+                  onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') { e.currentTarget.value = anchor.name; e.currentTarget.blur(); } }} />
+              )}
+            </span>
             <span className="cp-vec">{anchor.position.map((value, axis) => (
               <label key={axis} style={{ minWidth: 0, flex: 1 }}>{'XYZ'[axis]}
-                <AnchorCoordinate key={`${anchor.id}-${axis}-${value}`} value={value} label={`${anchor.id === 'source' ? 'Source' : 'Target'} ${'XYZ'[axis]}`}
+                <AnchorCoordinate key={`${anchor.id}-${axis}-${value}`} value={value} label={`${anchor.id === 'source' ? 'Source' : anchor.id === 'target' ? 'Target' : anchor.name} ${'XYZ'[axis]}`}
                   onCommit={next => onEdit(`Move ${anchor.id} ${'XYZ'[axis]}`, [{ op: 'set', path: ['anchors', index, 'position', axis], value: next }])} />
               </label>
             ))}</span>

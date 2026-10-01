@@ -61,7 +61,7 @@ The search box matches name, element or type ("fire", "impact", "beam").
 
 - **Mouse:** orbit / pan / zoom. **View ▾** overlay (top-right corner of the viewport) → **Reset camera** fits the
   effect again.
-- **Source / Target positions:** open the right inspector's **Controls** tab. The **Source & Target** section has X/Y/Z fields in metres (Y is height). Press Enter or leave the field to apply; Undo restores the previous position. Viewport markers show their positions but cannot be dragged. [`vfx_set_anchor`]
+- **Anchors:** in **Controls → Anchors**, click **Add anchor** to create a named point with its own colour, matching its viewport marker. Edit the name or X/Y/Z positions in metres (Y is height). In an Anchor node's inspector, choose the new anchor to wire it into an effect. Double-click or double-tap any marker to activate it (it grows), then drag. Movement follows the plane facing the camera; orbit first to choose another direction. Release to apply one undoable move; Escape cancels, and clicking empty space deactivates it. Enable **View → Grid & markers** if markers are hidden. Adding, renaming and moving anchors support Undo. [`vfx_set_anchor`]
 - **Transport (one row under the viewport):** Play/Pause (▶/⏸), **Restart** (⟲), step one tick back/forward, the
   scrub bar with a tick readout, speed 0.25× / 0.5× / 1× (sound only plays at 1×), **Loop** (↻), **Sound** (🔊/🔇).
 - **View ▾ overlay** (viewport corner): Glow on/off (see the raw shapes), Grid & markers, Light arena (check the

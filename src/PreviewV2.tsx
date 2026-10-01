@@ -25,6 +25,7 @@ import { buildPack, readPack, type PackAsset } from './model/vfxpack.ts';
 import { hasAssetUrl, registerAssetUrl } from './assets/assetUrls.ts';
 import { CORRUPT_KEY, DRAFT_KEY, REVISIONS_KEY, DRAFT_META_KEY, SHELF_KEY, TRASH_KEY, documentFileName, mergeEntryLists, emptyTrash, loadDraftText, readDraftMeta, readShelf, readTrash, recoverDraft, removeFromShelf, restoreFromTrash, saveDraft, saveToShelf, type DraftStorage, type ShelfEntry, type TrashEntry } from './model/persistence.ts';
 import { ControlsPanel } from './editor/ControlsPanel.tsx';
+import { anchorColor } from './editor/anchorColor.ts';
 import { OutlinePanel } from './editor/OutlinePanel.tsx';
 import { compileAudio } from './graph/toAudio.ts';
 import { choosePreviewMode, createLightningAudioDemoDocument, hasRootAudio, ribbonStyleDiagnostics, type PreviewModeChoice } from './render/previewMode.ts';
@@ -733,7 +734,17 @@ export default function PreviewV2() {
     mountedRef.current = true;
     let vp: PreviewViewport | null = null;
     try {
-      vp = new PreviewViewport(host, { onFrame: setFrame, onError: setRuntimeErrors, onLoop: () => onLoopRef.current(), onContextLost: setGpuLost });
+      vp = new PreviewViewport(host, { onFrame: setFrame, onError: setRuntimeErrors, onLoop: () => onLoopRef.current(), onContextLost: setGpuLost,
+        onAnchorMove: (id, world) => {
+          const current = historyRef.current!.snapshot(), index = current.anchors.findIndex(a => a.id === id);
+          if (index < 0 || current.rootTransform.scale === 0) return;
+          const t = current.rootTransform, [qx, qy, qz, qw] = t.rotation;
+          const x = world[0] - t.position[0], y = world[1] - t.position[1], z = world[2] - t.position[2];
+          // Inverse unit-quaternion rotation, then inverse scale: world → document coordinates.
+          const tx = 2 * (-qy * z + qz * y), ty = 2 * (-qz * x + qx * z), tz = 2 * (-qx * y + qy * x);
+          const position = [(x + qw * tx - qy * tz + qz * ty) / t.scale, (y + qw * ty - qz * tx + qx * tz) / t.scale, (z + qw * tz - qx * ty + qy * tx) / t.scale];
+          onEdit(`Drag ${id}`, [{ op: 'set', path: ['anchors', index, 'position'], value: position }]);
+        } });
       viewportRef.current = vp;
       // Dev-only diagnostics hook (resource plateau / context-loss checks); absent from production builds.
       if (import.meta.env.DEV) (window as unknown as { __vfxDebug?: unknown }).__vfxDebug = { viewport: vp, load: (text: string) => replaceRef.current?.(text, 'debug load'), openPack: (f: File) => openPack(f) };
@@ -780,7 +791,8 @@ export default function PreviewV2() {
       const tx = 2 * (qy * z - qz * y), ty = 2 * (qz * x - qx * z), tz = 2 * (qx * y - qy * x);
       return [x + qw * tx + (qy * tz - qz * ty) + t.position[0], y + qw * ty + (qz * tx - qx * tz) + t.position[1], z + qw * tz + (qx * ty - qy * tx) + t.position[2]];
     };
-    viewportRef.current?.setMarkers(doc.anchors.map(a => ({ position: world(a.position), kind: a.id === 'source' ? 'source' as const : a.id === 'target' ? 'target' as const : 'other' as const })));
+    const custom = doc.anchors.filter(a => a.id !== 'source' && a.id !== 'target');
+    viewportRef.current?.setMarkers(doc.anchors.map(a => ({ id: a.id, color: anchorColor(a.id, custom.findIndex(c => c.id === a.id)), position: world(a.position), kind: a.id === 'source' ? 'source' as const : a.id === 'target' ? 'target' as const : 'other' as const })));
   }, [doc.anchors, doc.rootTransform]);
   // 08 diagnostics readout, refreshed once a second.
   const [renderStats, setRenderStats] = useState<ReturnType<PreviewViewport['renderStats']> | null>(null);

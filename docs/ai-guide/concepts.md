@@ -81,7 +81,7 @@ follower. Exports (Roblox, Unreal) keep the first path only and say so in their 
 
 ## 4. Space: anchors
 
-- **Source** and **Target** are document anchors. Move them (Controls → Source & Target position fields, or `vfx_set_anchor`) and every node
+- **Source** and **Target** are document anchors. Move them (Controls → Anchors position fields, double-tap and drag their markers, or `vfx_set_anchor`) and every node
   that uses them follows: emitters aim at Target, paths run Source→Target, impacts land on Target.
 - `OffsetAnchor` makes a derived point (1.2 m in front of Source, a floor point under Target with
   `dropToGround`). Always derive from Source/Target instead of adding fixed anchors, or pieces get left behind when
