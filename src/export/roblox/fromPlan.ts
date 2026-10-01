@@ -346,52 +346,57 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
   const usedBy = new Map<string, string>(), names = new Set<string>();
   const unique = (base: string) => { let n = safeName(base), i = 2; while (names.has(n)) n = `${safeName(base)}_${i++}`; names.add(n); return n; };
   const emitters: RbxEmitter[] = [];
+  const emittersBySystem = new Map<string, RbxEmitter[]>();
   for (const layer of plan.value.layers) {
     const d = systems.get(layer.systemId);
     if (!d) continue;
     const shared = usedBy.get(layer.systemId);
     if (shared) report.push({ level: 'approximated', item: layer.nodeId, message: `Shares its particles with ${shared} in the editor; in Roblox it emits its own (same timing and look, different random particles).` });
     else usedBy.set(layer.systemId, layer.nodeId);
-    emitters.push(emitterFrom(layer, d, origin, plan.value.durationTicks, unique(layer.nodeId), report));
+    const own = [emitterFrom(layer, d, origin, plan.value.durationTicks, unique(layer.nodeId), report)];
+    // A PathFollower over several paths: one source per path, each emitting the full amount (as in the editor).
+    (d.extraSourceTracks ?? []).forEach((track, k) => own.push(emitterFrom(layer, { ...d, sourceTrack: track, extraSourceTracks: undefined }, origin, plan.value.durationTicks, unique(`${layer.nodeId}_path${k + 2}`), report)));
+    emitters.push(...own);
+    if (!emittersBySystem.has(layer.systemId)) emittersBySystem.set(layer.systemId, own);
   }
   // Trails: one particle riding a moving source → a native Roblox Trail; trails behind many particles → stretched
   // velocity-aligned particles on that system's emitter (Roblox cannot trail every particle).
-  // A PathFollower over several paths makes one source per path in the editor; the player follows one route.
-  for (const s of plan.value.systems) if (s.descriptor.extraSourceTracks?.length) report.push({ level: 'approximated', item: s.id, message: `Follows ${1 + s.descriptor.extraSourceTracks.length} paths in the editor; exported the first path only.` });
   const trails: RbxTrail[] = [];
-  const emitterBySystem = new Map(plan.value.layers.map((l, i) => [l.systemId, emitters[i]] as const).filter(([, e]) => !!e));
   for (const t of plan.value.trails) {
     const d = systems.get(t.systemId);
     if (!d) continue;
     const births = d.bursts.reduce((n, b) => n + b.count, 0);
     if (d.attachToSource && d.sourceTrack && !d.rate && births <= 2) {
-      const start = Math.min(...d.bursts.map(b => b.tick));
-      const rel = (p: readonly number[]): Vec3 => [r3((p[0] - origin[0]) * S), r3((p[1] - origin[1]) * S), r3((p[2] - origin[2]) * S)];
-      const path: [number, Vec3][] = [];
-      let prev = '';
-      d.sourceTrack.positions.forEach((p, i) => { const q = rel(p), k = q.join(); if (k !== prev) { path.push([d.sourceTrack!.startTick + i, q]); prev = k; } });
-      const c = hueRotate(applyGrade(t.color, t.grade), t.hueShift ?? 0), base = r3(1 - Math.min(1, t.opacity * t.color.alpha));
-      const fade = Math.min(0.95, Math.max(0.05, t.endFade));
-      trails.push({
-        name: unique(t.nodeId), position: path[0]?.[1] ?? rel(d.sourcePosition), path,
-        window: [start, Math.min(plan.value.durationTicks, start + d.lifetimeTicks.max)],
-        lifetime: r3(t.historyTicks / TICKS_PER_SECOND), width: r3(t.width * S), color: hex(c).map(r3) as [number, number, number],
-        transparency: [{ t: 0, v: base, e: 0 }, { t: r3(1 - fade), v: base, e: 0 }, { t: 1, v: 1, e: 0 }],
-        widthScale: [{ t: 0, v: 1, e: 0 }, { t: 1, v: 0.3, e: 0 }],
-        lightEmission: t.blend === 'additive' ? 1 : 0, brightness: r3(1 + t.emission),
-      });
+      for (const track of [d.sourceTrack, ...(d.extraSourceTracks ?? [])]) {
+        const start = Math.min(...d.bursts.map(b => b.tick));
+        const rel = (p: readonly number[]): Vec3 => [r3((p[0] - origin[0]) * S), r3((p[1] - origin[1]) * S), r3((p[2] - origin[2]) * S)];
+        const path: [number, Vec3][] = [];
+        let prev = '';
+        track.positions.forEach((p, i) => { const q = rel(p), k = q.join(); if (k !== prev) { path.push([track.startTick + i, q]); prev = k; } });
+        const c = hueRotate(applyGrade(t.color, t.grade), t.hueShift ?? 0), base = r3(1 - Math.min(1, t.opacity * t.color.alpha));
+        const fade = Math.min(0.95, Math.max(0.05, t.endFade));
+        trails.push({
+          name: unique(t.nodeId), position: path[0]?.[1] ?? rel(d.sourcePosition), path,
+          window: [start, Math.min(plan.value.durationTicks, start + d.lifetimeTicks.max)],
+          lifetime: r3(t.historyTicks / TICKS_PER_SECOND), width: r3(t.width * S), color: hex(c).map(r3) as [number, number, number],
+          transparency: [{ t: 0, v: base, e: 0 }, { t: r3(1 - fade), v: base, e: 0 }, { t: 1, v: 1, e: 0 }],
+          widthScale: [{ t: 0, v: 1, e: 0 }, { t: 1, v: 0.3, e: 0 }],
+          lightEmission: t.blend === 'additive' ? 1 : 0, brightness: r3(1 + t.emission),
+        });
+      }
       continue;
     }
-    const em = emitterBySystem.get(t.systemId);
-    if (em) {
+    const ems = emittersBySystem.get(t.systemId) ?? [];
+    for (const em of ems) {
       const speed = (em.speed[0] + em.speed[1]) / 2, size = Math.max(0.01, em.size[0]?.v ?? 0.1);
       const s = r3(Math.min(3, Math.max(0.5, Math.log2(1 + (speed * t.historyTicks) / TICKS_PER_SECOND / size))));
       em.orientation = 'VelocityParallel';
       em.rotation = [VELOCITY_PARALLEL_ROTATION, VELOCITY_PARALLEL_ROTATION];
       em.rotSpeed = [0, 0];
       em.squash = [{ t: 0, v: s, e: 0 }, { t: 1, v: s, e: 0 }];
-      report.push({ level: 'approximated', item: t.nodeId, message: 'Trails behind many particles become stretched, velocity-aligned particles (Roblox cannot trail every particle).' });
-    } else report.push({ level: 'dropped', item: t.nodeId, message: 'A trail on particles with no visible sprite cannot be exported.' });
+    }
+    if (ems.length) report.push({ level: 'approximated', item: t.nodeId, message: 'Trails behind many particles become stretched, velocity-aligned particles (Roblox cannot trail every particle).' });
+    else report.push({ level: 'dropped', item: t.nodeId, message: 'A trail on particles with no visible sprite cannot be exported.' });
   }
   const meshes = bakeMeshes(plan.value.meshes, systems, origin, plan.value.durationTicks, unique, report);
   if (plan.value.presentation.flashes.length) report.push({ level: 'dropped', item: 'presentation', message: 'Screen flashes are not exported (a client-side ScreenGui flash can be added later).' });

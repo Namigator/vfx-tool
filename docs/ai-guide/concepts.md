@@ -63,7 +63,7 @@ path takes its own length ÷ speed, so arrivals can differ; a Schedule started b
 **`PathSplitter`** in front to decide who goes and who is left behind: modes `range` (Count paths from From),
 `everyNth` (every Step-th from Offset), `random` (a fixed, seeded pick), `longest` / `shortest`. Its `paths` output
 is the chosen ones (original order kept) and `rest` is everyone else; it works anywhere paths flow, not only before a
-follower. Exports (Roblox, Unreal) keep the first path only and say so in their report.
+follower. Exports (Roblox, Unreal, Godot) do the same: one emitter (and trail) per path, each on its own route.
 
 ## 3. Time: schedules, windows and events
 

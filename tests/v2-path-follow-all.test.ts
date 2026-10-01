@@ -315,18 +315,21 @@ test('PathSplitter node: registry spec, bypass when disabled, feeds the follower
   assert.deepEqual(rest.value.probe!.map(x => x.id), ['p1', 'p3']);
 });
 
-test('exporters report that only the first of several paths is exported', () => {
+test('exporters emit one source per path (each its own moving route), as the editor does', () => {
   const d = raysDoc(5);
   const rbx = robloxEffectFrom(d), ue = unrealEffectFrom(d);
   assert.ok(rbx.ok && ue.ok);
-  for (const report of [rbx.value.report, ue.value.report]) {
-    const item = report.find(r => /Follows 5 paths/.test(r.message));
-    assert.ok(item, 'report item present');
-    assert.equal(item.level, 'approximated');
-    assert.match(item.message, /exported the first path only/);
-  }
-  // A single path stays silent.
-  const one = robloxEffectFrom(raysDoc(1));
+  // Unreal/Godot IR: the follower emitter appears 5 times, each with its own route ending at its ray's end.
+  const ueRiders = ue.value.emitters.filter(e => e.sourceTrack?.length);
+  assert.equal(ueRiders.length, 5);
+  assert.equal(new Set(ueRiders.map(e => e.sourceTrack!.at(-1)![1].join())).size, 5);
+  assert.equal(new Set(ueRiders.map(e => e.name)).size, 5);
+  const rbxRiders = rbx.value.emitters.filter(e => e.path?.length);
+  assert.equal(rbxRiders.length, 5);
+  assert.equal(new Set(rbxRiders.map(e => e.path!.at(-1)![1].join())).size, 5);
+  for (const report of [rbx.value.report, ue.value.report]) assert.equal(report.some(r => /first path only/.test(r.message)), false);
+  // A single path stays one emitter.
+  const one = unrealEffectFrom(raysDoc(1));
   assert.ok(one.ok);
-  assert.equal(one.value.report.some(r => /Follows \d+ paths/.test(r.message)), false);
+  assert.equal(one.value.emitters.filter(e => e.sourceTrack?.length).length, 1);
 });
