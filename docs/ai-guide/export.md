@@ -181,7 +181,7 @@ What the importer actually builds today (seen in UE 5.8 on the flamethrower, lig
 | Lifetime, speed, direction, gravity/acceleration, drag | kept |
 | Opacity over life | **exact**: written into the templates' Scale Alpha curve |
 | Size over life | its life-average size (no stock size-curve module) |
-| Colour over life | its average over the first 60 % of life (no stock colour curve): reads redder, no white-hot core |
+| Colour over life | **exact**: Scale Color in its RGBA colour-curve mode (colour and opacity per life) |
 | Flipbook sheets | the first frame of the sheet |
 | Velocity-stretched sprites | velocity-aligned sprites (no stretch) |
 | Emitters that start away from Source (smoke at the target...) | kept: Shape Location offset (the importer turns on its Offset Mode switch, which the stock template ships off) |

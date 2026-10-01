@@ -37,6 +37,7 @@
 #include "NiagaraNodeInput.h"
 #include "NiagaraDataInterface.h"
 #include "NiagaraDataInterfaceCurve.h"
+#include "NiagaraDataInterfaceColorCurve.h"
 #include "Materials/MaterialExpressionTextureCoordinate.h"
 #include "NiagaraSpriteRendererProperties.h"
 #include "NiagaraLightRendererProperties.h"
@@ -510,6 +511,42 @@ namespace
 		UE_LOG(LogVfxImporter, Display, TEXT("   ribbon %s: %d frame(s) visible over ticks %d-%d -> %d baked slice(s)"), *RName, Visible, S, E, N);
 	}
 
+	/** Colour and opacity over life, exact: Scale Color switched to "RGBA Linear Color Curve" with a colour-curve data
+	 *  interface sampled by normalized age (sRGB keys -> linear). Returns false (caller keeps the averaged colour and the
+	 *  Scale Alpha curve) when the module or its curve input cannot be set. */
+	bool SetColorOverLifeCurve(UNiagaraGraph* Graph, const TArray<TSharedPtr<FJsonValue>>* ColorKeys, const TArray<TSharedPtr<FJsonValue>>* OpacityKeys)
+	{
+		if (!Graph || !ColorKeys || ColorKeys->Num() == 0) return false;
+		UNiagaraNodeFunctionCall* Fn = nullptr;
+		for (UEdGraphNode* Node : Graph->Nodes) if (auto* F = Cast<UNiagaraNodeFunctionCall>(Node)) if (F->GetFunctionName().Contains(TEXT("ScaleColor"))) { Fn = F; break; }
+		if (!Fn || !SetStaticSwitch(Graph, TEXT("ScaleColor"), TEXT("Scale Mode"), TEXT("NewEnumerator2"))) return false;
+		const FNiagaraParameterHandle Handle = FNiagaraParameterHandle::CreateAliasedModuleParameterHandle(FNiagaraParameterHandle::CreateModuleParameterHandle(FName(TEXT("Linear Color Curve"))), Fn);
+		UEdGraphPin& Pin = FNiagaraStackGraphUtilities::GetOrCreateStackFunctionInputOverridePin(*Fn, Handle, FNiagaraTypeDefinition(UNiagaraDataInterfaceColorCurve::StaticClass()), FGuid(), FGuid());
+		if (Pin.LinkedTo.Num()) Pin.BreakAllPinLinks();
+		UNiagaraDataInterface* DI = nullptr;
+		FNiagaraStackGraphUtilities::SetDataInterfaceValueForFunctionInput(Pin, UNiagaraDataInterfaceColorCurve::StaticClass(), Handle.GetParameterHandleString().ToString(), DI);
+		UNiagaraDataInterfaceColorCurve* Curve = Cast<UNiagaraDataInterfaceColorCurve>(DI);
+		if (!Curve) { UE_LOG(LogVfxImporter, Warning, TEXT("    ScaleColor: could not create the colour curve")); return false; }
+		TArray<double> Times;
+		const auto AddTimes = [&Times](const TArray<TSharedPtr<FJsonValue>>* Keys) { if (Keys) for (const auto& K : *Keys) Times.AddUnique(K->AsObject()->GetNumberField(TEXT("t"))); };
+		AddTimes(ColorKeys); AddTimes(OpacityKeys);
+		Times.Sort();
+		Curve->Modify();
+		Curve->RedCurve.Reset(); Curve->GreenCurve.Reset(); Curve->BlueCurve.Reset(); Curve->AlphaCurve.Reset();
+		for (const double T : Times)
+		{
+			const FLinearColor C(FColor(
+				(uint8)FMath::Clamp(SampleKeys(ColorKeys, T, TEXT("r"), 1.0) * 255.0, 0.0, 255.0),
+				(uint8)FMath::Clamp(SampleKeys(ColorKeys, T, TEXT("g"), 1.0) * 255.0, 0.0, 255.0),
+				(uint8)FMath::Clamp(SampleKeys(ColorKeys, T, TEXT("b"), 1.0) * 255.0, 0.0, 255.0)));
+			Curve->RedCurve.AddKey(T, C.R); Curve->GreenCurve.AddKey(T, C.G); Curve->BlueCurve.AddKey(T, C.B);
+			Curve->AlphaCurve.AddKey(T, SampleKeys(OpacityKeys, T, TEXT("v"), 1.0));
+		}
+		Curve->UpdateLUT();
+		UE_LOG(LogVfxImporter, Display, TEXT("    ScaleColor: colour + opacity curve over life (%d keys)"), Times.Num());
+		return true;
+	}
+
 	/** A light: one particle born when the light turns on, living until it turns off, drawn only by a Light renderer
 	 *  (colour x peak intensity, radius, brightness following the intensity track through Scale Alpha). */
 	void BuildLightEmitter(FNiagaraEmitterHandle& Handle, FVersionedNiagaraEmitterData* Data, const TSharedPtr<FJsonObject>& L)
@@ -732,10 +769,16 @@ namespace
 			}
 			Body.R /= (N + 1); Body.G /= (N + 1); Body.B /= (N + 1);
 		}
-		const FLinearColor InitColor(Body.R, Body.G, Body.B, 1.0f);
-		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Color"), Col, ColorLit(InitColor));
 		const TArray<TSharedPtr<FJsonValue>>* OpacityKeys = nullptr;
-		if (E->TryGetArrayField(TEXT("opacityOverLife"), OpacityKeys)) SetScaleAlphaCurve(Graph, OpacityKeys);
+		E->TryGetArrayField(TEXT("opacityOverLife"), OpacityKeys);
+		// Exact colour + opacity over life when Scale Color takes a colour curve (it multiplies the birth colour, so the
+		// birth colour becomes white); otherwise the averaged body colour and the exact opacity curve.
+		if (SetColorOverLifeCurve(Graph, ColorKeys, OpacityKeys)) OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Color"), Col, ColorLit(FLinearColor::White));
+		else
+		{
+			OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Color"), Col, ColorLit(FLinearColor(Body.R, Body.G, Body.B, 1.0f)));
+			if (OpacityKeys) SetScaleAlphaCurve(Graph, OpacityKeys);
+		}
 
 		if (Template == TEXT("Fountain"))
 		{
