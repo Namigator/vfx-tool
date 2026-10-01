@@ -1193,6 +1193,14 @@ export default function PreviewV2() {
                               </select>
                             </label>
                             <button type="button" onClick={() => vp?.resetView()} title="Fit the whole effect in view again (after orbiting or zooming)">Reset camera</button>
+                            {/* Technical details live here (they used to expand under the timeline and push the whole layout). */}
+                            {(frame.sampleParticleId || renderStats) && (
+                              <div className="pv2-tech">
+                                <div className="pv2-tech-title">Technical details</div>
+                                {frame.sampleParticleId && <div>Sample particle: <code>{frame.sampleParticleId}</code></div>}
+                                {renderStats && <div>Last frame: {renderStats.calls} draw calls, {renderStats.triangles} triangles · {renderStats.width}×{renderStats.height} px (pixel ratio {renderStats.pixelRatio}) · {renderStats.geometries} geometries, {renderStats.materials} materials, {renderStats.textures} textures{renderStats.contextLost ? ' · GPU context lost' : ''}</div>}
+                              </div>
+                            )}
                           </OverlayMenu>
                         </div>
                         {isEmptyEffect && compiled && <div className="pv2-empty-state">Empty effect. Open the Library and add a component to get started.</div>}
@@ -1239,13 +1247,6 @@ export default function PreviewV2() {
                         <TimelineStrip document={doc} lanes={lanes} tick={frame.tick} durationTicks={frame.durationTicks} selectedNodeId={selectedNodeId}
                           onEdit={onEdit} onSeek={t => { vp?.seek(Math.max(0, Math.min(frame.durationTicks, t))); stopSound(''); }}
                           onSelect={nodeId => { const cur = historyRef.current!.snapshot(); if (canvasGraphId(cur) !== cur.rootGraphId) onEdit('Show the effect', [{ op: 'set', path: ['editor', 'openedGraphId'], value: cur.rootGraphId }]); setSelectedNodeId(nodeId); }} />
-                        {frame.sampleParticleId && (
-                          <details className="pv2-tech">
-                            <summary>Technical details</summary>
-                            Sample particle ID: <code>{frame.sampleParticleId}</code>
-                            {renderStats && <div className="pv2-muted">Last frame: {renderStats.calls} draw calls, {renderStats.triangles} triangles · {renderStats.width}×{renderStats.height} px (pixel ratio {renderStats.pixelRatio}) · {renderStats.geometries} geometries, {renderStats.materials} materials, {renderStats.textures} textures{renderStats.contextLost ? ' · GPU context lost' : ''}</div>}
-                          </details>
-                        )}
                       </div>
                     }
                     second={

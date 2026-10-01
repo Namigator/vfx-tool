@@ -145,8 +145,8 @@
 .pv2-mark-flash, .pv2-mark-shake { background: #ff7070; }
 .pv2-window { position: absolute; top: 1px; height: 4px; background: rgba(127, 180, 255, .35); border-radius: 2px; }
 .pv2-check { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; white-space: nowrap; }
-.pv2-tech { padding: 0 10px 6px; font-size: var(--pv2-font-size-sm); color: var(--pv2-text-muted); min-width: 0; }
-.pv2-tech summary { line-height: 28px; cursor: pointer; }
+.pv2-tech { display: flex; flex-direction: column; gap: 4px; max-width: 260px; margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--pv2-border); font-size: var(--pv2-font-size-sm); color: var(--pv2-text-muted); min-width: 0; }
+.pv2-tech-title { color: var(--pv2-text); font-weight: 600; }
 .pv2-tech code { overflow-wrap: anywhere; word-break: break-all; }
 
 /* ---------- Right inspector: tabs ---------- */
@@ -299,6 +299,6 @@
   .pv2-phone .pv2-menu-list, .pv2-phone .pv2-overlay-panel { top: calc(44px + env(safe-area-inset-top)); }
   .pv2-phone .pv2-scrub { order: 0; flex: 1 1 120px; }
   .pv2-phone .pv2-transport { flex-wrap: nowrap; padding: 2px 8px; }
-  .pv2-phone .pv2-readout, .pv2-phone .pv2-tech, .pv2-phone .tl-root { display: none; }
+  .pv2-phone .pv2-readout, .pv2-phone .tl-root { display: none; }
   .pv2 .pv2-mnav-btn { flex-direction: row; gap: 6px; min-height: 44px; font-size: 12px; padding: 0; }
 }
