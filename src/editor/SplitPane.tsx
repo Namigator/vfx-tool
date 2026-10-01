@@ -43,9 +43,12 @@ export type SplitPaneProps = {
   sizedPane?: 'first' | 'second';
   /** Smallest size (px) left for the other pane while dragging. Default 120. */
   otherMin?: number;
+  /** Phone layout: show only this pane, full size, no splitter. Both panes stay mounted (the other is hidden with CSS),
+   *  so the 3D viewport, graph and inspector keep their state while the user switches between them. */
+  phoneShow?: 'first' | 'second';
 };
 
-export function SplitPane({ storageKey, direction, defaultSize, min, max, collapsed, onToggleCollapse, first, second, ariaLabel, className, sizedPane = 'first', otherMin = 120 }: SplitPaneProps) {
+export function SplitPane({ storageKey, direction, defaultSize, min, max, collapsed, onToggleCollapse, first, second, ariaLabel, className, sizedPane = 'first', otherMin = 120, phoneShow }: SplitPaneProps) {
   const [size, setSize] = useState(() => readStored(storageKey, defaultSize));
   const sizeRef = useRef(size);
   sizeRef.current = size;
@@ -114,6 +117,15 @@ export function SplitPane({ storageKey, direction, defaultSize, min, max, collap
   const paneStyle: CSSProperties = direction === 'row' ? { flex: '0 1 auto', flexBasis: size, width: size } : { flex: '0 1 auto', flexBasis: size, height: size };
   const hideFirst = collapsed === 'first';
   const hideSecond = collapsed === 'second';
+
+  if (phoneShow) {
+    return (
+      <div ref={containerRef} className={`pv2-split pv2-split-${direction} pv2-split-phone${className ? ` ${className}` : ''}`}>
+        <div className={`pv2-split-pane pv2-split-first${phoneShow === 'first' ? '' : ' pv2-split-off'}`}>{first}</div>
+        <div className={`pv2-split-pane pv2-split-second${phoneShow === 'second' ? '' : ' pv2-split-off'}`}>{second}</div>
+      </div>
+    );
+  }
 
   return (
     <div ref={containerRef} className={`pv2-split pv2-split-${direction}${className ? ` ${className}` : ''}`}>

@@ -195,14 +195,6 @@
   .pv2-topbar-status .pv2-note:not(:last-child) { display: none; }
 }
 
-@media (max-width: 700px) {
-  .pv2-main { flex-direction: column; }
-  .pv2-split-row { flex-direction: column; }
-  .pv2-split-row > .pv2-splitter { width: auto; height: 5px; cursor: row-resize; }
-  .pv2-split-row > .pv2-split-pane.pv2-split-first { width: auto !important; height: auto; max-height: 40vh; }
-  .pv2-transport { flex-wrap: wrap; }
-  .pv2-transport input[type=range] { min-width: 100px; }
-}
 
 /* Visible file toolbar in the top bar (compact, wraps to icons-free labels only). */
 .pv2-topbar-menus { display: flex; align-items: center; gap: 4px; flex-wrap: nowrap; min-width: 0; overflow-x: auto; scrollbar-width: none; }
@@ -239,3 +231,74 @@
   .pv2-tool-filemenu { display: inline-flex; }
 }
 .pv2-topbar-menus { overflow: visible; }
+
+/* ---------- Phones (<= 760 px, class set from PreviewV2's PHONE_QUERY) ----------
+   One panel at a time, chosen in a bottom tab bar (thumb reach); panels stay mounted and are hidden with CSS.
+   Touch targets >= 44 px (Apple HIG / WCAG 2.5.5), form fields at 16 px so iOS Safari does not zoom on focus,
+   safe-area insets for notches and the home indicator, dynamic viewport height for mobile browser toolbars. */
+.pv2-split-off { display: none !important; }
+.pv2-phone { height: 100vh; height: 100dvh; padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left); }
+.pv2-phone .pv2-split > .pv2-split-pane { flex: 1 1 auto !important; width: auto !important; height: auto !important; }
+.pv2-phone .pv2-side { border-left: none; }
+.pv2-phone .pv2-graph { border-top: none; }
+
+/* Top bar: name, File, Export, undo/redo. Layout switches, panel toggles and the status line are desktop-only. */
+.pv2-phone .pv2-topbar { gap: 4px; padding: 0 6px; height: 52px; }
+.pv2-phone .pv2-appname, .pv2-phone .pv2-topbar-panels, .pv2-phone .pv2-segmented, .pv2-phone .pv2-topbar-status,
+.pv2-phone .pv2-topbar-sep, .pv2-phone .pv2-tutorial-btn { display: none; }
+.pv2-phone .pv2-topbar-brand { flex: 1 1 auto; min-width: 0; }
+.pv2-phone .pv2-name-display, .pv2-phone .pv2-name-input { max-width: 100%; min-width: 0; }
+.pv2-phone .pv2-topbar-history { margin-left: auto; }
+
+/* Touch sizes. */
+.pv2-phone button { min-height: 44px; min-width: 44px; }
+.pv2-phone .pv2-icon-btn { min-width: 44px; min-height: 44px; }
+.pv2-phone .pv2 .pv2-tool-btn, .pv2-phone .pv2-tool-btn { min-height: 44px; }
+.pv2-phone input, .pv2-phone select, .pv2-phone textarea { font-size: 16px; }
+.pv2-phone select, .pv2-phone input[type=text], .pv2-phone input[type=number] { min-height: 44px; }
+.pv2-phone input[type=range] { min-height: 32px; touch-action: pan-y; }
+.pv2-phone .pv2-tabs { padding-top: 4px; }
+.pv2-phone .pv2-tabs .pv2-tab { min-height: 44px; padding: 10px 12px; font-size: 13px; }
+.pv2-phone .pv2-tabpanel { padding: 10px 12px 16px; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+
+/* Menus become full-width sheets under the top bar instead of popovers that run off the screen. */
+.pv2-phone .pv2-menu-list, .pv2-phone .pv2-overlay-panel { position: fixed; top: calc(52px + env(safe-area-inset-top)); left: 8px; right: 8px; min-width: 0;
+  max-height: calc(100dvh - 140px); overflow-y: auto; }
+.pv2-phone .pv2-menu-item { min-height: 48px; font-size: 15px; }
+.pv2-phone .pv2-banner { min-width: 0; max-width: 100%; }
+
+/* 3D view: the scrubber gets its own full-width row above the buttons; touch drags orbit the camera. */
+.pv2-phone .pv2-host canvas { touch-action: none; }
+.pv2-phone .pv2-transport { flex-wrap: wrap; gap: 4px 6px; padding: 6px 8px; }
+.pv2-phone .pv2-scrub { order: -1; flex: 1 1 100%; }
+.pv2-phone .pv2-readout { flex: 1 1 auto; text-align: right; }
+.pv2-phone .pv2-view-overlay { top: 8px; right: 8px; }
+
+/* Bottom tab bar. */
+.pv2-mnav { flex: none; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--pv2-border); background: var(--pv2-bg-raised);
+  padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+.pv2 .pv2-mnav-btn { flex-direction: column; gap: 2px; min-height: 56px; border: none; border-radius: 0; background: transparent; color: var(--pv2-text-muted); font-size: 11px; padding: 6px 0 4px; }
+.pv2 .pv2-mnav-btn[aria-pressed="true"] { background: transparent; color: var(--pv2-accent); border: none; }
+.pv2 .pv2-mnav-btn:active:not(:disabled) { background: var(--pv2-bg-control); }
+.pv2-mnav-btn .pv2-badge { margin-left: 3px; }
+
+/* Phone graph toolbar: one horizontally scrolling row (labels folded into the pickers) so the graph keeps the screen. */
+.pv2-phone .pv2-graph-corner { display: none; }
+.pv2-phone .gc-toolbar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 6px; padding: 6px 8px; }
+.pv2-phone .gc-toolbar::-webkit-scrollbar { display: none; }
+.pv2-phone .gc-toolbar > * { flex: none; }
+.pv2-phone .gc-add { font-size: 0; }
+.pv2-phone .gc-add > select { font-size: 16px; }
+.pv2-phone .gc-add > span { font-size: 12px; color: var(--pv2-text-muted); }
+.pv2-phone .gc-add select { max-width: 170px; }
+.pv2-phone .gc-add-doc { display: none; }
+
+/* Phone held sideways: little height, so the chrome shrinks and the 3D view keeps most of the screen. */
+@media (orientation: landscape) {
+  .pv2-phone .pv2-topbar { height: 44px; }
+  .pv2-phone .pv2-menu-list, .pv2-phone .pv2-overlay-panel { top: calc(44px + env(safe-area-inset-top)); }
+  .pv2-phone .pv2-scrub { order: 0; flex: 1 1 120px; }
+  .pv2-phone .pv2-transport { flex-wrap: nowrap; padding: 2px 8px; }
+  .pv2-phone .pv2-readout, .pv2-phone .pv2-tech, .pv2-phone .tl-root { display: none; }
+  .pv2 .pv2-mnav-btn { flex-direction: row; gap: 6px; min-height: 44px; font-size: 12px; padding: 0; }
+}

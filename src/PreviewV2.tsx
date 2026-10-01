@@ -54,6 +54,17 @@ const EMPTY_FRAME: PreviewFrameInfo = { tick: 0, durationTicks: 0, playing: fals
 /** Documents larger than this are rejected before reading the file contents. */
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
+/** Phone layout breakpoint (also used by the stylesheet's .pv2-phone rules). */
+const PHONE_QUERY = '(max-width: 760px), (max-height: 500px) and (pointer: coarse)'; // portrait phones, and phones held sideways
+type PhoneTab = 'preview' | 'graph' | 'edit' | 'library';
+/** Bottom tab bar on phones: icon (24-unit SVG path) + label, thumb-reachable. */
+const PHONE_TABS: { id: PhoneTab; label: string; icon: string }[] = [
+  { id: 'preview', label: 'Preview', icon: 'M8 5.5v13l11-6.5z' },
+  { id: 'graph', label: 'Graph', icon: 'M5 6h4v4H5zM15 14h4v4h-4zM9 8h3a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2' },
+  { id: 'edit', label: 'Edit', icon: 'M4 7h10M18 7h2M4 17h4M12 17h8M14 5v4M8 15v4' },
+  { id: 'library', label: 'Library', icon: 'M5 4h4v16H5zM11 4h4v16h-4zM16.5 5.5l3.5-1 3 15-3.5 1' },
+];
+
 function describe(d: Diagnostic): string {
   const where = [d.fieldPath, d.nodeId && `node ${d.nodeId}`].filter(Boolean).join(' · ');
   return where ? `${d.code} at ${where}: ${d.message}` : `${d.code}: ${d.message}`;
@@ -192,6 +203,16 @@ export default function PreviewV2() {
   const toggleSolo = useCallback((id: string) => setSolo(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; }), []);
   // 12 "Below 1024 px show a compact preview and 'Desktop authoring recommended'".
   const [narrow, setNarrow] = useState(() => window.innerWidth < 1024);
+  // Phones (<= 760 px wide): one panel at a time, switched by a bottom tab bar (the usual mobile app pattern); panels
+  // stay mounted so the 3D view, graph and inspector keep their state.
+  const [phone, setPhone] = useState(() => typeof window.matchMedia === 'function' && window.matchMedia(PHONE_QUERY).matches);
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia(PHONE_QUERY), on = () => setPhone(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  const [mtab, setMtab] = useState<PhoneTab>('preview');
   useEffect(() => { const on = () => setNarrow(window.innerWidth < 1024); window.addEventListener('resize', on); return () => window.removeEventListener('resize', on); }, []);
   // 12 workspace: the library is a left panel at >= 1280 px and a toggled drawer below (closed in the watch-only ?view=1 page).
   const [libraryOpen, setLibraryOpen] = useState(() => window.innerWidth >= 1280 && new URLSearchParams(window.location.search).get('view') !== '1');
@@ -978,7 +999,7 @@ export default function PreviewV2() {
   ];
 
   return (
-    <div className="pv2">
+    <div className={`pv2${phone ? ` pv2-phone pv2-mtab-${mtab}` : ''}`}>
       <header className="pv2-topbar">
         <div className="pv2-topbar-brand">
           <strong className="pv2-appname">VFX Studio</strong>
@@ -1133,20 +1154,23 @@ export default function PreviewV2() {
         <SplitPane
           storageKey="library-rest" direction="row" defaultSize={260} min={170} otherMin={420}
           collapsed={libraryOpen && layout === 'split' ? false : 'first'} onToggleCollapse={() => setLibraryOpen(o => !o)} ariaLabel="Library panel"
-          first={<LibraryPanel document={doc} graphId={graphId} onEdit={onEdit} onOpenNew={(t, label) => { setShelfPick(''); replace(t, label); }} onClose={() => setLibraryOpen(false)} />}
+          phoneShow={phone ? (mtab === 'library' ? 'first' : 'second') : undefined}
+          first={<LibraryPanel document={doc} graphId={graphId} onEdit={onEdit} onOpenNew={(t, label) => { setShelfPick(''); replace(t, label); if (phone) setMtab('preview'); }} onClose={() => (phone ? setMtab('preview') : setLibraryOpen(false))} />}
           second={
             <SplitPane
               storageKey="center-right" direction="row" defaultSize={360} min={240} otherMin={320} sizedPane="second"
               collapsed={rightOpen ? false : 'second'} onToggleCollapse={() => setRightOpen(o => !o)} ariaLabel="Inspector panel"
+              phoneShow={phone ? (mtab === 'edit' ? 'second' : 'first') : undefined}
               first={
-                <section className={`pv2-center pv2-layout-${layout}${layout === 'graph' ? ` pv2-pip-${pip}` : ''}`}>
+                <section className={`pv2-center pv2-layout-${phone ? 'split' : layout}${layout === 'graph' && !phone ? ` pv2-pip-${pip}` : ''}`}>
                   <SplitPane
                     storageKey="viewport-graph2" direction="column" defaultSize={Math.round(Math.max(200, (window.innerHeight - 110) * 0.42))} min={140} otherMin={120} sizedPane="second"
                     collapsed={layout === 'graph' ? false : layout === 'preview' || !graphOpen ? 'second' : false} onToggleCollapse={() => setGraphOpen(o => !o)} ariaLabel="Graph editor"
+                    phoneShow={phone ? (mtab === 'graph' ? 'second' : 'first') : undefined}
                     first={
                       <div className="pv2-viewport-pane">
                         <div className="pv2-host" ref={hostRef} />
-                        {layout === 'graph' && (
+                        {layout === 'graph' && !phone && (
                           <div className="pv2-pip-bar">
                             <span>Preview</span>
                             <button type="button" className="pv2-icon-btn pv2-pip-btn" title="Mini preview size (small / medium / large)" aria-label="Change mini preview size" onClick={() => setPip(p => (p === 's' ? 'm' : p === 'm' ? 'l' : 's'))}>{pip === 'l' ? '−' : '+'}</button>
@@ -1236,7 +1260,7 @@ export default function PreviewV2() {
                           onEdit={onEdit}
                           soloed={solo}
                           onToggleSolo={toggleSolo}
-                          refitKey={layout}
+                          refitKey={phone ? `phone-${mtab}` : layout}
                         />
                       </div>
                     }
@@ -1345,6 +1369,16 @@ export default function PreviewV2() {
           }
         />
       </main>
+      {phone && (
+        <nav className="pv2-mnav" aria-label="Panels">
+          {PHONE_TABS.map(t => (
+            <button key={t.id} type="button" className="pv2-mnav-btn" aria-pressed={mtab === t.id} aria-label={t.label} onClick={() => setMtab(t.id)}>
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={t.icon} /></svg>
+              <span>{t.label}{t.id === 'edit' && diagCount > 0 && <span className="pv2-badge">{diagCount}</span>}</span>
+            </button>
+          ))}
+        </nav>
+      )}
     </div>
   );
 }
