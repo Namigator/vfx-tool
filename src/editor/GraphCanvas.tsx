@@ -36,6 +36,9 @@ export type GraphCanvasProps = {
   onToggleSolo?: (id: string) => void;
   /** Changes when the surrounding layout changes size a lot (maximize/restore); the graph refits to the new space. */
   refitKey?: string;
+  /** Bumped whenever the document is replaced (New, Open, Load): the camera is re-seeded and the graph re-fitted even
+   *  when the new document has the same ID (every blank effect is "doc-blank"). */
+  documentEpoch?: number;
 };
 
 type CardData = {
@@ -152,7 +155,7 @@ function NodeCard({ data, selected }: NodeProps<CardNode>) {
 
 const nodeTypes = { card: NodeCard };
 
-function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, soloed, onToggleSolo, refitKey }: GraphCanvasProps) {
+function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, soloed, onToggleSolo, refitKey, documentEpoch = 0 }: GraphCanvasProps) {
   const [componentId, setComponentId] = useState('');
   /** 12: when the inserted component starts — its own time ("") or an event "nodeId\u0000port" next to it. */
   const [startOn, setStartOn] = useState('');
@@ -177,7 +180,7 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
   const nodesInitialized = useNodesInitialized();
   // The camera is local preview state, never authored/undoable. It is seeded from the saved layout once per
   // document+graph and only changes through user pan/zoom or Fit; re-renders never reapply the saved value.
-  const viewKey = `${doc.id}\u0000${graphId}`;
+  const viewKey = `${doc.id}\u0000${graphId}\u0000${documentEpoch}`;
   const [camera, setCamera] = useState<{ key: string; viewport: Viewport }>(() =>
     ({ key: viewKey, viewport: doc.editor.graphs[graphId]?.viewport ?? DEFAULT_VIEWPORT }));
   if (camera.key !== viewKey) setCamera({ key: viewKey, viewport: doc.editor.graphs[graphId]?.viewport ?? DEFAULT_VIEWPORT });
@@ -666,7 +669,7 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
           if (!port) return;
           setMenu({ x: pt.clientX - r.left, y: pt.clientY - r.top, flow: flow.screenToFlowPosition({ x: pt.clientX, y: pt.clientY }), from: { nodeId: st.fromNode.id, port: port.id, side, portType: port.type } });
         }}
-        viewport={camera.viewport} onViewportChange={onViewportChange} minZoom={0.1}
+        viewport={camera.viewport} onViewportChange={onViewportChange} minZoom={0.1} maxZoom={4}
       >
         {notice && (
           <Panel position="bottom-left" className={`gc-notice gc-notice-${notice.kind}`}>

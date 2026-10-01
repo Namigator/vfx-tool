@@ -213,6 +213,7 @@ export default function PreviewV2() {
     return () => mq.removeEventListener('change', on);
   }, []);
   const [mtab, setMtab] = useState<PhoneTab>('preview');
+  const [docEpoch, setDocEpoch] = useState(0);
   useEffect(() => { const on = () => setNarrow(window.innerWidth < 1024); window.addEventListener('resize', on); return () => window.removeEventListener('resize', on); }, []);
   // 12 workspace: the library is a left panel at >= 1280 px and a toggled drawer below (closed in the watch-only ?view=1 page).
   const [libraryOpen, setLibraryOpen] = useState(() => window.innerWidth >= 1280 && new URLSearchParams(window.location.search).get('view') !== '1');
@@ -756,6 +757,7 @@ export default function PreviewV2() {
       return false;
     }
     historyRef.current = next;
+    setDocEpoch(e => e + 1); // the graph re-fits a replaced document even when its ID is the same
     lastGoodRef.current = false; // A different document never shows the previous one's preview as stale.
     viewportRef.current?.newDocument(); // ...and is framed afresh instead of keeping the previous camera.
     setJsonErrors(valid.warnings);
@@ -1261,6 +1263,7 @@ export default function PreviewV2() {
                           soloed={solo}
                           onToggleSolo={toggleSolo}
                           refitKey={phone ? `phone-${mtab}` : layout}
+                          documentEpoch={docEpoch}
                         />
                       </div>
                     }
