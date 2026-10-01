@@ -135,3 +135,20 @@ test('mix to WAV round trip stays under -1 dBFS', () => {
   const v = new DataView(encodeWavPcm16Stereo(r.left, r.right).buffer);
   for (let i = 0; i < 4; i++) assert.ok(Math.abs(v.getInt16(44 + i * 2, true)) <= Math.round(LIMITER_CEILING * 32767));
 });
+
+test('comfortGain: loud sustained noise is turned down to about -20 dBFS RMS; quiet sounds are never boosted', async () => {
+  const { comfortGain, COMFORT_TARGET_RMS, COMFORT_PEAK_CEILING } = await import('../src/audio/mix.ts');
+  const n = 48000, loud = { sampleRate: 48000, left: new Float32Array(n), right: new Float32Array(n) };
+  let seed = 7; const rnd = () => ((seed = (seed * 1103515245 + 12345) >>> 0) / 2 ** 32) * 2 - 1;
+  for (let i = 0; i < n; i++) { loud.left[i] = 0.89 * rnd(); loud.right[i] = 0.89 * rnd(); }
+  const g = comfortGain(loud);
+  assert.ok(g < 0.25, `loud noise gain ${g}`);
+  let sum = 0; for (let i = 0; i < n; i++) sum += ((loud.left[i] * g) ** 2 + (loud.right[i] * g) ** 2) / 2;
+  assert.ok(Math.abs(Math.sqrt(sum / n) - COMFORT_TARGET_RMS) < 0.01, 'played at the comfort level');
+  const quiet = { sampleRate: 48000, left: new Float32Array(n).fill(0.01), right: new Float32Array(n).fill(0.01) };
+  assert.equal(comfortGain(quiet), 1);
+  const spike = { sampleRate: 48000, left: new Float32Array(n), right: new Float32Array(n) };
+  spike.left[100] = 0.95;
+  assert.ok(Math.abs(comfortGain(spike) - COMFORT_PEAK_CEILING / 0.95) < 1e-6, 'a lone peak is held under -6 dBFS');
+  assert.equal(comfortGain({ sampleRate: 48000, left: new Float32Array(0), right: new Float32Array(0) }), 1);
+});

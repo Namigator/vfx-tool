@@ -1,7 +1,7 @@
 // Live browser audio transport for an already rendered canonical mix.
 // Depends only on a minimal AudioContext-like interface so it can be tested
 // with fakes; no DOM, React or Three imports.
-import type { MixResult } from './mix.ts';
+import { comfortGain, type MixResult } from './mix.ts';
 
 export const TRANSPORT_SAMPLE_RATE = 48000;
 export const SCHEDULE_LEAD_SECONDS = 0.05;
@@ -54,6 +54,8 @@ export class AudioTransport {
   private generation = 0;
   private disposed = false;
   private muted = false;
+  /** Comfort level for the current mix (comfortGain): loud mixes play turned down, quiet ones unchanged. */
+  private level = 1;
 
   constructor(ctx: AudioContextLike) {
     this.ctx = ctx;
@@ -85,6 +87,8 @@ export class AudioTransport {
     buf.getChannelData(1).set(mix.right);
     this.buffer = buf;
     this.frames = mix.left.length;
+    this.level = comfortGain(mix);
+    this.previewGain.gain.value = this.muted ? 0 : this.level;
     this.revision = revision;
   }
 
@@ -148,7 +152,7 @@ export class AudioTransport {
   setMuted(muted: boolean): void {
     this.assertLive();
     this.muted = muted;
-    this.previewGain.gain.value = muted ? 0 : 1;
+    this.previewGain.gain.value = muted ? 0 : this.level;
   }
 
   dispose(): void {

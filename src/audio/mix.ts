@@ -124,3 +124,32 @@ export function mixStereo(inputs: readonly MixInput[], masterGain = 1): MixResul
 export function peakToDbfs(peak: number): number {
   return peak <= 0 ? -Infinity : 20 * Math.log10(peak);
 }
+
+/** Comfortable listening level: the loudest 400 ms window of a mix plays back at about -20 dBFS RMS. */
+export const COMFORT_TARGET_RMS = Math.pow(10, -20 / 20);
+/** ...and no sample above -6 dBFS. */
+export const COMFORT_PEAK_CEILING = Math.pow(10, -6 / 20);
+
+/**
+ * Playback gain (0..1) that brings a mix to a comfortable level: the user reported effect sounds that "hurt my
+ * ears" - sustained near-full-scale noise passes the -1 dBFS peak limiter untouched. Measures the loudest 400 ms
+ * window (RMS over both channels) and the peak, and only ever turns down (never boosts quiet sounds). Pure.
+ */
+export function comfortGain(mix: Pick<MixResult, 'left' | 'right' | 'sampleRate'>): number {
+  const { left, right } = mix, n = left.length;
+  if (!n) return 1;
+  const win = Math.max(1, Math.round(mix.sampleRate * 0.4));
+  let sum = 0, loudest = 0, peak = 0;
+  const sq = (i: number) => (left[i] * left[i] + right[i] * right[i]) / 2;
+  for (let i = 0; i < n; i++) {
+    sum += sq(i);
+    if (i >= win) sum -= sq(i - win);
+    const rms = Math.sqrt(Math.max(0, sum) / Math.min(win, i + 1));
+    if (i >= Math.min(win, n) - 1 && rms > loudest) loudest = rms;
+    const p = Math.max(Math.abs(left[i]), Math.abs(right[i]));
+    if (p > peak) peak = p;
+  }
+  const byLoudness = loudest > 0 ? COMFORT_TARGET_RMS / loudest : 1;
+  const byPeak = peak > 0 ? COMFORT_PEAK_CEILING / peak : 1;
+  return Math.min(1, byLoudness, byPeak);
+}

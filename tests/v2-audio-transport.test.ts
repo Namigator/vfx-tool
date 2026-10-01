@@ -1,3 +1,4 @@
+import { comfortGain } from '../src/audio/mix.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { AudioTransport, SCHEDULE_LEAD_SECONDS, type AudioContextLike, type BufferSourceLike } from '../src/audio/transport.ts';
@@ -110,12 +111,14 @@ test('mute only changes preview gain', async () => {
   const t = new AudioTransport(ctx);
   const m = mix();
   t.setMix('r1', m);
-  assert.equal(ctx.gain.value, 1);
+  const level = comfortGain(m); // loud mixes play at a comfortable level (never above 1)
+  assert.ok(level > 0 && level <= 1);
+  assert.equal(ctx.gain.value, level);
   t.setMuted(true);
   assert.equal(ctx.gain.value, 0);
   assert.equal(m.left[0], 0.5);
   t.setMuted(false);
-  assert.equal(ctx.gain.value, 1);
+  assert.equal(ctx.gain.value, level);
 });
 
 test('stale revision never plays after replacement during pending resume', async () => {
