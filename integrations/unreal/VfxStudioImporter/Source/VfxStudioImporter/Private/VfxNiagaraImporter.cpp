@@ -39,6 +39,7 @@
 #include "NiagaraDataInterfaceCurve.h"
 #include "NiagaraDataInterfaceColorCurve.h"
 #include "Materials/MaterialExpressionTextureCoordinate.h"
+#include "Materials/MaterialExpressionTextureSampleParameterSubUV.h"
 #include "NiagaraSpriteRendererProperties.h"
 #include "NiagaraLightRendererProperties.h"
 #include "NiagaraMeshRendererProperties.h"
@@ -168,9 +169,9 @@ namespace
 	 *  them if already present from a previous import into the same project. */
 	UMaterial* GetOrCreateBaseMaterial(const FString& DestRoot, bool bAdditive, int32 Columns = 1, int32 Rows = 1)
 	{
-		// One base per blend mode and flipbook grid: the texture coordinates are scaled to the FIRST cell of the sheet
-		// (a 4x4 flipbook would otherwise draw all 16 frames at once as a square).
-		const FString Grid = (Columns > 1 || Rows > 1) ? FString::Printf(TEXT("_%dx%d"), Columns, Rows) : FString();
+		// Flipbooks sample through a Particle SubUV node (the frame comes from the particle's SubImageIndex, the grid from
+		// the sprite renderer's SubImage Size), so one SubUV base serves every grid.
+		const FString Grid = (Columns > 1 || Rows > 1) ? FString(TEXT("_SubUV")) : FString();
 		const FString Name = FString(bAdditive ? TEXT("M_VfxStudio_Additive") : TEXT("M_VfxStudio_Translucent")) + Grid;
 		const FString PackagePath = DestRoot / TEXT("_Materials");
 		const FString AssetPath = PackagePath / Name;
@@ -187,14 +188,10 @@ namespace
 		Mat->BlendMode = bAdditive ? BLEND_Additive : BLEND_Translucent;
 		Mat->TwoSided = true;
 
-		UMaterialExpression* TexExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionTextureSampleParameter2D::StaticClass(), -300, 0);
-		if (auto* TexParam = Cast<UMaterialExpressionTextureSampleParameter2D>(TexExpr)) TexParam->ParameterName = TEXT("Texture");
-		if (Columns > 1 || Rows > 1)
-		{
-			UMaterialExpression* UvExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionTextureCoordinate::StaticClass(), -550, 0);
-			if (auto* Uv = Cast<UMaterialExpressionTextureCoordinate>(UvExpr)) { Uv->UTiling = 1.0f / FMath::Max(1, Columns); Uv->VTiling = 1.0f / FMath::Max(1, Rows); }
-			UMaterialEditingLibrary::ConnectMaterialExpressions(UvExpr, TEXT(""), TexExpr, TEXT("UVs"));
-		}
+		const bool bSubUV = Columns > 1 || Rows > 1;
+		UMaterialExpression* TexExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, bSubUV ? UMaterialExpressionTextureSampleParameterSubUV::StaticClass() : UMaterialExpressionTextureSampleParameter2D::StaticClass(), -300, 0);
+		if (auto* TexParam = Cast<UMaterialExpressionTextureSampleParameter2D>(TexExpr)) TexParam->ParameterName = TEXT("Texture"); // SubUV derives from it
+		if (bSubUV) Mat->bUsedWithNiagaraSprites = true;
 		UMaterialExpression* ParticleColorExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionParticleColor::StaticClass(), -300, 200);
 		UMaterialExpression* MulRgbExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionMultiply::StaticClass(), 0, 0);
 		UMaterialEditingLibrary::ConnectMaterialExpressions(TexExpr, TEXT("RGB"), MulRgbExpr, TEXT("A"));
@@ -705,6 +702,29 @@ namespace
 		const auto V3 = FNiagaraTypeDefinition::GetVec3Def();
 		const auto P3 = FNiagaraTypeDefinition::GetPositionDef();
 		const TSharedPtr<FJsonObject>* O = nullptr;
+		// Developer probe: -ProbeModule=<asset path> adds that module and logs its inputs and switches.
+		FString ProbePath;
+		if (FParse::Value(FCommandLine::Get(), TEXT("ProbeModule="), ProbePath))
+			if (UNiagaraNodeFunctionCall* Probe = AddForceModule(Data, *ProbePath)) LogModule(Probe);
+		// Flipbook playback: SubUV Animation (V2) in Infinite Loop mode at the sheet's frames per second, wrapping
+		// (looping sheets) or holding the last frame; grid read from the sprite renderer's SubImage Size.
+		if (E->TryGetObjectField(TEXT("flipbook"), O))
+			if (UNiagaraNodeFunctionCall* Fn = AddForceModule(Data, TEXT("/Niagara/Modules/Update/SubUV/V2/SubUVAnimation.SubUVAnimation")))
+			{
+				UNiagaraGraph* G = Cast<UNiagaraGraph>(Fn->GetGraph());
+				const auto Sw = [&](const TCHAR* Pin, const TCHAR* V) {
+					for (UEdGraphPin* P : Fn->Pins) if (P->Direction == EGPD_Input && P->PinName.ToString() == Pin) { Fn->Modify(); P->DefaultValue = V; UE_LOG(LogVfxImporter, Display, TEXT("    SubUVAnimation [switch %s] = %s"), Pin, V); return; }
+					UE_LOG(LogVfxImporter, Warning, TEXT("    SubUVAnimation switch %s not found"), Pin);
+				};
+				Sw(TEXT("SubUV Animation Mode"), TEXT("NewEnumerator3")); // Infinite Loop
+				Sw(TEXT("Playback Mode"), TEXT("NewEnumerator1"));       // Frames Per Second
+				bool bLoop = false, bRandom = false;
+				(*O)->TryGetBoolField(TEXT("loop"), bLoop); (*O)->TryGetBoolField(TEXT("randomStartFrame"), bRandom);
+				Sw(TEXT("Loop Range Boundary"), bLoop ? TEXT("NewEnumerator1") : TEXT("NewEnumerator0")); // Wrap : Clamp
+				if (bRandom) Sw(TEXT("Random Start Frame"), TEXT("true"));
+				OverrideOnNode(Fn, TEXT("Frames Per Second"), FNiagaraTypeDefinition::GetIntDef(), FString::FromInt(FMath::Max(1, FMath::RoundToInt((*O)->GetNumberField(TEXT("fps"))))));
+				(void)G;
+			}
 		// Size over life, exact: Scale Sprite Size (its default "Uniform Curve" mode) scales the birth size by a curve of
 		// normalized age; the birth size itself is set by ApplyEmitterOverrides.
 		const TArray<TSharedPtr<FJsonValue>>* SizeKeys = nullptr;
@@ -1011,13 +1031,14 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 		const TSharedPtr<FJsonObject>* Flip = nullptr;
 		if (E->TryGetObjectField(TEXT("flipbook"), Flip)) { Cols = (int32)(*Flip)->GetNumberField(TEXT("columns")); Rows = (int32)(*Flip)->GetNumberField(TEXT("rows")); }
 		UMaterial* Base = (Cols > 1 || Rows > 1) ? GetOrCreateBaseMaterial(DestPath, bAdditive, Cols, Rows) : (bAdditive ? AdditiveBase : TranslucentBase);
-		const FString Tag = FString(bAdditive ? TEXT("Add") : TEXT("Trans")) + ((Cols > 1 || Rows > 1) ? FString::Printf(TEXT("%dx%d"), Cols, Rows) : FString());
+		const FString Tag = FString(bAdditive ? TEXT("Add") : TEXT("Trans")) + ((Cols > 1 || Rows > 1) ? FString(TEXT("SubUV")) : FString());
 		UMaterialInstanceConstant* MIC = FoundTex ? GetOrCreateTextureMaterial(DestPath, Base, *FoundTex, Tag) : nullptr;
 		for (UNiagaraRendererProperties* Renderer : Data->GetRenderers())
 		{
 			if (auto* Sprite = Cast<UNiagaraSpriteRendererProperties>(Renderer))
 			{
 				if (MIC) Sprite->Material = MIC;
+				if (Cols > 1 || Rows > 1) Sprite->SubImageSize = FVector2D(Cols, Rows);
 				if (E->GetStringField(TEXT("alignment")) == TEXT("velocity")) Sprite->Alignment = ENiagaraSpriteAlignment::VelocityAligned;
 				else UE_LOG(LogVfxImporter, Warning, TEXT("   no texture for %s; keeping the template's default sprite material"), *EName);
 			}

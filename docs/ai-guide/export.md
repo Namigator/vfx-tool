@@ -182,7 +182,7 @@ What the importer actually builds today (seen in UE 5.8 on the flamethrower, lig
 | Opacity over life | **exact**: written into the templates' Scale Alpha curve |
 | Size over life | **exact**: a Scale Sprite Size module with a size curve over life (particles are born at the curve's first size) |
 | Colour over life | **exact**: Scale Color in its RGBA colour-curve mode (colour and opacity per life) |
-| Flipbook sheets | the first frame of the sheet |
+| Flipbook sheets | **animated**: Particle SubUV material + SubUV Animation at the sheet's frames per second (loops or holds the last frame; random start frame kept) |
 | Velocity-stretched sprites | velocity-aligned sprites (no stretch) |
 | Emitters that start away from Source (smoke at the target...) | kept: Shape Location offset (the importer turns on its Offset Mode switch, which the stock template ships off) |
 | Curl noise, attraction, vortex, ground collision | stock Curl Noise / Point Attraction (no falloff, particles reaching the core die) / Vortex / Collision modules before the force solver; the vortex has no distance falloff in Niagara, so far particles swirl a little harder |
