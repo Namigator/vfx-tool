@@ -6,6 +6,8 @@ import { AI_EDIT_FIELDS, runAiSession, type AiSessionResult } from '../ai/sessio
 import { renderAiFrames } from '../ai/render.ts';
 
 type Props = { document: EffectDocumentV2; onEdit: (label: string, patches: Patch[]) => void };
+/** Gemini model ID verified working from the published site (2026-10-01); docs/ai-guide/assistant.md. */
+const GEMINI_DEFAULT_MODEL = 'gemini-3-flash-preview';
 const roots = { openai: 'https://api.openai.com/v1', anthropic: 'https://api.anthropic.com/v1', gemini: 'https://generativelanguage.googleapis.com/v1beta', custom: 'http://127.0.0.1:11434/v1' };
 /** Private / self-hosted models that speak the OpenAI chat-completions format (base URL + example model ID). */
 const PRIVATE_PRESETS: { label: string; url: string; model: string; vision: boolean; note: string }[] = [
@@ -76,7 +78,7 @@ export default function AiPanel({ document: doc, onEdit }: Props) {
     <p>Describe a change. The AI edits a draft and checks rendered frames before you apply it.</p>
     <details open><summary>AI connection</summary>
       <fieldset disabled={busy}>
-        <label>Provider<select aria-label="AI provider" value={provider} onChange={e => { const p = e.target.value as typeof provider; setProvider(p); setBaseUrl(roots[p]); setModel(''); setApiKey(''); setVision(p !== 'custom'); }}>
+        <label>Provider<select aria-label="AI provider" value={provider} onChange={e => { const p = e.target.value as typeof provider; setProvider(p); setBaseUrl(roots[p]); setModel(p === 'gemini' ? GEMINI_DEFAULT_MODEL : ''); setApiKey(''); setVision(p !== 'custom'); }}>
           <option value="openai">GPT / OpenAI API</option><option value="anthropic">Claude API</option><option value="gemini">Gemini API</option><option value="custom">Private / custom model</option>
         </select></label>
         {provider === 'custom' && <label>Quick setup<select aria-label="Private model preset" value="" onChange={e => {

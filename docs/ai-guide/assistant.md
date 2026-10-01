@@ -14,10 +14,17 @@ The default allowed browser origins are http://127.0.0.1:5174, :5176, :5177, htt
 | --- | --- | --- |
 | GPT / OpenAI API | https://api.openai.com/v1 | OpenAI API key |
 | Claude API | https://api.anthropic.com/v1 | Claude Console API key |
-| Gemini API | https://generativelanguage.googleapis.com/v1beta | Gemini API key |
+| Gemini API | https://generativelanguage.googleapis.com/v1beta | Gemini API key (https://aistudio.google.com/apikey) |
 | Private / custom model | Your OpenAI-compatible API root, e.g. http://127.0.0.1:11434/v1 | Optional, depending on your server |
 
 Enter the exact model ID available on your account/server. Base URLs are API roots: do not append /chat/completions, /messages or :generateContent. Path prefixes are preserved. This supports private/self-hosted servers, including OpenAI-compatible configurations of Ollama, LM Studio and vLLM; it does not install or start them. The companion connects to the chosen endpoint using Node fetch, so a model server does not need browser CORS support. Custom endpoints must accept Chat Completions JSON and return choices[0].message.content. Streaming and provider function/tool APIs are not required; the model returns structured edit JSON.
+
+### Gemini (tested setup)
+
+Verified working on 2026-10-01 from the published site: **Provider** Gemini API, **Model ID** `gemini-3-flash-preview`,
+**Model accepts images** on (Gemini sees the preview frames). The panel fills this model ID when you pick Gemini.
+`gemini-2.5-flash` answers HTTP 404 (retired); if a model ID stops working, the error shows Google's reason and the
+AI Studio model list (https://aistudio.google.com) shows the names your key can use.
 
 ### Private models (Qwen, GLM, DeepSeek, Llama…)
 
@@ -38,6 +45,13 @@ request off and the model then answers nonsense. **Reasoning models** (Qwen3, GL
 `<think>` text, Markdown fences and surrounding prose are stripped and the JSON object is extracted. Local models are
 given 5 minutes per call.
 
+**Open WebUI servers** (for example a team server at chat.server.xpo): API root `https://<server>/api` (https, not
+http: plain http redirects to https and the companion refuses redirects); the key comes from Open WebUI → profile →
+Settings → Account → **API keys**. That section only exists when an admin has turned on **Admin Panel → Settings →
+General → Enable API Key** (newer versions also need the API Keys permission for your user group). Model ID = the name
+in Open WebUI's model picker. Servers with an internal HTTPS certificate work because `pnpm ai:server` trusts the
+Windows certificate store (`--use-system-ca`).
+
 Only enable **Model accepts images** for a model/server that supports image inputs. Text-only models still edit and compile the graph and produce rendered thumbnails for you, but cannot inspect screenshots or establish visual acceptance. The Test model connection button sends a small inference request and may use provider quota. A successful test establishes text connectivity, not image support or effect quality.
 
 API keys and the pairing token are held in memory only; reload clears them. The non-secret settings (provider, API root, model ID, image input, companion URL, rounds) are remembered in this browser. Switching provider clears the API key. They are never included in effect JSON, packs or history. Requests send the effect graph and user prompt to the configured endpoint; image-enabled requests also send PNG preview frames. Use your private endpoint to keep inference on your own server. API billing and model terms are those of your configured provider.
@@ -57,6 +71,18 @@ The companion reads the guide files when it starts; restart it after changing th
 3. Cancel stops the run and leaves the active effect unchanged. Switching inspector tabs preserves the connection and the ongoing run; closing the editor cancels it.
 4. Review the summary and rendered thumbnails. “Model reviewed” means images were supplied for a post-edit response; it is not a human quality approval.
 5. Apply draft or Discard draft. Undo restores the pre-Apply effect. A round-limited result can be applied, but clearly reports that the model did not complete its final review.
+
+## Troubleshooting the connection
+
+| Message | Cause and fix |
+| --- | --- |
+| Buttons stay greyed out | Fill in **Model ID** and **Pairing token** (the token printed by `pnpm ai:server`; it changes every start). |
+| Cannot reach the AI companion | The companion is not running (keep the `pnpm ai:server` window open), the URL/token does not match what it printed, or, on the published site, Chrome blocked access to this computer: answer **Allow** to its prompt, or icon left of the address → Site settings → allow access to apps on this device (local network). |
+| The companion URL is the helper running on this computer… | A model-server address was typed in **Companion URL**. It belongs in **API base URL**; Companion URL stays `http://127.0.0.1:5181`. |
+| Cannot reach the model endpoint over plain http | Use `https://` (Open WebUI: `https://<server>/api`). |
+| Model returned HTTP 400 (Gemini) | The API key is not valid. |
+| Model returned HTTP 401 | Missing or wrong API key. |
+| Model returned HTTP 404 | Unknown model ID (or wrong API root); the message includes the server's reason. |
 
 ## Current limits and follow-ups
 
