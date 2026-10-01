@@ -39,6 +39,7 @@
 #include "NiagaraDataInterfaceCurve.h"
 #include "Materials/MaterialExpressionTextureCoordinate.h"
 #include "NiagaraSpriteRendererProperties.h"
+#include "NiagaraLightRendererProperties.h"
 #include "ViewModels/Stack/NiagaraStackGraphUtilities.h"
 #include "ViewModels/Stack/NiagaraParameterHandle.h"
 
@@ -270,6 +271,57 @@ namespace
 		return Done;
 	}
 
+	/** A light: one particle born when the light turns on, living until it turns off, drawn only by a Light renderer
+	 *  (colour x peak intensity, radius, brightness following the intensity track through Scale Alpha). */
+	void BuildLightEmitter(FNiagaraEmitterHandle& Handle, FVersionedNiagaraEmitterData* Data, const TSharedPtr<FJsonObject>& L)
+	{
+		const auto F = FNiagaraTypeDefinition::GetFloatDef();
+		const TArray<TSharedPtr<FJsonValue>>* Track = nullptr;
+		L->TryGetArrayField(TEXT("intensity"), Track);
+		double Peak = 0.0; int32 On = -1, Off = -1;
+		if (Track) for (const auto& Entry : *Track)
+		{
+			const auto& Pair = Entry->AsArray();
+			if (Pair.Num() != 2) continue;
+			const int32 Tick = (int32)Pair[0]->AsNumber(); const double V = Pair[1]->AsNumber();
+			if (V > 0.0) { if (On < 0) On = Tick; Off = Tick + 1; Peak = FMath::Max(Peak, V); }
+		}
+		if (On < 0 || Peak <= 0.0) { UE_LOG(LogVfxImporter, Warning, TEXT("   light %s never turns on; skipped"), *L->GetStringField(TEXT("name"))); return; }
+		const double Life = FMath::Max(1.0 / 60.0, (Off - On) / 60.0);
+		UNiagaraScriptSource* Source = Data->SpawnScriptProps.Script ? Cast<UNiagaraScriptSource>(Data->SpawnScriptProps.Script->GetLatestSource()) : nullptr;
+		UNiagaraGraph* Graph = Source ? Source->NodeGraph : nullptr;
+		OverrideLiteral(Graph, TEXT("SpawnBurst_Instantaneous"), TEXT("Spawn Count"), FNiagaraTypeDefinition::GetIntDef(), TEXT("1"));
+		OverrideLiteral(Graph, TEXT("SpawnBurst_Instantaneous"), TEXT("Spawn Time"), F, FloatLit(On / 60.0));
+		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Min"), F, FloatLit(Life));
+		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Max"), F, FloatLit(Life));
+		const TArray<TSharedPtr<FJsonValue>>* Rgb = nullptr; L->TryGetArrayField(TEXT("color"), Rgb);
+		const FLinearColor Base = (Rgb && Rgb->Num() >= 3) ? FLinearColor(FColor((uint8)((*Rgb)[0]->AsNumber() * 255), (uint8)((*Rgb)[1]->AsNumber() * 255), (uint8)((*Rgb)[2]->AsNumber() * 255))) : FLinearColor::White;
+		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Color"), FNiagaraTypeDefinition::GetColorDef(), ColorLit(FLinearColor(Base.R * Peak, Base.G * Peak, Base.B * Peak, 1.0f)));
+		// Intensity over the light's life -> Scale Alpha (normalized age), with alpha scaling the light's brightness.
+		TArray<TSharedPtr<FJsonValue>> Keys;
+		if (Track) for (const auto& Entry : *Track)
+		{
+			const auto& Pair = Entry->AsArray();
+			const double Tick = Pair[0]->AsNumber();
+			if (Tick < On || Tick > Off) continue;
+			TSharedPtr<FJsonObject> K = MakeShared<FJsonObject>();
+			K->SetNumberField(TEXT("t"), FMath::Clamp((Tick - On) / FMath::Max(1, Off - On), 0.0, 1.0));
+			K->SetNumberField(TEXT("v"), Pair[1]->AsNumber() / Peak);
+			Keys.Add(MakeShared<FJsonValueObject>(K));
+		}
+		SetScaleAlphaCurve(Graph, &Keys);
+		for (UNiagaraRendererProperties* R : Data->GetRenderers()) if (R) R->SetIsEnabled(false); // no visible sprite
+		const FVersionedNiagaraEmitter Inst = Handle.GetInstance();
+		UNiagaraLightRendererProperties* Light = NewObject<UNiagaraLightRendererProperties>(Inst.Emitter, NAME_None, RF_Transactional);
+		Light->RadiusScale = (float)(L->GetNumberField(TEXT("radiusCm")) / 100.0);
+		Light->bAlphaScalesBrightness = true;
+		// Exponent falloff: colour x peak is the brightness at the centre (inverse-square needs lumen-scale values).
+		Light->bUseInverseSquaredFalloff = false;
+		Light->DefaultExponent = 2.0f;
+		Inst.Emitter->AddRenderer(Light, Inst.Version);
+		UE_LOG(LogVfxImporter, Display, TEXT("   light %s: ticks %d-%d, peak %.2f, radius %.0f cm"), *L->GetStringField(TEXT("name")), On, Off, Peak, L->GetNumberField(TEXT("radiusCm")));
+	}
+
 	/** Applies the module-input overrides shared by every emitter, then the template-specific ones. Shape/AddVelocity
 	 *  are skipped (module not found, logged) rather than guessed when a template lacks them. */
 	void ApplyEmitterOverrides(UNiagaraGraph* Graph, const TSharedPtr<FJsonObject>& E, const FString& Template)
@@ -410,7 +462,7 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 	// Emitters go in through the factory's EmittersToAddToNewSystem: that path (FNiagaraEditorUtilities::AddEmitterToSystem)
 	// also wires each emitter into the system scripts. UNiagaraSystem::AddEmitterHandle alone does not, and such a system
 	// has nothing running: it completes on its first tick and never draws (the 2026-10-01 "black frame").
-	struct FPending { TSharedPtr<FJsonObject> E; FString Name; FString Template; };
+	struct FPending { TSharedPtr<FJsonObject> E; FString Name; FString Template; bool bLight = false; };
 	TArray<FPending> Pending;
 	UNiagaraSystemFactoryNew* SysFactory = NewObject<UNiagaraSystemFactoryNew>();
 	const TArray<TSharedPtr<FJsonValue>>* Emitters = nullptr;
@@ -429,6 +481,20 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 			if (!Tmpl) { UE_LOG(LogVfxImporter, Error, TEXT("Skipping emitter %s: template load failed"), *EName); continue; }
 			SysFactory->EmittersToAddToNewSystem.Add(FVersionedNiagaraEmitter(Tmpl, Tmpl->GetExposedVersion().VersionGuid));
 			Pending.Add({ E, EName, Template });
+		}
+	}
+	// Lights: one single-particle emitter each (SimpleSpriteBurst) carrying a Niagara Light renderer.
+	const TArray<TSharedPtr<FJsonValue>>* LightList = nullptr;
+	if (Root->TryGetArrayField(TEXT("lights"), LightList))
+	{
+		if (UNiagaraEmitter* Tmpl = LoadTemplate(TEXT("/Niagara/DefaultAssets/Templates/Emitters/SimpleSpriteBurst.SimpleSpriteBurst")))
+		{
+			for (const auto& Item : *LightList)
+			{
+				const TSharedPtr<FJsonObject> L = Item->AsObject();
+				SysFactory->EmittersToAddToNewSystem.Add(FVersionedNiagaraEmitter(Tmpl, Tmpl->GetExposedVersion().VersionGuid));
+				Pending.Add({ L, L->GetStringField(TEXT("name")), TEXT("SimpleSpriteBurst"), true });
+			}
 		}
 	}
 	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
@@ -451,6 +517,7 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 
 		FVersionedNiagaraEmitterData* Data = Handle.GetEmitterData();
 		if (!Data) { UE_LOG(LogVfxImporter, Error, TEXT("   no emitter data for %s"), *EName); continue; }
+		if (Pending[i].bLight) { BuildLightEmitter(Handle, Data, E); EmitterCount++; continue; }
 
 		// Material: an MIC over the shared Additive/Translucent base, per the emitter's texture + blend mode.
 		const FString Blend = E->GetStringField(TEXT("blend"));

@@ -188,7 +188,8 @@ same length and shape as the VFX Studio preview, but redder and without glow):
 | Emitters that start away from Source (smoke at the target...) | offset written but not taking effect in UE 5.8 yet: move their Shape Location by hand |
 | Curl noise, attraction, vortex, ground collision | in effect.json, **not applied** by the importer yet |
 | Keyframed knobs | their tick-0 value |
-| Ribbons (lightning, streams) and lights | in effect.json, **not built** by the importer yet (logged) |
+| Lights | one single-particle emitter each with a Niagara Light renderer: colour x peak intensity, radius, on/off timing, intensity track as its brightness over life (exponent falloff) |
+| Ribbons (lightning, streams) | in effect.json, **not built** by the importer yet (logged) |
 | Mesh particles; dissolve, rim, distortion; screen flash, camera shake | left out |
 | Glow | Unreal's own bloom/post-process (not exported) |
 
