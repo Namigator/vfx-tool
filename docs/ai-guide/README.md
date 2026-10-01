@@ -18,6 +18,7 @@ chapter, `{ topic, section }` one section, `{ node: "Emitter" }` / `{ component:
 5. **[troubleshooting.md](troubleshooting.md)**: every diagnostic code, frequent messages, "it looks wrong" table.
 6. **[export.md](export.md)**: .vfx.json, .vfxpack, Roblox (aiming API, textures, what changes).
 7. **[editor.md](editor.md)**: where everything is in the editor, with the matching MCP tool for each action.
+8. **[assistant.md](assistant.md)**: the AI panel, API/private model connections, local companion and draft review.
 
 ## Reference (generated from the code, always current)
 

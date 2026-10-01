@@ -104,6 +104,7 @@ export const CHAPTERS: Array<[string, string]> = [
   ['troubleshooting', 'Every diagnostic code, frequent messages and an "it looks wrong" table.'],
   ['export', '.vfx.json, .vfxpack and Roblox export: aiming API, textures, what changes.'],
   ['editor', 'Where everything is in the editor, with the matching MCP tool for each action.'],
+  ['assistant', 'AI panel: API and private model connections, paired local companion, draft rendering and review.'],
 ];
 export const REFERENCES: Array<[string, string]> = [
   ['nodes', 'Every node type: ports, parameters with units, ranges, defaults (look up one with { node }).'],

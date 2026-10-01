@@ -39,6 +39,7 @@ import { sha256Hex } from './assets/importTexture.ts';
 import { DocumentHistory, type HistoryNotice, type HistoryResult, type Patch } from './editor/history.ts';
 import GraphCanvas from './editor/GraphCanvas.tsx';
 import NodeInspector from './editor/NodeInspector.tsx';
+import AiPanel from './editor/AiPanel.tsx';
 import { PreviewViewport, type PreviewFrameInfo } from './render/PreviewViewport.ts';
 import { mergeDiagnostics } from './render/layerOrder.ts';
 import { timelineInfo, timelineLanes, type TimelineInfo } from './render/timeline.ts';
@@ -208,7 +209,7 @@ export default function PreviewV2() {
   }, []);
   const [pip, setPip] = useState<'s' | 'm' | 'l' | 'hidden'>('m');
   const [tutorialOpen, setTutorialOpen] = useState(false);
-  const [rightTab, setRightTab] = useState<'controls' | 'node' | 'outline' | 'assets' | 'sound' | 'diagnostics'>('controls');
+  const [rightTab, setRightTab] = useState<'controls' | 'node' | 'outline' | 'assets' | 'sound' | 'diagnostics' | 'ai'>(() => new URLSearchParams(window.location.search).get('panel') === 'ai' ? 'ai' : 'controls');
   const [showProjects, setShowProjects] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
   const [nameEditing, setNameEditing] = useState(false);
@@ -1213,6 +1214,7 @@ export default function PreviewV2() {
               second={
                 <aside className="pv2-side">
                   <div className="pv2-tabs" role="tablist" aria-label="Inspector">
+                    <button type="button" role="tab" aria-selected={rightTab === 'ai'} className="pv2-tab" onClick={() => setRightTab('ai')}>AI</button>
                     <button type="button" role="tab" aria-selected={rightTab === 'controls'} className="pv2-tab" onClick={() => setRightTab('controls')}>Controls</button>
                     <button type="button" role="tab" aria-selected={rightTab === 'node'} className="pv2-tab" title="The node selected in the graph" onClick={() => setRightTab('node')}>Node</button>
                     <button type="button" role="tab" aria-selected={rightTab === 'outline'} className="pv2-tab" onClick={() => setRightTab('outline')}>Outline</button>
@@ -1223,6 +1225,7 @@ export default function PreviewV2() {
                     <button type="button" role="tab" aria-selected={rightTab === 'sound'} className="pv2-tab" title="Sound audition (sound is parked)" onClick={() => setRightTab('sound')}>Sound</button>
                   </div>
                   <div className="pv2-tabpanel">
+                    <section aria-label="AI assistant" hidden={rightTab !== 'ai'}><AiPanel document={doc} onEdit={onEdit} /></section>
                     {rightTab === 'controls' && (
                       <section aria-label="Controls">
                         <ControlsPanel document={doc} onEdit={onEdit} followers={followers} tick={frame.tick} />

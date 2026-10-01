@@ -380,7 +380,7 @@ const CURATED = {
   MAX_RADIAL_COUNT: 'RadialPath: most rays.', MIN_RADIAL_COUNT: 'RadialPath: fewest rays.',
   MAX_RING_SAMPLES: 'RingPath/RingRenderer: most segments.', MIN_RING_SAMPLES: 'Fewest segments.',
   MAX_RING_RADIUS: 'Largest ring radius (m).', MIN_RING_RADIUS: 'Smallest ring radius (m).',
-  DEFAULT_MAX_LIVE_PARTICLES: 'Most particles alive at once across the whole effect (BUDGET_EXCEEDED at compile: "Preview could keep up to N particles alive"). Reduce burst, rate or lifetime.',
+  DEFAULT_MAX_LIVE_PARTICLES: 'Runtime ceiling. The saved root EffectOutput.particleBudget sets the effect-wide limit: 30000 default, configurable 1–65536 in Controls → Effect settings.',
   DEFAULT_MAX_TOTAL_BIRTHS: 'Most particles born in total over the whole effect (all emitters).',
   MAX_EMISSION_PATH_POINTS: 'Most path vertices an Emitter with shape "path" can spawn along.',
   MAX_TRACKS: 'Most keyframed (animated) values per item (implementation limit).', MAX_TRACK_KEYS: 'Most keys per animated value (implementation limit).',
@@ -456,7 +456,7 @@ function buildLimits() {
   if (rest.length) groups.push({ name: 'Other', list: rest });
   const evalOf = (n) => rows.find(r => r.name === n)?.value;
   const headline = [
-    ['Live particles at once', evalOf('DEFAULT_MAX_LIVE_PARTICLES'), 'Peak of (rate x lifetime + bursts alive); checked at compile (BUDGET_EXCEEDED).'],
+    ['Live particles at once', '30000 default; configurable 1–65536', 'Set Controls → Effect settings → Live particle budget, or root EffectOutput.particleBudget through MCP. Peak checked across all systems at compile.'],
     ['Particles born per effect', evalOf('DEFAULT_MAX_TOTAL_BIRTHS'), 'Total births over the whole effect.'],
     ['Burst events per emitter', evalOf('DEFAULT_MAX_BURST_EVENTS'), 'Trigger events considered by one emitter.'],
     ['Effect duration', `${evalOf('MAX_DURATION_TICKS')} ticks (${evalOf('MAX_EFFECT_SECONDS')} s)`, 'Minimum 1 tick; longer is rejected.'],
