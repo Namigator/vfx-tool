@@ -4,7 +4,7 @@ Open the inspector's **AI** tab. This panel edits a draft of the active effect, 
 
 ## Start the companion
 
-From the project folder run `pnpm ai:server` (or `node --experimental-strip-types tools/ai-server.ts`). The server binds only to 127.0.0.1:5181 and prints a randomly generated pairing token. Copy its URL and token into the AI connection settings. Keep the process running while using the panel. No API keys are written to disk or logged by the companion.
+From the project folder run `pnpm ai:server` (or `node --experimental-strip-types tools/ai-server.ts`). The server binds only to 127.0.0.1:5181 and prints its pairing token. The token is generated once and kept in `~/.vfx-studio/ai-companion-token`, so it stays the same across restarts (delete that file, or set `VFX_AI_TOKEN`, to change it). Copy its URL and token into the AI connection settings. Keep the process running while using the panel. No API keys are written to disk or logged by the companion.
 
 The default allowed browser origins are http://127.0.0.1:5174, :5176, :5177, http://localhost:5174 and the published site https://demo.xpo.dev. For a deployed website, set `VFX_AI_ORIGINS` to its exact origin before launching. It accepts a comma-separated list. Use `VFX_AI_PORT` to change the port; `VFX_AI_TOKEN` can set a pairing token of at least 16 characters. These values configure the local companion, not the model. Browser restrictions on public sites accessing local HTTP services may require browser permission or a trusted HTTPS companion; do not bypass certificate warnings. A static deployed build does not start the Node companion automatically.
 
@@ -54,7 +54,7 @@ Windows certificate store (`--use-system-ca`).
 
 Only enable **Model accepts images** for a model/server that supports image inputs. Text-only models still edit and compile the graph and produce rendered thumbnails for you, but cannot inspect screenshots or establish visual acceptance. The Test model connection button sends a small inference request and may use provider quota. A successful test establishes text connectivity, not image support or effect quality.
 
-API keys and the pairing token are held in memory only; reload clears them. The non-secret settings (provider, API root, model ID, image input, companion URL, rounds) are remembered in this browser. Switching provider clears the API key. They are never included in effect JSON, packs or history. Requests send the effect graph and user prompt to the configured endpoint; image-enabled requests also send PNG preview frames. Use your private endpoint to keep inference on your own server. API billing and model terms are those of your configured provider.
+The API key (one per provider) and the pairing token are remembered in this browser while **Remember API keys and pairing token in this browser** is ticked (the default); unticking it deletes them. They are stored in the browser's local storage, which other pages of the same site origin can read: untick it on shared computers or on a site that hosts other people's apps. The other connection settings (provider, API root, model ID, image input, companion URL, rounds) are always remembered in this browser. None of this is ever included in effect JSON, packs or history. Requests send the effect graph and user prompt to the configured endpoint; image-enabled requests also send PNG preview frames. Use your private endpoint to keep inference on your own server. API billing and model terms are those of your configured provider.
 
 ## Documentation access
 
