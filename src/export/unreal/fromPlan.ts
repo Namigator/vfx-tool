@@ -143,14 +143,25 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
   // SpawnRate; Minimal has NEITHER (InitializeParticle/ParticleState only) -- it cannot spawn anything on its own, so
   // it is only picked for an emitter with no rate and no bursts (should not occur for a real component; the plugin
   // reports it so it's never a silent empty system).
-  const template: UeEmitter['suggestedTemplate'] = !d.rate && d.bursts.length ? 'SimpleSpriteBurst' : (d.rate ? 'Fountain' : 'Minimal');
+  // Many bursts (smoke/embers born where flames die: dozens of small events) become a steady stream on the Fountain
+  // template (SimpleSpriteBurst holds exactly one burst): same total count spread over the bursts' time span.
+  const liveBursts = d.bursts.filter(b => b.count > 0);
+  const manyBursts = !d.rate && liveBursts.length > 1;
+  const template: UeEmitter['suggestedTemplate'] = manyBursts ? 'Fountain' : !d.rate && liveBursts.length ? 'SimpleSpriteBurst' : (d.rate ? 'Fountain' : 'Minimal');
+  let rateOverTime = rateTrack(d, duration);
+  if (manyBursts) {
+    const first = liveBursts[0].tick, last = liveBursts[liveBursts.length - 1].tick, span = Math.max(1, last - first + 1);
+    const total = liveBursts.reduce((n, b) => n + b.count, 0);
+    rateOverTime = [[first, Math.round((total / span) * 60 * 10) / 10], [Math.min(duration, last + 1), 0]];
+    report.push({ level: 'approximated', item: layer.nodeId, message: `${liveBursts.length} bursts (ticks ${first}-${last}, ${total} particles) become a steady spawn rate over that span; per-event positions are not kept.` });
+  }
   if (template === 'Minimal') report.push({ level: 'approximated', item: layer.nodeId, message: 'No continuous rate or burst found; the Minimal template has no spawn module, so this emitter needs a SpawnRate or Burst module added by hand in Niagara.' });
   return {
     name,
     suggestedTemplate: template,
     position: relCm(d.sourceTrack ? d.sourceTrack.positions[0] : d.sourcePosition),
     direction, shape,
-    rateOverTime: rateTrack(d, duration),
+    rateOverTime,
     bursts: d.bursts.filter(b => b.count > 0).map(b => ({ tick: b.tick, count: b.count, ...(b.position ? { positionCm: relCm(b.position) } : {}) })),
     lifetimeSecMin: life[0], lifetimeSecMax: life[1],
     speedCmSMin: speed[0], speedCmSMax: speed[1],

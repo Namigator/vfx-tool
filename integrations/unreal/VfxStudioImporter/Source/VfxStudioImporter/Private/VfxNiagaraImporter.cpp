@@ -34,8 +34,13 @@
 #include "NiagaraGraph.h"
 #include "NiagaraNodeOutput.h"
 #include "NiagaraNodeFunctionCall.h"
+#include "NiagaraNodeInput.h"
+#include "NiagaraDataInterface.h"
+#include "NiagaraDataInterfaceCurve.h"
+#include "Materials/MaterialExpressionTextureCoordinate.h"
 #include "NiagaraSpriteRendererProperties.h"
 #include "ViewModels/Stack/NiagaraStackGraphUtilities.h"
+#include "ViewModels/Stack/NiagaraParameterHandle.h"
 
 #include "Factories/TextureFactory.h"
 #include "Engine/Texture2D.h"
@@ -83,7 +88,11 @@ namespace
 		{
 			UNiagaraNodeFunctionCall* ModuleNode = Cast<UNiagaraNodeFunctionCall>(Node);
 			if (!ModuleNode || !ModuleNode->GetFunctionName().Contains(ModuleNameSubstring)) continue;
-			FNiagaraParameterHandle Handle{ FName(InputName) };
+			// The override pin must be keyed by the ALIASED module input ("<ModuleName>.<Input>", built from
+			// "Module.<Input>"); a bare "<Input>" name compiles to an orphan parameter ("Only one namespace entry found
+			// for: LifetimeMin") and the system then refuses to activate.
+			const FNiagaraParameterHandle ModuleHandle = FNiagaraParameterHandle::CreateModuleParameterHandle(FName(InputName));
+			const FNiagaraParameterHandle Handle = FNiagaraParameterHandle::CreateAliasedModuleParameterHandle(ModuleHandle, ModuleNode);
 			UEdGraphPin& OverridePin = FNiagaraStackGraphUtilities::GetOrCreateStackFunctionInputOverridePin(*ModuleNode, Handle, Type, FGuid(), FGuid());
 			OverridePin.DefaultValue = LiteralValue;
 			UE_LOG(LogVfxImporter, Log, TEXT("    %s.%s = %s"), *ModuleNode->GetFunctionName(), InputName, *LiteralValue);
@@ -92,10 +101,19 @@ namespace
 		UE_LOG(LogVfxImporter, Warning, TEXT("    module containing '%s' not found (input '%s' not set)"), ModuleNameSubstring, InputName);
 		return false;
 	}
+	/** UNiagaraNodeInput::GetDataInterface is not exported from NiagaraEditor; read the UPROPERTY through reflection. */
+	UNiagaraDataInterface* NodeInputDataInterface(const UNiagaraNodeInput* In)
+	{
+		static FObjectProperty* Prop = FindFProperty<FObjectProperty>(UNiagaraNodeInput::StaticClass(), TEXT("DataInterface"));
+		return Prop ? Cast<UNiagaraDataInterface>(Prop->GetObjectPropertyValue_InContainer(In)) : nullptr;
+	}
 	FString FloatLit(double V) { return FString::SanitizeFloat(V); }
 	FString Vec3Lit(const FVector& V) { return FString::Printf(TEXT("%f,%f,%f"), V.X, V.Y, V.Z); }
-	FString Vec2Lit(double A, double B) { return FString::Printf(TEXT("%f,%f"), A, B); }
-	FString ColorLit(const FLinearColor& C) { return FString::Printf(TEXT("%f,%f,%f,%f"), C.R, C.G, C.B, C.A); }
+	// Pin default-value syntax per Niagara type (NiagaraEditor/Private/TypeEditorUtilities): Vector3/4 are bare
+	// "x,y,z"; Vector2 is "(X=..., Y=...)"; LinearColor is FLinearColor::ToString() "(R=...,G=...,B=...,A=...)".
+	// A wrong syntax silently parses as zero (black particles, zero-size sprites).
+	FString Vec2Lit(double A, double B) { return FString::Printf(TEXT("(X=%3.3f, Y=%3.3f)"), A, B); }
+	FString ColorLit(const FLinearColor& C) { return C.ToString(); }
 
 	/** Every override target for one emitter, applied to every usage graph reachable from the emitter (Spawn/Update
 	 *  share one graph in this Niagara version, per the 2026-10-01 enumeration -- see file header). */
@@ -110,9 +128,12 @@ namespace
 
 	/** Builds (once) the shared Additive/Translucent unlit sprite base materials under DestRoot/_Materials, or loads
 	 *  them if already present from a previous import into the same project. */
-	UMaterial* GetOrCreateBaseMaterial(const FString& DestRoot, bool bAdditive)
+	UMaterial* GetOrCreateBaseMaterial(const FString& DestRoot, bool bAdditive, int32 Columns = 1, int32 Rows = 1)
 	{
-		const FString Name = bAdditive ? TEXT("M_VfxStudio_Additive") : TEXT("M_VfxStudio_Translucent");
+		// One base per blend mode and flipbook grid: the texture coordinates are scaled to the FIRST cell of the sheet
+		// (a 4x4 flipbook would otherwise draw all 16 frames at once as a square).
+		const FString Grid = (Columns > 1 || Rows > 1) ? FString::Printf(TEXT("_%dx%d"), Columns, Rows) : FString();
+		const FString Name = FString(bAdditive ? TEXT("M_VfxStudio_Additive") : TEXT("M_VfxStudio_Translucent")) + Grid;
 		const FString PackagePath = DestRoot / TEXT("_Materials");
 		const FString AssetPath = PackagePath / Name;
 		if (UMaterial* Existing = LoadObject<UMaterial>(nullptr, *(AssetPath + TEXT(".") + Name)))
@@ -130,6 +151,12 @@ namespace
 
 		UMaterialExpression* TexExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionTextureSampleParameter2D::StaticClass(), -300, 0);
 		if (auto* TexParam = Cast<UMaterialExpressionTextureSampleParameter2D>(TexExpr)) TexParam->ParameterName = TEXT("Texture");
+		if (Columns > 1 || Rows > 1)
+		{
+			UMaterialExpression* UvExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionTextureCoordinate::StaticClass(), -550, 0);
+			if (auto* Uv = Cast<UMaterialExpressionTextureCoordinate>(UvExpr)) { Uv->UTiling = 1.0f / FMath::Max(1, Columns); Uv->VTiling = 1.0f / FMath::Max(1, Rows); }
+			UMaterialEditingLibrary::ConnectMaterialExpressions(UvExpr, TEXT(""), TexExpr, TEXT("UVs"));
+		}
 		UMaterialExpression* ParticleColorExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionParticleColor::StaticClass(), -300, 200);
 		UMaterialExpression* MulRgbExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionMultiply::StaticClass(), 0, 0);
 		UMaterialEditingLibrary::ConnectMaterialExpressions(TexExpr, TEXT("RGB"), MulRgbExpr, TEXT("A"));
@@ -144,8 +171,12 @@ namespace
 		}
 		else
 		{
-			// Additive particles still fade with ParticleColor.A (opacity-over-life exported as alpha): scale emissive by it too.
-			UMaterialEditingLibrary::ConnectMaterialExpressions(ParticleColorExpr, TEXT("A"), MulRgbExpr, TEXT("B"));
+			// Additive particles fade with ParticleColor.A (opacity over life): emissive = texture.rgb * colour.rgb * colour.a.
+			// (Feeding A into the same multiply's B replaced the colour input: glows ignored their colour.)
+			UMaterialExpression* FadeExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionMultiply::StaticClass(), 200, 0);
+			UMaterialEditingLibrary::ConnectMaterialExpressions(MulRgbExpr, TEXT(""), FadeExpr, TEXT("A"));
+			UMaterialEditingLibrary::ConnectMaterialExpressions(ParticleColorExpr, TEXT("A"), FadeExpr, TEXT("B"));
+			UMaterialEditingLibrary::ConnectMaterialProperty(FadeExpr, TEXT(""), MP_EmissiveColor);
 		}
 		UMaterialEditingLibrary::RecompileMaterial(Mat);
 		SaveAssetObj(Mat);
@@ -194,6 +225,51 @@ namespace
 		return Tex;
 	}
 
+	/** Linear sample of a {t, <field>} key list at normalized life t. */
+	double SampleKeys(const TArray<TSharedPtr<FJsonValue>>* Keys, double T, const TCHAR* Field, double Fallback)
+	{
+		if (!Keys || Keys->Num() == 0) return Fallback;
+		const auto At = [&](int32 i, const TCHAR* F) { return (*Keys)[i]->AsObject()->GetNumberField(F); };
+		if (T <= At(0, TEXT("t"))) return At(0, Field);
+		for (int32 i = 1; i < Keys->Num(); i++)
+		{
+			const double T0 = At(i - 1, TEXT("t")), T1 = At(i, TEXT("t"));
+			if (T <= T1) { const double U = T1 > T0 ? (T - T0) / (T1 - T0) : 0.0; return At(i - 1, Field) + (At(i, Field) - At(i - 1, Field)) * U; }
+		}
+		return At(Keys->Num() - 1, Field);
+	}
+
+	/** Average of a {t, v} curve over life 0..1 (trapezoids on a fine grid). */
+	double AverageKeys(const TArray<TSharedPtr<FJsonValue>>* Keys, double Fallback)
+	{
+		if (!Keys || Keys->Num() == 0) return Fallback;
+		double Sum = 0.0; const int32 N = 32;
+		for (int32 i = 0; i <= N; i++) Sum += SampleKeys(Keys, double(i) / N, TEXT("v"), Fallback) * ((i == 0 || i == N) ? 0.5 : 1.0);
+		return Sum / N;
+	}
+
+	/** Writes opacity-over-life into every "Scale Alpha" float-curve data interface of the graph (the stock templates'
+	 *  Scale Color module reads Scale Alpha from a Float-from-Curve dynamic input over normalized age). */
+	int32 SetScaleAlphaCurve(UNiagaraGraph* Graph, const TArray<TSharedPtr<FJsonValue>>* Keys)
+	{
+		if (!Graph || !Keys || Keys->Num() == 0) return 0;
+		int32 Done = 0;
+		for (UEdGraphNode* Node : Graph->Nodes)
+		{
+			UNiagaraNodeInput* In = Cast<UNiagaraNodeInput>(Node);
+			if (!In || !In->Input.GetName().ToString().StartsWith(TEXT("Scale Alpha"))) continue;
+			UNiagaraDataInterfaceCurve* Curve = Cast<UNiagaraDataInterfaceCurve>(NodeInputDataInterface(In));
+			if (!Curve) continue;
+			Curve->Modify();
+			Curve->Curve.Reset();
+			for (const auto& K : *Keys) { const auto O = K->AsObject(); Curve->Curve.AddKey(O->GetNumberField(TEXT("t")), O->GetNumberField(TEXT("v"))); }
+			Curve->UpdateLUT();
+			Done++;
+		}
+		UE_LOG(LogVfxImporter, Log, TEXT("    Scale Alpha curve set on %d data interface(s) (%d keys)"), Done, Keys->Num());
+		return Done;
+	}
+
 	/** Applies the module-input overrides shared by every emitter, then the template-specific ones. Shape/AddVelocity
 	 *  are skipped (module not found, logged) rather than guessed when a template lacks them. */
 	void ApplyEmitterOverrides(UNiagaraGraph* Graph, const TSharedPtr<FJsonObject>& E, const FString& Template)
@@ -205,23 +281,38 @@ namespace
 
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Min"), F, FloatLit(E->GetNumberField(TEXT("lifetimeSecMin"))));
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Max"), F, FloatLit(E->GetNumberField(TEXT("lifetimeSecMax"))));
-		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Sprite Size Min"), V2, Vec2Lit(E->GetNumberField(TEXT("sizeCmMin")), E->GetNumberField(TEXT("sizeCmMin"))));
-		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Sprite Size Max"), V2, Vec2Lit(E->GetNumberField(TEXT("sizeCmMax")), E->GetNumberField(TEXT("sizeCmMax"))));
+		// Size over life: no stock size-curve module, so use the life-average size (flames grow x3.7; the birth size alone
+		// draws them far too small). sizeOverLife values are absolute cm around the min/max midpoint.
+		const double SMin = E->GetNumberField(TEXT("sizeCmMin")), SMax = E->GetNumberField(TEXT("sizeCmMax")), SMid = FMath::Max(0.001, (SMin + SMax) / 2.0);
+		const TArray<TSharedPtr<FJsonValue>>* SizeKeys = nullptr; E->TryGetArrayField(TEXT("sizeOverLife"), SizeKeys);
+		const double SizeScale = AverageKeys(SizeKeys, SMid) / SMid;
+		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Sprite Size Min"), V2, Vec2Lit(SMin * SizeScale, SMin * SizeScale));
+		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Sprite Size Max"), V2, Vec2Lit(SMax * SizeScale, SMax * SizeScale));
+		// The stock templates size sprites in "uniform" mode, which reads these instead of the Vector2 pair above.
+		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Uniform Sprite Size Min"), F, FloatLit(SMin * SizeScale));
+		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Uniform Sprite Size Max"), F, FloatLit(SMax * SizeScale));
 
-		// First key of colorOverLife/opacityOverLife (full-curve wiring is out of scope this pass; see header comment).
-		const TArray<TSharedPtr<FJsonValue>>* ColorKeys = nullptr;
-		FLinearColor InitColor(1, 1, 1, 1);
-		if (E->TryGetArrayField(TEXT("colorOverLife"), ColorKeys) && ColorKeys->Num() > 0)
+		// Colour over life: no stock colour-curve module, so use the colour averaged over the visible first 60 % of life
+		// (keeps the white-hot start and the orange body; a single mid-life sample multiplied into an already orange flame
+		// texture reads deep red). Averaged in linear space. Opacity over life is exact: the template's Scale Alpha curve.
+		const TArray<TSharedPtr<FJsonValue>>* ColorKeys = nullptr; E->TryGetArrayField(TEXT("colorOverLife"), ColorKeys);
+		FLinearColor Body(0, 0, 0, 1);
 		{
-			const auto K = (*ColorKeys)[0]->AsObject();
-			InitColor = FLinearColor(K->GetNumberField(TEXT("r")), K->GetNumberField(TEXT("g")), K->GetNumberField(TEXT("b")), 1.0);
+			const int32 N = 12;
+			for (int32 i = 0; i <= N; i++)
+			{
+				const double T = 0.6 * i / N;
+				Body += FLinearColor(FColor(
+					(uint8)FMath::Clamp(SampleKeys(ColorKeys, T, TEXT("r"), 1.0) * 255.0, 0.0, 255.0),
+					(uint8)FMath::Clamp(SampleKeys(ColorKeys, T, TEXT("g"), 1.0) * 255.0, 0.0, 255.0),
+					(uint8)FMath::Clamp(SampleKeys(ColorKeys, T, TEXT("b"), 1.0) * 255.0, 0.0, 255.0)));
+			}
+			Body.R /= (N + 1); Body.G /= (N + 1); Body.B /= (N + 1);
 		}
-		const TArray<TSharedPtr<FJsonValue>>* OpacityKeys = nullptr;
-		if (E->TryGetArrayField(TEXT("opacityOverLife"), OpacityKeys) && OpacityKeys->Num() > 0)
-		{
-			InitColor.A = (*OpacityKeys)[0]->AsObject()->GetNumberField(TEXT("v"));
-		}
+		const FLinearColor InitColor(Body.R, Body.G, Body.B, 1.0f);
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Color"), Col, ColorLit(InitColor));
+		const TArray<TSharedPtr<FJsonValue>>* OpacityKeys = nullptr;
+		if (E->TryGetArrayField(TEXT("opacityOverLife"), OpacityKeys)) SetScaleAlphaCurve(Graph, OpacityKeys);
 
 		if (Template == TEXT("Fountain"))
 		{
@@ -236,6 +327,10 @@ namespace
 			OverrideLiteral(Graph, TEXT("GravityForce"), TEXT("Gravity"), V3, Vec3Lit(JsonVec3(Accel)));
 			OverrideLiteral(Graph, TEXT("Drag"), TEXT("Drag"), F, FloatLit(E->GetNumberField(TEXT("drag"))));
 
+			// Spawn origin relative to the effect origin (the floor point under Source): without it every emitter starts on
+			// the floor instead of at the nozzle / Source height.
+			const TArray<TSharedPtr<FJsonValue>>* Pos = nullptr;
+			if (E->TryGetArrayField(TEXT("position"), Pos)) OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Offset"), V3, Vec3Lit(JsonVec3(Pos)));
 			const TSharedPtr<FJsonObject>* ShapeObj = nullptr;
 			if (E->TryGetObjectField(TEXT("shape"), ShapeObj))
 			{
@@ -252,6 +347,8 @@ namespace
 		}
 		else if (Template == TEXT("SimpleSpriteBurst"))
 		{
+			const TArray<TSharedPtr<FJsonValue>>* Pos = nullptr;
+			if (E->TryGetArrayField(TEXT("position"), Pos)) OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Offset"), FNiagaraTypeDefinition::GetVec3Def(), Vec3Lit(JsonVec3(Pos)));
 			const TArray<TSharedPtr<FJsonValue>>* Bursts = nullptr;
 			if (E->TryGetArrayField(TEXT("bursts"), Bursts) && Bursts->Num() > 0)
 			{
@@ -303,14 +400,12 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 	UMaterial* TranslucentBase = GetOrCreateBaseMaterial(DestPath, false);
 
 	// --- NiagaraSystem ---
-	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
-	const FString SystemName = TEXT("NS_") + Name;
+	// Emitters go in through the factory's EmittersToAddToNewSystem: that path (FNiagaraEditorUtilities::AddEmitterToSystem)
+	// also wires each emitter into the system scripts. UNiagaraSystem::AddEmitterHandle alone does not, and such a system
+	// has nothing running: it completes on its first tick and never draws (the 2026-10-01 "black frame").
+	struct FPending { TSharedPtr<FJsonObject> E; FString Name; FString Template; };
+	TArray<FPending> Pending;
 	UNiagaraSystemFactoryNew* SysFactory = NewObject<UNiagaraSystemFactoryNew>();
-	UObject* NewAsset = AssetTools.CreateAsset(SystemName, DestPath, UNiagaraSystem::StaticClass(), SysFactory);
-	UNiagaraSystem* System = Cast<UNiagaraSystem>(NewAsset);
-	if (!System) { UE_LOG(LogVfxImporter, Error, TEXT("CreateAsset(NiagaraSystem) failed (may already exist at %s/%s)"), *DestPath, *SystemName); return false; }
-
-	int32 EmitterCount = 0;
 	const TArray<TSharedPtr<FJsonValue>>* Emitters = nullptr;
 	if (Root->TryGetArrayField(TEXT("emitters"), Emitters))
 	{
@@ -325,35 +420,58 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 				TEXT("/Niagara/DefaultAssets/Templates/Emitters/Fountain.Fountain");
 			UNiagaraEmitter* Tmpl = LoadTemplate(TemplatePath);
 			if (!Tmpl) { UE_LOG(LogVfxImporter, Error, TEXT("Skipping emitter %s: template load failed"), *EName); continue; }
-			const FGuid Version = Tmpl->GetExposedVersion().VersionGuid;
-			FNiagaraEmitterHandle Handle = System->AddEmitterHandle(*Tmpl, FName(*EName), Version);
-			UE_LOG(LogVfxImporter, Warning, TEXT(" + emitter %s (template %s)"), *EName, *Template);
-
-			FVersionedNiagaraEmitterData* Data = Handle.GetEmitterData();
-			if (!Data) { UE_LOG(LogVfxImporter, Error, TEXT("   no emitter data for %s"), *EName); continue; }
-
-			// Material: an MIC over the shared Additive/Translucent base, per the emitter's texture + blend mode.
-			const FString Blend = E->GetStringField(TEXT("blend"));
-			const bool bAdditive = Blend == TEXT("additive");
-			FString TexFile; E->TryGetStringField(TEXT("textureFile"), TexFile);
-			UTexture2D** FoundTex = TexFile.IsEmpty() ? nullptr : Textures.Find(TexFile);
-			UMaterialInstanceConstant* MIC = FoundTex ? GetOrCreateTextureMaterial(DestPath, bAdditive ? AdditiveBase : TranslucentBase, *FoundTex, bAdditive ? TEXT("Add") : TEXT("Trans")) : nullptr;
-			for (UNiagaraRendererProperties* Renderer : Data->GetRenderers())
-			{
-				if (auto* Sprite = Cast<UNiagaraSpriteRendererProperties>(Renderer))
-				{
-					if (MIC) Sprite->Material = MIC;
-					else UE_LOG(LogVfxImporter, Warning, TEXT("   no texture for %s; keeping the template's default sprite material"), *EName);
-				}
-			}
-
-			UNiagaraScript* SpawnScript = Data->SpawnScriptProps.Script;
-			UNiagaraScriptSource* Source = SpawnScript ? Cast<UNiagaraScriptSource>(SpawnScript->GetLatestSource()) : nullptr;
-			if (Source && Source->NodeGraph) ApplyEmitterOverrides(Source->NodeGraph, E, Template);
-			else UE_LOG(LogVfxImporter, Error, TEXT("   no spawn-script graph for %s; module overrides skipped"), *EName);
-
-			EmitterCount++;
+			SysFactory->EmittersToAddToNewSystem.Add(FVersionedNiagaraEmitter(Tmpl, Tmpl->GetExposedVersion().VersionGuid));
+			Pending.Add({ E, EName, Template });
 		}
+	}
+	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
+	const FString SystemName = TEXT("NS_") + Name;
+	UObject* NewAsset = AssetTools.CreateAsset(SystemName, DestPath, UNiagaraSystem::StaticClass(), SysFactory);
+	UNiagaraSystem* System = Cast<UNiagaraSystem>(NewAsset);
+	if (!System) { UE_LOG(LogVfxImporter, Error, TEXT("CreateAsset(NiagaraSystem) failed (may already exist at %s/%s)"), *DestPath, *SystemName); return false; }
+
+	int32 EmitterCount = 0;
+	TArray<FNiagaraEmitterHandle>& Handles = System->GetEmitterHandles();
+	if (Handles.Num() != Pending.Num()) UE_LOG(LogVfxImporter, Error, TEXT("Expected %d emitters in the new system, found %d"), Pending.Num(), Handles.Num());
+	for (int32 i = 0; i < FMath::Min(Handles.Num(), Pending.Num()); i++)
+	{
+		const TSharedPtr<FJsonObject> E = Pending[i].E;
+		const FString& EName = Pending[i].Name;
+		const FString& Template = Pending[i].Template;
+		FNiagaraEmitterHandle& Handle = Handles[i];
+		Handle.SetName(FName(*EName), *System);
+		UE_LOG(LogVfxImporter, Warning, TEXT(" + emitter %s (template %s)"), *EName, *Template);
+
+		FVersionedNiagaraEmitterData* Data = Handle.GetEmitterData();
+		if (!Data) { UE_LOG(LogVfxImporter, Error, TEXT("   no emitter data for %s"), *EName); continue; }
+
+		// Material: an MIC over the shared Additive/Translucent base, per the emitter's texture + blend mode.
+		const FString Blend = E->GetStringField(TEXT("blend"));
+		const bool bAdditive = Blend == TEXT("additive");
+		FString TexFile; E->TryGetStringField(TEXT("textureFile"), TexFile);
+		UTexture2D** FoundTex = TexFile.IsEmpty() ? nullptr : Textures.Find(TexFile);
+		int32 Cols = 1, Rows = 1;
+		const TSharedPtr<FJsonObject>* Flip = nullptr;
+		if (E->TryGetObjectField(TEXT("flipbook"), Flip)) { Cols = (int32)(*Flip)->GetNumberField(TEXT("columns")); Rows = (int32)(*Flip)->GetNumberField(TEXT("rows")); }
+		UMaterial* Base = (Cols > 1 || Rows > 1) ? GetOrCreateBaseMaterial(DestPath, bAdditive, Cols, Rows) : (bAdditive ? AdditiveBase : TranslucentBase);
+		const FString Tag = FString(bAdditive ? TEXT("Add") : TEXT("Trans")) + ((Cols > 1 || Rows > 1) ? FString::Printf(TEXT("%dx%d"), Cols, Rows) : FString());
+		UMaterialInstanceConstant* MIC = FoundTex ? GetOrCreateTextureMaterial(DestPath, Base, *FoundTex, Tag) : nullptr;
+		for (UNiagaraRendererProperties* Renderer : Data->GetRenderers())
+		{
+			if (auto* Sprite = Cast<UNiagaraSpriteRendererProperties>(Renderer))
+			{
+				if (MIC) Sprite->Material = MIC;
+				if (E->GetStringField(TEXT("alignment")) == TEXT("velocity")) Sprite->Alignment = ENiagaraSpriteAlignment::VelocityAligned;
+				else UE_LOG(LogVfxImporter, Warning, TEXT("   no texture for %s; keeping the template's default sprite material"), *EName);
+			}
+		}
+
+		UNiagaraScript* SpawnScript = Data->SpawnScriptProps.Script;
+		UNiagaraScriptSource* Source = SpawnScript ? Cast<UNiagaraScriptSource>(SpawnScript->GetLatestSource()) : nullptr;
+		if (Source && Source->NodeGraph) ApplyEmitterOverrides(Source->NodeGraph, E, Template);
+		else UE_LOG(LogVfxImporter, Error, TEXT("   no spawn-script graph for %s; module overrides skipped"), *EName);
+
+		EmitterCount++;
 	}
 
 	const TArray<TSharedPtr<FJsonValue>>* Ribbons = nullptr;
@@ -373,4 +491,32 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 	const bool bSaved = SaveAssetObj(System);
 	UE_LOG(LogVfxImporter, Warning, TEXT("=== ImportPackage done: %d emitter(s), saved=%d ==="), EmitterCount, bSaved ? 1 : 0);
 	return bSaved && EmitterCount > 0;
+}
+
+void UVfxNiagaraImporter::DumpTemplates()
+{
+	const TCHAR* Paths[] = {
+		TEXT("/Niagara/DefaultAssets/Templates/Emitters/Fountain.Fountain"),
+		TEXT("/Niagara/DefaultAssets/Templates/Emitters/SimpleSpriteBurst.SimpleSpriteBurst"),
+	};
+	for (const TCHAR* Path : Paths)
+	{
+		UNiagaraEmitter* Tmpl = LoadTemplate(Path);
+		FVersionedNiagaraEmitterData* Data = Tmpl ? Tmpl->GetEmitterData(Tmpl->GetExposedVersion().VersionGuid) : nullptr;
+		if (!Data) continue;
+		UNiagaraScriptSource* Source = Data->SpawnScriptProps.Script ? Cast<UNiagaraScriptSource>(Data->SpawnScriptProps.Script->GetLatestSource()) : nullptr;
+		if (!Source || !Source->NodeGraph) continue;
+		UE_LOG(LogVfxImporter, Warning, TEXT("DUMP template %s: %d nodes"), Path, Source->NodeGraph->Nodes.Num());
+		for (UEdGraphNode* Node : Source->NodeGraph->Nodes)
+		{
+			FString Extra;
+			if (UNiagaraNodeFunctionCall* Fn = Cast<UNiagaraNodeFunctionCall>(Node)) Extra = FString::Printf(TEXT("function=%s"), *Fn->GetFunctionName());
+			if (UNiagaraNodeInput* In = Cast<UNiagaraNodeInput>(Node))
+			{
+				UNiagaraDataInterface* DI = NodeInputDataInterface(In);
+				Extra = FString::Printf(TEXT("input=%s type=%s di=%s"), *In->Input.GetName().ToString(), *In->Input.GetType().GetName(), DI ? *DI->GetClass()->GetName() : TEXT("-"));
+			}
+			UE_LOG(LogVfxImporter, Warning, TEXT("DUMP   %s | %s | %s"), *Node->GetClass()->GetName(), *Node->GetNodeTitle(ENodeTitleType::ListView).ToString(), *Extra);
+		}
+	}
 }

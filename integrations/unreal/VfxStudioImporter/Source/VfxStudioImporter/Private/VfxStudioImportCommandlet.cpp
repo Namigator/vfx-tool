@@ -9,6 +9,11 @@ int32 UVfxStudioImportCommandlet::Main(const FString& Params)
 	TArray<FString> Tokens, Switches;
 	ParseCommandLine(*Params, Tokens, Switches, ParamMap);
 
+	if (Switches.Contains(TEXT("DumpTemplates")))
+	{
+		UVfxNiagaraImporter::DumpTemplates();
+		return 0;
+	}
 	const FString* Package = ParamMap.Find(TEXT("Package"));
 	const FString* Dest = ParamMap.Find(TEXT("Dest"));
 	if (!Package || Package->IsEmpty() || !Dest || Dest->IsEmpty())

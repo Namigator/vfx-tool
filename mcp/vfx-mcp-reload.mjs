@@ -3,11 +3,18 @@
 // agents always use the current tool code without the user reconnecting. The client's `initialize` handshake
 // is replayed to each new child (its reply swallowed), requests arriving mid-restart are queued, and the client
 // is told the tool list changed. Open documents survive because the server reloads them from work/mcp/<id>.json.
+// A reload never strands a call: it waits (up to MAX_RELOAD_WAIT_MS) for in-flight requests to answer, and any request
+// still open when the old child goes away gets a JSON-RPC error ("server reloaded; retry") instead of silence (a lost
+// reply used to leave the client waiting for its 30-minute timeout).
 import { spawn } from 'node:child_process';
 import { watch } from 'node:fs';
 
 const serverArgs = ['--experimental-strip-types', '--no-warnings', 'mcp/vfx-mcp.ts'];
 let child = null, ready = false, init = null, initialized = null, pending = [], restarting = false, timer = null;
+/** Request ids forwarded to the current child and not answered yet (id -> method). */
+const inFlight = new Map();
+const MAX_RELOAD_WAIT_MS = 90_000;
+let reloadWanted = false, reloadDeadline = 0;
 const REPLAY_ID = '__vfx_reload_init__';
 
 const send = line => process.stdout.write(line + '\n');
@@ -24,6 +31,10 @@ function start(replay) {
       const line = buf.slice(0, i); buf = buf.slice(i + 1);
       if (!line.trim()) continue;
       let msg; try { msg = JSON.parse(line); } catch { send(line); continue; }
+      if (msg.id !== undefined && (msg.result !== undefined || msg.error !== undefined)) {
+        inFlight.delete(msg.id);
+        if (reloadWanted && inFlight.size === 0) setTimeout(maybeReload, 0);
+      }
       if (msg.id === REPLAY_ID) { // Our replayed handshake: finish it, then flush queued requests.
         if (initialized) child.stdin.write(initialized + '\n');
         ready = true;
@@ -39,6 +50,7 @@ function start(replay) {
   // restarts it at once anyway.
   const startedAt = Date.now();
   child.on('exit', code => {
+    failInFlight(`the VFX server exited (code ${code})`);
     if (restarting) return;
     const wait = Date.now() - startedAt < 3000 ? 3000 : 0;
     log(`server exited (${code}); restarting${wait ? ' in 3 s' : ''}`);
@@ -46,6 +58,23 @@ function start(replay) {
     timer = setTimeout(restart, wait);
   });
   if (replay && init) { const m = JSON.parse(init); m.id = REPLAY_ID; child.stdin.write(JSON.stringify(m) + '\n'); }
+}
+
+/** Answer every still-open request with an error so no caller waits forever. */
+function failInFlight(why) {
+  for (const [id, method] of inFlight) {
+    send(JSON.stringify({ jsonrpc: '2.0', id, error: { code: -32000, message: `${method} was interrupted: ${why}. Nothing is wrong with your document; retry the call.` } }));
+  }
+  inFlight.clear();
+}
+
+/** Reload now if nothing is in flight (or the wait ran out), else check again when the last reply arrives. */
+function maybeReload() {
+  if (!reloadWanted) return;
+  if (inFlight.size > 0 && Date.now() < reloadDeadline) { clearTimeout(timer); timer = setTimeout(maybeReload, 1000); return; }
+  reloadWanted = false;
+  failInFlight('the VFX server reloaded after a code change');
+  restart();
 }
 
 function restart() {
@@ -68,6 +97,7 @@ process.stdin.on('data', chunk => {
       if (m.method === 'initialize') init = line;
       if (m.method === 'notifications/initialized') initialized = line;
     } catch { /* forward as-is */ }
+    try { const m = JSON.parse(line); if (m.id !== undefined && m.method) inFlight.set(m.id, m.method === 'tools/call' ? `tools/call ${m.params?.name ?? ''}` : m.method); } catch { /* not JSON */ }
     if (ready) child.stdin.write(line + '\n'); else pending.push(line);
   }
 });
@@ -76,7 +106,10 @@ process.stdin.on('end', () => { child?.kill(); process.exit(0); });
 const onChange = (_e, file) => {
   if (!file || !/\.(ts|mjs|js|json)$/.test(String(file)) || /generated|work[\\/]/.test(String(file))) return;
   clearTimeout(timer);
-  timer = setTimeout(() => { log(`change in ${file}; reloading`); restart(); }, 400);
+  timer = setTimeout(() => {
+    log(`change in ${file}; reloading${inFlight.size ? ` after ${inFlight.size} in-flight call(s) finish` : ''}`);
+    reloadWanted = true; reloadDeadline = Date.now() + MAX_RELOAD_WAIT_MS; maybeReload();
+  }, 400);
 };
 for (const dir of ['src', 'mcp']) { try { watch(dir, { recursive: true }, onChange); } catch (e) { log(`cannot watch ${dir}: ${e.message}`); } }
 start(false);

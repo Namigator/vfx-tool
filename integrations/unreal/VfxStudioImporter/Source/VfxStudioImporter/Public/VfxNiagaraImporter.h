@@ -30,4 +30,7 @@ public:
 	 *  compiled and saved); check the log (category LogVfxImporter) for per-emitter detail either way. */
 	UFUNCTION(BlueprintCallable, Category = "VfxStudioImporter")
 	static bool ImportPackage(const FString& PackageDir, const FString& DestPath);
+
+	/** Logs every node (class, title, data interface) of the stock emitter templates' spawn/update graphs. */
+	static void DumpTemplates();
 };
