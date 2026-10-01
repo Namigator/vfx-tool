@@ -13,14 +13,54 @@ type Props = {
   onEdit: (label: string, patches: HistoryPatch[]) => void; onSelect: (nodeId: string) => void; onSeek: (tick: number) => void;
 };
 type Drag = { prefix: string; mode: 'move' | 'stretch'; x0: number; width: number; delta: number };
+type KeyDrag = { prefix: string; from: number; to: number; x0: number; width: number; pointer: number; min: number; max: number; controls: number[] };
 
 const pct = (t: number, d: number) => `${(100 * Math.max(0, Math.min(d, t))) / Math.max(1, d)}%`;
 
 export function TimelineStrip({ document: doc, lanes, tick, durationTicks, selectedNodeId, onEdit, onSelect, onSeek }: Props) {
   const [drag, setDrag] = useState<Drag | null>(null);
   const dragRef = useRef<Drag | null>(null);
+  const [keyDrag, setKeyDrag] = useState<KeyDrag | null>(null);
+  const keyDragRef = useRef<KeyDrag | null>(null);
   if (!lanes.length) return null;
   const dur = Math.max(1, durationTicks);
+
+  const beginKey = (e: ReactPointerEvent<HTMLElement>, lane: TimelineLane, from: number) => {
+    if (!e.isPrimary || e.button !== 0) return;
+    e.preventDefault(); e.stopPropagation();
+    e.currentTarget.focus();
+    const track = e.currentTarget.closest('.tl-track')?.getBoundingClientRect();
+    if (!track) return;
+    const prefixes = lanes.map(l => l.prefix).sort((a, b) => b.length - a.length);
+    const controls = doc.controls.flatMap((c, index) => prefixes.find(p => c.id.startsWith(`ctl-${p}-`)) === lane.prefix && c.keys?.some(k => k.tick === from) ? [index] : []);
+    let min = 0, max = dur;
+    for (const index of controls) for (const k of doc.controls[index].keys ?? []) {
+      if (k.tick < from) min = Math.max(min, k.tick + 1);
+      if (k.tick > from) max = Math.min(max, k.tick - 1);
+    }
+    e.currentTarget.setPointerCapture(e.pointerId);
+    keyDragRef.current = { prefix: lane.prefix, from, to: from, x0: e.clientX, width: track.width, pointer: e.pointerId, min, max, controls };
+    setKeyDrag(keyDragRef.current);
+  };
+  const moveKey = (e: ReactPointerEvent<HTMLElement>) => {
+    const d = keyDragRef.current;
+    if (!d || d.pointer !== e.pointerId) return;
+    e.stopPropagation();
+    const to = Math.max(d.min, Math.min(d.max, d.from + Math.round((e.clientX - d.x0) / Math.max(1, d.width) * dur)));
+    if (to !== d.to) { keyDragRef.current = { ...d, to }; setKeyDrag(keyDragRef.current); }
+  };
+  const cancelKey = () => { keyDragRef.current = null; setKeyDrag(null); };
+  const endKey = (e: ReactPointerEvent<HTMLElement>) => {
+    moveKey(e);
+    const d = keyDragRef.current;
+    if (!d || d.pointer !== e.pointerId) return;
+    cancelKey();
+    e.stopPropagation();
+    if (d.to !== d.from) onEdit(`Move keyframes from tick ${d.from} to ${d.to}`, d.controls.map(index => ({
+      op: 'set', path: ['controls', index, 'keys'], value: doc.controls[index].keys!.map(k => k.tick === d.from ? { ...k, tick: d.to } : k).sort((a, b) => a.tick - b.tick),
+    })));
+    onSeek(d.to);
+  };
 
   const begin = (e: ReactPointerEvent<HTMLElement>, lane: TimelineLane, mode: Drag['mode']) => {
     e.stopPropagation();
@@ -77,8 +117,16 @@ export function TimelineStrip({ document: doc, lanes, tick, durationTicks, selec
                     onPointerDown={e => begin(e, lane, 'stretch')} onPointerMove={move} onPointerUp={() => end(lane)} />}
                 </div>
               ) : <span className="tl-empty">not visible</span>}
-              {lane.keys?.map(k => <span key={k.tick} className="tl-keyframe" style={{ left: pct(k.tick, dur) }} title={`Tick ${k.tick}: ${k.labels.join(', ')} keyed (click to jump here)`}
-                onPointerDown={e => { e.stopPropagation(); onSeek(k.tick); }} />)}
+              {lane.keys?.map(k => {
+                const active = keyDrag?.prefix === lane.prefix && keyDrag.from === k.tick;
+                const shown = active ? keyDrag.to : k.tick;
+                return <span key={k.tick} className={`tl-keyframe${active ? ' tl-key-dragging' : ''}`} style={{ left: pct(shown, dur) }}
+                  title={`Tick ${shown}: ${k.labels.join(', ')} keyed. Drag to move; click to jump. Keys at the same tick move together; cannot cross another key.`}
+                  role="button" aria-label={`${lane.label} keyframe at tick ${shown}`} tabIndex={0}
+                  onPointerDown={e => beginKey(e, lane, k.tick)} onPointerMove={moveKey} onPointerUp={endKey}
+                  onPointerCancel={cancelKey} onLostPointerCapture={cancelKey}
+                  onKeyDown={e => { if (e.key === 'Escape') cancelKey(); if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSeek(k.tick); } }} />;
+              })}
               <span className="tl-playhead" style={{ left: pct(tick, dur) }} />
             </div>
           </div>
@@ -96,7 +144,7 @@ export function TimelineStrip({ document: doc, lanes, tick, durationTicks, selec
 .tl-drag-readout{position:absolute;left:4px;top:-1px;font-size:11px;color:#fff;white-space:nowrap;pointer-events:none}
 .tl-playhead{position:absolute;top:-2px;bottom:-2px;width:2px;margin-left:-1px;background:#ff5a5a;pointer-events:none}
 .tl-empty{position:absolute;left:6px;top:1px;opacity:.5}
-.tl-keyframe{position:absolute;top:4px;width:8px;height:8px;margin-left:-4px;background:#f0b35a;border:1px solid #1a1a1a;transform:rotate(45deg);cursor:pointer;z-index:2}`}</style>
+.tl-keyframe{position:absolute;top:2px;width:12px;height:12px;box-sizing:border-box;margin-left:-6px;background:#f0b35a;border:1px solid #1a1a1a;transform:rotate(45deg);cursor:grab;touch-action:none;z-index:2}.tl-key-dragging{cursor:grabbing;background:#fff0bd}.tl-keyframe:focus-visible{outline:2px solid white}`}</style>
     </div>
   );
 }

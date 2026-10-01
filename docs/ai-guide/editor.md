@@ -73,7 +73,9 @@ The search box matches name, element or type ("fire", "impact", "beam").
 ## Timeline strip (under the play bar)
 
 One bar per component. Drag a bar to change its **Start at**; drag its right edge to change its length knob (Burn
-time, Duration...) when it has one; click to select. Keyframed knobs show their keys as ticks on the lane.
+time, Duration...) when it has one; click to select. Keyframed knobs show gold diamonds on the lane. Drag a diamond
+to change its time (whole ticks); release commits one undoable move. Keys grouped at the same tick move together,
+and movement stops before neighbouring keys to avoid overwriting them. Click to jump there; Escape cancels a drag.
 [`vfx_list_timeline`, `vfx_set_control`]
 
 ## Right inspector (tabs: Controls · Node · Outline · Assets · Issues · Sound)
