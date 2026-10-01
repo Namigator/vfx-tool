@@ -232,3 +232,10 @@
 .tut-spacer { flex: 1; }
 .pv2 .tut-next { background: var(--pv2-accent); color: #0b1020; border-color: var(--pv2-accent); font-weight: 600; }
 .pv2 .pv2-tutorial-btn { flex: none; }
+/* < 1250 px: one File menu instead of the file buttons, so the bar never scrolls its buttons out of sight. */
+.pv2-tool-filemenu { display: none; }
+@media (max-width: 1250px) {
+  .pv2 .pv2-tool-file-btn, .pv2-tool-more { display: none !important; }
+  .pv2-tool-filemenu { display: inline-flex; }
+}
+.pv2-topbar-menus { overflow: visible; }

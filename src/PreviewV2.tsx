@@ -988,12 +988,17 @@ export default function PreviewV2() {
           {fileMenuItems.filter(i => !i.separator && i.onClick).map(i => {
             const secondary = i.label === 'Save as…' || i.label.startsWith('Projects');
             return (
-              <button key={i.label} type="button" className={`pv2-tool-btn${secondary ? ' pv2-tool-secondary' : ''}`} title={i.title} onClick={i.onClick}>
+              <button key={i.label} type="button" className={`pv2-tool-btn pv2-tool-file-btn${secondary ? ' pv2-tool-secondary' : ''}`} title={i.title} onClick={i.onClick}>
                 {i.label.startsWith('Projects') ? `Projects (${shelf.length})…` : i.label}
               </button>
             );
           })}
-          <button type="button" className="pv2-tool-btn pv2-tool-secondary" title="Import an effect made with the old editor (a new editable copy; the original is never changed)" onClick={() => setShowProjects(true)}>Import old…</button>
+          <button type="button" className="pv2-tool-btn pv2-tool-file-btn pv2-tool-secondary" title="Import an effect made with the old editor (a new editable copy; the original is never changed)" onClick={() => setShowProjects(true)}>Import old…</button>
+          {/* Narrow windows (< 1250 px): every file action folds into one File menu (CSS shows it instead of the buttons). */}
+          <span className="pv2-tool-filemenu"><MenuButton label="File" items={[
+            ...fileMenuItems,
+            { label: 'Import old effect…', title: 'Import an effect made with the old editor', onClick: () => setShowProjects(true) },
+          ]} /></span>
           {/* On narrower windows the less-used file actions fold into More (CSS shows one or the other). */}
           <span className="pv2-tool-more"><MenuButton label="More" items={[
             ...fileMenuItems.filter(i => i.label === 'Save as…' || i.label.startsWith('Projects')),
