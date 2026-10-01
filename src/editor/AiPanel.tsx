@@ -21,13 +21,26 @@ const PRIVATE_PRESETS: { label: string; url: string; model: string; vision: bool
 const SETTINGS_KEY = 'vfx-ai-connection';
 type Saved = { provider?: 'openai' | 'anthropic' | 'gemini' | 'custom'; baseUrl?: string; model?: string; vision?: boolean; companion?: string; maxRounds?: number };
 function loadSaved(): Saved { try { return JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') as Saved; } catch { return {}; } }
+/** Opt-out remembered secrets (user 2026-10-01): API key per provider and the pairing token, in this browser only.
+ *  Kept apart from the settings so "Forget" removes exactly them. Readable by any page of the same site origin. */
+const SECRETS_KEY = 'vfx-ai-secrets';
+type Secrets = { remember?: boolean; token?: string; keys?: Partial<Record<Saved['provider'] & string, string>> };
+function loadSecrets(): Secrets { try { return JSON.parse(localStorage.getItem(SECRETS_KEY) ?? '{}') as Secrets; } catch { return {}; } }
 
 export default function AiPanel({ document: doc, onEdit }: Props) {
-  // Non-secret connection settings are remembered in this browser; API keys and the pairing token never are.
-  const saved = useRef(loadSaved()).current;
+  // Connection settings are remembered in this browser; the API key and pairing token too unless "Remember" is off.
+  const saved = useRef(loadSaved()).current, secrets = useRef(loadSecrets()).current;
   const [provider, setProvider] = useState<'openai' | 'anthropic' | 'gemini' | 'custom'>(saved.provider ?? 'openai');
-  const [baseUrl, setBaseUrl] = useState<string>(saved.baseUrl ?? roots.openai), [model, setModel] = useState(saved.model ?? ''), [apiKey, setApiKey] = useState('');
-  const [vision, setVision] = useState(saved.vision ?? true), [companion, setCompanion] = useState(saved.companion ?? 'http://127.0.0.1:5181'), [token, setToken] = useState('');
+  const [baseUrl, setBaseUrl] = useState<string>(saved.baseUrl ?? roots.openai), [model, setModel] = useState(saved.model ?? ''), [apiKey, setApiKey] = useState(secrets.keys?.[saved.provider ?? 'openai'] ?? '');
+  const [vision, setVision] = useState(saved.vision ?? true), [companion, setCompanion] = useState(saved.companion ?? 'http://127.0.0.1:5181'), [token, setToken] = useState(secrets.token ?? '');
+  const [remember, setRemember] = useState(secrets.remember !== false), keysRef = useRef<Secrets['keys']>({ ...(secrets.keys ?? {}) });
+  useEffect(() => {
+    try {
+      if (!remember) { localStorage.setItem(SECRETS_KEY, JSON.stringify({ remember: false } satisfies Secrets)); return; }
+      if (apiKey) keysRef.current = { ...keysRef.current, [provider]: apiKey }; else if (keysRef.current) delete keysRef.current[provider];
+      localStorage.setItem(SECRETS_KEY, JSON.stringify({ remember: true, token, keys: keysRef.current } satisfies Secrets));
+    } catch { /* private mode */ }
+  }, [remember, apiKey, token, provider]);
   const [prompt, setPrompt] = useState(''), [maxRounds, setMaxRounds] = useState(saved.maxRounds ?? 4), [busy, setBusy] = useState(false), [status, setStatus] = useState('');
   const [presetNote, setPresetNote] = useState('');
   useEffect(() => {
@@ -78,7 +91,7 @@ export default function AiPanel({ document: doc, onEdit }: Props) {
     <p>Describe a change. The AI edits a draft and checks rendered frames before you apply it.</p>
     <details open><summary>AI connection</summary>
       <fieldset disabled={busy}>
-        <label>Provider<select aria-label="AI provider" value={provider} onChange={e => { const p = e.target.value as typeof provider; setProvider(p); setBaseUrl(roots[p]); setModel(p === 'gemini' ? GEMINI_DEFAULT_MODEL : ''); setApiKey(''); setVision(p !== 'custom'); }}>
+        <label>Provider<select aria-label="AI provider" value={provider} onChange={e => { const p = e.target.value as typeof provider; setProvider(p); setBaseUrl(roots[p]); setModel(p === 'gemini' ? GEMINI_DEFAULT_MODEL : ''); setApiKey(remember ? keysRef.current?.[p] ?? '' : ''); setVision(p !== 'custom'); }}>
           <option value="openai">GPT / OpenAI API</option><option value="anthropic">Claude API</option><option value="gemini">Gemini API</option><option value="custom">Private / custom model</option>
         </select></label>
         {provider === 'custom' && <label>Quick setup<select aria-label="Private model preset" value="" onChange={e => {
@@ -94,9 +107,10 @@ export default function AiPanel({ document: doc, onEdit }: Props) {
         {!vision && <p>Text-only mode edits and validates the graph. It renders thumbnails for you, but the model cannot inspect them.</p>}
         <label>Companion URL (helper on this PC)<input aria-label="AI companion URL" value={companion} onChange={e => setCompanion(e.target.value)} spellCheck={false} /></label>
         <label>Pairing token<input type="password" aria-label="AI pairing token" autoComplete="off" value={token} onChange={e => setToken(e.target.value)} /></label>
+        <label className="ai-check"><input type="checkbox" checked={remember} onChange={e => { const r = e.target.checked; setRemember(r); if (!r) keysRef.current = {}; }} />Remember API keys and pairing token in this browser</label>
         <button type="button" disabled={!model.trim() || !token.trim()} onClick={() => void start(true)}>Test model connection</button>
       </fieldset>
-      <p>Start the local companion with <code>pnpm ai:server</code>, then copy its pairing token here. Keys and tokens stay in memory and are not saved with your effect. Requests and, when enabled, preview images go to your chosen model endpoint.</p>
+      <p>Start the local companion with <code>pnpm ai:server</code>, then copy its pairing token here. Keys and the token are remembered only in this browser (untick "Remember" to forget them) and are never saved with your effect. Pages of the same site can read browser storage: untick it on shared computers or sites. Requests and, when enabled, preview images go to your chosen model endpoint.</p>
       <p>These are API connections. Chat-subscription sign-in is not included in this version.</p>
     </details>
     <label>Your request<textarea aria-label="AI request" value={prompt} maxLength={8000} rows={4} disabled={busy} onChange={e => setPrompt(e.target.value)} placeholder="Make the sparks spread wider and fade more slowly…" /></label>

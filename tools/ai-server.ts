@@ -1,5 +1,8 @@
 import { createServer, type Server } from 'node:http';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { MODEL_TIMEOUT_MS, requestAi, validateAiRequest } from '../src/ai/provider.ts';
 import { loadAiGuide, aiGuideContext } from './ai-guide-context.ts';
@@ -44,7 +47,14 @@ export function createAiServer(options: { token: string; origins: string[]; requ
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const token = process.env.VFX_AI_TOKEN || randomBytes(24).toString('hex');
+  // The pairing token persists across restarts (~/.vfx-studio/ai-companion-token), so a browser that remembered it stays
+  // paired. Delete the file (or set VFX_AI_TOKEN) to change it.
+  const tokenFile = join(homedir(), '.vfx-studio', 'ai-companion-token');
+  let token = process.env.VFX_AI_TOKEN || '';
+  if (!token) {
+    try { if (existsSync(tokenFile)) token = readFileSync(tokenFile, 'utf8').trim(); } catch { /* regenerate */ }
+    if (token.length < 16) { token = randomBytes(24).toString('hex'); try { mkdirSync(join(homedir(), '.vfx-studio'), { recursive: true }); writeFileSync(tokenFile, token, { mode: 0o600 }); } catch { /* keep in memory */ } }
+  }
   const origins = (process.env.VFX_AI_ORIGINS || 'http://127.0.0.1:5174,http://127.0.0.1:5176,http://127.0.0.1:5177,http://localhost:5174,https://demo.xpo.dev').split(',').map(s => s.trim()).filter(Boolean);
   const port = Number(process.env.VFX_AI_PORT || 5181);
   const server = createAiServer({ token, origins }); server.requestTimeout = MODEL_TIMEOUT_MS + 10_000;
