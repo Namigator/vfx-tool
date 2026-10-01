@@ -146,8 +146,8 @@ Keep X, swap Y and Z, scale metres to centimetres. This also flips handedness co
 becomes Unreal's left-handed frame), so shapes and windings come through unmirrored. The one place this needs a
 manual check is a **signed rotation about a single axis** — a vortex/curl force's swirl direction: the exporter keeps
 the authored sign, and the report flags every vortex export so you can flip the axis in Niagara if the swirl looks
-mirrored. The imported NiagaraSystem is authored at its own local origin (0,0,0); place the actor where you want the
-effect to play.
+mirrored. The NiagaraSystem's origin is the **Source** anchor (the caster / nozzle): place or attach the actor
+there.
 
 ### Importing it: the VfxStudioImporter plugin
 
@@ -171,28 +171,33 @@ The plugin lives in the VFX-Tool repo at `integrations/unreal/VfxStudioImporter/
 
 ### What changes in Unreal (the report lists it per effect)
 
-Niagara has far fewer hard limits than Roblox (no 20-key curve cap, no beam-segment budget), so most approximations
-are about **feature mapping** rather than a runtime ceiling:
+What the importer actually builds today (verified on the flamethrower: it renders as a level jet from the Source,
+same length and shape as the VFX Studio preview, but redder and without glow):
 
-| VFX Studio | In Unreal (Niagara) |
+| VFX Studio | In Unreal (Niagara) today |
 |---|---|
-| Turbulence / curl noise | **kept**: Niagara Curl Noise Force (Roblox drops this) |
-| Drag, gravity/acceleration, attraction, vortex | **kept**: Drag, gravity, Point Attraction Force, Vortex/curl force |
-| Ground collision | Niagara Collision module against a ground plane |
-| Over-life curves (size/colour/opacity) | full key set (no 20-key cap) |
-| Keyframed knobs (a value that changes mid-effect) | exported at its tick-0 value — out of scope this pass |
-| Trails behind many particles | stretched velocity-aligned sprites, same as Roblox (a true per-particle Ribbon trail is a heavier follow-up) |
-| Mesh particles (rocks, crystals, shards, orbs) | **not exported** this pass — a report item naming what was dropped |
-| Dissolve, sprite rim glow, ribbon texture distortion | left out (would need a custom material) |
-| Screen flash, camera shake | left out (add a UE Camera Shake / post-process on impact if needed) |
-| Light flicker | baked as its average intensity |
+| Spawn rate over time | the window's peak rate (Spawn Rate) |
+| One burst | Spawn Burst Instantaneous |
+| Many bursts (smoke/embers born at flame deaths) | a steady rate with the same total over the bursts' span |
+| Lifetime, speed, direction, gravity/acceleration, drag | kept |
+| Opacity over life | **exact**: written into the templates' Scale Alpha curve |
+| Size over life | its life-average size (no stock size-curve module) |
+| Colour over life | its average over the first 60 % of life (no stock colour curve): reads redder, no white-hot core |
+| Flipbook sheets | the first frame of the sheet |
+| Velocity-stretched sprites | velocity-aligned sprites (no stretch) |
+| Emitters that start away from Source (smoke at the target...) | offset written but not taking effect in UE 5.8 yet: move their Shape Location by hand |
+| Curl noise, attraction, vortex, ground collision | in effect.json, **not applied** by the importer yet |
+| Keyframed knobs | their tick-0 value |
+| Ribbons (lightning, streams) and lights | in effect.json, **not built** by the importer yet (logged) |
+| Mesh particles; dissolve, rim, distortion; screen flash, camera shake | left out |
+| Glow | Unreal's own bloom/post-process (not exported) |
 
-### Headless visual verification
+### Checking an import
 
-`node tools/unreal-check.mjs <package-dir>` builds the plugin into a test project, imports the package, saves a test
-level (camera + NiagaraActor + dark floor) and launches `UnrealEditor.exe -game -RenderOffscreen -unattended` to
-capture a mid-life frame via `HighResShot`, then quits. See the script and `work/unreal/` for output PNGs and its own
-honesty notes — headless UE rendering is the least proven part of this exporter (see STATE.md "Unreal export").
+`node tools/unreal-check.mjs <package-dir>` imports the package into the test project and renders a frame in a
+windowed editor kept off-screen (`tools/unreal-capture.py`: waits for shaders, places the system at Source height,
+simulates `VFX_UE_SECONDS` = 1.0 s, captures through a SceneCapture2D) to `work/unreal/<name>.png`. Read the image;
+the script does not judge it.
 
 ## Choosing what to build for export
 

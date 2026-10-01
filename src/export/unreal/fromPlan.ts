@@ -246,7 +246,11 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
   if (!plan.ok) return { ok: false, message: plan.errors.map(e => e.message).join(' ') };
   const report: UeReportItem[] = [];
   const src = doc.anchors.find(a => a.id === 'source')?.position ?? [0, 0, 0];
-  const origin = [src[0], 0, src[2]]; // Source anchor over the floor, like the Roblox exporter's origin choice.
+  // The Niagara system's origin is the Source anchor itself (the caster / nozzle): in Unreal you attach the effect
+  // there, and emitters that start at Source then need no spawn offset. (Niagara's ShapeLocation Offset /
+  // InitializeParticle Position Offset overrides were written by the importer but had no visible effect in UE 5.8
+  // captures, so offsets from Source are reported, not relied on.)
+  const origin = [src[0], src[1], src[2]];
   const systems = new Map(plan.value.systems.map(s => [s.id, s.descriptor]));
   const usedBy = new Map<string, string>(), names = new Set<string>();
   const unique = (base: string) => { let n = safeName(base), i = 2; while (names.has(n)) n = `${safeName(base)}_${i++}`; names.add(n); return n; };
@@ -269,7 +273,9 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
   if (lights.length > 4) report.push({ level: 'info', item: 'lights', message: `${lights.length} lights exported as Niagara Light renderers; consider capping simultaneous lit particles for mobile/console budgets.` });
   const ribbons = ribbonsFrom(doc, origin, report);
   const textures = [...new Set([...emitters.map(e => e.textureFile), ...ribbons.map(b => b.textureFile)].filter((x): x is string => !!x))];
-  report.push({ level: 'info', item: 'scale', message: `1 m = ${CM_PER_METER} cm. Axis mapping: ue.x=src.x*100, ue.y=src.z*100, ue.z=src.y*100 (our +Y up -> Unreal +Z up). The imported NiagaraSystem is authored at its own origin (0,0,0); place the actor at the desired world position.` });
+  report.push({ level: 'info', item: 'scale', message: `1 m = ${CM_PER_METER} cm. Axis mapping: ue.x=src.x*100, ue.y=src.z*100, ue.z=src.y*100 (our +Y up -> Unreal +Z up). The NiagaraSystem's origin is the Source anchor: place or attach the actor at the caster / nozzle.` });
+  const offset = emitters.filter(e => Math.hypot(...e.position) > 5);
+  if (offset.length) report.push({ level: 'approximated', item: 'positions', message: `${offset.length} emitter(s) start away from Source (${offset.map(e => e.name).join(', ')}); the importer writes their spawn offset, but in UE 5.8 it may not take effect: move those emitters' Shape Location in Niagara if they appear at the Source.` });
   return { ok: true, value: {
     name: safeName(doc.name || 'Effect'), durationTicks: plan.value.durationTicks, ticksPerSecond: 60,
     emitters, ribbons, lights, textures, report,

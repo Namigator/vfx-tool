@@ -29,7 +29,7 @@ floor.set_actor_scale3d(unreal.Vector(12, 8, 1))
 ns = unreal.EditorAssetLibrary.load_asset(NS_PATH)
 print("VFXCAP asset", NS_PATH, bool(ns))
 actor = el.spawn_actor_from_class(unreal.NiagaraActor, unreal.Vector(0, 0, 0), unreal.Rotator(0, 0, 0))
-actor.set_actor_location(unreal.Vector(0, 0, 0), False, False)
+actor.set_actor_location(unreal.Vector(0, 0, float(os.environ.get("VFX_ACTOR_Z", "120"))), False, False)  # the exported origin is the Source (caster / nozzle)
 comp = actor.niagara_component
 comp.set_asset(ns)
 try:

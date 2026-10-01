@@ -95,7 +95,7 @@ namespace
 			const FNiagaraParameterHandle Handle = FNiagaraParameterHandle::CreateAliasedModuleParameterHandle(ModuleHandle, ModuleNode);
 			UEdGraphPin& OverridePin = FNiagaraStackGraphUtilities::GetOrCreateStackFunctionInputOverridePin(*ModuleNode, Handle, Type, FGuid(), FGuid());
 			OverridePin.DefaultValue = LiteralValue;
-			UE_LOG(LogVfxImporter, Log, TEXT("    %s.%s = %s"), *ModuleNode->GetFunctionName(), InputName, *LiteralValue);
+			UE_LOG(LogVfxImporter, Display, TEXT("    %s.%s = %s (pin %s)"), *ModuleNode->GetFunctionName(), InputName, *LiteralValue, *OverridePin.PinName.ToString());
 			return true;
 		}
 		UE_LOG(LogVfxImporter, Warning, TEXT("    module containing '%s' not found (input '%s' not set)"), ModuleNameSubstring, InputName);
@@ -330,7 +330,11 @@ namespace
 			// Spawn origin relative to the effect origin (the floor point under Source): without it every emitter starts on
 			// the floor instead of at the nozzle / Source height.
 			const TArray<TSharedPtr<FJsonValue>>* Pos = nullptr;
-			if (E->TryGetArrayField(TEXT("position"), Pos)) OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Offset"), V3, Vec3Lit(JsonVec3(Pos)));
+			if (E->TryGetArrayField(TEXT("position"), Pos))
+			{
+				OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Offset"), V3, Vec3Lit(JsonVec3(Pos)));
+				OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Position Offset"), V3, Vec3Lit(JsonVec3(Pos)));
+			}
 			const TSharedPtr<FJsonObject>* ShapeObj = nullptr;
 			if (E->TryGetObjectField(TEXT("shape"), ShapeObj))
 			{
@@ -344,6 +348,9 @@ namespace
 			OverrideLiteral(Graph, TEXT("AddVelocity"), TEXT("Velocity Speed"), F, FloatLit(SpeedAvg));
 			const TArray<TSharedPtr<FJsonValue>>* Dir = nullptr;
 			if (E->TryGetArrayField(TEXT("direction"), Dir)) OverrideLiteral(Graph, TEXT("AddVelocity"), TEXT("Cone Axis"), V3, Vec3Lit(JsonVec3(Dir)));
+			// Fountain's Add Velocity runs in linear mode: it reads the "Velocity" vector (a fixed upward fountain by
+			// default) and ignores Velocity Speed / Cone Axis. Without this the jet arcs up and falls onto the floor.
+			if (Dir) OverrideLiteral(Graph, TEXT("AddVelocity"), TEXT("Velocity"), V3, Vec3Lit(JsonVec3(Dir) * SpeedAvg));
 		}
 		else if (Template == TEXT("SimpleSpriteBurst"))
 		{
@@ -510,7 +517,13 @@ void UVfxNiagaraImporter::DumpTemplates()
 		for (UEdGraphNode* Node : Source->NodeGraph->Nodes)
 		{
 			FString Extra;
-			if (UNiagaraNodeFunctionCall* Fn = Cast<UNiagaraNodeFunctionCall>(Node)) Extra = FString::Printf(TEXT("function=%s"), *Fn->GetFunctionName());
+			if (UNiagaraNodeFunctionCall* Fn = Cast<UNiagaraNodeFunctionCall>(Node))
+			{
+				Extra = FString::Printf(TEXT("function=%s inputs="), *Fn->GetFunctionName());
+				TArray<FNiagaraVariable> Inputs;
+				FNiagaraStackGraphUtilities::GetStackFunctionInputs(*Fn, Inputs, FCompileConstantResolver(), FNiagaraStackGraphUtilities::ENiagaraGetStackFunctionInputPinsOptions::ModuleInputsOnly);
+				for (const FNiagaraVariable& V : Inputs) Extra += FString::Printf(TEXT("[%s:%s] "), *V.GetName().ToString(), *V.GetType().GetName());
+			}
 			if (UNiagaraNodeInput* In = Cast<UNiagaraNodeInput>(Node))
 			{
 				UNiagaraDataInterface* DI = NodeInputDataInterface(In);
