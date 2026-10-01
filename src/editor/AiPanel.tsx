@@ -39,6 +39,9 @@ export default function AiPanel({ document: doc, onEdit }: Props) {
   const root = () => {
     const url = new URL(companion);
     if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) throw new Error('Enter a complete companion URL without credentials or query parameters.');
+    // The companion is the helper on THIS computer; a model server typed here would be called straight from the page
+    // (blocked as mixed content on the https site, and without the guide) - say which box it belongs in.
+    if (!['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname)) throw new Error(`The companion URL is the helper running on this computer (normally http://127.0.0.1:5181, printed by pnpm ai:server). Your model server (${url.host}) goes in "API base URL" instead.`);
     if (!token.trim()) throw new Error('Enter the companion pairing token.');
     return companion.replace(/\/+$/, '');
   };
@@ -87,7 +90,7 @@ export default function AiPanel({ document: doc, onEdit }: Props) {
         <label className="ai-check"><input type="checkbox" checked={vision} onChange={e => setVision(e.target.checked)} />Model accepts images</label>
         {provider === 'custom' && <p>Any OpenAI-compatible server works (Qwen, GLM, DeepSeek, Llama…). The model needs a large context window (32k tokens or more): each request carries the effect graph and the relevant documentation. Reasoning models are fine; their thinking is ignored. Keep "accepts images" off for text-only models.</p>}
         {!vision && <p>Text-only mode edits and validates the graph. It renders thumbnails for you, but the model cannot inspect them.</p>}
-        <label>Companion URL<input aria-label="AI companion URL" value={companion} onChange={e => setCompanion(e.target.value)} spellCheck={false} /></label>
+        <label>Companion URL (helper on this PC)<input aria-label="AI companion URL" value={companion} onChange={e => setCompanion(e.target.value)} spellCheck={false} /></label>
         <label>Pairing token<input type="password" aria-label="AI pairing token" autoComplete="off" value={token} onChange={e => setToken(e.target.value)} /></label>
         <button type="button" disabled={!model.trim() || !token.trim()} onClick={() => void start(true)}>Test model connection</button>
       </fieldset>
