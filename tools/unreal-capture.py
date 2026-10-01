@@ -37,10 +37,21 @@ try:
 except Exception as e:
     print("VFXCAP force_solo n/a", e)
 print("VFXCAP actor at", actor.get_actor_location(), "asset", comp.get_asset())
+# Debug: VFX_SHOW_MESH=<asset path> also places that static mesh at the effect origin (e.g. a baked ribbon slice).
+if os.environ.get("VFX_SHOW_MESH"):
+    dbg = el.spawn_actor_from_class(unreal.StaticMeshActor, actor.get_actor_location() + unreal.Vector(float(os.environ.get("VFX_SHOW_MESH_X", "0")), 0, 0), unreal.Rotator(0, 0, 0))
+    m = unreal.EditorAssetLibrary.load_asset(os.environ["VFX_SHOW_MESH"])
+    dbg.static_mesh_component.set_static_mesh(m)
+    if os.environ.get("VFX_SHOW_MESH_MAT"):  # e.g. /Engine/BasicShapes/BasicShapeMaterial to see bare geometry
+        dbg.static_mesh_component.set_material(0, unreal.EditorAssetLibrary.load_asset(os.environ["VFX_SHOW_MESH_MAT"]))
+    print("VFXCAP debug mesh", m, m.get_bounds() if m else None)
 
 # Camera: look at the effect from the side (Unreal: X forward, Y right, Z up; VFX Studio Source->Target runs along +X).
-cap_actor = el.spawn_actor_from_class(unreal.SceneCapture2D, unreal.Vector(220, -620, 200), unreal.Rotator(0, 0, 0))
-cap_actor.set_actor_rotation((unreal.Vector(220, 0, 110) - cap_actor.get_actor_location()).rotator(), False)
+# VFX_CAM_X (look-at X, default 220) and VFX_CAM_DIST (default 620) frame long effects (a 15 m bolt: 700 / 1600).
+CAM_X = float(os.environ.get("VFX_CAM_X", "220"))
+CAM_DIST = float(os.environ.get("VFX_CAM_DIST", "620"))
+cap_actor = el.spawn_actor_from_class(unreal.SceneCapture2D, unreal.Vector(CAM_X, -CAM_DIST, 200), unreal.Rotator(0, 0, 0))
+cap_actor.set_actor_rotation((unreal.Vector(CAM_X, 0, 110) - cap_actor.get_actor_location()).rotator(), False)
 cap = cap_actor.capture_component2d
 rt = unreal.RenderingLibrary.create_render_target2d(world, W, H, unreal.TextureRenderTargetFormat.RTF_RGBA8, unreal.LinearColor(0, 0, 0, 1))
 cap.set_editor_property("texture_target", rt)

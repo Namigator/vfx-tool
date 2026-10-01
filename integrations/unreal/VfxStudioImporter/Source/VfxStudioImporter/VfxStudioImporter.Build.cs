@@ -31,6 +31,8 @@ public class VfxStudioImporter : ModuleRules
 			"EditorScriptingUtilities",
 			"Json",
 			"JsonUtilities",
+			"MeshDescription",
+			"StaticMeshDescription",
 		});
 	}
 }

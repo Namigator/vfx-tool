@@ -48,7 +48,8 @@ function run(label, exe, args, { timeoutMs } = {}) {
 }
 
 // --- 1. Import the package into a NiagaraSystem via the commandlet ---
-const importResult = run('import', EDITOR_CMD, [
+// VFX_UE_SKIP_IMPORT=1 re-renders the system already imported (camera/time changes only).
+const importResult = process.env.VFX_UE_SKIP_IMPORT ? { status: 0 } : run('import', EDITOR_CMD, [
   TEST_PROJECT, '-run=VfxStudioImport', `-Package=${resolve(pkgDir)}`, `-Dest=${destPath}`,
   '-unattended', '-nosplash', '-nullrhi', '-log',
 ], { timeoutMs: 120_000 });

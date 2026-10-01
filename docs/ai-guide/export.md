@@ -189,7 +189,8 @@ same length and shape as the VFX Studio preview, but redder and without glow):
 | Curl noise, attraction, vortex, ground collision | in effect.json, **not applied** by the importer yet |
 | Keyframed knobs | their tick-0 value |
 | Lights | one single-particle emitter each with a Niagara Light renderer: colour x peak intensity, radius, on/off timing, intensity track as its brightness over life (exponent falloff) |
-| Ribbons (lightning, streams) | in effect.json, **not built** by the importer yet (logged) |
+| Ribbons (lightning, streams, rings) | baked into static meshes (each path a cross of two strips, its width, end fade and per-path opacity): up to 6 shapes per layer, each shown for its share of the layer's visible time with the per-frame flicker kept as opacity; a bolt that re-forms every frame shows 6 shapes instead of every one; no texture |
+| Light position | lights sit at the Source (a light at the target lights the caster's floor instead) |
 | Mesh particles; dissolve, rim, distortion; screen flash, camera shake | left out |
 | Glow | Unreal's own bloom/post-process (not exported) |
 
@@ -197,7 +198,7 @@ same length and shape as the VFX Studio preview, but redder and without glow):
 
 `node tools/unreal-check.mjs <package-dir>` imports the package into the test project and renders a frame in a
 windowed editor kept off-screen (`tools/unreal-capture.py`: waits for shaders, places the system at Source height,
-simulates `VFX_UE_SECONDS` = 1.0 s, captures through a SceneCapture2D) to `work/unreal/<name>.png`. Read the image;
+simulates `VFX_UE_SECONDS` = 1.0 s, captures through a SceneCapture2D) to `work/unreal/<name>.png`. `VFX_CAM_X`/`VFX_CAM_DIST` frame long effects (a 15 m bolt: 700/1600), `VFX_UE_SKIP_IMPORT=1` re-renders without importing; `node --experimental-strip-types tools/unreal-export.mjs <component>` writes a package for any built-in component. Read the image;
 the script does not judge it.
 
 ## Godot 4

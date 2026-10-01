@@ -40,6 +40,12 @@
 #include "Materials/MaterialExpressionTextureCoordinate.h"
 #include "NiagaraSpriteRendererProperties.h"
 #include "NiagaraLightRendererProperties.h"
+#include "NiagaraMeshRendererProperties.h"
+#include "Engine/StaticMesh.h"
+#include "StaticMeshCompiler.h"
+#include "StaticMeshAttributes.h"
+#include "MeshDescription.h"
+#include "Materials/MaterialExpressionVertexColor.h"
 #include "ViewModels/Stack/NiagaraStackGraphUtilities.h"
 #include "ViewModels/Stack/NiagaraParameterHandle.h"
 
@@ -271,6 +277,209 @@ namespace
 		return Done;
 	}
 
+	/** Unlit two-sided material for baked ribbon meshes drawn by a Niagara Mesh renderer:
+	 *  colour = VertexColor.rgb x ParticleColor.rgb, opacity = VertexColor.a x ParticleColor.a (additive: rgb x opacity). */
+	UMaterial* GetOrCreateRibbonMaterial(const FString& DestRoot, bool bAdditive)
+	{
+		const FString Name = bAdditive ? TEXT("M_VfxStudio_RibbonAdditive") : TEXT("M_VfxStudio_RibbonTranslucent");
+		const FString PackagePath = DestRoot / TEXT("_Materials");
+		if (UMaterial* Existing = LoadObject<UMaterial>(nullptr, *((PackagePath / Name) + TEXT(".") + Name))) return Existing;
+		IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
+		UMaterial* Mat = Cast<UMaterial>(AssetTools.CreateAsset(Name, PackagePath, UMaterial::StaticClass(), nullptr));
+		if (!Mat) { UE_LOG(LogVfxImporter, Error, TEXT("CreateAsset(Material %s) failed"), *Name); return nullptr; }
+		Mat->SetShadingModel(MSM_Unlit);
+		Mat->BlendMode = bAdditive ? BLEND_Additive : BLEND_Translucent;
+		Mat->TwoSided = true;
+		Mat->bUsedWithNiagaraMeshParticles = true;
+		UMaterialExpression* Vc = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionVertexColor::StaticClass(), -500, 0);
+		UMaterialExpression* Pc = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionParticleColor::StaticClass(), -500, 200);
+		UMaterialExpression* Rgb = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionMultiply::StaticClass(), -250, 0);
+		UMaterialEditingLibrary::ConnectMaterialExpressions(Vc, TEXT(""), Rgb, TEXT("A")); // VertexColor pins are unnamed: "" = RGB(A), "A" by mask
+		UMaterialEditingLibrary::ConnectMaterialExpressions(Pc, TEXT("RGB"), Rgb, TEXT("B"));
+		UMaterialExpression* Alpha = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionMultiply::StaticClass(), -250, 200);
+		UMaterialEditingLibrary::ConnectMaterialExpressions(Vc, TEXT("A"), Alpha, TEXT("A"));
+		UMaterialEditingLibrary::ConnectMaterialExpressions(Pc, TEXT("A"), Alpha, TEXT("B"));
+		if (bAdditive)
+		{
+			UMaterialExpression* Out = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionMultiply::StaticClass(), 0, 0);
+			UMaterialEditingLibrary::ConnectMaterialExpressions(Rgb, TEXT(""), Out, TEXT("A"));
+			UMaterialEditingLibrary::ConnectMaterialExpressions(Alpha, TEXT(""), Out, TEXT("B"));
+			UMaterialEditingLibrary::ConnectMaterialProperty(Out, TEXT(""), MP_EmissiveColor);
+		}
+		else
+		{
+			UMaterialEditingLibrary::ConnectMaterialProperty(Rgb, TEXT(""), MP_EmissiveColor);
+			UMaterialEditingLibrary::ConnectMaterialProperty(Alpha, TEXT(""), MP_Opacity);
+		}
+		UMaterialEditingLibrary::RecompileMaterial(Mat);
+		SaveAssetObj(Mat);
+		return Mat;
+	}
+
+	/** One ribbon path: points [x,y,z,width] in cm and its opacity. */
+	struct FRibbonPath { TArray<FVector4> Points; double Alpha = 1.0; };
+	struct FRibbonFrame { int32 Tick = 0; int32 End = 0; TArray<FRibbonPath> Paths; double MaxAlpha = 0.0; double Sum = 0.0; };
+
+	/** Bakes the paths of one frame into a static mesh: each path is a cross of two perpendicular strips (visible from
+	 *  any side, unlike the preview's camera-facing strip), its full width per point, vertex alpha = path alpha /
+	 *  NormAlpha x end fade. */
+	UStaticMesh* BuildRibbonMesh(const FString& DestRoot, const FString& AssetName, const FRibbonFrame& F, double NormAlpha, double EndFade, UMaterialInterface* Mat)
+	{
+		const FString PackagePath = DestRoot / TEXT("Meshes");
+		UPackage* Package = CreatePackage(*(PackagePath / AssetName));
+		UStaticMesh* Mesh = NewObject<UStaticMesh>(Package, FName(*AssetName), RF_Public | RF_Standalone);
+		Mesh->GetStaticMaterials().Add(FStaticMaterial(Mat, FName("Ribbon"), FName("Ribbon")));
+		FStaticMeshSourceModel& Src = Mesh->AddSourceModel();
+		Src.BuildSettings.bRecomputeNormals = false;
+		Src.BuildSettings.bRecomputeTangents = false;
+		Src.BuildSettings.bGenerateLightmapUVs = false;
+		FMeshDescription* MD = Mesh->CreateMeshDescription(0);
+		FStaticMeshAttributes Attr(*MD);
+		Attr.Register();
+		const FPolygonGroupID Group = MD->CreatePolygonGroup();
+		Attr.GetPolygonGroupMaterialSlotNames()[Group] = FName("Ribbon");
+		auto Positions = Attr.GetVertexPositions();
+		auto Uvs = Attr.GetVertexInstanceUVs();
+		auto Colors = Attr.GetVertexInstanceColors();
+		auto Normals = Attr.GetVertexInstanceNormals();
+		auto Tangents = Attr.GetVertexInstanceTangents();
+		auto Signs = Attr.GetVertexInstanceBinormalSigns();
+		int32 Tris = 0;
+		for (const FRibbonPath& P : F.Paths)
+		{
+			const int32 N = P.Points.Num();
+			if (N < 2 || P.Alpha <= 0.0) continue;
+			const double A = FMath::Clamp(P.Alpha / FMath::Max(NormAlpha, 1e-6), 0.0, 1.0);
+			for (int32 Side = 0; Side < 2; Side++)
+			{
+				TArray<FVertexInstanceID> Left, Right;
+				for (int32 i = 0; i < N; i++)
+				{
+					const FVector Pt(P.Points[i].X, P.Points[i].Y, P.Points[i].Z);
+					const FVector4& P0 = P.Points[FMath::Max(i - 1, 0)];
+					const FVector4& P1 = P.Points[FMath::Min(i + 1, N - 1)];
+					FVector T = FVector(P1.X - P0.X, P1.Y - P0.Y, P1.Z - P0.Z).GetSafeNormal();
+					if (T.IsNearlyZero()) T = FVector::XAxisVector;
+					const FVector Ref = FMath::Abs(T.Z) > 0.9 ? FVector::XAxisVector : FVector::ZAxisVector;
+					const FVector S1 = FVector::CrossProduct(T, Ref).GetSafeNormal();
+					const FVector Dir = Side == 0 ? S1 : FVector::CrossProduct(T, S1).GetSafeNormal();
+					const FVector Off = Dir * (P.Points[i].W * 0.5);
+					const double U = double(i) / double(N - 1);
+					const double Edge = EndFade > 0.0 ? FMath::Clamp(FMath::Min(U, 1.0 - U) / EndFade, 0.0, 1.0) : 1.0;
+					const FVector3f Normal = FVector3f(FVector::CrossProduct(Dir, T).GetSafeNormal());
+					for (int32 k = 0; k < 2; k++)
+					{
+						const FVertexID V = MD->CreateVertex();
+						Positions[V] = FVector3f(k == 0 ? Pt - Off : Pt + Off);
+						const FVertexInstanceID VI = MD->CreateVertexInstance(V);
+						Uvs.Set(VI, 0, FVector2f((float)U, (float)k));
+						Colors[VI] = FVector4f(1.f, 1.f, 1.f, (float)(A * Edge));
+						Normals[VI] = Normal;
+						Tangents[VI] = FVector3f(T);
+						Signs[VI] = 1.f;
+						(k == 0 ? Left : Right).Add(VI);
+					}
+				}
+				for (int32 i = 0; i + 1 < N; i++)
+				{
+					MD->CreateTriangle(Group, { Left[i], Right[i], Right[i + 1] });
+					MD->CreateTriangle(Group, { Left[i], Right[i + 1], Left[i + 1] });
+					Tris += 2;
+				}
+			}
+		}
+		if (Tris == 0) return nullptr;
+		Mesh->CommitMeshDescription(0);
+		Mesh->Build(true);
+		FStaticMeshCompilingManager::Get().FinishCompilation({ Mesh }); // saving while the async build runs crashes
+		Mesh->PostEditChange();
+		FAssetRegistryModule::AssetCreated(Mesh);
+		SaveAssetObj(Mesh);
+		return Mesh;
+	}
+
+	/** One time slice of a ribbon layer: a baked mesh shown by one particle from Start for Life ticks, its opacity
+	 *  following the layer's per-frame alpha through Scale Alpha. */
+	struct FRibbonSlice { FString Name; UStaticMesh* Mesh = nullptr; int32 Start = 0; int32 Life = 1; FLinearColor Color; TArray<TSharedPtr<FJsonValue>> AlphaKeys; };
+
+	/** Most baked meshes per ribbon layer (each is one emitter): lightning changes shape every few frames; it is
+	 *  shown as this many shapes, each held for its share of the layer's visible time, flicker kept in the alpha. */
+	constexpr int32 MaxRibbonSlices = 6;
+
+	void BuildRibbonSlices(const FString& DestRoot, const TSharedPtr<FJsonObject>& R, TArray<FRibbonSlice>& Out)
+	{
+		const FString RName = R->GetStringField(TEXT("name"));
+		const bool bAdditive = R->GetStringField(TEXT("blend")) == TEXT("additive");
+		UMaterial* Mat = GetOrCreateRibbonMaterial(DestRoot, bAdditive);
+		double EndFade = 0.0; R->TryGetNumberField(TEXT("endFade"), EndFade);
+		FLinearColor Color = FLinearColor::White;
+		const TSharedPtr<FJsonObject>* C = nullptr;
+		if (R->TryGetObjectField(TEXT("color"), C))
+			Color = FLinearColor((float)(*C)->GetNumberField(TEXT("r")), (float)(*C)->GetNumberField(TEXT("g")), (float)(*C)->GetNumberField(TEXT("b")), (float)(*C)->GetNumberField(TEXT("a")));
+		const TArray<TSharedPtr<FJsonValue>>* Frames = nullptr;
+		if (!R->TryGetArrayField(TEXT("frames"), Frames)) return;
+		TArray<FRibbonFrame> Fs;
+		const auto ReadPoints = [](const TArray<TSharedPtr<FJsonValue>>& Arr) {
+			TArray<FVector4> Pts;
+			for (const auto& V : Arr) { const auto& Q = V->AsArray(); if (Q.Num() >= 4) Pts.Add(FVector4(Q[0]->AsNumber(), Q[1]->AsNumber(), Q[2]->AsNumber(), Q[3]->AsNumber())); }
+			return Pts;
+		};
+		for (const auto& FV : *Frames)
+		{
+			const TSharedPtr<FJsonObject> FO = FV->AsObject();
+			FRibbonFrame F; F.Tick = (int32)FO->GetNumberField(TEXT("tick"));
+			const TArray<TSharedPtr<FJsonValue>>* Paths = nullptr;
+			if (FO->TryGetArrayField(TEXT("paths"), Paths))
+			{
+				for (const auto& PV : *Paths)
+				{
+					const TSharedPtr<FJsonObject> PO = PV->AsObject();
+					FRibbonPath P; P.Points = ReadPoints(PO->GetArrayField(TEXT("points"))); P.Alpha = PO->GetNumberField(TEXT("alpha"));
+					if (P.Points.Num() >= 2 && P.Alpha > 0.0) F.Paths.Add(P);
+				}
+			}
+			else
+			{
+				FRibbonPath P; P.Points = ReadPoints(FO->GetArrayField(TEXT("points")));
+				if (P.Points.Num() >= 2) F.Paths.Add(P);
+			}
+			for (const FRibbonPath& P : F.Paths) { F.MaxAlpha = FMath::Max(F.MaxAlpha, P.Alpha); F.Sum += P.Alpha * P.Points.Num(); }
+			Fs.Add(F);
+		}
+		for (int32 i = 0; i < Fs.Num(); i++) Fs[i].End = i + 1 < Fs.Num() ? Fs[i + 1].Tick : Fs[i].Tick + 1;
+		int32 S = MAX_int32, E = 0, Visible = 0;
+		for (const FRibbonFrame& F : Fs) if (F.MaxAlpha > 0.0) { S = FMath::Min(S, F.Tick); E = FMath::Max(E, F.End); Visible++; }
+		if (!Visible) { UE_LOG(LogVfxImporter, Warning, TEXT("   ribbon %s is never visible; skipped"), *RName); return; }
+		const int32 N = FMath::Min(MaxRibbonSlices, Visible);
+		for (int32 k = 0; k < N; k++)
+		{
+			const int32 A = S + (E - S) * k / N, B = S + (E - S) * (k + 1) / N;
+			if (B <= A) continue;
+			const FRibbonFrame* Rep = nullptr;
+			for (const FRibbonFrame& F : Fs) if (F.End > A && F.Tick < B && F.MaxAlpha > 0.0 && (!Rep || F.Sum > Rep->Sum)) Rep = &F;
+			if (!Rep) continue;
+			FRibbonSlice Slice;
+			Slice.Name = FString::Printf(TEXT("%s_s%d"), *RName, k);
+			Slice.Mesh = BuildRibbonMesh(DestRoot, TEXT("SM_") + Slice.Name, *Rep, Rep->MaxAlpha, EndFade, Mat);
+			if (!Slice.Mesh) continue;
+			Slice.Start = A; Slice.Life = B - A; Slice.Color = Color;
+			// Step track of each frame's peak path alpha over the slice (normalized age).
+			for (const FRibbonFrame& F : Fs)
+			{
+				const int32 F0 = FMath::Max(F.Tick, A), F1 = FMath::Min(F.End, B);
+				if (F1 <= F0) continue;
+				for (const double T : { double(F0 - A) / Slice.Life, FMath::Max(double(F0 - A), double(F1 - A) - 0.01) / Slice.Life })
+				{
+					TSharedPtr<FJsonObject> Key = MakeShared<FJsonObject>();
+					Key->SetNumberField(TEXT("t"), T); Key->SetNumberField(TEXT("v"), F.MaxAlpha);
+					Slice.AlphaKeys.Add(MakeShared<FJsonValueObject>(Key));
+				}
+			}
+			Out.Add(Slice);
+		}
+		UE_LOG(LogVfxImporter, Display, TEXT("   ribbon %s: %d frame(s) visible over ticks %d-%d -> %d baked slice(s)"), *RName, Visible, S, E, N);
+	}
+
 	/** A light: one particle born when the light turns on, living until it turns off, drawn only by a Light renderer
 	 *  (colour x peak intensity, radius, brightness following the intensity track through Scale Alpha). */
 	void BuildLightEmitter(FNiagaraEmitterHandle& Handle, FVersionedNiagaraEmitterData* Data, const TSharedPtr<FJsonObject>& L)
@@ -320,6 +529,31 @@ namespace
 		Light->DefaultExponent = 2.0f;
 		Inst.Emitter->AddRenderer(Light, Inst.Version);
 		UE_LOG(LogVfxImporter, Display, TEXT("   light %s: ticks %d-%d, peak %.2f, radius %.0f cm"), *L->GetStringField(TEXT("name")), On, Off, Peak, L->GetNumberField(TEXT("radiusCm")));
+	}
+
+	/** A ribbon slice: one static particle at the effect origin drawing the baked mesh (its points are already in
+	 *  effect space) through a Mesh renderer; the layer's colour, opacity flicker via Scale Alpha. */
+	void BuildRibbonEmitter(FNiagaraEmitterHandle& Handle, FVersionedNiagaraEmitterData* Data, const FRibbonSlice& S)
+	{
+		const auto F = FNiagaraTypeDefinition::GetFloatDef();
+		UNiagaraScriptSource* Source = Data->SpawnScriptProps.Script ? Cast<UNiagaraScriptSource>(Data->SpawnScriptProps.Script->GetLatestSource()) : nullptr;
+		UNiagaraGraph* Graph = Source ? Source->NodeGraph : nullptr;
+		const double Life = FMath::Max(1, S.Life) / 60.0;
+		OverrideLiteral(Graph, TEXT("SpawnBurst_Instantaneous"), TEXT("Spawn Count"), FNiagaraTypeDefinition::GetIntDef(), TEXT("1"));
+		OverrideLiteral(Graph, TEXT("SpawnBurst_Instantaneous"), TEXT("Spawn Time"), F, FloatLit(S.Start / 60.0));
+		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Min"), F, FloatLit(Life));
+		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Max"), F, FloatLit(Life));
+		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Color"), FNiagaraTypeDefinition::GetColorDef(), ColorLit(S.Color));
+		SetScaleAlphaCurve(Graph, &S.AlphaKeys);
+		for (UNiagaraRendererProperties* R : Data->GetRenderers()) if (R) R->SetIsEnabled(false);
+		const FVersionedNiagaraEmitter Inst = Handle.GetInstance();
+		UNiagaraMeshRendererProperties* MeshR = NewObject<UNiagaraMeshRendererProperties>(Inst.Emitter, NAME_None, RF_Transactional);
+		FNiagaraMeshRendererMeshProperties M;
+		M.Mesh = S.Mesh;
+		MeshR->Meshes.Reset();
+		MeshR->Meshes.Add(M);
+		Inst.Emitter->AddRenderer(MeshR, Inst.Version);
+		UE_LOG(LogVfxImporter, Display, TEXT("   ribbon slice %s: ticks %d+%d"), *S.Name, S.Start, S.Life);
 	}
 
 	/** Applies the module-input overrides shared by every emitter, then the template-specific ones. Shape/AddVelocity
@@ -462,9 +696,17 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 	// Emitters go in through the factory's EmittersToAddToNewSystem: that path (FNiagaraEditorUtilities::AddEmitterToSystem)
 	// also wires each emitter into the system scripts. UNiagaraSystem::AddEmitterHandle alone does not, and such a system
 	// has nothing running: it completes on its first tick and never draws (the 2026-10-01 "black frame").
-	struct FPending { TSharedPtr<FJsonObject> E; FString Name; FString Template; bool bLight = false; };
+	// Ribbon meshes are built (and saved) first: their builds can garbage-collect unreferenced objects such as the
+	// factory and loaded templates below.
+	TArray<FRibbonSlice> Slices;
+	const TArray<TSharedPtr<FJsonValue>>* RibbonList = nullptr;
+	if (Root->TryGetArrayField(TEXT("ribbons"), RibbonList))
+		for (const auto& Item : *RibbonList) BuildRibbonSlices(DestPath, Item->AsObject(), Slices);
+
+	struct FPending { TSharedPtr<FJsonObject> E; FString Name; FString Template; bool bLight = false; int32 Slice = -1; };
 	TArray<FPending> Pending;
 	UNiagaraSystemFactoryNew* SysFactory = NewObject<UNiagaraSystemFactoryNew>();
+	SysFactory->AddToRoot(); // mesh builds below can run a garbage collection
 	const TArray<TSharedPtr<FJsonValue>>* Emitters = nullptr;
 	if (Root->TryGetArrayField(TEXT("emitters"), Emitters))
 	{
@@ -497,9 +739,21 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 			}
 		}
 	}
+	// Ribbons (beams, lightning): baked mesh slices, one single-particle emitter each with a Mesh renderer.
+	{
+		if (UNiagaraEmitter* Tmpl = Slices.Num() ? LoadTemplate(TEXT("/Niagara/DefaultAssets/Templates/Emitters/SimpleSpriteBurst.SimpleSpriteBurst")) : nullptr)
+		{
+			for (int32 k = 0; k < Slices.Num(); k++)
+			{
+				SysFactory->EmittersToAddToNewSystem.Add(FVersionedNiagaraEmitter(Tmpl, Tmpl->GetExposedVersion().VersionGuid));
+				Pending.Add({ nullptr, Slices[k].Name, TEXT("SimpleSpriteBurst"), false, k });
+			}
+		}
+	}
 	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
 	const FString SystemName = TEXT("NS_") + Name;
 	UObject* NewAsset = AssetTools.CreateAsset(SystemName, DestPath, UNiagaraSystem::StaticClass(), SysFactory);
+	SysFactory->RemoveFromRoot();
 	UNiagaraSystem* System = Cast<UNiagaraSystem>(NewAsset);
 	if (!System) { UE_LOG(LogVfxImporter, Error, TEXT("CreateAsset(NiagaraSystem) failed (may already exist at %s/%s)"), *DestPath, *SystemName); return false; }
 
@@ -518,6 +772,7 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 		FVersionedNiagaraEmitterData* Data = Handle.GetEmitterData();
 		if (!Data) { UE_LOG(LogVfxImporter, Error, TEXT("   no emitter data for %s"), *EName); continue; }
 		if (Pending[i].bLight) { BuildLightEmitter(Handle, Data, E); EmitterCount++; continue; }
+		if (Pending[i].Slice >= 0) { BuildRibbonEmitter(Handle, Data, Slices[Pending[i].Slice]); EmitterCount++; continue; }
 
 		// Material: an MIC over the shared Additive/Translucent base, per the emitter's texture + blend mode.
 		const FString Blend = E->GetStringField(TEXT("blend"));
@@ -546,15 +801,6 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 		else UE_LOG(LogVfxImporter, Error, TEXT("   no spawn-script graph for %s; module overrides skipped"), *EName);
 
 		EmitterCount++;
-	}
-
-	const TArray<TSharedPtr<FJsonValue>>* Ribbons = nullptr;
-	const int32 RibbonCount = Root->TryGetArrayField(TEXT("ribbons"), Ribbons) ? Ribbons->Num() : 0;
-	const TArray<TSharedPtr<FJsonValue>>* Lights = nullptr;
-	const int32 LightCount = Root->TryGetArrayField(TEXT("lights"), Lights) ? Lights->Num() : 0;
-	if (RibbonCount || LightCount)
-	{
-		UE_LOG(LogVfxImporter, Warning, TEXT("effect.json has %d ribbon layer(s) and %d light(s); this plugin pass does not build Niagara Ribbon/Light renderers yet (particle emitters only) -- see report.md for hand-authoring them."), RibbonCount, LightCount);
 	}
 
 	System->RequestCompile(true);
