@@ -51,7 +51,16 @@ export async function requestAi(request: AiRequest, options: { signal?: AbortSig
   catch { if (signal.aborted) throw new Error(options.signal?.aborted ? 'AI request cancelled.' : `Model request timed out after ${MODEL_TIMEOUT_MS / 1000} seconds.`); // A plain-http address of a server that redirects to https fails here (redirects are refused): say so.
     if (/^http:\/\//.test(root) && !/^http:\/\/(127\.0\.0\.1|localhost|\[::1\])[:/]/.test(root + '/')) throw new Error(`Cannot reach the model endpoint over plain http (${root}). If the server uses https, change the API base URL to start with https:// (Open WebUI: https://<server>/api).`);
     throw new Error('Cannot reach the model endpoint. Check its URL, network and certificate.'); }
-  if (!response.ok) throw new Error(`Model returned HTTP ${response.status}. Check credentials, model ID and server availability.`);
+  if (!response.ok) {
+    // Show the server's structured explanation (e.g. Gemini: "models/x is not found for API version v1beta") - only a
+    // JSON error message, never a raw body, with the key and any long token-like strings blanked out.
+    let detail = '';
+    try { const j = JSON.parse(await response.text()); const m = j?.error?.message ?? (typeof j?.error === 'string' ? j.error : undefined) ?? j?.message ?? j?.detail; if (typeof m === 'string') detail = m; } catch { /* not JSON: show nothing */ }
+    if (c.apiKey) detail = detail.split(c.apiKey).join('[key]');
+    detail = detail.replace(/[A-Za-z0-9_\-.]{32,}/g, '[redacted]');
+    detail = detail.replace(/\s+/g, ' ').trim().slice(0, 240);
+    throw new Error(`Model returned HTTP ${response.status}${detail ? `: ${detail}` : ''}. Check credentials, model ID and server availability.`);
+  }
   const reader = response.body?.getReader();
   if (!reader) throw new Error('Model returned an empty response.');
   let size = 0; const chunks: Uint8Array[] = [];

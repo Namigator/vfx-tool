@@ -29,7 +29,9 @@ test('connection validation rejects unsafe URLs, external images and invalid set
   const r = request(); r.messages[0].images = ['https://example.org/frame.png']; assert.throws(() => validateAiRequest(r));
   const t = request(); t.connection.vision = false; assert.throws(() => validateAiRequest(t));
 });
-test('provider errors do not expose keys or upstream response bodies', async () => {
+test('provider errors do not expose keys or raw upstream bodies; a JSON error message is shown with the key blanked', async () => {
+  await assert.rejects(requestAi(request(), { fetch: async () => new Response(JSON.stringify({ error: { message: 'models/x is not found; key test-key rejected' } }), { status: 404 }) }),
+    e => e instanceof Error && e.message.includes('HTTP 404') && e.message.includes('models/x is not found') && !e.message.includes('test-key'));
   await assert.rejects(requestAi(request(), { fetch: async () => new Response('secret test-key', { status: 401 }) }), e => e instanceof Error && e.message.includes('HTTP 401') && !e.message.includes('test-key'));
   await assert.rejects(requestAi(request(), { fetch: async () => { throw new Error('test-key'); } }), e => e instanceof Error && !e.message.includes('test-key'));
 });
