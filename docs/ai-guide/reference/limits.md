@@ -15,6 +15,7 @@ Hard limits and budgets, collected from the MAX_*/MIN_* constants in src/ (value
 - [Audio (parked)](#audio-parked)
 - [Export](#export)
 - [Editor and storage](#editor-and-storage)
+- [Other](#other)
 
 ## Headline limits
 
@@ -172,3 +173,9 @@ The ones that matter most when building effects.
 | `MAX_HISTORY_BYTES` | 20971520 | Editor undo memory cap (20 MiB). | src/editor/history.ts |
 | `MAX_REVISIONS` | 5 | Prior revisions kept besides the latest draft. | src/model/persistence.ts |
 | `MAX_SHELF` | 50 | Most projects on the browser shelf. | src/model/persistence.ts |
+
+## Other
+
+| constant | value | meaning | defined in |
+|---|---|---|---|
+| `MAX_GUIDE_CONTEXT` | 48000 | Most characters of documentation the AI panel attaches to one model request (the most relevant sections first). | src/ai/guideContext.ts |

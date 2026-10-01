@@ -3,6 +3,9 @@ import { createServer } from 'node:http';
 import { createAiServer } from './ai-server.ts';
 let calls = 0;
 const model = createServer(async (req, res) => {
+  // Browser (direct mode) testing: allow the page to call this fake model itself.
+  res.setHeader('Access-Control-Allow-Origin', req.headers.origin ?? '*'); res.setHeader('Access-Control-Allow-Headers', 'authorization, content-type');
+  if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
   const chunks: Buffer[] = []; for await (const c of req) chunks.push(c);
   const input = JSON.parse(Buffer.concat(chunks).toString('utf8'));
   calls++; const text = JSON.stringify(input.messages ?? []);
@@ -12,8 +15,8 @@ const model = createServer(async (req, res) => {
   if (current.includes('cancel-test')) await new Promise(r => setTimeout(r, 5000));
   const added = current.includes('ai-smoke');
   const result = isTest ? 'Connection ready.' : JSON.stringify({ summary: added ? 'Inspected the smoke draft frames. This is a local mock result.' : 'Added a Smoke plume component as a draft.', patches: [], components: added ? [] : [{ id: 'smoke-plume', prefix: 'ai-smoke' }], ticks: [20, 40, 60], done: added });
-  console.log(JSON.stringify({ call: calls, imageCount: Array.isArray(user) ? user.filter((p: any) => p.type === 'image_url').length : 0, phase: isTest ? 'connection' : added ? 'review' : 'edit' }));
+  console.log(JSON.stringify({ call: calls, imageCount: Array.isArray(user) ? user.filter((p: any) => p.type === 'image_url').length : 0, docs: String(input.messages?.[0]?.content ?? '').includes('VFX DOCUMENTATION'), phase: isTest ? 'connection' : added ? 'review' : 'edit' }));
   res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ choices: [{ message: { content: result } }] }));
 });
 model.listen(5182, '127.0.0.1');
-createAiServer({ token: 'vfx-local-test-token', origins: ['http://127.0.0.1:5177'] }).listen(5181, '127.0.0.1', () => console.log('LOCAL MOCK ONLY: companion 5181, model http://127.0.0.1:5182/v1, token vfx-local-test-token'));
+createAiServer({ token: 'vfx-local-test-token', origins: ['http://127.0.0.1:5177'] }).listen(Number(process.env.VFX_AI_MOCK_COMPANION_PORT || 5181), '127.0.0.1', () => console.log('LOCAL MOCK ONLY: companion 5181, model http://127.0.0.1:5182/v1, token vfx-local-test-token'));

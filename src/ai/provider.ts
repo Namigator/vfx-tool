@@ -22,7 +22,8 @@ export function validateAiRequest(input: unknown): asserts input is AiRequest {
   }
 }
 
-export async function requestAi(request: AiRequest, options: { signal?: AbortSignal; fetch?: typeof fetch } = {}): Promise<AiReply> {
+/** `browser`: called from the web page itself (direct mode) rather than the companion. */
+export async function requestAi(request: AiRequest, options: { signal?: AbortSignal; fetch?: typeof fetch; browser?: boolean } = {}): Promise<AiReply> {
   validateAiRequest(request);
   const { connection: c, messages, system, maxTokens } = request;
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -37,6 +38,8 @@ export async function requestAi(request: AiRequest, options: { signal?: AbortSig
     path = '/messages';
     if (!c.apiKey) throw new Error('Claude API connections require an API key.');
     headers['x-api-key'] = c.apiKey; headers['anthropic-version'] = '2023-06-01';
+    // Anthropic serves browser requests (with the user's own key) only when they say so explicitly.
+    if (options.browser) headers['anthropic-dangerous-direct-browser-access'] = 'true';
     body = { model: c.model, max_tokens: maxTokens, system, messages: messages.map(m => ({ role: m.role, content: [{ type: 'text', text: m.text }, ...(m.images ?? []).map(url => ({ type: 'image', source: { type: 'base64', media_type: 'image/png', data: url.split(',')[1] } }))] })) };
   } else {
     path = `/models/${encodeURIComponent(c.model)}:generateContent`;

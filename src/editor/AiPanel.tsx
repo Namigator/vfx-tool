@@ -4,10 +4,15 @@ import type { Patch } from './history.ts';
 import type { AiConnection, AiRequest, AiReply } from '../ai/types.ts';
 import { AI_EDIT_FIELDS, runAiSession, type AiSessionResult } from '../ai/session.ts';
 import { renderAiFrames } from '../ai/render.ts';
+import { requestAiDirect } from '../ai/direct.ts';
 
 type Props = { document: EffectDocumentV2; onEdit: (label: string, patches: Patch[]) => void };
 /** Gemini model ID verified working from the published site (2026-10-01); docs/ai-guide/assistant.md. */
 const GEMINI_DEFAULT_MODEL = 'gemini-3-flash-preview';
+/** Model ID filled in when a provider is picked (the user can type any other). */
+const DEFAULT_MODELS: Record<string, string> = { gemini: GEMINI_DEFAULT_MODEL, anthropic: 'claude-sonnet-5-5' };
+/** Where to get a key (shown next to the key box). */
+const KEY_LINKS: Record<string, string> = { openai: 'https://platform.openai.com/api-keys', gemini: 'https://aistudio.google.com/apikey', anthropic: 'https://console.anthropic.com/settings/keys' };
 const roots = { openai: 'https://api.openai.com/v1', anthropic: 'https://api.anthropic.com/v1', gemini: 'https://generativelanguage.googleapis.com/v1beta', custom: 'http://127.0.0.1:11434/v1' };
 /** Private / self-hosted models that speak the OpenAI chat-completions format (base URL + example model ID). */
 const PRIVATE_PRESETS: { label: string; url: string; model: string; vision: boolean; note: string }[] = [
@@ -19,7 +24,9 @@ const PRIVATE_PRESETS: { label: string; url: string; model: string; vision: bool
   { label: 'OpenRouter (many models)', url: 'https://openrouter.ai/api/v1', model: 'qwen/qwen3-235b-a22b', vision: false, note: 'One key for Qwen, GLM, DeepSeek, Llama and more.' },
 ];
 const SETTINGS_KEY = 'vfx-ai-connection';
-type Saved = { provider?: 'openai' | 'anthropic' | 'gemini' | 'custom'; baseUrl?: string; model?: string; vision?: boolean; companion?: string; maxRounds?: number };
+/** route: 'direct' = this page calls the provider with the user's key (works on the public site, no install);
+ *  'companion' = through the helper on this PC (pnpm ai:server), for models on this computer (Ollama, LM Studio…). */
+type Saved = { provider?: 'openai' | 'anthropic' | 'gemini' | 'custom'; baseUrl?: string; model?: string; vision?: boolean; companion?: string; maxRounds?: number; route?: 'direct' | 'companion' };
 function loadSaved(): Saved { try { return JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') as Saved; } catch { return {}; } }
 /** Opt-out remembered secrets (user 2026-10-01): API key per provider and the pairing token, in this browser only.
  *  Kept apart from the settings so "Forget" removes exactly them. Readable by any page of the same site origin. */
@@ -43,9 +50,11 @@ export default function AiPanel({ document: doc, onEdit }: Props) {
   }, [remember, apiKey, token, provider]);
   const [prompt, setPrompt] = useState(''), [maxRounds, setMaxRounds] = useState(saved.maxRounds ?? 4), [busy, setBusy] = useState(false), [status, setStatus] = useState('');
   const [presetNote, setPresetNote] = useState('');
+  const [route, setRoute] = useState<'direct' | 'companion'>(saved.route ?? 'direct');
+  const viaCompanion = route === 'companion', ready = !!model.trim() && (!viaCompanion || !!token.trim());
   useEffect(() => {
-    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ provider, baseUrl, model, vision, companion, maxRounds } satisfies Saved)); } catch { /* private mode */ }
-  }, [provider, baseUrl, model, vision, companion, maxRounds]);
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ provider, baseUrl, model, vision, companion, maxRounds, route } satisfies Saved)); } catch { /* private mode */ }
+  }, [provider, baseUrl, model, vision, companion, maxRounds, route]);
   const [result, setResult] = useState<AiSessionResult | null>(null), [base, setBase] = useState('');
   const abort = useRef<AbortController | null>(null), currentDoc = useRef(doc); currentDoc.current = doc;
   useEffect(() => () => abort.current?.abort(), []);
@@ -61,6 +70,7 @@ export default function AiPanel({ document: doc, onEdit }: Props) {
     return companion.replace(/\/+$/, '');
   };
   const request = async (input: AiRequest, signal?: AbortSignal): Promise<AiReply> => {
+    if (!viaCompanion) return requestAiDirect(input, signal);
     const r = await fetch(`${root()}/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token.trim()}` }, body: JSON.stringify(input), signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(70_000)]) : AbortSignal.timeout(70_000) });
     const body = await r.json(); if (!r.ok) throw new Error(body.error || `Companion returned HTTP ${r.status}.`); return body;
   };
@@ -77,7 +87,7 @@ export default function AiPanel({ document: doc, onEdit }: Props) {
       }
     } catch (e) {
       if (controller.signal.aborted) setStatus('Cancelled. Your effect was not changed.');
-      else setStatus(e instanceof Error && e.name !== 'TypeError' ? e.message : 'Cannot reach the AI companion. Check that pnpm ai:server is running (keep its window open) and the URL and pairing token match what it printed. On the public site, Chrome must also be allowed to reach apps on this device: answer Allow to its prompt, or click the icon left of the address, Site settings, and allow access to apps on this device (local network).');
+      else setStatus(e instanceof Error && (e.name !== 'TypeError' || !viaCompanion) ? e.message : 'Cannot reach the AI companion. Check that pnpm ai:server is running (keep its window open) and the URL and pairing token match what it printed. On the public site, Chrome must also be allowed to reach apps on this device: answer Allow to its prompt, or click the icon left of the address, Site settings, and allow access to apps on this device (local network).');
     } finally { if (abort.current === controller) { setBusy(false); abort.current = null; } }
   };
   const apply = () => {
@@ -91,7 +101,7 @@ export default function AiPanel({ document: doc, onEdit }: Props) {
     <p>Describe a change. The AI edits a draft and checks rendered frames before you apply it.</p>
     <details open><summary>AI connection</summary>
       <fieldset disabled={busy}>
-        <label>Provider<select aria-label="AI provider" value={provider} onChange={e => { const p = e.target.value as typeof provider; setProvider(p); setBaseUrl(roots[p]); setModel(p === 'gemini' ? GEMINI_DEFAULT_MODEL : ''); setApiKey(remember ? keysRef.current?.[p] ?? '' : ''); setVision(p !== 'custom'); }}>
+        <label>Provider<select aria-label="AI provider" value={provider} onChange={e => { const p = e.target.value as typeof provider; setProvider(p); setBaseUrl(roots[p]); setModel(DEFAULT_MODELS[p] ?? ''); setApiKey(remember ? keysRef.current?.[p] ?? '' : ''); setVision(p !== 'custom'); }}>
           <option value="openai">GPT / OpenAI API</option><option value="anthropic">Claude API</option><option value="gemini">Gemini API</option><option value="custom">Private / custom model</option>
         </select></label>
         {provider === 'custom' && <label>Quick setup<select aria-label="Private model preset" value="" onChange={e => {
@@ -100,22 +110,29 @@ export default function AiPanel({ document: doc, onEdit }: Props) {
         }}><option value="">Choose a server or service…</option>{PRIVATE_PRESETS.map((p, i) => <option key={p.label} value={i}>{p.label}</option>)}</select></label>}
         {provider === 'custom' && presetNote && <p>{presetNote}</p>}
         <label>API base URL<input aria-label="AI API base URL" value={baseUrl} onChange={e => setBaseUrl(e.target.value)} spellCheck={false} /></label>
-        <label>Model ID<input aria-label="AI model ID" value={model} placeholder="Your server's model name" onChange={e => setModel(e.target.value)} spellCheck={false} /></label>
+        <label>Model ID<input aria-label="AI model ID" value={model} placeholder={provider === 'openai' ? 'e.g. a current GPT model name from your OpenAI account' : "Your server's model name"} onChange={e => setModel(e.target.value)} spellCheck={false} /></label>
         <label>API key{provider === 'custom' ? ' (optional)' : ''}<input type="password" aria-label="AI API key" autoComplete="off" value={apiKey} onChange={e => setApiKey(e.target.value)} /></label>
+        {KEY_LINKS[provider] && <p>Use your own key: <a href={KEY_LINKS[provider]} target="_blank" rel="noreferrer noopener">get a {provider === 'openai' ? 'OpenAI' : provider === 'gemini' ? 'Gemini' : 'Claude'} API key</a>. Usage is billed to your account by the provider.</p>}
         <label className="ai-check"><input type="checkbox" checked={vision} onChange={e => setVision(e.target.checked)} />Model accepts images</label>
         {provider === 'custom' && <p>Any OpenAI-compatible server works (Qwen, GLM, DeepSeek, Llama…). The model needs a large context window (32k tokens or more): each request carries the effect graph and the relevant documentation. Reasoning models are fine; their thinking is ignored. Keep "accepts images" off for text-only models.</p>}
         {!vision && <p>Text-only mode edits and validates the graph. It renders thumbnails for you, but the model cannot inspect them.</p>}
-        <label>Companion URL (helper on this PC)<input aria-label="AI companion URL" value={companion} onChange={e => setCompanion(e.target.value)} spellCheck={false} /></label>
-        <label>Pairing token<input type="password" aria-label="AI pairing token" autoComplete="off" value={token} onChange={e => setToken(e.target.value)} /></label>
-        <label className="ai-check"><input type="checkbox" checked={remember} onChange={e => { const r = e.target.checked; setRemember(r); if (!r) keysRef.current = {}; }} />Remember API keys and pairing token in this browser</label>
-        <button type="button" disabled={!model.trim() || !token.trim()} onClick={() => void start(true)}>Test model connection</button>
+        <label className="ai-check"><input type="checkbox" checked={viaCompanion} onChange={e => setRoute(e.target.checked ? 'companion' : 'direct')} />Connect through the helper on this PC (for models running on this computer)</label>
+        {viaCompanion && <>
+          <label>Companion URL (helper on this PC)<input aria-label="AI companion URL" value={companion} onChange={e => setCompanion(e.target.value)} spellCheck={false} /></label>
+          <label>Pairing token<input type="password" aria-label="AI pairing token" autoComplete="off" value={token} onChange={e => setToken(e.target.value)} /></label>
+        </>}
+        <label className="ai-check"><input type="checkbox" checked={remember} onChange={e => { const r = e.target.checked; setRemember(r); if (!r) keysRef.current = {}; }} />Remember API keys{viaCompanion ? ' and pairing token' : ''} in this browser</label>
+        <button type="button" disabled={!ready} onClick={() => void start(true)}>Test model connection</button>
       </fieldset>
-      <p>Start the local companion with <code>pnpm ai:server</code>, then copy its pairing token here. Keys and the token are remembered only in this browser (untick "Remember" to forget them) and are never saved with your effect. Pages of the same site can read browser storage: untick it on shared computers or sites. Requests and, when enabled, preview images go to your chosen model endpoint.</p>
-      <p>These are API connections. Chat-subscription sign-in is not included in this version.</p>
+      {viaCompanion
+        ? <p>Start the helper with <code>pnpm ai:server</code> on this PC, then copy its pairing token here (it stays the same between restarts).</p>
+        : <p>This page talks to the provider directly with your key; nothing to install.</p>}
+      <p>Keys are remembered only in this browser (untick "Remember" to forget them) and are never saved with your effect. Pages of the same site can read browser storage: untick it on shared computers or sites. Requests and, when enabled, preview images go to your chosen model endpoint.</p>
+      <p>These are API connections (pay-as-you-go keys). A ChatGPT, Gemini or Claude chat subscription cannot be used here.</p>
     </details>
     <label>Your request<textarea aria-label="AI request" value={prompt} maxLength={8000} rows={4} disabled={busy} onChange={e => setPrompt(e.target.value)} placeholder="Make the sparks spread wider and fade more slowly…" /></label>
     <label>Maximum rounds<select aria-label="AI maximum rounds" value={maxRounds} disabled={busy} onChange={e => setMaxRounds(Number(e.target.value))}>{[2, 3, 4, 5, 6].map(n => <option key={n}>{n}</option>)}</select></label>
-    <div className="ai-actions"><button type="button" disabled={busy || !prompt.trim() || !model.trim() || !token.trim()} onClick={() => void start(false)}>Create draft</button>
+    <div className="ai-actions"><button type="button" disabled={busy || !prompt.trim() || !ready} onClick={() => void start(false)}>Create draft</button>
       {busy && <button type="button" onClick={() => abort.current?.abort()}>Cancel AI run</button>}</div>
     <p role="status" aria-live="polite">{status}</p>
     {result && <section aria-label="AI draft"><p style={{ whiteSpace: 'pre-wrap' }}>{result.summary}</p>

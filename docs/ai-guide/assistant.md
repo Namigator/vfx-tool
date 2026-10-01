@@ -2,6 +2,19 @@
 
 Open the inspector's **AI** tab. This panel edits a draft of the active effect, renders it at representative ticks, and asks an image-capable model to inspect the new frames before offering Apply. The original effect stays unchanged until Apply; applying is one undoable edit. If the active effect changes during a run, the draft cannot overwrite it.
 
+## Connect: directly from the page (default) or through the companion
+
+**Directly from the page** is the default and needs nothing installed: pick GPT / OpenAI, Gemini or Claude, paste your
+own API key (links next to the key box: platform.openai.com/api-keys, aistudio.google.com/apikey,
+console.anthropic.com/settings/keys) and run. The page sends requests straight to the provider, which bills your key;
+the documentation is loaded into the page the first time a draft needs it. This works on the published site, on phones
+and for anyone using it. OpenAI, Gemini and Claude accept these browser requests (checked 2026-10-01); a self-hosted
+OpenAI-compatible server works too if it allows browser requests from the site (Open WebUI does by default for its own
+CORS list). A ChatGPT / Gemini / Claude chat subscription is not an API key and cannot be used.
+
+**Through the companion** (tick *Connect through the helper on this PC*) is for models on your own computer (Ollama,
+LM Studio, vLLM on 127.0.0.1) or servers that refuse browser requests:
+
 ## Start the companion
 
 From the project folder run `pnpm ai:server` (or `node --experimental-strip-types tools/ai-server.ts`). The server binds only to 127.0.0.1:5181 and prints its pairing token. The token is generated once and kept in `~/.vfx-studio/ai-companion-token`, so it stays the same across restarts (delete that file, or set `VFX_AI_TOKEN`, to change it). Copy its URL and token into the AI connection settings. Keep the process running while using the panel. No API keys are written to disk or logged by the companion.

@@ -383,6 +383,7 @@ const CURATED = {
   DEFAULT_MAX_LIVE_PARTICLES: 'Runtime ceiling. The saved root EffectOutput.particleBudget sets the effect-wide limit: 30000 default, configurable 1–65536 in Controls → Effect settings.',
   DEFAULT_MAX_TOTAL_BIRTHS: 'Most particles born in total over the whole effect (all emitters).',
   MAX_EMISSION_PATH_POINTS: 'Most path vertices an Emitter with shape "path" can spawn along.',
+  MAX_GUIDE_CONTEXT: 'Most characters of documentation the AI panel attaches to one model request (the most relevant sections first).',
   MAX_UE_BURSTS: 'Most bursts one Unreal-exported emitter keeps as separate bursts; more (or bursts at their own positions) become a steady rate.',
   MAX_EVENT_OCCURRENCES: 'Most occurrences of one event a triggered Schedule re-fires on (repeating cues, several arrivals).',
   MAX_TRACKS: 'Most keyframed (animated) values per item (implementation limit).', MAX_TRACK_KEYS: 'Most keys per animated value (implementation limit).',
