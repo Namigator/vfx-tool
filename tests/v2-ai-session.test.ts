@@ -66,3 +66,16 @@ test('AI session: replies from thinking / chatty models still parse (think block
   assert.deepEqual(parseModelJson('{"summary":"a } brace \\" in a string","patches":[],"ticks":[],"done":false}'), { summary: 'a } brace " in a string', patches: [], ticks: [], done: false });
   assert.throws(() => parseModelJson('no json here'), /documented JSON object/);
 });
+
+test('AI edits that remove or rename a node keep the editor layout valid (the model may not edit layout)', () => {
+  const d = createF01Document(), g = d.graphs[0];
+  // The model replaces the Schedule with a re-IDed copy and re-points its edges: "node-schedule" leaves the graph.
+  const nodes = g.nodes.map(n => n.id === 'node-schedule' ? { ...n, id: 'node-sched2' } : n);
+  const edges = g.edges.map(e => ({ ...e, source: e.source.nodeId === 'node-schedule' ? { ...e.source, nodeId: 'node-sched2' } : e.source, target: e.target.nodeId === 'node-schedule' ? { ...e.target, nodeId: 'node-sched2' } : e.target }));
+  const controls = d.controls.map(c => ({ ...c, bindings: c.bindings.map(b => b.nodeId === 'node-schedule' ? { ...b, nodeId: 'node-sched2' } : b) }));
+  const out = aiApplyPatches(d, [{ op: 'set', path: ['graphs', 0, 'nodes'], value: nodes }, { op: 'set', path: ['graphs', 0, 'edges'], value: edges }, { op: 'set', path: ['controls'], value: controls }]);
+  const layout = out.editor.graphs[g.id].nodes;
+  assert.equal(layout['node-schedule'], undefined);
+  assert.ok(layout['node-sched2'], 'the new node gets a position');
+  assert.ok(d.editor.graphs[g.id].nodes['node-schedule'], 'the original document is untouched');
+});
