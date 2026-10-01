@@ -101,6 +101,12 @@ namespace
 			const FNiagaraParameterHandle ModuleHandle = FNiagaraParameterHandle::CreateModuleParameterHandle(FName(InputName));
 			const FNiagaraParameterHandle Handle = FNiagaraParameterHandle::CreateAliasedModuleParameterHandle(ModuleHandle, ModuleNode);
 			UEdGraphPin& OverridePin = FNiagaraStackGraphUtilities::GetOrCreateStackFunctionInputOverridePin(*ModuleNode, Handle, Type, FGuid(), FGuid());
+			// A template input driven by a dynamic input (e.g. Fountain's random-range speed) ignores a literal: unlink it.
+			if (OverridePin.LinkedTo.Num())
+			{
+				UE_LOG(LogVfxImporter, Display, TEXT("    %s.%s was driven by %s; replaced by a literal"), *ModuleNode->GetFunctionName(), InputName, *OverridePin.LinkedTo[0]->GetOwningNode()->GetNodeTitle(ENodeTitleType::ListView).ToString());
+				OverridePin.BreakAllPinLinks();
+			}
 			OverridePin.DefaultValue = LiteralValue;
 			UE_LOG(LogVfxImporter, Display, TEXT("    %s.%s = %s (pin %s)"), *ModuleNode->GetFunctionName(), InputName, *LiteralValue, *OverridePin.PinName.ToString());
 			return true;
@@ -108,6 +114,30 @@ namespace
 		UE_LOG(LogVfxImporter, Warning, TEXT("    module containing '%s' not found (input '%s' not set)"), ModuleNameSubstring, InputName);
 		return false;
 	}
+	/** Sets a module's static switch (a pin on the module node itself, e.g. Shape Location "Offset Mode", Initialize
+	 *  Particle "UsePositionOffset"): these are not module inputs, and the stock templates ship some of them OFF, which is
+	 *  why the Offset/Position Offset overrides above had no effect (Fountain: Offset Mode = None). Enum values are the
+	 *  enum entry names ("NewEnumerator0"), booleans "true"/"false". */
+	bool SetStaticSwitch(UNiagaraGraph* Graph, const TCHAR* ModuleNameSubstring, const TCHAR* PinName, const FString& Value)
+	{
+		if (!Graph) return false;
+		for (UEdGraphNode* Node : Graph->Nodes)
+		{
+			UNiagaraNodeFunctionCall* Fn = Cast<UNiagaraNodeFunctionCall>(Node);
+			if (!Fn || !Fn->GetFunctionName().Contains(ModuleNameSubstring)) continue;
+			for (UEdGraphPin* Pin : Fn->Pins)
+				if (Pin->Direction == EGPD_Input && Pin->PinName.ToString() == PinName)
+				{
+					Fn->Modify();
+					Pin->DefaultValue = Value;
+					UE_LOG(LogVfxImporter, Display, TEXT("    %s [switch %s] = %s"), *Fn->GetFunctionName(), PinName, *Value);
+					return true;
+				}
+		}
+		UE_LOG(LogVfxImporter, Warning, TEXT("    static switch %s.%s not found"), ModuleNameSubstring, PinName);
+		return false;
+	}
+
 	/** UNiagaraNodeInput::GetDataInterface is not exported from NiagaraEditor; read the UPROPERTY through reflection. */
 	UNiagaraDataInterface* NodeInputDataInterface(const UNiagaraNodeInput* In)
 	{
@@ -503,6 +533,12 @@ namespace
 		OverrideLiteral(Graph, TEXT("SpawnBurst_Instantaneous"), TEXT("Spawn Time"), F, FloatLit(On / 60.0));
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Min"), F, FloatLit(Life));
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Max"), F, FloatLit(Life));
+		const TArray<TSharedPtr<FJsonValue>>* LightPos = nullptr;
+		if (L->TryGetArrayField(TEXT("positionCm"), LightPos) && !JsonVec3(LightPos).IsNearlyZero())
+		{
+			SetStaticSwitch(Graph, TEXT("InitializeParticle"), TEXT("UsePositionOffset"), TEXT("true"));
+			OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Position Offset"), FNiagaraTypeDefinition::GetVec3Def(), Vec3Lit(JsonVec3(LightPos)));
+		}
 		const TArray<TSharedPtr<FJsonValue>>* Rgb = nullptr; L->TryGetArrayField(TEXT("color"), Rgb);
 		const FLinearColor Base = (Rgb && Rgb->Num() >= 3) ? FLinearColor(FColor((uint8)((*Rgb)[0]->AsNumber() * 255), (uint8)((*Rgb)[1]->AsNumber() * 255), (uint8)((*Rgb)[2]->AsNumber() * 255))) : FLinearColor::White;
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Color"), FNiagaraTypeDefinition::GetColorDef(), ColorLit(FLinearColor(Base.R * Peak, Base.G * Peak, Base.B * Peak, 1.0f)));
@@ -554,6 +590,107 @@ namespace
 		MeshR->Meshes.Add(M);
 		Inst.Emitter->AddRenderer(MeshR, Inst.Version);
 		UE_LOG(LogVfxImporter, Display, TEXT("   ribbon slice %s: ticks %d+%d"), *S.Name, S.Start, S.Life);
+	}
+
+	/** The modules of one stack (output node usage) in execution order: walks the parameter-map chain back from the
+	 *  output node (GetOrderedModuleNodes is not exported). */
+	TArray<UNiagaraNodeFunctionCall*> OrderedModules(UNiagaraNodeOutput* Output)
+	{
+		TArray<UNiagaraNodeFunctionCall*> Out;
+		UEdGraphNode* Node = Output;
+		for (int32 Guard = 0; Node && Guard < 256; Guard++)
+		{
+			UEdGraphPin* MapIn = nullptr;
+			for (UEdGraphPin* Pin : Node->Pins)
+				if (Pin->Direction == EGPD_Input && Pin->PinType.PinSubCategoryObject == FNiagaraTypeDefinition::GetParameterMapStruct() && Pin->LinkedTo.Num()) { MapIn = Pin; break; }
+			Node = MapIn ? MapIn->LinkedTo[0]->GetOwningNode() : nullptr;
+			if (UNiagaraNodeFunctionCall* Fn = Cast<UNiagaraNodeFunctionCall>(Node)) Out.Insert(Fn, 0);
+		}
+		return Out;
+	}
+
+	/** Sets one module input literal when the module really has that input (logged either way). */
+	bool OverrideOnNode(UNiagaraNodeFunctionCall* Fn, const TCHAR* InputName, const FNiagaraTypeDefinition& Type, const FString& Literal)
+	{
+		TArray<FNiagaraVariable> Inputs;
+		FNiagaraStackGraphUtilities::GetStackFunctionInputs(*Fn, Inputs, FCompileConstantResolver(), FNiagaraStackGraphUtilities::ENiagaraGetStackFunctionInputPinsOptions::ModuleInputsOnly);
+		const FString Want = FString(TEXT("Module.")) + InputName;
+		if (!Inputs.ContainsByPredicate([&](const FNiagaraVariable& V) { return V.GetName().ToString() == Want; }))
+		{
+			FString Have; for (const FNiagaraVariable& V : Inputs) Have += V.GetName().ToString() + TEXT(" ");
+			UE_LOG(LogVfxImporter, Warning, TEXT("    %s has no input '%s' (has: %s)"), *Fn->GetFunctionName(), InputName, *Have);
+			return false;
+		}
+		const FNiagaraParameterHandle Handle = FNiagaraParameterHandle::CreateAliasedModuleParameterHandle(FNiagaraParameterHandle::CreateModuleParameterHandle(FName(InputName)), Fn);
+		FNiagaraStackGraphUtilities::GetOrCreateStackFunctionInputOverridePin(*Fn, Handle, Type, FGuid(), FGuid()).DefaultValue = Literal;
+		UE_LOG(LogVfxImporter, Display, TEXT("    %s.%s = %s"), *Fn->GetFunctionName(), InputName, *Literal);
+		return true;
+	}
+
+	/** Adds a stock module to the particle update stack just before Solve Forces and Velocity (forces must be summed
+	 *  before the solver integrates them). */
+	UNiagaraNodeFunctionCall* AddForceModule(FVersionedNiagaraEmitterData* Data, const TCHAR* ScriptPath)
+	{
+		UNiagaraScript* Update = Data->UpdateScriptProps.Script;
+		UNiagaraScriptSource* Source = Update ? Cast<UNiagaraScriptSource>(Update->GetLatestSource()) : nullptr;
+		UNiagaraNodeOutput* Output = Source && Source->NodeGraph ? Source->NodeGraph->FindEquivalentOutputNode(ENiagaraScriptUsage::ParticleUpdateScript, Update->GetUsageId()) : nullptr;
+		UNiagaraScript* Module = LoadObject<UNiagaraScript>(nullptr, ScriptPath);
+		if (!Output || !Module) { UE_LOG(LogVfxImporter, Warning, TEXT("    cannot add %s (update stack %s, module %s)"), ScriptPath, Output ? TEXT("ok") : TEXT("missing"), Module ? TEXT("ok") : TEXT("missing")); return nullptr; }
+		const TArray<UNiagaraNodeFunctionCall*> Mods = OrderedModules(Output);
+		const int32 Solve = Mods.IndexOfByPredicate([](UNiagaraNodeFunctionCall* F) { return F->GetFunctionName().Contains(TEXT("SolveForcesAndVelocity")); });
+		UNiagaraNodeFunctionCall* Fn = FNiagaraStackGraphUtilities::AddScriptModuleToStack(Module, *Output, Solve);
+		UE_LOG(LogVfxImporter, Display, TEXT("    + module %s at %d of %d"), Fn ? *Fn->GetFunctionName() : TEXT("(failed)"), Solve, Mods.Num());
+		return Fn;
+	}
+
+	/** Turbulence, attraction, swirl and ground collision: stock force/collision modules in the update stack. */
+	void ApplyForces(FVersionedNiagaraEmitterData* Data, const TSharedPtr<FJsonObject>& E)
+	{
+		const auto F = FNiagaraTypeDefinition::GetFloatDef();
+		const auto V3 = FNiagaraTypeDefinition::GetVec3Def();
+		const auto P3 = FNiagaraTypeDefinition::GetPositionDef();
+		const TSharedPtr<FJsonObject>* O = nullptr;
+		if (E->TryGetObjectField(TEXT("noise"), O))
+			if (UNiagaraNodeFunctionCall* Fn = AddForceModule(Data, TEXT("/Niagara/Modules/Update/Forces/CurlNoiseForce.CurlNoiseForce")))
+			{
+				OverrideOnNode(Fn, TEXT("Noise Strength"), F, FloatLit((*O)->GetNumberField(TEXT("amplitudeCmS2"))));
+				// Our frequency is per metre; Niagara's Noise Frequency is per cm of world space.
+				OverrideOnNode(Fn, TEXT("Noise Frequency"), F, FloatLit((*O)->GetNumberField(TEXT("frequency")) / 100.0));
+			}
+		if (E->TryGetObjectField(TEXT("attract"), O))
+			if (UNiagaraNodeFunctionCall* Fn = AddForceModule(Data, TEXT("/Niagara/Modules/Update/Forces/PointAttractionForce.PointAttractionForce")))
+			{
+				// Our attraction pulls with the same strength at any distance: no falloff, a radius covering the effect.
+				OverrideOnNode(Fn, TEXT("AttractionStrength"), F, FloatLit((*O)->GetNumberField(TEXT("strengthCmS2"))));
+				// The module reads AttractorPosition in WORLD space (it transforms it to simulation space itself) and defaults
+				// to the owner's position: keep that default for a centre at the effect origin (the usual case).
+				const FVector APos = JsonVec3(&(*O)->GetArrayField(TEXT("positionCm")));
+				if (!APos.IsNearlyZero(1.0)) OverrideOnNode(Fn, TEXT("AttractorPosition"), P3, Vec3Lit(APos));
+				OverrideOnNode(Fn, TEXT("Attraction Radius"), F, FloatLit(100000.0));
+				OverrideOnNode(Fn, TEXT("Use Falloff"), FNiagaraTypeDefinition::GetBoolDef(), TEXT("false"));
+				// Particles that reach the core die (a charge-up's motes vanish into it instead of overshooting).
+				double Kill = 0.0;
+				if ((*O)->TryGetNumberField(TEXT("killRadiusCm"), Kill) && Kill > 0.0)
+				{
+					OverrideOnNode(Fn, TEXT("Kill Within Radius"), FNiagaraTypeDefinition::GetBoolDef(), TEXT("true"));
+					OverrideOnNode(Fn, TEXT("Kill Radius"), F, FloatLit(Kill));
+				}
+			}
+		if (E->TryGetObjectField(TEXT("vortex"), O))
+			if (UNiagaraNodeFunctionCall* Fn = AddForceModule(Data, TEXT("/Niagara/Modules/Update/Forces/VortexForce.VortexForce")))
+			{
+				OverrideOnNode(Fn, TEXT("Vortex Force Amount"), F, FloatLit((*O)->GetNumberField(TEXT("strengthCmS2"))));
+				OverrideOnNode(Fn, TEXT("Vortex Axis"), V3, Vec3Lit(JsonVec3(&(*O)->GetArrayField(TEXT("axis")))));
+				const FVector VPos = JsonVec3(&(*O)->GetArrayField(TEXT("positionCm")));
+				if (!VPos.IsNearlyZero(1.0)) OverrideOnNode(Fn, TEXT("Vortex Origin"), P3, Vec3Lit(VPos)); // world space, like the attractor
+				double Inward = 0.0;
+				if ((*O)->TryGetNumberField(TEXT("inwardCmS2"), Inward) && Inward != 0.0) OverrideOnNode(Fn, TEXT("Origin Pull Amount"), F, FloatLit(Inward));
+			}
+		if (E->TryGetObjectField(TEXT("groundCollision"), O))
+			if (UNiagaraNodeFunctionCall* Fn = AddForceModule(Data, TEXT("/Niagara/Modules/Collision/Collision.Collision")))
+			{
+				OverrideOnNode(Fn, TEXT("Restitution"), F, FloatLit((*O)->GetNumberField(TEXT("restitution"))));
+			}
 	}
 
 	/** Applies the module-input overrides shared by every emitter, then the template-specific ones. Shape/AddVelocity
@@ -616,10 +753,10 @@ namespace
 			// Spawn origin relative to the effect origin (the floor point under Source): without it every emitter starts on
 			// the floor instead of at the nozzle / Source height.
 			const TArray<TSharedPtr<FJsonValue>>* Pos = nullptr;
-			if (E->TryGetArrayField(TEXT("position"), Pos))
+			if (E->TryGetArrayField(TEXT("position"), Pos) && !JsonVec3(Pos).IsNearlyZero())
 			{
+				SetStaticSwitch(Graph, TEXT("ShapeLocation"), TEXT("Offset Mode"), TEXT("NewEnumerator0")); // Default (the template ships None)
 				OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Offset"), V3, Vec3Lit(JsonVec3(Pos)));
-				OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Position Offset"), V3, Vec3Lit(JsonVec3(Pos)));
 			}
 			const TSharedPtr<FJsonObject>* ShapeObj = nullptr;
 			if (E->TryGetObjectField(TEXT("shape"), ShapeObj))
@@ -641,7 +778,12 @@ namespace
 		else if (Template == TEXT("SimpleSpriteBurst"))
 		{
 			const TArray<TSharedPtr<FJsonValue>>* Pos = nullptr;
-			if (E->TryGetArrayField(TEXT("position"), Pos)) OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Offset"), FNiagaraTypeDefinition::GetVec3Def(), Vec3Lit(JsonVec3(Pos)));
+			// No Shape Location on this template: Initialize Particle's Position Offset (behind a switch shipped off).
+			if (E->TryGetArrayField(TEXT("position"), Pos) && !JsonVec3(Pos).IsNearlyZero())
+			{
+				SetStaticSwitch(Graph, TEXT("InitializeParticle"), TEXT("UsePositionOffset"), TEXT("true"));
+				OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Position Offset"), FNiagaraTypeDefinition::GetVec3Def(), Vec3Lit(JsonVec3(Pos)));
+			}
 			const TArray<TSharedPtr<FJsonValue>>* Bursts = nullptr;
 			if (E->TryGetArrayField(TEXT("bursts"), Bursts) && Bursts->Num() > 0)
 			{
@@ -799,6 +941,7 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 		UNiagaraScriptSource* Source = SpawnScript ? Cast<UNiagaraScriptSource>(SpawnScript->GetLatestSource()) : nullptr;
 		if (Source && Source->NodeGraph) ApplyEmitterOverrides(Source->NodeGraph, E, Template);
 		else UE_LOG(LogVfxImporter, Error, TEXT("   no spawn-script graph for %s; module overrides skipped"), *EName);
+		ApplyForces(Data, E);
 
 		EmitterCount++;
 	}
@@ -815,6 +958,21 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 
 void UVfxNiagaraImporter::DumpTemplates()
 {
+	// Module internals (custom HLSL and called functions) of the force modules the importer adds.
+	for (const TCHAR* Path : { TEXT("/Niagara/Modules/Update/Forces/PointAttractionForce.PointAttractionForce"), TEXT("/Niagara/Modules/Update/Forces/VortexForce.VortexForce") })
+	{
+		UNiagaraScript* Script = LoadObject<UNiagaraScript>(nullptr, Path);
+		UNiagaraScriptSource* Src = Script ? Cast<UNiagaraScriptSource>(Script->GetLatestSource()) : nullptr;
+		if (!Src || !Src->NodeGraph) { UE_LOG(LogVfxImporter, Warning, TEXT("DUMPMOD %s: no graph"), Path); continue; }
+		for (UEdGraphNode* Node : Src->NodeGraph->Nodes)
+		{
+			FString Extra;
+			// UNiagaraNodeCustomHlsl is not exported: read its CustomHlsl UPROPERTY by reflection.
+			if (FStrProperty* Prop = FindFProperty<FStrProperty>(Node->GetClass(), TEXT("CustomHlsl"))) Extra = Prop->GetPropertyValue_InContainer(Node).Replace(TEXT("\n"), TEXT(" | ")).Replace(TEXT("\r"), TEXT(""));
+			if (UNiagaraNodeFunctionCall* Fn = Cast<UNiagaraNodeFunctionCall>(Node)) Extra += TEXT(" fn=") + Fn->GetFunctionName();
+			UE_LOG(LogVfxImporter, Warning, TEXT("DUMPMOD %s | %s | %s | %s"), Path, *Node->GetClass()->GetName(), *Node->GetNodeTitle(ENodeTitleType::ListView).ToString().Replace(TEXT("\n"), TEXT(" ")), *Extra);
+		}
+	}
 	const TCHAR* Paths[] = {
 		TEXT("/Niagara/DefaultAssets/Templates/Emitters/Fountain.Fountain"),
 		TEXT("/Niagara/DefaultAssets/Templates/Emitters/SimpleSpriteBurst.SimpleSpriteBurst"),
@@ -836,6 +994,14 @@ void UVfxNiagaraImporter::DumpTemplates()
 				TArray<FNiagaraVariable> Inputs;
 				FNiagaraStackGraphUtilities::GetStackFunctionInputs(*Fn, Inputs, FCompileConstantResolver(), FNiagaraStackGraphUtilities::ENiagaraGetStackFunctionInputPinsOptions::ModuleInputsOnly);
 				for (const FNiagaraVariable& V : Inputs) Extra += FString::Printf(TEXT("[%s:%s] "), *V.GetName().ToString(), *V.GetType().GetName());
+				Extra += TEXT(" pins=");
+				for (UEdGraphPin* Pin : Fn->Pins)
+					if (const UEnum* En = Cast<UEnum>(Pin->PinType.PinSubCategoryObject.Get()))
+					{
+						FString Names; for (int32 k = 0; k < En->NumEnums() - 1; k++) Names += FString::Printf(TEXT("%s=%s;"), *En->GetNameStringByIndex(k), *En->GetDisplayNameTextByIndex(k).ToString());
+						UE_LOG(LogVfxImporter, Warning, TEXT("DUMPENUM %s.%s: %s"), *Fn->GetFunctionName(), *Pin->PinName.ToString(), *Names);
+					}
+				for (UEdGraphPin* Pin : Fn->Pins) Extra += FString::Printf(TEXT("{%s%s='%s'%s} "), Pin->Direction == EGPD_Input ? TEXT("in:") : TEXT("out:"), *Pin->PinName.ToString(), *Pin->DefaultValue, Pin->LinkedTo.Num() ? *FString::Printf(TEXT(" <- %s"), *Pin->LinkedTo[0]->GetOwningNode()->GetNodeTitle(ENodeTitleType::ListView).ToString()) : TEXT(""));
 			}
 			if (UNiagaraNodeInput* In = Cast<UNiagaraNodeInput>(Node))
 			{

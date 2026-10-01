@@ -171,8 +171,7 @@ The plugin lives in the VFX-Tool repo at `integrations/unreal/VfxStudioImporter/
 
 ### What changes in Unreal (the report lists it per effect)
 
-What the importer actually builds today (verified on the flamethrower: it renders as a level jet from the Source,
-same length and shape as the VFX Studio preview, but redder and without glow):
+What the importer actually builds today (seen in UE 5.8 on the flamethrower, lightning strike and charge-up):
 
 | VFX Studio | In Unreal (Niagara) today |
 |---|---|
@@ -185,12 +184,12 @@ same length and shape as the VFX Studio preview, but redder and without glow):
 | Colour over life | its average over the first 60 % of life (no stock colour curve): reads redder, no white-hot core |
 | Flipbook sheets | the first frame of the sheet |
 | Velocity-stretched sprites | velocity-aligned sprites (no stretch) |
-| Emitters that start away from Source (smoke at the target...) | offset written but not taking effect in UE 5.8 yet: move their Shape Location by hand |
-| Curl noise, attraction, vortex, ground collision | in effect.json, **not applied** by the importer yet |
+| Emitters that start away from Source (smoke at the target...) | kept: Shape Location offset (the importer turns on its Offset Mode switch, which the stock template ships off) |
+| Curl noise, attraction, vortex, ground collision | stock Curl Noise / Point Attraction (no falloff, particles reaching the core die) / Vortex / Collision modules before the force solver; the vortex has no distance falloff in Niagara, so far particles swirl a little harder |
 | Keyframed knobs | their tick-0 value |
 | Lights | one single-particle emitter each with a Niagara Light renderer: colour x peak intensity, radius, on/off timing, intensity track as its brightness over life (exponent falloff) |
 | Ribbons (lightning, streams, rings) | baked into static meshes (each path a cross of two strips, its width, end fade and per-path opacity): up to 6 shapes per layer, each shown for its share of the layer's visible time with the per-frame flicker kept as opacity; a bolt that re-forms every frame shows 6 shapes instead of every one; no texture |
-| Light position | lights sit at the Source (a light at the target lights the caster's floor instead) |
+| Light position | kept (a light at the target lights the target) |
 | Mesh particles; dissolve, rim, distortion; screen flash, camera shake | left out |
 | Glow | Unreal's own bloom/post-process (not exported) |
 

@@ -110,8 +110,8 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     if (op.kind === 'gravity') { const g = toUe(op.acceleration).map((v, i) => acceleration[i] + v) as Vec3; acceleration = g; }
     else if (op.kind === 'drag') drag += op.coefficient / Math.LN2;
     else if (op.kind === 'noise') { noise = { amplitudeCmS2: r3(op.amplitude * CM_PER_METER), frequency: r3(op.frequency) }; report.push({ level: 'info', item: layer.nodeId, message: `Turbulence exported as Niagara Curl Noise Force (amplitude ${r3(op.amplitude * CM_PER_METER)} cm/s²) — unlike Roblox this is kept, not dropped.` }); }
-    else if (op.kind === 'attract') attract = { positionCm: relCm(op.center), strengthCmS2: r3(op.acceleration * CM_PER_METER) };
-    else if (op.kind === 'vortex') { vortex = { positionCm: relCm(op.center), axis: toUeDir(op.axis), strengthCmS2: r3(op.tangential * CM_PER_METER) }; report.push({ level: 'approximated', item: layer.nodeId, message: 'Vortex exported as a Niagara Vortex/curl force around the given axis; spin sign kept as authored — flip the axis in Niagara if the swirl direction looks mirrored (axis-swap caveat, see the export README).' }); }
+    else if (op.kind === 'attract') attract = { positionCm: relCm(op.center), strengthCmS2: r3(op.acceleration * CM_PER_METER), softRadiusCm: r3(op.softRadius * CM_PER_METER), killRadiusCm: r3(op.killRadius * CM_PER_METER) };
+    else if (op.kind === 'vortex') { vortex = { positionCm: relCm(op.center), axis: toUeDir(op.axis), strengthCmS2: r3(op.tangential * CM_PER_METER), inwardCmS2: r3(op.inward * CM_PER_METER), falloffCm: r3(op.falloff * CM_PER_METER) }; report.push({ level: 'approximated', item: layer.nodeId, message: 'Vortex exported as a Niagara Vortex/curl force around the given axis; spin sign kept as authored — flip the axis in Niagara if the swirl direction looks mirrored (axis-swap caveat, see the export README).' }); }
     else if (op.kind === 'ground') groundCollision = { groundZCm: 0, restitution: op.restitution, mode: op.mode === 'slide' ? 'stop' as const : op.mode === 'kill' ? 'kill' as const : 'bounce' as const };
     if ('gain' in op && op.gain?.some(g => g !== 1)) report.push({ level: 'approximated', item: layer.nodeId, message: `A force strength that changes over time (${op.kind}) is exported at full strength (Niagara curve-over-life on the force module can restore this by hand).` });
   }
@@ -278,8 +278,6 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
   const ribbons = ribbonsFrom(doc, origin, report);
   const textures = [...new Set([...emitters.map(e => e.textureFile), ...ribbons.map(b => b.textureFile)].filter((x): x is string => !!x))];
   report.push({ level: 'info', item: 'scale', message: `1 m = ${CM_PER_METER} cm. Axis mapping: ue.x=src.x*100, ue.y=src.z*100, ue.z=src.y*100 (our +Y up -> Unreal +Z up). The NiagaraSystem's origin is the Source anchor: place or attach the actor at the caster / nozzle.` });
-  const offset = emitters.filter(e => Math.hypot(...e.position) > 5);
-  if (offset.length) report.push({ level: 'approximated', item: 'positions', message: `${offset.length} emitter(s) start away from Source (${offset.map(e => e.name).join(', ')}); the importer writes their spawn offset, but in UE 5.8 it may not take effect: move those emitters' Shape Location in Niagara if they appear at the Source.` });
   return { ok: true, value: {
     name: safeName(doc.name || 'Effect'), durationTicks: plan.value.durationTicks, ticksPerSecond: 60,
     emitters, ribbons, lights, textures, report,

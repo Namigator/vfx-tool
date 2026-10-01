@@ -79,9 +79,9 @@ export type UeEmitter = {
   /** Curl Noise Force (Niagara keeps this unlike Roblox): amplitude cm/s^2 and frequency. Undefined = no noise. */
   noise?: { amplitudeCmS2: number; frequency: number };
   /** Point Attraction Force. Undefined = none. */
-  attract?: { positionCm: Vec3; strengthCmS2: number };
+  attract?: { positionCm: Vec3; strengthCmS2: number; /** pull eases inside this radius */ softRadiusCm?: number; /** particles reaching it die (0 = never) */ killRadiusCm?: number };
   /** Vortex/curl around an axis through `positionCm`. Undefined = none. See header re: sign convention under the axis flip. */
-  vortex?: { positionCm: Vec3; axis: Vec3; strengthCmS2: number };
+  vortex?: { positionCm: Vec3; axis: Vec3; strengthCmS2: number; /** pull toward the axis */ inwardCmS2?: number; /** e-folding distance of the swirl */ falloffCm?: number };
   /** Ground collision (Niagara "Collision" module against a Z-up plane at groundZCm). */
   groundCollision?: { groundZCm: number; restitution: number; mode: 'bounce' | 'kill' | 'stop' };
   sizeCmMin: number;

@@ -121,3 +121,13 @@ test('Unreal IR: colour over life keeps the authored colours (flamethrower tongu
   assert.ok(Math.abs(at(0.25).g - 0xe0 / 255) < 0.01 && Math.abs(at(0.25).b - 0xa0 / 255) < 0.01, JSON.stringify(at(0.25)));
   assert.ok(Math.abs(at(0.5).g - 0xa0 / 255) < 0.01 && Math.abs(at(0.5).b - 0x50 / 255) < 0.01, JSON.stringify(at(0.5)));
 });
+
+test('Unreal IR: attraction keeps its kill/soft radius and the vortex its inward pull and falloff (charge-up)', () => {
+  const e = effect('charge-up');
+  const motes = e.emitters.find(m => m.attract && m.vortex)!;
+  assert.ok(motes, 'charge-up has an attracted, swirling emitter');
+  assert.deepEqual(motes.attract, { positionCm: [0, 0, 0], strengthCmS2: 1400, softRadiusCm: 15, killRadiusCm: 12 });
+  assert.equal(motes.vortex!.falloffCm, 200);
+  assert.equal(motes.vortex!.inwardCmS2, 0);
+  assert.equal(e.report.some(r => r.item === 'positions'), false, 'offsets now take effect: no hand-fix report item');
+});
