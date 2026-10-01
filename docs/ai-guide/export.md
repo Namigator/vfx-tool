@@ -175,15 +175,16 @@ What the importer actually builds today (seen in UE 5.8 on the flamethrower, lig
 
 | VFX Studio | In Unreal (Niagara) today |
 |---|---|
-| Spawn rate over time | the window's peak rate (Spawn Rate) |
-| One burst | Spawn Burst Instantaneous |
-| Many bursts (smoke/embers born at flame deaths) | a steady rate with the same total over the bursts' span |
-| Lifetime, speed, direction, gravity/acceleration, drag | kept |
+| Spawn rate over time | the window's peak rate, emitting only inside the window (Emitter State: once, delayed to the start, lasting the window); ramps inside the window are flattened |
+| Bursts (up to 32, at the emitter's position) | one Spawn Burst Instantaneous each, timed exactly |
+| More bursts, or bursts at their own positions (smoke/embers born at flame deaths) | a steady rate with the same total over the bursts' span |
+| Lifetime, speed range, direction and cone spread, gravity/acceleration, drag | kept (burst emitters get the Shape Location / Add Velocity / Gravity / Drag modules their template lacks) |
 | Opacity over life | **exact**: written into the templates' Scale Alpha curve |
 | Size over life | **exact**: a Scale Sprite Size module with a size curve over life (particles are born at the curve's first size) |
 | Colour over life | **exact**: Scale Color in its RGBA colour-curve mode (colour and opacity per life) |
 | Flipbook sheets | **animated**: Particle SubUV material + SubUV Animation at the sheet's frames per second (loops or holds the last frame; random start frame kept) |
-| Velocity-stretched sprites | velocity-aligned sprites (no stretch) |
+| Velocity-stretched sprites | velocity-aligned sprites, length = width x stretch |
+| Untextured (procedural) sprites | the built-in soft-glow sheet's tight cell |
 | Emitters that start away from Source (smoke at the target...) | kept: Shape Location offset (the importer turns on its Offset Mode switch, which the stock template ships off) |
 | Curl noise, attraction, vortex, ground collision | stock Curl Noise / Point Attraction (no falloff, particles reaching the core die) / Vortex / Collision modules before the force solver; the vortex has no distance falloff in Niagara, so far particles swirl a little harder |
 | Keyframed knobs | their tick-0 value |
@@ -197,7 +198,7 @@ What the importer actually builds today (seen in UE 5.8 on the flamethrower, lig
 
 `node tools/unreal-check.mjs <package-dir>` imports the package into the test project and renders a frame in a
 windowed editor kept off-screen (`tools/unreal-capture.py`: waits for shaders, places the system at Source height,
-simulates `VFX_UE_SECONDS` = 1.0 s, captures through a SceneCapture2D) to `work/unreal/<name>.png`. `VFX_CAM_X`/`VFX_CAM_DIST` frame long effects (a 15 m bolt: 700/1600), `VFX_UE_SKIP_IMPORT=1` re-renders without importing; `node --experimental-strip-types tools/unreal-export.mjs <component>` writes a package for any built-in component. Read the image;
+simulates `VFX_UE_SECONDS` = 1.0 s and pauses there, captures through a SceneCapture2D) to `work/unreal/<name>.png`. `VFX_CAM_X`/`VFX_CAM_DIST` frame long effects (a 15 m bolt: 700/1600), `VFX_UE_SKIP_IMPORT=1` re-renders without importing; `node --experimental-strip-types tools/unreal-export.mjs <component>` writes a package for any built-in component. Read the image;
 the script does not judge it.
 
 ## Godot 4

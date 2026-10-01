@@ -78,6 +78,11 @@ def on_tick(dt):
             comp.activate(True)
             print("VFXCAP after activate", comp.is_active())
             comp.advance_simulation(max(1, int(SECONDS * 60)), 1.0 / 60.0)
+            # Freeze it there: the render ticks below would otherwise keep simulating (~0.3 s late captures).
+            try:
+                comp.set_paused(True)
+            except Exception as e:
+                print("VFXCAP set_paused n/a", e)
             print("VFXCAP active", comp.is_active(), "after", round(elapsed, 1), "s")
             state["phase"] = "render"; state["frames"] = 0
         return

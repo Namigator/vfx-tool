@@ -544,6 +544,26 @@ namespace
 		return true;
 	}
 
+	/** Effect length of the package being imported (ticks), for windows that run to the end. */
+	int32 GDocTicks = 600;
+
+	/** Plays the emitter once inside [StartTick, EndTick): Emitter State "Once" with a loop delay of the start and a loop
+	 *  duration of the window (the stock templates loop forever or for a fixed 1-2 s). Bursts are timed relative to the
+	 *  start (SetBurstTimes). */
+	void SetEmitterWindow(UNiagaraGraph* Graph, int32 StartTick, int32 EndTick)
+	{
+		const auto F = FNiagaraTypeDefinition::GetFloatDef();
+		SetStaticSwitch(Graph, TEXT("EmitterState"), TEXT("Loop Behavior"), TEXT("NewEnumerator1"));    // Once
+		SetStaticSwitch(Graph, TEXT("EmitterState"), TEXT("Loop Duration Mode"), TEXT("NewEnumerator0")); // Fixed
+		SetStaticSwitch(Graph, TEXT("EmitterState"), TEXT("Life Cycle Mode"), TEXT("NewEnumerator1"));    // Self
+		OverrideLiteral(Graph, TEXT("EmitterState"), TEXT("Loop Duration"), F, FloatLit(FMath::Max(1, EndTick - StartTick) / 60.0));
+		if (StartTick > 0)
+		{
+			SetStaticSwitch(Graph, TEXT("EmitterState"), TEXT("UseLoopDelay"), TEXT("true"));
+			OverrideLiteral(Graph, TEXT("EmitterState"), TEXT("Loop Delay"), F, FloatLit(StartTick / 60.0));
+		}
+	}
+
 	/** A light: one particle born when the light turns on, living until it turns off, drawn only by a Light renderer
 	 *  (colour x peak intensity, radius, brightness following the intensity track through Scale Alpha). */
 	void BuildLightEmitter(FNiagaraEmitterHandle& Handle, FVersionedNiagaraEmitterData* Data, const TSharedPtr<FJsonObject>& L)
@@ -564,7 +584,8 @@ namespace
 		UNiagaraScriptSource* Source = Data->SpawnScriptProps.Script ? Cast<UNiagaraScriptSource>(Data->SpawnScriptProps.Script->GetLatestSource()) : nullptr;
 		UNiagaraGraph* Graph = Source ? Source->NodeGraph : nullptr;
 		OverrideLiteral(Graph, TEXT("SpawnBurst_Instantaneous"), TEXT("Spawn Count"), FNiagaraTypeDefinition::GetIntDef(), TEXT("1"));
-		OverrideLiteral(Graph, TEXT("SpawnBurst_Instantaneous"), TEXT("Spawn Time"), F, FloatLit(On / 60.0));
+		OverrideLiteral(Graph, TEXT("SpawnBurst_Instantaneous"), TEXT("Spawn Time"), F, TEXT("0.0"));
+		SetEmitterWindow(Graph, On, Off + 1);
 		SetStaticSwitch(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Mode"), TEXT("NewEnumerator1")); // Random: reads Min/Max (SimpleSpriteBurst ships Direct Set)
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Min"), F, FloatLit(Life));
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Max"), F, FloatLit(Life));
@@ -611,7 +632,8 @@ namespace
 		UNiagaraGraph* Graph = Source ? Source->NodeGraph : nullptr;
 		const double Life = FMath::Max(1, S.Life) / 60.0;
 		OverrideLiteral(Graph, TEXT("SpawnBurst_Instantaneous"), TEXT("Spawn Count"), FNiagaraTypeDefinition::GetIntDef(), TEXT("1"));
-		OverrideLiteral(Graph, TEXT("SpawnBurst_Instantaneous"), TEXT("Spawn Time"), F, FloatLit(S.Start / 60.0));
+		OverrideLiteral(Graph, TEXT("SpawnBurst_Instantaneous"), TEXT("Spawn Time"), F, TEXT("0.0"));
+		SetEmitterWindow(Graph, S.Start, S.Start + FMath::Max(1, S.Life) + 1);
 		SetStaticSwitch(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Mode"), TEXT("NewEnumerator1")); // Random: reads Min/Max (SimpleSpriteBurst ships Direct Set)
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Min"), F, FloatLit(Life));
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Max"), F, FloatLit(Life));
@@ -679,6 +701,9 @@ namespace
 		return Fn;
 	}
 
+	/** Most extra Spawn Burst modules per emitter (many-burst emitters are exported as a rate instead, see fromPlan.ts). */
+	constexpr int32 MaxExtraBursts = 31;
+
 	/** Logs a module node's inputs, static-switch pins and their enum entries (to find what a stock module offers). */
 	void LogModule(UNiagaraNodeFunctionCall* Fn)
 	{
@@ -706,9 +731,30 @@ namespace
 		FString ProbePath;
 		if (FParse::Value(FCommandLine::Get(), TEXT("ProbeModule="), ProbePath))
 			if (UNiagaraNodeFunctionCall* Probe = AddForceModule(Data, *ProbePath)) LogModule(Probe);
+		// Bursts after the first: one more Spawn Burst Instantaneous each in the emitter update stack (capped).
+		const TArray<TSharedPtr<FJsonValue>>* Bursts = nullptr;
+		if (E->GetStringField(TEXT("suggestedTemplate")) == TEXT("SimpleSpriteBurst") && E->TryGetArrayField(TEXT("bursts"), Bursts) && Bursts->Num() > 1)
+		{
+			UNiagaraScript* EmUpdate = Data->EmitterUpdateScriptProps.Script;
+			UNiagaraScriptSource* Src = EmUpdate ? Cast<UNiagaraScriptSource>(EmUpdate->GetLatestSource()) : nullptr;
+			UNiagaraNodeOutput* Out = Src && Src->NodeGraph ? Src->NodeGraph->FindEquivalentOutputNode(ENiagaraScriptUsage::EmitterUpdateScript, EmUpdate->GetUsageId()) : nullptr;
+			UNiagaraScript* BurstModule = LoadObject<UNiagaraScript>(nullptr, TEXT("/Niagara/Modules/Emitter/SpawnBurst_Instantaneous.SpawnBurst_Instantaneous"));
+			const double First = (*Bursts)[0]->AsObject()->GetNumberField(TEXT("tick"));
+			const int32 N = FMath::Min(Bursts->Num(), MaxExtraBursts + 1);
+			for (int32 i = 1; Out && BurstModule && i < N; i++)
+			{
+				const auto Bo = (*Bursts)[i]->AsObject();
+				if (UNiagaraNodeFunctionCall* Fn = FNiagaraStackGraphUtilities::AddScriptModuleToStack(BurstModule, *Out))
+				{
+					OverrideOnNode(Fn, TEXT("Spawn Count"), FNiagaraTypeDefinition::GetIntDef(), FString::FromInt((int32)Bo->GetNumberField(TEXT("count"))));
+					OverrideOnNode(Fn, TEXT("Spawn Time"), FNiagaraTypeDefinition::GetFloatDef(), FloatLit((Bo->GetNumberField(TEXT("tick")) - First) / 60.0));
+				}
+			}
+			if (Bursts->Num() > N) UE_LOG(LogVfxImporter, Warning, TEXT("    %d burst(s) beyond %d not exported"), Bursts->Num() - N, N);
+		}
 		// Flipbook playback: SubUV Animation (V2) in Infinite Loop mode at the sheet's frames per second, wrapping
 		// (looping sheets) or holding the last frame; grid read from the sprite renderer's SubImage Size.
-		if (E->TryGetObjectField(TEXT("flipbook"), O))
+		if (E->TryGetObjectField(TEXT("flipbook"), O) && (*O)->GetNumberField(TEXT("fps")) > 0.0) // fps 0: hold the first cell
 			if (UNiagaraNodeFunctionCall* Fn = AddForceModule(Data, TEXT("/Niagara/Modules/Update/SubUV/V2/SubUVAnimation.SubUVAnimation")))
 			{
 				UNiagaraGraph* G = Cast<UNiagaraGraph>(Fn->GetGraph());
@@ -733,6 +779,9 @@ namespace
 			{
 				const double SMid = FMath::Max(0.001, (E->GetNumberField(TEXT("sizeCmMin")) + E->GetNumberField(TEXT("sizeCmMax"))) / 2.0);
 				const double Birth = FMath::Max(0.001, SampleKeys(SizeKeys, 0.0, TEXT("v"), SMid));
+				// The module scales "Initial Sprite Size" (a fixed 50 cm by default, not the particle's birth size).
+				const double Stretch = E->GetStringField(TEXT("alignment")) == TEXT("velocity") && E->HasField(TEXT("stretchRatio")) ? FMath::Max(1.0, E->GetNumberField(TEXT("stretchRatio"))) : 1.0;
+				OverrideOnNode(Fn, TEXT("Initial Sprite Size"), FNiagaraTypeDefinition::GetVec2Def(), Vec2Lit(Birth, Birth * Stretch));
 				const FNiagaraParameterHandle Handle = FNiagaraParameterHandle::CreateAliasedModuleParameterHandle(FNiagaraParameterHandle::CreateModuleParameterHandle(FName(TEXT("Uniform Curve Sprite Scale"))), Fn);
 				UEdGraphPin& Pin = FNiagaraStackGraphUtilities::GetOrCreateStackFunctionInputOverridePin(*Fn, Handle, FNiagaraTypeDefinition(UNiagaraDataInterfaceCurve::StaticClass()), FGuid(), FGuid());
 				if (Pin.LinkedTo.Num()) Pin.BreakAllPinLinks();
@@ -790,6 +839,42 @@ namespace
 			}
 	}
 
+	/** A float module input drawn per particle from [Min, Max]: the stock Random Range Float dynamic input (a literal
+	 *  when Min == Max). */
+	void SetRandomRange(UNiagaraGraph* Graph, const TCHAR* ModuleNameSubstring, const TCHAR* InputName, double Min, double Max)
+	{
+		if (FMath::IsNearlyEqual(Min, Max)) { OverrideLiteral(Graph, ModuleNameSubstring, InputName, FNiagaraTypeDefinition::GetFloatDef(), FloatLit(Min)); return; }
+		UNiagaraNodeFunctionCall* Fn = nullptr;
+		if (Graph) for (UEdGraphNode* Node : Graph->Nodes) if (auto* F = Cast<UNiagaraNodeFunctionCall>(Node)) if (F->GetFunctionName().Contains(ModuleNameSubstring)) { Fn = F; break; }
+		UNiagaraScript* Range = LoadObject<UNiagaraScript>(nullptr, TEXT("/Niagara/DynamicInputs/UniformRange/V2/RandomRangeFloat.RandomRangeFloat"));
+		if (!Fn || !Range) { OverrideLiteral(Graph, ModuleNameSubstring, InputName, FNiagaraTypeDefinition::GetFloatDef(), FloatLit((Min + Max) / 2.0)); return; }
+		const FNiagaraParameterHandle Handle = FNiagaraParameterHandle::CreateAliasedModuleParameterHandle(FNiagaraParameterHandle::CreateModuleParameterHandle(FName(InputName)), Fn);
+		UEdGraphPin& Pin = FNiagaraStackGraphUtilities::GetOrCreateStackFunctionInputOverridePin(*Fn, Handle, FNiagaraTypeDefinition::GetFloatDef(), FGuid(), FGuid());
+		if (Pin.LinkedTo.Num()) Pin.BreakAllPinLinks();
+		UNiagaraNodeFunctionCall* Dyn = nullptr;
+		FNiagaraStackGraphUtilities::SetDynamicInputForFunctionInput(Pin, Range, Dyn);
+		if (!Dyn) { Pin.DefaultValue = FloatLit((Min + Max) / 2.0); return; }
+		OverrideOnNode(Dyn, TEXT("Minimum"), FNiagaraTypeDefinition::GetFloatDef(), FloatLit(Min));
+		OverrideOnNode(Dyn, TEXT("Maximum"), FNiagaraTypeDefinition::GetFloatDef(), FloatLit(Max));
+	}
+
+	/** SimpleSpriteBurst has no position, launch or force modules (its sprites would sit in a ball at the origin): adds
+	 *  Shape Location and Add Velocity to the particle spawn stack and Gravity Force and Drag before the force solver. */
+	void AddMotionModules(FVersionedNiagaraEmitterData* Data)
+	{
+		UNiagaraScript* Spawn = Data->SpawnScriptProps.Script;
+		UNiagaraScriptSource* Src = Spawn ? Cast<UNiagaraScriptSource>(Spawn->GetLatestSource()) : nullptr;
+		UNiagaraNodeOutput* Out = Src && Src->NodeGraph ? Src->NodeGraph->FindEquivalentOutputNode(ENiagaraScriptUsage::ParticleSpawnScript, Spawn->GetUsageId()) : nullptr;
+		for (const TCHAR* Path : { TEXT("/Niagara/Modules/Spawn/Location/V2/ShapeLocation.ShapeLocation"), TEXT("/Niagara/Modules/Spawn/Velocity/AddVelocity.AddVelocity") })
+		{
+			UNiagaraScript* Module = LoadObject<UNiagaraScript>(nullptr, Path);
+			UNiagaraNodeFunctionCall* Fn = Out && Module ? FNiagaraStackGraphUtilities::AddScriptModuleToStack(Module, *Out) : nullptr;
+			UE_LOG(LogVfxImporter, Display, TEXT("    + spawn module %s"), Fn ? *Fn->GetFunctionName() : *(FString(TEXT("(failed) ")) + Path));
+		}
+		AddForceModule(Data, TEXT("/Niagara/Modules/Update/Forces/GravityForce.GravityForce"));
+		AddForceModule(Data, TEXT("/Niagara/Modules/Update/Forces/Drag.Drag"));
+	}
+
 	/** Applies the module-input overrides shared by every emitter, then the template-specific ones. Shape/AddVelocity
 	 *  are skipped (module not found, logged) rather than guessed when a template lacks them. */
 	void ApplyEmitterOverrides(UNiagaraGraph* Graph, const TSharedPtr<FJsonObject>& E, const FString& Template)
@@ -814,6 +899,15 @@ namespace
 		// The stock templates size sprites in "uniform" mode, which reads these instead of the Vector2 pair above.
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Uniform Sprite Size Min"), F, FloatLit(SMin * SizeScale));
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Uniform Sprite Size Max"), F, FloatLit(SMax * SizeScale));
+		// Velocity-stretched sprites (sparks, rain): a velocity-aligned sprite's Y runs along the motion, so a random
+		// non-uniform size (width, width x stretch) draws the streak.
+		const double Stretch = E->HasField(TEXT("stretchRatio")) ? E->GetNumberField(TEXT("stretchRatio")) : 1.0;
+		if (Stretch > 1.05 && E->GetStringField(TEXT("alignment")) == TEXT("velocity"))
+		{
+			SetStaticSwitch(Graph, TEXT("InitializeParticle"), TEXT("Sprite Size Mode"), TEXT("NewEnumerator2")); // Random Non-Uniform
+			OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Sprite Size Min"), V2, Vec2Lit(SMin * SizeScale, SMin * SizeScale * Stretch));
+			OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Sprite Size Max"), V2, Vec2Lit(SMax * SizeScale, SMax * SizeScale * Stretch));
+		}
 
 		// Colour over life: no stock colour-curve module, so use the colour averaged over the visible first 60 % of life
 		// (keeps the white-hot start and the orange body; a single mid-life sample multiplied into an already orange flame
@@ -850,7 +944,36 @@ namespace
 			const TArray<TSharedPtr<FJsonValue>>* Rate = nullptr;
 			if (E->TryGetArrayField(TEXT("rateOverTime"), Rate)) for (const auto& Entry : *Rate) { const auto& Pair = Entry->AsArray(); if (Pair.Num() == 2) PeakRate = FMath::Max(PeakRate, Pair[1]->AsNumber()); }
 			OverrideLiteral(Graph, TEXT("SpawnRate"), TEXT("SpawnRate"), F, FloatLit(PeakRate));
+			// Spawn only inside the rate window (first tick with a rate .. the tick it drops to 0 for good).
+			int32 WStart = -1, WEnd = GDocTicks;
+			if (Rate) for (const auto& Entry : *Rate)
+			{
+				const auto& Pair = Entry->AsArray();
+				if (Pair.Num() != 2) continue;
+				const int32 Tick = (int32)Pair[0]->AsNumber();
+				if (Pair[1]->AsNumber() > 0.0) { if (WStart < 0) WStart = Tick; WEnd = GDocTicks; }
+				else if (WStart >= 0) WEnd = Tick;
+			}
+			if (WStart >= 0) SetEmitterWindow(Graph, WStart, WEnd);
 
+		}
+		else if (Template == TEXT("SimpleSpriteBurst"))
+		{
+			const TArray<TSharedPtr<FJsonValue>>* Bursts = nullptr;
+			if (E->TryGetArrayField(TEXT("bursts"), Bursts) && Bursts->Num() > 0)
+			{
+				// The emitter plays once from its first burst to just after its last; each burst's time is relative to
+				// that start. The first burst uses the template's module, the others are added in ApplyForces.
+				const auto B0 = (*Bursts)[0]->AsObject();
+				const int32 First = (int32)B0->GetNumberField(TEXT("tick")), Last = (int32)(*Bursts)[Bursts->Num() - 1]->AsObject()->GetNumberField(TEXT("tick"));
+				OverrideLiteral(Graph, TEXT("SpawnBurst_Instantaneous"), TEXT("Spawn Count"), FNiagaraTypeDefinition::GetIntDef(), FString::FromInt((int32)B0->GetNumberField(TEXT("count"))));
+				OverrideLiteral(Graph, TEXT("SpawnBurst_Instantaneous"), TEXT("Spawn Time"), F, TEXT("0.0"));
+				SetEmitterWindow(Graph, First, Last + 2);
+			}
+		}
+		// Motion for both spawning templates (SimpleSpriteBurst gets these modules from AddMotionModules).
+		if (Template == TEXT("Fountain") || Template == TEXT("SimpleSpriteBurst"))
+		{
 			const TArray<TSharedPtr<FJsonValue>>* Accel = nullptr;
 			E->TryGetArrayField(TEXT("acceleration"), Accel);
 			OverrideLiteral(Graph, TEXT("GravityForce"), TEXT("Gravity"), V3, Vec3Lit(JsonVec3(Accel)));
@@ -869,35 +992,24 @@ namespace
 			{
 				const FString Kind = (*ShapeObj)->GetStringField(TEXT("kind"));
 				if (Kind == TEXT("sphere") || Kind == TEXT("disc")) OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Sphere Radius"), F, FloatLit((*ShapeObj)->GetNumberField(TEXT("radiusCm"))));
-				else if (Kind == TEXT("cone")) { OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Cone Angle"), F, FloatLit((*ShapeObj)->GetNumberField(TEXT("angleDeg")))); }
+				else if (Kind == TEXT("cone"))
+				{
+					// A cone spreads the launch DIRECTIONS (Add Velocity in cone mode) from a small sphere of positions.
+					OverrideLiteral(Graph, TEXT("AddVelocity"), TEXT("Cone Angle"), F, FloatLit((*ShapeObj)->GetNumberField(TEXT("angleDeg"))));
+					double R = 0.0; (*ShapeObj)->TryGetNumberField(TEXT("radiusCm"), R);
+					OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Sphere Radius"), F, FloatLit(R));
+				}
 				else if (Kind == TEXT("box")) { const auto* Ext = &(*ShapeObj)->GetArrayField(TEXT("extentsCm")); OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Box Size"), V3, Vec3Lit(JsonVec3(Ext))); }
 				// 'point': ShapeLocation left at its template default (effectively a point for our purposes at radius 0 is not set -- logged via the module-not-targeted path is unnecessary here, template default is close enough).
 			}
 			const double SpeedAvg = (E->GetNumberField(TEXT("speedCmSMin")) + E->GetNumberField(TEXT("speedCmSMax"))) / 2.0;
-			OverrideLiteral(Graph, TEXT("AddVelocity"), TEXT("Velocity Speed"), F, FloatLit(SpeedAvg));
+			SetRandomRange(Graph, TEXT("AddVelocity"), TEXT("Velocity Speed"), E->GetNumberField(TEXT("speedCmSMin")), E->GetNumberField(TEXT("speedCmSMax")));
 			const TArray<TSharedPtr<FJsonValue>>* Dir = nullptr;
 			if (E->TryGetArrayField(TEXT("direction"), Dir)) OverrideLiteral(Graph, TEXT("AddVelocity"), TEXT("Cone Axis"), V3, Vec3Lit(JsonVec3(Dir)));
-			// Fountain's Add Velocity runs in linear mode: it reads the "Velocity" vector (a fixed upward fountain by
-			// default) and ignores Velocity Speed / Cone Axis. Without this the jet arcs up and falls onto the floor.
+			// Add Velocity in its cone mode reads Velocity Speed / Cone Axis / Cone Angle; the Velocity vector is set too in
+			// case a template runs it in linear mode.
+			SetStaticSwitch(Graph, TEXT("AddVelocity"), TEXT("Velocity Mode"), TEXT("NewEnumerator2")); // In Cone
 			if (Dir) OverrideLiteral(Graph, TEXT("AddVelocity"), TEXT("Velocity"), V3, Vec3Lit(JsonVec3(Dir) * SpeedAvg));
-		}
-		else if (Template == TEXT("SimpleSpriteBurst"))
-		{
-			const TArray<TSharedPtr<FJsonValue>>* Pos = nullptr;
-			// No Shape Location on this template: Initialize Particle's Position Offset (behind a switch shipped off).
-			if (E->TryGetArrayField(TEXT("position"), Pos) && !JsonVec3(Pos).IsNearlyZero())
-			{
-				SetStaticSwitch(Graph, TEXT("InitializeParticle"), TEXT("UsePositionOffset"), TEXT("true"));
-				OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Position Offset"), FNiagaraTypeDefinition::GetVec3Def(), Vec3Lit(JsonVec3(Pos)));
-			}
-			const TArray<TSharedPtr<FJsonValue>>* Bursts = nullptr;
-			if (E->TryGetArrayField(TEXT("bursts"), Bursts) && Bursts->Num() > 0)
-			{
-				const auto B0 = (*Bursts)[0]->AsObject();
-				OverrideLiteral(Graph, TEXT("SpawnBurst_Instantaneous"), TEXT("Spawn Count"), FNiagaraTypeDefinition::GetIntDef(), FString::FromInt((int32)B0->GetNumberField(TEXT("count"))));
-				OverrideLiteral(Graph, TEXT("SpawnBurst_Instantaneous"), TEXT("Spawn Time"), F, FloatLit(B0->GetNumberField(TEXT("tick")) / 60.0));
-				if (Bursts->Num() > 1) UE_LOG(LogVfxImporter, Warning, TEXT("    %d extra burst(s) beyond the first are not exported to SpawnBurst_Instantaneous (one burst per module this pass)."), Bursts->Num() - 1);
-			}
 		}
 		// 'Minimal': no spawn module exists on this template; see fromPlan.ts's report item for this case.
 	}
@@ -922,6 +1034,7 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 		return false;
 	}
 	const FString Name = Root->GetStringField(TEXT("name"));
+	GDocTicks = (int32)Root->GetNumberField(TEXT("durationTicks"));
 	UE_LOG(LogVfxImporter, Warning, TEXT("Effect: %s"), *Name);
 
 	// --- Textures ---
@@ -1046,6 +1159,7 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 
 		UNiagaraScript* SpawnScript = Data->SpawnScriptProps.Script;
 		UNiagaraScriptSource* Source = SpawnScript ? Cast<UNiagaraScriptSource>(SpawnScript->GetLatestSource()) : nullptr;
+		if (Template == TEXT("SimpleSpriteBurst")) AddMotionModules(Data);
 		if (Source && Source->NodeGraph) ApplyEmitterOverrides(Source->NodeGraph, E, Template);
 		else UE_LOG(LogVfxImporter, Error, TEXT("   no spawn-script graph for %s; module overrides skipped"), *EName);
 		ApplyForces(Data, E);

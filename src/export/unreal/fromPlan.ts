@@ -143,10 +143,11 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
   // SpawnRate; Minimal has NEITHER (InitializeParticle/ParticleState only) -- it cannot spawn anything on its own, so
   // it is only picked for an emitter with no rate and no bursts (should not occur for a real component; the plugin
   // reports it so it's never a silent empty system).
-  // Many bursts (smoke/embers born where flames die: dozens of small events) become a steady stream on the Fountain
-  // template (SimpleSpriteBurst holds exactly one burst): same total count spread over the bursts' time span.
+  // Bursts at the emitter's own position stay bursts (the importer adds one Spawn Burst module per burst, up to
+  // MAX_UE_BURSTS); many bursts, or bursts at their own positions (smoke/embers born where flames die), become a
+  // steady stream on the Fountain template: same total count spread over the bursts' time span.
   const liveBursts = d.bursts.filter(b => b.count > 0);
-  const manyBursts = !d.rate && liveBursts.length > 1;
+  const manyBursts = !d.rate && liveBursts.length > 1 && (liveBursts.length > MAX_UE_BURSTS || liveBursts.some(b => b.position));
   const template: UeEmitter['suggestedTemplate'] = manyBursts ? 'Fountain' : !d.rate && liveBursts.length ? 'SimpleSpriteBurst' : (d.rate ? 'Fountain' : 'Minimal');
   let rateOverTime = rateTrack(d, duration);
   if (manyBursts) {
@@ -174,7 +175,8 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     alignment: velocityAligned ? 'velocity' : layer.alignment === 'worldAxis' ? 'worldUpCameraFacing' : 'camera',
     stretchRatio: r3(stretchRatio),
     blend: layer.blend === 'additive' ? 'additive' : 'translucent',
-    ...flipbookOf(layer, (life[0] + life[1]) / 2, report),
+    // Procedural sprites (no texture: the editor draws a soft round glow) ship the built-in soft-glow sheet.
+    ...(layer.sprite ? flipbookOf(layer, (life[0] + life[1]) / 2, report) : { textureFile: 'soft-glow.png', flipbook: { columns: 2, rows: 2, fps: 0, loop: false, randomStartFrame: false } }), // its first cell: the tight glow
     loop: false,
     ...(sourceTrack ? { sourceTrack } : {}),
     attachToSource: d.attachToSource === true,
@@ -245,6 +247,9 @@ function ribbonLayer(l: PathPreviewLayer, report: UeReportItem[]): UeRibbon & { 
 }
 
 /** Converts a validated document into the Unreal IR. Fails only when the effect itself does not compile. */
+/** Most bursts one exported emitter keeps as separate Niagara Spawn Burst modules (the importer's limit). */
+export const MAX_UE_BURSTS = 32;
+
 export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: UnrealEffect } | { ok: false; message: string } {
   const plan = compileParticlePreview(doc, { ribbonsHandled: true, audioHandled: true });
   if (!plan.ok) return { ok: false, message: plan.errors.map(e => e.message).join(' ') };
