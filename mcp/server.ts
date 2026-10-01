@@ -7,7 +7,7 @@ import { canKeyframe, controlValueAt } from '../src/graph/keyframes.ts';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { chromeEval } from './chromeEval.ts';
 import { MEDIA_FORMATS, mediaExtension, resolveMediaOptions, type MediaFormat } from '../src/export/media/layout.ts';
 import { compositeChecker } from '../src/export/media/matte.ts';
@@ -54,6 +54,30 @@ import { createMeshAsset } from '../src/assets/importMesh.ts';
 import { buildPack, readPack, type PackAsset } from '../src/model/vfxpack.ts';
 
 export type VfxServerOptions = { root?: string; editorUrl?: string; chromePath?: string };
+
+/** One headless screenshot may take this long before Chrome (and its whole process tree) is killed. */
+const RENDER_TIMEOUT_MS = 60_000;
+
+/**
+ * Runs Chrome without blocking the MCP server (spawnSync froze every tool while a render hung) and kills the whole
+ * process tree at the deadline: on Windows a plain kill leaves Chrome's GPU/renderer children alive.
+ */
+function runChrome(chrome: string, args: string[], timeoutMs: number): Promise<'ok' | 'timeout' | 'error'> {
+  return new Promise(resolve => {
+    let done = false;
+    const finish = (r: 'ok' | 'timeout' | 'error') => { if (!done) { done = true; clearTimeout(timer); resolve(r); } };
+    const proc = spawn(chrome, args, { stdio: 'ignore', windowsHide: true });
+    const timer = setTimeout(() => {
+      if (proc.pid !== undefined) {
+        if (process.platform === 'win32') spawn('taskkill', ['/pid', String(proc.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
+        else try { process.kill(-proc.pid, 'SIGKILL'); } catch { proc.kill('SIGKILL'); }
+      }
+      finish('timeout');
+    }, timeoutMs);
+    proc.on('error', () => finish('error'));
+    proc.on('exit', () => finish('ok'));
+  });
+}
 
 const CHROME_CANDIDATES = [
   process.env.VFX_CHROME, 'C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
@@ -623,7 +647,7 @@ ${md}`);
     return ok(`${editorUrl}?workspace=v2&doc=/work/mcp/${encodeURIComponent(docId)}.json`);
   });
   type RenderArgs = { docId: string; ticks: number[]; width?: number; height?: number; glow?: boolean; background?: 'dark' | 'light'; solo?: string[]; orbit?: { yaw: number; pitch: number; distance?: number }; camera?: { position: [number, number, number]; target: [number, number, number]; fov?: number } };
-  const renderFrames = ({ docId, ticks, width, height, glow, background, camera, solo, orbit }: RenderArgs): Result => {
+  const renderFrames = async ({ docId, ticks, width, height, glow, background, camera, solo, orbit }: RenderArgs): Promise<Result> => {
     const d = getDoc(docId); persist(d);
     const chrome = options.chromePath ?? CHROME_CANDIDATES.find(p => p && existsSync(p));
     if (!chrome) return bad('No Chrome/Edge found; set VFX_CHROME to its executable path.');
@@ -633,9 +657,10 @@ ${md}`);
       const out = join(dir, `${docId}-t${tick}${background === 'light' ? '-light' : ''}.png`), profile = mkdtempSync(join(tmpdir(), 'vfx-chrome-'));
       rmSync(out, { force: true });
       const url = new URL(`capture.html?doc=/work/mcp/${encodeURIComponent(docId)}.json&tick=${tick}&label=1${glow === false ? '&glow=0' : ''}${background === 'light' ? '&bg=light' : ''}${solo?.length ? `&solo=${solo.map(encodeURIComponent).join(',')}` : ''}${orbit && !camera ? `&orbit=${orbit.yaw},${orbit.pitch},${orbit.distance ?? 1}` : ''}${camera ? `&cam=${camera.position.join(',')}&look=${camera.target.join(',')}${camera.fov ? `&fov=${camera.fov}` : ''}` : ''}`, editorUrl).href;
-      spawnSync(chrome, ['--headless=new', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--hide-scrollbars', '--no-first-run', '--no-default-browser-check',
-        `--user-data-dir=${profile}`, `--window-size=${width ?? 960},${height ?? 540}`, '--virtual-time-budget=6000', `--screenshot=${out}`, url], { timeout: 90_000, stdio: 'ignore' });
-      rmSync(profile, { recursive: true, force: true });
+      const run = await runChrome(chrome, ['--headless=new', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--hide-scrollbars', '--no-first-run', '--no-default-browser-check',
+        `--user-data-dir=${profile}`, `--window-size=${width ?? 960},${height ?? 540}`, '--virtual-time-budget=6000', `--screenshot=${out}`, url], RENDER_TIMEOUT_MS);
+      try { rmSync(profile, { recursive: true, force: true }); } catch { /* Chrome may still hold files briefly */ }
+      if (run === 'timeout' && !existsSync(out)) return bad(`Rendering tick ${tick} took longer than ${RENDER_TIMEOUT_MS / 1000} s, so Chrome was stopped. Nothing is wrong with the document necessarily: retry once; if it repeats, check the dev server at ${editorUrl}.`);
       if (!existsSync(out)) return bad(`Chrome produced no image for tick ${tick}. Is the dev server running at ${editorUrl}?`);
       const bytes = readFileSync(out);
       content.push({ type: 'image', data: bytes.toString('base64'), mimeType: 'image/png' }); paths.push(out);
@@ -649,7 +674,7 @@ ${md}`);
     camera: z.object({ position: z.tuple([z.number(), z.number(), z.number()]), target: z.tuple([z.number(), z.number(), z.number()]), fov: z.number().min(5).max(120).optional() }).optional(),
     solo: z.array(z.string()).optional().describe('Show only these nodes (renderers, lights or whole components/Group nodes), like the editor Outline Solo. The effect is unchanged.'),
     orbit: z.object({ yaw: z.number(), pitch: z.number(), distance: z.number().min(0.2).max(5).optional() }).optional().describe('Keep the automatic framing but orbit it (yaw/pitch degrees, distance multiplier); ignored with camera.'),
-  }, args => renderFrames(args));
+  }, async args => renderFrames(args));
 
   // ---------- media export (sprite sheet / PNG sequence / GIF / video) ----------
   type MediaPayload = { container: string; frameCount: number; width: number; height: number; fps: number; ticks: number[]; notes: string[]; timing: { renderMs: number; encodeMs: number }; sidecar: Record<string, unknown> | null; files: { name: string; mime: string; bytes: number; base64: string }[]; preview: { width: number; height: number; base64: string } };

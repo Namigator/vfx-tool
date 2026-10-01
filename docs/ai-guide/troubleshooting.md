@@ -67,9 +67,9 @@ the node when you click an error.
 - `vfx_render_frames` needs the dev server (http://127.0.0.1:5174). If rendering fails, check it's running.
 - The MCP server mirrors documents to `work/mcp/<id>.json`; the editor opens them with `?doc=/work/mcp/<id>.json`.
 - If a tool reports an unexpected error, `vfx_get_document` shows the current JSON; `vfx_undo` steps back.
-- A render can occasionally hang or time out with nothing wrong in the document; retry the same call once before
-  changing anything.
+- A render that takes longer than 60 s is stopped (Chrome and its helper processes are killed) and the tool says so;
+  retry the same call once before changing anything. If it repeats, check the dev server.
 - After a large batch of parallel edits, check with `vfx_get_document` (or `vfx_compile`, which reports unknown node
   ids) that every call landed: a call lost to a transport timeout leaves no error in the document.
-- Clipped content at late ticks: the automatic camera fits once; see [workflow.md](workflow.md) "Cameras and
-  backgrounds".
+- Content looks small in early frames: the automatic camera fits the whole effect, including its largest moment.
+  Pass `camera` or `orbit` with `distance` < 1 to get closer.

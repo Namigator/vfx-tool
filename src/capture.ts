@@ -8,6 +8,7 @@ import { compileParticlePreview } from './graph/toParticles.ts';
 import { compilePathPreview } from './graph/toPaths.ts';
 import { choosePreviewMode, hasRootAudio } from './render/previewMode.ts';
 import { PreviewViewport } from './render/PreviewViewport.ts';
+import type { FramePointSet } from './render/RibbonGeometry.ts';
 import { registerAssetUrl } from './assets/assetUrls.ts';
 import { glowSettings } from './graph/glow.ts';
 
@@ -56,6 +57,15 @@ async function main(): Promise<void> {
   const vec = (s: string | null) => { const v = (s ?? '').split(',').map(Number); return v.length === 3 && v.every(Number.isFinite) ? v as [number, number, number] : undefined; };
   const cam = vec(q.get('cam')), look = vec(q.get('look'));
   if (cam && look) vp.setCameraPose(cam, look, q.get('fov') ? Number(q.get('fov')) : undefined);
+  // Auto framing covers the WHOLE effect (every tick, sampled), not just its first moments: growing content (crystals
+  // shooting up, expanding rings) is not cut off at late ticks, and every tick of one document renders with the same
+  // camera, so frames compare. ?fit=early keeps the preview's own early-sample framing.
+  if (!(cam && look) && q.get('fit') !== 'early' && !(Number(q.get('bench')) > 0)) {
+    const sets: FramePointSet[] = [], step = Math.max(1, Math.ceil(d.durationTicks / 48));
+    for (let t = 0; t < d.durationTicks; t += step) if (vp.exportSeek(t)) vp.exportBounds(sets);
+    if (vp.exportSeek(d.durationTicks - 1)) vp.exportBounds(sets);
+    vp.exportFit(sets, 0.85);
+  }
   // Oblique evidence angles on top of the auto framing: orbit=yawDeg,pitchDeg[,distanceScale] (after the framing settles).
   const orbit = (q.get('orbit') ?? '').split(',').map(Number);
   if (!cam && orbit.length >= 2 && orbit.every(Number.isFinite)) { await new Promise(r => setTimeout(r, 150)); vp.orbitCamera(orbit[0], orbit[1], orbit[2] ?? 1); }
