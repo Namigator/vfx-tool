@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "ai:server": "node --experimental-strip-types tools/ai-server.ts",
+    "ai:server": "node --use-system-ca --experimental-strip-types tools/ai-server.ts",
     "dev": "vite --host 127.0.0.1 --port 5174 --strictPort",
     "build": "tsc --noEmit && vite build",
     "guide": "node --experimental-strip-types tools/build-ai-guide.mjs",
