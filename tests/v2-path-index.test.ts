@@ -193,3 +193,16 @@ test('Orbit after arrival: riders circle their path start at the arrival radius 
   // Arrival timing is unchanged by orbiting.
   assert.deepEqual(arrivalTicks(p), arrivalTicks(plan(raysDoc({}))));
 });
+
+test('Roblox: gathering motes (Attract toward the emitter centre) export as Inward emission, not dropped', async () => {
+  const { robloxEffectFrom } = await import('../src/export/roblox/fromPlan.ts');
+  const { insertComponent } = await import('../src/graph/components.ts');
+  const { createBlankDocument } = await import('../src/graph/fixtures.ts');
+  const r = robloxEffectFrom(insertComponent(createBlankDocument(), 'charge-up').doc);
+  assert.ok(r.ok);
+  if (!r.ok) return;
+  const motes = r.value.emitters.find(e => /motebb/.test(e.name))!;
+  assert.equal(motes.shapeInOut, 'Inward');
+  assert.ok(motes.speed[0] > 0);
+  assert.ok(!r.value.report.some(x => x.item === 'charge-up-motebb' && /Attraction toward a point has no/.test(x.message)));
+});

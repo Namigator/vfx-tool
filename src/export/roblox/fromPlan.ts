@@ -119,17 +119,31 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     if (n > 1e-9) direction = [v[0] / n, v[1] / n, v[2] / n];
     speed = [r3(n * S), r3(n * S)];
   } else speed = [r3(d.initialVelocity.speed * S), r3(d.initialVelocity.speed * S)];
-  let acceleration: Vec3 = [0, 0, 0], drag = 0;
+  let acceleration: Vec3 = [0, 0, 0], drag = 0, inward = false;
+  const from = d.sourceTrack ? d.sourceTrack.positions[0] : d.sourcePosition;
   for (const op of d.operators) {
     if (op.kind === 'gravity') acceleration = [acceleration[0] + op.acceleration[0] * S, acceleration[1] + op.acceleration[1] * S, acceleration[2] + op.acceleration[2] * S];
     else if (op.kind === 'drag') drag += op.coefficient / Math.LN2;
     else if (op.kind === 'noise') report.push({ level: 'dropped', item: layer.nodeId, message: `Turbulence (noise ${op.amplitude} m/s²) has no Roblox equivalent; particles fly straighter.` });
-    else if (op.kind === 'attract') report.push({ level: 'dropped', item: layer.nodeId, message: 'Attraction toward a point has no Roblox equivalent.' });
+    else if (op.kind === 'attract') {
+      // Gathering motes (pull toward the emitter's own centre): Roblox Inward emission flies them straight in.
+      const off = Math.hypot(op.center[0] - from[0], op.center[1] - from[1], op.center[2] - from[2]);
+      if (em && (em.shape === 'sphere' || em.shape === 'disc') && em.radius > 0 && off <= Math.max(0.2, em.radius * 0.3) && !d.attachToSource) {
+        inward = true;
+        report.push({ level: 'approximated', item: layer.nodeId, message: 'Attraction toward the emitter centre becomes Roblox Inward emission: motes fly straight in at a steady speed instead of accelerating and curving.' });
+      } else report.push({ level: 'dropped', item: layer.nodeId, message: 'Attraction toward a point has no Roblox equivalent.' });
+    }
     else if (op.kind === 'vortex') report.push({ level: 'dropped', item: layer.nodeId, message: 'Vortex swirl has no Roblox equivalent.' });
     else if (op.kind === 'ground') report.push({ level: 'dropped', item: layer.nodeId, message: `Ground ${op.mode} is dropped: Roblox particles pass through the floor.` });
     if ('gain' in op && op.gain?.some(g => g !== 1)) report.push({ level: 'approximated', item: layer.nodeId, message: `A force strength that changes over time (${op.kind}) is exported at full strength.` });
   }
   const life: [number, number] = [r3(d.lifetimeTicks.min / TICKS_PER_SECOND), r3(d.lifetimeTicks.max / TICKS_PER_SECOND)];
+  if (inward && em) {
+    // Reach the centre at about the end of the life (Roblox cannot kill on arrival); drag would stall them short.
+    const v = (em.radius * S) / Math.max(0.1, (life[0] + life[1]) / 2);
+    speed = [r3(v * 0.85), r3(v * 1.1)];
+    drag = 0;
+  }
   const sizeCurve = compileLifeCurve(layer.sizeOverLife);
   const ts = lifeTimes(layer.sizeOverLife.keys.map(k => k.x), layer.opacityOverLife.keys.map(k => k.x), layer.colorOverLife.stops.map(s => s.position));
   const mid = ((d.size.min + d.size.max) / 2) * S, env = ((d.size.max - d.size.min) / 2) * S;
@@ -168,6 +182,7 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     direction: direction.map(r3) as Vec3,
     partSize: partSize.map(r3) as Vec3,
     ...shapeOf(em?.shape ?? 'point'),
+    ...(inward ? { shapeInOut: 'Inward' as const } : {}),
     spreadAngle: [r3(spread), r3(spread)],
     speed, lifetime: life,
     acceleration: acceleration.map(r3) as Vec3,
