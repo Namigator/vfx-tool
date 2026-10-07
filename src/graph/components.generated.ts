@@ -33403,10 +33403,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "radius": 2,
      "samples": 96,
      "orientation": [
-      0.7071067811865476,
       0,
       0,
-      0.7071067811865476
+      0,
+      1
      ]
     }
    },
@@ -34268,10 +34268,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "radius": 2,
      "samples": 96,
      "orientation": [
-      0.7071067811865476,
       0,
       0,
-      0.7071067811865476
+      0,
+      1
      ]
     }
    },
@@ -35133,10 +35133,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "radius": 2,
      "samples": 96,
      "orientation": [
-      0.7071067811865476,
       0,
       0,
-      0.7071067811865476
+      0,
+      1
      ]
     }
    },
