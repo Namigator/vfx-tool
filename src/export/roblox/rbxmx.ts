@@ -27,6 +27,12 @@ export type WriteOptions = {
    * `import('./EffectPlayer.luau?raw')`; Node code passes effectPlayerSource() from ./playerSource.node.ts.
    */
   playerSource: string;
+  /**
+   * The model's recolour settings (Studio Properties, no code): VfxColor (Color3Value, white = authored colours) and
+   * VfxHueShift (NumberValue, degrees). Colourway exports set them; default white / 0.
+   */
+  color?: [number, number, number];
+  hueShift?: number;
 };
 
 // ---------- numbers / escaping ----------
@@ -481,6 +487,8 @@ export function writeRbxmx(input: RobloxEffect, options: WriteOptions): string {
     item('ModuleScript', refs.next(), [P.str('Name', 'EffectData'), P.source('Source', effectDataSource(effect, names))]),
     item('ModuleScript', refs.next(), [P.str('Name', 'EffectPlayer'), P.source('Source', opts.playerSource)]),
     item('Script', refs.next(), [P.str('Name', 'Demo'), P.bool('Disabled', true), P.source('Source', DEMO_SOURCE)]),
+    item('Color3Value', refs.next(), [P.str('Name', 'VfxColor'), `<Color3 name="Value"><R>${num(opts.color?.[0] ?? 1)}</R><G>${num(opts.color?.[1] ?? 1)}</G><B>${num(opts.color?.[2] ?? 1)}</B></Color3>`]),
+    item('NumberValue', refs.next(), [P.str('Name', 'VfxHueShift'), `<double name="Value">${num(opts.hueShift ?? 0)}</double>`]),
   ];
   const model = item('Model', refs.next(), [P.str('Name', effect.name || 'Effect'), P.ref('PrimaryPart', originRef)], children);
   return `<?xml version="1.0" encoding="utf-8"?>\n<roblox version="4">${model}</roblox>\n`;

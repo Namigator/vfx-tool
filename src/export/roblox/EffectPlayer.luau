@@ -20,6 +20,8 @@
 -- Recolouring: options.color (Color3) turns every coloured part of the effect to that hue, keeping each part's own
 -- saturation and brightness (white-hot cores stay white); options.hueShift (degrees) instead turns every hue by the
 -- same amount, so multicoloured effects keep their variety. Both work on any clone and can change between plays.
+-- Without them the model's own settings apply (Studio Properties, no code): the VfxColor Color3Value (white = the
+-- authored colours) and the VfxHueShift NumberValue (degrees).
 --
 -- EffectPlayer.create(...) returns the same object plus update(dt) / isDone() so a host can drive time itself
 -- (used by tools/roblox-check.mjs); options.onEmit(emitter, count) is called for every :Emit.
@@ -156,7 +158,21 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 	local originCF = origin or pivot
 	local duration = data.durationTicks
 	local onEmit = opts.onEmit
-	local recolor = makeRecolor(opts)
+	local tint = { color = opts.color, hueShift = opts.hueShift }
+	if tint.color == nil and tint.hueShift == nil then
+		local cv = model:FindFirstChild("VfxColor")
+		if cv and cv:IsA("Color3Value") then
+			local _, s = cv.Value:ToHSV()
+			if s >= 0.08 then
+				tint.color = cv.Value
+			end
+		end
+		local hv = model:FindFirstChild("VfxHueShift")
+		if hv and hv:IsA("ValueBase") and type((hv :: any).Value) == "number" and (hv :: any).Value ~= 0 then
+			tint.hueShift = (hv :: any).Value
+		end
+	end
+	local recolor = makeRecolor(tint)
 
 	-- Space: authored origin-relative studs -> world. Default = the origin CFrame; with a target, the Source->Target
 	-- line is stretched onto the runtime source->target and the effect is rotated to face it.
