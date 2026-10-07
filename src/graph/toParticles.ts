@@ -533,6 +533,9 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
     const slowest = Math.max(...Array.from({ length: Math.max(travels.length, delays.length) }, (_, i) => delayOf(i) + travelOf(i)));
     const all: Vec3[][] = [];
     const last: (Vec3 | undefined)[] = [];
+    // Orbit after arrival: each rider circles its path's start point (vertical axis) once it has arrived.
+    const orbit = num(f, 'orbitSpeed');
+    const pivot: ({ c: Vec3; e: Vec3 } | undefined)[] = [];
     for (let tk = start; tk < end; tk++) {
       if (tk - start <= slowest || !last.length) {
         const r = compilePathPreview(input, tk, { audioHandled: true, probe: { nodeId: src.nodeId, port: src.port } });
@@ -544,9 +547,17 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
           const path = probe[i];
           const u = (tk - start - delayOf(i)) / travelOf(i);
           if (path && path.points.length && (u <= 1 || !last[i])) last[i] = pointAtArcFraction(path.points, ease(easing, Math.max(0, Math.min(1, u))));
+          if (orbit !== 0 && path && path.points.length && u >= 1 && !pivot[i]) pivot[i] = { c: [...path.points[0]] as Vec3, e: [...path.points[path.points.length - 1]] as Vec3 };
         }
       }
-      last.forEach((l, i) => { if (l) all[i].push([l[0], l[1], l[2]]); });
+      last.forEach((l, i) => {
+        if (!l) return;
+        const pv = pivot[i], since = tk - start - delayOf(i) - travelOf(i);
+        if (pv && since > 0) {
+          const a = (orbit * since) / TICKS_PER_SECOND, dx = pv.e[0] - pv.c[0], dz = pv.e[2] - pv.c[2], c = Math.cos(a), s = Math.sin(a);
+          all[i].push([pv.c[0] + dx * c - dz * s, pv.e[1], pv.c[2] + dx * s + dz * c]);
+        } else all[i].push([l[0], l[1], l[2]]);
+      });
     }
     if (!all.length || !all[0].length) return [];
     let lengths: number[] = [];

@@ -180,3 +180,16 @@ test('Tidy up: columns follow the data flow, nothing overlaps, unconnected nodes
     assert.ok(Math.abs(A.x - B.x) >= TIDY_DEFAULT_SIZE.width || Math.abs(A.y - B.y) >= TIDY_DEFAULT_SIZE.height, 'no overlap');
   }
 });
+
+test('Orbit after arrival: riders circle their path start at the arrival radius and height', () => {
+  const p = plan(raysDoc({ orbitSpeed: 2 }));
+  const t = tracks(p);
+  const c = t[0].positions[0];
+  const atArrive = t[0].positions[20], later = t[0].positions[50];
+  const r = (q: readonly number[]) => Math.hypot(q[0] - c[0], q[2] - c[2]);
+  assert.ok(Math.abs(r(later) - r(atArrive)) < 1e-6, 'same radius');
+  assert.ok(Math.abs(later[1] - atArrive[1]) < 1e-9, 'same height');
+  assert.ok(!near(later, atArrive), 'it moved round');
+  // Arrival timing is unchanged by orbiting.
+  assert.deepEqual(arrivalTicks(p), arrivalTicks(plan(raysDoc({}))));
+});
