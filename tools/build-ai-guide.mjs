@@ -357,7 +357,7 @@ const CURATED = {
   MAX_MESH_INSTANCES: 'Most mesh instances drawn per frame in the preview (hard limit).',
   MAX_MESH_TRIANGLES: 'Most mesh triangles drawn per frame in the preview (hard limit).',
   MAX_TRAIL_SAMPLES: 'Most trail vertices drawn per frame in the preview.',
-  MAX_ACTIVE_LIGHTS: 'Most PointLights active at once in the preview; extra lights are ignored (a compile warning says so).',
+  MAX_ACTIVE_LIGHTS: 'Most PointLights active at once in the preview (a light on a PathFollower counts once per path); more is a compile error, never silently dropped.',
   MAX_PREVIEW_PATHS: 'Most individual paths evaluated per tick (hard limit).',
   MAX_PREVIEW_POINTS: 'Most path vertices per preview frame.',
   MAX_PATH_SAMPLES: 'Most vertices per path (path resolution cap).',

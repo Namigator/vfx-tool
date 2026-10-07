@@ -732,7 +732,7 @@ Curves in space (beams, bolts, rings, projectile routes): generators, modifiers 
 
 ### PathFollower
 
-Moves along every path of its set at once: the `anchor` output follows each path (carry a glowing core, emitters, lights, trails on it) and everything attached is repeated per path (5 paths = 5 projectiles, each emitting the full rate). The `arrival` event fires once per path when it gets there (trigger impact bursts so each impact lands exactly on time; a Schedule started by the arrival starts at the first one). Give Travel ticks or a Speed (speed mode: each path takes its own length / speed). Use PathSplitter in front of it to choose which paths.
+Moves along every path of its set at once: the `anchor` output follows each path (carry a glowing core, emitters, lights, trails on it) and everything attached is repeated per path (5 paths = 5 projectiles, each emitting the full rate). The `arrival` event fires once per path when it gets there (trigger impact bursts so each impact lands exactly on time; a Schedule started by the arrival starts at the first one). Give Travel ticks or a Speed (speed mode: each path takes its own length / speed). Paths are numbered 0, 1, 2... (shown in the viewport while it is selected): Stagger sends them off one after another, Colour by path gives each path its own colour (riders fade from their own colour to it over Colour change time). Use PathSplitter in front of it to choose which paths.
 
 - Category: Paths; portability: core; disabled = produces nothing; definition version 1.
 
@@ -757,6 +757,11 @@ Moves along every path of its set at once: the `anchor` output follows each path
 | `durationTicks` | Travel ticks | integer | tick | `30` | 1..600 step 1 | — | resample | constant | scalarSignal | Ticks every path of the set takes from start to end; arrival fires then. Holds at the end until the window closes. |
 | `easing` | Easing | enum | — | `linear` | — | linear, easeIn, easeOut, easeInOut | resample | constant | — | Speed profile of the travel: linear, easeIn (slow start), easeOut (slow end), easeInOut. |
 | `speed` | Speed | number | metersPerSecond | `0` | 0..200 | — | resample | constant | scalarSignal | 0 = travel for Travel ticks. Above 0: travel ticks = path length ÷ speed (rounded to ticks, per path), so a farther Target, or a longer path, takes longer at the same speed. |
+| `stagger` | Stagger | integer | tick | `0` | 0..120 step 1 | — | resample | constant | scalarSignal | Ticks between one path's departure and the next (path 0 leaves first, then path 1...). Waiting ones hold at their path start. 0 = all leave together. |
+| `staggerOrder` | Stagger order | enum | — | `forward` | — | forward, reverse | resample | constant | — | forward: path 0 leaves first. reverse: the last path leaves first. |
+| `pathColor` | Colour by path | enum | — | `off` | — | off, rainbow, gradient | live | constant | — | Gives every path its own colour: everything riding on it (sprites, trails, emitted particles, lights) takes that colour. rainbow: hues spread evenly over the paths. gradient: Path colours sampled from the first path (0) to the last (1). Path numbers are shown in the viewport while this node is selected. |
+| `pathGradient` | Path colours | gradient | — | `gradient: 0:#30E0FF 0.5:#FFD040 1:#9060FF` | — | — | live | constant | gradientValue | Colour by path = gradient: the colour of the first path (0) to the last (1). |
+| `pathColorTicks` | Colour change time | integer | tick | `0` | 0..600 step 1 | — | live | constant | scalarSignal | Ticks over which the riders fade from their own colour to their path colour, counted from that path's departure. 0 = path colour from the start. |
 
 ### LinePath
 
@@ -897,7 +902,7 @@ Decides which paths of a set go on and which are left behind. `paths` = the chos
 
 ### MergePaths
 
-Combines several path sets into one.
+Combines several path sets into one. append: every path kept, numbered in connection order (Reverse order flips it; numbers show in the viewport while it is selected). join: everything chained end to start into ONE continuous path, so a single PathFollower flies to the target and then spirals down without a hand-off.
 
 - Category: Paths; portability: core; disabled = produces nothing; definition version 1.
 
@@ -915,7 +920,10 @@ Combines several path sets into one.
 
 **Parameters**
 
-None.
+| id | label | type | unit | default | range | choices | edit | domains | drive | description |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `mode` | Mode | enum | — | `append` | — | append, join | resample | constant | — | append: one set holding every path (inputs in connection order, path numbers shown in the viewport when selected). join: all paths chained end to start into ONE continuous path (fly to the target, then spiral down) - a follower walks it without a hand-off. |
+| `reverse` | Reverse order | boolean | — | `false` | — | — | resample | constant | booleanSignal | Take the inputs in the opposite order (last connected first). Changes path numbers (append) or which part comes first (join). |
 
 ### ParticlePaths
 
@@ -1192,7 +1200,7 @@ Draws a tapered trail behind each particle (spark streaks). Needs its own (usual
 
 ### MotionTrail
 
-Draws a trail behind a moving anchor (a projectile core from PathFollower).
+Draws a smooth trail behind a moving anchor (a projectile core from PathFollower); one trail per path of the follower. Colour over window changes its colour over time; a follower with Colour by path colours each trail.
 
 - Category: Renderers and lights; portability: approximation; disabled = produces nothing; definition version 1.
 
@@ -1218,6 +1226,7 @@ Draws a trail behind a moving anchor (a projectile core from PathFollower).
 | `maxPoints` | Max points | integer | — | `48` | 2..128 step 1 | — | resample | constant | scalarSignal | Most samples kept in the trail. |
 | `width` | Width | number | meter | `0.12` | 0.001..5 | — | live | constant | scalarSignal | Trail width at the head (m). |
 | `endFade` | End fade | number | normalized | `0.35` | 0..0.5 | — | live | constant | scalarSignal | Fraction of the trail length that fades out at the tail (0..0.5). |
+| `colorOverWindow` | Colour over window | gradient | — | `gradient: 0:#FFFFFF 1:#FFFFFF` | — | — | live | constant | gradientValue | Multiplies the material colour across the window (0 = window start, 1 = end). White = unchanged. |
 | `renderOrderOffset` | Render order offset | integer | — | `0` | -32..32 step 1 | — | live | constant | scalarSignal | Draw order tweak: higher draws on top of lower among layers of the same blend (-32..32). |
 
 ### MeshRenderer
@@ -1328,7 +1337,7 @@ One sprite at an anchor over a window (a muzzle flash, an orb core), sized over 
 
 ### PointLight
 
-A light that follows an anchor during a window (colour, intensity, range, flicker). At most a few lights are active in the preview at once (see limits).
+A light that follows an anchor during a window (colour, colour over window, intensity, range, flicker). On a PathFollower it becomes one light per path (each counts toward the 8 active lights, see limits) and takes its path colour when Colour by path is on.
 
 - Category: Renderers and lights; portability: core; disabled = produces nothing; definition version 1.
 
@@ -1352,6 +1361,7 @@ A light that follows an anchor during a window (colour, intensity, range, flicke
 | `color` | Colour | color | — | `#FFFFFF` | — | — | live | constant | colorSignal | Light colour. |
 | `intensity` | Intensity | number | linearGain | `20` | 0..100 | — | live | constant | scalarSignal | Peak intensity (candela-like preview units). |
 | `intensityOverWindow` | Intensity over window | curve | normalized | `curve normalized/linear: 0:0 0.1:1 1:0` | 0..1 (normalized curve) | — | live | constant | curveValue | Light intensity over the normalized window (0..1). |
+| `colorOverWindow` | Colour over window | gradient | — | `gradient: 0:#FFFFFF 1:#FFFFFF` | — | — | live | constant | gradientValue | Multiplies Colour across the window (0 = window start, 1 = end): a light that turns from pink to cyan. White = unchanged. |
 | `range` | Range | number | meter | `5` | 0.1..50 | — | live | constant | scalarSignal | Light reach (m). |
 | `flicker` | Flicker | number | normalized | `0` | 0..1 | — | live | constant | scalarSignal | Depth of deterministic noise flicker (fire, electricity). |
 | `flickerRate` | Flicker rate | number | hertz | `12` | 0..60 | — | live | constant | scalarSignal | Flicker frequency (Hz); 0 = steady. |

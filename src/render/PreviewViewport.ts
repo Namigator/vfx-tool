@@ -24,7 +24,8 @@ import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 //
 // Mixed mode (setMixedSource): point simulations and a path source share one clock; render order of
 // both layer kinds comes from layerRenderOrder(renderOrderOffset, visualOrder).
-import type { Diagnostic, ValidationResult, Vec3 } from '../model/types.ts';
+import type { ColorValue, Diagnostic, GradientValue, ValidationResult, Vec3 } from '../model/types.ts';
+import { linearOf, pathTintAmount, type PathTint } from '../graph/pathColor.ts';
 import type { MeshLayer, ParticlePreviewLayer, ParticlePreviewPlan, ParticleTrailLayer, PointLightLayer } from '../graph/toParticles.ts';
 import type { ColorGrade } from '../graph/recolor.ts';
 import { colorTrackValue, trackValue, type LayerAnimation } from '../graph/keyframes.ts';
@@ -361,11 +362,14 @@ const RIBBON_VERTEX = /* glsl */ `
 attribute float opacity;
 attribute float side;
 attribute vec3 strip;
+attribute vec3 tint;
 varying float vOpacity;
 varying float vSide;
 varying vec3 vStrip;
+varying vec3 vTint;
 void main() {
   vOpacity = opacity;
+  vTint = tint;
   vSide = side;
   vStrip = strip;
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
@@ -421,12 +425,13 @@ uniform float uLiquid;
 varying float vOpacity;
 varying float vSide;
 varying vec3 vStrip;
+varying vec3 vTint;
 void main() {
   // Transverse falloff: full on the centreline, fading to 0 at the strip edge over the outer
   // uSoftness fraction (1 = whole half-width, soft glow; 0 = hard edge).
   float s = abs(vSide);
   float edge = uSoftness > 0.0 ? 1.0 - smoothstep(1.0 - uSoftness, 1.0, s) : 1.0;
-  vec3 rgb = uColor;
+  vec3 rgb = uColor * vTint;
   float a = uAlpha * vOpacity * edge;
   if (uLiquid > 0.0 && uUseTex < 0.5) {
     // 09 liquid: see-through core, bright edges (like a lit tube seen side-on) and highlights that run along
@@ -475,9 +480,11 @@ void main() {
   #include <colorspace_fragment>
 }`;
 
-type LayerMesh = { layer: ParticlePreviewLayer; mesh: THREE.InstancedMesh; material: THREE.ShaderMaterial; sizeSampler: LifeCurveSampler; opacitySampler: LifeCurveSampler; colorSampler: LifeGradientSampler };
+type LayerMesh = { layer: ParticlePreviewLayer; mesh: THREE.InstancedMesh; material: THREE.ShaderMaterial; sizeSampler: LifeCurveSampler; opacitySampler: LifeCurveSampler; colorSampler: LifeGradientSampler; tint?: TintState };
+/** Colour by path / colour over window, resolved once per layer: the layer colour and each path colour in linear RGB. */
+type TintState = { base: Vec3; paths?: Vec3[]; cow?: LifeGradientSampler };
 type RibbonMesh = { nodeId: string; ribbon: RibbonGeometry; mesh: THREE.Mesh; material: THREE.ShaderMaterial };
-type TrailMesh = RibbonMesh & { layer: ParticleTrailLayer; history: TrailHistory };
+type TrailMesh = RibbonMesh & { layer: ParticleTrailLayer; history: TrailHistory; tint?: TintState };
 
 /** Per-tick path compile supplied by the caller (e.g. `t => compilePathPreview(doc, t)`). */
 export type PathCompile = (tick: number) => ValidationResult<PathPreviewPlan>;
@@ -508,6 +515,20 @@ function materialFor(
     depthTest: m.depthTest !== false,
     blending: m.blend === 'additive' ? THREE.AdditiveBlending : THREE.NormalBlending,
   });
+}
+
+function tintStateOf(color: { srgb: string }, pathTint?: PathTint, cow?: GradientValue): { tint?: TintState } {
+  if (!pathTint && !cow) return {};
+  return { tint: { base: linearOf(color as ColorValue), ...(pathTint ? { paths: pathTint.colors.map(linearOf) } : {}), ...(cow ? { cow: compileLifeGradient(cow) } : {}) } };
+}
+
+/** `own` (linear) blended toward the path colour of `track` (scaled by `bright`, the rider's own brightness). */
+function tintTarget(own: Vec3, ts: TintState, pt: PathTint | undefined, track: number, tick: number, bright = 1): Vec3 {
+  if (!pt || !ts.paths?.length) return own;
+  const k = pathTintAmount(pt, track, tick);
+  if (k <= 0) return own;
+  const p = ts.paths[Math.min(track, ts.paths.length - 1)];
+  return [own[0] + (p[0] * bright - own[0]) * k, own[1] + (p[1] * bright - own[1]) * k, own[2] + (p[2] * bright - own[2]) * k];
 }
 
 /** Keyframed values at `tick`, keyed by dotted path ("opacity", "color.srgb", "grade.hue", "colorOverLife.stops.1.color.srgb"). */
@@ -553,7 +574,7 @@ export class PreviewViewport {
   #pathPlan: PathPreviewPlan | null = null;
   #ribbons: RibbonMesh[] = [];
   #trails: TrailMesh[] = [];
-  #lights: { layer: PointLightLayer; light: THREE.PointLight; curve: LifeCurveSampler }[] = [];
+  #lights: { layer: PointLightLayer; light: THREE.PointLight; curve: LifeCurveSampler; tint?: TintState }[] = [];
   #meshes: { layer: MeshLayer; mesh: THREE.InstancedMesh; material: THREE.Material; size: LifeCurveSampler; color: LifeGradientSampler }[] = [];
   readonly #meshGeometries = new Map<string, THREE.BufferGeometry>();
   #ribbonKey = '';
@@ -773,7 +794,7 @@ export class PreviewViewport {
       const light = new THREE.PointLight(new THREE.Color().setStyle(layer.color.srgb), 0, layer.range, 2);
       light.position.set(layer.position[0], layer.position[1], layer.position[2]);
       this.#scene.add(light);
-      this.#lights.push({ layer, light, curve: compileLifeCurve(layer.intensityOverWindow) });
+      this.#lights.push({ layer, light, curve: compileLifeCurve(layer.intensityOverWindow), ...tintStateOf(layer.color, layer.pathTint, layer.colorOverWindow) });
     }
     for (const layer of plan.trails ?? []) {
       const ribbon = new RibbonGeometry({ maxPoints: MAX_PREVIEW_POINTS });
@@ -785,7 +806,7 @@ export class PreviewViewport {
       mesh.frustumCulled = false;
       mesh.renderOrder = layerRenderOrder(layer.renderOrderOffset, layer.visualOrder);
       this.#scene.add(mesh);
-      this.#trails.push({ nodeId: layer.nodeId, ribbon, mesh, material, layer, history: new TrailHistory(layer.historyTicks, layer.maxPoints) });
+      this.#trails.push({ nodeId: layer.nodeId, ribbon, mesh, material, layer, history: new TrailHistory(layer.historyTicks, layer.maxPoints, layer.systemId === layer.nodeId), ...tintStateOf(layer.color, layer.pathTint, layer.colorOverWindow) });
     }
     for (const layer of plan.layers) {
       const material = materialFor(VERTEX, FRAGMENT, layer);
@@ -834,7 +855,7 @@ export class PreviewViewport {
       mesh.frustumCulled = false;
       mesh.renderOrder = layerRenderOrder(layer.renderOrderOffset, layer.visualOrder);
       this.#scene.add(mesh);
-      this.#layers.push({ layer, mesh, material, sizeSampler: compileLifeCurve(layer.sizeOverLife), opacitySampler: compileLifeCurve(layer.opacityOverLife), colorSampler: compileLifeGradient(layer.colorOverLife) });
+      this.#layers.push({ layer, mesh, material, sizeSampler: compileLifeCurve(layer.sizeOverLife), opacitySampler: compileLifeCurve(layer.opacityOverLife), colorSampler: compileLifeGradient(layer.colorOverLife), ...tintStateOf(layer.color, layer.pathTint) });
     }
   }
 
@@ -1124,6 +1145,37 @@ export class PreviewViewport {
     if (e.type === 'pointercancel') { this.#anchorPress = null; this.#anchorTap = null; }
   };
   #anchorKey = (e: KeyboardEvent): void => { if (e.key === 'Escape') { this.#finishAnchor(true); this.#armAnchor(null); } };
+  /**
+   * Path numbers (user 2026-10-07 "we need to be able to index them"): small numbered badges at the end of each path of
+   * the selected path node / PathFollower / PathSplitter / MergePaths, in the order a splitter or Colour by path counts
+   * them. Overlay only: always on top, hidden in exports. Empty or null clears them.
+   */
+  #pathLabels: THREE.Sprite[] = [];
+  setPathLabels(labels: readonly { position: readonly [number, number, number]; text: string; color?: string }[] | null): void {
+    for (const s of this.#pathLabels) { this.#scene.remove(s); s.material.map?.dispose(); s.material.dispose(); }
+    this.#pathLabels = (labels ?? []).slice(0, 128).map(l => {
+      const c = document.createElement('canvas');
+      c.width = 64; c.height = 64;
+      const g = c.getContext('2d');
+      if (g) {
+        g.fillStyle = 'rgba(12,14,20,0.82)';
+        g.beginPath(); g.arc(32, 32, 28, 0, Math.PI * 2); g.fill();
+        g.lineWidth = 4; g.strokeStyle = l.color ?? '#ffffff'; g.stroke();
+        g.fillStyle = '#ffffff'; g.font = `bold ${l.text.length > 2 ? 22 : 30}px system-ui, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText(l.text, 32, 34);
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, depthWrite: false, transparent: true, toneMapped: false }));
+      s.scale.setScalar(0.28);
+      s.position.set(l.position[0], l.position[1], l.position[2]);
+      s.renderOrder = 1001;
+      s.visible = !this.#exporting;
+      this.#scene.add(s);
+      return s;
+    });
+  }
+
   setMarkers(points: readonly { position: readonly [number, number, number]; kind: 'source' | 'target' | 'other'; id?: string; color?: string }[]): void {
     for (const m of this.#markers) { this.#scene.remove(m); m.geometry.dispose(); (m.material as THREE.Material).dispose(); }
     this.#markers = points.map(pt => {
@@ -1254,6 +1306,7 @@ export class PreviewViewport {
     cancelAnimationFrame(this.#raf);
     this.#observer.disconnect();
     this.#controls.dispose();
+    this.setPathLabels(null);
     this.#clearLayers();
     this.#quad.dispose();
     for (const t of this.#textures.values()) t.dispose();
@@ -1537,7 +1590,7 @@ export class PreviewViewport {
   /** Light intensity = peak × window curve × (1 − flicker·noise), zero outside the window. */
   #updateLights(alpha: number): void {
     const tick = (this.#clock ? this.#clock.tick : 0) + alpha;
-    for (const { layer: l0, light, curve } of this.#lights) {
+    for (const [li, { layer: l0, light, curve }] of this.#lights.entries()) {
       let l = l0;
       if (l0.animation) {
         const v = animatedValues(l0.animation, tick);
@@ -1549,6 +1602,13 @@ export class PreviewViewport {
       const u = (tick - l.startTick) / Math.max(1, l.endTick - l.startTick);
       const f = l.flicker > 0 ? 1 - l.flicker * (0.5 + 0.5 * valueNoise4(l.seed, (tick * PARTICLE_DT) * l.flickerRate, 0.5, 0.5, 0)) : 1;
       light.intensity = inside ? l.intensity * sampleLifeCurve(curve, u) * f : 0;
+      const ts = this.#lights[li].tint;
+      if (ts && inside) {
+        const own: Vec3 = [...ts.base] as Vec3;
+        if (ts.cow) { sampleLifeGradient(ts.cow, Math.min(1, Math.max(0, u)), rgbaScratch); own[0] *= rgbaScratch[0]; own[1] *= rgbaScratch[1]; own[2] *= rgbaScratch[2]; }
+        const c = tintTarget(own, ts, l0.pathTint, l0.pathTrack ?? 0, tick);
+        light.color.setRGB(c[0], c[1], c[2]);
+      }
       if (l.track) { const p = l.track.positions[Math.max(0, Math.min(l.track.positions.length - 1, Math.floor(tick) - l.track.startTick))]; light.position.set(p[0], p[1], p[2]); }
     }
   }
@@ -1561,7 +1621,13 @@ export class PreviewViewport {
       const sim = this.#sims.get(t.layer.systemId), tick = sim ? sim.tick : 0;
       const heads = new Map<string, Vec3>();
       for (const p of this.#snapshots.get(t.layer.systemId) ?? []) heads.set(p.id, [p.position[0] + p.velocity[0] * step, p.position[1] + p.velocity[1] * step, p.position[2] + p.velocity[2] * step]);
-      t.ribbon.update(t.history.paths(tick, heads), { cameraPosition, width: t.layer.width, endFade: t.layer.endFade, fadeHead: false });
+      const paths = t.history.paths(tick, heads), ts = t.tint;
+      if (ts) {
+        const own: Vec3 = [...ts.base] as Vec3, w = t.layer.window;
+        if (ts.cow && w) { sampleLifeGradient(ts.cow, Math.min(1, Math.max(0, (tick + alpha - w[0]) / Math.max(1, w[1] - w[0]))), rgbaScratch); own[0] *= rgbaScratch[0]; own[1] *= rgbaScratch[1]; own[2] *= rgbaScratch[2]; }
+        for (const p of paths) { const c = tintTarget(own, ts, t.layer.pathTint, p.track, tick + alpha); p.tint = [c[0] / Math.max(0.02, ts.base[0]), c[1] / Math.max(0.02, ts.base[1]), c[2] / Math.max(0.02, ts.base[2])]; }
+      }
+      t.ribbon.update(paths, { cameraPosition, width: t.layer.width, endFade: t.layer.endFade, fadeHead: false });
     }
   }
 
@@ -1591,6 +1657,7 @@ export class PreviewViewport {
     const step = alpha * PARTICLE_DT;
     for (const l of this.#layers) {
       const particles = this.#snapshots.get(l.layer.systemId);
+      const simTick = this.#sims.get(l.layer.systemId)?.tick ?? 0;
       const n = particles ? Math.min(particles.length, this.#poolSize) : 0;
       const m = l.mesh.instanceMatrix.array as Float32Array;
       const opAttr = l.mesh.geometry.getAttribute('lifeOpacity') as THREE.InstancedBufferAttribute;
@@ -1617,6 +1684,12 @@ export class PreviewViewport {
         seeds[i * 2] = u; seeds[i * 2 + 1] = (fnv1a32Utf8(p.id) % 4096) / 4096;
         const o = i * 16, s = p.size * sampleLifeCurve(l.sizeSampler, u);
         sampleLifeGradient(l.colorSampler, u, rgbaScratch);
+        if (l.tint && l.layer.pathTint) {
+          // Colour by path: blend this particle's colour toward its path's colour (the shader multiplies by the layer colour).
+          const b = l.tint.base, own: Vec3 = [b[0] * rgbaScratch[0], b[1] * rgbaScratch[1], b[2] * rgbaScratch[2]];
+          const c = tintTarget(own, l.tint, l.layer.pathTint, p.track ?? 0, simTick + alpha, Math.max(rgbaScratch[0], rgbaScratch[1], rgbaScratch[2]));
+          rgbaScratch[0] = c[0] / Math.max(0.02, b[0]); rgbaScratch[1] = c[1] / Math.max(0.02, b[1]); rgbaScratch[2] = c[2] / Math.max(0.02, b[2]);
+        }
         col[i * 3] = rgbaScratch[0]; col[i * 3 + 1] = rgbaScratch[1]; col[i * 3 + 2] = rgbaScratch[2];
         op[i] = sampleLifeCurve(l.opacitySampler, u) * rgbaScratch[3];
         spin[i] = p.rotation === undefined ? 0 : p.rotation + (p.angularVelocity ?? 0) * (p.ageTicks + alpha) * PARTICLE_DT * spinAverage(l.layer.spinOverLife, lifeFraction(p.ageTicks, p.lifetimeTicks, alpha));
@@ -1843,6 +1916,7 @@ export class PreviewViewport {
     this.#exportSaved = { grid: this.#grid.visible, ground: this.#ground.visible, markers: this.#markers.map(m => m.visible), background: (this.#scene.background as THREE.Color).getHex(), bloom: this.#bloom?.enabled ?? false };
     this.#grid.visible = false; this.#ground.visible = false;
     for (const m of this.#markers) m.visible = false;
+    for (const s of this.#pathLabels) s.visible = false;
     this.exportResize(width, height);
     this.#exportQuad?.dispose();
     this.#exportQuad = new FullScreenQuad(new THREE.ShaderMaterial({
@@ -1893,6 +1967,7 @@ export class PreviewViewport {
     if (s && !this.#disposed) {
       this.#grid.visible = s.grid; this.#ground.visible = s.ground;
       this.#markers.forEach((m, i) => { m.visible = s.markers[i] ?? s.grid; });
+      for (const l of this.#pathLabels) l.visible = true;
       (this.#scene.background as THREE.Color).setHex(s.background);
       if (this.#bloom) this.#bloom.enabled = s.bloom;
       if (this.#outputPass) this.#outputPass.enabled = true;

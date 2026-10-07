@@ -54,6 +54,7 @@ import { portabilityReport } from '../src/graph/portability.ts';
 import { createMeshAsset } from '../src/assets/importMesh.ts';
 import { buildPack, readPack, type PackAsset } from '../src/model/vfxpack.ts';
 import { FEEDBACK_KINDS, feedbackLink, sendFeedback } from '../src/feedback.ts';
+import { tidyLayout } from '../src/model/tidyLayout.ts';
 
 export type VfxServerOptions = { root?: string; editorUrl?: string; chromePath?: string };
 
@@ -254,6 +255,13 @@ ${formatMigrationReport(report)}`);
       (d.editor.graphs[g.id] ??= { nodes: {}, viewport: { x: 0, y: 0, zoom: 1 } }).nodes[a.nodeId] = { x: a.x, y: a.y };
       return `Moved ${a.nodeId} to (${a.x}, ${a.y}).`;
     }));
+  tool('vfx_tidy_layout', 'Lay a graph out left to right by data flow (editor: Tidy up): short connections, no overlaps. Run it after building a graph so the user can read it.', { docId: z.string(), graphId: z.string().optional() }, a =>
+    mutate(a.docId, d => {
+      const g = rootGraph(d, a.graphId);
+      const pos = tidyLayout(g.nodes.map(n => ({ id: n.id })), g.edges.map(e => ({ source: e.source.nodeId, target: e.target.nodeId })));
+      d.editor.graphs[g.id] = { viewport: d.editor.graphs[g.id]?.viewport ?? { x: 0, y: 0, zoom: 1 }, nodes: pos };
+      return `Tidied ${g.nodes.length} node(s) in ${g.id}.`;
+    }));
 
   // ---------- components ----------
   // Saved user components (editor: Save as my component). The MCP keeps them in work/mcp/user-components.json;
@@ -342,7 +350,8 @@ ${formatMigrationReport(report)}`);
     let id = a.id ?? `node-${a.type.toLowerCase()}`;
     if (!a.id) for (let i = 2; g.nodes.some(n => n.id === id); i++) id = `node-${a.type.toLowerCase()}-${i}`;
     if (g.nodes.some(n => n.id === id)) throw new Error(`Node id "${id}" already exists.`);
-    const node: NodeDefinition = { id, type: spec.type, definitionVersion: spec.definitionVersion, label: a.label ?? spec.type, enabled: a.enabled ?? true, randomStreamId: `rs-${id}`, params: (a.params ?? {}) as Record<string, ParameterValue> };
+    // A chosen id ("splitFollow") is a better card title than the type when no label is given.
+    const node: NodeDefinition = { id, type: spec.type, definitionVersion: spec.definitionVersion, label: a.label ?? a.id ?? spec.type, enabled: a.enabled ?? true, randomStreamId: `rs-${id}`, params: (a.params ?? {}) as Record<string, ParameterValue> };
     g.nodes.push(node);
     const layout = d.editor.graphs[g.id]?.nodes;
     if (layout) layout[id] = { x: 260 * (Object.keys(layout).length % 7), y: 180 * Math.floor(Object.keys(layout).length / 7) + 320 };

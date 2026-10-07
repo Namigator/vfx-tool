@@ -27,7 +27,27 @@ export const MAX_TRAVEL_TICKS = 600;
  * keeps the speed and the arrival (and everything it triggers) moves with it.
  */
 export function followerTravel(ctx: TimingContext, followerId: string, startTick: number): number {
-  return Math.min(...followerTravels(ctx, followerId, startTick));
+  return Math.min(...followerArrivals(ctx, followerId, startTick));
+}
+
+/**
+ * Departure delay of each path (PathFollower Stagger): path k leaves k × stagger ticks after the window start
+ * (reverse order: the last path first). One 0 when there is no stagger.
+ */
+export function followerDelays(ctx: TimingContext, followerId: string, startTick: number): number[] {
+  const stagger = ctx.raw(followerId, 'stagger');
+  if (!(stagger > 0)) return [0];
+  const p = ctx.source(followerId, 'paths');
+  const n = p && ctx.pathLengths ? ctx.pathLengths(p.nodeId, p.port, startTick).length : 1;
+  const reverse = String(ctx.raw(followerId, 'staggerOrder')) === 'reverse';
+  return Array.from({ length: Math.max(1, n) }, (_, k) => (reverse ? Math.max(1, n) - 1 - k : k) * stagger);
+}
+
+/** Ticks from the window start to each path's arrival (its departure delay + its travel), in path order. */
+export function followerArrivals(ctx: TimingContext, followerId: string, startTick: number): number[] {
+  const travels = followerTravels(ctx, followerId, startTick), delays = followerDelays(ctx, followerId, startTick);
+  const n = Math.max(travels.length, delays.length);
+  return Array.from({ length: n }, (_, k) => delays[Math.min(k, delays.length - 1)] + travels[Math.min(k, travels.length - 1)]);
 }
 
 /**
@@ -79,7 +99,7 @@ export function eventTicks(ctx: TimingContext, nodeId: string, port: string, dep
   } else if (type === 'PathFollower' && port === 'arrival') {
     const w = ctx.source(nodeId, 'window');
     if (!w || ctx.type(w.nodeId) !== 'Schedule') throw new TimingError(`PathFollower "${nodeId}" needs a Schedule window to time its arrival.`, nodeId);
-    out = scheduleStarts(ctx, w.nodeId, depth + 1).flatMap(s => followerTravels(ctx, nodeId, s).map(tr => s + tr));
+    out = scheduleStarts(ctx, w.nodeId, depth + 1).flatMap(s => followerArrivals(ctx, nodeId, s).map(tr => s + tr));
   } else if (type === 'EventDelay') {
     const s = ctx.source(nodeId, 'events');
     if (!s) throw new TimingError(`EventDelay "${nodeId}" has no input event.`, nodeId);

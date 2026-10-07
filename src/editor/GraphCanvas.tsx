@@ -24,6 +24,7 @@ import { analyzeGraph } from '../graph/analyze.ts';
 import { prepareDocument } from '../graph/prepare.ts';
 import { copySelection, duplicateSelection, parseClipboard, pasteSelection, removeAndReconnect } from './graphOps.ts';
 import { canSolo } from '../graph/solo.ts';
+import { tidyLayout } from '../model/tidyLayout.ts';
 
 export type GraphCanvasProps = {
   document: EffectDocumentV2;
@@ -539,6 +540,14 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
     setNotice({ kind: 'info', lines: [`Grouped ${groupIds.length} node(s). Double-click the group (or Open internals) to see them.`] });
     onSelectNode(r.groupNodeId);
   };
+  /** Tidy up: lays the open graph out left to right by data flow (one undoable edit), then fits the view. */
+  const tidy = () => {
+    if (!graph) return;
+    const pos = tidyLayout(graph.nodes.map(n => ({ id: n.id, width: measured[n.id]?.width, height: measured[n.id]?.height })), graph.edges.map(e => ({ source: e.source.nodeId, target: e.target.nodeId })));
+    const editorGraphs = { ...doc.editor.graphs, [graphId]: { viewport: doc.editor.graphs[graphId]?.viewport ?? DEFAULT_VIEWPORT, nodes: pos } };
+    onEdit('Tidy up layout', [{ op: 'set', path: ['editor', 'graphs'], value: editorGraphs }]);
+    setTimeout(() => void flow.fitView({ padding: 0.15, duration: 250 }), 60);
+  };
   /** Commits a whole-document result (duplicate/paste) as one undoable edit. */
   const commitDoc = (label: string, next: EffectDocumentV2) => onEdit(label, [
     { op: 'set', path: ['graphs'], value: next.graphs },
@@ -614,6 +623,8 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
         {/* Toolbar lives outside the flow pane so it never covers nodes. */}
         <div className="gc-toolbar" role="toolbar" aria-label="Graph tools">
           <button type="button" onClick={() => flow.fitView({ padding: 0.2 })}>Fit view</button>
+          <button type="button" onClick={tidy} disabled={!graph || graph.nodes.length < 2}
+            title="Lays the graph out left to right by data flow so connections are short and nothing overlaps (undo restores the old layout).">Tidy up</button>
           <button type="button" onClick={deleteSelection} disabled={!canDelete}
             title="Deletes the selected node with its connections, and any selected connections.">Delete selection</button>
           <button type="button" onClick={groupPicked} disabled={groupIds.length === 0}
@@ -758,6 +769,7 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
               <>
                 {item('Paste  (Ctrl+V)', () => void paste())}
                 {item('Fit view  (F)', () => void flow.fitView({ padding: 0.2 }))}
+                {item('Tidy up layout', tidy)}
                 {trail.length > 1 && item('Up to parent  (Esc)', goUp)}
               </>
             )}

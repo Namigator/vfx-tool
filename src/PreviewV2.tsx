@@ -4,6 +4,7 @@
 // in React state. Only semantic changes recompile, so moving nodes does not reset the simulation.
 import { spriteUrl } from './assets/spriteUrl.ts';
 import { soloMask } from './graph/solo.ts';
+import { pathLabelsFor } from './graph/pathLabels.ts';
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import type { Diagnostic, EffectDocumentV2 } from './model/types.ts';
 import { validateDocument } from './model/document.ts';
@@ -837,6 +838,11 @@ export default function PreviewV2() {
     const m = selectedNodeId ? soloMask(doc, new Set([selectedNodeId])) : null;
     viewportRef.current?.setHighlight(m && m.size ? m : null);
   }, [doc, selectedNodeId]);
+  // Path numbers at each path end while a path node / follower / splitter is selected (paused: at the shown tick).
+  const labelTick = frame.playing ? -1 : frame.tick;
+  const labelTickRef = useRef(0);
+  if (labelTick >= 0) labelTickRef.current = labelTick;
+  useEffect(() => { viewportRef.current?.setPathLabels(pathLabelsFor(doc, selectedNodeId, labelTickRef.current)); }, [doc, selectedNodeId, labelTick]);
   // 08 arena markers at Source/Target (and other anchors), in world space through the root transform.
   useEffect(() => {
     const t = doc.rootTransform, [qx, qy, qz, qw] = t.rotation;

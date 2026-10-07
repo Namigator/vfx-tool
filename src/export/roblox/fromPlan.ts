@@ -10,6 +10,7 @@ import { compileLifeCurve, compileLifeGradient, sampleLifeCurve, sampleLifeGradi
 import { applyGrade, hueRotate, type ColorGrade } from '../../graph/recolor.ts';
 import { trackValue, type LayerAnimation } from '../../graph/keyframes.ts';
 import { bakeMeshes } from './meshBake.ts';
+import { settledColor } from '../../graph/pathColor.ts';
 import {
   MAX_SEQUENCE_KEYS, STUDS_PER_METER,
   type RbxBeamLayer, type RbxColorKey, type RbxTrail, type RbxEmitter, type RbxFlipbook, type RbxLight, type RbxNumberKey, type RbxReportItem, type RbxStepTrack, type RobloxEffect, type Vec3,
@@ -195,6 +196,13 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
   };
 }
 
+/** Colour by path / colour over window on a light: the colour it settles on (reported once per light node). */
+function settleLight(l: PointLightLayer, report: RbxReportItem[]): PointLightLayer {
+  if (!l.pathTint && !l.colorOverWindow) return l;
+  if (!report.some(r => r.item === l.nodeId && r.message.startsWith('Colour by path'))) report.push({ level: 'approximated', item: l.nodeId, message: 'Colour by path / colour over window: each path exports the colour it settles on (the fade from the original colour is not exported).' });
+  return { ...l, color: settledColor(l.color, l.pathTint, l.pathTrack ?? 0, l.colorOverWindow) };
+}
+
 function lightFrom(l: PointLightLayer, origin: Vec3, duration: number, report: RbxReportItem[]): RbxLight {
   const rel = (p: readonly number[]): Vec3 => [r3((p[0] - origin[0]) * S), r3((p[1] - origin[1]) * S), r3((p[2] - origin[2]) * S)];
   const curve = compileLifeCurve(l.intensityOverWindow);
@@ -353,9 +361,11 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
     const shared = usedBy.get(layer.systemId);
     if (shared) report.push({ level: 'approximated', item: layer.nodeId, message: `Shares its particles with ${shared} in the editor; in Roblox it emits its own (same timing and look, different random particles).` });
     else usedBy.set(layer.systemId, layer.nodeId);
-    const own = [emitterFrom(layer, d, origin, plan.value.durationTicks, unique(layer.nodeId), report)];
+    const at = (k: number) => (layer.pathTint ? { ...layer, color: settledColor(layer.color, layer.pathTint, k) } : layer);
+    if (layer.pathTint) report.push({ level: 'approximated', item: layer.nodeId, message: 'Colour by path / colour over window: each path exports the colour it settles on (the fade from the original colour is not exported).' });
+    const own = [emitterFrom(at(0), d, origin, plan.value.durationTicks, unique(layer.nodeId), report)];
     // A PathFollower over several paths: one source per path, each emitting the full amount (as in the editor).
-    (d.extraSourceTracks ?? []).forEach((track, k) => own.push(emitterFrom(layer, { ...d, sourceTrack: track, extraSourceTracks: undefined }, origin, plan.value.durationTicks, unique(`${layer.nodeId}_path${k + 2}`), report)));
+    (d.extraSourceTracks ?? []).forEach((track, k) => own.push(emitterFrom(at(k + 1), { ...d, sourceTrack: track, extraSourceTracks: undefined }, origin, plan.value.durationTicks, unique(`${layer.nodeId}_path${k + 2}`), report)));
     emitters.push(...own);
     if (!emittersBySystem.has(layer.systemId)) emittersBySystem.set(layer.systemId, own);
   }
@@ -367,13 +377,14 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
     if (!d) continue;
     const births = d.bursts.reduce((n, b) => n + b.count, 0);
     if (d.attachToSource && d.sourceTrack && !d.rate && births <= 2) {
-      for (const track of [d.sourceTrack, ...(d.extraSourceTracks ?? [])]) {
+      if (t.pathTint || t.colorOverWindow) report.push({ level: 'approximated', item: t.nodeId, message: 'Colour by path / colour over window: each path exports the colour it settles on (the fade from the original colour is not exported).' });
+      for (const [ti, track] of [d.sourceTrack, ...(d.extraSourceTracks ?? [])].entries()) {
         const start = Math.min(...d.bursts.map(b => b.tick));
         const rel = (p: readonly number[]): Vec3 => [r3((p[0] - origin[0]) * S), r3((p[1] - origin[1]) * S), r3((p[2] - origin[2]) * S)];
         const path: [number, Vec3][] = [];
         let prev = '';
         track.positions.forEach((p, i) => { const q = rel(p), k = q.join(); if (k !== prev) { path.push([track.startTick + i, q]); prev = k; } });
-        const c = hueRotate(applyGrade(t.color, t.grade), t.hueShift ?? 0), base = r3(1 - Math.min(1, t.opacity * t.color.alpha));
+        const c = hueRotate(applyGrade(settledColor(t.color, t.pathTint, ti, t.colorOverWindow), t.grade), t.hueShift ?? 0), base = r3(1 - Math.min(1, t.opacity * t.color.alpha));
         const fade = Math.min(0.95, Math.max(0.05, t.endFade));
         trails.push({
           name: unique(t.nodeId), position: path[0]?.[1] ?? rel(d.sourcePosition), path,
@@ -401,7 +412,7 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
   const meshes = bakeMeshes(plan.value.meshes, systems, origin, plan.value.durationTicks, unique, report);
   if (plan.value.presentation.flashes.length) report.push({ level: 'dropped', item: 'presentation', message: 'Screen flashes are not exported (a client-side ScreenGui flash can be added later).' });
   if (plan.value.presentation.impulses.length) report.push({ level: 'dropped', item: 'presentation', message: 'Camera shake is not exported.' });
-  const lights = plan.value.lights.map(l => lightFrom(l, origin, plan.value.durationTicks, report));
+  const lights = plan.value.lights.map(l => lightFrom(settleLight(l, report), origin, plan.value.durationTicks, report));
   const beams = beamsFrom(doc, origin, report);
   report.push({ level: 'info', item: 'scale', message: `1 m = ${r3(S)} studs; the effect origin (model pivot) is the floor point under the Source anchor, so the effect starts ${r3(src[1] * S)} studs above it. Without source/target options it plays exactly as authored; with them it re-aims (see targeting).` });
   const textures = [...new Set([...emitters.map(e => e.textureKey), ...beams.map(b => b.textureKey)].filter((x): x is string => !!x))];

@@ -219,7 +219,7 @@ test('sprites and trails on a follower ride every path in one system; point ligh
   assert.equal(p.lights.length, 3);
   assert.deepEqual(p.lights.map(l => l.track?.positions.at(-1)).map(v => v?.map(x => x.toFixed(4)).join()).filter((v, i, a) => a.indexOf(v) === i).length, 3);
   // More paths than the light budget allows: a BUDGET_EXCEEDED error, nothing silently dropped.
-  const r = compile(raysDoc(5, { mutate: d => {
+  const r = compile(raysDoc(9, { mutate: d => {
     const g = root(d);
     g.nodes.push(node('node-light', 'PointLight', {}), node('node-win', 'Schedule', { startTicks: 10, durationTicks: 30, mode: 'window' }));
     g.edges.push(edge('e-la', 'node-follow', 'anchor', 'node-light', 'anchor'), edge('e-lw', 'node-win', 'window', 'node-light', 'window'), edge('e-lv', 'node-light', 'visual', 'node-output', 'visual', 3));

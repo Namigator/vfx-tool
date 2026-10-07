@@ -27,7 +27,7 @@ The ones that matter most when building effects.
 | Particles born per effect | 65536 | Total births over the whole effect. |
 | Burst events per emitter | 1024 | Trigger events considered by one emitter. |
 | Effect duration | 600 ticks (10 s) | Minimum 1 tick; longer is rejected. |
-| Active lights | 4 | PointLights drawn at once in the preview. |
+| Active lights | 8 | PointLights drawn at once in the preview. |
 | Paths per tick / branches | 256 / 64 | Beam/bolt/ring paths evaluated per tick; BranchPath branch count cap. |
 | Mesh pieces / triangles per frame | 512 / 250000 | Preview MeshRenderer budget. |
 | Roblox export mesh pieces | 300 | Parts one export may animate. |
@@ -75,8 +75,9 @@ The ones that matter most when building effects.
 | `MAX_EVENT_OCCURRENCES` | 1024 | Most occurrences of one event a triggered Schedule re-fires on (repeating cues, several arrivals). | src/graph/eventTiming.ts |
 | `MAX_TRAVEL_TICKS` | 600 | Longest PathFollower travel (600 ticks). | src/graph/eventTiming.ts |
 | `MAX_TRACKS_PER_ITEM` | 64 | Most values one keyframed item may animate at once. | src/graph/keyframes.ts |
+| `MAX_PATH_LABELS` | 64 | Most labels drawn (the rest of a huge set stays unnumbered). | src/graph/pathLabels.ts |
 | `MAX_BRANCH_COUNT` | 64 | Most branches BranchPath grows. | src/graph/registry.ts |
-| `MAX_ACTIVE_LIGHTS` | 4 | Most PointLights active at once in the preview; extra lights are ignored (a compile warning says so). | src/graph/toParticles.ts |
+| `MAX_ACTIVE_LIGHTS` | 8 | Most PointLights active at once in the preview (a light on a PathFollower counts once per path); more is a compile error, never silently dropped. | src/graph/toParticles.ts |
 | `MAX_PREVIEW_PATHS` | 256 | Most individual paths evaluated per tick (hard limit). | src/graph/toPaths.ts |
 | `MAX_PREVIEW_POINTS` | 262144 | Most path vertices per preview frame. | src/graph/toPaths.ts |
 | `MIN_PLAYBACK_SPEED` | 0.25 | Slowest preview playback speed multiplier. | src/runtime/clock.ts |

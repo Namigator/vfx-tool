@@ -3,7 +3,7 @@
 
 # MCP tool reference
 
-All 53 tools of the VFX Studio MCP server (server name "vfx-studio"), in registration order, read from the running server's registry (mcp/server.ts). Parameters use JSON types; object parameters show their fields inline, `?` marks an optional field. Documents are addressed by id; every successful change is mirrored to work/mcp/<id>.json and the editor can open it. Tools reject invalid changes and leave the document unchanged.
+All 54 tools of the VFX Studio MCP server (server name "vfx-studio"), in registration order, read from the running server's registry (mcp/server.ts). Parameters use JSON types; object parameters show their fields inline, `?` marks an optional field. Documents are addressed by id; every successful change is mirrored to work/mcp/<id>.json and the editor can open it. Tools reject invalid changes and leave the document unchanged.
 
 ## Contents
 
@@ -22,6 +22,7 @@ All 53 tools of the VFX Studio MCP server (server name "vfx-studio"), in registr
 - [vfx_redo](#vfx_redo)
 - [vfx_list_documents](#vfx_list_documents)
 - [vfx_move_node](#vfx_move_node)
+- [vfx_tidy_layout](#vfx_tidy_layout)
 - [vfx_list_components](#vfx_list_components)
 - [vfx_save_group_component](#vfx_save_group_component)
 - [vfx_delete_user_component](#vfx_delete_user_component)
@@ -199,6 +200,15 @@ Place a node on the graph canvas (editor layout x/y), like dragging it in the ed
 | `nodeId` | string | required | — |
 | `x` | number | required | — |
 | `y` | number | required | — |
+| `graphId` | string | optional | — |
+
+## vfx_tidy_layout
+
+Lay a graph out left to right by data flow (editor: Tidy up): short connections, no overlaps. Run it after building a graph so the user can read it.
+
+| parameter | type | required | description / constraints |
+|---|---|---|---|
+| `docId` | string | required | — |
 | `graphId` | string | optional | — |
 
 ## vfx_list_components

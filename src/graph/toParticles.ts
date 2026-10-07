@@ -37,7 +37,8 @@ import type { DescriptorTrack } from '../runtime/particles.ts';
 import { analyzeGraph } from './analyze.ts';
 import { expandGroups, type ExpandedConnection, type ExpandedGraph, type ExpandedNode, type ExpandedSource } from './expand.ts';
 import { createRegistry } from './registry.ts';
-import { followerTravels, scheduleStart, scheduleStarts, TimingError, type TimingContext } from './eventTiming.ts';
+import { followerDelays, followerTravels, scheduleStart, scheduleStarts, TimingError, type TimingContext } from './eventTiming.ts';
+import { pathColors, type PathColorMode, type PathTint } from './pathColor.ts';
 import { dataTextureFile, isTexturedTemplate, materialSheet, MATERIAL_TEMPLATE_IDS, templateLitsMeshes, templateParam } from './materialSprite.ts';
 import { lifeCurveError, OPACITY_OVER_LIFE_BOUNDS, SIZE_OVER_LIFE_BOUNDS } from '../render/billboardLife.ts';
 import { BUILTIN_SPRITES } from '../assets/builtinSprites.generated.ts';
@@ -100,12 +101,18 @@ export type ParticlePreviewLayer = {
   pivot: number;
   /** Present for SpriteTextured materials: the library sheet and how cells are chosen. */
   sprite?: { sheet: SpriteSheet; mode: FlipbookMode; fps: number; randomStart: boolean; variant: number; loop?: false; crossfade?: true };
+  /** Riding a PathFollower with Colour by path: each particle turns toward its path's colour (particle.track). */
+  pathTint?: PathTint;
 };
 /** 05 ParticleTrail sink: ribbon trails behind one particle system's particles. */
 export type ParticleTrailLayer = {
   nodeId: string; systemId: string; historyTicks: number; maxPoints: number; width: number; endFade: number;
   color: ColorValue; opacity: number; emission: number; blend: 'normal' | 'additive' | 'cutout'; alphaCutoff: number; hueShift?: number; grade?: ColorGrade; depthTest?: false; animation?: LayerAnimation;
   renderOrderOffset: number; visualOrder: number;
+  /** Riding a PathFollower with Colour by path: each trail turns toward its path's colour. */
+  pathTint?: PathTint;
+  /** MotionTrail Colour over window (multiplies the colour; absent = white) over [start, end) ticks. */
+  colorOverWindow?: GradientValue; window?: [number, number];
 };
 /** 05 PointLight: lights the preview ground over its window. */
 export type PointLightLayer = {
@@ -115,6 +122,10 @@ export type PointLightLayer = {
   /** Moving light (PathFollower anchor): world position per tick from startTick, clamped. */
   track?: { startTick: number; positions: Vec3[] };
   startTick: number; endTick: number; intensityOverWindow: CurveValue; flicker: number; flickerRate: number; seed: number;
+  /** Colour over window (multiplies the colour; absent = white). */
+  colorOverWindow?: GradientValue;
+  /** Riding path `pathTrack` of a PathFollower with Colour by path. */
+  pathTint?: PathTint; pathTrack?: number;
 };
 /** 05 MeshRenderer: instanced built-in mesh per particle. */
 export type MeshLayer = {
@@ -169,7 +180,7 @@ export type FollowerTravel = {
   travels: number[]; lengths: number[];
 };
 
-export const MAX_ACTIVE_LIGHTS = 4;
+export const MAX_ACTIVE_LIGHTS = 8;
 export const DEFAULT_PREVIEW_SIZE = { min: 0.08, max: 0.16 } as const;
 
 const EMITTER_PORTS = ['anchor', 'paths', 'trigger', 'window', 'aim'];
@@ -494,7 +505,7 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
    * until the window closes. Duration mode: every path takes the authored travel ticks; speed mode: each path's own
    * length / speed, so arrivals can differ.
    */
-  type Track = { startTick: number; positions: Vec3[]; arrivalTick: number; arrivalPos: Vec3; lengthMeters: number; speedMode: boolean };
+  type Track = { startTick: number; positions: Vec3[]; arrivalTick: number; arrivalPos: Vec3; lengthMeters: number; speedMode: boolean; departTick: number };
   const tracks = new Map<string, Track[]>();
   const followerTracks = (f: ExpandedNode): Track[] => {
     const fid = f.node.id;
@@ -510,14 +521,16 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
     const start = num(s, 'startTicks'), end = Math.min(doc.durationTicks, start + num(s, 'durationTicks'));
     const ps = into(fid, 'paths');
     if (ps.length !== 1 || ps[0].source.kind !== 'node') return fail('MISSING_REFERENCE', `PathFollower "${fid}" needs one connected path source.`, fid);
-    let travels: number[];
-    try { travels = followerTravels(timing, fid, start); } catch (e) {
+    let travels: number[], delays: number[];
+    try { travels = followerTravels(timing, fid, start); delays = followerDelays(timing, fid, start); } catch (e) {
       if (e instanceof TimingError) return fail('INVALID_VALUE', e.message, e.nodeId);
       throw e;
     }
     const src = ps[0].source, easing = param(f, 'easing') as Easing;
     const travelOf = (i: number) => travels[Math.min(i, travels.length - 1)];
-    const slowest = Math.max(...travels);
+    const delayOf = (i: number) => delays[Math.min(i, delays.length - 1)];
+    // Stagger: path i waits delayOf(i) ticks at its start, then travels.
+    const slowest = Math.max(...Array.from({ length: Math.max(travels.length, delays.length) }, (_, i) => delayOf(i) + travelOf(i)));
     const all: Vec3[][] = [];
     const last: (Vec3 | undefined)[] = [];
     for (let tk = start; tk < end; tk++) {
@@ -529,8 +542,8 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
         if (!last.length) probe.forEach(() => { last.push(undefined); all.push([]); });
         for (let i = 0; i < last.length; i++) {
           const path = probe[i];
-          const u = (tk - start) / travelOf(i);
-          if (path && path.points.length && (u <= 1 || !last[i])) last[i] = pointAtArcFraction(path.points, ease(easing, Math.min(1, u)));
+          const u = (tk - start - delayOf(i)) / travelOf(i);
+          if (path && path.points.length && (u <= 1 || !last[i])) last[i] = pointAtArcFraction(path.points, ease(easing, Math.max(0, Math.min(1, u))));
         }
       }
       last.forEach((l, i) => { if (l) all[i].push([l[0], l[1], l[2]]); });
@@ -539,14 +552,27 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
     let lengths: number[] = [];
     try { lengths = probePathLengths(input, src.nodeId, src.port, start); } catch (e) { if (!(e instanceof TimingError)) throw e; }
     const out = all.map((positions, i): Track => {
-      const travel = travelOf(i);
-      return { startTick: start, positions, arrivalTick: start + travel, arrivalPos: positions[Math.min(travel, positions.length - 1)], lengthMeters: lengths[i] ?? 0, speedMode: num(f, 'speed') > 0 };
+      const travel = travelOf(i) + delayOf(i);
+      return { startTick: start, positions, arrivalTick: start + travel, arrivalPos: positions[Math.min(travel, positions.length - 1)], lengthMeters: lengths[i] ?? 0, speedMode: num(f, 'speed') > 0, departTick: start + delayOf(i) };
     });
     tracks.set(fid, out);
     return out;
   };
   /** The moving sources an anchor input resolves to: every path track of a PathFollower, or none. */
   const tracksOf = (anchorNode: ExpandedNode | undefined): Track[] => anchorNode?.node.type === 'PathFollower' ? followerTracks(anchorNode) : [];
+  /** Colour by path of the follower an anchor input resolves to (undefined when off or not a follower). */
+  const tintOf = (anchorNode: ExpandedNode | undefined): PathTint | undefined => {
+    if (anchorNode?.node.type !== 'PathFollower' || !anchorNode.effectiveEnabled) return undefined;
+    const tks = followerTracks(anchorNode);
+    const colors = pathColors(param(anchorNode, 'pathColor') as PathColorMode, param(anchorNode, 'pathGradient') as GradientValue, tks.length);
+    return colors && tks.length ? { colors, from: tks.map(t => t.departTick), ticks: num(anchorNode, 'pathColorTicks') } : undefined;
+  };
+  /** The follower (or anchor) feeding an emitter chain's anchor input. */
+  const chainAnchor = (chain: Chain): ExpandedNode | undefined => {
+    const an = into(chain.emitter.node.id, 'anchor');
+    return an.length === 1 && an[0].source.kind === 'node' ? nodes.get(an[0].source.nodeId) : undefined;
+  };
+  const tintField = (t: PathTint | undefined) => (t ? { pathTint: t } : {});
   const trackData = (t: Track) => ({ startTick: t.startTick, positions: t.positions.map(p => [...p] as Vec3) });
   /** Descriptor fields for a moving source: first track, plus the rest when the follower walks several paths. */
   const trackFields = (tks: Track[]): Pick<ParticleEmitterDescriptor, 'sourceTrack' | 'extraSourceTracks'> =>
@@ -856,6 +882,7 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
         const start = num(s, 'startTicks'), len = Math.max(1, Math.min(num(s, 'durationTicks'), doc.durationTicks - start));
         if (start >= doc.durationTicks) continue;
         const scale = transform.scale, a = (ap ?? [0, 0, 0]) as Vec3, q = rotate(transform.rotation, [a[0] * scale, a[1] * scale, a[2] * scale]);
+        const cow = param(b, 'colorOverWindow') as GradientValue, cowOn = cow.stops.some(s => s.color.srgb.toUpperCase() !== '#FFFFFF' || s.color.alpha !== 1);
         const d: ParticleEmitterDescriptor = {
           documentSeed: doc.seed, durationTicks: doc.durationTicks, emitterId: tid, randomStreamId: b.node.randomStreamId, shape: 'point',
           sourcePosition: track ? [...track.positions[0]] as Vec3 : [q[0] + transform.position[0], q[1] + transform.position[1], q[2] + transform.position[2]],
@@ -870,6 +897,7 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
           nodeId: tid, systemId: tid, historyTicks: Math.max(1, Math.round(num(b, 'history') * TICKS_PER_SECOND)), maxPoints: num(b, 'maxPoints'),
           width: num(b, 'width') * scale, endFade: num(b, 'endFade'), color: param(m, 'tint') as ColorValue, hueShift: num(m, 'hueShift'), ...gradeField(m), ...depthOf(m), opacity: num(m, 'opacity'), emission: num(m, 'emission'),
           blend: param(m, 'blend') as ParticleTrailLayer['blend'], alphaCutoff: num(m, 'alphaCutoff'), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
+          ...tintField(tintOf(anchorNode)), ...(cowOn ? { colorOverWindow: structuredClone(cow), window: [start, start + len] as [number, number] } : {}),
         });
         continue;
       }
@@ -925,12 +953,15 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
         const curve = param(b, 'intensityOverWindow') as CurveValue, cerr = lifeCurveError(curve, { min: 0, max: 1 });
         if (cerr !== undefined) report('INVALID_VALUE', `PointLight "${lid}" intensityOverWindow: ${cerr}`, lid, 'intensityOverWindow');
         const scale = transform.scale, a = (ap ?? [0, 0, 0]) as Vec3, q = rotate(transform.rotation, [a[0] * scale, a[1] * scale, a[2] * scale]);
+        const lcow = param(b, 'colorOverWindow') as GradientValue, lcowOn = lcow.stops.some(s => s.color.srgb.toUpperCase() !== '#FFFFFF' || s.color.alpha !== 1);
+        const ltint = tintOf(anchorNode);
         // A follower over several paths: one light per path (the light budget below counts each).
         for (const [li, ltrack] of (ltracks.length ? ltracks : [undefined]).entries()) lights.push({
           ...(ltrack ? { track: trackData(ltrack) } : {}),
           nodeId: lid, position: [q[0] + transform.position[0], q[1] + transform.position[1], q[2] + transform.position[2]], color: hueRotate(applyGrade(param(b, 'color') as ColorValue, gradeFor(b)), num(b, 'hueShift')),
           intensity: num(b, 'intensity'), range: num(b, 'range') * scale, startTick: start, endTick: Math.min(doc.durationTicks, start + num(s, 'durationTicks')),
           intensityOverWindow: structuredClone(curve), flicker: num(b, 'flicker'), flickerRate: num(b, 'flickerRate'),
+          ...(lcowOn ? { colorOverWindow: structuredClone(lcow) } : {}), ...(ltint && ltrack ? { pathTint: ltint, pathTrack: li } : {}),
           seed: sampleUnit({ documentSeed: doc.seed, randomStreamId: b.node.randomStreamId, eventRandomKey: li > 0 ? `light@t${li}` : 'light', entityOrdinal: 0, propertyKey: 'flicker', sampleOrdinal: 0 }) * 4294967296 >>> 0,
         });
         continue;
@@ -1034,7 +1065,7 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
           nodeId: sid, systemId: sid, color: param(m, 'tint') as ColorValue, hueShift: num(m, 'hueShift'), ...gradeField(m), ...depthOf(m), opacity: num(m, 'opacity'), emission: num(m, 'emission'),
           blend: param(m, 'blend') as ParticlePreviewLayer['blend'], alphaCutoff: num(m, 'alphaCutoff'), groundFade: num(m, 'groundFade') * transform.scale, ...dissolveOf(m), ...spriteOpsOf(m), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
           sizeOverLife: curve('sizeOverWindow', SIZE_OVER_LIFE_BOUNDS), opacityOverLife: curve('opacityOverWindow', OPACITY_OVER_LIFE_BOUNDS),
-          colorOverLife: structuredClone(param(b, 'colorOverWindow') as GradientValue), stretchRatio: 1, pivot: 0.5,
+          colorOverLife: structuredClone(param(b, 'colorOverWindow') as GradientValue), stretchRatio: 1, pivot: 0.5, ...tintField(tintOf(anchorNode)),
           ...((): Pick<ParticlePreviewLayer, 'alignment' | 'worldAxis'> => { const w = param(b, 'worldAxis') as Vec3, l = Math.hypot(w[0], w[1], w[2]); return param(b, 'alignment') === 'worldAxis' && l > 1e-9 ? { alignment: 'worldAxis', worldAxis: rotate(transform.rotation, [w[0] / l, w[1] / l, w[2] / l]) } : { alignment: 'camera', worldAxis: [0, 1, 0] }; })(), ...(sprite ? { sprite } : {}),
         });
         continue;
@@ -1064,6 +1095,7 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
           nodeId: tid, systemId: chain.terminalId, historyTicks: Math.max(1, Math.round(num(b, 'history') * TICKS_PER_SECOND)), maxPoints: num(b, 'maxPoints'),
           width: num(b, 'width') * transform.scale, endFade: num(b, 'endFade'), color: multiplyColors(base, param(m, 'tint') as ColorValue), hueShift: num(m, 'hueShift'), ...gradeField(m), ...depthOf(m), opacity: num(m, 'opacity'),
           emission: num(m, 'emission'), blend: param(m, 'blend') as ParticleTrailLayer['blend'], alphaCutoff: num(m, 'alphaCutoff'), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
+          ...tintField(tintOf(chainAnchor(chain))),
         });
         continue;
       }
@@ -1134,6 +1166,7 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
         stretchRatio: num(b, 'stretchRatio'),
         pivot: num(b, 'pivot'),
         ...(sprite ? { sprite: { ...sprite, randomStart: chain.initial ? param(chain.initial, 'randomFrameStart') === true : false } } : {}),
+        ...tintField(tintOf(chainAnchor(chain))),
       });
     } catch (e) {
       if (!(e instanceof Fail)) throw e;

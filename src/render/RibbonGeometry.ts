@@ -122,6 +122,8 @@ export class RibbonGeometry {
   private capacity = 0;
   private positions = new Float32Array(0);
   private opacities = new Float32Array(0);
+  /** Per vertex: the path's tint (linear RGB, 1 = none). */
+  private tints = new Float32Array(0);
   private sides = new Float32Array(0);
   /** Per vertex: arc length from the path start, total path length, stable per-path key in [0,1). */
   private strips = new Float32Array(0);
@@ -185,6 +187,7 @@ export class RibbonGeometry {
     const cam = options.cameraPosition;
     const pos = this.positions;
     const op = this.opacities;
+    const tn = this.tints;
     const sd = this.sides;
     const st = this.strips;
     const idx = this.indices;
@@ -217,6 +220,7 @@ export class RibbonGeometry {
         return e * e * (3 - 2 * e);
       };
       const key = fnv1a32Utf8(String(path.id)) / 4294967296;
+      const tr = path.tint ? path.tint[0] : 1, tg = path.tint ? path.tint[1] : 1, tb = path.tint ? path.tint[2] : 1;
       // strip.z = -1 marks round-join fan vertices (textured ribbons skip them; untextured ones use them).
       const put = (p: Vec3, side: V, w: number, sign: number, opacity: number, arcAt: number, join = false): number => {
         st[v * 3] = arcAt; st[v * 3 + 1] = totalLength; st[v * 3 + 2] = join ? -1 : key;
@@ -225,6 +229,7 @@ export class RibbonGeometry {
         pos[o + 1] = p[1] + side[1] * w * sign;
         pos[o + 2] = p[2] + side[2] * w * sign;
         op[v] = opacity;
+        tn[o] = tr; tn[o + 1] = tg; tn[o + 2] = tb;
         sd[v] = sign;
         v += 1;
         return v - 1;
@@ -341,6 +346,7 @@ export class RibbonGeometry {
     // Upload only the live prefix; stale capacity past it is never drawn.
     markLive(this.geometry.getAttribute('position') as THREE.BufferAttribute, v * 3);
     markLive(this.geometry.getAttribute('opacity') as THREE.BufferAttribute, v);
+    markLive(this.geometry.getAttribute('tint') as THREE.BufferAttribute, v * 3);
     markLive(this.geometry.getAttribute('side') as THREE.BufferAttribute, v);
     markLive(this.geometry.getAttribute('strip') as THREE.BufferAttribute, v * 3);
     markLive(this.geometry.getIndex() as THREE.BufferAttribute, n);
@@ -366,11 +372,14 @@ export class RibbonGeometry {
     this.capacity = points;
     this.positions = new Float32Array(points * VERTS_PER_POINT * 3);
     this.opacities = new Float32Array(points * VERTS_PER_POINT);
+    this.tints = new Float32Array(points * VERTS_PER_POINT * 3);
     this.sides = new Float32Array(points * VERTS_PER_POINT);
     this.strips = new Float32Array(points * VERTS_PER_POINT * 3);
     this.indices = new Uint32Array(points * INDICES_PER_POINT);
     const position = new THREE.BufferAttribute(this.positions, 3);
     const opacity = new THREE.BufferAttribute(this.opacities, 1);
+    const tint = new THREE.BufferAttribute(this.tints, 3);
+    tint.setUsage(THREE.DynamicDrawUsage);
     const side = new THREE.BufferAttribute(this.sides, 1);
     const strip = new THREE.BufferAttribute(this.strips, 3);
     strip.setUsage(THREE.DynamicDrawUsage);
@@ -381,6 +390,7 @@ export class RibbonGeometry {
     index.setUsage(THREE.DynamicDrawUsage);
     this.geometry.setAttribute('position', position);
     this.geometry.setAttribute('opacity', opacity);
+    this.geometry.setAttribute('tint', tint);
     this.geometry.setAttribute('side', side);
     this.geometry.setAttribute('strip', strip);
     this.geometry.setIndex(index);

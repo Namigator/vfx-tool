@@ -14,6 +14,7 @@ import { compilePathPreview, type PathPreviewLayer } from '../../graph/toPaths.t
 import type { ParticleEmitterDescriptor } from '../../runtime/particles.ts';
 import { compileLifeCurve, compileLifeGradient, sampleLifeCurve, sampleLifeGradient } from '../../render/billboardLife.ts';
 import { applyGrade, hueRotate, type ColorGrade } from '../../graph/recolor.ts';
+import { settledColor } from '../../graph/pathColor.ts';
 import {
   CM_PER_METER, toUe, toUeDir,
   type UeColorKey, type UeEmitter, type UeFloatKey, type UeFlipbook, type UeLight, type UeReportItem, type UeRibbon,
@@ -270,15 +271,21 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
     const shared = usedBy.get(layer.systemId);
     if (shared) report.push({ level: 'approximated', item: layer.nodeId, message: `Shares its particles with ${shared} in the editor; Niagara emits its own particles for each (same timing/look, different random instances).` });
     else usedBy.set(layer.systemId, layer.nodeId);
-    emitters.push(emitterFrom(layer, d, origin, plan.value.durationTicks, unique(layer.nodeId), report));
+    const at = (k: number) => (layer.pathTint ? { ...layer, color: settledColor(layer.color, layer.pathTint, k) } : layer);
+    if (layer.pathTint) report.push({ level: 'approximated', item: layer.nodeId, message: 'Colour by path / colour over window: each path exports the colour it settles on (the fade from the original colour is not exported).' });
+    emitters.push(emitterFrom(at(0), d, origin, plan.value.durationTicks, unique(layer.nodeId), report));
     // A PathFollower over several paths: one source per path, each emitting the full amount (as in the editor).
-    (d.extraSourceTracks ?? []).forEach((track, k) => emitters.push(emitterFrom(layer, { ...d, sourceTrack: track, extraSourceTracks: undefined }, origin, plan.value.durationTicks, unique(`${layer.nodeId}_path${k + 2}`), report)));
+    (d.extraSourceTracks ?? []).forEach((track, k) => emitters.push(emitterFrom(at(k + 1), { ...d, sourceTrack: track, extraSourceTracks: undefined }, origin, plan.value.durationTicks, unique(`${layer.nodeId}_path${k + 2}`), report)));
   }
   if (plan.value.trails.length) report.push({ level: 'approximated', item: 'trails', message: `${plan.value.trails.length} trail layer(s) exported as velocity-stretched sprites on the parent emitter (Niagara Ribbon-per-particle trails are a heavier engine feature left for hand-tuning).` });
   if (plan.value.meshes.length) report.push({ level: 'dropped', item: 'meshes', message: `${plan.value.meshes.length} mesh-particle layer(s) are not exported; see report for manual Niagara Mesh Renderer setup (out of scope this pass — "meshes -> report item unless cheap" per spec).` });
   if (plan.value.presentation.flashes.length) report.push({ level: 'dropped', item: 'presentation', message: 'Screen flashes are not exported (add a post-process/camera-shake Blueprint on impact if needed).' });
   if (plan.value.presentation.impulses.length) report.push({ level: 'dropped', item: 'presentation', message: 'Camera shake is not exported (use a UE Camera Shake asset triggered on impact if needed).' });
-  const lights = plan.value.lights.map(l => lightFrom(l, origin, plan.value.durationTicks, report));
+  const lights = plan.value.lights.map(l => {
+    if (!l.pathTint && !l.colorOverWindow) return lightFrom(l, origin, plan.value.durationTicks, report);
+    if (!report.some(r => r.item === l.nodeId && r.message.startsWith('Colour by path'))) report.push({ level: 'approximated', item: l.nodeId, message: 'Colour by path / colour over window: each path exports the colour it settles on (the fade from the original colour is not exported).' });
+    return lightFrom({ ...l, color: settledColor(l.color, l.pathTint, l.pathTrack ?? 0, l.colorOverWindow) }, origin, plan.value.durationTicks, report);
+  });
   if (lights.length > 4) report.push({ level: 'info', item: 'lights', message: `${lights.length} lights exported as Niagara Light renderers; consider capping simultaneous lit particles for mobile/console budgets.` });
   const ribbons = ribbonsFrom(doc, origin, report);
   const textures = [...new Set([...emitters.map(e => e.textureFile), ...ribbons.map(b => b.textureFile)].filter((x): x is string => !!x))];

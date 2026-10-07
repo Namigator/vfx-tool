@@ -65,6 +65,21 @@ path takes its own length ÷ speed, so arrivals can differ; a Schedule started b
 is the chosen ones (original order kept) and `rest` is everyone else; it works anywhere paths flow, not only before a
 follower. Exports (Roblox, Unreal, Godot) do the same: one emitter (and trail) per path, each on its own route.
 
+**Path numbers.** Every path of a set has a number (0, 1, 2...). Select a path node, `PathFollower`, `PathSplitter` or
+`MergePaths` and the viewport shows each number at its path's end (a splitter shows its input numbers, chosen ones
+green). The numbers are what `PathSplitter` From/Offset count, and what the follower uses for:
+- **Stagger** (ticks): path k leaves k × Stagger ticks after the window opens (Stagger order reverse: last first);
+  waiting riders hold at their start, each arrival (and whatever it triggers) moves with its own departure.
+- **Colour by path** (`rainbow` or `gradient` with Path colours from path 0 to the last): everything riding on the
+  follower - sprites, motion trails, emitted particles, point lights - takes its path's colour. **Colour change time**
+  fades each rider from its own colour to its path colour, starting at that path's departure (0 = at once): one pink
+  orb that splits into six coloured lights is one follower, one sprite, one trail and one light.
+
+`MergePaths` keeps inputs in connection order (`Reverse order` flips it). Its **join** mode chains every input end to
+start into ONE continuous path: a single follower flies Source → Target and then spirals down a `HelixPath` with no
+second follower or hand-off. `PointLight` and `MotionTrail` also have **Colour over window** (a colour ramp across
+their window).
+
 ## 3. Time: schedules, windows and events
 
 - A **Schedule** node decides *when*. Modes: `once` (a single start event), `window` (open from `startTicks` for

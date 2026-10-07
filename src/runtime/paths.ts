@@ -9,6 +9,8 @@ export interface PathData {
   points: Vec3[];
   widthScale: number;
   opacityScale: number;
+  /** Preview-only colour multiplier (linear RGB) for this ribbon, e.g. a trail's path colour; absent = white. */
+  tint?: Vec3;
 }
 
 export interface StableFrame { t: Vec3; n1: Vec3; n2: Vec3 }
@@ -281,4 +283,20 @@ export function transformPath(p: PathData, offset: Vec3, q: [number, number, num
     return [v[0] + qw * tx + (qy * tz - qz * ty), v[1] + qw * ty + (qz * tx - qx * tz), v[2] + qw * tz + (qx * ty - qy * tx)];
   };
   return { ...p, points: p.points.map(v => { const r = rot([(v[0] - o[0]) * scale, (v[1] - o[1]) * scale, (v[2] - o[2]) * scale]); return [o[0] + r[0] + offset[0], o[1] + r[1] + offset[1], o[2] + r[2] + offset[2]]; }) };
+}
+
+/**
+ * MergePaths "join": every path chained end to start into ONE continuous path (a gap between one path's end and the
+ * next path's start becomes a straight piece). Width/opacity come from the first path. Empty in, empty out.
+ */
+export function joinPaths(paths: readonly PathData[]): PathData[] {
+  const withPts = paths.filter(p => p.points.length > 0);
+  if (!withPts.length) return [];
+  const points: Vec3[] = [];
+  for (const p of withPts) for (const q of p.points) {
+    const last = points[points.length - 1];
+    if (last && Math.hypot(q[0] - last[0], q[1] - last[1], q[2] - last[2]) < 1e-9) continue;
+    points.push([q[0], q[1], q[2]]);
+  }
+  return [{ id: 'joined', points, widthScale: withPts[0].widthScale, opacityScale: withPts[0].opacityScale }];
 }

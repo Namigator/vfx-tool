@@ -31,7 +31,7 @@ import type { SpriteSheet } from '../assets/spriteLibrary.ts';
 import type { ColorValue, CurveValue, Diagnostic, ErrorCode, ParameterValue, Quaternion, Transform, ValidationResult, Vec3 } from '../model/types.ts';
 import { TICKS_PER_SECOND } from '../model/types.ts';
 import { registryKey } from '../model/controls.ts';
-import { bezierPath, jaggedPath, linePath, revealPath, type PathData, helixPath, transformPath, type HelixTaper } from '../runtime/paths.ts';
+import { bezierPath, jaggedPath, linePath, revealPath, type PathData, helixPath, joinPaths, transformPath, type HelixTaper } from '../runtime/paths.ts';
 import { branchPaths, type BranchCountMode } from '../runtime/branches.ts';
 import { radialPaths, type RadialMode } from '../runtime/radial.ts';
 import { ringPath } from '../runtime/ring.ts';
@@ -427,14 +427,16 @@ export function compilePathPreview(input: unknown, effectTick: number, options: 
       }
       case 'MergePaths': {
         if (!on) { out = new Map([['paths', []]]); break; }
-        // Inputs in edge order; each input's ids get its index so merged ids stay unique and stable.
+        // Inputs in edge order (or reversed); each input's ids get its index so merged ids stay unique and stable.
         const merged: PathData[] = [];
-        into(id, 'paths').forEach((c, i) => {
+        const ins = into(id, 'paths').map((c, i) => [c, i] as const);
+        if (param(n, 'reverse') === true) ins.reverse();
+        for (const [c, i] of ins) {
           const src = sourceNode(c.source, id, 'paths'), set = evalNode(src).get(c.source.kind === 'node' ? c.source.port : '');
           if (!set) fail('UNKNOWN_NODE', `Output of "${src.node.id}" feeding MergePaths "${id}" is not a path output.`, src.node.id);
           for (const p of set as PathData[]) merged.push({ ...p, id: `m${i}-${p.id}` });
-        });
-        out = new Map([['paths', merged]]);
+        }
+        out = new Map([['paths', param(n, 'mode') === 'join' ? joinPaths(merged) : merged]]);
         break;
       }
       case 'PathTransform': {

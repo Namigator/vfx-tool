@@ -453,6 +453,7 @@ function pointLight(): NodeSpec {
       param({ id: 'color', label: 'Colour', type: 'color', unit: 'none', default: white(), editPolicy: 'live' }),
       param({ id: 'intensity', label: 'Intensity', type: 'number', unit: 'linearGain', default: 20, min: 0, max: 100, editPolicy: 'live', description: 'Peak intensity (candela-like preview units).' }),
       param({ id: 'intensityOverWindow', label: 'Intensity over window', type: 'curve', unit: 'normalized', curveDomain: 'normalized', default: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 0 }, { x: 0.1, y: 1 }, { x: 1, y: 0 }] }, min: 0, max: 1, editPolicy: 'live' }),
+      param({ id: 'colorOverWindow', label: 'Colour over window', type: 'gradient', unit: 'none', default: { stops: [{ position: 0, color: white() }, { position: 1, color: white() }] }, editPolicy: 'live', description: 'Multiplies Colour across the window (0 = window start, 1 = end): a light that turns from pink to cyan. White = unchanged.' }),
       param({ id: 'range', label: 'Range', type: 'number', unit: 'meter', default: 5, min: 0.1, max: 50, editPolicy: 'live' }),
       param({ id: 'flicker', label: 'Flicker', type: 'number', unit: 'normalized', default: 0, min: 0, max: 1, editPolicy: 'live', description: 'Depth of deterministic noise flicker (fire, electricity).' }),
       param({ id: 'flickerRate', label: 'Flicker rate', type: 'number', unit: 'hertz', default: 12, min: 0, max: 60, editPolicy: 'live' }),
@@ -475,6 +476,11 @@ function pathFollower(): NodeSpec {
       param({ id: 'durationTicks', label: 'Travel ticks', type: 'integer', unit: 'tick', default: 30, min: 1, max: 600, step: 1, description: 'Ticks every path of the set takes from start to end; arrival fires then. Holds at the end until the window closes.' }),
       param({ id: 'easing', label: 'Easing', type: 'enum', unit: 'none', default: 'linear', choices: ['linear', 'easeIn', 'easeOut', 'easeInOut'] }),
       param({ id: 'speed', label: 'Speed', type: 'number', unit: 'metersPerSecond', default: 0, min: 0, max: 200, description: '0 = travel for Travel ticks. Above 0: travel ticks = path length ÷ speed (rounded to ticks, per path), so a farther Target, or a longer path, takes longer at the same speed.' }),
+      param({ id: 'stagger', label: 'Stagger', type: 'integer', unit: 'tick', default: 0, min: 0, max: 120, step: 1, description: 'Ticks between one path\'s departure and the next (path 0 leaves first, then path 1...). Waiting ones hold at their path start. 0 = all leave together.' }),
+      param({ id: 'staggerOrder', label: 'Stagger order', type: 'enum', unit: 'none', default: 'forward', choices: ['forward', 'reverse'], description: 'forward: path 0 leaves first. reverse: the last path leaves first.' }),
+      param({ id: 'pathColor', label: 'Colour by path', type: 'enum', unit: 'none', default: 'off', choices: ['off', 'rainbow', 'gradient'], editPolicy: 'live', description: 'Gives every path its own colour: everything riding on it (sprites, trails, emitted particles, lights) takes that colour. rainbow: hues spread evenly over the paths. gradient: Path colours sampled from the first path (0) to the last (1). Path numbers are shown in the viewport while this node is selected.' }),
+      param({ id: 'pathGradient', label: 'Path colours', type: 'gradient', unit: 'none', default: { stops: [{ position: 0, color: { srgb: '#30E0FF', alpha: 1 } }, { position: 0.5, color: { srgb: '#FFD040', alpha: 1 } }, { position: 1, color: { srgb: '#9060FF', alpha: 1 } }] }, editPolicy: 'live', description: 'Colour by path = gradient: the colour of the first path (0) to the last (1).' }),
+      param({ id: 'pathColorTicks', label: 'Colour change time', type: 'integer', unit: 'tick', default: 0, min: 0, max: 600, step: 1, editPolicy: 'live', description: 'Ticks over which the riders fade from their own colour to their path colour, counted from that path\'s departure. 0 = path colour from the start.' }),
     ],
     disabledBehavior: 'empty',
   });
@@ -527,7 +533,10 @@ function mergePathsNode(): NodeSpec {
   return node('MergePaths', {
     inputs: [port({ id: 'paths', label: 'Paths', type: 'paths', cardinality: 'many', required: true })],
     outputs: [port({ id: 'paths', label: 'Paths', type: 'paths' })],
-    parameters: [],
+    parameters: [
+      param({ id: 'mode', label: 'Mode', type: 'enum', unit: 'none', default: 'append', choices: ['append', 'join'], description: 'append: one set holding every path (inputs in connection order, path numbers shown in the viewport when selected). join: all paths chained end to start into ONE continuous path (fly to the target, then spiral down) - a follower walks it without a hand-off.' }),
+      param({ id: 'reverse', label: 'Reverse order', type: 'boolean', unit: 'none', default: false, description: 'Take the inputs in the opposite order (last connected first). Changes path numbers (append) or which part comes first (join).' }),
+    ],
     disabledBehavior: 'empty',
   });
 }
@@ -580,6 +589,7 @@ function motionTrail(): NodeSpec {
       param({ id: 'maxPoints', label: 'Max points', type: 'integer', unit: 'none', default: 48, min: 2, max: 128, step: 1 }),
       param({ id: 'width', label: 'Width', type: 'number', unit: 'meter', default: 0.12, min: 0.001, max: 5, editPolicy: 'live' }),
       param({ id: 'endFade', label: 'End fade', type: 'number', unit: 'normalized', default: 0.35, min: 0, max: 0.5, editPolicy: 'live' }),
+      param({ id: 'colorOverWindow', label: 'Colour over window', type: 'gradient', unit: 'none', default: { stops: [{ position: 0, color: white() }, { position: 1, color: white() }] }, editPolicy: 'live', description: 'Multiplies the material colour across the window (0 = window start, 1 = end). White = unchanged.' }),
       param({ id: 'renderOrderOffset', label: 'Render order offset', type: 'integer', unit: 'none', default: 0, min: -32, max: 32, step: 1, editPolicy: 'live' }),
     ],
     disabledBehavior: 'empty',
