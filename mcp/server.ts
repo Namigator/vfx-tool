@@ -53,6 +53,7 @@ import { unusedAssetHashes } from '../src/model/assetStore.ts';
 import { portabilityReport } from '../src/graph/portability.ts';
 import { createMeshAsset } from '../src/assets/importMesh.ts';
 import { buildPack, readPack, type PackAsset } from '../src/model/vfxpack.ts';
+import { FEEDBACK_KINDS, feedbackLink, sendFeedback } from '../src/feedback.ts';
 
 export type VfxServerOptions = { root?: string; editorUrl?: string; chromePath?: string };
 
@@ -152,6 +153,20 @@ export function createVfxServer(options: VfxServerOptions = {}): McpServer {
   tool('vfx_guide', 'The VFX Studio guide. No arguments = index of chapters with one-line summaries. { topic } = a chapter (readme, concepts, workflow, look, troubleshooting, export, editor, recipes/<family>, reference/<name>) or one of the short topics (basics, glow, fire, smoke, sparks, beams, projectile, props, materials, values, tools). { topic, section } = only one "##" section of it. { node: "Emitter" } = that node type\'s entry (ports, parameters, ranges) from reference/nodes; { component: "flamethrower" } = that component\'s knobs. Read "readme", "concepts" and "workflow" before building; read the family recipe for what you are making.', {
     topic: z.string().optional(), section: z.string().optional(), node: z.string().optional(), component: z.string().optional(),
   }, ({ topic, section, node, component }) => ok(guideText({ topic, section, node, component })));
+
+  tool('vfx_submit_feedback', 'Send a ticket (suggestion, bug, question) to the VFX Studio developer, like the editor Feedback button. Use when the user wants something the tool cannot do, hits a bug, or has an idea: OFFER it ("Should I submit a ticket for that?"), show the exact text, and only call this after the user says yes. Write the message in plain words: what they tried, what happened, what they wanted. replyTo = the user email ONLY if they give it and want a reply.', {
+    kind: z.enum(FEEDBACK_KINDS), message: z.string().min(3).max(5000), replyTo: z.string().email().optional(),
+  }, async ({ kind, message, replyTo }) => {
+    try {
+      await sendFeedback({ kind, message, replyTo, source: 'MCP (vfx_submit_feedback)' });
+      return ok(`Ticket sent (${kind}). The developer gets it by email.`);
+    } catch (e) {
+      // The free delivery plan only accepts tickets sent from a web page, so hand back a pre-filled form link.
+      return ok(`Could not send directly (${e instanceof Error ? e.message : String(e)}).
+Give the user this link: it opens the VFX Studio Feedback form already filled in, they only press Send:
+${feedbackLink(kind, message)}`);
+    }
+  });
 
   tool('vfx_convert_legacy', 'Convert an old (v1) effect into a NEW editable graph document (the v1 file is never changed), like the editor Legacy v1 > Convert a copy. Give a v1 recipe/bundle JSON path, or a family name for its v1 default. Returns the conversion report.', {
     path: z.string().optional(), family: z.enum(FAMILIES).optional(), docId: z.string().regex(ID).optional(),

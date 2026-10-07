@@ -302,3 +302,8 @@
   .pv2-phone .pv2-readout, .pv2-phone .tl-root { display: none; }
   .pv2 .pv2-mnav-btn { flex-direction: row; gap: 6px; min-height: 44px; font-size: 12px; padding: 0; }
 }
+
+/* Feedback form */
+.pv2-feedback label { display: flex; flex-direction: column; gap: 4px; }
+.pv2-feedback textarea { width: 100%; box-sizing: border-box; resize: vertical; font: inherit; }
+.pv2-feedback > div { display: flex; gap: 6px; }

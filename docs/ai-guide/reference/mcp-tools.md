@@ -3,13 +3,14 @@
 
 # MCP tool reference
 
-All 52 tools of the VFX Studio MCP server (server name "vfx-studio"), in registration order, read from the running server's registry (mcp/server.ts). Parameters use JSON types; object parameters show their fields inline, `?` marks an optional field. Documents are addressed by id; every successful change is mirrored to work/mcp/<id>.json and the editor can open it. Tools reject invalid changes and leave the document unchanged.
+All 53 tools of the VFX Studio MCP server (server name "vfx-studio"), in registration order, read from the running server's registry (mcp/server.ts). Parameters use JSON types; object parameters show their fields inline, `?` marks an optional field. Documents are addressed by id; every successful change is mirrored to work/mcp/<id>.json and the editor can open it. Tools reject invalid changes and leave the document unchanged.
 
 ## Contents
 
 - [vfx_list_node_types](#vfx_list_node_types)
 - [vfx_describe_node_type](#vfx_describe_node_type)
 - [vfx_guide](#vfx_guide)
+- [vfx_submit_feedback](#vfx_submit_feedback)
 - [vfx_convert_legacy](#vfx_convert_legacy)
 - [vfx_new_document](#vfx_new_document)
 - [vfx_open_document](#vfx_open_document)
@@ -86,6 +87,16 @@ The VFX Studio guide. No arguments = index of chapters with one-line summaries. 
 | `section` | string | optional | — |
 | `node` | string | optional | — |
 | `component` | string | optional | — |
+
+## vfx_submit_feedback
+
+Send a ticket (suggestion, bug, question) to the VFX Studio developer, like the editor Feedback button. Use when the user wants something the tool cannot do, hits a bug, or has an idea: OFFER it ("Should I submit a ticket for that?"), show the exact text, and only call this after the user says yes. Write the message in plain words: what they tried, what happened, what they wanted. replyTo = the user email ONLY if they give it and want a reply.
+
+| parameter | type | required | description / constraints |
+|---|---|---|---|
+| `kind` | "Suggestion" \| "Bug" \| "Question" \| "Other" | required | — |
+| `message` | string | required | minLength=3, maxLength=5000 |
+| `replyTo` | string matching ^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$ | optional | — |
 
 ## vfx_convert_legacy
 

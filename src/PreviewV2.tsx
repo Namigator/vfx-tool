@@ -45,6 +45,8 @@ import { mergeDiagnostics } from './render/layerOrder.ts';
 import { timelineInfo, timelineLanes, type TimelineInfo } from './render/timeline.ts';
 import { TimelineStrip } from './editor/TimelineStrip.tsx';
 import { Tutorial } from './editor/Tutorial.tsx';
+import { FeedbackDialog } from './editor/FeedbackDialog.tsx';
+import { parseFeedbackHash } from './feedback.ts';
 import { SplitPane } from './editor/SplitPane.tsx';
 import { MenuButton, OverlayMenu, type MenuItem } from './editor/MenuButton.tsx';
 import { IconUndo, IconRedo, IconPlay, IconPause, IconRestart, IconStepBack, IconStepForward, IconChevronDown, IconPanelLeft, IconPanelRight, IconPanelBottom, IconEye, IconMaximize, IconRestoreSplit } from './editor/icons.tsx';
@@ -231,6 +233,9 @@ export default function PreviewV2() {
   }, []);
   const [pip, setPip] = useState<'s' | 'm' | 'l' | 'hidden'>('m');
   const [tutorialOpen, setTutorialOpen] = useState(false);
+  // A "#feedback=..." link (handed out by the MCP tool vfx_submit_feedback) opens the form pre-filled.
+  const [feedbackInitial] = useState(() => typeof location === 'undefined' ? null : parseFeedbackHash(location.hash));
+  const [feedbackOpen, setFeedbackOpen] = useState(feedbackInitial !== null);
   const [rightTab, setRightTab] = useState<'controls' | 'node' | 'outline' | 'assets' | 'sound' | 'diagnostics' | 'ai'>(() => new URLSearchParams(window.location.search).get('panel') === 'ai' ? 'ai' : 'controls');
   const [showProjects, setShowProjects] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
@@ -1058,12 +1063,13 @@ export default function PreviewV2() {
           <button type="button" className="pv2-icon-btn" disabled={!historyFlags.canRedo} onClick={redo} title="Redo (Ctrl/Cmd+Shift+Z)" aria-label="Redo"><IconRedo /></button>
         </div>
         <button type="button" className="pv2-tool-btn pv2-tutorial-btn" onClick={() => setTutorialOpen(true)} title="A short guided tour of the editor (about 2 minutes)">Tutorial</button>
+        <button type="button" className="pv2-tool-btn pv2-tutorial-btn" onClick={() => setFeedbackOpen(true)} title="Send a suggestion, bug report or question to the developer">Feedback</button>
         <div className="pv2-topbar-status" role="status" aria-live="polite">
           {narrow && <span className="pv2-note" role="note">Desktop authoring recommended: under 1024 px wide, panels stack.</span>}
           <span className="pv2-note">{saveStatus}</span>
         </div>
       </header>
-      {(stale || fileNote || (recoveredFromRef.current && typeof localStorage !== 'undefined' && localStorage.getItem(CORRUPT_KEY)) || (jsonErrors.some(e => e.code === 'UNSUPPORTED_VERSION') && textDirty) || stagedPack || migrationReport || mediaOpen || showProjects) && (
+      {(stale || fileNote || (recoveredFromRef.current && typeof localStorage !== 'undefined' && localStorage.getItem(CORRUPT_KEY)) || (jsonErrors.some(e => e.code === 'UNSUPPORTED_VERSION') && textDirty) || stagedPack || migrationReport || mediaOpen || feedbackOpen || showProjects) && (
         <div className="pv2-notices">
           {stale && (
             <span className="pv2-stale" role="alert">
@@ -1079,6 +1085,7 @@ export default function PreviewV2() {
           {jsonErrors.some(e => e.code === 'UNSUPPORTED_VERSION') && textDirty && (
             <button type="button" onClick={() => downloadText('effect-unsupported-version.json', text)} title="This file is from a version this editor cannot open; it was not changed or converted. Download it as-is.">Download the file as-is</button>
           )}
+          {feedbackOpen && <FeedbackDialog initial={feedbackInitial ?? undefined} onClose={() => { setFeedbackOpen(false); if (location.hash.startsWith('#feedback=')) history.replaceState(null, '', location.pathname + location.search); }} />}
           {mediaOpen && <ExportMediaDialog getDocument={() => historyRef.current!.snapshot()} getCameraPose={() => viewportRef.current?.cameraPose() ?? null} glow={glow} onNote={setFileNote} onClose={() => setMediaOpen(false)} />}
           {stagedPack && (
             <div className="pv2-banner" role="dialog" aria-label={`Open ${stagedPack.name}`}>
