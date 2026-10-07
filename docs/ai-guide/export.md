@@ -70,6 +70,8 @@ local p = EffectPlayer.play(model, nil, {
     target = mouseHit,                           -- Vector3
     speed = 60,          -- projectile studs/s   (or travelTime = 0.5 seconds; neither = authored speed)
     scale = 0.5,         -- resize for your game: sizes, speeds, widths, light range (reach still follows target)
+    color = Color3.fromRGB(80, 200, 255),  -- recolour: every coloured part takes this hue (whites stay white)
+    -- hueShift = 120,  -- or turn every hue by degrees (multicoloured effects keep their variety)
     loop = false,
 })
 p.setTarget(enemy.Position)   -- follow a moving target mid-flight
@@ -80,6 +82,9 @@ p.stop()
 Everything after the arrival (impact, sparks, lights) moves with the retimed flight. Sizes, widths and heights are
 not stretched by aiming; only positions along the aim line are. `EffectPlayer.create(...)` returns the same handle
 plus `update(dt)` / `isDone()` for hosts that drive time themselves.
+
+`color` / `hueShift` recolour emitters, beams, lights and mesh pieces from their authored colours each play (a later
+play without them restores the original), so one model serves every colourway.
 
 ### Textures
 

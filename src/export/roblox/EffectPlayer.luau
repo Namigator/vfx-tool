@@ -17,6 +17,10 @@
 -- options.scale (default 1) resizes the effect for your game (particle sizes, speeds, spread, beam/trail widths,
 -- light range, offsets across the aim line); the Source->Target reach still follows source/target.
 --
+-- Recolouring: options.color (Color3) turns every coloured part of the effect to that hue, keeping each part's own
+-- saturation and brightness (white-hot cores stay white); options.hueShift (degrees) instead turns every hue by the
+-- same amount, so multicoloured effects keep their variety. Both work on any clone and can change between plays.
+--
 -- EffectPlayer.create(...) returns the same object plus update(dt) / isDone() so a host can drive time itself
 -- (used by tools/roblox-check.mjs); options.onEmit(emitter, count) is called for every :Emit.
 
@@ -56,12 +60,53 @@ local function scaleSequence(seq, s)
 	return NumberSequence.new(out)
 end
 
-local function buildColor(flat)
+local function buildColor(flat, recolor)
 	local out = {}
 	for i = 1, #flat, 4 do
-		out[#out + 1] = ColorSequenceKeypoint.new(flat[i], Color3.new(flat[i + 1], flat[i + 2], flat[i + 3]))
+		local c = Color3.new(flat[i + 1], flat[i + 2], flat[i + 3])
+		out[#out + 1] = ColorSequenceKeypoint.new(flat[i], if recolor then recolor(c) else c)
 	end
 	return ColorSequence.new(out)
+end
+
+-- options.color / options.hueShift -> a Color3 mapper (nil = keep the authored colours).
+local function makeRecolor(opts)
+	local target, shift = opts.color, opts.hueShift
+	if not target and not (shift and shift ~= 0) then
+		return nil
+	end
+	local th = if target then (target:ToHSV()) else nil
+	return function(c: Color3): Color3
+		local h, s, v = c:ToHSV()
+		if s < 0.08 then
+			return c -- white / grey parts keep their look
+		end
+		h = if th then th else (h + shift / 360) % 1
+		return Color3.fromHSV(h, s, v)
+	end
+end
+
+-- Recolours instance property `prop` from its authored value (kept in an attribute, so replays and clones never
+-- compound a shift); with no recolor the authored value is restored.
+local function applyRecolor(inst: Instance, prop: string, recolor)
+	local attr = "VfxBase" .. prop
+	local base = inst:GetAttribute(attr)
+	if base == nil then
+		base = (inst :: any)[prop]
+		inst:SetAttribute(attr, base)
+	end
+	if typeof(base) == "ColorSequence" then
+		if recolor then
+			local out = {}
+			for i, kp in ipairs(base.Keypoints) do
+				out[i] = ColorSequenceKeypoint.new(kp.Time, recolor(kp.Value))
+			end
+			base = ColorSequence.new(out)
+		end
+	elseif typeof(base) == "Color3" and recolor then
+		base = recolor(base)
+	end
+	(inst :: any)[prop] = base
 end
 
 local function buildNumbers(flat)
@@ -92,6 +137,8 @@ export type Options = {
 	speed: number?,
 	travelTime: number?,
 	scale: number?,
+	color: Color3?,
+	hueShift: number?,
 }
 
 -- Right-handed frame (forward, up, side) around a direction; up follows +Y unless the direction is near vertical.
@@ -109,6 +156,7 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 	local originCF = origin or pivot
 	local duration = data.durationTicks
 	local onEmit = opts.onEmit
+	local recolor = makeRecolor(opts)
 
 	-- Space: authored origin-relative studs -> world. Default = the origin CFrame; with a target, the Source->Target
 	-- line is stretched onto the runtime source->target and the effect is rotated to face it.
@@ -191,6 +239,7 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 		local part = emittersFolder and emittersFolder:FindFirstChild(d.name)
 		local em = part and part:FindFirstChildOfClass("ParticleEmitter")
 		if part and em then
+			applyRecolor(em, "Color", recolor)
 			local rel = pivot:ToObjectSpace(part.CFrame)
 			local s = {
 				d = d,
@@ -229,6 +278,7 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 		local folder = beamsFolder and beamsFolder:FindFirstChild(d.name)
 		local template = folder and folder:FindFirstChildOfClass("Beam")
 		if template then
+			applyRecolor(template, "Color", recolor)
 			-- Layers sharing a bolt (d.src) read the root layer's frames with widths x d.ratio.
 			local root = (d.src and beamByName[d.src]) or d
 			local frames = root.frames or {}
@@ -267,6 +317,7 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 		local part = lightsFolder and lightsFolder:FindFirstChild(d.name)
 		local light = part and part:FindFirstChildOfClass("PointLight")
 		if part and light then
+			applyRecolor(light, "Color", recolor)
 			local rel = pivot:ToObjectSpace(part.CFrame)
 			if k ~= 1 then
 				light.Range = math.min(60, light.Range * k)
@@ -309,6 +360,7 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 	for _, d in ipairs(data.meshes or {}) do
 		local template = meshesFolder and meshesFolder:FindFirstChild(d.name)
 		if template and template:IsA("BasePart") then
+			applyRecolor(template, "Color", recolor)
 			table.insert(meshLayers, {
 				d = d,
 				template = template,
@@ -637,7 +689,7 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 			return
 		end
 		s.cfKey = key
-		s.em.Color = buildColor(lerpFlat(a[2], b[2], f))
+		s.em.Color = buildColor(lerpFlat(a[2], b[2], f), recolor)
 		s.em.Transparency = buildNumbers(lerpFlat(a[3], b[3], f))
 	end
 
@@ -784,7 +836,7 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 				b += (nums[o2 + 13] - b) * f
 				tr += (nums[o2 + 14] - tr) * f
 			end
-			part.Color = Color3.new(r, g, b)
+			part.Color = if recolor then recolor(Color3.new(r, g, b)) else Color3.new(r, g, b)
 			part.Transparency = if tiny then 1 else tr
 		else
 			part.Transparency = if tiny then 1 else layer.baseTransparency

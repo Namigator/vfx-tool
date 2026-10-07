@@ -297,6 +297,35 @@ if data.anchors then
 	end
 end
 
+-- recolour option: options.color turns saturated colours to the target hue; a play without it restores them
+do
+	local firstEm
+	for _, part in ipairs(eFolder:GetChildren()) do
+		local em = part:FindFirstChildOfClass("ParticleEmitter")
+		if em then firstEm = em break end
+	end
+	if firstEm then
+		local before = firstEm.Color
+		local target = Color3.fromRGB(0, 120, 255)
+		local th = (target:ToHSV())
+		local okC, rc = pcall(function() return Player.create(model, nil, { color = target }) end)
+		if not okC then fail("recolor create: " .. tostring(rc)) else
+			local hueOk, satSeen = true, false
+			for _, kp in ipairs(firstEm.Color.Keypoints) do
+				local h, s = kp.Value:ToHSV()
+				if s >= 0.08 then satSeen = true; if math.abs(h - th) > 0.02 then hueOk = false end end
+			end
+			pcall(rc.stop)
+			local okS, rs = pcall(function() return Player.create(model, nil, {}) end)
+			if okS then pcall(rs.stop) end
+			local restored = firstEm.Color == before
+			summary.recolor = { saturated = satSeen, hueOk = hueOk, restored = restored }
+			if satSeen and not hueOk then fail("recolor: hue not applied") end
+			if not restored then fail("recolor: authored colours not restored") end
+		end
+	end
+end
+
 -- play()/stop() wiring (Heartbeat)
 local okPlay, pl = pcall(function() return Player.play(model, nil, { loop = true }) end)
 if okPlay then pl.stop() else fail("play(): " .. tostring(pl)) end
