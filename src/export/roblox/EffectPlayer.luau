@@ -153,7 +153,11 @@ end
 
 function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 	local opts = options or {}
-	local data = require(model:FindFirstChild("EffectData"))
+	-- EffectData: JSON in a StringValue (older exports: a ModuleScript returning the same table).
+	local dataInst = model:FindFirstChild("EffectData")
+	local data = if dataInst and dataInst:IsA("StringValue")
+		then game:GetService("HttpService"):JSONDecode(dataInst.Value)
+		else require(dataInst)
 	local pivot = model:GetPivot()
 	local originCF = origin or pivot
 	local duration = data.durationTicks

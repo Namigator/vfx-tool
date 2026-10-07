@@ -43,7 +43,7 @@ if not model then
 end
 summary.model = model.Name
 
-local ok, data = pcall(function() return require(model:FindFirstChild("EffectData")) end)
+local ok, data = pcall(function() local d = model:FindFirstChild("EffectData"); if d:IsA("StringValue") then return HttpService:JSONDecode(d.Value) end return require(d) end)
 if not ok then fail("require EffectData: " .. tostring(data)) print("ROBLOX_CHECK_JSON " .. HttpService:JSONEncode(summary)) return end
 local ok2, Player = pcall(function() return require(model:FindFirstChild("EffectPlayer")) end)
 if not ok2 then fail("require EffectPlayer: " .. tostring(Player)) print("ROBLOX_CHECK_JSON " .. HttpService:JSONEncode(summary)) return end

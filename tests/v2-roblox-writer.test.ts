@@ -159,21 +159,29 @@ test('sequences are clamped to Roblox rules', () => {
   assert.ok(seq.length / 3 <= 20);
 });
 
+/** EffectData JSON text (StringValue Value, XML-unescaped); checked to parse. */
+function dataOf(xml: string): string {
+  const m = /<Item class="StringValue"[^>]*><Properties><string name="Name">EffectData<\/string><string name="Value">([\s\S]*?)<\/string>/.exec(xml);
+  assert.ok(m, 'EffectData StringValue');
+  const text = m![1].replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
+  JSON.parse(text);
+  return text;
+}
+
 test('EffectData carries bursts, paths and tracks; players are embedded', () => {
   const xml = writeRbxmx(handBuiltEffect(), { playerSource: PLAYER });
-  const data = /<Item class="ModuleScript"[^>]*><Properties><string name="Name">EffectData<\/string><ProtectedString name="Source"><!\[CDATA\[([\s\S]*?)\]\]><\/ProtectedString>/.exec(xml)![1];
-  assert.ok(data.startsWith('-- Generated'));
-  assert.ok(data.includes('bursts={{10,12,1,2,3},{50,5}}'), data);
-  assert.ok(data.includes('durationTicks=120'));
-  assert.ok(data.includes('tracks={SpeedScale={{0,1},{120,2}}}'));
-  assert.ok(data.includes('path={{0,0,1,0},{60,3,1,0}}'));
-  assert.ok(data.includes('maxSegments=3'));
-  assert.ok(data.includes('{0,{{1,"0 0 0 0.5 1 1 0 0.4 2 0 0 0.1"}}}'), data);
-  assert.ok(data.includes('{45,false,2}'));
-  assert.ok(data.includes('interpolate=true'));
-  assert.ok(data.includes('src="bolt"'));
-  assert.ok(data.includes('ratio=0.5'));
-  assert.ok(data.includes('brightness={{0,2},{100,0}}'));
+  const data = dataOf(xml);
+  assert.ok(data.includes('"bursts":[[10,12,1,2,3],[50,5]]'), data);
+  assert.ok(data.includes('"durationTicks":120'));
+  assert.ok(data.includes('"tracks":{"SpeedScale":[[0,1],[120,2]]}'));
+  assert.ok(data.includes('"path":[[0,0,1,0],[60,3,1,0]]'));
+  assert.ok(data.includes('"maxSegments":3'));
+  assert.ok(data.includes('[0,[[1,"0 0 0 0.5 1 1 0 0.4 2 0 0 0.1"]]]'), data);
+  assert.ok(data.includes('[45,false,2]'));
+  assert.ok(data.includes('"interpolate":true'));
+  assert.ok(data.includes('"src":"bolt"'));
+  assert.ok(data.includes('"ratio":0.5'));
+  assert.ok(data.includes('"brightness":[[0,2],[100,0]]'));
   assert.ok(!/\d\.\d{4}/.test(data));
   const player = readFileSync(new URL('../src/export/roblox/EffectPlayer.luau', import.meta.url), 'utf8');
   assert.ok(player.includes('EffectPlayer.play'));
@@ -192,12 +200,12 @@ test('mesh layers: template Parts (WedgePart for wedges) and compact frame strin
   assert.equal([...xml.matchAll(/<token name="shape">/g)].length, 1, 'the WedgePart has no shape');
   assert.ok(xml.includes('<float name="Reflectance">0.25</float>'));
   assert.match(xml, /<Color3uint8 name="Color3uint8">\d+<\/Color3uint8>/);
-  const data = /<string name="Name">EffectData<\/string><ProtectedString name="Source"><!\[CDATA\[([\s\S]*?)\]\]>/.exec(xml)![1];
+  const data = dataOf(xml);
   // stride 10: tick pos(3) quat xyz(3) size(3)
-  assert.ok(data.includes('name="rocks",stride=10') || data.includes('stride=10'), data);
-  assert.ok(data.includes('{10,14,"10 1 0.5 2 0 0 0 2 1.5 1.8 12 1 1.5 2 0 0.707 0 2 1.5 1.8 14 1 0.5 2 0 1 0 0 0 0"}'), data);
+  assert.ok(data.includes('"stride":10'), data);
+  assert.ok(data.includes('[10,14,"10 1 0.5 2 0 0 0 2 1.5 1.8 12 1 1.5 2 0 0.707 0 2 1.5 1.8 14 1 0.5 2 0 1 0 0 0 0"]'), data);
   // stride 14 adds colour and transparency
-  assert.ok(data.includes('stride=14'));
+  assert.ok(data.includes('"stride":14'));
   assert.ok(data.includes('"0 0 1 0 0 0 0 1 2 1 1 1 1 0.1 2 0 2 0 0 0 0 1 2 1 0.2 0.4 0.6 0.9"'), data);
   assert.ok(!/\d\.\d{4}/.test(data));
   // a layer-free effect still writes an (empty) Meshes folder
@@ -224,8 +232,8 @@ test('real IR files export (chains resolved, well-formed)', () => {
     const xml = writeRbxmx(ir, { assetIds: ids, playerSource: PLAYER });
     assert.ok(checkBalanced(xml) > 100);
     writeFileSync(new URL(`../work/roblox/${name}.rbxmx`, import.meta.url), xml);
-    const data = />EffectData<\/string><ProtectedString name="Source"><!\[CDATA\[([\s\S]*?)\]\]>/.exec(xml)![1];
-    assert.equal((data.match(/src="/g) ?? []).length, ir.beams.filter(l => l.sameGeometryAs !== undefined).length);
+    const data = dataOf(xml);
+    assert.equal((data.match(/"src":"/g) ?? []).length, ir.beams.filter(l => l.sameGeometryAs !== undefined).length);
   }
 });
 
