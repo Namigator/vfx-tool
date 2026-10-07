@@ -18,7 +18,8 @@ if (!asset || (!user && !group) || !(price >= 0)) { console.error('usage: roblox
 const body = {
   modelAssetId: String(asset),
   ...(group ? { groupSeller: `groups/${group}` } : { userSeller: `users/${user}` }),
-  basePrice: { currencyCode: 'USD', quantity: { significand: Math.round(price * 1e9), exponent: -9 } },
+  // Free = no price at all (Roblox rejects a $0 price tier for models).
+  ...(price > 0 ? { basePrice: { currencyCode: 'USD', quantity: { significand: Math.round(price * 1e9), exponent: -9 } } } : {}),
   published: !unpublish,
 };
 console.log(`${unpublish ? 'Unpublish' : 'Publish'} model ${asset} on the Creator Store at ${price > 0 ? `$${price.toFixed(2)}` : 'free'}`);
