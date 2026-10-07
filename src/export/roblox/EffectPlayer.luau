@@ -354,6 +354,7 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 		local part = trailsFolder and trailsFolder:FindFirstChild(d.name)
 		local trail = part and part:FindFirstChildOfClass("Trail")
 		if part and trail then
+			applyRecolor(trail, "Color", recolor)
 			local rel = pivot:ToObjectSpace(part.CFrame)
 			if k ~= 1 then
 				for _, att in ipairs(part:GetChildren()) do

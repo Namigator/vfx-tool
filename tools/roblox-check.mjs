@@ -315,6 +315,11 @@ do
 				local h, s = kp.Value:ToHSV()
 				if s >= 0.08 then satSeen = true; if math.abs(h - th) > 0.02 then hueOk = false end end
 			end
+			local tFolder = model:FindFirstChild("Trails")
+			for _, tp in ipairs(tFolder and tFolder:GetChildren() or {}) do
+				local tr = tp:FindFirstChildOfClass("Trail")
+				if tr then for _, kp in ipairs(tr.Color.Keypoints) do local h, s = kp.Value:ToHSV(); if s >= 0.08 and math.abs(h - th) > 0.02 then hueOk = false end end end
+			end
 			pcall(rc.stop)
 			local okS, rs = pcall(function() return Player.create(model, nil, {}) end)
 			if okS then pcall(rs.stop) end
