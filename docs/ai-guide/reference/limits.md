@@ -160,6 +160,7 @@ The ones that matter most when building effects.
 | `MAX_FRAME_SIDE` | 4096 | Largest frame width or height in pixels for exported media. | src/export/media/layout.ts |
 | `MAX_FRAMES` | 1200 | Most frames one media export may contain (lower the fps or the tick range to fit). | src/export/media/layout.ts |
 | `MAX_BUFFERED_BYTES` | 1200000000 | RGBA bytes kept in memory at once (GIF keeps every frame for its shared palette). | src/export/media/layout.ts |
+| `MIN_VISIBLE_OPACITY` | 0.04 | Path alpha x layer opacity (x brightness above 1) below this draws nothing visible on Roblox. | src/export/roblox/fromPlan.ts |
 | `MAX_MESH_PIECES` | 300 | Roblox export: most Parts one export may animate. | src/export/roblox/meshBake.ts |
 | `MAX_SEQUENCE_KEYS` | 20 | Roblox export: NumberSequence/ColorSequence keypoint limit. | src/export/roblox/types.ts |
 | `MAX_UE_BURSTS` | 32 | Most bursts one Unreal-exported emitter keeps as separate bursts; more (or bursts at their own positions) become a steady rate. | src/export/unreal/fromPlan.ts |

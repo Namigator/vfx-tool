@@ -150,7 +150,11 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
   const size: RbxNumberKey[] = ts.map(t => { const k = sampleLifeCurve(sizeCurve, t); return { t, v: r3(mid * k), e: r3(env * k) }; });
   const { color, transparency } = colourSequences(layer, ts);
   const velocityAligned = layer.alignment === 'velocity';
-  if (layer.alignment === 'worldAxis') report.push({ level: 'approximated', item: layer.nodeId, message: 'Flat world-facing sprites (ground rings) face the camera in Roblox.' });
+  // Flat world-facing sprites (ground rings): Roblox VelocityPerpendicular faces a particle along its velocity, so a
+  // sprite that does not move gets a creep speed along its axis and lies flat. Moving ones fall back to the camera.
+  const flat = layer.alignment === 'worldAxis' && speed[1] < 0.05 && acceleration.every(v => Math.abs(v) < 1e-6) && !inward;
+  if (flat) { direction = layer.worldAxis.map(r3) as Vec3; speed = [FLAT_CREEP_SPEED, FLAT_CREEP_SPEED]; spread = 0; drag = 0; }
+  else if (layer.alignment === 'worldAxis') report.push({ level: 'approximated', item: layer.nodeId, message: 'Flat world-facing sprites that move face the camera in Roblox (only still ones lie flat).' });
   const squash = velocityAligned && layer.stretchRatio > 1.05 ? (() => { const s = r3(Math.min(3, Math.log2(layer.stretchRatio))); return [{ t: 0, v: s, e: 0 }, { t: 1, v: s, e: 0 }]; })() : undefined;
   if (squash) report.push({ level: 'approximated', item: layer.nodeId, message: `Velocity stretch ×${layer.stretchRatio} becomes Roblox Squash ${squash[0].v}.` });
   if (layer.dissolve) report.push({ level: 'dropped', item: layer.nodeId, message: 'Dissolve (burning-edge fade) is not available on Roblox particles.' });
@@ -193,7 +197,7 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     lightInfluence: 0,
     brightness: r3(1 + layer.emission),
     ...flipbookOf(layer, (life[0] + life[1]) / 2, report),
-    orientation: velocityAligned ? 'VelocityParallel' : 'FacingCamera',
+    orientation: velocityAligned ? 'VelocityParallel' : flat ? 'VelocityPerpendicular' : 'FacingCamera',
     // Velocity-aligned sprites ignore spin in the editor (the direction of travel sets their angle); a roll here
     // turned flame tongues into spiky stars (user 2026-09-30). No spin = upright.
     // VelocityParallel lays the texture's side along the motion; +90 puts its top (flame tip, streak head) there
@@ -283,9 +287,58 @@ function beamsFrom(doc: EffectDocumentV2, origin: Vec3, report: RbxReportItem[])
     if (!a || ratio === undefined) return;
     b.sameGeometryAs = a.name; b.widthRatio = r3(ratio); b.frames = [];
   });
+  // One Beam per segment: drop points the eye cannot miss (lightning had ~1460 Beams at once). Only geometry owners
+  // (sharers follow them) and only layers that are not blended between frames (blending needs equal point counts).
+  // Paths fainter than MIN_VISIBLE_OPACITY on the owner and every sharer are dropped (lightning: faint glow layers of
+  // thin branches, ~1-4 % opacity, were half of all Beams).
+  let culled = 0;
+  for (const b of out) if (!b.sameGeometryAs && !b.interpolate && b.frames.length) {
+    const visibility = Math.max(...[b, ...out.filter(x => x.sameGeometryAs === b.name)].map(x => (1 - x.transparency) * Math.max(1, x.brightness)));
+    for (const f of b.frames) if (f.paths) {
+      const n = f.paths.length;
+      f.paths = f.paths.filter(p => p.alpha * visibility >= MIN_VISIBLE_OPACITY).map(p => ({ ...p, points: simplifyPolyline(p.points) }));
+      culled += n - f.paths.length;
+    }
+    b.maxSegments = Math.max(0, ...b.frames.map(f => (f.paths ?? []).reduce((n, p) => n + p.points.length - 1, 0)));
+  }
+  for (const b of out) if (b.sameGeometryAs) b.maxSegments = out.find(x => x.name === b.sameGeometryAs)?.maxSegments ?? b.maxSegments;
+  if (culled) report.push({ level: 'approximated', item: 'beams', message: `Left out ${culled} path frame(s) fainter than ${MIN_VISIBLE_OPACITY * 100} % opacity (invisible Beams).` });
   const total = out.reduce((s, b) => s + b.maxSegments, 0);
   if (total > 1500) report.push({ level: 'info', item: 'beams', message: `Paths need up to ${total} Beam segments at once; heavy for mobile.` });
   return out;
+}
+
+/** Studs per second given to still flat sprites so VelocityPerpendicular lays them flat (invisible drift). */
+const FLAT_CREEP_SPEED = 0.01;
+type BeamPoint = [number, number, number, number];
+/** Path alpha x layer opacity (x brightness above 1) below this draws nothing visible on Roblox. */
+const MIN_VISIBLE_OPACITY = 0.04;
+/** Points closer than this fraction of the local beam width to the chord are invisible (floor 0.03 studs). */
+const SIMPLIFY_WIDTH_FRACTION = 0.35;
+/**
+ * Ramer-Douglas-Peucker on [x, y, z, width] points: keep a point when it sits off the straight line between the kept
+ * neighbours by more than SIMPLIFY_WIDTH_FRACTION of the beam width there, or when its width differs from the
+ * interpolated width by more than 15 % (tapers and end fades survive).
+ */
+export function simplifyPolyline(points: BeamPoint[]): BeamPoint[] {
+  if (points.length <= 2) return points;
+  const keep = new Uint8Array(points.length); keep[0] = keep[points.length - 1] = 1;
+  const stack: [number, number][] = [[0, points.length - 1]];
+  while (stack.length) {
+    const [i, j] = stack.pop()!, a = points[i], b = points[j];
+    const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], len2 = d[0] ** 2 + d[1] ** 2 + d[2] ** 2;
+    let worst = -1, worstK = -1;
+    for (let k = i + 1; k < j; k++) {
+      const p = points[k], v = [p[0] - a[0], p[1] - a[1], p[2] - a[2]];
+      const u = len2 > 0 ? Math.min(1, Math.max(0, (v[0] * d[0] + v[1] * d[1] + v[2] * d[2]) / len2)) : 0;
+      const off = Math.hypot(v[0] - d[0] * u, v[1] - d[1] * u, v[2] - d[2] * u), w = a[3] + (b[3] - a[3]) * u;
+      const tol = Math.max(0.03, SIMPLIFY_WIDTH_FRACTION * Math.max(p[3], w));
+      const score = Math.max(off / tol, Math.abs(p[3] - w) / Math.max(0.15 * Math.max(p[3], w), 1e-3));
+      if (score > worst) { worst = score; worstK = k; }
+    }
+    if (worst > 1) { keep[worstK] = 1; stack.push([i, worstK], [worstK, j]); }
+  }
+  return points.filter((_, k) => keep[k]);
 }
 
 type Frame = RbxBeamLayer['frames'][number];
