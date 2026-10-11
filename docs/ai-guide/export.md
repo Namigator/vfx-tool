@@ -7,7 +7,7 @@
 | Roblox `.rbxmx` | A Roblox model with native emitters, beams, trails, lights and a player script. | available |
 | Sprite sheet / PNG sequence / GIF / MP4 / WebM | Rendered frames for any engine (flipbook textures) or for showing the effect. | available |
 | Unreal (Niagara) | A folder package (IR + textures + docs) imported by the VfxStudioImporter plugin into a NiagaraSystem. | available |
-| Unity | | planned (needs Unity installed) |
+| Unity 6 | A folder package (effect.unity.json + textures + docs) imported by integrations/unity/VfxStudio into a prefab. | available (checked headless in Unity 6000.6, built-in pipeline) |
 | Godot 4 (`.tscn`) | GPUParticles3D scene with exact life curves, timing animation, lights. | available |
 
 ## Recipe and pack
@@ -235,6 +235,31 @@ writes `<name>.tscn`, `Textures/*.png`, `README.md` and `report.md`, plus `ribbo
 
 `node tools/godot-check.mjs <package-dir> [seconds]` builds a throwaway Godot project (camera, floor, glow), imports
 the package and renders frames with Godot's movie writer to `work/godot/<name>.png` (Godot: `VFX_GODOT`). Read it.
+
+## Unity 6
+
+`vfx_export_unity { docId, path? }` (default `work/unity/<docId>/`) or the editor's **Export → Export Unity** (a zip)
+writes `effect.unity.json` (compact), `Textures/*.png`, `README.md` and `report.md`.
+
+- Import: copy `integrations/unity/VfxStudio` into the project as `Assets/VfxStudio/` (once), copy the exported folder
+  into `Assets/` too, then **Tools > VFX Studio > Import Effect...** and pick `effect.unity.json`, or run the batch
+  method `VfxStudio.EditorTools.VfxStudioImporter.ImportCli -vfxPackage <folder>`. It builds `<name>.prefab`: one
+  Particle System per emitter, Lights, and a `VfxStudioEffect` player (timing, bursts, moving sources, beams drawn by
+  LineRenderers). The prefab origin is the **Source** anchor; it plays on enable, `Play()` fires it again.
+- Units are metres, +Y up. **Z is mirrored** (Unity is left-handed): positions, directions and accelerations are
+  converted `(x, y, -z)`; a vortex's spin direction may need flipping by hand.
+- Light intensity = preview intensity x 0.1 (built-in pipeline scale). `sourceHeight` in effect.unity.json is how high
+  the Source stood above the floor in the editor: place the prefab that high (hand / nozzle height).
+- Velocity-aligned sprites become Stretched Billboards. Unity runs a texture's horizontal axis along the motion and
+  ignores rotation there, so the importer writes a quarter-turned copy of those sheets (`<sheet>.stretch.png`).
+- Material emission (the editor's colour x (1 + emission)) becomes material tint above 1: white-hot cores clip to
+  white without bloom. Add Bloom (URP Volume or Post Processing) for the editor's glow.
+- Check headless: `node tools/unity-check.mjs <package-dir> [ticks] [yaw] [pitch] [zoom]` imports into
+  F:/Dev2/UnityVFXLab and renders PNGs to work/unity/frames (needs Unity; VFX_UNITY_EXE / VFX_UNITY_PROJECT).
+- Exact: timing, rate and burst schedule, lifetime, speed, size/colour/opacity over life, flipbooks, moving sources,
+  beam geometry per frame. Approximated (listed in `report.md`): curl noise, attraction, vortex (Force Fields),
+  ground collision, drag, beams without texture scrolling or distortion. Whatever is left out is also in `report.md`;
+  read it after every export.
 
 ## Choosing what to build for export
 

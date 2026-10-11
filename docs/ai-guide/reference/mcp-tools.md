@@ -3,7 +3,7 @@
 
 # MCP tool reference
 
-All 54 tools of the VFX Studio MCP server (server name "vfx-studio"), in registration order, read from the running server's registry (mcp/server.ts). Parameters use JSON types; object parameters show their fields inline, `?` marks an optional field. Documents are addressed by id; every successful change is mirrored to work/mcp/<id>.json and the editor can open it. Tools reject invalid changes and leave the document unchanged.
+All 55 tools of the VFX Studio MCP server (server name "vfx-studio"), in registration order, read from the running server's registry (mcp/server.ts). Parameters use JSON types; object parameters show their fields inline, `?` marks an optional field. Documents are addressed by id; every successful change is mirrored to work/mcp/<id>.json and the editor can open it. Tools reject invalid changes and leave the document unchanged.
 
 ## Contents
 
@@ -52,6 +52,7 @@ All 54 tools of the VFX Studio MCP server (server name "vfx-studio"), in registr
 - [vfx_import_mesh](#vfx_import_mesh)
 - [vfx_export_roblox](#vfx_export_roblox)
 - [vfx_export_godot](#vfx_export_godot)
+- [vfx_export_unity](#vfx_export_unity)
 - [vfx_export_unreal](#vfx_export_unreal)
 - [vfx_export_pack](#vfx_export_pack)
 - [vfx_open_pack](#vfx_open_pack)
@@ -495,6 +496,15 @@ Export the effect for Roblox: a .rbxmx model (ParticleEmitters, Beams, PointLigh
 ## vfx_export_godot
 
 Export the effect for Godot 4: a folder (default work/godot/<docId>/) with <name>.tscn (GPUParticles3D emitters + an autoplaying AnimationPlayer for timing, bursts, moving sources and light intensity; size/colour/alpha over life as exact Godot curves), Textures/*.png, README.md and report.md. Copy the folder to res://vfx_studio/<name>/ in a Godot project and instance the scene at the caster (its origin is the Source anchor). Beams/ribbons, meshes, attraction, vortex and collision are not exported yet (listed in report.md).
+
+| parameter | type | required | description / constraints |
+|---|---|---|---|
+| `docId` | string | required | — |
+| `path` | string | optional | — |
+
+## vfx_export_unity
+
+Export the effect for Unity 6: a folder (default work/unity/<docId>/) with effect.unity.json, Textures/*.png, README.md and report.md. Import with integrations/unity/VfxStudio (copy to Assets/VfxStudio, then Tools > VFX Studio > Import Effect... or the ImportCli batch method); it builds a prefab of Particle Systems + Lights + a VfxStudioEffect player (timing, bursts, moving sources, beams via LineRenderers). Metres, +Y up, Z mirrored (Unity is left-handed); light intensity = preview x 0.1. See report.md for what is approximated or left out.
 
 | parameter | type | required | description / constraints |
 |---|---|---|---|

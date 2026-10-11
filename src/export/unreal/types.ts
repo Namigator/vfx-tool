@@ -50,6 +50,8 @@ export type UeFlipbook = {
   fps: number;
   loop: boolean;
   randomStartFrame: boolean;
+  /** The authored cell for a static (fps 0) sheet when the effect picks one (variant), else absent. */
+  startFrame?: number;
 };
 
 export type UeBlendMode = 'additive' | 'translucent' | 'opaque';
@@ -82,7 +84,7 @@ export type UeEmitter = {
   attract?: { positionCm: Vec3; strengthCmS2: number; /** pull eases inside this radius */ softRadiusCm?: number; /** particles reaching it die (0 = never) */ killRadiusCm?: number };
   /** Vortex/curl around an axis through `positionCm`. Undefined = none. See header re: sign convention under the axis flip. */
   vortex?: { positionCm: Vec3; axis: Vec3; strengthCmS2: number; /** pull toward the axis */ inwardCmS2?: number; /** e-folding distance of the swirl */ falloffCm?: number };
-  /** Ground collision (Niagara "Collision" module against a Z-up plane at groundZCm). */
+  /** Ground collision (Niagara "Collision" module). groundZCm = the floor (world height 0) relative to the effect origin (the Source anchor), i.e. minus the Source height. */
   groundCollision?: { groundZCm: number; restitution: number; mode: 'bounce' | 'kill' | 'stop' };
   sizeCmMin: number;
   sizeCmMax: number;
@@ -98,6 +100,8 @@ export type UeEmitter = {
   /** Velocity-aligned stretch ratio (>1 = stretched along travel direction); 1 = no stretch. */
   stretchRatio: number;
   blend: UeBlendMode;
+  /** Material emission: colour x (1 + emission) in the editor (HDR brightness; engines map it to tint/intensity). */
+  emission?: number;
   /** Library sprite sheet file (for texture import), absent = default engine particle sprite. */
   textureFile?: string;
   flipbook?: UeFlipbook;
@@ -113,6 +117,8 @@ export type UeRibbon = {
   name: string;
   color: UeColorKey; // constant colour (time-varying handled via frames' own alpha/width, like Roblox beams)
   blend: UeBlendMode;
+  /** Colour x (1 + emission) in the editor. */
+  emission?: number;
   textureFile?: string;
   widthCm: number;
   /** Fraction (0..0.5) of each path's length over which both ends taper and fade. */
@@ -145,5 +151,7 @@ export type UnrealEffect = {
   lights: UeLight[];
   /** Effect origin in world space isn't needed here (the package is authored at the origin; the importer places the actor). */
   textures: string[];
+  /** Height of the Source anchor (the origin) above the floor, cm. Optional for older packages. */
+  sourceHeightCm?: number;
   report: UeReportItem[];
 };

@@ -57,7 +57,7 @@ function flipbookOf(layer: ParticlePreviewLayer, meanLifeSeconds: number, report
   const { columns, rows, file } = sp.sheet;
   if (columns === 1 && rows === 1) return { textureFile: file };
   const frames = columns * rows;
-  if (sp.mode === 'first') return { textureFile: file, flipbook: { columns, rows, fps: 0, loop: false, randomStartFrame: sp.sheet.kind === 'variants' || sp.variant < 0 } };
+  if (sp.mode === 'first') return { textureFile: file, flipbook: { columns, rows, fps: 0, loop: false, randomStartFrame: sp.sheet.kind === 'variants' || sp.variant < 0, ...(sp.variant >= 0 ? { startFrame: sp.variant } : {}) } };
   if (sp.mode === 'overLife') { const fps = r3(frames / Math.max(0.05, meanLifeSeconds)); return { textureFile: file, flipbook: { columns, rows, fps, loop: false, randomStartFrame: sp.randomStart } }; }
   return { textureFile: file, flipbook: { columns, rows, fps: sp.fps, loop: sp.loop !== false, randomStartFrame: sp.randomStart } };
 }
@@ -113,7 +113,8 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     else if (op.kind === 'noise') { noise = { amplitudeCmS2: r3(op.amplitude * CM_PER_METER), frequency: r3(op.frequency) }; report.push({ level: 'info', item: layer.nodeId, message: `Turbulence exported as Niagara Curl Noise Force (amplitude ${r3(op.amplitude * CM_PER_METER)} cm/s²) — unlike Roblox this is kept, not dropped.` }); }
     else if (op.kind === 'attract') attract = { positionCm: relCm(op.center), strengthCmS2: r3(op.acceleration * CM_PER_METER), softRadiusCm: r3(op.softRadius * CM_PER_METER), killRadiusCm: r3(op.killRadius * CM_PER_METER) };
     else if (op.kind === 'vortex') { vortex = { positionCm: relCm(op.center), axis: toUeDir(op.axis), strengthCmS2: r3(op.tangential * CM_PER_METER), inwardCmS2: r3(op.inward * CM_PER_METER), falloffCm: r3(op.falloff * CM_PER_METER) }; report.push({ level: 'approximated', item: layer.nodeId, message: 'Vortex exported as a Niagara Vortex/curl force around the given axis; spin sign kept as authored — flip the axis in Niagara if the swirl direction looks mirrored (axis-swap caveat, see the export README).' }); }
-    else if (op.kind === 'ground') groundCollision = { groundZCm: 0, restitution: op.restitution, mode: op.mode === 'slide' ? 'stop' as const : op.mode === 'kill' ? 'kill' as const : 'bounce' as const };
+    else if (op.kind === 'ground') groundCollision = { groundZCm: r3(-origin[1] * CM_PER_METER), // the floor (world y 0) relative to the origin
+       restitution: op.restitution, mode: op.mode === 'slide' ? 'stop' as const : op.mode === 'kill' ? 'kill' as const : 'bounce' as const };
     if ('gain' in op && op.gain?.some(g => g !== 1)) report.push({ level: 'approximated', item: layer.nodeId, message: `A force strength that changes over time (${op.kind}) is exported at full strength (Niagara curve-over-life on the force module can restore this by hand).` });
   }
   const life: [number, number] = [r3(d.lifetimeTicks.min / TICKS_PER_SECOND), r3(d.lifetimeTicks.max / TICKS_PER_SECOND)];
@@ -176,8 +177,9 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     alignment: velocityAligned ? 'velocity' : layer.alignment === 'worldAxis' ? 'worldUpCameraFacing' : 'camera',
     stretchRatio: r3(stretchRatio),
     blend: layer.blend === 'additive' ? 'additive' : 'translucent',
+    ...(layer.emission ? { emission: r3(layer.emission) } : {}),
     // Procedural sprites (no texture: the editor draws a soft round glow) ship the built-in soft-glow sheet.
-    ...(layer.sprite ? flipbookOf(layer, (life[0] + life[1]) / 2, report) : { textureFile: 'soft-glow.png', flipbook: { columns: 2, rows: 2, fps: 0, loop: false, randomStartFrame: false } }), // its first cell: the tight glow
+    ...(layer.sprite ? flipbookOf(layer, (life[0] + life[1]) / 2, report) : { textureFile: 'soft-glow.png', flipbook: { columns: 2, rows: 2, fps: 0, loop: false, randomStartFrame: false, startFrame: 0 } }), // its first cell: the tight glow
     loop: false,
     ...(sourceTrack ? { sourceTrack } : {}),
     attachToSource: d.attachToSource === true,
@@ -241,6 +243,7 @@ function ribbonLayer(l: PathPreviewLayer, report: UeReportItem[]): UeRibbon & { 
     name: safeName(l.nodeId), color: { t: 0, r: r3(rgb[0]), g: r3(rgb[1]), b: r3(rgb[2]), a: r3(Math.min(1, l.opacity * l.color.alpha)) },
     blend: l.blend === 'additive' ? 'additive' : 'translucent',
     endFade: r3(l.endFade),
+    ...(l.emission ? { emission: r3(l.emission) } : {}),
     ...(l.sprite ? { textureFile: l.sprite.sheet.file } : {}),
     widthCm: r3(Math.max(0.1, l.uvTileLength * CM_PER_METER)),
     frames: [], last: '',
@@ -292,6 +295,6 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
   report.push({ level: 'info', item: 'scale', message: `1 m = ${CM_PER_METER} cm. Axis mapping: ue.x=src.x*100, ue.y=src.z*100, ue.z=src.y*100 (our +Y up -> Unreal +Z up). The NiagaraSystem's origin is the Source anchor: place or attach the actor at the caster / nozzle.` });
   return { ok: true, value: {
     name: safeName(doc.name || 'Effect'), durationTicks: plan.value.durationTicks, ticksPerSecond: 60,
-    emitters, ribbons, lights, textures, report,
+    emitters, ribbons, lights, textures, report, sourceHeightCm: r3(origin[1] * CM_PER_METER),
   } };
 }

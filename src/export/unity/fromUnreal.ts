@@ -1,0 +1,114 @@
+// Unity export: the engine-neutral IR (src/export/unreal/fromPlan.ts, also behind the Godot export) converted to
+// Unity units and axes (types.ts header): Unreal cm, (x, y=our z, z=our y) -> Unity m, (x, y, -z).
+import type { UeColorKey, UeEmitter, UeFloatKey, UeLight, UeRibbon, UnrealEffect } from '../unreal/types.ts';
+import type { UnityEffect, UnityEmitter, UnityLight, UnityReportItem, UnityRibbon } from './types.ts';
+
+const r4 = (x: number) => Math.round(x * 10000) / 10000;
+/** Unreal cm (x, our z, our y) -> Unity m (x, y, -z). */
+const pos = (p: readonly number[]): number[] => [r4(p[0] / 100), r4(p[2] / 100), r4(-p[1] / 100)];
+const dir = (p: readonly number[]): number[] => { const v = [p[0], p[2], -p[1]], l = Math.hypot(v[0], v[1], v[2]) || 1; return v.map(x => r4(x / l)); };
+/** Preview light intensity (Three.js, ~candela at metre scale) -> Unity built-in Light.intensity (0..8 typical). */
+export const UNITY_LIGHT_SCALE = 0.1;
+
+function emitterFrom(e: UeEmitter, report: UnityReportItem[]): UnityEmitter {
+  const s = e.shape, mid = Math.max(1e-6, (e.sizeCmMin + e.sizeCmMax) / 2);
+  const bursts = e.bursts.filter(b => b.count > 0);
+  const flat = (keys: UeFloatKey[], f: (v: number) => number) => ({ t: keys.map(k => r4(k.t)), v: keys.map(k => r4(f(k.v))) });
+  const size = flat(e.sizeOverLife, v => v / mid), alpha = flat(e.opacityOverLife, v => v);
+  const colors: UeColorKey[] = e.colorOverLife;
+  if (e.vortex) report.push({ level: 'approximated', item: e.name, message: 'Vortex swirl becomes a Unity Particle System Force Field (rotation speed); its turning direction may be mirrored by the Z flip - flip the sign by hand if it spins the wrong way.' });
+  if (e.noise) report.push({ level: 'approximated', item: e.name, message: 'Curl noise becomes the Noise module (strength matched roughly; check the look).' });
+  if (e.attract) report.push({ level: 'approximated', item: e.name, message: 'Attraction becomes a Particle System Force Field (gravity); particles are not killed on arrival unless the kill radius is set.' });
+  if (e.groundCollision) report.push({ level: 'approximated', item: e.name, message: 'Ground collision becomes the Collision module against a world plane at the floor height.' });
+  return {
+    name: e.name, position: pos(e.position), direction: dir(e.direction),
+    shape: s.kind === 'cylinder' ? 'sphere' : s.kind,
+    radius: r4(('radiusCm' in s ? s.radiusCm : 0) / 100), angleDeg: s.kind === 'cone' ? r4(s.angleDeg) : 0,
+    boxSize: s.kind === 'box' ? pos(s.extentsCm).map(v => r4(Math.abs(v) * 2)) : [0, 0, 0],
+    rateTicks: e.rateOverTime.map(([t]) => t), rateValues: e.rateOverTime.map(([, v]) => r4(v)),
+    burstTicks: bursts.map(b => b.tick), burstCounts: bursts.map(b => b.count),
+    burstHasPosition: bursts.map(b => (b.positionCm ? 1 : 0)), burstPositions: bursts.flatMap(b => (b.positionCm ? pos(b.positionCm) : [0, 0, 0])),
+    lifetimeMin: r4(e.lifetimeSecMin), lifetimeMax: r4(e.lifetimeSecMax), speedMin: r4(e.speedCmSMin / 100), speedMax: r4(e.speedCmSMax / 100),
+    acceleration: pos(e.acceleration), drag: r4(e.drag),
+    hasNoise: !!e.noise, noiseAmplitude: r4((e.noise?.amplitudeCmS2 ?? 0) / 100), noiseFrequency: r4(e.noise?.frequency ?? 0),
+    hasAttract: !!e.attract, attractPosition: e.attract ? pos(e.attract.positionCm) : [0, 0, 0], attractStrength: r4((e.attract?.strengthCmS2 ?? 0) / 100),
+    attractKillRadius: r4((e.attract?.killRadiusCm ?? 0) / 100),
+    hasVortex: !!e.vortex, vortexPosition: e.vortex ? pos(e.vortex.positionCm) : [0, 0, 0], vortexAxis: e.vortex ? dir(e.vortex.axis) : [0, 1, 0],
+    vortexStrength: r4((e.vortex?.strengthCmS2 ?? 0) / 100), vortexInward: r4((e.vortex?.inwardCmS2 ?? 0) / 100),
+    hasCollision: !!e.groundCollision, groundY: r4((e.groundCollision?.groundZCm ?? 0) / 100), restitution: r4(e.groundCollision?.restitution ?? 0),
+    collisionMode: e.groundCollision?.mode ?? '',
+    sizeMin: r4(e.sizeCmMin / 100), sizeMax: r4(e.sizeCmMax / 100), sizeKeysT: size.t, sizeKeysV: size.v,
+    colorKeysT: colors.map(k => r4(k.t)), colorKeysRgb: colors.flatMap(k => [r4(k.r), r4(k.g), r4(k.b)]),
+    alphaKeysT: alpha.t, alphaKeysV: alpha.v,
+    spinMinDeg: r4(e.spinDegMin), spinMaxDeg: r4(e.spinDegMax), angularVelocityMinDeg: r4(e.angularVelocityDegSMin), angularVelocityMaxDeg: r4(e.angularVelocityDegSMax),
+    alignment: e.alignment === 'worldUpCameraFacing' ? 'worldUp' : e.alignment, stretchRatio: r4(e.stretchRatio), blend: e.blend, emission: r4(e.emission ?? 0),
+    texture: e.textureFile ?? '',
+    flipColumns: e.flipbook?.columns ?? 1, flipRows: e.flipbook?.rows ?? 1, flipFps: e.flipbook?.fps ?? 0,
+    flipLoop: e.flipbook?.loop ?? false, flipRandomStart: e.flipbook?.randomStartFrame ?? false,
+    flipStartFrame: e.flipbook?.startFrame ?? (e.flipbook?.randomStartFrame === false ? 0 : -1),
+    attachToSource: e.attachToSource === true,
+    trackTicks: (e.sourceTrack ?? []).map(([t]) => t), trackPositions: (e.sourceTrack ?? []).flatMap(([, p]) => pos(p)),
+  };
+}
+
+function lightFrom(l: UeLight): UnityLight {
+  return {
+    name: l.name, color: l.color.map(r4), intensityTicks: l.intensity.map(([t]) => t), intensityValues: l.intensity.map(([, v]) => r4(v * UNITY_LIGHT_SCALE)),
+    range: r4(Math.max(0.1, l.radiusCm / 100)), position: pos(l.positionCm),
+    trackTicks: (l.sourceTrack ?? []).map(([t]) => t), trackPositions: (l.sourceTrack ?? []).flatMap(([, p]) => pos(p)),
+  };
+}
+
+function ribbonFrom(b: UeRibbon): UnityRibbon {
+  const r3 = (x: number) => Math.round(x * 1000) / 1000;
+  return {
+    name: b.name, color: [r4(b.color.r), r4(b.color.g), r4(b.color.b)], additive: b.blend === 'additive', emission: r4(b.emission ?? 0), texture: b.textureFile ?? '', endFade: r4(b.endFade ?? 0),
+    frames: b.frames.map(f => ({
+      tick: f.tick,
+      paths: (f.paths ?? (f.points.length ? [{ points: f.points, alpha: 1 }] : [])).map(p => ({
+        alpha: r4(p.alpha), points: p.points.flatMap(q => [r3(q[0] / 100), r3(q[2] / 100), r3(-q[1] / 100), r3(q[3] / 100)]),
+      })),
+    })),
+  };
+}
+
+export function unityEffectFrom(e: UnrealEffect): { effect: UnityEffect; report: UnityReportItem[] } {
+  const report: UnityReportItem[] = [];
+  const effect: UnityEffect = {
+    format: 'vfx-studio-unity', version: 1, name: e.name, durationTicks: e.durationTicks, ticksPerSecond: 60, sourceHeight: r4((e.sourceHeightCm ?? 0) / 100),
+    emitters: e.emitters.map(x => emitterFrom(x, report)), lights: e.lights.map(lightFrom), ribbons: e.ribbons.map(ribbonFrom), textures: e.textures,
+  };
+  // The shared IR's own notes that still apply (meshes, flashes, keyframes, multi-path...), minus Unreal-specific ones.
+  for (const r of e.report) if (!/Niagara|Unreal|importer|UE 5|Shape Location|template/i.test(r.message)) report.push(r);
+  if (e.ribbons.length) report.push({ level: 'info', item: 'ribbons', message: `${e.ribbons.length} beam/ribbon layer(s) are drawn by LineRenderers from baked per-frame geometry (camera-facing; no texture scrolling or distortion).` });
+  report.push({ level: 'info', item: 'scale', message: 'Unity uses metres and +Y up; Z is mirrored (Unity is left-handed). The prefab origin is the Source anchor. Light intensity = preview intensity x 0.1 (built-in pipeline scale).' });
+  return { effect, report };
+}
+
+export function unityReportMarkdown(name: string, report: UnityReportItem[]): string {
+  const lines = [`# Unity export: ${name}`, ''];
+  for (const [level, title] of [['dropped', 'Left out'], ['approximated', 'Approximated'], ['info', 'Notes']] as const) {
+    const items = report.filter(r => r.level === level);
+    if (!items.length) continue;
+    lines.push(`## ${title}`, '');
+    const folded = new Map<string, string[]>();
+    for (const r of items) folded.set(r.message, [...(folded.get(r.message) ?? []), r.item]);
+    for (const [m, where] of folded) lines.push(`- ${m} (${[...new Set(where)].join(', ')})`);
+    lines.push('');
+  }
+  return lines.join('\n');
+}
+
+export function unityReadme(name: string): string {
+  return [`# ${name} - Unity export`, '',
+    'Unity 6 (6000.x), built-in render pipeline or URP.', '',
+    '1. Copy `integrations/unity/VfxStudio` (from the VFX-Tool repo) into your project as `Assets/VfxStudio/` (once per project).',
+    `2. Copy this folder into the project, e.g. \`Assets/VfxStudioEffects/${name}/\`.`,
+    `3. In Unity: Tools > VFX Studio > Import Effect..., pick \`effect.unity.json\` in that folder. It builds \`${name}.prefab\` next to it`,
+    '   (one Particle System per emitter, Lights, a VfxStudioEffect player for timing, bursts, moving sources and beams).',
+    '4. Drag the prefab into a scene where the effect should start (its origin is the caster / nozzle; in VFX Studio it stood',
+    '   sourceHeight metres above the floor, see effect.unity.json). It plays on enable;',
+    '   call `GetComponent<VfxStudio.VfxStudioEffect>().Play()` to fire it again.', '',
+    'Command line: `Unity.exe -batchmode -quit -projectPath <project> -executeMethod VfxStudio.EditorTools.VfxStudioImporter.ImportCli -vfxPackage <this folder>`', '',
+    'See report.md for what changed versus the VFX Studio preview.', ''].join('\n');
+}
