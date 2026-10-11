@@ -11,6 +11,7 @@
       ],
       "columns": 4,
       "rows": 4,
+      "meanColor": "#F3BA78",
       "blend": "normal",
       "usage": "flame tongue, leans left; tip up (+V); play over life",
       "tint": "hot palette baked in; darken/redden with colour over life",
@@ -32,6 +33,7 @@
       ],
       "columns": 4,
       "rows": 4,
+      "meanColor": "#F5BD7B",
       "blend": "normal",
       "usage": "flame tongue, leans right, different silhouette",
       "tint": "hot palette baked in",
@@ -53,6 +55,7 @@
       ],
       "columns": 4,
       "rows": 4,
+      "meanColor": "#F09644",
       "blend": "normal",
       "usage": "billowing fire blob that cools and tears apart over life: flame body, fire decay, fireball puffs; play over life, additive or normal",
       "tint": "hot palette baked in",
@@ -74,6 +77,7 @@
       ],
       "columns": 4,
       "rows": 4,
+      "meanColor": "#E4E4E0",
       "blend": "normal",
       "usage": "smoke/dust puff evolving over 16 frames; tint grey/brown with colour over life",
       "provenance": {
@@ -94,6 +98,7 @@
       ],
       "columns": 4,
       "rows": 4,
+      "meanColor": "#EDF7FC",
       "blend": "normal",
       "usage": "foam/splash surface; ground-oriented cards or billboards",
       "provenance": {
@@ -114,6 +119,7 @@
       ],
       "columns": 2,
       "rows": 2,
+      "meanColor": "#FFFFFF",
       "blend": "additive",
       "usage": "radial core/halo masks: tight, medium, wide, core+ring",
       "provenance": {
@@ -134,6 +140,7 @@
       ],
       "columns": 2,
       "rows": 2,
+      "meanColor": "#FFDDB6",
       "blend": "additive",
       "usage": "spark streak, head at top (-V); use velocity alignment + stretch",
       "provenance": {
@@ -154,6 +161,7 @@
       ],
       "columns": 2,
       "rows": 2,
+      "meanColor": "#A9D5FF",
       "blend": "additive",
       "usage": "electric arc strip, endpoints at left/right edge centres",
       "provenance": {
@@ -174,6 +182,7 @@
       ],
       "columns": 2,
       "rows": 2,
+      "meanColor": "#C6D5E0",
       "blend": "normal",
       "usage": "water droplet with fresnel rim, glint and caustic; stretch along velocity for motion blur",
       "provenance": {
@@ -194,6 +203,7 @@
       ],
       "columns": 2,
       "rows": 2,
+      "meanColor": "#FFFFFF",
       "blend": "normal",
       "usage": "bubble with thin rim, clear middle and glints (gas, poison, underwater); tint with the material",
       "provenance": {
@@ -214,6 +224,7 @@
       ],
       "columns": 2,
       "rows": 2,
+      "meanColor": "#E6F5FF",
       "blend": "normal",
       "usage": "thin broken ripple ring mask for ground/water rings",
       "provenance": {
@@ -254,6 +265,7 @@
       ],
       "columns": 4,
       "rows": 4,
+      "meanColor": "#BADAFF",
       "blend": "additive",
       "usage": "lightning charge accents: filaments gathering into a core over 16 frames (overLife)",
       "provenance": {
@@ -274,6 +286,7 @@
       ],
       "columns": 2,
       "rows": 2,
+      "meanColor": "#FFFFFF",
       "blend": "normal",
       "usage": "static wisp masks (0–1 thin, 2–3 broad) for smoke threads, wind, spirits",
       "provenance": {
@@ -294,6 +307,7 @@
       ],
       "columns": 4,
       "rows": 4,
+      "meanColor": "#1F1A29",
       "blend": "normal",
       "usage": "dark smoke tendril curling and dissipating over 16 frames (DarkVolumeSprite)",
       "provenance": {
@@ -314,6 +328,7 @@
       ],
       "columns": 2,
       "rows": 2,
+      "meanColor": "#FFFFFF",
       "blend": "additive",
       "usage": "star (0), ray burst (1), thin ring (2) and cross flare (3) masks for glints, holy light, impacts",
       "provenance": {
@@ -334,6 +349,7 @@
       ],
       "columns": 2,
       "rows": 2,
+      "meanColor": "#838383",
       "blend": "normal",
       "usage": "neutral gradient utilities: linear (0), radial (1), band (2), diagonal (3); tint or use as masks",
       "provenance": {

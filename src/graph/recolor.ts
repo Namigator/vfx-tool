@@ -26,16 +26,36 @@ export function hsvToRgb([h, s, v]: readonly number[]): [number, number, number]
 
 /** Below this saturation a swatch has no meaningful hue: the grade sets the hue and adds saturation instead. */
 const GREY = 0.12;
+/** The same for what a textured part renders as (gradeOfRendered). */
+const RENDERED_GREY = 0.3;
 
 /** The grade mapping `from` onto `to`; undefined when off (from.alpha 0) or identical. */
-export function gradeOf(from: ColorValue, to: ColorValue): ColorGrade | undefined {
+export function gradeOf(from: ColorValue, to: ColorValue, grey = GREY): ColorGrade | undefined {
   if (from.alpha === 0 || from.srgb.toUpperCase() === to.srgb.toUpperCase()) return undefined;
   const [hf, sf, vf] = rgbToHsv(rgbOf(from)), [ht, st, vt] = rgbToHsv(rgbOf(to));
-  const grey = sf < GREY;
+  const isGrey = sf < grey;
   return {
-    hue: grey ? ht : (((ht - hf) % 360) + 540) % 360 - 180, setHue: grey,
-    sGain: grey ? 1 : st / sf, sAdd: grey ? st - sf : 0, vGain: vf > 0.02 ? vt / vf : 1,
+    hue: isGrey ? ht : (((ht - hf) % 360) + 540) % 360 - 180, setHue: isGrey,
+    sGain: isGrey ? 1 : st / sf, sAdd: isGrey ? st - sf : 0, vGain: vf > 0.02 ? vt / vf : 1,
   };
+}
+
+/**
+ * The grade for a textured part: hue and saturation are mapped from what actually renders (tint x the sheet's average
+ * colour, multiplied in linear light like the shader), brightness from the swatch. Without this an orange sprite tinted
+ * pale blue renders near-white, the grade boosts a pale blue that is not there, and the part stays near-white.
+ */
+export function gradeOfRendered(from: ColorValue, to: ColorValue, meanColor?: string): ColorGrade | undefined {
+  const g = gradeOf(from, to);
+  if (!g || !meanColor || !/^#[0-9a-f]{6}$/i.test(meanColor)) return g;
+  const lin = (x: number) => (x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4);
+  const enc = (x: number) => (x <= 0.0031308 ? x * 12.92 : 1.055 * x ** (1 / 2.4) - 0.055);
+  const m = rgbOf({ srgb: meanColor, alpha: 1 }), f = rgbOf(from);
+  const rendered = { srgb: hexOf(f.map((x, i) => enc(lin(x) * lin(m[i])))), alpha: from.alpha };
+  // A texture's pixels spread around the average hue; a weakly coloured average would fan them out over several hues
+  // when rotated, so below RENDERED_GREY the grade sets the hue instead (as for grey swatches).
+  const r = gradeOf(rendered, to, RENDERED_GREY);
+  return r ? { ...r, vGain: g.vGain } : g;
 }
 
 export function applyGrade(c: ColorValue, g: ColorGrade | undefined): ColorValue {

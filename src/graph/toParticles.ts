@@ -23,7 +23,7 @@
 //   Schedule output wired twice) are a DUPLICATE_ID error.
 import { prepareDocument } from './prepare.ts';
 import { compileKeyframed, hasKeyframes, trackValue, type LayerAnimation } from './keyframes.ts';
-import { applyGrade, gradeGradient, gradeOf, hueRotate, type ColorGrade } from './recolor.ts';
+import { applyGrade, gradeGradient, gradeOf, gradeOfRendered, hueRotate, type ColorGrade } from './recolor.ts';
 export { hueRotate } from './recolor.ts';
 import type { ColorValue, CurveValue, Diagnostic, ErrorCode, GradientValue, ParameterValue, Quaternion, Transform, ValidationResult, Vec3 } from '../model/types.ts';
 import { TICKS_PER_SECOND } from '../model/types.ts';
@@ -309,7 +309,13 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
     return t?.length && !d.animation ? { ...d, animation: structuredClone(t) } : d;
   };
   /** Per-part colour (recolorFrom → recolorTo); spread into shader layers, applied directly for meshes/lights. */
-  const gradeFor = (n: ExpandedNode) => gradeOf(param(n, 'recolorFrom') as ColorValue, param(n, 'recolorTo') as ColorValue);
+  // Textured materials grade from what renders (tint x the sheet's average colour), see recolor.ts gradeOfRendered.
+  const gradeFor = (n: ExpandedNode) => {
+    const from = param(n, 'recolorFrom') as ColorValue, to = param(n, 'recolorTo') as ColorValue;
+    if (n.node.type !== 'Material' || !isTexturedTemplate(param(n, 'template'), n.node.params)) return gradeOf(from, to);
+    const r = materialSheet(doc, param(n, 'sprite'), param(n, 'textureAsset'));
+    return gradeOfRendered(from, to, 'sheet' in r ? r.sheet.meanColor : undefined);
+  };
   const gradeField = (n: ExpandedNode): { grade?: ColorGrade } => { const g = gradeFor(n); return g ? { grade: g } : {}; };
   /** Value nodes feeding a parameter port (RandomRange, Constant, ScalarMath): evaluated once per cast. Undefined when not driven by one. */
   const valueSource = (nodeId: string, port: string): ExpandedNode | undefined => {

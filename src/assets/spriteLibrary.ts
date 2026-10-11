@@ -11,6 +11,8 @@ export interface SpriteSheet {
   columns: number;
   rows: number;
   blend: string;
+  /** Coverage-weighted average colour of the sheet ("#RRGGBB", tools/bake-sprites.mjs); imported textures have none. */
+  meanColor?: string;
 }
 
 export interface SpriteLibrary {
