@@ -1,4 +1,4 @@
-// Builds ONE Roblox model holding a whole effect pack: a README script plus one folder per colourway, each with every
+// Builds ONE Roblox model holding a whole effect pack: a README StringValue plus one folder per colourway, each with every
 // effect as its own playable model (EffectPlayer + Demo + VfxColor/VfxHueShift settings).
 //
 //   node --experimental-strip-types tools/build-roblox-pack.mjs --name "Arcane Bloom" --out pack.rbxmx \
@@ -45,7 +45,7 @@ const groups = ways.map(w => {
   return w.name ? folder(w.name, models) : models.join('');
 });
 const readmeText = readme ? readFileSync(readme, 'utf8') : `${name}\n`;
-const readmeItem = `<Item class="Script" referent="${ref()}"><Properties><string name="Name">README</string><bool name="Disabled">true</bool><ProtectedString name="Source"><![CDATA[--[==[\n${readmeText.replace(/\]==\]/g, '] ==]')}\n]==]\n]]></ProtectedString></Properties></Item>`;
+const readmeItem = `<Item class="StringValue" referent="${ref()}"><Properties><string name="Name">README</string><string name="Value">${esc(readmeText)}</string></Properties></Item>`;
 const pack = `<Item class="Model" referent="${ref()}"><Properties><string name="Name">${esc(name)}</string></Properties>${readmeItem}${groups.join('')}</Item>`;
 const xml = `<?xml version="1.0" encoding="utf-8"?>\n<roblox version="4">${pack}</roblox>\n`;
 writeFileSync(out, xml);
