@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Writes an Unreal export package for an included component (no MCP server needed):
-//   node --experimental-strip-types tools/unreal-export.mjs <component-id> [outDir=work/unreal/<component-id>]
+//   node --experimental-strip-types tools/unreal-export.mjs <component-id | doc.json> <outDir>
 // Then: node tools/unreal-check.mjs <outDir>
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -14,7 +14,8 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const id = process.argv[2];
 if (!id) { console.error('usage: node --experimental-strip-types tools/unreal-export.mjs <component-id> [outDir]'); process.exit(2); }
 const out = resolve(process.argv[3] ?? join(ROOT, 'work', 'unreal', id));
-const doc = { ...insertComponent(createBlankDocument(`unreal-${id}`, id), id, undefined, { group: true }).doc, name: id };
+// A path ending in .json is a saved effect document (e.g. work/mcp/<doc>.json) instead of a component id.
+const doc = id.endsWith('.json') ? JSON.parse(readFileSync(id, 'utf8')) : { ...insertComponent(createBlankDocument(`unreal-${id}`, id), id, undefined, { group: true }).doc, name: id };
 const r = unrealEffectFrom(doc);
 if (!r.ok) { console.error(r.message); process.exit(1); }
 const bytes = new Map(r.value.textures.map(t => [t, readFileSync(join(ROOT, 'assets', 'sprites', t))]));

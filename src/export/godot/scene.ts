@@ -153,12 +153,18 @@ function emitterNode(res: Resources, e: UeEmitter, texRoot: string, duration: nu
   return node.join('\n');
 }
 
+/**
+ * Preview light intensity (candela-like, typically 10-40) -> Godot OmniLight3D light_energy (about 1 is a normal lamp).
+ * Unscaled, the floor washed out to solid colour in Godot (side-by-side 2026-10-15).
+ */
+export const GODOT_LIGHT_ENERGY_SCALE = 0.06;
+
 function lightNode(l: UeLight, duration: number, tracks: Track[]): string {
   const name = nodeName(l.name);
   const peak = Math.max(0, ...l.intensity.map(([, v]) => v));
   const node = [`[node name=${str(name)} type="OmniLight3D" parent="."]`, `light_color = Color(${l.color.map(n).join(', ')}, 1)`,
     `omni_range = ${n(Math.max(0.1, l.radiusCm / 100))}`, `light_energy = 0.0`, `position = ${vec3(fromUe(l.positionCm))}`];
-  if (peak > 0) tracks.push({ path: `${name}:light_energy`, interp: 1, update: 0, keys: [[0, '0.0'], ...l.intensity.map(([tick, v]) => [Math.min(duration, tick) / 60, n(v)] as [number, string])] });
+  if (peak > 0) tracks.push({ path: `${name}:light_energy`, interp: 1, update: 0, keys: [[0, '0.0'], ...l.intensity.map(([tick, v]) => [Math.min(duration, tick) / 60, n(v * GODOT_LIGHT_ENERGY_SCALE)] as [number, string])] });
   if (l.sourceTrack?.length) tracks.push({ path: `${name}:position`, interp: 1, update: 0, keys: l.sourceTrack.map(([tick, p]) => [Math.min(duration, tick) / 60, vec3(fromUe(p))] as [number, string]) });
   return node.join('\n');
 }
