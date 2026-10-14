@@ -35,7 +35,6 @@ function lifeTimes(...sources: (number[] | undefined)[]): number[] {
   return ts;
 }
 
-/** Colour + transparency sequences of a billboard layer (life colour × layer colour, then part grade and colour shift). */
 /**
  * Roblox Squash s draws a particle (1+s)x taller and 1/(1+s) as wide (measured in Studio 2026-10-14: Size 2 at
  * Squash 0/1/2 drew 60x60, 30x120 and 20x178 px). An editor velocity stretch r keeps the sprite's width and makes it
@@ -47,19 +46,69 @@ export function stretchToSquash(r: number): { squash: number; sizeScale: number 
   return { squash: r3(k - 1), sizeScale: k };
 }
 
-function colourSequences(layer: Pick<ParticlePreviewLayer, 'color' | 'opacity' | 'colorOverLife' | 'opacityOverLife' | 'grade' | 'hueShift'>, ts: number[]) {
+/**
+ * Colour + transparency sequences of a billboard layer (life colour × layer colour, then part grade and colour shift).
+ * `heat` (additive layers: 1 + emission) bakes the editor's tone mapping in: where heat × opacity passes 1 the
+ * preview's ACES curve clips a bright colour toward white (a white-hot fireball core). Roblox does not tone-map
+ * particles, so the colour itself is shifted toward white there (fully at heat × opacity >= 3). `plain` is the
+ * unshifted colour, used for the bloom halo.
+ */
+function colourSequences(layer: Pick<ParticlePreviewLayer, 'color' | 'opacity' | 'colorOverLife' | 'opacityOverLife' | 'grade' | 'hueShift'>, ts: number[], heat = 0) {
   const grad = compileLifeGradient(layer.colorOverLife), op = compileLifeCurve(layer.opacityOverLife), out = [0, 0, 0, 0];
-  const color: RbxColorKey[] = [], transparency: RbxNumberKey[] = [];
+  const color: RbxColorKey[] = [], plain: RbxColorKey[] = [], transparency: RbxNumberKey[] = [];
   for (const t of ts) {
     sampleLifeGradient(grad, t, out);
     const life: ColorValue = { srgb: toHex([linToSrgb(out[0]), linToSrgb(out[1]), linToSrgb(out[2])]), alpha: 1 };
-    const c = hueRotate(applyGrade(multiplyColors(life, layer.color), layer.grade), layer.hueShift ?? 0);
-    color.push({ t, c: hex(c).map(r3) as [number, number, number] });
+    const c = hex(hueRotate(applyGrade(multiplyColors(life, layer.color), layer.grade), layer.hueShift ?? 0));
     const a = layer.opacity * layer.color.alpha * out[3] * sampleLifeCurve(op, t);
+    const w = WHITE_HOT * Math.min(1, Math.max(0, (heat * a - 1) / 2));
+    plain.push({ t, c: c.map(r3) as [number, number, number] });
+    color.push({ t, c: c.map(v => r3(v + (1 - v) * w)) as [number, number, number] });
     transparency.push({ t, v: r3(1 - Math.min(1, Math.max(0, a))), e: 0 });
   }
-  return { color, transparency };
+  return { color, transparency, plain };
 }
+
+/** How far a fully clipped colour moves to white (the preview's ACES keeps a trace of hue). */
+const WHITE_HOT = 0.85;
+/** Bloom stand-in: emissive camera-facing layers get a soft-glow companion this many times larger... */
+const HALO_SIZE = 2.5;
+/** ...whose opacity is this fraction of the layer's per unit of emission (clamped). */
+const HALO_ALPHA_PER_EMISSION = 0.12, HALO_ALPHA_MAX = 0.35, HALO_MIN_EMISSION = 1;
+
+/**
+ * The editor blooms bright pixels (UnrealBloom, threshold 1); Roblox only blooms a game's own BloomEffect, by default
+ * above 2, and not at all at low graphics quality. Bright camera-facing cores get two companions instead: a white-hot
+ * centre and a big faint soft-glow halo. Each is ONE particle locked to the emitter for the core's whole active window:
+ * Roblox cannot pair particles across emitters, so per-particle copies drifted away or spawned as a cluster of dots
+ * along the path (both seen in Studio 2026-10-14).
+ */
+function glowOf(e: RbxEmitter, color: RbxColorKey[], suffix: string, sizeScale: number, alpha: number): RbxEmitter | undefined {
+  const ticks = [...e.bursts.map(b => b.tick), ...e.rate.filter(([, v]) => v > 0).map(([t]) => t)];
+  if (!ticks.length) return undefined;
+  const start = Math.min(...ticks);
+  let lastRate = -1;
+  e.rate.forEach(([, v], i) => { if (v > 0) lastRate = i; });
+  const rateEnd = lastRate < 0 ? start : (e.rate[lastRate + 1]?.[0] ?? e.rate[lastRate][0] + 1);
+  const end = Math.max(rateEnd, ...e.bursts.map(b => b.tick)) + e.lifetime[1] * TICKS_PER_SECOND;
+  const life = r3(Math.max(0.1, (end - start) / TICKS_PER_SECOND));
+  const peak = Math.max(...e.size.map(k => k.v)) * sizeScale;
+  // Same texture + flipbook as the core: soft-glow.png is a 2x2 variant sheet, drawn whole it showed four dots and a ring.
+  const { squash: _s, tracks: _t, colorFrames: _c, path: _p, ...rest } = e;
+  return {
+    ...rest, ...(e.path ? { path: e.path } : {}), name: `${e.name}_${suffix}`,
+    size: [{ t: 0, v: r3(peak * 0.6), e: 0 }, { t: 0.15, v: r3(peak), e: 0 }, { t: 1, v: r3(peak * 0.8), e: 0 }],
+    transparency: [{ t: 0, v: 1, e: 0 }, { t: 0.08, v: r3(1 - alpha), e: 0 }, { t: 0.85, v: r3(1 - alpha), e: 0 }, { t: 1, v: 1, e: 0 }],
+    color: color.length ? [{ t: 0, c: color[0].c }, { t: 1, c: color[color.length - 1].c }] : color,
+    lifetime: [life, life], rate: [], bursts: [{ tick: start, count: 1 }],
+    lightEmission: 1, brightness: 1, orientation: 'FacingCamera', rotation: [0, 0], rotSpeed: [0, 0],
+    speed: [0, 0], spreadAngle: [0, 0], acceleration: [0, 0, 0], drag: 0, lockedToPart: true, partSize: POINT,
+  };
+}
+/** Halo and hot centre emit from one point (spread over the emitter volume they drew a cluster of dots). */
+const POINT: Vec3 = [0.05, 0.05, 0.05];
+/** White-hot centre of a bright core: this fraction of the core's size. */
+const HOT_CENTRE_SIZE = 0.35;
 
 /** Layer values at `tick` with its keyframed tracks applied (opacity / emission / hueShift / colour). */
 function layerAt<T extends { animation?: LayerAnimation }>(layer: T, tick: number): T {
@@ -112,7 +161,7 @@ function rateTrack(d: ParticleEmitterDescriptor, duration: number): RbxStepTrack
   return out;
 }
 
-function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, origin: Vec3, duration: number, name: string, report: RbxReportItem[]): RbxEmitter {
+function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, origin: Vec3, duration: number, name: string, report: RbxReportItem[]): RbxEmitter & { plainColor: RbxColorKey[] } {
   const rel = (p: readonly number[]): Vec3 => [r3((p[0] - origin[0]) * S), r3((p[1] - origin[1]) * S), r3((p[2] - origin[2]) * S)];
   const em = d.emission;
   let direction: Vec3 = [0, 1, 0], speed: [number, number] = [0, 0], spread = 0, partSize: Vec3 = [0.2, 0.2, 0.2];
@@ -159,7 +208,7 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
   const ts = lifeTimes(layer.sizeOverLife.keys.map(k => k.x), layer.opacityOverLife.keys.map(k => k.x), layer.colorOverLife.stops.map(s => s.position));
   const mid = ((d.size.min + d.size.max) / 2) * S, env = ((d.size.max - d.size.min) / 2) * S;
   const size: RbxNumberKey[] = ts.map(t => { const k = sampleLifeCurve(sizeCurve, t); return { t, v: r3(mid * k), e: r3(env * k) }; });
-  const { color, transparency } = colourSequences(layer, ts);
+  const { color, transparency, plain } = colourSequences(layer, ts, layer.blend === 'additive' ? 1 + layer.emission : 0);
   const velocityAligned = layer.alignment === 'velocity';
   // Flat world-facing sprites (ground rings): Roblox VelocityPerpendicular faces a particle along its velocity, so a
   // sprite that does not move gets a creep speed along its axis and lies flat. Moving ones fall back to the camera.
@@ -194,7 +243,7 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     else if (!/^(emission\.speed\.min|size\.min|lifetimeTicks\.min|initialVelocity\.value\.[12])$/.test(p)) report.push({ level: 'dropped', item: layer.nodeId, message: `The keyframed value ${p} is not animated in Roblox (exported at its first key).` });
   }
   const keyTicks = [...new Set((layer.animation ? [...layer.animation.numbers, ...layer.animation.colors] : []).flatMap(t => t.keys.map(k => k[0])))].sort((a, b) => a - b);
-  const colorFrames = keyTicks.length ? keyTicks.map(tick => ({ tick, ...colourSequences(layerAt(layer, tick), ts) })) : undefined;
+  const colorFrames = keyTicks.length ? keyTicks.map(tick => { const l = layerAt(layer, tick), q = colourSequences(l, ts, l.blend === 'additive' ? 1 + l.emission : 0); return { tick, color: q.color, transparency: q.transparency }; }) : undefined;
   return {
     name,
     position: rel(d.sourceTrack ? d.sourceTrack.positions[0] : d.sourcePosition),
@@ -223,6 +272,7 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     zOffset: 0,
     lockedToPart: d.attachToSource === true,
     rate: rateTrack(d, duration),
+    plainColor: plain,
     bursts: d.bursts.filter(b => b.count > 0).map(b => ({ tick: b.tick, count: b.count, ...(b.position ? { position: rel(b.position) } : {}) })),
     ...(path ? { path } : {}),
     ...(tracks.length ? { tracks } : {}),
@@ -449,7 +499,18 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
     const own = [emitterFrom(at(0), d, origin, plan.value.durationTicks, unique(layer.nodeId), report)];
     // A PathFollower over several paths: one source per path, each emitting the full amount (as in the editor).
     (d.extraSourceTracks ?? []).forEach((track, k) => own.push(emitterFrom(at(k + 1), { ...d, sourceTrack: track, extraSourceTracks: undefined }, origin, plan.value.durationTicks, unique(`${layer.nodeId}_path${k + 2}`), report)));
-    emitters.push(...own);
+    for (const e of own) {
+      const { plainColor, ...main } = e as RbxEmitter & { plainColor?: RbxColorKey[] };
+      if (layer.blend === 'additive' && layer.emission >= HALO_MIN_EMISSION && main.orientation === 'FacingCamera' && plainColor) {
+        // A bright camera-facing core: orange body, a small white-hot centre, a big soft halo (the editor's tone curve
+        // + bloom in three layers). Whitening the whole sprite instead drew a flat pale disc (seen in Studio).
+        const glows = [glowOf(main, main.color, 'hot', HOT_CENTRE_SIZE, 1), glowOf(main, plainColor, 'halo', HALO_SIZE, Math.min(HALO_ALPHA_MAX, HALO_ALPHA_PER_EMISSION * layer.emission))];
+        emitters.push({ ...main, color: plainColor }, ...glows.filter((g): g is RbxEmitter => !!g));
+      } else emitters.push(main);
+      if (layer.blend === 'additive' && layer.emission >= HALO_MIN_EMISSION && main.orientation === 'FacingCamera' && plainColor) {
+        if (!report.some(r => r.item === layer.nodeId && r.message.startsWith('Glow halo'))) report.push({ level: 'approximated', item: layer.nodeId, message: 'Glow halo: the editor blooms this bright layer; Roblox gets a soft-glow companion emitter instead.' });
+      }
+    }
     if (!emittersBySystem.has(layer.systemId)) emittersBySystem.set(layer.systemId, own);
   }
   // Trails: one particle riding a moving source → a native Roblox Trail; trails behind many particles → stretched

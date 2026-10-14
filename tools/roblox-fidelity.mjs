@@ -96,6 +96,15 @@ local function remap(seq)
 	return NumberSequence.new(keys)
 end
 for _, d in ipairs(model:GetDescendants()) do
+	if d:IsA("ParticleEmitter") and string.sub(d.Name, -5) == "_halo" then
+		local hs, ha = ${tweak.halosize ?? 1}, ${tweak.haloalpha ?? 1}
+		local sk, tk = {}, {}
+		for _, k in ipairs(d.Size.Keypoints) do table.insert(sk, NumberSequenceKeypoint.new(k.Time, k.Value * hs, k.Envelope * hs)) end
+		for _, k in ipairs(d.Transparency.Keypoints) do table.insert(tk, NumberSequenceKeypoint.new(k.Time, 1 - math.clamp((1 - k.Value) * ha, 0, 1), k.Envelope)) end
+		d.Size = NumberSequence.new(sk); d.Transparency = NumberSequence.new(tk)
+		if ${tweak.halored ?? 0} == 1 then d.Color = ColorSequence.new(Color3.new(1, 0, 0)); d.Transparency = NumberSequence.new(0); d.LightEmission = 0 end
+		print("HALO", d:GetFullName(), d.Rate, d.Enabled)
+	end
 	if d:IsA("ParticleEmitter") then
 		if ${tweak.squash ?? -1} == 0 then d.Squash = NumberSequence.new(0) end
 		if ${tweak.face ?? 0} == 1 then d.Orientation = Enum.ParticleOrientation.FacingCamera end
@@ -166,6 +175,6 @@ for (const t of ticks) {
 }
 const inputs = ticks.flatMap(t => ['-i', join(out, `editor-${t}.png`), '-i', join(out, `roblox-${t}.png`)]);
 const rows = ticks.map((_, k) => `[${2 * k}:v]scale=${W}:${H}[e${k}];[${2 * k + 1}:v]scale=${W}:${H}[r${k}];[e${k}][r${k}]hstack[row${k}]`).join(';');
-run('ffmpeg', ['-v', 'error', '-y', ...inputs, '-filter_complex', `${rows};${ticks.map((_, k) => `[row${k}]`).join('')}vstack=${ticks.length}`, join(out, 'sheet.png')]);
+run('ffmpeg', ['-v', 'error', '-y', ...inputs, '-filter_complex', ticks.length > 1 ? `${rows};${ticks.map((_, k) => `[row${k}]`).join('')}vstack=${ticks.length}` : rows.replace('[row0]', ''), join(out, 'sheet.png')]);
 writeFileSync(join(out, 'metrics.json'), JSON.stringify({ doc: docPath, model: modelPath, camera: { cam, look, fov, robloxCam: rc, robloxLook: rl }, syncFrame: t0, metrics }, null, 2));
 console.log(JSON.stringify({ sheet: join(out, 'sheet.png'), metrics: metrics.map(m => ({ tick: m.tick, lumaRatio: m.lumaRatio, areaRatio: m.areaRatio, editor: m.editor, roblox: m.roblox })) }, null, 1));
