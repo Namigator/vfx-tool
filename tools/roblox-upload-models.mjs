@@ -5,7 +5,8 @@
 //
 // DRY RUN by default; --yes uploads (ask the user first).
 //
-//   node tools/roblox-upload-models.mjs --creator-user <userId> [--creator-group <groupId>] [--yes] <model.rbxmx ...>
+//   node tools/roblox-upload-models.mjs --creator-user <userId> [--creator-group <groupId>] [--name <display name>]
+//     [--description <text>] [--yes] <model.rbxmx ...>   (--name/--description apply to new uploads only)
 //
 // Needs ROBLOX_OPEN_CLOUD_API_KEY with the "assets" read+write permission. The key is read from the environment and
 // never printed.
@@ -16,6 +17,7 @@ const args = process.argv.slice(2);
 const opt = n => { const i = args.indexOf(`--${n}`); if (i < 0) return undefined; const v = args[i + 1]; args.splice(i, 2); return v; };
 const flag = n => { const i = args.indexOf(`--${n}`); if (i < 0) return false; args.splice(i, 1); return true; };
 const user = opt('creator-user'), group = opt('creator-group'), yes = flag('yes');
+const nameOpt = opt('name'), descOpt = opt('description'); // new uploads only; one model per call when given
 const root = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 const idsFile = join(root, 'work', 'roblox', 'model-ids.json');
 const ids = existsSync(idsFile) ? JSON.parse(readFileSync(idsFile, 'utf8')) : {};
@@ -38,7 +40,7 @@ for (const f of files) {
   const form = new FormData();
   const request = existing
     ? { assetId: String(existing) }
-    : { assetType: 'Model', displayName: nameOf(f).slice(0, 50), description: 'VFX effect made with VFX Studio. Insert it, enable the Demo script and press Play.', creationContext: { creator } };
+    : { assetType: 'Model', displayName: (nameOpt ?? nameOf(f)).slice(0, 50), description: descOpt ?? 'VFX effect made with VFX Studio. Insert it, enable the Demo script and press Play.', creationContext: { creator } };
   form.append('request', JSON.stringify(request));
   form.append('fileContent', new Blob([readFileSync(f)], { type: 'model/x-rbxm' }), b);
   const url = existing ? `https://apis.roblox.com/assets/v1/assets/${existing}` : 'https://apis.roblox.com/assets/v1/assets';
