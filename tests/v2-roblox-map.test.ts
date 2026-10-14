@@ -122,3 +122,14 @@ test('Roblox map: earth-upheaval rocks are Slate blocks with irregular per-piece
   assert.ok(ratios.size > 1, 'rocks are not all the same proportions');
   assert.ok(ice.meshes.some(m => m.shape === 'Wedge' && m.material === 'Ice'), `ice: ${ice.meshes.map(m => `${m.source}:${m.shape}/${m.material}`)}`);
 });
+
+test('velocity stretch → Squash keeps the sprite width (Roblox draws (1+s)x tall, 1/(1+s) wide)', async () => {
+  const { stretchToSquash } = await import('../src/export/roblox/fromPlan.ts');
+  for (const r of [1.5, 2.2, 3, 9]) {
+    const { squash, sizeScale } = stretchToSquash(r);
+    assert.ok(Math.abs(sizeScale / (1 + squash) - 1) < 0.01, `width kept at stretch ${r}`);
+    assert.ok(Math.abs(sizeScale * (1 + squash) - r) < 0.02, `length ×${r}`);
+  }
+  assert.deepEqual(stretchToSquash(1), { squash: 0, sizeScale: 1 });
+  assert.equal(stretchToSquash(100).squash, 3); // Roblox caps Squash at 3
+});

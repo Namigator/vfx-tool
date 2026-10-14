@@ -36,6 +36,17 @@ function lifeTimes(...sources: (number[] | undefined)[]): number[] {
 }
 
 /** Colour + transparency sequences of a billboard layer (life colour × layer colour, then part grade and colour shift). */
+/**
+ * Roblox Squash s draws a particle (1+s)x taller and 1/(1+s) as wide (measured in Studio 2026-10-14: Size 2 at
+ * Squash 0/1/2 drew 60x60, 30x120 and 20x178 px). An editor velocity stretch r keeps the sprite's width and makes it
+ * r times longer, so s = sqrt(r) - 1 with Size x sqrt(r). The old log2(r) mapping made sparks ~2.6x too thin at r = 3,
+ * thin enough to vanish at gameplay distance. Squash caps at 3, so stretches above 16 are clamped.
+ */
+export function stretchToSquash(r: number): { squash: number; sizeScale: number } {
+  const k = Math.min(4, Math.sqrt(Math.max(1, r)));
+  return { squash: r3(k - 1), sizeScale: k };
+}
+
 function colourSequences(layer: Pick<ParticlePreviewLayer, 'color' | 'opacity' | 'colorOverLife' | 'opacityOverLife' | 'grade' | 'hueShift'>, ts: number[]) {
   const grad = compileLifeGradient(layer.colorOverLife), op = compileLifeCurve(layer.opacityOverLife), out = [0, 0, 0, 0];
   const color: RbxColorKey[] = [], transparency: RbxNumberKey[] = [];
@@ -155,7 +166,11 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
   const flat = layer.alignment === 'worldAxis' && speed[1] < 0.05 && acceleration.every(v => Math.abs(v) < 1e-6) && !inward;
   if (flat) { direction = layer.worldAxis.map(r3) as Vec3; speed = [FLAT_CREEP_SPEED, FLAT_CREEP_SPEED]; spread = 0; drag = 0; }
   else if (layer.alignment === 'worldAxis') report.push({ level: 'approximated', item: layer.nodeId, message: 'Flat world-facing sprites that move face the camera in Roblox (only still ones lie flat).' });
-  const squash = velocityAligned && layer.stretchRatio > 1.05 ? (() => { const s = r3(Math.min(3, Math.log2(layer.stretchRatio))); return [{ t: 0, v: s, e: 0 }, { t: 1, v: s, e: 0 }]; })() : undefined;
+  const squash = velocityAligned && layer.stretchRatio > 1.05 ? (() => {
+    const { squash: s, sizeScale } = stretchToSquash(layer.stretchRatio);
+    for (const k of size) { k.v = r3(k.v * sizeScale); k.e = r3(k.e * sizeScale); }
+    return [{ t: 0, v: s, e: 0 }, { t: 1, v: s, e: 0 }];
+  })() : undefined;
   if (squash) report.push({ level: 'approximated', item: layer.nodeId, message: `Velocity stretch ×${layer.stretchRatio} becomes Roblox Squash ${squash[0].v}.` });
   if (layer.dissolve) report.push({ level: 'dropped', item: layer.nodeId, message: 'Dissolve (burning-edge fade) is not available on Roblox particles.' });
   if (layer.rim) report.push({ level: 'dropped', item: layer.nodeId, message: 'Sprite rim glow is not available on Roblox particles.' });
@@ -468,7 +483,8 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
     const ems = emittersBySystem.get(t.systemId) ?? [];
     for (const em of ems) {
       const speed = (em.speed[0] + em.speed[1]) / 2, size = Math.max(0.01, em.size[0]?.v ?? 0.1);
-      const s = r3(Math.min(3, Math.max(0.5, Math.log2(1 + (speed * t.historyTicks) / TICKS_PER_SECOND / size))));
+      const { squash: s, sizeScale } = stretchToSquash(Math.max(Math.SQRT2, 1 + (speed * t.historyTicks) / TICKS_PER_SECOND / size));
+      em.size = em.size.map(k => ({ ...k, v: r3(k.v * sizeScale), e: r3(k.e * sizeScale) }));
       em.orientation = 'VelocityParallel';
       em.rotation = [VELOCITY_PARALLEL_ROTATION, VELOCITY_PARALLEL_ROTATION];
       em.rotSpeed = [0, 0];
