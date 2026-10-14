@@ -308,6 +308,9 @@ function lightFrom(l: PointLightLayer, origin: Vec3, duration: number, report: R
   };
 }
 
+/** Paths with fewer points than this are straight rays: no end fade (it would zero every point). */
+const MIN_BEAM_POINTS = 5;
+
 function beamsFrom(doc: EffectDocumentV2, origin: Vec3, report: RbxReportItem[]): RbxBeamLayer[] {
   const layers = new Map<string, RbxBeamLayer & { last: string; fullFrame?: NonNullable<RbxBeamLayer['frames'][number]['paths']> }>();
   for (let tick = 0; tick < doc.durationTicks; tick++) {
@@ -318,9 +321,14 @@ function beamsFrom(doc: EffectDocumentV2, origin: Vec3, report: RbxReportItem[])
       if (!b) { b = beamLayer(l, report); layers.set(l.nodeId, b); }
       const wCurve = compileLifeCurve(l.widthOverPath);
       const paths = (l.active ? l.paths : []).filter(p => p.points.length >= 2).map(p => {
-        const n = p.points.length;
-        return { alpha: r3(p.opacityScale), points: p.points.map((q, i) => {
-          const u = n > 1 ? i / (n - 1) : 0, fade = l.endFade > 0 ? Math.min(1, Math.min(u, 1 - u) / l.endFade) : 1;
+        // A 2-3 point path (a straight ray) with an end fade had zero width at every point and vanished in Roblox.
+        // It stays one segment (each Beam repeats its texture's soft ends, so resampled rays drew dashed) and skips
+        // the end fade; the width curve still tapers it through Width0/Width1.
+        const pts = p.points, n = pts.length, short = n < MIN_BEAM_POINTS;
+        return { alpha: r3(p.opacityScale), points: pts.map((q, i) => {
+          const u = n > 1 ? i / (n - 1) : 0, fade = l.endFade > 0 && !short ? Math.min(1, Math.min(u, 1 - u) / l.endFade) : 1;
+          // Widths stay raw here (layers sharing a bolt need a constant width ratio); the player draws anything
+          // thinner than its MIN_BEAM_WIDTH at that width.
           return [r2((q[0] - origin[0]) * S), r2((q[1] - origin[1]) * S), r2((q[2] - origin[2]) * S), r3(l.width * p.widthScale * sampleLifeCurve(wCurve, u) * fade * S)] as [number, number, number, number];
         }) };
       });

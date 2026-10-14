@@ -29,6 +29,8 @@
 local RunService = game:GetService("RunService")
 
 local TICK_RATE = 60
+-- Thinnest beam drawn (studs): ~2 px at 30 studs, like the editor's bloomed hairline ribbons.
+local MIN_BEAM_WIDTH = 0.12
 
 local EffectPlayer = {}
 
@@ -616,7 +618,10 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 				if ptsB then
 					w = w + (ptsB[o + 4] - w) * f
 				end
-				return math.max(w * wmul, 0)
+				local v = w * wmul
+				-- The editor's bloom turns hairline ribbons into glowing lines; Roblox would draw them sub-pixel.
+				-- Tapered ends (exactly 0) still come to a point.
+				return if v > 0 then math.max(v, MIN_BEAM_WIDTH) else 0
 			end
 			for i = 1, n - 1 do
 				seg += 1
