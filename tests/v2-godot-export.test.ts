@@ -70,3 +70,26 @@ test('Godot: beams ship as ribbons.json + vfx_ribbons.gd (every path with its pe
   assert.equal(mid.paths[0].p.length % 4, 0);
   assert.match(g.files.find(f => f.path === 'vfx_ribbons.gd')!.text, /^extends Node3D/);
 });
+
+test('Godot: ribbons draw like the editor - one sheet cell per path, tiling, soft untextured edges, emission', () => {
+  const { ir, g } = scene('helix-beam');
+  const data = JSON.parse(g.files.find(f => f.path === 'ribbons.json')!.text);
+  const strand = data.layers.find((l: { texture?: string }) => l.texture?.includes('electric-arc'));
+  const plainLayer = data.layers.find((l: { texture?: string }) => !l.texture);
+  assert.ok(strand && plainLayer, 'helix-beam has textured strands and untextured core/haze');
+  const irStrand = ir.ribbons.find(b => b.textureFile?.startsWith('electric-arc'))!;
+  // electric-arc is a 2x2 variant sheet: the editor draws one cell (random per path when the variant is -1), not the atlas.
+  assert.deepEqual(strand.grid, [2, 2]);
+  assert.deepEqual(irStrand.sheetGrid, [2, 2]);
+  if (irStrand.cell === -1) {
+    const cells = strand.frames.flatMap((f: { paths: { c?: number }[] }) => f.paths.map(p => p.c));
+    assert.ok(cells.every((c: number | undefined) => c !== undefined && c >= 0 && c < 4), 'every path carries its cell');
+  }
+  assert.equal(strand.tile > 0, irStrand.tileCm !== undefined, 'tiled strands carry their tile length (m)');
+  assert.ok(plainLayer.softness > 0, 'untextured strips keep the soft edge');
+  assert.equal(irStrand.softness, undefined, 'textured strips take their cross-section from the texture');
+  const gd = g.files.find(f => f.path === 'vfx_ribbons.gd')!.text;
+  assert.match(gd, /shader_type spatial;/);
+  assert.match(gd, /surface_set_uv2\(/);
+  for (const u of ['grid', 'softness', 'tile', 'scroll', 'emission', 'fade', 'time_s']) assert.ok(gd.includes(`set_shader_parameter("${u}"`), u);
+});

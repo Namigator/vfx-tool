@@ -234,11 +234,17 @@ function ribbonsJson(ribbons: UeRibbon[], texRoot: string): string {
     color: [b.color.r, b.color.g, b.color.b, 1],
     additive: b.blend === 'additive',
     endFade: b.endFade ?? 0,
-    ...(b.textureFile ? { texture: `${texRoot}/${b.textureFile}` } : {}),
+    emission: b.emission ?? 0,
+    softness: b.softness ?? 0,
+    ...(b.textureFile ? {
+      texture: `${texRoot}/${b.textureFile}`, grid: b.sheetGrid ?? [1, 1], cell: Math.max(0, b.cell ?? 0),
+      tile: (b.tileCm ?? 0) / 100, scroll: b.scroll ?? [0, 0],
+    } : {}),
     frames: b.frames.map(f => ({
       tick: f.tick,
       paths: (f.paths ?? (f.points.length ? [{ points: f.points, alpha: 1 }] : [])).map(p => ({
         a: p.alpha,
+        ...('cell' in p && p.cell !== undefined ? { c: p.cell } : {}),
         p: p.points.flatMap(q => [r(q[0] / 100), r(q[2] / 100), r(q[1] / 100), r(q[3] / 100)]),
       })),
     })),

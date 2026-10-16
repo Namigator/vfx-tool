@@ -13,6 +13,7 @@ import { compileParticlePreview, multiplyColors, type ParticlePreviewLayer, type
 import { compilePathPreview, type PathPreviewLayer } from '../../graph/toPaths.ts';
 import type { ParticleEmitterDescriptor } from '../../runtime/particles.ts';
 import { compileLifeCurve, compileLifeGradient, sampleLifeCurve, sampleLifeGradient } from '../../render/billboardLife.ts';
+import { fnv1a32Utf8 } from '../../runtime/random.ts';
 import { applyGrade, greyTextured, hueRotate, type ColorGrade } from '../../graph/recolor.ts';
 import { settledColor } from '../../graph/pathColor.ts';
 import {
@@ -25,6 +26,8 @@ const r3 = (x: number) => Math.round(x * 1000) / 1000;
 const deg = (rad: number) => (rad * 180) / Math.PI;
 const linToSrgb = (l: number) => (l <= 0.0031308 ? l * 12.92 : 1.055 * l ** (1 / 2.4) - 0.055);
 const safeName = (id: string) => id.replace(/[^A-Za-z0-9_]/g, '_').slice(0, 60);
+/** The preview's transverse soft edge of untextured ribbons (RibbonGeometry.ts ribbonSoftness; not imported: it pulls in three). */
+const ribbonSoftness = (blend: string) => (blend === 'additive' ? 1 : blend === 'normal' ? 0.25 : 0);
 const greyNote = (item: string, from: string, to: string): UeReportItem => ({ level: 'approximated', item,
   message: `Recoloured texture: ${from} is coloured and the engine cannot recolour texture x colour like the editor, so it ships as ${to} with the hue in the colour (exact for one-hue sheets; colour variation inside the sheet is lost).` });
 
@@ -228,7 +231,10 @@ function ribbonsFrom(doc: EffectDocumentV2, origin: readonly number[], report: U
       const live = l.active ? l.paths.filter(p => p.points.length >= 2) : [];
       const points: Vec3Width[] = live.length ? toPoints(live[0]) : [];
       const layerAlpha = Math.min(1, l.opacity * l.color.alpha);
-      const paths = live.map(p => ({ points: toPoints(p), alpha: r3(Math.min(1, layerAlpha * p.opacityScale)) }));
+      // A random cell per path, keyed on the path id like the editor (RibbonGeometry strip.z).
+      const cells = l.sprite && l.sprite.variant < 0 ? l.sprite.sheet.columns * l.sprite.sheet.rows : 0;
+      const paths = live.map(p => ({ points: toPoints(p), alpha: r3(Math.min(1, layerAlpha * p.opacityScale)),
+        ...(cells > 1 ? { cell: Math.floor((fnv1a32Utf8(String(p.id)) / 4294967296) * cells) } : {}) }));
       const key = JSON.stringify(paths);
       if (key === b.last) continue;
       b.last = key;
@@ -254,6 +260,11 @@ function ribbonLayer(l: PathPreviewLayer, report: UeReportItem[]): UeRibbon & { 
     ...(l.emission ? { emission: r3(l.emission) } : {}),
     ...(l.sprite ? { textureFile: grey?.file ?? l.sprite.sheet.file } : {}),
     widthCm: r3(Math.max(0.1, l.uvTileLength * CM_PER_METER)),
+    ...(l.sprite ? {
+      sheetGrid: [l.sprite.sheet.columns, l.sprite.sheet.rows] as [number, number], cell: l.sprite.variant < 0 ? -1 : l.sprite.variant,
+      ...(l.uvMode === 'tile' ? { tileCm: r3(Math.max(0.1, l.uvTileLength * CM_PER_METER)) } : {}),
+      ...(l.uvAnim && (l.uvAnim.scroll[0] || l.uvAnim.scroll[1]) ? { scroll: [r3(l.uvAnim.scroll[0]), r3(l.uvAnim.scroll[1])] as [number, number] } : {}),
+    } : { softness: ribbonSoftness(l.blend) }),
     frames: [], last: '',
   };
 }

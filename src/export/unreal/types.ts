@@ -123,10 +123,19 @@ export type UeRibbon = {
   widthCm: number;
   /** Fraction (0..0.5) of each path's length over which both ends taper and fade. */
   endFade?: number;
+  /** How the editor draws the strip (exporters that can copy it: Godot vfx_ribbons.gd). Textured: the sheet's grid and
+   *  the one cell drawn, -1 = a random cell per path (frames' paths[].cell); tileCm = the texture repeats every tileCm
+   *  along the path (absent = stretched once); scroll in UV/s. Untextured: softness = the outer fraction of the
+   *  half-width that fades out (1 = soft glow, 0 = hard edge). */
+  sheetGrid?: [columns: number, rows: number];
+  cell?: number;
+  tileCm?: number;
+  scroll?: [number, number];
+  softness?: number;
   /** Per-tick geometry: `points` = the first path as [x,y,z,widthCm] in Unreal cm (empty = hidden this tick);
    *  `paths` = every path of the layer (trunk + branches...) with its opacity at that tick (layer opacity x the
    *  path's own opacity, e.g. a flickering, decaying bolt). Frames are stored only when something changed. */
-  frames: { tick: number; points: Vec3Width[]; paths?: { points: Vec3Width[]; alpha: number }[] }[];
+  frames: { tick: number; points: Vec3Width[]; paths?: { points: Vec3Width[]; alpha: number; cell?: number }[] }[];
 };
 export type Vec3Width = [number, number, number, number];
 
