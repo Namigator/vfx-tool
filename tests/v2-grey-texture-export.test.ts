@@ -115,6 +115,9 @@ test('IR: a colour-shifted electric-arc beam ships the grey sheet and a colour o
 
   const rb = robloxEffectFrom(arcEffect(120));
   assert.ok(rb.ok);
-  assert.ok(rb.value.beams.some(b => b.textureKey === 'electric-arc.grey.png'), 'Roblox beam uses the grey sheet');
-  assert.ok(rb.value.textures.includes('electric-arc.grey.png'));
+  // A chain of Beams restarts its texture per segment: the grey sheet's straightened line, never the 2x2 atlas.
+  assert.ok(rb.value.beams.some(b => b.textureKey === 'electric-arc.grey.png#line'), 'Roblox beam uses the grey sheet straightened line');
+  assert.ok(rb.value.textures.includes('electric-arc.grey.png#line'));
+  // Untextured beams get a soft cross-section, not the particle sparkle.
+  assert.ok(rb.value.beams.some(b => b.textureKey?.startsWith('@beam-soft-')), 'untextured core/haze use @beam-soft');
 });

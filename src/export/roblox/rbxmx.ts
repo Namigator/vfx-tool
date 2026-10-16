@@ -193,19 +193,24 @@ export function builtinFallback(key: string): string {
 }
 function withFallbacks(effect: RobloxEffect, ids: Record<string, string> = {}): { effect: RobloxEffect; ids: Record<string, string> } {
   const all = { ...ids };
-  // A grey sheet variant (recoloured part, recolor.ts greyTextured) that was never uploaded uses its original sheet.
-  const uploaded = (key: string) => ids[key] ?? ids[key.replace(/\.grey\.png$/, '.png')];
+  // Not uploaded yet: a grey sheet variant (recoloured part, recolor.ts greyTextured) uses its original sheet, a beam's
+  // straightened line ("sheet.png#line") the whole sheet; a generated beam cross-section ("@beam-soft-..") draws solid.
+  const uploaded = (key: string) => {
+    const cell = key.replace(/#\w+$/, ''), tries = [key, key.replace(/\.grey\.png/, '.png'), cell, cell.replace(/\.grey\.png$/, '.png')];
+    for (const k of tries) if (ids[k]) return ids[k];
+    return undefined;
+  };
   const missing = (key?: string) => key !== undefined && !uploaded(key);
-  for (const key of effect.textures) if (!ids[key]) all[key] = uploaded(key) ?? builtinFallback(key);
+  for (const key of effect.textures) if (!ids[key]) all[key] = uploaded(key) ?? (key.startsWith('@') ? '' : builtinFallback(key));
   return {
     ids: all,
     effect: { ...effect, emitters: effect.emitters.map(e => (missing(e.textureKey) && e.flipbook ? { ...e, flipbook: undefined } : e)) },
   };
 }
 
-function textureUrl(key: string | undefined, ids?: Record<string, string>): string {
+function textureUrl(key: string | undefined, ids?: Record<string, string>, none = DEFAULT_TEXTURE): string {
   const id = key !== undefined ? ids?.[key] : undefined;
-  if (!id) return DEFAULT_TEXTURE;
+  if (!id) return none;
   return /^[a-z]+:\/\//i.test(id) ? id : `rbxassetid://${id}`;
 }
 
@@ -253,7 +258,8 @@ function beamItem(refs: Refs, b: RbxBeamLayer, ids?: Record<string, string>): st
     P.numSeq('Transparency', clampNumberSequence([{ t: 0, v: b.transparency, e: 0 }, { t: 1, v: b.transparency, e: 0 }], 'transparency')),
     P.float('LightEmission', Math.max(0, b.lightEmission)),
     P.float('Brightness', Math.max(0, b.brightness)),
-    P.content('Texture', textureUrl(b.textureKey, ids)),
+    // No texture = a solid Beam (Roblox's own default), not the particle sparkle.
+    P.content('Texture', textureUrl(b.textureKey, ids, '')),
     P.token('TextureMode', ENUM.TextureMode[b.textureMode]),
     P.float('TextureLength', Math.max(0.001, b.textureLength)),
     P.float('TextureSpeed', b.textureSpeed),

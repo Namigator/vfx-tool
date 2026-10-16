@@ -10,6 +10,7 @@
 // never printed.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
+import { textureBytes } from './roblox-texture-bytes.mjs';
 
 const args = process.argv.slice(2);
 const opt = n => { const i = args.indexOf(`--${n}`); if (i < 0) return undefined; const v = args[i + 1]; args.splice(i, 2); return v; };
@@ -33,11 +34,12 @@ if (!user && !group) { console.error('Pass --creator-user <userId> or --creator-
 const creator = group ? { groupId: String(group) } : { userId: String(user) };
 
 for (const f of todo) {
-  const path = join(root, 'assets', 'sprites', f);
-  if (!existsSync(path)) { console.error(`  ${f}: not found in assets/sprites`); continue; }
+  // Beam keys are cut or generated here (roblox-texture-bytes.mjs): "sheet.png#2" = one cell, "@beam-soft-100.png".
+  const bytes = textureBytes(root, f);
+  if (!bytes) { console.error(`  ${f}: not found in assets/sprites`); continue; }
   const form = new FormData();
-  form.append('request', JSON.stringify({ assetType: 'Image', displayName: `VFX ${f.replace(/\.png$/i, '')}`.slice(0, 50), description: 'VFX Studio sprite sheet (procedurally generated)', creationContext: { creator } }));
-  form.append('fileContent', new Blob([readFileSync(path)], { type: 'image/png' }), f);
+  form.append('request', JSON.stringify({ assetType: 'Image', displayName: `VFX ${f.replace(/\.png/gi, '').replace('#', ' cell ').replace('@', '')}`.slice(0, 50), description: 'VFX Studio sprite sheet (procedurally generated)', creationContext: { creator } }));
+  form.append('fileContent', new Blob([bytes], { type: 'image/png' }), f.replace(/[#@]/g, '_'));
   const res = await fetch('https://apis.roblox.com/assets/v1/assets', { method: 'POST', headers: { 'x-api-key': key }, body: form });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) { console.error(`  ${f}: upload failed HTTP ${res.status} ${JSON.stringify(body).slice(0, 300)}`); continue; }

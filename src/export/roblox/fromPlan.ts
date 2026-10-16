@@ -477,6 +477,25 @@ function widthRatio(a: RbxBeamLayer, b: RbxBeamLayer): number | undefined {
   return ratio ?? 1;
 }
 
+/**
+ * A path is a chain of Beams and each Beam restarts its Texture, so a multi-cell sheet (electric-arc) drew the whole
+ * atlas squeezed into every short segment: a comb of vertical squiggles (Studio 2026-10-17). Such beams use the sheet's
+ * straightened line instead ("sheet.png#line": the cells' line profile across the strip, cut at upload by
+ * roblox-texture-bytes.mjs); the path keeps its own shape. An untextured beam uses a soft cross-section
+ * ("@beam-soft-100.png": alpha falling to 0 over the outer softness fraction of the half-width, RibbonGeometry
+ * ribbonSoftness) instead of the particle sparkle that made rays and haze faint.
+ */
+function beamTexture(l: PathPreviewLayer, file: string | undefined, report: RbxReportItem[]): { textureKey?: string } {
+  if (!l.sprite) {
+    const softness = l.blend === 'additive' ? 1 : l.blend === 'normal' ? 0.25 : 0;
+    return softness > 0 ? { textureKey: `@beam-soft-${Math.round(softness * 100)}.png` } : {};
+  }
+  const sheet = l.sprite.sheet, cells = sheet.columns * sheet.rows, base = file ?? sheet.file;
+  if (cells <= 1) return { textureKey: base };
+  report.push({ level: 'approximated', item: l.nodeId, message: `${sheet.file} becomes its straightened line across the beam (Roblox Beams restart their texture on every path segment); the path keeps its own shape.` });
+  return { textureKey: `${base}#line` };
+}
+
 function beamLayer(l: PathPreviewLayer, report: RbxReportItem[]): RbxBeamLayer & { last: string } {
   const grey = l.sprite ? greyTextured(l.sprite.sheet, l.grade as ColorGrade | undefined, l.hueShift) : undefined;
   if (grey) report.push(greyNote(l.nodeId, l.sprite!.sheet.file, grey.file));
@@ -486,7 +505,7 @@ function beamLayer(l: PathPreviewLayer, report: RbxReportItem[]): RbxBeamLayer &
   return {
     name: safeName(l.nodeId), color: hex(c).map(r3) as [number, number, number], transparency: r3(1 - Math.min(1, l.opacity * l.color.alpha)),
     lightEmission: l.blend === 'additive' ? 1 : 0, brightness: r3(1 + l.emission),
-    ...(l.sprite ? { textureKey: grey?.file ?? l.sprite.sheet.file } : {}),
+    ...beamTexture(l, grey?.file, report),
     textureMode: l.uvMode === 'tile' ? 'Wrap' : 'Stretch', textureLength: r3(Math.max(0.1, l.uvTileLength * S)), textureSpeed: r3(l.uvAnim?.scroll[0] ?? 0),
     zOffset: 0, frames: [], maxSegments: 0, last: '',
   };
