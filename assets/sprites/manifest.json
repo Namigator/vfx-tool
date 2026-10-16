@@ -12,6 +12,7 @@
       "columns": 4,
       "rows": 4,
       "meanColor": "#F3BA78",
+      "greyFile": "flame-tongue-a.grey.png",
       "blend": "normal",
       "usage": "flame tongue, leans left; tip up (+V); play over life",
       "tint": "hot palette baked in; darken/redden with colour over life",
@@ -34,6 +35,7 @@
       "columns": 4,
       "rows": 4,
       "meanColor": "#F5BD7B",
+      "greyFile": "flame-tongue-b.grey.png",
       "blend": "normal",
       "usage": "flame tongue, leans right, different silhouette",
       "tint": "hot palette baked in",
@@ -56,6 +58,7 @@
       "columns": 4,
       "rows": 4,
       "meanColor": "#F09644",
+      "greyFile": "fire-puff.grey.png",
       "blend": "normal",
       "usage": "billowing fire blob that cools and tears apart over life: flame body, fire decay, fireball puffs; play over life, additive or normal",
       "tint": "hot palette baked in",
@@ -141,6 +144,7 @@
       "columns": 2,
       "rows": 2,
       "meanColor": "#FFDDB6",
+      "greyFile": "spark-streak.grey.png",
       "blend": "additive",
       "usage": "spark streak, head at top (-V); use velocity alignment + stretch",
       "provenance": {
@@ -162,6 +166,7 @@
       "columns": 2,
       "rows": 2,
       "meanColor": "#A9D5FF",
+      "greyFile": "electric-arc.grey.png",
       "blend": "additive",
       "usage": "electric arc strip, endpoints at left/right edge centres",
       "provenance": {
@@ -266,6 +271,7 @@
       "columns": 4,
       "rows": 4,
       "meanColor": "#BADAFF",
+      "greyFile": "lightning-charge.grey.png",
       "blend": "additive",
       "usage": "lightning charge accents: filaments gathering into a core over 16 frames (overLife)",
       "provenance": {
@@ -308,6 +314,7 @@
       "columns": 4,
       "rows": 4,
       "meanColor": "#1F1A29",
+      "greyFile": "dark-wisp.grey.png",
       "blend": "normal",
       "usage": "dark smoke tendril curling and dissipating over 16 frames (DarkVolumeSprite)",
       "provenance": {

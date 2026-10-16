@@ -64,6 +64,22 @@ export function applyGrade(c: ColorValue, g: ColorGrade | undefined): ColorValue
   const hue = g.setHue ? g.hue : (h + g.hue + 360) % 360;
   return { srgb: hexOf(hsvToRgb([hue, Math.min(1, Math.max(0, s * g.sGain + g.sAdd)), v * g.vGain])), alpha: c.alpha };
 }
+/**
+ * Engines multiply texture x colour and cannot grade or colour-shift that product the way the preview shaders do
+ * (vfxGrade / vfxHue run after the texture), so a blue arc sheet on a part graded pink stayed blue in Godot/Roblox.
+ * For a coloured sheet on a graded or shifted part, exporters use the sheet's grey variant (each texel's brightest
+ * channel, tools/bake-sprites.mjs) and multiply `hue` (the sheet's average colour at full brightness) into the colour
+ * before grading: grey(t) x post(c x hue) = post(c x t) for a sheet of one hue (grade and shift commute with brightness).
+ * undefined = keep the sheet as is (no grade/shift, or a sheet without a grey variant).
+ */
+export function greyTextured(sheet: { meanColor?: string; greyFile?: string }, grade: ColorGrade | undefined, hueShift: number | undefined): { file: string; hue: ColorValue } | undefined {
+  if (!sheet.greyFile || !sheet.meanColor || !/^#[0-9a-f]{6}$/i.test(sheet.meanColor) || (!grade && !hueShift)) return undefined;
+  const lin = (x: number) => (x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4);
+  const enc = (x: number) => (x <= 0.0031308 ? x * 12.92 : 1.055 * x ** (1 / 2.4) - 0.055);
+  const m = rgbOf({ srgb: sheet.meanColor, alpha: 1 }).map(lin), top = Math.max(...m);
+  return top > 0 ? { file: sheet.greyFile, hue: { srgb: hexOf(m.map(x => enc(x / top))), alpha: 1 } } : undefined;
+}
+
 export const gradeGradient = (gr: GradientValue, g: ColorGrade | undefined): GradientValue =>
   (g ? { ...gr, stops: gr.stops.map(s => ({ ...s, color: applyGrade(s.color, g) })) } : gr);
 
