@@ -193,8 +193,10 @@ export function builtinFallback(key: string): string {
 }
 function withFallbacks(effect: RobloxEffect, ids: Record<string, string> = {}): { effect: RobloxEffect; ids: Record<string, string> } {
   const all = { ...ids };
-  const missing = (key?: string) => key !== undefined && !ids[key];
-  for (const key of effect.textures) if (!ids[key]) all[key] = builtinFallback(key);
+  // A grey sheet variant (recoloured part, recolor.ts greyTextured) that was never uploaded uses its original sheet.
+  const uploaded = (key: string) => ids[key] ?? ids[key.replace(/\.grey\.png$/, '.png')];
+  const missing = (key?: string) => key !== undefined && !uploaded(key);
+  for (const key of effect.textures) if (!ids[key]) all[key] = uploaded(key) ?? builtinFallback(key);
   return {
     ids: all,
     effect: { ...effect, emitters: effect.emitters.map(e => (missing(e.textureKey) && e.flipbook ? { ...e, flipbook: undefined } : e)) },

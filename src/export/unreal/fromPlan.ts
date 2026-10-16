@@ -7,13 +7,14 @@
 // direct "scale this module input over wall-clock time" track without a curve-driven user parameter per property,
 // which is out of scope for this pass. Life-curves (size/color/opacity over PARTICLE life, the common case) are
 // exported in full.
-import type { EffectDocumentV2 } from '../../model/types.ts';
+import type { ColorValue, EffectDocumentV2 } from '../../model/types.ts';
 import { TICKS_PER_SECOND } from '../../model/types.ts';
 import { compileParticlePreview, multiplyColors, type ParticlePreviewLayer, type PointLightLayer } from '../../graph/toParticles.ts';
 import { compilePathPreview, type PathPreviewLayer } from '../../graph/toPaths.ts';
 import type { ParticleEmitterDescriptor } from '../../runtime/particles.ts';
 import { compileLifeCurve, compileLifeGradient, sampleLifeCurve, sampleLifeGradient } from '../../render/billboardLife.ts';
-import { applyGrade, hueRotate, type ColorGrade } from '../../graph/recolor.ts';
+import { fnv1a32Utf8 } from '../../runtime/random.ts';
+import { applyGrade, greyTextured, hueRotate, type ColorGrade } from '../../graph/recolor.ts';
 import { settledColor } from '../../graph/pathColor.ts';
 import {
   CM_PER_METER, toUe, toUeDir,
@@ -25,6 +26,10 @@ const r3 = (x: number) => Math.round(x * 1000) / 1000;
 const deg = (rad: number) => (rad * 180) / Math.PI;
 const linToSrgb = (l: number) => (l <= 0.0031308 ? l * 12.92 : 1.055 * l ** (1 / 2.4) - 0.055);
 const safeName = (id: string) => id.replace(/[^A-Za-z0-9_]/g, '_').slice(0, 60);
+/** The preview's transverse soft edge of untextured ribbons (RibbonGeometry.ts ribbonSoftness; not imported: it pulls in three). */
+const ribbonSoftness = (blend: string) => (blend === 'additive' ? 1 : blend === 'normal' ? 0.25 : 0);
+const greyNote = (item: string, from: string, to: string): UeReportItem => ({ level: 'approximated', item,
+  message: `Recoloured texture: ${from} is coloured and the engine cannot recolour texture x colour like the editor, so it ships as ${to} with the hue in the colour (exact for one-hue sheets; colour variation inside the sheet is lost).` });
 
 /** Sample times for a life curve: its own key positions, else evenly spaced 9 points (no 20-key engine cap here). */
 function lifeTimes(...sources: (number[] | undefined)[]): number[] {
@@ -33,7 +38,8 @@ function lifeTimes(...sources: (number[] | undefined)[]): number[] {
   return [...set].sort((a, b) => a - b);
 }
 
-function colourSequences(layer: Pick<ParticlePreviewLayer, 'color' | 'opacity' | 'colorOverLife' | 'opacityOverLife' | 'grade' | 'hueShift'>, ts: number[]) {
+/** `sheetHue`: a recoloured part on a grey sheet variant carries the sheet's hue in its colour (recolor.ts greyTextured). */
+function colourSequences(layer: Pick<ParticlePreviewLayer, 'color' | 'opacity' | 'colorOverLife' | 'opacityOverLife' | 'grade' | 'hueShift'>, ts: number[], sheetHue?: ColorValue) {
   const grad = compileLifeGradient(layer.colorOverLife), op = compileLifeCurve(layer.opacityOverLife), out = [0, 0, 0, 0];
   const colorOverLife: UeColorKey[] = [], opacityOverLife: UeFloatKey[] = [];
   for (const t of ts) {
@@ -42,7 +48,8 @@ function colourSequences(layer: Pick<ParticlePreviewLayer, 'color' | 'opacity' |
     void life;
     const srgb: [number, number, number] = [linToSrgb(out[0]), linToSrgb(out[1]), linToSrgb(out[2])];
     const asColorValue = { srgb: '#' + srgb.map(c => Math.round(Math.min(1, Math.max(0, c)) * 255).toString(16).padStart(2, '0')).join('').toUpperCase(), alpha: 1 };
-    const c = hueRotate(applyGrade(multiplyColors(asColorValue, layer.color), layer.grade), layer.hueShift ?? 0);
+    const lit = multiplyColors(asColorValue, layer.color);
+    const c = hueRotate(applyGrade(sheetHue ? multiplyColors(lit, sheetHue) : lit, layer.grade), layer.hueShift ?? 0);
     const rgb = [1, 3, 5].map(i => parseInt(c.srgb.slice(i, i + 2), 16) / 255);
     colorOverLife.push({ t, r: r3(rgb[0]), g: r3(rgb[1]), b: r3(rgb[2]), a: 1 });
     const a = layer.opacity * layer.color.alpha * out[3] * sampleLifeCurve(op, t);
@@ -51,10 +58,10 @@ function colourSequences(layer: Pick<ParticlePreviewLayer, 'color' | 'opacity' |
   return { colorOverLife, opacityOverLife };
 }
 
-function flipbookOf(layer: ParticlePreviewLayer, meanLifeSeconds: number, report: UeReportItem[]): { textureFile?: string; flipbook?: UeFlipbook } {
+function flipbookOf(layer: ParticlePreviewLayer, meanLifeSeconds: number, report: UeReportItem[], file = layer.sprite?.sheet.file ?? ''): { textureFile?: string; flipbook?: UeFlipbook } {
   const sp = layer.sprite;
   if (!sp) return {};
-  const { columns, rows, file } = sp.sheet;
+  const { columns, rows } = sp.sheet;
   if (columns === 1 && rows === 1) return { textureFile: file };
   const frames = columns * rows;
   // Keep legacy animation fields for existing exporters; consumers that understand variantFrame
@@ -125,7 +132,9 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
   const ts = lifeTimes(layer.sizeOverLife.keys.map(k => k.x), layer.opacityOverLife.keys.map(k => k.x), layer.colorOverLife.stops.map(s => s.position));
   const mid = ((d.size.min + d.size.max) / 2) * CM_PER_METER, env = ((d.size.max - d.size.min) / 2) * CM_PER_METER;
   const sizeOverLife: UeFloatKey[] = ts.map(t => ({ t, v: r3(mid * sampleLifeCurve(sizeCurve, t)) }));
-  const { colorOverLife, opacityOverLife } = colourSequences(layer, ts);
+  const grey = layer.sprite ? greyTextured(layer.sprite.sheet, layer.grade, layer.hueShift) : undefined;
+  if (grey) report.push(greyNote(layer.nodeId, layer.sprite!.sheet.file, grey.file));
+  const { colorOverLife, opacityOverLife } = colourSequences(layer, ts, grey?.hue);
   const velocityAligned = layer.alignment === 'velocity';
   if (layer.alignment === 'worldAxis') report.push({ level: 'info', item: layer.nodeId, message: 'World-facing flat sprites (ground rings) map to Niagara sprite renderer Alignment=CustomFacingVector / facing plane; verify orientation after import.' });
   const stretchRatio = velocityAligned ? Math.max(1, layer.stretchRatio) : 1;
@@ -182,7 +191,7 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     blend: layer.blend === 'additive' ? 'additive' : 'translucent',
     ...(layer.emission ? { emission: r3(layer.emission) } : {}),
     // Procedural sprites (no texture: the editor draws a soft round glow) ship the built-in soft-glow sheet.
-    ...(layer.sprite ? flipbookOf(layer, (life[0] + life[1]) / 2, report) : { textureFile: 'soft-glow.png', flipbook: { columns: 2, rows: 2, fps: 0, loop: false, randomStartFrame: false, startFrame: 0 } }), // its first cell: the tight glow
+    ...(layer.sprite ? flipbookOf(layer, (life[0] + life[1]) / 2, report, grey?.file) : { textureFile: 'soft-glow.png', flipbook: { columns: 2, rows: 2, fps: 0, loop: false, randomStartFrame: false, startFrame: 0 } }), // its first cell: the tight glow
     loop: false,
     ...(sourceTrack ? { sourceTrack } : {}),
     attachToSource: d.attachToSource === true,
@@ -225,7 +234,10 @@ function ribbonsFrom(doc: EffectDocumentV2, origin: readonly number[], report: U
       const live = l.active ? l.paths.filter(p => p.points.length >= 2) : [];
       const points: Vec3Width[] = live.length ? toPoints(live[0]) : [];
       const layerAlpha = Math.min(1, l.opacity * l.color.alpha);
-      const paths = live.map(p => ({ points: toPoints(p), alpha: r3(Math.min(1, layerAlpha * p.opacityScale)) }));
+      // A random cell per path, keyed on the path id like the editor (RibbonGeometry strip.z).
+      const cells = l.sprite && l.sprite.variant < 0 ? l.sprite.sheet.columns * l.sprite.sheet.rows : 0;
+      const paths = live.map(p => ({ points: toPoints(p), alpha: r3(Math.min(1, layerAlpha * p.opacityScale)),
+        ...(cells > 1 ? { cell: Math.floor((fnv1a32Utf8(String(p.id)) / 4294967296) * cells) } : {}) }));
       const key = JSON.stringify(paths);
       if (key === b.last) continue;
       b.last = key;
@@ -238,7 +250,9 @@ function ribbonsFrom(doc: EffectDocumentV2, origin: readonly number[], report: U
 }
 
 function ribbonLayer(l: PathPreviewLayer, report: UeReportItem[]): UeRibbon & { last: string } {
-  const c = hueRotate(applyGrade(l.color, l.grade as ColorGrade | undefined), l.hueShift);
+  const grey = l.sprite ? greyTextured(l.sprite.sheet, l.grade as ColorGrade | undefined, l.hueShift) : undefined;
+  if (grey) report.push(greyNote(l.nodeId, l.sprite!.sheet.file, grey.file));
+  const c = hueRotate(applyGrade(grey ? multiplyColors(l.color, grey.hue) : l.color, l.grade as ColorGrade | undefined), l.hueShift);
   const rgb = [1, 3, 5].map(i => parseInt(c.srgb.slice(i, i + 2), 16) / 255) as [number, number, number];
   if (l.liquid > 0) report.push({ level: 'approximated', item: l.nodeId, message: 'The liquid look (clear core, lit edges) becomes a plain translucent/additive ribbon material.' });
   if (l.uvAnim && l.uvAnim.distort > 0) report.push({ level: 'dropped', item: l.nodeId, message: 'Texture distortion on ribbons has no stock Niagara ribbon module (would need a custom material).' });
@@ -247,8 +261,13 @@ function ribbonLayer(l: PathPreviewLayer, report: UeReportItem[]): UeRibbon & { 
     blend: l.blend === 'additive' ? 'additive' : 'translucent',
     endFade: r3(l.endFade),
     ...(l.emission ? { emission: r3(l.emission) } : {}),
-    ...(l.sprite ? { textureFile: l.sprite.sheet.file } : {}),
+    ...(l.sprite ? { textureFile: grey?.file ?? l.sprite.sheet.file } : {}),
     widthCm: r3(Math.max(0.1, l.uvTileLength * CM_PER_METER)),
+    ...(l.sprite ? {
+      sheetGrid: [l.sprite.sheet.columns, l.sprite.sheet.rows] as [number, number], cell: l.sprite.variant < 0 ? -1 : l.sprite.variant,
+      ...(l.uvMode === 'tile' ? { tileCm: r3(Math.max(0.1, l.uvTileLength * CM_PER_METER)) } : {}),
+      ...(l.uvAnim && (l.uvAnim.scroll[0] || l.uvAnim.scroll[1]) ? { scroll: [r3(l.uvAnim.scroll[0]), r3(l.uvAnim.scroll[1])] as [number, number] } : {}),
+    } : { softness: ribbonSoftness(l.blend) }),
     frames: [], last: '',
   };
 }

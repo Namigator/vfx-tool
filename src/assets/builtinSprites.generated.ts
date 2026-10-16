@@ -2,21 +2,21 @@
 import type { SpriteSheet } from './spriteLibrary.ts';
 
 export const BUILTIN_SPRITES: readonly SpriteSheet[] = [
-  { id: "flame-tongue-a", file: "flame-tongue-a.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "normal", meanColor: "#F3BA78" },
-  { id: "flame-tongue-b", file: "flame-tongue-b.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "normal", meanColor: "#F5BD7B" },
-  { id: "fire-puff", file: "fire-puff.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "normal", meanColor: "#F09644" },
+  { id: "flame-tongue-a", file: "flame-tongue-a.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "normal", meanColor: "#F3BA78", greyFile: "flame-tongue-a.grey.png" },
+  { id: "flame-tongue-b", file: "flame-tongue-b.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "normal", meanColor: "#F5BD7B", greyFile: "flame-tongue-b.grey.png" },
+  { id: "fire-puff", file: "fire-puff.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "normal", meanColor: "#F09644", greyFile: "fire-puff.grey.png" },
   { id: "smoke-puff", file: "smoke-puff.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "normal", meanColor: "#E4E4E0" },
   { id: "foam", file: "foam.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "normal", meanColor: "#EDF7FC" },
   { id: "soft-glow", file: "soft-glow.png", kind: "variants", cell: [256,256], columns: 2, rows: 2, blend: "additive", meanColor: "#FFFFFF" },
-  { id: "spark-streak", file: "spark-streak.png", kind: "variants", cell: [256,256], columns: 2, rows: 2, blend: "additive", meanColor: "#FFDDB6" },
-  { id: "electric-arc", file: "electric-arc.png", kind: "variants", cell: [256,256], columns: 2, rows: 2, blend: "additive", meanColor: "#A9D5FF" },
+  { id: "spark-streak", file: "spark-streak.png", kind: "variants", cell: [256,256], columns: 2, rows: 2, blend: "additive", meanColor: "#FFDDB6", greyFile: "spark-streak.grey.png" },
+  { id: "electric-arc", file: "electric-arc.png", kind: "variants", cell: [256,256], columns: 2, rows: 2, blend: "additive", meanColor: "#A9D5FF", greyFile: "electric-arc.grey.png" },
   { id: "droplet", file: "droplet.png", kind: "variants", cell: [256,256], columns: 2, rows: 2, blend: "normal", meanColor: "#C6D5E0" },
   { id: "bubble", file: "bubble.png", kind: "variants", cell: [256,256], columns: 2, rows: 2, blend: "normal", meanColor: "#FFFFFF" },
   { id: "ripple-ring", file: "ripple-ring.png", kind: "variants", cell: [256,256], columns: 2, rows: 2, blend: "normal", meanColor: "#E6F5FF" },
   { id: "dissolve-noise", file: "dissolve-noise.png", kind: "texture", cell: [256,256], columns: 1, rows: 1, blend: "n/a" },
-  { id: "lightning-charge", file: "lightning-charge.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "additive", meanColor: "#BADAFF" },
+  { id: "lightning-charge", file: "lightning-charge.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "additive", meanColor: "#BADAFF", greyFile: "lightning-charge.grey.png" },
   { id: "wisp", file: "wisp.png", kind: "variants", cell: [256,256], columns: 2, rows: 2, blend: "normal", meanColor: "#FFFFFF" },
-  { id: "dark-wisp", file: "dark-wisp.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "normal", meanColor: "#1F1A29" },
+  { id: "dark-wisp", file: "dark-wisp.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "normal", meanColor: "#1F1A29", greyFile: "dark-wisp.grey.png" },
   { id: "star-ray", file: "star-ray.png", kind: "variants", cell: [256,256], columns: 2, rows: 2, blend: "additive", meanColor: "#FFFFFF" },
   { id: "gradient", file: "gradient.png", kind: "variants", cell: [256,256], columns: 2, rows: 2, blend: "normal", meanColor: "#838383" },
 ];

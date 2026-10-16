@@ -7,7 +7,7 @@ import { compileParticlePreview, multiplyColors, type ParticlePreviewLayer, type
 import { compilePathPreview, type PathPreviewLayer } from '../../graph/toPaths.ts';
 import type { ParticleEmitterDescriptor } from '../../runtime/particles.ts';
 import { compileLifeCurve, compileLifeGradient, sampleLifeCurve, sampleLifeGradient } from '../../render/billboardLife.ts';
-import { applyGrade, hueRotate, type ColorGrade } from '../../graph/recolor.ts';
+import { applyGrade, greyTextured, hueRotate, type ColorGrade } from '../../graph/recolor.ts';
 import { trackValue, type LayerAnimation } from '../../graph/keyframes.ts';
 import { bakeMeshes } from './meshBake.ts';
 import { settledColor } from '../../graph/pathColor.ts';
@@ -25,6 +25,8 @@ const hex = (c: ColorValue): [number, number, number] => [1, 3, 5].map(i => pars
 const linToSrgb = (l: number) => (l <= 0.0031308 ? l * 12.92 : 1.055 * l ** (1 / 2.4) - 0.055);
 const toHex = (rgb: readonly number[]) => `#${rgb.map(x => Math.round(Math.min(1, Math.max(0, x)) * 255).toString(16).toUpperCase().padStart(2, '0')).join('')}`;
 const safeName = (id: string) => id.replace(/[^A-Za-z0-9_]/g, '_').slice(0, 60);
+const greyNote = (item: string, from: string, to: string): RbxReportItem => ({ level: 'approximated', item,
+  message: `Recoloured texture: ${from} is coloured and Roblox cannot recolour texture x colour like the editor, so it uses ${to} with the hue in the colour (exact for one-hue sheets; colour variation inside the sheet is lost). Upload ${to} or it falls back to ${from}.` });
 
 /** Sample times for a life sequence: the curve's own key positions (≤20), else evenly spaced. */
 function lifeTimes(...sources: (number[] | undefined)[]): number[] {
@@ -51,15 +53,17 @@ export function stretchToSquash(r: number): { squash: number; sizeScale: number 
  * `heat` (additive layers: 1 + emission) bakes the editor's tone mapping in: where heat × opacity passes 1 the
  * preview's ACES curve clips a bright colour toward white (a white-hot fireball core). Roblox does not tone-map
  * particles, so the colour itself is shifted toward white there (fully at heat × opacity >= 3). `plain` is the
- * unshifted colour, used for the bloom halo.
+ * unshifted colour, used for the bloom halo. `sheetHue`: a recoloured part on a grey sheet variant carries the sheet's
+ * hue in its colour (recolor.ts greyTextured).
  */
-function colourSequences(layer: Pick<ParticlePreviewLayer, 'color' | 'opacity' | 'colorOverLife' | 'opacityOverLife' | 'grade' | 'hueShift'>, ts: number[], heat = 0) {
+function colourSequences(layer: Pick<ParticlePreviewLayer, 'color' | 'opacity' | 'colorOverLife' | 'opacityOverLife' | 'grade' | 'hueShift'>, ts: number[], heat = 0, sheetHue?: ColorValue) {
   const grad = compileLifeGradient(layer.colorOverLife), op = compileLifeCurve(layer.opacityOverLife), out = [0, 0, 0, 0];
   const color: RbxColorKey[] = [], plain: RbxColorKey[] = [], transparency: RbxNumberKey[] = [];
   for (const t of ts) {
     sampleLifeGradient(grad, t, out);
     const life: ColorValue = { srgb: toHex([linToSrgb(out[0]), linToSrgb(out[1]), linToSrgb(out[2])]), alpha: 1 };
-    const c = hex(hueRotate(applyGrade(multiplyColors(life, layer.color), layer.grade), layer.hueShift ?? 0));
+    const lit = multiplyColors(life, layer.color);
+    const c = hex(hueRotate(applyGrade(sheetHue ? multiplyColors(lit, sheetHue) : lit, layer.grade), layer.hueShift ?? 0));
     const a = layer.opacity * layer.color.alpha * out[3] * sampleLifeCurve(op, t);
     const w = WHITE_HOT * Math.min(1, Math.max(0, (heat * a - 1) / 2));
     plain.push({ t, c: c.map(r3) as [number, number, number] });
@@ -128,10 +132,10 @@ const shapeOf = (s: string): Pick<RbxEmitter, 'shape' | 'shapeStyle' | 'shapeInO
     : s === 'disc' ? { shape: 'Disc', shapeStyle: 'Volume', shapeInOut: 'Outward' }
       : { shape: 'Box', shapeStyle: 'Volume', shapeInOut: 'Outward' };
 
-function flipbookOf(layer: ParticlePreviewLayer, meanLifeSeconds: number, report: RbxReportItem[]): { textureKey?: string; flipbook?: RbxFlipbook } {
+function flipbookOf(layer: ParticlePreviewLayer, meanLifeSeconds: number, report: RbxReportItem[], file = layer.sprite?.sheet.file ?? ''): { textureKey?: string; flipbook?: RbxFlipbook } {
   const sp = layer.sprite;
   if (!sp) return {};
-  const { columns, rows, file } = sp.sheet;
+  const { columns, rows } = sp.sheet;
   if (columns === 1 && rows === 1) return { textureKey: file };
   const layout = columns === rows && [2, 4, 8].includes(columns) ? (`Grid${columns}x${rows}` as RbxFlipbook['layout']) : undefined;
   if (!layout) { report.push({ level: 'approximated', item: layer.nodeId, message: `Sprite sheet ${file} is ${columns}×${rows}; Roblox flipbooks are 2×2, 4×4 or 8×8, so it plays as a single image.` }); return { textureKey: file }; }
@@ -208,7 +212,9 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
   const ts = lifeTimes(layer.sizeOverLife.keys.map(k => k.x), layer.opacityOverLife.keys.map(k => k.x), layer.colorOverLife.stops.map(s => s.position));
   const mid = ((d.size.min + d.size.max) / 2) * S, env = ((d.size.max - d.size.min) / 2) * S;
   const size: RbxNumberKey[] = ts.map(t => { const k = sampleLifeCurve(sizeCurve, t); return { t, v: r3(mid * k), e: r3(env * k) }; });
-  const { color, transparency, plain } = colourSequences(layer, ts, layer.blend === 'additive' ? 1 + layer.emission : 0);
+  const grey = layer.sprite ? greyTextured(layer.sprite.sheet, layer.grade, layer.hueShift) : undefined;
+  if (grey) report.push(greyNote(layer.nodeId, layer.sprite!.sheet.file, grey.file));
+  const { color, transparency, plain } = colourSequences(layer, ts, layer.blend === 'additive' ? 1 + layer.emission : 0, grey?.hue);
   const velocityAligned = layer.alignment === 'velocity';
   // Flat world-facing sprites (ground rings): Roblox VelocityPerpendicular faces a particle along its velocity, so a
   // sprite that does not move gets a creep speed along its axis and lies flat. Moving ones fall back to the camera.
@@ -243,7 +249,7 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     else if (!/^(emission\.speed\.min|size\.min|lifetimeTicks\.min|initialVelocity\.value\.[12])$/.test(p)) report.push({ level: 'dropped', item: layer.nodeId, message: `The keyframed value ${p} is not animated in Roblox (exported at its first key).` });
   }
   const keyTicks = [...new Set((layer.animation ? [...layer.animation.numbers, ...layer.animation.colors] : []).flatMap(t => t.keys.map(k => k[0])))].sort((a, b) => a - b);
-  const colorFrames = keyTicks.length ? keyTicks.map(tick => { const l = layerAt(layer, tick), q = colourSequences(l, ts, l.blend === 'additive' ? 1 + l.emission : 0); return { tick, color: q.color, transparency: q.transparency }; }) : undefined;
+  const colorFrames = keyTicks.length ? keyTicks.map(tick => { const l = layerAt(layer, tick), q = colourSequences(l, ts, l.blend === 'additive' ? 1 + l.emission : 0, grey?.hue); return { tick, color: q.color, transparency: q.transparency }; }) : undefined;
   return {
     name,
     position: rel(d.sourceTrack ? d.sourceTrack.positions[0] : d.sourcePosition),
@@ -260,7 +266,7 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     lightEmission: layer.blend === 'additive' ? 1 : 0,
     lightInfluence: 0,
     brightness: r3(1 + layer.emission),
-    ...flipbookOf(layer, (life[0] + life[1]) / 2, report),
+    ...flipbookOf(layer, (life[0] + life[1]) / 2, report, grey?.file),
     orientation: velocityAligned ? 'VelocityParallel' : flat ? 'VelocityPerpendicular' : 'FacingCamera',
     // Velocity-aligned sprites ignore spin in the editor (the direction of travel sets their angle); a roll here
     // turned flame tongues into spiky stars (user 2026-09-30). No spin = upright.
@@ -472,13 +478,15 @@ function widthRatio(a: RbxBeamLayer, b: RbxBeamLayer): number | undefined {
 }
 
 function beamLayer(l: PathPreviewLayer, report: RbxReportItem[]): RbxBeamLayer & { last: string } {
-  const c = hueRotate(applyGrade(l.color, l.grade as ColorGrade | undefined), l.hueShift);
+  const grey = l.sprite ? greyTextured(l.sprite.sheet, l.grade as ColorGrade | undefined, l.hueShift) : undefined;
+  if (grey) report.push(greyNote(l.nodeId, l.sprite!.sheet.file, grey.file));
+  const c = hueRotate(applyGrade(grey ? multiplyColors(l.color, grey.hue) : l.color, l.grade as ColorGrade | undefined), l.hueShift);
   if (l.liquid > 0) report.push({ level: 'approximated', item: l.nodeId, message: 'The liquid look (clear core, lit edges) becomes a plain translucent Beam.' });
   if (l.uvAnim && l.uvAnim.distort > 0) report.push({ level: 'dropped', item: l.nodeId, message: 'Texture distortion on ribbons is not available on Roblox Beams.' });
   return {
     name: safeName(l.nodeId), color: hex(c).map(r3) as [number, number, number], transparency: r3(1 - Math.min(1, l.opacity * l.color.alpha)),
     lightEmission: l.blend === 'additive' ? 1 : 0, brightness: r3(1 + l.emission),
-    ...(l.sprite ? { textureKey: l.sprite.sheet.file } : {}),
+    ...(l.sprite ? { textureKey: grey?.file ?? l.sprite.sheet.file } : {}),
     textureMode: l.uvMode === 'tile' ? 'Wrap' : 'Stretch', textureLength: r3(Math.max(0.1, l.uvTileLength * S)), textureSpeed: r3(l.uvAnim?.scroll[0] ?? 0),
     zOffset: 0, frames: [], maxSegments: 0, last: '',
   };
