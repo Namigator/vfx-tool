@@ -52,6 +52,8 @@ export type UeFlipbook = {
   randomStartFrame: boolean;
   /** The authored cell for a static (fps 0) sheet when the effect picks one (variant), else absent. */
   startFrame?: number;
+  /** Authored static variant cell (-1 = random). Variant atlases never animate in the editor. */
+  variantFrame?: number;
 };
 
 export type UeBlendMode = 'additive' | 'translucent' | 'opaque';
@@ -130,6 +132,26 @@ export type UeRibbon = {
 };
 export type Vec3Width = [number, number, number, number];
 
+/** Optional per-particle trail renderer. Legacy Unreal/Unity consumers may ignore it. */
+export type UeParticleTrail = {
+  name: string;
+  /** First billboard sharing this particle system, when present. */
+  parentEmitterName?: string;
+  /** Complete spawning/motion data, including trail-only systems. Preserve its name for shared random seeds. */
+  emitter: UeEmitter;
+  lifetimeSec: number;
+  maxPoints: number;
+  widthCm: number;
+  endFade: number;
+  /** All trail curves run from oldest tail (0) to live head (1), independently of particle age. Width is a multiplier. */
+  widthOverTrail: UeFloatKey[];
+  colorOverTrail: UeColorKey[];
+  opacityOverTrail: UeFloatKey[];
+  blend: UeBlendMode;
+  emission?: number;
+  textureFile?: string;
+};
+
 export type UeLight = {
   name: string;
   color: [number, number, number];
@@ -148,6 +170,8 @@ export type UnrealEffect = {
   ticksPerSecond: 60;
   emitters: UeEmitter[];
   ribbons: UeRibbon[];
+  /** Absent for effects without particle trails, preserving existing serialized IR. */
+  trails?: UeParticleTrail[];
   lights: UeLight[];
   /** Effect origin in world space isn't needed here (the package is authored at the origin; the importer places the actor). */
   textures: string[];

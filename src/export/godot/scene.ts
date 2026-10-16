@@ -6,7 +6,7 @@
 // stock templates, Godot's ParticleProcessMaterial takes size, colour and alpha over life as curves directly, so those
 // export exactly. Timing (when each emitter runs, when bursts fire, a moving source, light intensity) lives in one
 // "play" animation that autoplays. The scene origin is the Source anchor.
-import type { UeEmitter, UeLight, UeRibbon, UnrealEffect } from '../unreal/types.ts';
+import type { UeEmitter, UeLight, UeParticleTrail, UeRibbon, UnrealEffect } from '../unreal/types.ts';
 import { VFX_RIBBONS_GD } from './vfx_ribbons.gd.ts';
 
 export type GodotReportItem = { level: 'approximated' | 'dropped' | 'info'; item: string; message: string };
@@ -22,6 +22,7 @@ const n = (x: number) => { const r = Math.round(x * 10000) / 10000; return Numbe
 const vec3 = (v: readonly number[]) => `Vector3(${n(v[0])}, ${n(v[1])}, ${n(v[2])})`;
 const str = (s: string) => `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 const nodeName = (s: string) => s.replace(/[^A-Za-z0-9_]/g, '_') || 'Emitter';
+const seedOf = (name: string) => [...name].reduce((hash, c) => (Math.imul(hash, 31) + c.charCodeAt(0)) >>> 0, 1);
 
 class Resources {
   ext: string[] = []; sub: string[] = []; private ids = new Map<string, string>(); private count = 0;
@@ -39,16 +40,16 @@ class Resources {
 }
 
 /** A Godot Curve over life 0..1 (values may exceed 1: max_value is raised to fit). */
-function curve(res: Resources, keys: { t: number; v: number }[]): string {
+function curve(res: Resources, keys: { t: number; v: number }[], texture = true): string {
   const pts = keys.length ? keys : [{ t: 0, v: 1 }, { t: 1, v: 1 }];
   const max = Math.max(1, ...pts.map(k => k.v)), min = Math.min(0, ...pts.map(k => k.v));
   const data = pts.map(k => `Vector2(${n(k.t)}, ${n(k.v)}), 0.0, 0.0, 1, 1`).join(', ');
   const c = res.add('Curve', [`min_value = ${n(min)}`, `max_value = ${n(max)}`, `_data = [${data}]`, `point_count = ${pts.length}`]);
-  return res.add('CurveTexture', [`curve = ${c}`]);
+  return texture ? res.add('CurveTexture', [`curve = ${c}`]) : c;
 }
 
 /** Colour ramp over life: colour keys (sRGB) and the opacity curve merged onto shared offsets. */
-function colorRamp(res: Resources, e: UeEmitter): string {
+function colorRamp(res: Resources, e: Pick<UeEmitter, 'colorOverLife' | 'opacityOverLife'>, trail = false): string {
   const ts = [...new Set([...e.colorOverLife.map(k => k.t), ...e.opacityOverLife.map(k => k.t), 0, 1])].sort((a, b) => a - b);
   const at = <K extends { t: number }>(keys: K[], t: number, pick: (k: K) => number[]): number[] => {
     if (!keys.length) return pick({ t } as K).map(() => 1);
@@ -65,13 +66,15 @@ function colorRamp(res: Resources, e: UeEmitter): string {
     return [r, g, b, a].map(n).join(', ');
   });
   const g = res.add('Gradient', [`offsets = PackedFloat32Array(${ts.map(n).join(', ')})`, `colors = PackedColorArray(${colors.join(', ')})`]);
-  return res.add('GradientTexture1D', [`gradient = ${g}`]);
+  // RibbonTrailMesh UV.y goes from head (0) to tail (1); the IR curves go tail -> head.
+  return trail ? res.add('GradientTexture2D', [`gradient = ${g}`, 'width = 2', 'height = 256', 'use_hdr = true',
+    'fill_from = Vector2(0, 1)', 'fill_to = Vector2(0, 0)']) : res.add('GradientTexture1D', [`gradient = ${g}`]);
 }
 
 type Track = { path: string; interp: 0 | 1; update: 0 | 1; keys: [number, string][] };
 
-function emitterNode(res: Resources, e: UeEmitter, texRoot: string, duration: number, tracks: Track[], report: GodotReportItem[]): string {
-  const name = nodeName(e.name);
+function emitterNode(res: Resources, e: UeEmitter, texRoot: string, duration: number, tracks: Track[], report: GodotReportItem[], trail?: UeParticleTrail): string {
+  const name = nodeName(trail ? `${trail.name}_Trail` : e.name);
   const lifeMax = Math.max(0.017, e.lifetimeSecMax), lifeMin = Math.min(lifeMax, Math.max(0.017, e.lifetimeSecMin));
   const speedMin = e.speedCmSMin / 100, speedMax = e.speedCmSMax / 100, speedAvg = (speedMin + speedMax) / 2;
   const dir = dirFromUe(e.direction);
@@ -106,28 +109,69 @@ function emitterNode(res: Resources, e: UeEmitter, texRoot: string, duration: nu
   const mid = Math.max(1e-4, (e.sizeCmMin + e.sizeCmMax) / 2);
   const factors = e.sizeOverLife.map(k => ({ t: k.t, v: k.v / mid })), sizePeak = Math.max(1e-4, ...factors.map(k => k.v), factors.length ? 0 : 1);
   const sMin = (e.sizeCmMin / 100) * (factors.length ? sizePeak : 1), sMax = (e.sizeCmMax / 100) * (factors.length ? sizePeak : 1);
-  ppm.push(`scale_min = ${n(sMin)}`, `scale_max = ${n(sMax)}`);
-  if (factors.length) ppm.push(`scale_curve = ${curve(res, factors.map(k => ({ t: k.t, v: k.v / sizePeak })))}`);
-  ppm.push(`color_ramp = ${colorRamp(res, e)}`);
+  // Trail width is authored independently of the head's sprite size/life curves.
+  ppm.push(`scale_min = ${n(trail ? 1 : sMin)}`, `scale_max = ${n(trail ? 1 : sMax)}`);
+  if (!trail && factors.length) ppm.push(`scale_curve = ${curve(res, factors.map(k => ({ t: k.t, v: k.v / sizePeak })))}`);
+  if (!trail) ppm.push(`color_ramp = ${colorRamp(res, e)}`);
   if (e.spinDegMin || e.spinDegMax) ppm.push(`angle_min = ${n(e.spinDegMin)}`, `angle_max = ${n(e.spinDegMax)}`);
   if (e.angularVelocityDegSMin || e.angularVelocityDegSMax) ppm.push(`angular_velocity_min = ${n(e.angularVelocityDegSMin)}`, `angular_velocity_max = ${n(e.angularVelocityDegSMax)}`);
-  const velocity = e.alignment === 'velocity';
+  const velocity = !trail && e.alignment === 'velocity';
   if (velocity) ppm.push('particle_flag_align_y = true');
-  const fb = e.flipbook;
+  const fb = trail ? undefined : e.flipbook;
   if (fb && (fb.columns > 1 || fb.rows > 1)) {
     const frames = fb.columns * fb.rows, meanLife = (lifeMin + lifeMax) / 2;
-    const speed = fb.fps > 0 ? (fb.fps * meanLife) / frames : 0; // Godot anim speed 1 = the whole sheet once per lifetime
-    ppm.push(`anim_speed_min = ${n(speed)}`, `anim_speed_max = ${n(speed)}`, ...(fb.randomStartFrame ? ['anim_offset_max = 1.0'] : []));
+    // Variants sheets are static cells even when SpriteRenderer's generic mode says overLife.
+    const staticFrame = fb.variantFrame ?? (fb.fps === 0 ? fb.startFrame : undefined);
+    const speed = staticFrame !== undefined ? 0 : fb.fps > 0 ? (fb.fps * meanLife) / frames : 0;
+    ppm.push(`anim_speed_min = ${n(speed)}`, `anim_speed_max = ${n(speed)}`);
+    if (staticFrame !== undefined && staticFrame >= 0) {
+      ppm.push(`anim_offset_min = ${n(staticFrame / frames)}`, `anim_offset_max = ${n(staticFrame / frames)}`);
+    } else if (fb.randomStartFrame || staticFrame === -1) ppm.push('anim_offset_max = 1.0');
   }
-  const process = res.add('ParticleProcessMaterial', ppm);
+  let process = res.add('ParticleProcessMaterial', ppm);
+  const followsAnchor = !!(trail && e.attachToSource && e.sourceTrack?.length && e.shape.kind === 'point'
+    && speedMax === 0 && e.acceleration.every(v => v === 0) && !e.noise && !e.vortex && !e.attract);
+  if (followsAnchor) {
+    // A local-space trail would move its entire history with the anchor. These stationary
+    // attached riders instead follow EMISSION_TRANSFORM in world space, so Godot skins the
+    // ribbon against the actual previous world positions. The head remains a local sprite.
+    const shader = res.add('Shader', ['code = ' + str(`shader_type particles;
+render_mode disable_force, disable_velocity;
+void start() {
+  TRANSFORM = EMISSION_TRANSFORM;
+  COLOR = vec4(1.0);
+  CUSTOM = vec4(0.0);
+}
+void process() {
+  TRANSFORM[3].xyz = EMISSION_TRANSFORM[3].xyz;
+  CUSTOM.y += DELTA / LIFETIME;
+  if (CUSTOM.y >= 1.0) { ACTIVE = false; }
+}`)]);
+    process = res.add('ShaderMaterial', [`shader = ${shader}`]);
+  }
+  if (trail && e.attachToSource && e.sourceTrack?.length && !followsAnchor)
+    report.push({ level: 'approximated', item: trail.name, message: 'Attached particles with independent spawn/motion retain local-space trail history; anchor motion is represented exactly only for stationary point riders.' });
   // ---- draw material: unshaded billboard, additive or alpha blend, colour from the ramp (vertex colour) ----
-  const mat = [`transparency = 1`, `blend_mode = ${e.blend === 'additive' ? 1 : 0}`, 'shading_mode = 0', 'vertex_color_use_as_albedo = true',
+  const mat = [`transparency = 1`, `blend_mode = ${(trail?.blend ?? e.blend) === 'additive' ? 1 : 0}`, 'shading_mode = 0', 'vertex_color_use_as_albedo = true',
     // Velocity-aligned: no billboard + Align Y (Godot's Y-billboard uses world up, so it would stand every flame upright).
-    `billboard_mode = ${velocity ? 0 : 3}`, 'billboard_keep_scale = true', 'cull_mode = 2'];
-  if (e.textureFile) mat.push(`albedo_texture = ${res.extTexture(`${texRoot}/${e.textureFile}`)}`);
+    `billboard_mode = ${trail || velocity ? 0 : 3}`, 'billboard_keep_scale = true', 'cull_mode = 2'];
+  if (!trail && e.emission) {
+    const gain = n(1 + e.emission);
+    mat.push(`albedo_color = Color(${gain}, ${gain}, ${gain}, 1)`);
+  }
+  if (trail) {
+    mat.push('use_particle_trails = true', `albedo_texture = ${colorRamp(res, {
+      colorOverLife: trail.colorOverTrail.map(k => ({ ...k, r: k.r * (1 + (trail.emission ?? 0)), g: k.g * (1 + (trail.emission ?? 0)), b: k.b * (1 + (trail.emission ?? 0)) })),
+      opacityOverLife: trail.opacityOverTrail,
+    }, true)}`);
+    if (trail.textureFile) mat.push('detail_enabled = true', 'detail_blend_mode = 3', `detail_albedo = ${res.extTexture(`${texRoot}/${trail.textureFile}`)}`);
+  } else if (e.textureFile) mat.push(`albedo_texture = ${res.extTexture(`${texRoot}/${e.textureFile}`)}`);
   if (fb && (fb.columns > 1 || fb.rows > 1)) mat.push(`particles_anim_h_frames = ${fb.columns}`, `particles_anim_v_frames = ${fb.rows}`, `particles_anim_loop = ${fb.loop}`);
   const material = res.add('StandardMaterial3D', mat);
-  const quad = res.add('QuadMesh', [`material = ${material}`]);
+  const sections = trail ? Math.max(2, Math.min(128, trail.maxPoints - 1)) : 0;
+  const quad = trail ? res.add('RibbonTrailMesh', [`material = ${material}`, `size = ${n(trail.widthCm / 100)}`,
+    `sections = ${sections}`, 'section_segments = 1', `section_length = ${n(Math.max(0.001, speedAvg * trail.lifetimeSec / sections))}`,
+    `curve = ${curve(res, trail.widthOverTrail.map(k => ({ t: 1 - k.t, v: k.v })).reverse(), false)}`]) : res.add('QuadMesh', [`material = ${material}`]);
   // ---- timing: continuous rate or one burst ----
   const node: string[] = [`[node name=${str(name)} type="GPUParticles3D" parent="."]`];
   const peak = Math.max(0, ...e.rateOverTime.map(([, v]) => v));
@@ -146,8 +190,13 @@ function emitterNode(res: Resources, e: UeEmitter, texRoot: string, duration: nu
     node.push('amount = 1');
     report.push({ level: 'dropped', item: e.name, message: 'No rate or burst: the emitter is exported but never emits.' });
   }
-  node.push('emitting = false', `lifetime = ${n(lifeMax)}`, 'fixed_fps = 60', 'interpolate = true', `local_coords = ${e.attachToSource ? 'true' : 'false'}`,
+  node.push('emitting = false', `lifetime = ${n(lifeMax)}`, 'fixed_fps = 60', 'interpolate = true', `local_coords = ${e.attachToSource && !followsAnchor ? 'true' : 'false'}`,
     `position = ${vec3(fromUe(e.position))}`, 'visibility_aabb = AABB(-20, -20, -20, 40, 40, 40)', `process_material = ${process}`, `draw_pass_1 = ${quad}`);
+  // Skinning affects every draw pass, so keep the head on its own node. Duplicate the spawn/motion
+  // process with the same seed and timing instead of a sub-emitter (which introduces a birth delay).
+  // Size/colour differ, but do not change spawn/velocity random sampling in ParticleProcessMaterial.
+  node.push('use_fixed_seed = true', `seed = ${seedOf(trail?.parentEmitterName ?? e.name)}`);
+  if (trail) node.push('trail_enabled = true', `trail_lifetime = ${n(Math.max(0.017, trail.lifetimeSec))}`);
   if (e.sourceTrack?.length) tracks.push({ path: `${name}:position`, interp: 1, update: 0, keys: e.sourceTrack.map(([tick, p]) => [t(tick), vec3(fromUe(p))] as [number, string]) });
   if (velocity && e.stretchRatio > 1.05) report.push({ level: 'approximated', item: e.name, message: `Velocity stretch x${e.stretchRatio} becomes velocity-aligned sprites without stretch (scale the quad's Y in the material to stretch).` });
   return node.join('\n');
@@ -175,6 +224,7 @@ export function godotSceneFrom(e: UnrealEffect, resRoot = `res://vfx_studio/${e.
   const duration = e.durationTicks;
   const nodes = [`[node name=${str(nodeName(e.name))} type="Node3D"]`];
   for (const em of e.emitters) nodes.push(emitterNode(res, em, `${resRoot}/Textures`, duration, tracks, report));
+  for (const trail of e.trails ?? []) nodes.push(emitterNode(res, trail.emitter, `${resRoot}/Textures`, duration, tracks, report, trail));
   for (const l of e.lights) nodes.push(lightNode(l, duration, tracks));
   const files: GodotScene['files'] = [];
   if (e.ribbons.length) {
@@ -187,7 +237,11 @@ export function godotSceneFrom(e: UnrealEffect, resRoot = `res://vfx_studio/${e.
   }
   // Carry the Unreal IR's own notes that still apply (meshes, flashes, keyframes, many bursts, multi-path...).
   for (const r of e.report) if (!/Niagara|Unreal|importer|UE 5|Shape Location/i.test(r.message)) report.push(r);
+  if (e.trails?.length) report.push({ level: 'info', item: 'trails', message: `${e.trails.length} particle trail layer(s) use separate seeded GPUParticles3D nodes with RibbonTrailMesh skinning.` });
   report.push({ level: 'info', item: 'scale', message: 'Godot uses metres and +Y up like VFX Studio; the scene origin is the Source anchor. The "play" animation autoplays; call $AnimationPlayer.play("play") to fire it again.' });
+  // A burst at tick zero replaces the initial disabled key. Duplicate timestamps can select
+  // the disabled value instead of starting a one-particle long-lived sprite.
+  for (const tr of tracks) tr.keys = [...new Map(tr.keys).entries()].sort((a, b) => a[0] - b[0]);
   const trackLines = tracks.flatMap((tr, i) => [
     `tracks/${i}/type = "value"`, `tracks/${i}/imported = false`, `tracks/${i}/enabled = true`, `tracks/${i}/path = NodePath(${str(tr.path)})`,
     `tracks/${i}/interp = ${tr.interp}`, `tracks/${i}/loop_wrap = true`,

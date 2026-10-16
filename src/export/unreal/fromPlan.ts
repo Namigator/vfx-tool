@@ -18,7 +18,7 @@ import { settledColor } from '../../graph/pathColor.ts';
 import {
   CM_PER_METER, toUe, toUeDir,
   type UeColorKey, type UeEmitter, type UeFloatKey, type UeFlipbook, type UeLight, type UeReportItem, type UeRibbon,
-  type UeSpawnShape, type UeStepTrack, type UnrealEffect, type Vec3, type Vec3Width,
+  type UeSpawnShape, type UeStepTrack, type UeParticleTrail, type UnrealEffect, type Vec3, type Vec3Width,
 } from './types.ts';
 
 const r3 = (x: number) => Math.round(x * 1000) / 1000;
@@ -57,9 +57,12 @@ function flipbookOf(layer: ParticlePreviewLayer, meanLifeSeconds: number, report
   const { columns, rows, file } = sp.sheet;
   if (columns === 1 && rows === 1) return { textureFile: file };
   const frames = columns * rows;
-  if (sp.mode === 'first') return { textureFile: file, flipbook: { columns, rows, fps: 0, loop: false, randomStartFrame: sp.sheet.kind === 'variants' || sp.variant < 0, ...(sp.variant >= 0 ? { startFrame: sp.variant } : {}) } };
-  if (sp.mode === 'overLife') { const fps = r3(frames / Math.max(0.05, meanLifeSeconds)); return { textureFile: file, flipbook: { columns, rows, fps, loop: false, randomStartFrame: sp.randomStart } }; }
-  return { textureFile: file, flipbook: { columns, rows, fps: sp.fps, loop: sp.loop !== false, randomStartFrame: sp.randomStart } };
+  // Keep legacy animation fields for existing exporters; consumers that understand variantFrame
+  // can match the editor's static cell selection even when the renderer mode says overLife/fps.
+  const variant = sp.sheet.kind === 'variants' ? { variantFrame: sp.variant >= 0 ? sp.variant : -1 } : {};
+  if (sp.mode === 'first') return { textureFile: file, flipbook: { columns, rows, fps: 0, loop: false, randomStartFrame: sp.sheet.kind === 'variants' || sp.variant < 0, ...(sp.variant >= 0 ? { startFrame: sp.variant } : {}), ...variant } };
+  if (sp.mode === 'overLife') { const fps = r3(frames / Math.max(0.05, meanLifeSeconds)); return { textureFile: file, flipbook: { columns, rows, fps, loop: false, randomStartFrame: sp.randomStart, ...variant } }; }
+  return { textureFile: file, flipbook: { columns, rows, fps: sp.fps, loop: sp.loop !== false, randomStartFrame: sp.randomStart, ...variant } };
 }
 
 function rateTrack(d: ParticleEmitterDescriptor, duration: number): UeStepTrack {
@@ -268,6 +271,7 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
   const usedBy = new Map<string, string>(), names = new Set<string>();
   const unique = (base: string) => { let n = safeName(base), i = 2; while (names.has(n)) n = `${safeName(base)}_${i++}`; names.add(n); return n; };
   const emitters: UeEmitter[] = [];
+  const systemEmitters = new Map<string, UeEmitter[]>();
   for (const layer of plan.value.layers) {
     const d = systems.get(layer.systemId);
     if (!d) continue;
@@ -276,9 +280,53 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
     else usedBy.set(layer.systemId, layer.nodeId);
     const at = (k: number) => (layer.pathTint ? { ...layer, color: settledColor(layer.color, layer.pathTint, k) } : layer);
     if (layer.pathTint) report.push({ level: 'approximated', item: layer.nodeId, message: 'Colour by path / colour over window: each path exports the colour it settles on (the fade from the original colour is not exported).' });
-    emitters.push(emitterFrom(at(0), d, origin, plan.value.durationTicks, unique(layer.nodeId), report));
+    const first = emitterFrom(at(0), d, origin, plan.value.durationTicks, unique(layer.nodeId), report);
+    emitters.push(first);
+    const matching = [first];
     // A PathFollower over several paths: one source per path, each emitting the full amount (as in the editor).
-    (d.extraSourceTracks ?? []).forEach((track, k) => emitters.push(emitterFrom(at(k + 1), { ...d, sourceTrack: track, extraSourceTracks: undefined }, origin, plan.value.durationTicks, unique(`${layer.nodeId}_path${k + 2}`), report)));
+    (d.extraSourceTracks ?? []).forEach((track, k) => {
+      const extra = emitterFrom(at(k + 1), { ...d, sourceTrack: track, extraSourceTracks: undefined }, origin, plan.value.durationTicks, unique(`${layer.nodeId}_path${k + 2}`), report);
+      emitters.push(extra); matching.push(extra);
+    });
+    if (!systemEmitters.has(layer.systemId)) systemEmitters.set(layer.systemId, matching);
+  }
+  const trails: UeParticleTrail[] = [];
+  for (const layer of plan.value.trails) {
+    const d = systems.get(layer.systemId);
+    if (!d) continue;
+    const parents = systemEmitters.get(layer.systemId);
+    const tracks = [d.sourceTrack, ...(d.extraSourceTracks ?? [])];
+    tracks.forEach((track, k) => {
+      const color = settledColor(layer.color, layer.pathTint, k, layer.colorOverWindow);
+      const c = hueRotate(applyGrade(color, layer.grade), layer.hueShift ?? 0);
+      const rgb = [1, 3, 5].map(i => r3(parseInt(c.srgb.slice(i, i + 2), 16) / 255));
+      const name = unique(k ? `${layer.nodeId}_path${k + 1}` : layer.nodeId);
+      const parent = parents?.[k];
+      // Trail-only sinks still need their own spawn descriptor. This neutral billboard is used only
+      // to reuse emitter conversion; it is never appended to the legacy billboard emitter list.
+      const neutral: ParticlePreviewLayer = {
+        nodeId: layer.nodeId, systemId: layer.systemId, color: layer.color, opacity: 1, emission: 0,
+        blend: layer.blend, alphaCutoff: layer.alphaCutoff, renderOrderOffset: 0, visualOrder: 0,
+        alignment: 'camera', worldAxis: [0, 1, 0], stretchRatio: 1, pivot: 0.5,
+        sizeOverLife: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] },
+        opacityOverLife: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] },
+        colorOverLife: { stops: [{ position: 0, color: { srgb: '#FFFFFF', alpha: 1 } }, { position: 1, color: { srgb: '#FFFFFF', alpha: 1 } }] },
+      };
+      const emitter = parent ?? emitterFrom(neutral, { ...d, sourceTrack: track, extraSourceTracks: undefined }, origin, plan.value.durationTicks, name, report);
+      // The editor smoothsteps width and alpha at the old tail only (fadeHead:false).
+      const times = lifeTimes(layer.endFade > 0 ? [0.25, 0.5, 0.75, 1].map(t => t * layer.endFade) : undefined);
+      const fade = (t: number) => { const u = layer.endFade > 0 ? Math.min(1, t / layer.endFade) : 1; return u * u * (3 - 2 * u); };
+      trails.push({
+        name, ...(parent ? { parentEmitterName: parent.name } : {}), emitter,
+        lifetimeSec: r3(layer.historyTicks / TICKS_PER_SECOND), maxPoints: layer.maxPoints,
+        widthCm: r3(layer.width * CM_PER_METER), endFade: layer.endFade,
+        widthOverTrail: times.map(t => ({ t, v: r3(fade(t)) })),
+        colorOverTrail: [{ t: 0, r: rgb[0], g: rgb[1], b: rgb[2], a: 1 }, { t: 1, r: rgb[0], g: rgb[1], b: rgb[2], a: 1 }],
+        opacityOverTrail: times.map(t => ({ t, v: r3(Math.min(1, layer.opacity * c.alpha) * fade(t)) })),
+        blend: layer.blend === 'additive' ? 'additive' : 'translucent',
+        ...(layer.emission ? { emission: r3(layer.emission) } : {}),
+      });
+    });
   }
   if (plan.value.trails.length) report.push({ level: 'approximated', item: 'trails', message: `${plan.value.trails.length} trail layer(s) exported as velocity-stretched sprites on the parent emitter (Niagara Ribbon-per-particle trails are a heavier engine feature left for hand-tuning).` });
   if (plan.value.meshes.length) report.push({ level: 'dropped', item: 'meshes', message: `${plan.value.meshes.length} mesh-particle layer(s) are not exported; see report for manual Niagara Mesh Renderer setup (out of scope this pass — "meshes -> report item unless cheap" per spec).` });
@@ -295,6 +343,6 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
   report.push({ level: 'info', item: 'scale', message: `1 m = ${CM_PER_METER} cm. Axis mapping: ue.x=src.x*100, ue.y=src.z*100, ue.z=src.y*100 (our +Y up -> Unreal +Z up). The NiagaraSystem's origin is the Source anchor: place or attach the actor at the caster / nozzle.` });
   return { ok: true, value: {
     name: safeName(doc.name || 'Effect'), durationTicks: plan.value.durationTicks, ticksPerSecond: 60,
-    emitters, ribbons, lights, textures, report, sourceHeightCm: r3(origin[1] * CM_PER_METER),
+    emitters, ribbons, ...(trails.length ? { trails } : {}), lights, textures, report, sourceHeightCm: r3(origin[1] * CM_PER_METER),
   } };
 }

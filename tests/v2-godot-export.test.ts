@@ -16,13 +16,58 @@ const scene = (component: string) => {
 test('Godot: flamethrower becomes GPUParticles3D emitters, an autoplaying animation, textures under res://vfx_studio', () => {
   const { ir, g } = scene('flamethrower');
   assert.match(g.tscn, /^\[gd_scene load_steps=\d+ format=3\]/);
-  assert.equal((g.tscn.match(/type="GPUParticles3D"/g) ?? []).length, ir.emitters.length);
+  assert.equal((g.tscn.match(/type="GPUParticles3D"/g) ?? []).length, ir.emitters.length + (ir.trails?.length ?? 0));
   assert.equal((g.tscn.match(/type="OmniLight3D"/g) ?? []).length, ir.lights.length);
   assert.match(g.tscn, /\[node name="AnimationPlayer" type="AnimationPlayer" parent="\."\][\s\S]*autoplay = &"play"/);
   for (const t of g.textures) assert.ok(g.tscn.includes(`path="res://vfx_studio/flamethrower/Textures/${t}"`), t);
   // load_steps = ext + sub resources + 1
   const ext = (g.tscn.match(/^\[ext_resource /gm) ?? []).length, sub = (g.tscn.match(/^\[sub_resource /gm) ?? []).length;
   assert.equal(Number(g.tscn.match(/load_steps=(\d+)/)![1]), ext + sub + 1);
+});
+
+test('Godot: static sprite cells, HDR gain and attached source motion preserve long-lived riders', () => {
+  const { ir } = scene('impact-flash');
+  const rider = { ...ir.emitters[0], name: 'Rider', sizeCmMin: 45, sizeCmMax: 45,
+    sizeOverLife: [{ t: 0, v: 45 }, { t: 1, v: 45 }], lifetimeSecMin: 2, lifetimeSecMax: 2,
+    rateOverTime: [], bursts: [{ tick: 0, count: 1 }], attachToSource: true,
+    sourceTrack: [[0, [0, 0, 0]], [60, [100, 0, 0]]] as [number, [number, number, number]][],
+    emission: 2.5, flipbook: { columns: 2, rows: 2, fps: 2, loop: false, randomStartFrame: false, variantFrame: 2 } };
+  const text = godotSceneFrom({ ...ir, emitters: [rider], trails: undefined, ribbons: [], lights: [] }).tscn;
+  assert.match(text, /scale_min = 0\.45\nscale_max = 0\.45/);
+  assert.match(text, /anim_speed_min = 0\.0\nanim_speed_max = 0\.0/);
+  assert.match(text, /anim_offset_min = 0\.5\nanim_offset_max = 0\.5/);
+  assert.match(text, /albedo_color = Color\(3\.5, 3\.5, 3\.5, 1\)/);
+  assert.match(text, /local_coords = true/);
+  assert.match(text, /NodePath\("Rider:position"\)/);
+  assert.match(text, /"times": PackedFloat32Array\(0\.0\),[\s\S]*?"values": \[true\]/);
+  assert.doesNotMatch(text, /PackedFloat32Array\(0\.0, 0\.0/);
+});
+
+test('Godot: trails have independent ribbon skinning, tail colour/opacity, width and shared random seeds', () => {
+  const { ir } = scene('impact-flash');
+  const parent = { ...ir.emitters[0], name: 'Head', attachToSource: false };
+  const trail = { name: 'Comet', parentEmitterName: 'Head', emitter: parent, lifetimeSec: 0.3, maxPoints: 20,
+    widthCm: 8, endFade: 0.5, blend: 'additive' as const,
+    widthOverTrail: [{ t: 0, v: 0 }, { t: 1, v: 1 }],
+    colorOverTrail: [{ t: 0, r: 1, g: 0, b: 0.5, a: 1 }, { t: 1, r: 1, g: 0, b: 0.5, a: 1 }],
+    opacityOverTrail: [{ t: 0, v: 0 }, { t: 1, v: 0.8 }] };
+  const text = godotSceneFrom({ ...ir, emitters: [parent], trails: [trail], ribbons: [], lights: [] }).tscn;
+  assert.match(text, /name="Comet_Trail" type="GPUParticles3D"/);
+  assert.match(text, /trail_enabled = true\ntrail_lifetime = 0\.3/);
+  assert.match(text, /type="RibbonTrailMesh"[\s\S]*?size = 0\.08\nsections = 19/);
+  assert.match(text, /use_particle_trails = true/);
+  assert.match(text, /type="GradientTexture2D"/);
+  assert.match(text, /colors = PackedColorArray\(1\.0, 0\.0, 0\.5, 0\.0, 1\.0, 0\.0, 0\.5, 0\.8\)/);
+  const seeds = [...text.matchAll(/^seed = (\d+)/gm)].map(m => m[1]);
+  assert.equal(seeds.length, 2);
+  assert.equal(seeds[0], seeds[1]);
+  const attached = { ...parent, attachToSource: true, shape: { kind: 'point' as const }, speedCmSMin: 0, speedCmSMax: 0,
+    acceleration: [0, 0, 0] as [number, number, number], noise: undefined, attract: undefined, vortex: undefined,
+    sourceTrack: [[0, [0, 0, 0]], [60, [100, 0, 0]]] as [number, [number, number, number]][] };
+  const moving = godotSceneFrom({ ...ir, emitters: [attached], trails: [{ ...trail, emitter: attached }], ribbons: [], lights: [] }).tscn;
+  assert.match(moving, /TRANSFORM\[3\]\.xyz = EMISSION_TRANSFORM\[3\]\.xyz/);
+  const node = moving.split('[node name="Comet_Trail"')[1].split('\n[')[0];
+  assert.match(node, /local_coords = false/);
 });
 
 test('Godot: units and axes - metres, +Y up; the jet starts at the Source and points along +X', () => {
