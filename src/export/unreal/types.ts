@@ -101,6 +101,8 @@ export type UeEmitter = {
   alignment: UeAlignment;
   /** Velocity-aligned stretch ratio (>1 = stretched along travel direction); 1 = no stretch. */
   stretchRatio: number;
+  /** Where the particle sits along a stretched sprite: 0 trailing end, 1 leading tip (editor default 0.5 = centred). */
+  pivot?: number;
   blend: UeBlendMode;
   /** Material emission: colour x (1 + emission) in the editor (HDR brightness; engines map it to tint/intensity). */
   emission?: number;

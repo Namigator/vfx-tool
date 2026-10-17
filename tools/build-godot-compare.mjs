@@ -58,8 +58,18 @@ func _ready() -> void:
 	e.background_color = Color(0.03, 0.03, 0.04)
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	e.ambient_light_color = Color(0.25, 0.25, 0.3)
+	# Same post as the editor (PreviewViewport: ACES filmic, UnrealBloom strength 0.8 radius 0.45 threshold 1): without
+	# it over-bright cores clipped to flat white discs and thin bright lines stayed hairlines (2026-10-18).
+	e.tonemap_mode = Environment.TONE_MAPPER_ACES
 	e.glow_enabled = true
-	e.glow_bloom = 0.1
+	# Matched by eye on Nova/Bolt/Summon: Godot's glow sums levels, so the editor's 0.8 over-blooms here.
+	e.glow_intensity = 0.35
+	e.glow_strength = 1.0
+	e.glow_bloom = 0.0
+	e.glow_hdr_threshold = 1.0
+	e.glow_blend_mode = Environment.GLOW_BLEND_MODE_ADDITIVE
+	for lv in range(1, 8):
+		e.set_glow_level(lv, 1.0 if lv >= 2 and lv <= 4 else 0.0)
 	env.environment = e
 	add_child(env)
 	var floor := MeshInstance3D.new()

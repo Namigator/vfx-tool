@@ -188,6 +188,7 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     angularVelocityDegSMin: spin ? r3(deg(spin.angularVelocity.min)) : 0, angularVelocityDegSMax: spin ? r3(deg(spin.angularVelocity.max)) : 0,
     alignment: velocityAligned ? 'velocity' : layer.alignment === 'worldAxis' ? 'worldUpCameraFacing' : 'camera',
     stretchRatio: r3(stretchRatio),
+    ...(stretchRatio > 1 && layer.pivot !== 0.5 ? { pivot: r3(layer.pivot) } : {}),
     blend: layer.blend === 'additive' ? 'additive' : 'translucent',
     ...(layer.emission ? { emission: r3(layer.emission) } : {}),
     // Procedural sprites (no texture: the editor draws a soft round glow) ship the built-in soft-glow sheet.

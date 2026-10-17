@@ -171,7 +171,13 @@ void process() {
   const sections = trail ? Math.max(2, Math.min(128, trail.maxPoints - 1)) : 0;
   const quad = trail ? res.add('RibbonTrailMesh', [`material = ${material}`, `size = ${n(trail.widthCm / 100)}`,
     `sections = ${sections}`, 'section_segments = 1', `section_length = ${n(Math.max(0.001, speedAvg * trail.lifetimeSec / sections))}`,
-    `curve = ${curve(res, trail.widthOverTrail.map(k => ({ t: 1 - k.t, v: k.v })).reverse(), false)}`]) : res.add('QuadMesh', [`material = ${material}`]);
+    `curve = ${curve(res, trail.widthOverTrail.map(k => ({ t: 1 - k.t, v: k.v })).reverse(), false)}`])
+    // Velocity stretch: like the editor's billboard, the quad is r times longer along its local +Y (= the velocity with
+    // Align Y; image top = leading tip) and offset so the particle sits at the pivot (0 tail, 1 tip). Without it the
+    // Charge motes (x6) were 2-3 cm dots instead of streaks (Godot side-by-side 2026-10-17).
+    : velocity && e.stretchRatio > 1.05 ? res.add('QuadMesh', [`material = ${material}`, `size = Vector2(1, ${n(e.stretchRatio)})`,
+      `center_offset = ${vec3([0, (0.5 - (e.pivot ?? 0.5)) * e.stretchRatio, 0])}`])
+    : res.add('QuadMesh', [`material = ${material}`]);
   // ---- timing: continuous rate or one burst ----
   const node: string[] = [`[node name=${str(name)} type="GPUParticles3D" parent="."]`];
   const peak = Math.max(0, ...e.rateOverTime.map(([, v]) => v));
@@ -198,7 +204,7 @@ void process() {
   node.push('use_fixed_seed = true', `seed = ${seedOf(trail?.parentEmitterName ?? e.name)}`);
   if (trail) node.push('trail_enabled = true', `trail_lifetime = ${n(Math.max(0.017, trail.lifetimeSec))}`);
   if (e.sourceTrack?.length) tracks.push({ path: `${name}:position`, interp: 1, update: 0, keys: e.sourceTrack.map(([tick, p]) => [t(tick), vec3(fromUe(p))] as [number, string]) });
-  if (velocity && e.stretchRatio > 1.05) report.push({ level: 'approximated', item: e.name, message: `Velocity stretch x${e.stretchRatio} becomes velocity-aligned sprites without stretch (scale the quad's Y in the material to stretch).` });
+  if (velocity && e.stretchRatio > 1.05) report.push({ level: 'approximated', item: e.name, message: `Velocity stretch x${e.stretchRatio} is a quad that long along the velocity (Align Y); unlike the editor it does not turn to face the camera.` });
   return node.join('\n');
 }
 
