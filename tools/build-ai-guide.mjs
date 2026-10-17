@@ -367,6 +367,7 @@ const CURATED = {
   DEFAULT_MAX_BURST_EVENTS: 'Default cap on burst events considered by the particle simulation.',
   MAX_DRAG_COEFFICIENT: 'Simulation cap on the Drag coefficient.',
   MAX_MESH_PIECES: 'Roblox export: most Parts one export may animate.',
+  MIN_FADE_POINTS: 'Unity export: beam paths with an end fade and fewer points are resampled to this many (LineRenderer fades only at vertices).',
   MAX_SEQUENCE_KEYS: 'Roblox export: NumberSequence/ColorSequence keypoint limit.',
   MAX_TRAVEL_TICKS: 'Longest PathFollower travel (600 ticks).',
   MAX_VOICES: 'Audio: most simultaneous voices in a render.',

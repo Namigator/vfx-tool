@@ -164,6 +164,7 @@ The ones that matter most when building effects.
 | `MIN_VISIBLE_OPACITY` | 0.04 | Path alpha x layer opacity (x brightness above 1) below this draws nothing visible on Roblox. | src/export/roblox/fromPlan.ts |
 | `MAX_MESH_PIECES` | 300 | Roblox export: most Parts one export may animate. | src/export/roblox/meshBake.ts |
 | `MAX_SEQUENCE_KEYS` | 20 | Roblox export: NumberSequence/ColorSequence keypoint limit. | src/export/roblox/types.ts |
+| `MIN_FADE_POINTS` | 17 | Unity export: beam paths with an end fade and fewer points are resampled to this many (LineRenderer fades only at vertices). | src/export/unity/fromUnreal.ts |
 | `MAX_UE_BURSTS` | 32 | Most bursts one Unreal-exported emitter keeps as separate bursts; more (or bursts at their own positions) become a steady rate. | src/export/unreal/fromPlan.ts |
 
 ## Editor and storage
