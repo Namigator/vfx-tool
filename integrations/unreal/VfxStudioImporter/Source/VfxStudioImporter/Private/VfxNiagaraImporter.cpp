@@ -394,10 +394,28 @@ namespace
 		auto Tangents = Attr.GetVertexInstanceTangents();
 		auto Signs = Attr.GetVertexInstanceBinormalSigns();
 		int32 Tris = 0;
-		for (const FRibbonPath& P : F.Paths)
+		for (const FRibbonPath& Src0 : F.Paths)
 		{
+			if (Src0.Points.Num() < 2 || Src0.Alpha <= 0.0) continue;
+			// The end fade lives in vertex alpha: a 2-point path (Helix core/haze, Pulse rays) had alpha 0 at both of its
+			// only vertices and vanished. Short paths are resampled so the fade has interior vertices.
+			FRibbonPath P = Src0;
+			constexpr int32 MinFadePoints = 17;
+			if (EndFade > 0.0 && P.Points.Num() < MinFadePoints)
+			{
+				TArray<FVector4> Dense;
+				const int32 Segs = P.Points.Num() - 1;
+				for (int32 j = 0; j < MinFadePoints; j++)
+				{
+					const double T = double(j) / (MinFadePoints - 1) * Segs;
+					const int32 S = FMath::Min(Segs - 1, (int32)T);
+					const double Fr = T - S;
+					const FVector4& A0 = Src0.Points[S]; const FVector4& A1 = Src0.Points[S + 1];
+					Dense.Add(FVector4(A0.X + (A1.X - A0.X) * Fr, A0.Y + (A1.Y - A0.Y) * Fr, A0.Z + (A1.Z - A0.Z) * Fr, A0.W + (A1.W - A0.W) * Fr));
+				}
+				P.Points = Dense;
+			}
 			const int32 N = P.Points.Num();
-			if (N < 2 || P.Alpha <= 0.0) continue;
 			const double A = FMath::Clamp(P.Alpha / FMath::Max(NormAlpha, 1e-6), 0.0, 1.0);
 			for (int32 Side = 0; Side < 2; Side++)
 			{
@@ -469,7 +487,14 @@ namespace
 		FLinearColor Color = FLinearColor::White;
 		const TSharedPtr<FJsonObject>* C = nullptr;
 		if (R->TryGetObjectField(TEXT("color"), C))
-			Color = FLinearColor((float)(*C)->GetNumberField(TEXT("r")), (float)(*C)->GetNumberField(TEXT("g")), (float)(*C)->GetNumberField(TEXT("b")), (float)(*C)->GetNumberField(TEXT("a")));
+		{
+			// RGB only: each frame's path alpha (the Scale Alpha track) already includes the layer opacity, and the colour's
+			// own alpha applied it twice (Helix core 0.35 -> 0.12, haze 0.1 -> 0.01: invisible). Emission is the editor's
+			// colour x (1 + emission) gain (HDR colour).
+			double Emission = 0.0; R->TryGetNumberField(TEXT("emission"), Emission);
+			const float Gain = (float)(1.0 + FMath::Max(0.0, Emission));
+			Color = FLinearColor((float)(*C)->GetNumberField(TEXT("r")) * Gain, (float)(*C)->GetNumberField(TEXT("g")) * Gain, (float)(*C)->GetNumberField(TEXT("b")) * Gain, 1.f);
+		}
 		const TArray<TSharedPtr<FJsonValue>>* Frames = nullptr;
 		if (!R->TryGetArrayField(TEXT("frames"), Frames)) return;
 		TArray<FRibbonFrame> Fs;
