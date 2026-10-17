@@ -61,6 +61,9 @@ func _ready() -> void:
 	# Same post as the editor (PreviewViewport: ACES filmic, UnrealBloom strength 0.8 radius 0.45 threshold 1): without
 	# it over-bright cores clipped to flat white discs and thin bright lines stayed hairlines (2026-10-17).
 	e.tonemap_mode = Environment.TONE_MAPPER_ACES
+	# Godot's default white point 1.0 clips every HDR value above 1 to white (hot cores = flat white discs); three's
+	# ACES rolls highlights off far later.
+	e.tonemap_white = 6.0
 	e.glow_enabled = true
 	# Matched by eye on Nova/Bolt/Summon: Godot's glow sums levels, so the editor's 0.8 over-blooms here.
 	e.glow_intensity = 0.35
