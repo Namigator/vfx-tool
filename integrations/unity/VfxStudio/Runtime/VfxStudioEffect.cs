@@ -16,8 +16,10 @@ namespace VfxStudio
         public ParticleSystem[] systems = new ParticleSystem[0];
         [Tooltip("One Light per exported light, in export order.")]
         public Light[] lights = new Light[0];
-        [Tooltip("One material per exported beam layer, in export order.")]
+        [Tooltip("Beam materials: per layer (export order) one per sheet cell; ribbonMaterialFirst/Count index into this.")]
         public Material[] ribbonMaterials = new Material[0];
+        [HideInInspector] public int[] ribbonMaterialFirst = new int[0];
+        [HideInInspector] public int[] ribbonMaterialCount = new int[0];
         public bool playOnEnable = true;
         public bool loop;
         [Min(0f)] public float speed = 1f;
@@ -27,6 +29,8 @@ namespace VfxStudio
         float _time; int _tick = -1; bool _playing;
         List<LineRenderer>[] _pools;
         Transform _ribbonRoot;
+        MaterialPropertyBlock _mpb;
+        static readonly int MainTexSt = Shader.PropertyToID("_MainTex_ST"), BaseMapSt = Shader.PropertyToID("_BaseMap_ST");
 
         public VfxEffectData Data => _data ??= effectJson ? VfxEffectData.Parse(effectJson.text) : null;
         public float Duration => Data != null ? Data.durationTicks / (float)Data.ticksPerSecond : 0f;
@@ -150,24 +154,46 @@ namespace VfxStudio
                     foreach (var path in frame.paths)
                     {
                         if (path.points == null || path.points.Length < 8 || path.alpha <= 0f) continue;
-                        if (used == pool.Count) pool.Add(NewLine(layer, li));
-                        Fill(pool[used++], layer, path);
+                        if (used == pool.Count) pool.Add(NewLine(layer));
+                        var lr = pool[used++];
+                        lr.sharedMaterial = RibbonMaterial(li, path.cell);
+                        Fill(lr, layer, path);
+                        UvTransform(lr, layer, tick / (float)d.ticksPerSecond);
                     }
                 for (int k = used; k < pool.Count; k++) pool[k].enabled = false;
             }
         }
 
-        LineRenderer NewLine(VfxRibbonData layer, int index)
+        /// <summary>The layer's material for a sheet cell (prefabs from older importers: one material per layer).</summary>
+        Material RibbonMaterial(int layer, int cell)
+        {
+            if (ribbonMaterialFirst == null || ribbonMaterialFirst.Length <= layer || ribbonMaterialCount.Length <= layer)
+                return layer < ribbonMaterials.Length ? ribbonMaterials[layer] : null;
+            int i = ribbonMaterialFirst[layer] + Mathf.Clamp(cell, 0, Mathf.Max(0, ribbonMaterialCount[layer] - 1));
+            return i < ribbonMaterials.Length ? ribbonMaterials[i] : null;
+        }
+
+        /// <summary>Tiling (u = metres along the path / tile) and UV scroll through the texture transform, per line.</summary>
+        void UvTransform(LineRenderer lr, VfxRibbonData layer, float seconds)
+        {
+            var s = layer.Scroll;
+            if (layer.tile <= 0f && s == Vector2.zero) { lr.SetPropertyBlock(null); return; }
+            _mpb ??= new MaterialPropertyBlock();
+            var st = new Vector4(layer.tile > 0f ? 1f / layer.tile : 1f, 1f, s.x * seconds, s.y * seconds);
+            _mpb.SetVector(MainTexSt, st); _mpb.SetVector(BaseMapSt, st);
+            lr.SetPropertyBlock(_mpb);
+        }
+
+        LineRenderer NewLine(VfxRibbonData layer)
         {
             var go = new GameObject(layer.name);
             go.transform.SetParent(_ribbonRoot, false);
             var lr = go.AddComponent<LineRenderer>();
             lr.useWorldSpace = false;
             lr.alignment = LineAlignment.View;
-            lr.textureMode = LineTextureMode.Stretch;
+            lr.textureMode = layer.tile > 0f ? LineTextureMode.Tile : LineTextureMode.Stretch; // Tile: u = metres along the line
             lr.numCapVertices = 0; lr.numCornerVertices = 1;
             lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; lr.receiveShadows = false;
-            if (index < ribbonMaterials.Length) lr.sharedMaterial = ribbonMaterials[index];
             return lr;
         }
 

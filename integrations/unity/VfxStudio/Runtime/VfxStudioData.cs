@@ -48,7 +48,7 @@ namespace VfxStudio
         public int[] trackTicks; public float[] trackPositions;
     }
 
-    [Serializable] public class VfxRibbonPath { public float alpha; public float[] points; } // x, y, z, width per point
+    [Serializable] public class VfxRibbonPath { public float alpha; public float[] points; public int cell; } // x, y, z, width per point; sheet cell
     [Serializable] public class VfxRibbonFrame { public int tick; public VfxRibbonPath[] paths; }
     [Serializable]
     public class VfxRibbonData
@@ -59,7 +59,18 @@ namespace VfxStudio
         public float emission;
         public string texture;
         public float endFade;
+        // Like the editor (and Godot's vfx_ribbons.gd): textured strips draw ONE cell of a grid[0] x grid[1] sheet per path
+        // (paths[].cell), repeated every `tile` metres along the path (0 = stretched once), scrolled by `scroll` UV/s.
+        // Untextured strips: `softness` = outer fraction of the half-width that fades out (0 = hard edge).
+        public int[] grid;
+        public int cell;
+        public float tile;
+        public float[] scroll;
+        public float softness;
         public VfxRibbonFrame[] frames;
+        public int Columns => grid != null && grid.Length > 0 ? Mathf.Max(1, grid[0]) : 1;
+        public int Rows => grid != null && grid.Length > 1 ? Mathf.Max(1, grid[1]) : 1;
+        public Vector2 Scroll => scroll != null && scroll.Length > 1 ? new Vector2(scroll[0], scroll[1]) : Vector2.zero;
     }
 
     [Serializable]

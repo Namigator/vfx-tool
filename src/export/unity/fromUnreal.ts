@@ -1,6 +1,6 @@
 // Unity export: the engine-neutral IR (src/export/unreal/fromPlan.ts, also behind the Godot export) converted to
 // Unity units and axes (types.ts header): Unreal cm, (x, y=our z, z=our y) -> Unity m, (x, y, -z).
-import type { UeColorKey, UeEmitter, UeFloatKey, UeLight, UeRibbon, UnrealEffect } from '../unreal/types.ts';
+import type { UeColorKey, UeEmitter, UeFloatKey, UeLight, UeRibbon, UnrealEffect, Vec3Width } from '../unreal/types.ts';
 import type { UnityEffect, UnityEmitter, UnityLight, UnityReportItem, UnityRibbon } from './types.ts';
 
 const r4 = (x: number) => Math.round(x * 10000) / 10000;
@@ -59,14 +59,33 @@ function lightFrom(l: UeLight): UnityLight {
   };
 }
 
+/** LineRenderer evaluates its alpha gradient (the end fade) and width curve only at the path's vertices: a 2-point path
+ *  (Helix core/haze, Pulse rays) got alpha 0 at both of its only vertices and was never drawn (the Unreal importer had
+ *  the same bug, a1f8d5b). Short faded paths are resampled to this many evenly spaced points. */
+export const MIN_FADE_POINTS = 17;
+export function resampleForFade(points: Vec3Width[], endFade: number): Vec3Width[] {
+  if (!(endFade > 0) || points.length < 2 || points.length >= MIN_FADE_POINTS) return points;
+  const segs = points.length - 1, out: Vec3Width[] = [];
+  for (let j = 0; j < MIN_FADE_POINTS; j++) {
+    const t = (j / (MIN_FADE_POINTS - 1)) * segs, s = Math.min(segs - 1, Math.floor(t)), f = t - s;
+    const a = points[s], b = points[s + 1];
+    out.push([0, 1, 2, 3].map(k => a[k] + (b[k] - a[k]) * f) as Vec3Width);
+  }
+  return out;
+}
+
 function ribbonFrom(b: UeRibbon): UnityRibbon {
   const r3 = (x: number) => Math.round(x * 1000) / 1000;
+  const textured = !!b.textureFile, cell = textured ? Math.max(0, b.cell ?? 0) : 0;
   return {
     name: b.name, color: [r4(b.color.r), r4(b.color.g), r4(b.color.b)], additive: b.blend === 'additive', emission: r4(b.emission ?? 0), texture: b.textureFile ?? '', endFade: r4(b.endFade ?? 0),
+    grid: textured ? [...(b.sheetGrid ?? [1, 1])] : [1, 1], cell, tile: textured ? r4((b.tileCm ?? 0) / 100) : 0,
+    scroll: textured && b.scroll ? [r4(b.scroll[0]), r4(b.scroll[1])] : [0, 0], softness: textured ? 0 : r4(b.softness ?? 0),
     frames: b.frames.map(f => ({
       tick: f.tick,
       paths: (f.paths ?? (f.points.length ? [{ points: f.points, alpha: 1 }] : [])).map(p => ({
-        alpha: r4(p.alpha), points: p.points.flatMap(q => [r3(q[0] / 100), r3(q[2] / 100), r3(-q[1] / 100), r3(q[3] / 100)]),
+        alpha: r4(p.alpha), cell: textured && 'cell' in p && p.cell !== undefined ? Math.max(0, p.cell) : cell,
+        points: resampleForFade(p.points, b.endFade ?? 0).flatMap(q => [r3(q[0] / 100), r3(q[2] / 100), r3(-q[1] / 100), r3(q[3] / 100)]),
       })),
     })),
   };
@@ -80,7 +99,7 @@ export function unityEffectFrom(e: UnrealEffect): { effect: UnityEffect; report:
   };
   // The shared IR's own notes that still apply (meshes, flashes, keyframes, multi-path...), minus Unreal-specific ones.
   for (const r of e.report) if (!/Niagara|Unreal|importer|UE 5|Shape Location|template/i.test(r.message)) report.push(r);
-  if (e.ribbons.length) report.push({ level: 'info', item: 'ribbons', message: `${e.ribbons.length} beam/ribbon layer(s) are drawn by LineRenderers from baked per-frame geometry (camera-facing; no texture scrolling or distortion).` });
+  if (e.ribbons.length) report.push({ level: 'info', item: 'ribbons', message: `${e.ribbons.length} beam/ribbon layer(s) are drawn by LineRenderers from baked per-frame geometry (camera-facing; one sheet cell per path, tiled or stretched, UV scroll and soft edges like the editor; no distortion).` });
   report.push({ level: 'info', item: 'scale', message: 'Unity uses metres and +Y up; Z is mirrored (Unity is left-handed). The prefab origin is the Source anchor. Light intensity = preview intensity x 0.1 (built-in pipeline scale).' });
   return { effect, report };
 }

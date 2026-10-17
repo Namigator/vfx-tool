@@ -80,17 +80,39 @@ namespace VfxStudio.EditorTools
             foreach (var t in d.textures ?? new string[0]) textures[t] = ImportTexture($"{folder}/Textures/{t}");
             var materials = new Dictionary<string, Material>();
             Directory.CreateDirectory(Path.Combine(Path.GetDirectoryName(Application.dataPath), folder, "Materials"));
-            Material MaterialFor(string texture, string blend, float emission, VfxEmitterData stretched = null, bool ribbon = false)
+            Material MaterialFor(string texture, string blend, float emission, VfxEmitterData stretched = null)
             {
-                var key = (texture ?? "") + "|" + blend + "|" + emission.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) + (stretched != null ? "|stretch" : "") + (ribbon ? "|ribbon" : "");
+                var key = (texture ?? "") + "|" + blend + "|" + emission.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) + (stretched != null ? "|stretch" : "");
                 if (materials.TryGetValue(key, out var m)) return m;
                 textures.TryGetValue(texture ?? "", out var tex);
                 if (tex && stretched != null) tex = StretchVariant(folder, texture, Mathf.Max(1, stretched.flipColumns), Mathf.Max(1, stretched.flipRows));
-                m = MakeMaterial(tex ? tex : ribbon ? DefaultBandTexture() : DefaultParticleTexture(), blend, emission);
-                var path = $"{folder}/Materials/{Safe(string.IsNullOrEmpty(texture) ? "default" : Path.GetFileNameWithoutExtension(texture))}_{blend}{(emission > 0f ? "_e" + Mathf.RoundToInt(emission * 100) : "")}{(stretched != null ? "_stretch" : "")}{(ribbon ? "_beam" : "")}.mat";
+                m = MakeMaterial(tex ? tex : DefaultParticleTexture(), blend, emission);
+                var path = $"{folder}/Materials/{Safe(string.IsNullOrEmpty(texture) ? "default" : Path.GetFileNameWithoutExtension(texture))}_{blend}{(emission > 0f ? "_e" + Mathf.RoundToInt(emission * 100) : "")}{(stretched != null ? "_stretch" : "")}.mat";
                 AssetDatabase.DeleteAsset(path);
                 AssetDatabase.CreateAsset(m, path);
                 return materials[key] = m;
+            }
+            // Beams, like the editor: a textured layer draws ONE cell of its sheet per path (cut out as its own texture so it
+            // can repeat along the path); an untextured layer a soft band with the layer's softness. Materials per layer:
+            // ribbonMaterials[first .. first + count) = one per cell.
+            var ribbonMats = new List<Material>();
+            var ribbonFirst = new int[d.ribbons.Length]; var ribbonCount = new int[d.ribbons.Length];
+            for (int li = 0; li < d.ribbons.Length; li++)
+            {
+                var r = d.ribbons[li];
+                var blend = r.additive ? "additive" : "translucent";
+                ribbonFirst[li] = ribbonMats.Count;
+                var cells = textures.TryGetValue(r.texture ?? "", out var sheet) && sheet ? RibbonCells(folder, r.texture, r.Columns, r.Rows, r.tile > 0f || r.Scroll.x != 0f, r.Scroll.y != 0f) : null;
+                if (cells == null) cells = new[] { BandTexture(r.softness) };
+                for (int k = 0; k < cells.Length; k++)
+                {
+                    var m = MakeMaterial(cells[k], blend, r.emission);
+                    var path = $"{folder}/Materials/{Safe(r.name)}_beam{(cells.Length > 1 ? "_c" + k : "")}.mat";
+                    AssetDatabase.DeleteAsset(path);
+                    AssetDatabase.CreateAsset(m, path);
+                    ribbonMats.Add(m);
+                }
+                ribbonCount[li] = cells.Length;
             }
 
             var root = new GameObject(Safe(d.name));
@@ -102,11 +124,11 @@ namespace VfxStudio.EditorTools
                 foreach (var e in d.emitters) systems.Add(BuildEmitter(root.transform, e, d, MaterialFor(e.texture, e.blend, e.emission, e.alignment == "velocity" ? e : null)));
                 fx.systems = systems.ToArray();
                 fx.lights = d.lights.Select(l => BuildLight(root.transform, l)).ToArray();
-                fx.ribbonMaterials = d.ribbons.Select(r => MaterialFor(r.texture, r.additive ? "additive" : "translucent", r.emission, null, true)).ToArray();
+                fx.ribbonMaterials = ribbonMats.ToArray(); fx.ribbonMaterialFirst = ribbonFirst; fx.ribbonMaterialCount = ribbonCount;
                 var prefabPath = $"{folder}/{Safe(d.name)}.prefab";
                 var prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath, out var ok);
                 if (!ok) throw new Exception("Could not save " + prefabPath);
-                Debug.Log($"{Log}{prefabPath}: {d.emitters.Length} particle systems, {d.lights.Length} lights, {d.ribbons.Length} beam layers, {materials.Count} materials ({(GraphicsSettings.currentRenderPipeline ? "SRP " + GraphicsSettings.currentRenderPipeline.GetType().Name : "built-in pipeline")})");
+                Debug.Log($"{Log}{prefabPath}: {d.emitters.Length} particle systems, {d.lights.Length} lights, {d.ribbons.Length} beam layers, {materials.Count + ribbonMats.Count} materials ({(GraphicsSettings.currentRenderPipeline ? "SRP " + GraphicsSettings.currentRenderPipeline.GetType().Name : "built-in pipeline")})");
                 return prefab;
             }
             finally { UnityEngine.Object.DestroyImmediate(root); }
@@ -158,21 +180,63 @@ namespace VfxStudio.EditorTools
         /** Which way StretchVariant turns cells; the motion runs toward the texture's +U (checked visually). */
         internal static bool StretchClockwise = true;
 
-        static Texture2D _band;
-        /// <summary>Untextured beams: soft across the strip (V), constant along it (U), like the editor's ribbon falloff.</summary>
-        static Texture2D DefaultBandTexture()
+        /// <summary>Untextured beams: alpha across the strip (V) = 1 - smoothstep(1 - softness, 1, |2v - 1|), constant along
+        /// it (U) - the editor's RIBBON_FRAGMENT soft edge (softness 0 = hard edge). One generated texture per softness.</summary>
+        static Texture2D BandTexture(float softness)
         {
-            if (_band) return _band;
-            const string path = "Assets/VfxStudioEffects/vfxstudio-soft-band.png";
-            _band = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-            if (_band) return _band;
+            int pct = Mathf.RoundToInt(Mathf.Clamp01(softness) * 100f);
+            var path = $"Assets/VfxStudioEffects/vfxstudio-band-s{pct}.png";
+            var existing = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            if (existing) return existing;
             const int n = 64;
+            float s = pct / 100f;
             var t = new Texture2D(8, n, TextureFormat.RGBA32, false);
-            for (int y = 0; y < n; y++) { float a = 1f - Mathf.SmoothStep(0.35f, 1f, Mathf.Abs((y + .5f) / n - .5f) * 2f); for (int x = 0; x < 8; x++) t.SetPixel(x, y, new Color(1, 1, 1, a)); }
+            for (int y = 0; y < n; y++)
+            {
+                float v = Mathf.Abs((y + .5f) / n - .5f) * 2f, a = s > 0f ? 1f - SmoothStep(1f - s, 1f, v) : 1f;
+                for (int x = 0; x < 8; x++) t.SetPixel(x, y, new Color(1, 1, 1, a));
+            }
             Directory.CreateDirectory(Path.Combine(Path.GetDirectoryName(Application.dataPath), "Assets/VfxStudioEffects"));
             File.WriteAllBytes(Path.Combine(Path.GetDirectoryName(Application.dataPath), path), t.EncodeToPNG());
+            UnityEngine.Object.DestroyImmediate(t);
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
-            return _band = ImportTexture(path);
+            return ImportTexture(path);
+        }
+        /// <summary>GLSL smoothstep (Mathf.SmoothStep interpolates between two values instead).</summary>
+        static float SmoothStep(float e0, float e1, float x) { float u = Mathf.Clamp01((x - e0) / (e1 - e0)); return u * u * (3f - 2f * u); }
+
+        /// <summary>
+        /// Every cell of a beam's sheet as its own texture (cell k = column k % cols, row k / cols counted from the TOP, like
+        /// the editor and Godot), so a LineRenderer can stretch or repeat one cell along a path instead of the whole atlas
+        /// (Helix strands drew doubled lines). Repeat wrap only on the axes that tile or scroll.
+        /// </summary>
+        static Texture2D[] RibbonCells(string folder, string texture, int cols, int rows, bool wrapU, bool wrapV)
+        {
+            var root = Path.GetDirectoryName(Application.dataPath);
+            var img = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            if (!img.LoadImage(File.ReadAllBytes(Path.Combine(root, $"{folder}/Textures/{texture}")))) return null;
+            int cw = Mathf.Max(1, img.width / cols), ch = Mathf.Max(1, img.height / rows), count = Mathf.Min(cols * rows, 64);
+            var outTex = new Texture2D[count];
+            for (int k = 0; k < count; k++)
+            {
+                int cx = k % cols, cyTop = k / cols, y0 = (rows - 1 - cyTop) * ch; // pixel rows start at the bottom
+                var cell = new Texture2D(cw, ch, TextureFormat.RGBA32, false);
+                cell.SetPixels(img.GetPixels(cx * cw, y0, cw, ch)); cell.Apply();
+                var dst = $"{folder}/Textures/{Path.GetFileNameWithoutExtension(texture)}.beam{(cols * rows > 1 ? "-c" + k : "")}{(wrapU ? "u" : "")}{(wrapV ? "v" : "")}.png";
+                File.WriteAllBytes(Path.Combine(root, dst), cell.EncodeToPNG());
+                UnityEngine.Object.DestroyImmediate(cell);
+                AssetDatabase.ImportAsset(dst, ImportAssetOptions.ForceSynchronousImport);
+                outTex[k] = ImportTexture(dst);
+                if (AssetImporter.GetAtPath(dst) is TextureImporter ti)
+                {
+                    ti.wrapModeU = wrapU ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
+                    ti.wrapModeV = wrapV ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
+                    ti.SaveAndReimport();
+                    outTex[k] = AssetDatabase.LoadAssetAtPath<Texture2D>(dst);
+                }
+            }
+            UnityEngine.Object.DestroyImmediate(img);
+            return outTex;
         }
 
         static Texture2D _soft;

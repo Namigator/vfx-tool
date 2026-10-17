@@ -110,7 +110,7 @@ export type UnityLight = {
   trackPositions: number[];
 };
 
-export type UnityRibbonPath = { alpha: number; /** x, y, z, width per point. */ points: number[] };
+export type UnityRibbonPath = { alpha: number; /** x, y, z, width per point. */ points: number[]; /** Sheet cell drawn on this path. */ cell: number };
 export type UnityRibbonFrame = { tick: number; paths: UnityRibbonPath[] };
 /** Beam/ribbon layer (lightning, streams): baked geometry per tick (frames only where it changed), drawn by LineRenderers. */
 export type UnityRibbon = {
@@ -123,6 +123,15 @@ export type UnityRibbon = {
   texture: string;
   /** Fraction (0..0.5) of each path's length over which both ends taper and fade. */
   endFade: number;
+  /** Textured: the sheet's [columns, rows]; each path draws ONE cell (paths[].cell, the layer's `cell` by default), like
+   *  the editor - not the whole atlas. tile = the cell repeats every `tile` metres along the path (0 = stretched once);
+   *  scroll = UV per second. Untextured: softness = the outer fraction of the half-width that fades out (1 = soft glow,
+   *  0 = hard edge). Mirrors Godot's vfx_ribbons.gd. */
+  grid: number[];
+  cell: number;
+  tile: number;
+  scroll: number[];
+  softness: number;
   frames: UnityRibbonFrame[];
 };
 

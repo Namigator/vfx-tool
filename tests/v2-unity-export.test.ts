@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { insertComponent } from '../src/graph/components.ts';
 import { createBlankDocument } from '../src/graph/fixtures.ts';
 import { unrealEffectFrom } from '../src/export/unreal/fromPlan.ts';
-import { unityEffectFrom, unityReadme, unityReportMarkdown } from '../src/export/unity/fromUnreal.ts';
+import { MIN_FADE_POINTS, resampleForFade, unityEffectFrom, unityReadme, unityReportMarkdown } from '../src/export/unity/fromUnreal.ts';
 
 const irOf = (component: string) => {
   const d = { ...insertComponent(createBlankDocument(`u-${component}`, component), component, undefined, { group: true }).doc, name: component };
@@ -59,4 +59,38 @@ test('Unity: lightning strike ships ribbons with 4-float points', () => {
   }
   assert.ok(paths > 0);
   assert.ok(!/Niagara/.test(unityReportMarkdown(effect.name, report)));
+});
+
+test('Unity: ribbons draw like the editor (as Godot) - one sheet cell per path, tiling, soft untextured edges', () => {
+  const ir = irOf('helix-beam');
+  const { effect, report } = unityEffectFrom(ir);
+  const irStrand = ir.ribbons.find(b => b.textureFile?.startsWith('electric-arc'))!;
+  const strand = effect.ribbons.find(r => r.texture.startsWith('electric-arc'))!;
+  const plain = effect.ribbons.find(r => !r.texture)!;
+  assert.ok(strand && plain, 'helix-beam has textured strands and untextured core/haze');
+  assert.deepEqual(strand.grid, [2, 2], 'a 2x2 variant sheet: one cell per path, not the whole atlas');
+  const cells = strand.frames.flatMap(f => f.paths.map(p => p.cell));
+  assert.ok(cells.length > 0 && cells.every(c => Number.isInteger(c) && c >= 0 && c < 4), 'every path carries a valid cell');
+  if (irStrand.cell !== -1) assert.ok(cells.every(c => c === irStrand.cell));
+  assert.equal(strand.tile, irStrand.tileCm !== undefined ? Math.round(irStrand.tileCm) / 100 : 0, 'tile length in metres');
+  assert.equal(strand.scroll.length, 2);
+  assert.equal(strand.softness, 0);
+  assert.ok(plain.softness > 0, 'untextured strips keep the soft edge');
+  assert.deepEqual(plain.grid, [1, 1]);
+  assert.match(unityReportMarkdown(effect.name, report), /one sheet cell per path/);
+});
+
+test('Unity: short faded paths are resampled so the end fade has interior vertices (2-point paths vanished)', () => {
+  const two: [number, number, number, number][] = [[0, 0, 0, 10], [100, 0, 0, 30]];
+  const dense = resampleForFade(two, 0.2);
+  assert.equal(dense.length, MIN_FADE_POINTS);
+  assert.deepEqual(dense[0], two[0]);
+  assert.deepEqual(dense[dense.length - 1], two[1]);
+  assert.deepEqual(dense[8], [50, 0, 0, 20]);
+  assert.equal(resampleForFade(two, 0), two, 'no fade: unchanged');
+  const long = Array.from({ length: 20 }, (_, i) => [i, 0, 0, 1] as [number, number, number, number]);
+  assert.equal(resampleForFade(long, 0.2), long, 'enough points: unchanged');
+  const ir = irOf('helix-beam');
+  const { effect } = unityEffectFrom(ir);
+  for (const r of effect.ribbons) if (r.endFade > 0) for (const f of r.frames) for (const p of f.paths) assert.ok(p.points.length / 4 >= MIN_FADE_POINTS, `${r.name}: ${p.points.length / 4} points`);
 });
