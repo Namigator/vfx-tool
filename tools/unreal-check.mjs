@@ -52,6 +52,8 @@ function run(label, exe, args, { timeoutMs } = {}) {
 const importResult = process.env.VFX_UE_SKIP_IMPORT ? { status: 0 } : run('import', EDITOR_CMD, [
   TEST_PROJECT, '-run=VfxStudioImport', `-Package=${resolve(pkgDir)}`, `-Dest=${destPath}`,
   '-unattended', '-nosplash', '-nullrhi', '-log',
+  // VFX_UE_IMPORT_ARGS: extra commandlet switches, e.g. -VfxParticleTrails (particle trails as Niagara ribbons, opt-in).
+  ...(process.env.VFX_UE_IMPORT_ARGS ?? '').split(/\s+/).filter(Boolean),
 ], { timeoutMs: 600_000 }); // a first import compiles the new materials' shaders (Charge timed out at 120 s)
 if (importResult.status !== 0) {
   console.error(`[unreal-check] import FAILED (exit ${importResult.status}). See stdout/stderr below.`);

@@ -1133,18 +1133,22 @@ namespace
 		if (!bColor) SetScaleAlphaCurve(Graph, &AlphaKeys);
 		const bool bWidth = SetTrailWidthCurve(Data, WidthKeys);
 		for (UNiagaraRendererProperties* R : Data->GetRenderers()) if (R) R->SetIsEnabled(false);
+		// Materials FIRST: creating/saving one can run a garbage collection, which freed a renderer that was already
+		// NewObject'ed but not yet added (nothing referenced it) -> AddRenderer read freed memory (crash 0x3f0 in
+		// RebuildRendererBindings, 2026-10-17). The renderer is created and added with no save in between.
+		FString TexFile; Trail->TryGetStringField(TEXT("textureFile"), TexFile);
+		UTexture2D* const* Tex = Textures.Find(TexFile);
+		const bool bAdditive = Trail->GetStringField(TEXT("blend")) == TEXT("additive");
+		UMaterial* Mat = GetOrCreateParticleTrailMaterial(DestRoot, bAdditive, Tex && *Tex);
+		UMaterialInterface* TrailMat = Mat;
+		if (Mat && Tex && *Tex) TrailMat = GetOrCreateTextureMaterial(DestRoot, Mat, *Tex, bAdditive ? TEXT("TrailAdd") : TEXT("TrailTrans"));
 		const auto Inst = Handle.GetInstance();
 		auto* Ribbon = NewObject<UNiagaraRibbonRendererProperties>(Inst.Emitter, NAME_None, RF_Transactional);
 		Ribbon->FacingMode = ENiagaraRibbonFacingMode::Screen;
 		Ribbon->Shape = ENiagaraRibbonShapeMode::Plane;
 		Ribbon->MaxNumRibbons = 1;
 		Ribbon->bLinkOrderUseUniqueID = true;
-		FString TexFile; Trail->TryGetStringField(TEXT("textureFile"), TexFile);
-		UTexture2D* const* Tex = Textures.Find(TexFile);
-		const bool bAdditive = Trail->GetStringField(TEXT("blend")) == TEXT("additive");
-		UMaterial* Mat = GetOrCreateParticleTrailMaterial(DestRoot, bAdditive, Tex && *Tex);
-		Ribbon->Material = Mat;
-		if (Tex && *Tex) Ribbon->Material = GetOrCreateTextureMaterial(DestRoot, Mat, *Tex, bAdditive ? TEXT("TrailAdd") : TEXT("TrailTrans"));
+		Ribbon->Material = TrailMat;
 		Inst.Emitter->AddRenderer(Ribbon, Inst.Version);
 		UE_LOG(LogVfxImporter, Display, TEXT("   particle trail %s_Trail: ticks %d-%d, %.1f points/s, lifetime %.3fs, width %.2fcm"), *Trail->GetStringField(TEXT("name")), Start, End, Rate, Life, Trail->GetNumberField(TEXT("widthCm")));
 		if (!bSource || !bColor || !bWidth || !Ribbon->Material) UE_LOG(LogVfxImporter, Warning, TEXT("   trail setup incomplete: source=%d color=%d width=%d material=%d"), bSource, bColor, bWidth, Ribbon->Material ? 1 : 0);
@@ -1367,8 +1371,8 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 	{
 		for (const auto& Item : *Trails)
 		{
-			// OFF by default: building these crashed the commandlet (EXCEPTION_ACCESS_VIOLATION 0x3f0 in
-			// BuildParticleTrailEmitter, 2026-10-17, also without SetTrailWidthCurve) - unresolved. -VfxParticleTrails opts in.
+			// OFF by default until the ribbons are SEEN rendering. The import crash (0x3f0 in AddRenderer: a material save
+			// garbage-collected the not-yet-added renderer) is fixed; -VfxParticleTrails opts in.
 			if (!FParse::Param(FCommandLine::Get(), TEXT("VfxParticleTrails"))) { UE_LOG(LogVfxImporter, Display, TEXT("Particle trails are not imported yet (pass -VfxParticleTrails to try)")); break; }
 			const auto Trail = Item->AsObject();
 			int32 Start = 0, End = 0;
