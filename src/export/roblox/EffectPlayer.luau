@@ -1031,6 +1031,38 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 	return player
 end
 
+-- Textures download on first use, and until a Beam/Trail texture has arrived Roblox draws that Beam SOLID (a flat slab or
+-- a twisted band instead of a thin glowing line; seen on the first play in Studio, 2026-10-17). Requiring this module
+-- starts downloading the model's textures in the background; EffectPlayer.preload(model) waits until they are there
+-- (call it while loading, before the first cast).
+local ContentProvider = game:GetService("ContentProvider")
+local preloadState = setmetatable({}, { __mode = "k" }) -- model -> "loading" | "done"
+function EffectPlayer.preload(model: Instance)
+	if preloadState[model] == "done" then
+		return
+	end
+	if preloadState[model] == "loading" then
+		repeat
+			task.wait()
+		until preloadState[model] == "done"
+		return
+	end
+	preloadState[model] = "loading"
+	local list = {}
+	for _, d in ipairs(model:GetDescendants()) do
+		if d:IsA("ParticleEmitter") or d:IsA("Beam") or d:IsA("Trail") then
+			table.insert(list, d)
+		end
+	end
+	pcall(function()
+		ContentProvider:PreloadAsync(list)
+	end)
+	preloadState[model] = "done"
+end
+if script.Parent then
+	task.spawn(EffectPlayer.preload, script.Parent)
+end
+
 function EffectPlayer.play(model: Model, origin: CFrame?, options: Options?)
 	local player = EffectPlayer.create(model, origin, options)
 	local connection

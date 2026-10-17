@@ -121,6 +121,15 @@ for _, d in ipairs(model:GetDescendants()) do
 	end
 end
 model.Parent = workspace
+-- --preload (default 1): wait until the model's textures are downloaded, like a game that preloads its effects.
+-- Without it a freshly uploaded Beam/Trail texture is not there on the first play and the Beam draws SOLID
+-- (looked like the old comb/slab bugs, 2026-10-17).
+if ${opt('preload', '1') === '1' ? 'true' : 'false'} then
+	local t0 = os.clock()
+	local ep = require(model:WaitForChild("EffectPlayer"))
+	if ep.preload then ep.preload(model) else game:GetService("ContentProvider"):PreloadAsync(model:GetDescendants()) end
+	print(string.format("FIDELITY_PRELOAD %.2fs", os.clock() - t0))
+end
 local EffectPlayer = require(model:WaitForChild("EffectPlayer"))
 RunService.RenderStepped:Wait()
 flash.Visible = false
