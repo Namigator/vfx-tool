@@ -9,6 +9,38 @@
 import type { UeEmitter, UeLight, UeParticleTrail, UeRibbon, UnrealEffect } from '../unreal/types.ts';
 import { VFX_RIBBONS_GD } from './vfx_ribbons.gd.ts';
 
+/** Linear -> sRGB encoding, also above 1 (Godot decodes source_color values with the same curve). */
+export const srgbEncode = (l: number) => (l <= 0.0031308 ? l * 12.92 : 1.055 * l ** (1 / 2.4) - 0.055);
+
+/** A trail whose particle rides the moving source (a projectile's comet tail): drawn by the camera-facing rider shader. */
+const ridesAnchor = (e: UeEmitter) => !!(e.attachToSource && e.sourceTrack?.length && e.shape.kind === 'point'
+  && e.speedCmSMax === 0 && e.acceleration.every(v => v === 0) && !e.noise && !e.vortex && !e.attract);
+
+/** The editor's trail strip (RIBBON_FRAGMENT, additive softness 1): brightness across the width 1 - smoothstep(0, 1, |v|). */
+function softBand(res: Resources): string {
+  const xs = Array.from({ length: 17 }, (_, i) => i / 16);
+  const v = (x: number) => { const u = Math.abs(2 * x - 1); return 1 - u * u * (3 - 2 * u); };
+  const g = res.add('Gradient', [`offsets = PackedFloat32Array(${xs.map(n).join(', ')})`, `colors = PackedColorArray(${xs.map(x => { const c = n(v(x)); return `${c}, ${c}, ${c}, 1.0`; }).join(', ')})`]);
+  return res.add('GradientTexture2D', [`gradient = ${g}`, 'width = 64', 'height = 2', 'fill_from = Vector2(0, 0)', 'fill_to = Vector2(1, 0)']);
+}
+
+/** Feeds the camera position to the rider trails' process shaders, which turn each ribbon section to face it. */
+export const VFX_TRAILS_GD = `extends Node
+## VFX Studio export: keeps the particle trails' ribbons facing the camera like the editor's trail strips
+## (each listed trail's process shader turns its sections toward cam_pos).
+@export var trails: Array[NodePath] = []
+
+func _process(_delta: float) -> void:
+	var cam := get_viewport().get_camera_3d()
+	if cam == null:
+		return
+	for p in trails:
+		var node := get_node_or_null(p) as GPUParticles3D
+		if node != null and node.process_material is ShaderMaterial:
+			(node.process_material as ShaderMaterial).set_shader_parameter("cam_pos", cam.global_position)
+`;
+const srgbDecode = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+
 export type GodotReportItem = { level: 'approximated' | 'dropped' | 'info'; item: string; message: string };
 export type GodotScene = { name: string; tscn: string; textures: string[]; report: GodotReportItem[]; resPath: string;
   /** Extra text files of the package (beams: ribbons.json + vfx_ribbons.gd), relative to the package folder. */
@@ -116,7 +148,8 @@ function emitterNode(res: Resources, e: UeEmitter, texRoot: string, duration: nu
   if (e.spinDegMin || e.spinDegMax) ppm.push(`angle_min = ${n(e.spinDegMin)}`, `angle_max = ${n(e.spinDegMax)}`);
   if (e.angularVelocityDegSMin || e.angularVelocityDegSMax) ppm.push(`angular_velocity_min = ${n(e.angularVelocityDegSMin)}`, `angular_velocity_max = ${n(e.angularVelocityDegSMax)}`);
   const velocity = !trail && e.alignment === 'velocity';
-  if (velocity) ppm.push('particle_flag_align_y = true');
+  // Trails too: the ribbon's width axes are the particle's X/Z, so Y must follow the motion (see the rider shader below).
+  if (velocity || trail) ppm.push('particle_flag_align_y = true');
   const fb = trail ? undefined : e.flipbook;
   if (fb && (fb.columns > 1 || fb.rows > 1)) {
     const frames = fb.columns * fb.rows, meanLife = (lifeMin + lifeMax) / 2;
@@ -129,20 +162,35 @@ function emitterNode(res: Resources, e: UeEmitter, texRoot: string, duration: nu
     } else if (fb.randomStartFrame || staticFrame === -1) ppm.push('anim_offset_max = 1.0');
   }
   let process = res.add('ParticleProcessMaterial', ppm);
-  const followsAnchor = !!(trail && e.attachToSource && e.sourceTrack?.length && e.shape.kind === 'point'
-    && speedMax === 0 && e.acceleration.every(v => v === 0) && !e.noise && !e.vortex && !e.attract);
+  const followsAnchor = !!trail && ridesAnchor(e);
   if (followsAnchor) {
     // A local-space trail would move its entire history with the anchor. These stationary
     // attached riders instead follow EMISSION_TRANSFORM in world space, so Godot skins the
     // ribbon against the actual previous world positions. The head remains a local sprite.
     const shader = res.add('Shader', ['code = ' + str(`shader_type particles;
 render_mode disable_force, disable_velocity;
+uniform vec3 cam_pos = vec3(0.0, 2.0, 8.0);
 void start() {
   TRANSFORM = EMISSION_TRANSFORM;
   COLOR = vec4(1.0);
   CUSTOM = vec4(0.0);
 }
 void process() {
+  // A trail ribbon takes its width from the particle's basis at each history point (RibbonTrailMesh runs along local
+  // Y, the flat strip along X). Copying EMISSION_TRANSFORM's identity basis put the width ALONG a bolt flying in X:
+  // a hairline instead of a 13-34 cm tail; a cross-shaped strip overlapped itself into a doubled white core
+  // (tools/layer-brightness.mjs, 2026-10-17). Y follows the motion, X faces the camera (vfx_trails.gd sets cam_pos):
+  // the editor's camera-facing trail strip.
+  vec3 d = EMISSION_TRANSFORM[3].xyz - TRANSFORM[3].xyz;
+  if (dot(d, d) > 1e-10) {
+    vec3 y = normalize(d);
+    vec3 x = cross(y, cam_pos - EMISSION_TRANSFORM[3].xyz);
+    if (dot(x, x) < 1e-10) { x = cross(abs(y.y) < 0.99 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0), y); }
+    x = normalize(x);
+    TRANSFORM[0].xyz = x;
+    TRANSFORM[1].xyz = y;
+    TRANSFORM[2].xyz = cross(x, y);
+  }
   TRANSFORM[3].xyz = EMISSION_TRANSFORM[3].xyz;
   CUSTOM.y += DELTA / LIFETIME;
   if (CUSTOM.y >= 1.0) { ACTIVE = false; }
@@ -152,24 +200,33 @@ void process() {
   if (trail && e.attachToSource && e.sourceTrack?.length && !followsAnchor)
     report.push({ level: 'approximated', item: trail.name, message: 'Attached particles with independent spawn/motion retain local-space trail history; anchor motion is represented exactly only for stationary point riders.' });
   // ---- draw material: unshaded billboard, additive or alpha blend, colour from the ramp (vertex colour) ----
-  const mat = [`transparency = 1`, `blend_mode = ${(trail?.blend ?? e.blend) === 'additive' ? 1 : 0}`, 'shading_mode = 0', 'vertex_color_use_as_albedo = true',
+  // The IR colours are sRGB like the editor's; the editor linearises them (billboardLife srgbToLinear) and Godot only does
+  // when vertex_color_is_srgb is set - without it every layer drew 2-6x brighter and washed toward white (the "white-hot
+  // cores", measured per layer with tools/layer-brightness.mjs, 2026-10-17).
+  const mat = [`transparency = 1`, `blend_mode = ${(trail?.blend ?? e.blend) === 'additive' ? 1 : 0}`, 'shading_mode = 0', 'vertex_color_use_as_albedo = true', 'vertex_color_is_srgb = true',
     // Velocity-aligned: no billboard + Align Y (Godot's Y-billboard uses world up, so it would stand every flame upright).
     `billboard_mode = ${trail || velocity ? 0 : 3}`, 'billboard_keep_scale = true', 'cull_mode = 2'];
   if (!trail && e.emission) {
-    const gain = n(1 + e.emission);
+    // albedo_color is decoded sRGB -> linear by Godot: encode the editor's LINEAR (1 + emission) gain (1.5 stayed 2.53).
+    const gain = n(srgbEncode(1 + e.emission));
     mat.push(`albedo_color = Color(${gain}, ${gain}, ${gain}, 1)`);
   }
   if (trail) {
+    // The ramp is an HDR float texture, which Godot samples WITHOUT the sRGB decode of albedo textures: it holds the
+    // editor's linear colour x (1 + emission) (sRGB values here drew the pink sheath nearly white, 2026-10-17).
+    const gain = 1 + (trail.emission ?? 0);
     mat.push('use_particle_trails = true', `albedo_texture = ${colorRamp(res, {
-      colorOverLife: trail.colorOverTrail.map(k => ({ ...k, r: k.r * (1 + (trail.emission ?? 0)), g: k.g * (1 + (trail.emission ?? 0)), b: k.b * (1 + (trail.emission ?? 0)) })),
+      colorOverLife: trail.colorOverTrail.map(k => ({ ...k, r: srgbDecode(k.r) * gain, g: srgbDecode(k.g) * gain, b: srgbDecode(k.b) * gain })),
       opacityOverLife: trail.opacityOverTrail,
     }, true)}`);
     if (trail.textureFile) mat.push('detail_enabled = true', 'detail_blend_mode = 3', `detail_albedo = ${res.extTexture(`${texRoot}/${trail.textureFile}`)}`);
+    // Untextured additive trails: the editor's soft transverse falloff (a flat full-width strip drew ~2x the light).
+    else if (trail.blend === 'additive') mat.push('detail_enabled = true', 'detail_blend_mode = 3', `detail_albedo = ${softBand(res)}`);
   } else if (e.textureFile) mat.push(`albedo_texture = ${res.extTexture(`${texRoot}/${e.textureFile}`)}`);
   if (fb && (fb.columns > 1 || fb.rows > 1)) mat.push(`particles_anim_h_frames = ${fb.columns}`, `particles_anim_v_frames = ${fb.rows}`, `particles_anim_loop = ${fb.loop}`);
   const material = res.add('StandardMaterial3D', mat);
   const sections = trail ? Math.max(2, Math.min(128, trail.maxPoints - 1)) : 0;
-  const quad = trail ? res.add('RibbonTrailMesh', [`material = ${material}`, `size = ${n(trail.widthCm / 100)}`,
+  const quad = trail ? res.add('RibbonTrailMesh', [`material = ${material}`, ...(followsAnchor ? ['shape = 0'] : []), `size = ${n(trail.widthCm / 100)}`,
     `sections = ${sections}`, 'section_segments = 1', `section_length = ${n(Math.max(0.001, speedAvg * trail.lifetimeSec / sections))}`,
     `curve = ${curve(res, trail.widthOverTrail.map(k => ({ t: 1 - k.t, v: k.v })).reverse(), false)}`])
     // Velocity stretch: like the editor's billboard, the quad is r times longer along its local +Y (= the velocity with
@@ -240,6 +297,12 @@ export function godotSceneFrom(e: UnrealEffect, resRoot = `res://vfx_studio/${e.
     const script = res.extOf('Script', `${resRoot}/vfx_ribbons.gd`);
     nodes.push(`[node name="Ribbons" type="Node3D" parent="."]\nscript = ${script}\ndata_path = ${str(`${resRoot}/ribbons.json`)}`);
     report.push({ level: 'info', item: 'ribbons', message: `${e.ribbons.length} beam/ribbon layer(s) are drawn by vfx_ribbons.gd from ribbons.json (baked per frame, camera-facing strips; no texture scrolling or distortion).` });
+  }
+  const riders = (e.trails ?? []).filter(tr => ridesAnchor(tr.emitter)).map(tr => `${nodeName(tr.name)}_Trail`);
+  if (riders.length) {
+    files.push({ path: 'vfx_trails.gd', text: VFX_TRAILS_GD });
+    const script = res.extOf('Script', `${resRoot}/vfx_trails.gd`);
+    nodes.push(`[node name="TrailFacing" type="Node" parent="."]\nscript = ${script}\ntrails = Array[NodePath]([${riders.map(r => `NodePath(${str(`../${r}`)})`).join(', ')}])`);
   }
   // Carry the Unreal IR's own notes that still apply (meshes, flashes, keyframes, many bursts, multi-path...).
   for (const r of e.report) if (!/Niagara|Unreal|importer|UE 5|Shape Location/i.test(r.message)) report.push(r);

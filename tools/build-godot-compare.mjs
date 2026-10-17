@@ -86,6 +86,15 @@ func _ready() -> void:
 	add_child(floor)
 	var fx: Node = load(c.scene).instantiate()
 	add_child(fx)
+	# Per-layer measurement (tools/layer-brightness.mjs): args[1] = comma list of the effect's child nodes to keep
+	# ("__none__" = none: the empty plate; "" = all), args[2] = "noglow" turns the glow off.
+	if args.size() > 1 and args[1] != "":
+		var keep: PackedStringArray = args[1].split(",")
+		for ch in fx.get_children():
+			if (ch is GeometryInstance3D or ch is Light3D or String(ch.name) == "Ribbons") and not keep.has(String(ch.name)):
+				ch.visible = false
+	if args.size() > 2 and args[2] == "noglow":
+		e.glow_enabled = false
 	var cam := Camera3D.new()
 	cam.fov = c.fov
 	add_child(cam)

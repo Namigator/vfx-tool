@@ -36,7 +36,10 @@ test('Godot: static sprite cells, HDR gain and attached source motion preserve l
   assert.match(text, /scale_min = 0\.45\nscale_max = 0\.45/);
   assert.match(text, /anim_speed_min = 0\.0\nanim_speed_max = 0\.0/);
   assert.match(text, /anim_offset_min = 0\.5\nanim_offset_max = 0\.5/);
-  assert.match(text, /albedo_color = Color\(3\.5, 3\.5, 3\.5, 1\)/);
+  // The editor's linear gain 1 + 2.5 = 3.5, sRGB-encoded because Godot decodes albedo_color (source_color).
+  const gain = Number(text.match(/albedo_color = Color\(([\d.]+), \1, \1, 1\)/)?.[1]);
+  assert.ok(Math.abs(((gain + 0.055) / 1.055) ** 2.4 - 3.5) < 0.01, `gain ${gain} decodes to 3.5`);
+  assert.match(text, /vertex_color_is_srgb = true/, 'ramp colours are sRGB like the editor (it linearises them)');
   assert.match(text, /local_coords = true/);
   assert.match(text, /NodePath\("Rider:position"\)/);
   assert.match(text, /"times": PackedFloat32Array\(0\.0\),[\s\S]*?"values": \[true\]/);
@@ -57,7 +60,8 @@ test('Godot: trails have independent ribbon skinning, tail colour/opacity, width
   assert.match(text, /type="RibbonTrailMesh"[\s\S]*?size = 0\.08\nsections = 19/);
   assert.match(text, /use_particle_trails = true/);
   assert.match(text, /type="GradientTexture2D"/);
-  assert.match(text, /colors = PackedColorArray\(1\.0, 0\.0, 0\.5, 0\.0, 1\.0, 0\.0, 0\.5, 0\.8\)/);
+  // Linear colour (sRGB 0.5 -> 0.214): Godot does not decode the HDR ramp texture.
+  assert.match(text, /colors = PackedColorArray\(1\.0, 0\.0, 0\.214, 0\.0, 1\.0, 0\.0, 0\.214, 0\.8\)/);
   const seeds = [...text.matchAll(/^seed = (\d+)/gm)].map(m => m[1]);
   assert.equal(seeds.length, 2);
   assert.equal(seeds[0], seeds[1]);
@@ -66,6 +70,15 @@ test('Godot: trails have independent ribbon skinning, tail colour/opacity, width
     sourceTrack: [[0, [0, 0, 0]], [60, [100, 0, 0]]] as [number, [number, number, number]][] };
   const moving = godotSceneFrom({ ...ir, emitters: [attached], trails: [{ ...trail, emitter: attached }], ribbons: [], lights: [] }).tscn;
   assert.match(moving, /TRANSFORM\[3\]\.xyz = EMISSION_TRANSFORM\[3\]\.xyz/);
+  // The ribbon's width comes from the particle basis: Y follows the motion (identity basis = hairline trails), X faces
+  // the camera that vfx_trails.gd feeds in, on a flat strip (a cross overlapped into a doubled white core).
+  assert.match(moving, /TRANSFORM\[1\]\.xyz = y;/);
+  assert.match(moving, /cross\(y, cam_pos - EMISSION_TRANSFORM\[3\]\.xyz\)/);
+  assert.match(moving, /type="RibbonTrailMesh"[^[]*shape = 0/);
+  assert.match(moving, /\[node name="TrailFacing" type="Node" parent="\."\]\nscript = ExtResource\("[^"]+"\)\ntrails = Array\[NodePath\]\(\[NodePath\("\.\.\/Comet_Trail"\)\]\)/);
+  assert.ok(godotSceneFrom({ ...ir, emitters: [attached], trails: [{ ...trail, emitter: attached }], ribbons: [], lights: [] }).files.some(f => f.path === 'vfx_trails.gd'));
+  assert.match(moving, /detail_blend_mode = 3/, 'untextured additive trails get the soft transverse band');
+  assert.match(text, /particle_flag_align_y = true/, 'free trails align Y to their velocity');
   const node = moving.split('[node name="Comet_Trail"')[1].split('\n[')[0];
   assert.match(node, /local_coords = false/);
 });
