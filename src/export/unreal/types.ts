@@ -136,6 +136,10 @@ export type UeRibbon = {
   tileCm?: number;
   scroll?: [number, number];
   softness?: number;
+  /** The strip's cross-section for exporters that bake ribbon geometry without a texture (Unreal): alpha at offsets
+   *  0 (centreline) .. 1 (edge) of the half-width, mirrored. Untextured = the soft edge (softness); a variant sheet =
+   *  its straightened line (sprite lineProfile). Absent = a uniform strip. */
+  crossSection?: [offset: number, alpha: number][];
   /** Per-tick geometry: `points` = the first path as [x,y,z,widthCm] in Unreal cm (empty = hidden this tick);
    *  `paths` = every path of the layer (trunk + branches...) with its opacity at that tick (layer opacity x the
    *  path's own opacity, e.g. a flickering, decaying bolt). Frames are stored only when something changed. */

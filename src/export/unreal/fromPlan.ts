@@ -28,6 +28,17 @@ const linToSrgb = (l: number) => (l <= 0.0031308 ? l * 12.92 : 1.055 * l ** (1 /
 const safeName = (id: string) => id.replace(/[^A-Za-z0-9_]/g, '_').slice(0, 60);
 /** The preview's transverse soft edge of untextured ribbons (RibbonGeometry.ts ribbonSoftness; not imported: it pulls in three). */
 const ribbonSoftness = (blend: string) => (blend === 'additive' ? 1 : blend === 'normal' ? 0.25 : 0);
+/** UeRibbon.crossSection: the editor's smoothstep soft edge for untextured strips, a variant sheet's straightened line. */
+function crossSectionOf(l: PathPreviewLayer): { crossSection?: [number, number][] } {
+  if (l.sprite) {
+    const sh = l.sprite.sheet;
+    return sh.lineProfile && sh.columns * sh.rows > 1 ? { crossSection: sh.lineProfile.map(([o, a]) => [o, a] as [number, number]) } : {};
+  }
+  const s = ribbonSoftness(l.blend);
+  if (s <= 0) return {};
+  const offs = [0, 0.25, 0.5, 0.75, 0.875, 1].filter(o => o === 0 || o >= 1 - s || o === 1);
+  return { crossSection: offs.map(o => { const t = Math.min(1, Math.max(0, (o - (1 - s)) / s)); return [o, r3(1 - t * t * (3 - 2 * t))] as [number, number]; }) };
+}
 const greyNote = (item: string, from: string, to: string): UeReportItem => ({ level: 'approximated', item,
   message: `Recoloured texture: ${from} is coloured and the engine cannot recolour texture x colour like the editor, so it ships as ${to} with the hue in the colour (exact for one-hue sheets; colour variation inside the sheet is lost).` });
 
@@ -269,6 +280,7 @@ function ribbonLayer(l: PathPreviewLayer, report: UeReportItem[]): UeRibbon & { 
       ...(l.uvMode === 'tile' ? { tileCm: r3(Math.max(0.1, l.uvTileLength * CM_PER_METER)) } : {}),
       ...(l.uvAnim && (l.uvAnim.scroll[0] || l.uvAnim.scroll[1]) ? { scroll: [r3(l.uvAnim.scroll[0]), r3(l.uvAnim.scroll[1])] as [number, number] } : {}),
     } : { softness: ribbonSoftness(l.blend) }),
+    ...crossSectionOf(l),
     frames: [], last: '',
   };
 }

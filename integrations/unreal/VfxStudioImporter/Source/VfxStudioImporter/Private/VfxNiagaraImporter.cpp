@@ -358,9 +358,22 @@ namespace
 
 	/** Bakes the paths of one frame into a static mesh: each path is a cross of two perpendicular strips (visible from
 	 *  any side, unlike the preview's camera-facing strip), its full width per point, vertex alpha = path alpha /
-	 *  NormAlpha x end fade. */
-	UStaticMesh* BuildRibbonMesh(const FString& DestRoot, const FString& AssetName, const FRibbonFrame& F, double NormAlpha, double EndFade, UMaterialInterface* Mat)
+	 *  NormAlpha x end fade x the cross-section. Cross = (offset 0..1 of the half-width, alpha) from the centreline out,
+	 *  mirrored into vertex rows across the strip: the ribbon material has no texture, so the editor's soft edge and a
+	 *  line sheet's thin bright line live in vertex alpha. Empty = one uniform row pair at the edges. */
+	UStaticMesh* BuildRibbonMesh(const FString& DestRoot, const FString& AssetName, const FRibbonFrame& F, double NormAlpha, double EndFade, UMaterialInterface* Mat, const TArray<FVector2D>& Cross)
 	{
+		// Rows across the strip, -edge .. 0 .. +edge, with their alpha (trailing zero-alpha samples trimmed to one).
+		TArray<FVector2D> Rows;
+		if (Cross.Num() >= 2)
+		{
+			int32 Last = Cross.Num() - 1;
+			for (int32 j = 0; j < Cross.Num(); j++) if (Cross[j].Y <= 0.0) { Last = j; break; }
+			for (int32 j = Last; j >= 1; j--) Rows.Add(FVector2D(-Cross[j].X, Cross[j].Y));
+			for (int32 j = 0; j <= Last; j++) Rows.Add(FVector2D(Cross[j].X, Cross[j].Y));
+		}
+		else { Rows.Add(FVector2D(-1.0, 1.0)); Rows.Add(FVector2D(1.0, 1.0)); }
+		const int32 R = Rows.Num();
 		const FString PackagePath = DestRoot / TEXT("Meshes");
 		UPackage* Package = CreatePackage(*(PackagePath / AssetName));
 		UStaticMesh* Mesh = NewObject<UStaticMesh>(Package, FName(*AssetName), RF_Public | RF_Standalone);
@@ -388,7 +401,7 @@ namespace
 			const double A = FMath::Clamp(P.Alpha / FMath::Max(NormAlpha, 1e-6), 0.0, 1.0);
 			for (int32 Side = 0; Side < 2; Side++)
 			{
-				TArray<FVertexInstanceID> Left, Right;
+				TArray<TArray<FVertexInstanceID>> Row; Row.SetNum(R);
 				for (int32 i = 0; i < N; i++)
 				{
 					const FVector Pt(P.Points[i].X, P.Points[i].Y, P.Points[i].Z);
@@ -403,25 +416,26 @@ namespace
 					const double U = double(i) / double(N - 1);
 					const double Edge = EndFade > 0.0 ? FMath::Clamp(FMath::Min(U, 1.0 - U) / EndFade, 0.0, 1.0) : 1.0;
 					const FVector3f Normal = FVector3f(FVector::CrossProduct(Dir, T).GetSafeNormal());
-					for (int32 k = 0; k < 2; k++)
+					for (int32 k = 0; k < R; k++)
 					{
 						const FVertexID V = MD->CreateVertex();
-						Positions[V] = FVector3f(k == 0 ? Pt - Off : Pt + Off);
+						Positions[V] = FVector3f(Pt + Off * Rows[k].X);
 						const FVertexInstanceID VI = MD->CreateVertexInstance(V);
-						Uvs.Set(VI, 0, FVector2f((float)U, (float)k));
-						Colors[VI] = FVector4f(1.f, 1.f, 1.f, (float)(A * Edge));
+						Uvs.Set(VI, 0, FVector2f((float)U, (float)(0.5 + 0.5 * Rows[k].X)));
+						Colors[VI] = FVector4f(1.f, 1.f, 1.f, (float)(A * Edge * Rows[k].Y));
 						Normals[VI] = Normal;
 						Tangents[VI] = FVector3f(T);
 						Signs[VI] = 1.f;
-						(k == 0 ? Left : Right).Add(VI);
+						Row[k].Add(VI);
 					}
 				}
-				for (int32 i = 0; i + 1 < N; i++)
-				{
-					MD->CreateTriangle(Group, { Left[i], Right[i], Right[i + 1] });
-					MD->CreateTriangle(Group, { Left[i], Right[i + 1], Left[i + 1] });
-					Tris += 2;
-				}
+				for (int32 k = 0; k + 1 < R; k++)
+					for (int32 i = 0; i + 1 < N; i++)
+					{
+						MD->CreateTriangle(Group, { Row[k][i], Row[k + 1][i], Row[k + 1][i + 1] });
+						MD->CreateTriangle(Group, { Row[k][i], Row[k + 1][i + 1], Row[k][i + 1] });
+						Tris += 2;
+					}
 			}
 		}
 		if (Tris == 0) return nullptr;
@@ -448,6 +462,10 @@ namespace
 		const bool bAdditive = R->GetStringField(TEXT("blend")) == TEXT("additive");
 		UMaterial* Mat = GetOrCreateRibbonMaterial(DestRoot, bAdditive);
 		double EndFade = 0.0; R->TryGetNumberField(TEXT("endFade"), EndFade);
+		TArray<FVector2D> Cross;
+		const TArray<TSharedPtr<FJsonValue>>* CrossJson = nullptr;
+		if (R->TryGetArrayField(TEXT("crossSection"), CrossJson))
+			for (const auto& V : *CrossJson) { const auto& Q = V->AsArray(); if (Q.Num() >= 2) Cross.Add(FVector2D(Q[0]->AsNumber(), Q[1]->AsNumber())); }
 		FLinearColor Color = FLinearColor::White;
 		const TSharedPtr<FJsonObject>* C = nullptr;
 		if (R->TryGetObjectField(TEXT("color"), C))
@@ -496,7 +514,7 @@ namespace
 			if (!Rep) continue;
 			FRibbonSlice Slice;
 			Slice.Name = FString::Printf(TEXT("%s_s%d"), *RName, k);
-			Slice.Mesh = BuildRibbonMesh(DestRoot, TEXT("SM_") + Slice.Name, *Rep, Rep->MaxAlpha, EndFade, Mat);
+			Slice.Mesh = BuildRibbonMesh(DestRoot, TEXT("SM_") + Slice.Name, *Rep, Rep->MaxAlpha, EndFade, Mat, Cross);
 			if (!Slice.Mesh) continue;
 			Slice.Start = A; Slice.Life = B - A; Slice.Color = Color;
 			// Step track of each frame's peak path alpha over the slice (normalized age).

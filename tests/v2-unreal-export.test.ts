@@ -131,3 +131,16 @@ test('Unreal IR: attraction keeps its kill/soft radius and the vortex its inward
   assert.equal(motes.vortex!.inwardCmS2, 0);
   assert.equal(e.report.some(r => r.item === 'positions'), false, 'offsets now take effect: no hand-fix report item');
 });
+
+test('Unreal ribbons carry the editor cross-section: soft edge untextured, a line sheet straightened', () => {
+  const e = effect('helix-beam');
+  const strand = e.ribbons.find(b => b.textureFile?.startsWith('electric-arc'))!;
+  const plain = e.ribbons.find(b => !b.textureFile)!;
+  // electric-arc (2x2 variants): a thin bright line, gone by a fifth of the half-width.
+  assert.ok(strand.crossSection && strand.crossSection[0][0] === 0 && strand.crossSection[0][1] > 0.8, JSON.stringify(strand.crossSection));
+  assert.ok(strand.crossSection.some(([o, a]) => o <= 0.25 && a === 0), 'falls to 0 near the centreline');
+  // Additive untextured strips: the editor's smoothstep falloff over the whole half-width.
+  assert.deepEqual(plain.crossSection![0], [0, 1]);
+  assert.deepEqual(plain.crossSection!.at(-1), [1, 0]);
+  assert.ok(plain.crossSection!.every(([, a], i, arr) => i === 0 || a <= arr[i - 1][1]), 'monotonic');
+});

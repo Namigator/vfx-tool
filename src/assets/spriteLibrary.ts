@@ -15,6 +15,8 @@ export interface SpriteSheet {
   meanColor?: string;
   /** Grey variant of a coloured sheet (tools/bake-sprites.mjs): exporters use it for recoloured parts (recolor.ts greyTextured). */
   greyFile?: string;
+  /** Variant sheets: the cells' line straightened, [offset 0..1 of the half-height, alpha] (tools/bake-sprites.mjs). */
+  lineProfile?: [number, number][];
 }
 
 export interface SpriteLibrary {
@@ -42,7 +44,8 @@ export function parseSpriteManifest(json: unknown): SpriteLibrary {
     if (!Array.isArray(s.cell) || s.cell.length !== 2 || !s.cell.every(isPositiveInt)) throw new Error(`${where}: cell must be two positive integers`);
     if (!isPositiveInt(s.columns) || !isPositiveInt(s.rows)) throw new Error(`${where}: columns/rows must be positive integers`);
     sprites.set(s.id, { id: s.id, file: s.file, kind: s.kind as SpriteKind, cell: [s.cell[0], s.cell[1]], columns: s.columns, rows: s.rows, blend: typeof s.blend === 'string' ? s.blend : 'normal',
-      ...(typeof s.meanColor === 'string' ? { meanColor: s.meanColor } : {}), ...(typeof s.greyFile === 'string' ? { greyFile: s.greyFile } : {}) });
+      ...(typeof s.meanColor === 'string' ? { meanColor: s.meanColor } : {}), ...(typeof s.greyFile === 'string' ? { greyFile: s.greyFile } : {}),
+      ...(Array.isArray(s.lineProfile) ? { lineProfile: s.lineProfile } : {}) });
   }
   return { sprites };
 }
