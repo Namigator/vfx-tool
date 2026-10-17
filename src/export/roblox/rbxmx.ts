@@ -285,7 +285,7 @@ function lightItem(refs: Refs, l: RbxLight, name: string): string {
 }
 
 /** Native Trail between two attachments (±width/2 on the Part's up axis); the player moves the Part and toggles Enabled. */
-function trailItem(refs: Refs, t: RbxTrail, name: string): string {
+function trailItem(refs: Refs, t: RbxTrail, name: string, ids?: Record<string, string>): string {
   const r0 = refs.next(), r1 = refs.next(), half = Math.max(0.01, t.width / 2);
   const att = (ref: string, n: string, y: number) => item('Attachment', ref, [P.str('Name', n), coordinateFrame('CFrame', [0, y, 0])]);
   const trail = item('Trail', refs.next(), [
@@ -301,6 +301,7 @@ function trailItem(refs: Refs, t: RbxTrail, name: string): string {
     P.float('LightEmission', clamp(t.lightEmission, 0, 1)),
     P.float('Brightness', Math.max(0, t.brightness)),
     P.float('LightInfluence', 0),
+    P.content('Texture', textureUrl(t.textureKey, ids, '')),
   ]);
   return partItem(refs, name, [0.2, 0.2, 0.2], t.position, [0, 1, 0], [att(r0, 'A0', half), att(r1, 'A1', -half), trail]);
 }
@@ -477,7 +478,7 @@ export function writeRbxmx(input: RobloxEffect, options: WriteOptions): string {
     item('Folder', refs.next(), [P.str('Name', 'Emitters')], emitterParts),
     item('Folder', refs.next(), [P.str('Name', 'Beams')], beamFolders),
     item('Folder', refs.next(), [P.str('Name', 'Lights')], lightParts),
-    item('Folder', refs.next(), [P.str('Name', 'Trails')], (effect.trails ?? []).map((t, i) => trailItem(refs, t, names.t[i]))),
+    item('Folder', refs.next(), [P.str('Name', 'Trails')], (effect.trails ?? []).map((t, i) => trailItem(refs, t, names.t[i], opts.assetIds))),
     item('Folder', refs.next(), [P.str('Name', 'Meshes')], (effect.meshes ?? []).map((m, i) => meshTemplateItem(refs, m, names.m[i]))),
     item('StringValue', refs.next(), [P.str('Name', 'EffectData'), P.str('Value', effectDataSource(effect, names))]),
     item('ModuleScript', refs.next(), [P.str('Name', 'EffectPlayer'), P.source('Source', opts.playerSource)]),

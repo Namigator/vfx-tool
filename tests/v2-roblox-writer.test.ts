@@ -248,3 +248,15 @@ test('write the hand-built effect for tools/roblox-check.mjs', () => {
   mkdirSync(new URL('../work/roblox/', import.meta.url), { recursive: true });
   writeFileSync(new URL('../work/roblox/test.rbxmx', import.meta.url), writeRbxmx(handBuiltEffect(), { assetIds: { 'flame.png': '12345' }, playerSource: PLAYER }));
 });
+
+test('trails and untextured beams: soft cross-section texture, solid when not uploaded, never the particle sparkle', () => {
+  const e = handBuiltEffect();
+  e.trails = e.trails!.map(t => ({ ...t, textureKey: '@beam-soft-100.png' }));
+  e.textures = [...e.textures, '@beam-soft-100.png'];
+  const trailXml = (xml: string) => xml.slice(xml.indexOf('<Item class="Trail"'), xml.indexOf('</Item>', xml.indexOf('<Item class="Trail"')));
+  const up = writeRbxmx(e, { assetIds: { 'flame.png': '12345', '@beam-soft-100.png': '777' }, playerSource: PLAYER });
+  assert.match(trailXml(up), /<Content name="Texture"><url>rbxassetid:\/\/777<\/url><\/Content>/);
+  const none = writeRbxmx(e, { playerSource: PLAYER });
+  assert.match(trailXml(none), /<Content name="Texture"><url><\/url><\/Content>/);
+  assert.ok(!trailXml(none).includes(DEFAULT_TEXTURE));
+});

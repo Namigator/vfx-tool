@@ -485,11 +485,12 @@ function widthRatio(a: RbxBeamLayer, b: RbxBeamLayer): number | undefined {
  * ("@beam-soft-100.png": alpha falling to 0 over the outer softness fraction of the half-width, RibbonGeometry
  * ribbonSoftness) instead of the particle sparkle that made rays and haze faint.
  */
+function softBeamKey(blend: string): { textureKey?: string } {
+  const softness = blend === 'additive' ? 1 : blend === 'normal' ? 0.25 : 0;
+  return softness > 0 ? { textureKey: `@beam-soft-${Math.round(softness * 100)}.png` } : {};
+}
 function beamTexture(l: PathPreviewLayer, file: string | undefined, report: RbxReportItem[]): { textureKey?: string } {
-  if (!l.sprite) {
-    const softness = l.blend === 'additive' ? 1 : l.blend === 'normal' ? 0.25 : 0;
-    return softness > 0 ? { textureKey: `@beam-soft-${Math.round(softness * 100)}.png` } : {};
-  }
+  if (!l.sprite) return softBeamKey(l.blend);
   const sheet = l.sprite.sheet, cells = sheet.columns * sheet.rows, base = file ?? sheet.file;
   if (cells <= 1) return { textureKey: base };
   report.push({ level: 'approximated', item: l.nodeId, message: `${sheet.file} becomes its straightened line across the beam (Roblox Beams restart their texture on every path segment); the path keeps its own shape.` });
@@ -572,6 +573,8 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
           transparency: [{ t: 0, v: base, e: 0 }, { t: r3(1 - fade), v: base, e: 0 }, { t: 1, v: 1, e: 0 }],
           widthScale: [{ t: 0, v: 1, e: 0 }, { t: 1, v: 0.3, e: 0 }],
           lightEmission: t.blend === 'additive' ? 1 : 0, brightness: r3(1 + t.emission),
+          // The editor's trail ribbon has the untextured soft edge; without a texture a Trail is a hard solid band.
+          ...softBeamKey(t.blend),
         });
       }
       continue;
@@ -595,7 +598,7 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
   const lights = plan.value.lights.map(l => lightFrom(settleLight(l, report), origin, plan.value.durationTicks, report));
   const beams = beamsFrom(doc, origin, report);
   report.push({ level: 'info', item: 'scale', message: `1 m = ${r3(S)} studs; the effect origin (model pivot) is the floor point under the Source anchor, so the effect starts ${r3(src[1] * S)} studs above it. Without source/target options it plays exactly as authored; with them it re-aims (see targeting).` });
-  const textures = [...new Set([...emitters.map(e => e.textureKey), ...beams.map(b => b.textureKey)].filter((x): x is string => !!x))];
+  const textures = [...new Set([...emitters.map(e => e.textureKey), ...beams.map(b => b.textureKey), ...trails.map(t => t.textureKey)].filter((x): x is string => !!x))];
   const rel = (p: readonly number[]): Vec3 => [r3((p[0] - origin[0]) * S), r3((p[1] - origin[1]) * S), r3((p[2] - origin[2]) * S)];
   const tgt = doc.anchors.find(a => a.id === 'target')?.position ?? src;
   const flight = [...plan.value.followers].sort((a, b) => b.travelTicks - a.travelTicks)[0];

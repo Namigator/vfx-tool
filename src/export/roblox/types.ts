@@ -143,6 +143,8 @@ export type RbxTrail = {
   widthScale: RbxNumberKey[];
   lightEmission: number;
   brightness: number;
+  /** Soft cross-section ("@beam-soft-N.png", like untextured beams); absent = a solid band. */
+  textureKey?: string;
 };
 
 /** One baked keyframe of a mesh piece; `tick` may be fractional only for the death frame's neighbours (integers otherwise). */
