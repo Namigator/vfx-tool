@@ -38,9 +38,12 @@
 #include "NiagaraDataInterface.h"
 #include "NiagaraDataInterfaceCurve.h"
 #include "NiagaraDataInterfaceColorCurve.h"
+#include "NiagaraDataInterfaceVectorCurve.h"
+#include "NiagaraNodeAssignment.h"
 #include "Materials/MaterialExpressionTextureCoordinate.h"
 #include "Materials/MaterialExpressionTextureSampleParameterSubUV.h"
 #include "NiagaraSpriteRendererProperties.h"
+#include "NiagaraRibbonRendererProperties.h"
 #include "NiagaraLightRendererProperties.h"
 #include "NiagaraMeshRendererProperties.h"
 #include "Engine/StaticMesh.h"
@@ -926,6 +929,227 @@ namespace
 		AddForceModule(Data, TEXT("/Niagara/Modules/Update/Forces/Drag.Drag"));
 	}
 
+	/** Particle trails use ParticleColor directly; the baked-beam material also multiplies VertexColor, which is
+	 *  not the trail's authored colour. Keep a separate material/cache name so existing beam assets are unchanged. */
+	UMaterial* GetOrCreateParticleTrailMaterial(const FString& DestRoot, bool bAdditive, bool bTextured)
+	{
+		const FString Name = FString(bAdditive ? TEXT("M_VfxStudio_ParticleTrailAdd") : TEXT("M_VfxStudio_ParticleTrailTrans")) + (bTextured ? TEXT("_Tex") : TEXT(""));
+		const FString PackagePath = DestRoot / TEXT("_Materials");
+		if (UMaterial* Existing = LoadObject<UMaterial>(nullptr, *((PackagePath / Name) + TEXT(".") + Name))) return Existing;
+		IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
+		UMaterial* Mat = Cast<UMaterial>(AssetTools.CreateAsset(Name, PackagePath, UMaterial::StaticClass(), nullptr));
+		if (!Mat) return nullptr;
+		Mat->SetShadingModel(MSM_Unlit);
+		Mat->BlendMode = bAdditive ? BLEND_Additive : BLEND_Translucent;
+		Mat->TwoSided = true;
+		Mat->bUsedWithNiagaraRibbons = true;
+		UMaterialExpression* Pc = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionParticleColor::StaticClass(), -600, 0);
+		UMaterialExpression* Rgb = Pc;
+		UMaterialExpression* Alpha = Pc;
+		FString RgbPin = TEXT("RGB"), AlphaPin = TEXT("A");
+		if (bTextured)
+		{
+			auto* Tex = Cast<UMaterialExpressionTextureSampleParameter2D>(UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionTextureSampleParameter2D::StaticClass(), -600, 200));
+			Tex->ParameterName = TEXT("Texture");
+			Rgb = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionMultiply::StaticClass(), -300, 0);
+			Alpha = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionMultiply::StaticClass(), -300, 200);
+			UMaterialEditingLibrary::ConnectMaterialExpressions(Pc, TEXT("RGB"), Rgb, TEXT("A"));
+			UMaterialEditingLibrary::ConnectMaterialExpressions(Tex, TEXT("RGB"), Rgb, TEXT("B"));
+			UMaterialEditingLibrary::ConnectMaterialExpressions(Pc, TEXT("A"), Alpha, TEXT("A"));
+			UMaterialEditingLibrary::ConnectMaterialExpressions(Tex, TEXT("A"), Alpha, TEXT("B"));
+			RgbPin.Empty(); AlphaPin.Empty();
+		}
+		if (bAdditive)
+		{
+			UMaterialExpression* Out = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionMultiply::StaticClass(), 0, 0);
+			UMaterialEditingLibrary::ConnectMaterialExpressions(Rgb, RgbPin, Out, TEXT("A"));
+			UMaterialEditingLibrary::ConnectMaterialExpressions(Alpha, AlphaPin, Out, TEXT("B"));
+			UMaterialEditingLibrary::ConnectMaterialProperty(Out, TEXT(""), MP_EmissiveColor);
+		}
+		else
+		{
+			UMaterialEditingLibrary::ConnectMaterialProperty(Rgb, RgbPin, MP_EmissiveColor);
+			UMaterialEditingLibrary::ConnectMaterialProperty(Alpha, AlphaPin, MP_Opacity);
+		}
+		UMaterialEditingLibrary::RecompileMaterial(Mat);
+		SaveAssetObj(Mat);
+		return Mat;
+	}
+
+	UEdGraphPin& TrailInputPin(UNiagaraNodeFunctionCall* Fn, const TCHAR* Input, const FNiagaraTypeDefinition& Type)
+	{
+		const auto Handle = FNiagaraParameterHandle::CreateAliasedModuleParameterHandle(FNiagaraParameterHandle::CreateModuleParameterHandle(FName(Input)), Fn);
+		UEdGraphPin& Pin = FNiagaraStackGraphUtilities::GetOrCreateStackFunctionInputOverridePin(*Fn, Handle, Type, FGuid(), FGuid());
+		if (Pin.LinkedTo.Num()) Pin.BreakAllPinLinks();
+		return Pin;
+	}
+
+	UNiagaraNodeFunctionCall* TrailCurveInput(UNiagaraNodeFunctionCall* Fn, const TCHAR* Input, const FNiagaraTypeDefinition& Type, const TCHAR* ScriptPath, const TCHAR* IndexParameter)
+	{
+		UNiagaraScript* Script = LoadObject<UNiagaraScript>(nullptr, ScriptPath);
+		if (!Fn || !Script) return nullptr;
+		UNiagaraNodeFunctionCall* Dyn = nullptr;
+		FNiagaraStackGraphUtilities::SetDynamicInputForFunctionInput(TrailInputPin(Fn, Input, Type), Script, Dyn);
+		if (Dyn)
+		{
+			const auto F = FNiagaraTypeDefinition::GetFloatDef();
+			TSet<FNiagaraVariableBase> Known;
+			const FNiagaraVariableBase Index(F, FName(IndexParameter));
+			Known.Add(Index);
+			FNiagaraStackGraphUtilities::SetLinkedParameterValueForFunctionInput(TrailInputPin(Dyn, TEXT("CurveIndex"), F), Index, Known);
+		}
+		return Dyn;
+	}
+
+	/** sourceTrack is in absolute effect ticks. Sample once in Particle Spawn using system age, not particle age or
+	 *  emitter loop age (which would restart a delayed projectile at tick zero). Old points are never reattached. */
+	bool SetTrailSourceTrack(UNiagaraGraph* Graph, const TArray<TSharedPtr<FJsonValue>>& Track)
+	{
+		UNiagaraNodeFunctionCall* Shape = nullptr;
+		if (Graph) for (UEdGraphNode* N : Graph->Nodes) if (auto* Fn = Cast<UNiagaraNodeFunctionCall>(N)) if (Fn->GetFunctionName().Contains(TEXT("ShapeLocation"))) { Shape = Fn; break; }
+		SetStaticSwitch(Graph, TEXT("ShapeLocation"), TEXT("Offset Mode"), TEXT("NewEnumerator0"));
+		OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Sphere Radius"), FNiagaraTypeDefinition::GetFloatDef(), TEXT("0.0"));
+		UNiagaraNodeFunctionCall* Dyn = TrailCurveInput(Shape, TEXT("Offset"), FNiagaraTypeDefinition::GetVec3Def(), TEXT("/Niagara/DynamicInputs/ValueFromCurve/VectorFromCurve.VectorFromCurve"), TEXT("Engine.System.Age"));
+		if (!Dyn) return false;
+		UNiagaraDataInterface* DI = nullptr;
+		FNiagaraStackGraphUtilities::SetDataInterfaceValueForFunctionInput(TrailInputPin(Dyn, TEXT("VectorCurve"), FNiagaraTypeDefinition(UNiagaraDataInterfaceVectorCurve::StaticClass())), UNiagaraDataInterfaceVectorCurve::StaticClass(), TEXT("TrailSourceTrack"), DI);
+		auto* Curve = Cast<UNiagaraDataInterfaceVectorCurve>(DI);
+		if (!Curve) return false;
+		Curve->Modify(); Curve->XCurve.Reset(); Curve->YCurve.Reset(); Curve->ZCurve.Reset();
+		for (const auto& V : Track)
+		{
+			const auto& Pair = V->AsArray();
+			if (Pair.Num() != 2) continue;
+			const float Time = (float)(Pair[0]->AsNumber() / 60.0);
+			const FVector Pos = JsonVec3(&Pair[1]->AsArray());
+			Curve->XCurve.SetKeyInterpMode(Curve->XCurve.AddKey(Time, Pos.X), RCIM_Linear);
+			Curve->YCurve.SetKeyInterpMode(Curve->YCurve.AddKey(Time, Pos.Y), RCIM_Linear);
+			Curve->ZCurve.SetKeyInterpMode(Curve->ZCurve.AddKey(Time, Pos.Z), RCIM_Linear);
+		}
+		Curve->UpdateLUT();
+		return true;
+	}
+
+	/** One ribbon represents one head. Independent spark trails need per-head ribbon IDs/event spawning and are
+	 *  intentionally skipped rather than joining many particles into one erroneous ribbon. */
+	bool ParticleTrailWindow(const TSharedPtr<FJsonObject>& Trail, int32& Start, int32& End)
+	{
+		const TSharedPtr<FJsonObject>* E = nullptr;
+		if (!Trail.IsValid() || !Trail->TryGetObjectField(TEXT("emitter"), E)) return false;
+		const TArray<TSharedPtr<FJsonValue>>* Track = nullptr;
+		if (!(*E)->TryGetArrayField(TEXT("sourceTrack"), Track) || Track->Num() < 2) return false;
+		bool bAttached = false; (*E)->TryGetBoolField(TEXT("attachToSource"), bAttached);
+		const TArray<TSharedPtr<FJsonValue>>* Bursts = nullptr;
+		double Count = 0.0; Start = (int32)(*Track)[0]->AsArray()[0]->AsNumber();
+		if ((*E)->TryGetArrayField(TEXT("bursts"), Bursts)) for (const auto& B : *Bursts)
+		{
+			const auto O = B->AsObject();
+			if (O->GetNumberField(TEXT("count")) <= 0.0) continue;
+			if (Count == 0.0) Start = (int32)O->GetNumberField(TEXT("tick"));
+			Count += O->GetNumberField(TEXT("count"));
+		}
+		if (Count > 1.0 || (!bAttached && Count != 1.0)) return false;
+		const TArray<TSharedPtr<FJsonValue>>* Rate = nullptr;
+		if (!bAttached && (*E)->TryGetArrayField(TEXT("rateOverTime"), Rate)) for (const auto& R : *Rate)
+			if (R->AsArray().Num() == 2 && R->AsArray()[1]->AsNumber() > 0.0) return false;
+		End = FMath::Min(GDocTicks, Start + FMath::Max(1, FMath::CeilToInt((*E)->GetNumberField(TEXT("lifetimeSecMax")) * 60.0)));
+		return End > Start && Trail->GetNumberField(TEXT("lifetimeSec")) > 0.0;
+	}
+
+	bool SetTrailWidthCurve(FVersionedNiagaraEmitterData* Data, const TArray<TSharedPtr<FJsonValue>>& Keys)
+	{
+		bool bOk = true;
+		for (UNiagaraScript* Script : { Data->SpawnScriptProps.Script.Get(), Data->UpdateScriptProps.Script.Get() })
+		{
+			UNiagaraScriptSource* Src = Script ? Cast<UNiagaraScriptSource>(Script->GetLatestSource()) : nullptr;
+			const auto Usage = Script == Data->SpawnScriptProps.Script ? ENiagaraScriptUsage::ParticleSpawnScript : ENiagaraScriptUsage::ParticleUpdateScript;
+			UNiagaraNodeOutput* Out = Src && Src->NodeGraph ? Src->NodeGraph->FindEquivalentOutputNode(Usage, Script->GetUsageId()) : nullptr;
+			if (!Out) { bOk = false; continue; }
+			TArray<FNiagaraVariable> Vars; Vars.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("Particles.RibbonWidth")));
+			TArray<FString> Defaults; Defaults.Add(TEXT("1.0"));
+			auto* Set = FNiagaraStackGraphUtilities::AddParameterModuleToStack(Vars, *Out, INDEX_NONE, Defaults);
+			auto* Dyn = TrailCurveInput(Set, TEXT("Particles.RibbonWidth"), FNiagaraTypeDefinition::GetFloatDef(), TEXT("/Niagara/DynamicInputs/ValueFromCurve/FloatFromCurve.FloatFromCurve"), TEXT("Particles.NormalizedAge"));
+			if (!Dyn) { bOk = false; continue; }
+			UNiagaraDataInterface* DI = nullptr;
+			FNiagaraStackGraphUtilities::SetDataInterfaceValueForFunctionInput(TrailInputPin(Dyn, TEXT("FloatCurve"), FNiagaraTypeDefinition(UNiagaraDataInterfaceCurve::StaticClass())), UNiagaraDataInterfaceCurve::StaticClass(), TEXT("TrailWidth"), DI);
+			auto* Curve = Cast<UNiagaraDataInterfaceCurve>(DI);
+			if (!Curve) { bOk = false; continue; }
+			Curve->Modify(); Curve->Curve.Reset();
+			for (const auto& K : Keys) { const auto O = K->AsObject(); Curve->Curve.SetKeyInterpMode(Curve->Curve.AddKey(O->GetNumberField(TEXT("t")), O->GetNumberField(TEXT("v"))), RCIM_Linear); }
+			Curve->UpdateLUT();
+		}
+		return bOk;
+	}
+
+	void BuildParticleTrailEmitter(FNiagaraEmitterHandle& Handle, FVersionedNiagaraEmitterData* Data, const TSharedPtr<FJsonObject>& Trail, const FString& DestRoot, const TMap<FString, UTexture2D*>& Textures)
+	{
+		int32 Start = 0, End = 0;
+		if (!ParticleTrailWindow(Trail, Start, End)) return;
+		const auto E = Trail->GetObjectField(TEXT("emitter"));
+		const auto F = FNiagaraTypeDefinition::GetFloatDef();
+		UNiagaraScriptSource* Src = Data->SpawnScriptProps.Script ? Cast<UNiagaraScriptSource>(Data->SpawnScriptProps.Script->GetLatestSource()) : nullptr;
+		UNiagaraGraph* Graph = Src ? Src->NodeGraph : nullptr;
+		const double Life = Trail->GetNumberField(TEXT("lifetimeSec"));
+		// Fixed 60 Hz sampling prioritizes a smooth projectile tail. maxPoints is not a hard Niagara cap here:
+		// the live point count is approximately Rate * Life, with lifetime providing the rolling point budget.
+		const double Rate = 60.0;
+		OverrideLiteral(Graph, TEXT("SpawnRate"), TEXT("SpawnRate"), F, FloatLit(Rate));
+		SetEmitterWindow(Graph, Start, End);
+		// Let existing points finish their lifetime after spawning stops (do not kill the entire tail at head death).
+		SetStaticSwitch(Graph, TEXT("EmitterState"), TEXT("Inactive Response"), TEXT("NewEnumerator0")); // Complete
+		SetStaticSwitch(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Mode"), TEXT("NewEnumerator1"));
+		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Min"), F, FloatLit(Life));
+		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Max"), F, FloatLit(Life));
+		OverrideLiteral(Graph, TEXT("AddVelocity"), TEXT("Velocity Speed"), F, TEXT("0.0"));
+		OverrideLiteral(Graph, TEXT("AddVelocity"), TEXT("Velocity"), FNiagaraTypeDefinition::GetVec3Def(), Vec3Lit(FVector::ZeroVector));
+		OverrideLiteral(Graph, TEXT("GravityForce"), TEXT("Gravity"), FNiagaraTypeDefinition::GetVec3Def(), Vec3Lit(FVector::ZeroVector));
+		OverrideLiteral(Graph, TEXT("Drag"), TEXT("Drag"), F, TEXT("0.0"));
+		const bool bSource = SetTrailSourceTrack(Graph, E->GetArrayField(TEXT("sourceTrack")));
+		double Emission = 0.0; Trail->TryGetNumberField(TEXT("emission"), Emission);
+		const float Gain = (float)(1.0 + FMath::Max(0.0, Emission));
+		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Color"), FNiagaraTypeDefinition::GetColorDef(), ColorLit(FLinearColor(Gain, Gain, Gain, 1.0f)));
+
+		const TArray<TSharedPtr<FJsonValue>>* Width = nullptr; Trail->TryGetArrayField(TEXT("widthOverTrail"), Width);
+		const TArray<TSharedPtr<FJsonValue>>* Color = nullptr; Trail->TryGetArrayField(TEXT("colorOverTrail"), Color);
+		const TArray<TSharedPtr<FJsonValue>>* Opacity = nullptr; Trail->TryGetArrayField(TEXT("opacityOverTrail"), Opacity);
+		double Fade = 0.0; Trail->TryGetNumberField(TEXT("endFade"), Fade); Fade = FMath::Clamp(Fade, 0.0, 0.5);
+		TArray<double> Times = { 0.0, 1.0 };
+		for (const auto* Keys : { Width, Color, Opacity }) if (Keys) for (const auto& K : *Keys) Times.AddUnique(1.0 - FMath::Clamp(K->AsObject()->GetNumberField(TEXT("t")), 0.0, 1.0));
+		// Products of end fade and authored curves are sampled densely, retaining every original knot too.
+		if (Fade > 0.0) { Times.AddUnique(Fade); Times.AddUnique(1.0 - Fade); for (int32 i = 1; i < 64; i++) Times.AddUnique(i / 64.0); }
+		Times.Sort();
+		TArray<TSharedPtr<FJsonValue>> WidthKeys, ColorKeys, AlphaKeys;
+		for (double Age : Times)
+		{
+			const double T = 1.0 - Age; // IR: oldest tail=0, live head=1; Niagara: newborn age=0.
+			const double Edge = Fade > 0.0 ? FMath::Clamp(FMath::Min(T, 1.0 - T) / Fade, 0.0, 1.0) : 1.0;
+			auto W = MakeShared<FJsonObject>(); W->SetNumberField(TEXT("t"), Age); W->SetNumberField(TEXT("v"), Trail->GetNumberField(TEXT("widthCm")) * SampleKeys(Width, T, TEXT("v"), 1.0) * Edge); WidthKeys.Add(MakeShared<FJsonValueObject>(W));
+			auto A = MakeShared<FJsonObject>(); A->SetNumberField(TEXT("t"), Age); A->SetNumberField(TEXT("v"), SampleKeys(Opacity, T, TEXT("v"), 1.0) * Edge); AlphaKeys.Add(MakeShared<FJsonValueObject>(A));
+			auto C = MakeShared<FJsonObject>(); C->SetNumberField(TEXT("t"), Age);
+			for (const TCHAR* Channel : { TEXT("r"), TEXT("g"), TEXT("b"), TEXT("a") }) C->SetNumberField(Channel, SampleKeys(Color, T, Channel, 1.0));
+			ColorKeys.Add(MakeShared<FJsonValueObject>(C));
+		}
+		const bool bColor = SetColorOverLifeCurve(Graph, &ColorKeys, &AlphaKeys);
+		if (!bColor) SetScaleAlphaCurve(Graph, &AlphaKeys);
+		const bool bWidth = SetTrailWidthCurve(Data, WidthKeys);
+		for (UNiagaraRendererProperties* R : Data->GetRenderers()) if (R) R->SetIsEnabled(false);
+		const auto Inst = Handle.GetInstance();
+		auto* Ribbon = NewObject<UNiagaraRibbonRendererProperties>(Inst.Emitter, NAME_None, RF_Transactional);
+		Ribbon->FacingMode = ENiagaraRibbonFacingMode::Screen;
+		Ribbon->Shape = ENiagaraRibbonShapeMode::Plane;
+		Ribbon->MaxNumRibbons = 1;
+		Ribbon->bLinkOrderUseUniqueID = true;
+		FString TexFile; Trail->TryGetStringField(TEXT("textureFile"), TexFile);
+		UTexture2D* const* Tex = Textures.Find(TexFile);
+		const bool bAdditive = Trail->GetStringField(TEXT("blend")) == TEXT("additive");
+		UMaterial* Mat = GetOrCreateParticleTrailMaterial(DestRoot, bAdditive, Tex && *Tex);
+		Ribbon->Material = Mat;
+		if (Tex && *Tex) Ribbon->Material = GetOrCreateTextureMaterial(DestRoot, Mat, *Tex, bAdditive ? TEXT("TrailAdd") : TEXT("TrailTrans"));
+		Inst.Emitter->AddRenderer(Ribbon, Inst.Version);
+		UE_LOG(LogVfxImporter, Display, TEXT("   particle trail %s_Trail: ticks %d-%d, %.1f points/s, lifetime %.3fs, width %.2fcm"), *Trail->GetStringField(TEXT("name")), Start, End, Rate, Life, Trail->GetNumberField(TEXT("widthCm")));
+		if (!bSource || !bColor || !bWidth || !Ribbon->Material) UE_LOG(LogVfxImporter, Warning, TEXT("   trail setup incomplete: source=%d color=%d width=%d material=%d"), bSource, bColor, bWidth, Ribbon->Material ? 1 : 0);
+	}
+
 	/** Applies the module-input overrides shared by every emitter, then the template-specific ones. Shape/AddVelocity
 	 *  are skipped (module not found, logged) rather than guessed when a template lacks them. */
 	void ApplyEmitterOverrides(UNiagaraGraph* Graph, const TSharedPtr<FJsonObject>& E, const FString& Template)
@@ -1115,7 +1339,7 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 	if (Root->TryGetArrayField(TEXT("ribbons"), RibbonList))
 		for (const auto& Item : *RibbonList) BuildRibbonSlices(DestPath, Item->AsObject(), Slices);
 
-	struct FPending { TSharedPtr<FJsonObject> E; FString Name; FString Template; bool bLight = false; int32 Slice = -1; };
+	struct FPending { TSharedPtr<FJsonObject> E; FString Name; FString Template; bool bLight = false; int32 Slice = -1; bool bTrail = false; };
 	TArray<FPending> Pending;
 	UNiagaraSystemFactoryNew* SysFactory = NewObject<UNiagaraSystemFactoryNew>();
 	SysFactory->AddToRoot(); // mesh builds below can run a garbage collection
@@ -1135,6 +1359,28 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 			if (!Tmpl) { UE_LOG(LogVfxImporter, Error, TEXT("Skipping emitter %s: template load failed"), *EName); continue; }
 			SysFactory->EmittersToAddToNewSystem.Add(FVersionedNiagaraEmitter(Tmpl, Tmpl->GetExposedVersion().VersionGuid));
 			Pending.Add({ E, EName, Template });
+		}
+	}
+	// Particle trails: Fountain supplies continuous spawning and the standard age/colour update modules.
+	const TArray<TSharedPtr<FJsonValue>>* Trails = nullptr;
+	if (Root->TryGetArrayField(TEXT("trails"), Trails))
+	{
+		for (const auto& Item : *Trails)
+		{
+			// OFF by default: building these crashed the commandlet (EXCEPTION_ACCESS_VIOLATION 0x3f0 in
+			// BuildParticleTrailEmitter, 2026-10-17, also without SetTrailWidthCurve) - unresolved. -VfxParticleTrails opts in.
+			if (!FParse::Param(FCommandLine::Get(), TEXT("VfxParticleTrails"))) { UE_LOG(LogVfxImporter, Display, TEXT("Particle trails are not imported yet (pass -VfxParticleTrails to try)")); break; }
+			const auto Trail = Item->AsObject();
+			int32 Start = 0, End = 0;
+			if (!ParticleTrailWindow(Trail, Start, End))
+			{
+				UE_LOG(LogVfxImporter, Warning, TEXT("Skipping particle trail %s: requires one moving head with sourceTrack and a positive lifetime/window; many-particle trails are not supported"), Trail.IsValid() ? *Trail->GetStringField(TEXT("name")) : TEXT("(invalid)"));
+				continue;
+			}
+			UNiagaraEmitter* Tmpl = LoadTemplate(TEXT("/Niagara/DefaultAssets/Templates/Emitters/Fountain.Fountain"));
+			if (!Tmpl) { UE_LOG(LogVfxImporter, Warning, TEXT("Skipping particle trail %s: Fountain template load failed"), *Trail->GetStringField(TEXT("name"))); continue; }
+			SysFactory->EmittersToAddToNewSystem.Add(FVersionedNiagaraEmitter(Tmpl, Tmpl->GetExposedVersion().VersionGuid));
+			Pending.Add({ Trail, Trail->GetStringField(TEXT("name")) + TEXT("_Trail"), TEXT("Fountain"), false, -1, true });
 		}
 	}
 	// Lights: one single-particle emitter each (SimpleSpriteBurst) carrying a Niagara Light renderer.
@@ -1185,6 +1431,7 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 		if (!Data) { UE_LOG(LogVfxImporter, Error, TEXT("   no emitter data for %s"), *EName); continue; }
 		if (Pending[i].bLight) { BuildLightEmitter(Handle, Data, E); EmitterCount++; continue; }
 		if (Pending[i].Slice >= 0) { BuildRibbonEmitter(Handle, Data, Slices[Pending[i].Slice]); EmitterCount++; continue; }
+		if (Pending[i].bTrail) { BuildParticleTrailEmitter(Handle, Data, E, DestPath, Textures); EmitterCount++; continue; }
 
 		// Material: an MIC over the shared Additive/Translucent base, per the emitter's texture + blend mode.
 		const FString Blend = E->GetStringField(TEXT("blend"));
