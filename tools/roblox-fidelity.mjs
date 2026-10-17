@@ -2,6 +2,8 @@
 // Editor-vs-Roblox fidelity check with a MATCHED camera.
 //   node tools/roblox-fidelity.mjs --doc work/packs/x/source/a.vfx.json --model work/packs/x/roblox/A.rbxmx
 //        [--ticks 10,30,60] [--cam x,y,z --look x,y,z] [--fov 45] [--out work/fidelity/<name>] [--editor http://127.0.0.1:5174]
+//        [--floor Fabric|SmoothPlastic|...]  (default matte Fabric like the editor floor: on glossy SmoothPlastic each
+//        PointLight shows as a long vertical specular streak, which read as a broken effect 2026-10-17)
 // 1. Editor: headless Chrome renders capture.html at each tick with the camera (meters, editor world space).
 // 2. Roblox: a temporary place (rojo) plays the exported model at the origin with the same camera converted to studs
 //    ((p - origin) * STUDS_PER_METER, origin = Source anchor over the floor, exactly like the exporter), records it
@@ -123,6 +125,20 @@ local EffectPlayer = require(model:WaitForChild("EffectPlayer"))
 RunService.RenderStepped:Wait()
 flash.Visible = false
 EffectPlayer.play(model, CFrame.new(0, 0, 0))
+-- Culling probes (--tweak bounds=1,rig=1): small invisible parents near the floor get culled (2026-10-18). bounds=1 moves
+-- every ParticleEmitter onto an Attachment (same point) and grows its Part to 6 studs; rig=1 grows the beam rig.
+if ${tweak.bounds ?? 0} == 1 then
+	for _, em in ipairs(model:GetDescendants()) do
+		if em:IsA("ParticleEmitter") and em.Parent:IsA("BasePart") then
+			local part = em.Parent
+			local att = Instance.new("Attachment"); att.Parent = part; em.Parent = att
+			part.Size = Vector3.new(6, 6, 6)
+		end
+	end
+end
+if ${tweak.rig ?? 0} == 1 then
+	local rig = model:FindFirstChild("_BeamRig"); if rig then rig.Size = Vector3.new(80, 8, 80) end
+end
 print("FIDELITY_PLAY")
 `;
 mkdirSync(join(place, 'src'), { recursive: true });
@@ -131,8 +147,10 @@ writeFileSync(join(place, 'default.project.json'), JSON.stringify({
   name: 'Fidelity', tree: {
     $className: 'DataModel',
     Workspace: { $className: 'Workspace', $ignoreUnknownInstances: true,
-      Floor: { $className: 'Part', $properties: { Anchored: true, Locked: true, Size: [400, 2, 400], Position: [0, -1, 0], Color: [0.09, 0.09, 0.11], Material: 'SmoothPlastic' } },
-      SpawnLocation: { $className: 'SpawnLocation', $properties: { Anchored: true, Size: [6, 1, 6], Position: [0, 0.5, 150], Neutral: true, Transparency: 1 } } },
+      // Rojo writes a Part's "Position" but Studio ignores it on load (CFrame is the serialized property): the floor sat
+      // at the origin, its top 1 stud up, and swallowed everything lower (Summon riders, ground rings; 2026-10-18).
+      ...(opt('floor') === 'None' ? {} : { Floor: { $className: 'Part', $properties: { Anchored: true, Locked: true, Size: [400, 2, 400], CFrame: { CFrame: { position: [0, -1, 0], orientation: [[1, 0, 0], [0, 1, 0], [0, 0, 1]] } }, Color: [0.09, 0.09, 0.11], Material: opt('floor', 'Fabric') } } }),
+      SpawnLocation: { $className: 'SpawnLocation', $properties: { Anchored: true, Size: [6, 1, 6], CFrame: { CFrame: { position: [0, 0.5, 150], orientation: [[1, 0, 0], [0, 1, 0], [0, 0, 1]] } }, Neutral: true, Transparency: 1 } } },
     // A typical dark scene with Roblox's DEFAULT bloom: what a buyer gets without tuning anything.
     Lighting: { $className: 'Lighting', $ignoreUnknownInstances: true,
       $properties: { Technology: 'Future', ClockTime: 0, Brightness: 1, Ambient: [0.1, 0.1, 0.12], OutdoorAmbient: [0.1, 0.1, 0.12], GlobalShadows: false },

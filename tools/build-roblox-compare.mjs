@@ -86,7 +86,7 @@ writeFileSync(join(out, 'default.project.json'), JSON.stringify({
   name: 'VFXCompare',
   tree: {
     $className: 'DataModel',
-    Workspace: { $className: 'Workspace', Baseplate: { $className: 'Part', $properties: { Anchored: true, Size: [1024, 4, 1024], Position: [0, -2, 0], Color: [0.12, 0.13, 0.16] } } },
+    Workspace: { $className: 'Workspace', Baseplate: { $className: 'Part', $properties: { Anchored: true, Size: [1024, 4, 1024], CFrame: { CFrame: { position: [0, -2, 0], orientation: [[1, 0, 0], [0, 1, 0], [0, 0, 1]] } }, Color: [0.12, 0.13, 0.16] } } },
     Lighting: { $className: 'Lighting', $properties: { ClockTime: 0, Brightness: 0.5, Ambient: [0.2, 0.2, 0.24], OutdoorAmbient: [0.1, 0.1, 0.12] }, Bloom: { $className: 'BloomEffect', $properties: { Intensity: 0.6, Size: 24, Threshold: 1.4 } } },
     Players: { $className: 'Players', $properties: { CharacterAutoLoads: false } },
     ReplicatedStorage: { $className: 'ReplicatedStorage', Effects: { $path: 'effects' }, Schedule: { $path: 'schedule.txt' } },
