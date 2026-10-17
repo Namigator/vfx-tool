@@ -59,7 +59,7 @@ func _ready() -> void:
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	e.ambient_light_color = Color(0.25, 0.25, 0.3)
 	# Same post as the editor (PreviewViewport: ACES filmic, UnrealBloom strength 0.8 radius 0.45 threshold 1): without
-	# it over-bright cores clipped to flat white discs and thin bright lines stayed hairlines (2026-10-18).
+	# it over-bright cores clipped to flat white discs and thin bright lines stayed hairlines (2026-10-17).
 	e.tonemap_mode = Environment.TONE_MAPPER_ACES
 	e.glow_enabled = true
 	# Matched by eye on Nova/Bolt/Summon: Godot's glow sums levels, so the editor's 0.8 over-blooms here.

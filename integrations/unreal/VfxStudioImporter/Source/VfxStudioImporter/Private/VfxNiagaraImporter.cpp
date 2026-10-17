@@ -172,7 +172,8 @@ namespace
 		// Flipbooks sample through a Particle SubUV node (the frame comes from the particle's SubImageIndex, the grid from
 		// the sprite renderer's SubImage Size), so one SubUV base serves every grid.
 		const FString Grid = (Columns > 1 || Rows > 1) ? FString(TEXT("_SubUV")) : FString();
-		const FString Name = FString(bAdditive ? TEXT("M_VfxStudio_Additive") : TEXT("M_VfxStudio_Translucent")) + Grid;
+		// "_A2": additive glows weight by the texture's alpha (renamed so projects with the old cached material rebuild it).
+		const FString Name = FString(bAdditive ? TEXT("M_VfxStudio_Additive_A2") : TEXT("M_VfxStudio_Translucent")) + Grid;
 		const FString PackagePath = DestRoot / TEXT("_Materials");
 		const FString AssetPath = PackagePath / Name;
 		if (UMaterial* Existing = LoadObject<UMaterial>(nullptr, *(AssetPath + TEXT(".") + Name)))
@@ -206,11 +207,16 @@ namespace
 		}
 		else
 		{
-			// Additive particles fade with ParticleColor.A (opacity over life): emissive = texture.rgb * colour.rgb * colour.a.
+			// Additive particles weight by the texture's alpha and fade with ParticleColor.A (opacity over life), like the
+			// editor's SrcAlpha/One blend: emissive = texture.rgb * texture.a * colour.rgb * colour.a. Without texture.a the
+			// library glows (white RGB wherever alpha > 0) drew as hard flat discs (side-by-side 2026-10-15).
 			// (Feeding A into the same multiply's B replaced the colour input: glows ignored their colour.)
+			UMaterialExpression* AlphaExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionMultiply::StaticClass(), 0, 200);
+			UMaterialEditingLibrary::ConnectMaterialExpressions(TexExpr, TEXT("A"), AlphaExpr, TEXT("A"));
+			UMaterialEditingLibrary::ConnectMaterialExpressions(ParticleColorExpr, TEXT("A"), AlphaExpr, TEXT("B"));
 			UMaterialExpression* FadeExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionMultiply::StaticClass(), 200, 0);
 			UMaterialEditingLibrary::ConnectMaterialExpressions(MulRgbExpr, TEXT(""), FadeExpr, TEXT("A"));
-			UMaterialEditingLibrary::ConnectMaterialExpressions(ParticleColorExpr, TEXT("A"), FadeExpr, TEXT("B"));
+			UMaterialEditingLibrary::ConnectMaterialExpressions(AlphaExpr, TEXT(""), FadeExpr, TEXT("B"));
 			UMaterialEditingLibrary::ConnectMaterialProperty(FadeExpr, TEXT(""), MP_EmissiveColor);
 		}
 		UMaterialEditingLibrary::RecompileMaterial(Mat);
@@ -240,7 +246,9 @@ namespace
 
 	UTexture2D* ImportTexture(const FString& PngFile, const FString& DestRoot)
 	{
-		const FString AssetName = FPaths::GetBaseFilename(PngFile);
+		// Object names cannot hold '.' etc.: "electric-arc.grey.png" crashed the import ("Object is not packaged").
+		FString AssetName = FPaths::GetBaseFilename(PngFile);
+		for (const TCHAR C : FString(INVALID_OBJECTNAME_CHARACTERS)) AssetName.ReplaceCharInline(C, TEXT('_'));
 		const FString PackagePath = DestRoot / TEXT("Textures");
 		if (UTexture2D* Existing = LoadObject<UTexture2D>(nullptr, *((PackagePath / AssetName) + TEXT(".") + AssetName)))
 		{

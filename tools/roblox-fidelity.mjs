@@ -125,7 +125,7 @@ local EffectPlayer = require(model:WaitForChild("EffectPlayer"))
 RunService.RenderStepped:Wait()
 flash.Visible = false
 EffectPlayer.play(model, CFrame.new(0, 0, 0))
--- Culling probes (--tweak bounds=1,rig=1): small invisible parents near the floor get culled (2026-10-18). bounds=1 moves
+-- Culling probes (--tweak bounds=1,rig=1): small invisible parents near the floor get culled (2026-10-17). bounds=1 moves
 -- every ParticleEmitter onto an Attachment (same point) and grows its Part to 6 studs; rig=1 grows the beam rig.
 if ${tweak.bounds ?? 0} == 1 then
 	for _, em in ipairs(model:GetDescendants()) do
@@ -148,7 +148,7 @@ writeFileSync(join(place, 'default.project.json'), JSON.stringify({
     $className: 'DataModel',
     Workspace: { $className: 'Workspace', $ignoreUnknownInstances: true,
       // Rojo writes a Part's "Position" but Studio ignores it on load (CFrame is the serialized property): the floor sat
-      // at the origin, its top 1 stud up, and swallowed everything lower (Summon riders, ground rings; 2026-10-18).
+      // at the origin, its top 1 stud up, and swallowed everything lower (Summon riders, ground rings; 2026-10-17).
       ...(opt('floor') === 'None' ? {} : { Floor: { $className: 'Part', $properties: { Anchored: true, Locked: true, Size: [400, 2, 400], CFrame: { CFrame: { position: [0, -1, 0], orientation: [[1, 0, 0], [0, 1, 0], [0, 0, 1]] } }, Color: [0.09, 0.09, 0.11], Material: opt('floor', 'Fabric') } } }),
       SpawnLocation: { $className: 'SpawnLocation', $properties: { Anchored: true, Size: [6, 1, 6], CFrame: { CFrame: { position: [0, 0.5, 150], orientation: [[1, 0, 0], [0, 1, 0], [0, 0, 1]] } }, Neutral: true, Transparency: 1 } } },
     // A typical dark scene with Roblox's DEFAULT bloom: what a buyer gets without tuning anything.
