@@ -7,13 +7,13 @@ import { compileParticlePreview, multiplyColors, type ParticlePreviewLayer, type
 import { compilePathPreview, type PathPreviewLayer } from '../../graph/toPaths.ts';
 import type { ParticleEmitterDescriptor } from '../../runtime/particles.ts';
 import { compileLifeCurve, compileLifeGradient, sampleLifeCurve, sampleLifeGradient } from '../../render/billboardLife.ts';
-import { applyGrade, greyTextured, hueRotate, type ColorGrade } from '../../graph/recolor.ts';
+import { applyGrade, greyTextured, hueRotate, sheetGrey, type ColorGrade } from '../../graph/recolor.ts';
 import { trackValue, type LayerAnimation } from '../../graph/keyframes.ts';
 import { bakeMeshes } from './meshBake.ts';
 import { settledColor } from '../../graph/pathColor.ts';
 import {
   MAX_SEQUENCE_KEYS, STUDS_PER_METER,
-  type RbxBeamLayer, type RbxColorKey, type RbxTrail, type RbxEmitter, type RbxFlipbook, type RbxLight, type RbxNumberKey, type RbxReportItem, type RbxStepTrack, type RobloxEffect, type Vec3,
+  type RbxBeamLayer, type RbxColorKey, type RbxTrail, type RbxEmitter, type RbxFlipbook, type RbxLight, type RbxMeshLayer, type RbxNumberKey, type RbxReportItem, type RbxStepTrack, type RobloxEffect, type Vec3,
 } from './types.ts';
 
 const S = STUDS_PER_METER;
@@ -214,6 +214,9 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
   const size: RbxNumberKey[] = ts.map(t => { const k = sampleLifeCurve(sizeCurve, t); return { t, v: r3(mid * k), e: r3(env * k) }; });
   const grey = layer.sprite ? greyTextured(layer.sprite.sheet, layer.grade, layer.hueShift) : undefined;
   if (grey) report.push(greyNote(layer.nodeId, layer.sprite!.sheet.file, grey.file));
+  // A coloured sheet the editor shows as is: a recoloured copy (VfxColor / VfxHueShift) swaps to its grey variant at
+  // play time, or the sheet's own colour (an orange flame) stays put while only the white tint turns.
+  const recolorSheet = !grey && layer.sprite ? sheetGrey(layer.sprite.sheet) : undefined;
   const { color, transparency, plain } = colourSequences(layer, ts, layer.blend === 'additive' ? 1 + layer.emission : 0, grey?.hue);
   const velocityAligned = layer.alignment === 'velocity';
   // Flat world-facing sprites (ground rings): Roblox VelocityPerpendicular faces a particle along its velocity, so a
@@ -267,6 +270,7 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     lightInfluence: 0,
     brightness: r3(1 + layer.emission),
     ...flipbookOf(layer, (life[0] + life[1]) / 2, report, grey?.file),
+    ...(recolorSheet ? { recolorTexture: { key: flipbookOf(layer, (life[0] + life[1]) / 2, [], recolorSheet.file).textureKey!, hue: hex(recolorSheet.hue) } } : {}),
     orientation: velocityAligned ? 'VelocityParallel' : flat ? 'VelocityPerpendicular' : 'FacingCamera',
     // Velocity-aligned sprites ignore spin in the editor (the direction of travel sets their angle); a roll here
     // turned flame tongues into spiky stars (user 2026-09-30). No spin = upright.
@@ -284,6 +288,27 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     ...(tracks.length ? { tracks } : {}),
     ...(colorFrames ? { colorFrames } : {}),
   };
+}
+
+/**
+ * Debris: a burst of at least this many lit rock pieces (one piece is a prop, like the flamethrower barrel) whose median
+ * piece is at most this big in studs (Meteor rocks 0.44, chips 0.14; earth-upheaval stones ~1 keep their shading).
+ */
+const DEBRIS_MIN_PIECES = 4, DEBRIS_MAX_STUDS = 0.75;
+
+/**
+ * Lit rock debris shows form in the editor because its preview has a studio key light (PreviewViewport); a Roblox place
+ * has only its own lighting, so Meteor's rocks read as a black clump in a dark place (2026-10-17). A fill PointLight
+ * barely lit them and pooled light on the floor; Neon draws each rock at its own colour in any lighting, as an evenly
+ * lit rock in the editor (no shading).
+ */
+function unlitDebris(m: RbxMeshLayer): boolean {
+  if (!m.castShadow || m.material !== 'Slate' || m.pieces.length < DEBRIS_MIN_PIECES) return false;
+  const sizes = m.pieces.flatMap(p => p.frames.map(f => Math.max(...f.size))).sort((a, b) => a - b);
+  if (sizes[sizes.length >> 1] > DEBRIS_MAX_STUDS) return false;
+  m.material = 'Neon';
+  m.castShadow = false;
+  return true;
 }
 
 /** Colour by path / colour over window on a light: the colour it settles on (reported once per light node). */
@@ -596,9 +621,10 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
   if (plan.value.presentation.flashes.length) report.push({ level: 'dropped', item: 'presentation', message: 'Screen flashes are not exported (a client-side ScreenGui flash can be added later).' });
   if (plan.value.presentation.impulses.length) report.push({ level: 'dropped', item: 'presentation', message: 'Camera shake is not exported.' });
   const lights = plan.value.lights.map(l => lightFrom(settleLight(l, report), origin, plan.value.durationTicks, report));
+  for (const m of meshes) if (unlitDebris(m)) report.push({ level: 'approximated', item: m.name, message: 'Lit rock debris is Neon at its own colour (no shading): the editor lights it with a studio key light, and in a dark Roblox place it rendered black.' });
   const beams = beamsFrom(doc, origin, report);
   report.push({ level: 'info', item: 'scale', message: `1 m = ${r3(S)} studs; the effect origin (model pivot) is the floor point under the Source anchor, so the effect starts ${r3(src[1] * S)} studs above it. Without source/target options it plays exactly as authored; with them it re-aims (see targeting).` });
-  const textures = [...new Set([...emitters.map(e => e.textureKey), ...beams.map(b => b.textureKey), ...trails.map(t => t.textureKey)].filter((x): x is string => !!x))];
+  const textures = [...new Set([...emitters.flatMap(e => [e.textureKey, e.recolorTexture?.key]), ...beams.map(b => b.textureKey), ...trails.map(t => t.textureKey)].filter((x): x is string => !!x))];
   const rel = (p: readonly number[]): Vec3 => [r3((p[0] - origin[0]) * S), r3((p[1] - origin[1]) * S), r3((p[2] - origin[2]) * S)];
   const tgt = doc.anchors.find(a => a.id === 'target')?.position ?? src;
   const flight = [...plan.value.followers].sort((a, b) => b.travelTicks - a.travelTicks)[0];

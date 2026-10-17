@@ -73,7 +73,12 @@ export function applyGrade(c: ColorValue, g: ColorGrade | undefined): ColorValue
  * undefined = keep the sheet as is (no grade/shift, or a sheet without a grey variant).
  */
 export function greyTextured(sheet: { meanColor?: string; greyFile?: string }, grade: ColorGrade | undefined, hueShift: number | undefined): { file: string; hue: ColorValue } | undefined {
-  if (!sheet.greyFile || !sheet.meanColor || !/^#[0-9a-f]{6}$/i.test(sheet.meanColor) || (!grade && !hueShift)) return undefined;
+  return grade || hueShift ? sheetGrey(sheet) : undefined;
+}
+
+/** A coloured sheet's grey variant and hue (see greyTextured), whether or not the part is graded; undefined = none. */
+export function sheetGrey(sheet: { meanColor?: string; greyFile?: string }): { file: string; hue: ColorValue } | undefined {
+  if (!sheet.greyFile || !sheet.meanColor || !/^#[0-9a-f]{6}$/i.test(sheet.meanColor)) return undefined;
   const lin = (x: number) => (x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4);
   const enc = (x: number) => (x <= 0.0031308 ? x * 12.92 : 1.055 * x ** (1 / 2.4) - 0.055);
   const m = rgbOf({ srgb: sheet.meanColor, alpha: 1 }).map(lin), top = Math.max(...m);

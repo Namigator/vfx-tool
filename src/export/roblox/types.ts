@@ -59,6 +59,8 @@ export type RbxEmitter = {
   brightness: number;
   /** Library sprite sheet file (for asset upload), absent = the default round particle. */
   textureKey?: string;
+  /** Coloured sheet: its grey variant + the sheet's hue (sRGB 0..1), used when a copy is recoloured (EffectPlayer). */
+  recolorTexture?: { key: string; hue: [number, number, number] };
   flipbook?: RbxFlipbook;
   orientation: 'FacingCamera' | 'FacingCameraWorldUp' | 'VelocityParallel' | 'VelocityPerpendicular';
   /** degrees and degrees/s */

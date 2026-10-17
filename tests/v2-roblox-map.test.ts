@@ -116,7 +116,9 @@ for (const id of ['earth-upheaval', 'ice-eruption']) {
 
 test('Roblox map: earth-upheaval rocks are Slate blocks with irregular per-piece ratios; ice-eruption crystals are Ice wedges', () => {
   const earth = effect('earth-upheaval'), ice = effect('ice-eruption');
+  // The big stones keep Slate; small chips are Neon debris (fromPlan unlitDebris: they rendered black in a dark place).
   const rocks = earth.meshes.filter(m => m.shape === 'Block' && m.material === 'Slate');
+  assert.ok(earth.meshes.some(m => m.shape === 'Block' && m.material === 'Neon'), 'chips are Neon debris');
   assert.ok(rocks.length > 0, `rocks: ${earth.meshes.map(m => `${m.source}:${m.shape}/${m.material}`)}`);
   const ratios = new Set(rocks.flatMap(m => m.pieces.map(p => (p.frames[1].size[1] / p.frames[1].size[0]).toFixed(2))));
   assert.ok(ratios.size > 1, 'rocks are not all the same proportions');

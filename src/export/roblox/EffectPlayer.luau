@@ -261,12 +261,26 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 		local part = emittersFolder and emittersFolder:FindFirstChild(d.name)
 		local em = part and part:FindFirstChildOfClass("ParticleEmitter")
 		if part and em then
-			applyRecolor(em, "Color", recolor)
+			-- A coloured sheet (an orange flame) cannot be tinted another hue: a recoloured copy swaps to its grey
+			-- variant and multiplies the sheet's own hue into the colour before recolouring it.
+			-- EffectData grey = { grey texture, r, g, b, original texture }; a colourway copy already holds the grey one.
+			local emRecolor = recolor
+			if d.grey then
+				em.Texture = if recolor then d.grey[1] else d.grey[5]
+				if recolor then
+					local hr, hg, hb = d.grey[2], d.grey[3], d.grey[4]
+					emRecolor = function(c: Color3): Color3
+						return recolor(Color3.new(c.R * hr, c.G * hg, c.B * hb))
+					end
+				end
+			end
+			applyRecolor(em, "Color", emRecolor)
 			local rel = pivot:ToObjectSpace(part.CFrame)
 			local s = {
 				d = d,
 				part = part,
 				em = em,
+				recolor = emRecolor,
 				rot = rel - rel.Position,
 				home = Vector3.new(d.pos[1], d.pos[2], d.pos[3]),
 				baseSpeed = if k ~= 1 then NumberRange.new(em.Speed.Min * k, em.Speed.Max * k) else em.Speed,
@@ -715,7 +729,7 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 			return
 		end
 		s.cfKey = key
-		s.em.Color = buildColor(lerpFlat(a[2], b[2], f), recolor)
+		s.em.Color = buildColor(lerpFlat(a[2], b[2], f), s.recolor)
 		s.em.Transparency = buildNumbers(lerpFlat(a[3], b[3], f))
 	end
 
@@ -1053,6 +1067,24 @@ function EffectPlayer.preload(model: Instance)
 		if d:IsA("ParticleEmitter") or d:IsA("Beam") or d:IsA("Trail") then
 			table.insert(list, d)
 		end
+	end
+	-- Both sheets of a recolourable emitter (EffectData emitters[].grey): a copy recoloured at play time swaps to the
+	-- other one. Loaded through stand-in emitters: preloading the bare ids left the swapped-in sheet undownloaded on the
+	-- first play (Meteor's blue flame trail drew nothing, 2026-10-17).
+	local dataInst = model:FindFirstChild("EffectData")
+	if dataInst and dataInst:IsA("StringValue") then
+		pcall(function()
+			for _, e in ipairs(game:GetService("HttpService"):JSONDecode(dataInst.Value).emitters or {}) do
+				if e.grey then
+					for _, texture in ipairs({ e.grey[1], e.grey[5] }) do
+						local standIn = Instance.new("ParticleEmitter")
+						standIn.Enabled = false
+						standIn.Texture = texture
+						table.insert(list, standIn)
+					end
+				end
+			end
+		end)
 	end
 	pcall(function()
 		ContentProvider:PreloadAsync(list)

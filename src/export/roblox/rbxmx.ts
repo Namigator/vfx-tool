@@ -201,12 +201,23 @@ function withFallbacks(effect: RobloxEffect, ids: Record<string, string> = {}): 
     return undefined;
   };
   const missing = (key?: string) => key !== undefined && !uploaded(key);
+  // A recolour grey variant counts only when that grey sheet itself is uploaded (else the copy keeps the original).
+  const greyId = (key: string) => ids[key] ?? ids[key.replace(/#\w+$/, '')];
   for (const key of effect.textures) if (!ids[key]) all[key] = uploaded(key) ?? (key.startsWith('@') ? '' : builtinFallback(key));
   return {
     ids: all,
-    effect: { ...effect, emitters: effect.emitters.map(e => (missing(e.textureKey) && e.flipbook ? { ...e, flipbook: undefined } : e)) },
+    effect: { ...effect, emitters: effect.emitters.map(e => {
+      const out = missing(e.textureKey) && e.flipbook ? { ...e, flipbook: undefined } : e;
+      return out.recolorTexture && (!greyId(out.recolorTexture.key) || missing(out.textureKey)) ? { ...out, recolorTexture: undefined } : out;
+    }) },
   };
 }
+
+/** The copy plays recoloured (EffectPlayer.create: VfxColor of saturation >= 0.08, or a non-zero VfxHueShift). */
+const recolouredCopy = (o: WriteOptions): boolean => {
+  const c = o.color ?? [1, 1, 1], hi = Math.max(...c);
+  return (o.hueShift ?? 0) !== 0 || (hi > 0 && (hi - Math.min(...c)) / hi >= 0.08);
+};
 
 function textureUrl(key: string | undefined, ids?: Record<string, string>, none = DEFAULT_TEXTURE): string {
   const id = key !== undefined ? ids?.[key] : undefined;
@@ -214,7 +225,7 @@ function textureUrl(key: string | undefined, ids?: Record<string, string>, none 
   return /^[a-z]+:\/\//i.test(id) ? id : `rbxassetid://${id}`;
 }
 
-function emitterItem(refs: Refs, e: RbxEmitter, name: string, ids?: Record<string, string>): string {
+function emitterItem(refs: Refs, e: RbxEmitter, name: string, ids?: Record<string, string>, recoloured = false): string {
   const fb = e.flipbook;
   const props = [
     P.str('Name', name),
@@ -236,7 +247,8 @@ function emitterItem(refs: Refs, e: RbxEmitter, name: string, ids?: Record<strin
     P.float('LightEmission', Math.max(0, e.lightEmission)),
     P.float('LightInfluence', clamp(e.lightInfluence, 0, 1)),
     P.float('Brightness', Math.max(0, e.brightness)),
-    P.content('Texture', textureUrl(e.textureKey, ids)),
+    // A recoloured copy holds the grey sheet it plays with, so the game's usual preload (or Studio) downloads it.
+    P.content('Texture', textureUrl(recoloured && e.recolorTexture ? e.recolorTexture.key : e.textureKey, ids)),
     P.token('FlipbookLayout', ENUM.FlipbookLayout[fb ? fb.layout : 'None']),
     P.token('FlipbookMode', ENUM.FlipbookMode[fb ? fb.mode : 'Loop']),
     P.range('FlipbookFramerate', fb ? fb.framerate[0] : 1, fb ? fb.framerate[1] : 1),
@@ -359,7 +371,7 @@ function uniqueNamer(): (name: string) => string {
   };
 }
 
-function effectDataSource(effect: RobloxEffect, names: { e: string[]; b: string[]; l: string[]; t: string[]; m: string[] }): string {
+function effectDataSource(effect: RobloxEffect, names: { e: string[]; b: string[]; l: string[]; t: string[]; m: string[] }, ids?: Record<string, string>): string {
   const emitters = effect.emitters.map((e, i) => ({
     name: names.e[i],
     pos: e.position,
@@ -372,6 +384,8 @@ function effectDataSource(effect: RobloxEffect, names: { e: string[]; b: string[
     colorFrames: e.colorFrames && e.colorFrames.length
       ? byTick(e.colorFrames.map(f => [f.tick, flatC(clampColorSequence(f.color)), flatN(clampNumberSequence(f.transparency, 'transparency'))] as [number, number[], number[]]))
       : undefined,
+    // [grey, r, g, b, original]: a recoloured copy plays the grey sheet with the sheet's hue multiplied into its colour.
+    grey: e.recolorTexture ? [textureUrl(e.recolorTexture.key, ids), ...e.recolorTexture.hue, textureUrl(e.textureKey, ids)] : undefined,
     info: {
       shape: e.shape, shapeStyle: e.shapeStyle, shapeInOut: e.shapeInOut, orientation: e.orientation,
       flipbookLayout: e.flipbook ? e.flipbook.layout : 'None', flipbookMode: e.flipbook ? e.flipbook.mode : 'Loop',
@@ -469,7 +483,7 @@ export function writeRbxmx(input: RobloxEffect, options: WriteOptions): string {
   const originPart = partItem(refs, 'Origin', [0.2, 0.2, 0.2], [0, 0, 0], [0, 1, 0], [], originRef);
 
   const emitterParts = effect.emitters.map((e, i) =>
-    partItem(refs, names.e[i], e.partSize, e.position, e.direction, [emitterItem(refs, e, names.e[i], opts.assetIds)]));
+    partItem(refs, names.e[i], e.partSize, e.position, e.direction, [emitterItem(refs, e, names.e[i], opts.assetIds, recolouredCopy(opts))]));
   const beamFolders = effect.beams.map((b, i) => item('Folder', refs.next(), [P.str('Name', names.b[i])], [beamItem(refs, b, opts.assetIds)]));
   const lightParts = effect.lights.map((l, i) => lightItem(refs, l, names.l[i]));
 
@@ -480,7 +494,7 @@ export function writeRbxmx(input: RobloxEffect, options: WriteOptions): string {
     item('Folder', refs.next(), [P.str('Name', 'Lights')], lightParts),
     item('Folder', refs.next(), [P.str('Name', 'Trails')], (effect.trails ?? []).map((t, i) => trailItem(refs, t, names.t[i], opts.assetIds))),
     item('Folder', refs.next(), [P.str('Name', 'Meshes')], (effect.meshes ?? []).map((m, i) => meshTemplateItem(refs, m, names.m[i]))),
-    item('StringValue', refs.next(), [P.str('Name', 'EffectData'), P.str('Value', effectDataSource(effect, names))]),
+    item('StringValue', refs.next(), [P.str('Name', 'EffectData'), P.str('Value', effectDataSource(effect, names, opts.assetIds))]),
     item('ModuleScript', refs.next(), [P.str('Name', 'EffectPlayer'), P.source('Source', opts.playerSource)]),
     item('Script', refs.next(), [P.str('Name', 'Demo'), P.bool('Disabled', true), P.source('Source', DEMO_SOURCE)]),
     item('Color3Value', refs.next(), [P.str('Name', 'VfxColor'), `<Color3 name="Value"><R>${num(opts.color?.[0] ?? 1)}</R><G>${num(opts.color?.[1] ?? 1)}</G><B>${num(opts.color?.[2] ?? 1)}</B></Color3>`]),
