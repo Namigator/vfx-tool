@@ -52,7 +52,7 @@ function run(label, exe, args, { timeoutMs } = {}) {
 const importResult = process.env.VFX_UE_SKIP_IMPORT ? { status: 0 } : run('import', EDITOR_CMD, [
   TEST_PROJECT, '-run=VfxStudioImport', `-Package=${resolve(pkgDir)}`, `-Dest=${destPath}`,
   '-unattended', '-nosplash', '-nullrhi', '-log',
-  // VFX_UE_IMPORT_ARGS: extra commandlet switches, e.g. -VfxParticleTrails (particle trails as Niagara ribbons, opt-in).
+  // VFX_UE_IMPORT_ARGS: extra commandlet switches, e.g. -VfxNoParticleTrails (leave particle trails out; they import as Niagara ribbons by default).
   ...(process.env.VFX_UE_IMPORT_ARGS ?? '').split(/\s+/).filter(Boolean),
 ], { timeoutMs: 600_000 }); // a first import compiles the new materials' shaders (Charge timed out at 120 s)
 if (importResult.status !== 0) {
@@ -67,6 +67,9 @@ console.log('[unreal-check] import OK');
 //     waits for shaders, places the system at Source height (the export's origin is the Source anchor), steps the
 //     simulation and exports a SceneCapture2D frame. (-game screenshots fire on the first, blank frame; -RenderOffscreen
 //     crashes in the StylusInput plugin; -ExecutePythonScript closes the editor as soon as the script returns.)
+//     bThrottleCPUWhenNotForeground=False: an editor that starts without focus (another app in front) otherwise runs at
+//     3 fps and the capture drew NO particles at all, only lights + floor (2026-10-17; ~25 fps and particles with it off).
+//     VFX_UE_EDITOR_ARGS: extra editor switches for this render.
 const systemName = JSON.parse(readFileSync(join(resolve(pkgDir), 'effect.json'), 'utf8')).name.replace(/[^A-Za-z0-9_]/g, '_');
 const nsPath = `${destPath}/NS_${systemName}`;
 const seconds = process.env.VFX_UE_SECONDS ?? '1.0';
@@ -74,6 +77,8 @@ const capDir = join(outDir, 'cap');
 mkdirSync(capDir, { recursive: true });
 rmSync(join(capDir, 'unreal_capture'), { force: true });
 const capture = spawnSync(EDITOR, [TEST_PROJECT, '-windowed', '-WinX=-4000', '-WinY=0', '-ResX=1280', '-ResY=720', '-nosplash', '-NoLiveCoding',
+  '-ini:EditorPerProjectUserSettings:[/Script/UnrealEd.EditorPerformanceSettings]:bThrottleCPUWhenNotForeground=False',
+  ...(process.env.VFX_UE_EDITOR_ARGS ?? '').split(/\s+/).filter(Boolean),
   `-ExecCmds=py ${join(root, 'tools', 'unreal-capture.py')}`, '-log'], {
   env: { ...process.env, MSYS_NO_PATHCONV: '1', VFX_NS: nsPath, VFX_OUT: capDir, VFX_SECONDS: seconds }, timeout: 480_000,
 });

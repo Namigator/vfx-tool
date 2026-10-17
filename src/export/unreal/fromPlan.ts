@@ -360,7 +360,7 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
       });
     });
   }
-  if (plan.value.trails.length) report.push({ level: 'approximated', item: 'trails', message: `${plan.value.trails.length} trail layer(s) exported as velocity-stretched sprites on the parent emitter (Niagara Ribbon-per-particle trails are a heavier engine feature left for hand-tuning).` });
+  if (plan.value.trails.length) report.push({ level: 'approximated', item: 'trails', message: `${plan.value.trails.length} trail layer(s) exported as particle trails: the importer builds one Niagara ribbon per moving head (sourceTrack); trails left by many particles (spark/shed trails) are skipped (one ribbon per particle is not supported yet).` });
   if (plan.value.meshes.length) report.push({ level: 'dropped', item: 'meshes', message: `${plan.value.meshes.length} mesh-particle layer(s) are not exported; see report for manual Niagara Mesh Renderer setup (out of scope this pass — "meshes -> report item unless cheap" per spec).` });
   if (plan.value.presentation.flashes.length) report.push({ level: 'dropped', item: 'presentation', message: 'Screen flashes are not exported (add a post-process/camera-shake Blueprint on impact if needed).' });
   if (plan.value.presentation.impulses.length) report.push({ level: 'dropped', item: 'presentation', message: 'Camera shake is not exported (use a UE Camera Shake asset triggered on impact if needed).' });

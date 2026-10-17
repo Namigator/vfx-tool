@@ -1112,19 +1112,17 @@ namespace
 		const TArray<TSharedPtr<FJsonValue>>* Width = nullptr; Trail->TryGetArrayField(TEXT("widthOverTrail"), Width);
 		const TArray<TSharedPtr<FJsonValue>>* Color = nullptr; Trail->TryGetArrayField(TEXT("colorOverTrail"), Color);
 		const TArray<TSharedPtr<FJsonValue>>* Opacity = nullptr; Trail->TryGetArrayField(TEXT("opacityOverTrail"), Opacity);
-		double Fade = 0.0; Trail->TryGetNumberField(TEXT("endFade"), Fade); Fade = FMath::Clamp(Fade, 0.0, 0.5);
+		// The IR curves already carry endFade (the editor smoothsteps the old tail only; the live head stays full width).
+		// Multiplying a second fade over both ends here made the head a point and double-faded the tail (2026-10-17).
 		TArray<double> Times = { 0.0, 1.0 };
 		for (const auto* Keys : { Width, Color, Opacity }) if (Keys) for (const auto& K : *Keys) Times.AddUnique(1.0 - FMath::Clamp(K->AsObject()->GetNumberField(TEXT("t")), 0.0, 1.0));
-		// Products of end fade and authored curves are sampled densely, retaining every original knot too.
-		if (Fade > 0.0) { Times.AddUnique(Fade); Times.AddUnique(1.0 - Fade); for (int32 i = 1; i < 64; i++) Times.AddUnique(i / 64.0); }
 		Times.Sort();
 		TArray<TSharedPtr<FJsonValue>> WidthKeys, ColorKeys, AlphaKeys;
 		for (double Age : Times)
 		{
 			const double T = 1.0 - Age; // IR: oldest tail=0, live head=1; Niagara: newborn age=0.
-			const double Edge = Fade > 0.0 ? FMath::Clamp(FMath::Min(T, 1.0 - T) / Fade, 0.0, 1.0) : 1.0;
-			auto W = MakeShared<FJsonObject>(); W->SetNumberField(TEXT("t"), Age); W->SetNumberField(TEXT("v"), Trail->GetNumberField(TEXT("widthCm")) * SampleKeys(Width, T, TEXT("v"), 1.0) * Edge); WidthKeys.Add(MakeShared<FJsonValueObject>(W));
-			auto A = MakeShared<FJsonObject>(); A->SetNumberField(TEXT("t"), Age); A->SetNumberField(TEXT("v"), SampleKeys(Opacity, T, TEXT("v"), 1.0) * Edge); AlphaKeys.Add(MakeShared<FJsonValueObject>(A));
+			auto W = MakeShared<FJsonObject>(); W->SetNumberField(TEXT("t"), Age); W->SetNumberField(TEXT("v"), Trail->GetNumberField(TEXT("widthCm")) * SampleKeys(Width, T, TEXT("v"), 1.0)); WidthKeys.Add(MakeShared<FJsonValueObject>(W));
+			auto A = MakeShared<FJsonObject>(); A->SetNumberField(TEXT("t"), Age); A->SetNumberField(TEXT("v"), SampleKeys(Opacity, T, TEXT("v"), 1.0)); AlphaKeys.Add(MakeShared<FJsonValueObject>(A));
 			auto C = MakeShared<FJsonObject>(); C->SetNumberField(TEXT("t"), Age);
 			for (const TCHAR* Channel : { TEXT("r"), TEXT("g"), TEXT("b"), TEXT("a") }) C->SetNumberField(Channel, SampleKeys(Color, T, Channel, 1.0));
 			ColorKeys.Add(MakeShared<FJsonValueObject>(C));
@@ -1371,9 +1369,9 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 	{
 		for (const auto& Item : *Trails)
 		{
-			// OFF by default until the ribbons are SEEN rendering. The import crash (0x3f0 in AddRenderer: a material save
-			// garbage-collected the not-yet-added renderer) is fixed; -VfxParticleTrails opts in.
-			if (!FParse::Param(FCommandLine::Get(), TEXT("VfxParticleTrails"))) { UE_LOG(LogVfxImporter, Display, TEXT("Particle trails are not imported yet (pass -VfxParticleTrails to try)")); break; }
+			// ON by default since 2026-10-17: Bolt/Needle/Orb import without the old crash and were seen rendering as comet
+			// tails along the flight. -VfxNoParticleTrails leaves them out.
+			if (FParse::Param(FCommandLine::Get(), TEXT("VfxNoParticleTrails"))) { UE_LOG(LogVfxImporter, Display, TEXT("Particle trails skipped (-VfxNoParticleTrails)")); break; }
 			const auto Trail = Item->AsObject();
 			int32 Start = 0, End = 0;
 			if (!ParticleTrailWindow(Trail, Start, End))
