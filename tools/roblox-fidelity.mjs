@@ -4,6 +4,9 @@
 //        [--ticks 10,30,60] [--cam x,y,z --look x,y,z] [--fov 45] [--out work/fidelity/<name>] [--editor http://127.0.0.1:5174]
 //        [--floor Fabric|SmoothPlastic|...]  (default matte Fabric like the editor floor: on glossy SmoothPlastic each
 //        PointLight shows as a long vertical specular streak, which read as a broken effect 2026-10-17)
+//        [--cold 1]  run Studio on a fresh throwaway Windows profile = EMPTY content cache (first play for a buyer who never
+//        loaded these textures); the user's own Studio and cache are not touched. The default Studio layout differs:
+//        pass --crop for its game view (1920x1080: 1888:1062:16:9 is checked per run from roblox-plate.png).
 // 1. Editor: headless Chrome renders capture.html at each tick with the camera (meters, editor world space).
 // 2. Roblox: a temporary place (rojo) plays the exported model at the origin with the same camera converted to studs
 //    ((p - origin) * STUDS_PER_METER, origin = Source anchor over the floor, exactly like the exporter), records it
@@ -12,7 +15,7 @@
 // Needs: vite dev server, Chrome, rojo, ffmpeg, Roblox Studio. The capture is the primary monitor: do not use the PC.
 import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 
 const args = process.argv.slice(2);
@@ -173,7 +176,12 @@ const env = { ...process.env, PATH: `${process.env.PATH};${join(homedir(), '.car
 run('rojo', ['build', join(place, 'default.project.json'), '-o', join(place, 'Fidelity.rbxl')], { env });
 const video = join(out, 'roblox.mp4');
 const seconds = Math.ceil(12 + dur / 60 + 1); // Play -> character -> 4 s settle -> 0.5 s flash -> effect
-if (!(args.includes('--reuse') && existsSync(video))) run('powershell', ['-ExecutionPolicy', 'Bypass', '-File', join(homedir(), '.claude', 'tools', 'studio-record.ps1'), '-Place', join(place, 'Fidelity.rbxl'), '-Out', video, '-Seconds', String(seconds), '-LoadWait', '25', '-Quality', String(opt('quality', 21))], { stdio: 'inherit', encoding: 'utf8' });
+const coldProfile = opt('cold') === '1' ? join(tmpdir(), `vfx-cold-${process.pid}-${Date.now()}`) : null;
+if (!(args.includes('--reuse') && existsSync(video))) {
+  try {
+    run('powershell', ['-ExecutionPolicy', 'Bypass', '-File', join(homedir(), '.claude', 'tools', 'studio-record.ps1'), '-Place', join(place, 'Fidelity.rbxl'), '-Out', video, '-Seconds', String(seconds), '-LoadWait', String(opt('loadwait', coldProfile ? 40 : 25)), '-Quality', String(opt('quality', 21)), ...(coldProfile ? ['-ProfileDir', coldProfile] : [])], { stdio: 'inherit', encoding: 'utf8' });
+  } finally { if (coldProfile) rmSync(coldProfile, { recursive: true, force: true, maxRetries: 5, retryDelay: 1000 }); }
+}
 
 // ---- 3. sync + frames + metrics ----
 const VIEW = opt('crop', '1330:748:282:208'); // 16:9 centre of the maximised Studio game view (1920x1080 monitor)
