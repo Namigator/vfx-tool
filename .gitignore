@@ -10,6 +10,7 @@ graphify-out/
 
 # Internal working notes, planning history and agent/squad files (kept locally, not published)
 STATE.md
+STATE-history.md
 AGENTS.md
 CLAUDE.md
 GEMINI.md
