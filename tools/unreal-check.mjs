@@ -76,6 +76,18 @@ const seconds = process.env.VFX_UE_SECONDS ?? '1.0';
 const capDir = join(outDir, 'cap');
 mkdirSync(capDir, { recursive: true });
 rmSync(join(capDir, 'unreal_capture'), { force: true });
+// A pen-tablet driver whose Wintab32.dll fails to initialise (error 1114; on this PC the "Graphic Tablet" driver when its
+// TabletService.exe is not running) crashes the editor right after startup inside StylusInputWintab. UE loads that module
+// even with StylusInput disabled (Interchange / Modeling Tools depend on it; -DisablePlugins is ignored). 2026-10-19.
+if (process.platform === 'win32') {
+  const probe = spawnSync('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', join(root, 'tools', 'wintab-probe.ps1')], { encoding: 'utf8', timeout: 60_000 });
+  if (/FAILED, error 1114/.test(probe.stdout ?? '')) {
+    console.error('[unreal-check] Wintab32.dll (pen-tablet driver) fails to initialise (error 1114): the UE editor would crash at startup.\n' +
+      '  Fix: start the tablet driver (C:/Program Files (x86)/MyTablet/TabletService.exe, needs admin; it starts at login),\n' +
+      '  or plug the tablet in, or uninstall the tablet driver if it is not used. Re-check: powershell -File tools/wintab-probe.ps1');
+    process.exit(2);
+  }
+}
 const capture = spawnSync(EDITOR, [TEST_PROJECT, '-windowed', '-WinX=-4000', '-WinY=0', '-ResX=1280', '-ResY=720', '-nosplash', '-NoLiveCoding',
   '-ini:EditorPerProjectUserSettings:[/Script/UnrealEd.EditorPerformanceSettings]:bThrottleCPUWhenNotForeground=False',
   ...(process.env.VFX_UE_EDITOR_ARGS ?? '').split(/\s+/).filter(Boolean),
