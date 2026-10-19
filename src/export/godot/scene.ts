@@ -103,6 +103,7 @@ function colorRamp(res: Resources, e: Pick<UeEmitter, 'colorOverLife' | 'opacity
     'fill_from = Vector2(0, 1)', 'fill_to = Vector2(0, 0)']) : res.add('GradientTexture1D', [`gradient = ${g}`]);
 }
 
+// interp 0 = nearest (holds each key until the next: UeStepTrack values), 1 = linear (positions).
 type Track = { path: string; interp: 0 | 1; update: 0 | 1; keys: [number, string][] };
 
 function emitterNode(res: Resources, e: UeEmitter, texRoot: string, duration: number, tracks: Track[], report: GodotReportItem[], trail?: UeParticleTrail): string {
@@ -243,7 +244,7 @@ void process() {
     node.push(`amount = ${Math.max(1, Math.ceil(peak * lifeMax))}`);
     tracks.push({ path: `${name}:emitting`, interp: 0, update: 1, keys: [[0, 'false'], ...e.rateOverTime.map(([tick, v]) => [t(tick), v > 0 ? 'true' : 'false'] as [number, string])] });
     if (new Set(e.rateOverTime.map(([, v]) => v).filter(v => v > 0)).size > 1)
-      tracks.push({ path: `${name}:amount_ratio`, interp: 1, update: 0, keys: e.rateOverTime.filter(([, v]) => v > 0).map(([tick, v]) => [t(tick), n(v / peak)] as [number, string]) });
+      tracks.push({ path: `${name}:amount_ratio`, interp: 0, update: 0, keys: e.rateOverTime.filter(([, v]) => v > 0).map(([tick, v]) => [t(tick), n(v / peak)] as [number, string]) });
   } else if (e.bursts.length) {
     const b = e.bursts[0];
     node.push(`amount = ${Math.max(1, b.count)}`, 'one_shot = true', 'explosiveness = 1.0');
@@ -266,17 +267,20 @@ void process() {
 }
 
 /**
- * Preview light intensity (candela-like, typically 10-40) -> Godot OmniLight3D light_energy (about 1 is a normal lamp).
- * Unscaled, the floor washed out to solid colour in Godot (side-by-side 2026-10-15).
+ * Preview light intensity (candela) -> Godot OmniLight3D light_energy. The editor's three.js PointLight is physical:
+ * diffuse = I x albedo / pi / d^2 (decay 2). Godot (non-physical units) multiplies energy by pi and its Lambert divides
+ * by pi, so with omni_attenuation 2 (inverse square) energy = I / pi matches. The former 0.06 with Godot's default 1/d
+ * falloff lit the floor ~5x dimmer than the editor at 1 m (layer-brightness, 2026-10-19).
  */
-export const GODOT_LIGHT_ENERGY_SCALE = 0.06;
+export const GODOT_LIGHT_ENERGY_SCALE = 1 / Math.PI;
 
-function lightNode(l: UeLight, duration: number, tracks: Track[]): string {
-  const name = nodeName(l.name);
+function lightNode(l: UeLight, duration: number, tracks: Track[], name = nodeName(l.name)): string {
   const peak = Math.max(0, ...l.intensity.map(([, v]) => v));
   const node = [`[node name=${str(name)} type="OmniLight3D" parent="."]`, `light_color = Color(${l.color.map(n).join(', ')}, 1)`,
-    `omni_range = ${n(Math.max(0.1, l.radiusCm / 100))}`, `light_energy = 0.0`, `position = ${vec3(fromUe(l.positionCm))}`];
-  if (peak > 0) tracks.push({ path: `${name}:light_energy`, interp: 1, update: 0, keys: [[0, '0.0'], ...l.intensity.map(([tick, v]) => [Math.min(duration, tick) / 60, n(v * GODOT_LIGHT_ENERGY_SCALE)] as [number, string])] });
+    `omni_range = ${n(Math.max(0.1, l.radiusCm / 100))}`, 'omni_attenuation = 2.0', `light_energy = 0.0`, `position = ${vec3(fromUe(l.positionCm))}`];
+  // Step track: linear interpolation ramped Bolt's impact light 0 -> 50 from tick 0 instead of switching it on at its
+  // impact tick (a floor pool 16 ticks early, layer-brightness 2026-10-19). Ramps are per-tick keys already.
+  if (peak > 0) tracks.push({ path: `${name}:light_energy`, interp: 0, update: 0, keys: [[0, '0.0'], ...l.intensity.map(([tick, v]) => [Math.min(duration, tick) / 60, n(v * GODOT_LIGHT_ENERGY_SCALE)] as [number, string])] });
   if (l.sourceTrack?.length) tracks.push({ path: `${name}:position`, interp: 1, update: 0, keys: l.sourceTrack.map(([tick, p]) => [Math.min(duration, tick) / 60, vec3(fromUe(p))] as [number, string]) });
   return node.join('\n');
 }
@@ -288,7 +292,14 @@ export function godotSceneFrom(e: UnrealEffect, resRoot = `res://vfx_studio/${e.
   const nodes = [`[node name=${str(nodeName(e.name))} type="Node3D"]`];
   for (const em of e.emitters) nodes.push(emitterNode(res, em, `${resRoot}/Textures`, duration, tracks, report));
   for (const trail of e.trails ?? []) nodes.push(emitterNode(res, trail.emitter, `${resRoot}/Textures`, duration, tracks, report, trail));
-  for (const l of e.lights) nodes.push(lightNode(l, duration, tracks));
+  // A light on several paths (Nova's 8 shards) is one IR light per path under the same name: same-named sibling nodes
+  // left the animation driving only one of them (Nova's floor light 0.34x, 2026-10-19). Like emitters: <name>_path<k>.
+  const lightNames = new Map<string, number>();
+  for (const l of e.lights) {
+    const k = (lightNames.get(l.name) ?? 0) + 1;
+    lightNames.set(l.name, k);
+    nodes.push(lightNode(l, duration, tracks, nodeName(k > 1 ? `${l.name}_path${k}` : l.name)));
+  }
   const files: GodotScene['files'] = [];
   if (e.ribbons.length) {
     // Beams: baked per-tick geometry (every path: trunk + branches, with its flicker/decay opacity) drawn by a small

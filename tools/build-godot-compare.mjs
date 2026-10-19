@@ -55,32 +55,56 @@ func _ready() -> void:
 	var env := WorldEnvironment.new()
 	var e := Environment.new()
 	e.background_mode = Environment.BG_COLOR
-	e.background_color = Color(0.03, 0.03, 0.04)
+	# The editor's backdrop 0x0b0d12 (Godot colours here are sRGB like three's hex).
+	e.background_color = Color(0.043, 0.051, 0.071)
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	e.ambient_light_color = Color(0.25, 0.25, 0.3)
+	# The editor's fill: AmbientLight 0.6 + HemisphereLight sky 0xbfd0ff 0.8 (up-facing floor) through three's Lambert
+	# (/pi) = linear (0.324, 0.352, 0.446); Godot's ambient has no /pi. Plus the key light below. The old 0.25 grey left
+	# the floor ~20x darker than the editor's, and the ACES toe then swallowed the effect's floor light (2026-10-19).
+	e.ambient_light_color = Color(0.60, 0.625, 0.70)
 	# Same post as the editor (PreviewViewport: ACES filmic, UnrealBloom strength 0.8 radius 0.45 threshold 1): without
 	# it over-bright cores clipped to flat white discs and thin bright lines stayed hairlines (2026-10-17).
 	e.tonemap_mode = Environment.TONE_MAPPER_ACES
-	# Godot's default white point 1.0 clips every HDR value above 1 to white (hot cores = flat white discs); three's
-	# ACES rolls highlights off far later.
-	e.tonemap_white = 6.0
+	# three's ACESFilmic = the same Hill fit as Godot's ACES but with exposure 1/0.6 and no white normalisation; Godot
+	# bakes in exposure 1.8 and divides by f(1.8 * white). Exposure 1/(0.6*1.8) and white 14.26 (f(25.67) = 1) give the
+	# identical curve (2026-10-19; the former white 6 ran ~11% brighter in the mids).
+	e.tonemap_exposure = 1.0 / (0.6 * 1.8)
+	e.tonemap_white = 14.26
 	e.glow_enabled = true
-	# Matched by eye on Nova/Bolt/Summon: Godot's glow sums levels, so the editor's 0.8 over-blooms here.
-	e.glow_intensity = 0.35
+	# Derived from the two pipelines, not by eye (2026-10-19). three's UnrealBloom (strength 0.8, radius 0.45, threshold 1,
+	# glow limit 3) takes a pixel's FULL colour once its luminance passes 1 and adds 5 blurred mips weighted
+	# 0.8 * mix(f, 1.2 - f, 0.45) = 0.51, 0.50, 0.48, 0.46, 0.45 (sum 2.4). Godot passes colour x smoothstep(threshold,
+	# threshold + hdr_scale, max channel): the default hdr_scale 2 let almost nothing through once the sRGB fix put cores
+	# at 1-2 (glow added ~1% of the frame vs the editor's ~80%). hdr_scale 0.01 = three's step; cap 3 = the glow limit.
+	# Blur radii: three's mips are sigma 6/20/56/144/352 px at full res; Godot's cascaded levels ~5/9/18/37/74/148/296,
+	# so each mip's weight goes to the level(s) of matching size, intensity 1.
+	e.glow_intensity = 1.0
 	e.glow_strength = 1.0
 	e.glow_bloom = 0.0
 	e.glow_hdr_threshold = 1.0
+	e.glow_hdr_scale = 0.01
+	e.glow_hdr_luminance_cap = 3.0
 	e.glow_blend_mode = Environment.GLOW_BLEND_MODE_ADDITIVE
+	var levels := [0.256, 0.256, 0.496, 0.24, 0.24, 0.464, 0.448]
 	for lv in range(1, 8):
-		e.set_glow_level(lv, 1.0 if lv >= 2 and lv <= 4 else 0.0)
+		e.set_glow_level(lv - 1, levels[lv - 1])
 	env.environment = e
 	add_child(env)
+	# The editor's key: DirectionalLight 0xfff4e6 2.6 from (3, 6, 4); Godot energy x pi / pi Lambert -> 2.6 / pi.
+	var key := DirectionalLight3D.new()
+	key.light_color = Color(1.0, 0.957, 0.902)
+	key.light_energy = 2.6 / PI
+	add_child(key)
+	key.look_at_from_position(Vector3(3, 6, 4), Vector3.ZERO)
 	var floor := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
 	plane.size = Vector2(16, 10)
 	floor.mesh = plane
 	var m := StandardMaterial3D.new()
-	m.albedo_color = Color(0.1, 0.11, 0.13)
+	# The editor's ground: 0x10131a x pi/1.4 linear (= sRGB 0.110, 0.126, 0.164), roughness 0.85. The effect's floor
+	# light pool scales with this albedo.
+	m.albedo_color = Color(0.110, 0.126, 0.164)
+	m.roughness = 0.85
 	floor.material_override = m
 	floor.position = Vector3(c.pos[0], c.floorY, 0)
 	add_child(floor)

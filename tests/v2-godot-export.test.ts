@@ -25,6 +25,21 @@ test('Godot: flamethrower becomes GPUParticles3D emitters, an autoplaying animat
   assert.equal(Number(g.tscn.match(/load_steps=(\d+)/)![1]), ext + sub + 1);
 });
 
+test('Godot: lights - physical falloff, candela / pi, step intensity, one node per path', () => {
+  const { ir } = scene('flamethrower');
+  const light = { name: 'shardLight', color: [1, 0.3, 0.8] as [number, number, number], radiusCm: 200, positionCm: [300, 0, -120] as [number, number, number], intensity: [[0, 0], [50, 4]] as [number, number][] };
+  const text = godotSceneFrom({ ...ir, lights: [light, { ...light, positionCm: [0, 300, -120] }] }).tscn;
+  // Two lights on two paths share the IR name: two nodes, each with its own energy track.
+  assert.match(text, /\[node name="shardLight" type="OmniLight3D"/);
+  assert.match(text, /\[node name="shardLight_path2" type="OmniLight3D"/);
+  assert.ok(text.includes('NodePath("shardLight:light_energy")') && text.includes('NodePath("shardLight_path2:light_energy")'));
+  assert.equal((text.match(/omni_attenuation = 2/g) ?? []).length, 2);
+  assert.ok(text.includes(`${Number((4 / Math.PI).toFixed(4))}`) || text.includes('1.273'), 'energy = 4 cd / pi');
+  // Step track: no linear ramp from tick 0 to the light's switch-on tick.
+  const i = text.match(/tracks\/(\d+)\/path = NodePath\("shardLight:light_energy"\)/)![1];
+  assert.match(text, new RegExp(`tracks/${i}/interp = 0`));
+});
+
 test('Godot: static sprite cells, HDR gain and attached source motion preserve long-lived riders', () => {
   const { ir } = scene('impact-flash');
   const rider = { ...ir.emitters[0], name: 'Rider', sizeCmMin: 45, sizeCmMax: 45,
