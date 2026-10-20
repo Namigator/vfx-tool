@@ -117,9 +117,10 @@ export default function NodeInspector({ document: doc, graphId, nodeId, onEdit, 
         </p>); })()}
       {!spec ? (
         <p className="ni-unsupported" role="note">Unknown node type; parameters cannot be edited.</p>
-      ) : node.type === 'Group' ? (
+      ) : node.type === 'Group' ? (<>
+        <GroupAnchors doc={doc} graphId={String(node.params.graphId ?? '')} onEdit={onEdit} />
         <p className="ni-muted" role="note">This component's settings are its knobs in the Controls tab.</p>
-      ) : spec.parameters.length === 0 ? (
+      </>) : spec.parameters.length === 0 ? (
         <p className="ni-muted">This node has no parameters.</p>
       ) : (
         <div className="ni-params">
@@ -355,6 +356,33 @@ function AnchorSelect({ doc, value, onCommit, ...rest }: DraftBase & { doc: Effe
         return <option key={a} value={a}>{def?.name ? `${def.name} (${a})` : a}</option>;
       })}
     </select>
+  );
+}
+
+/** Anchor nodes inside a Group (nested groups included): pick which document anchor each one follows, without opening it. */
+function GroupAnchors({ doc, graphId, onEdit }: { doc: EffectDocumentV2; graphId: string; onEdit: NodeInspectorProps['onEdit'] }) {
+  const rows: { gi: number; ni: number; label: string; value: string }[] = [], seen = new Set<string>();
+  const walk = (gid: string) => {
+    const gi = doc.graphs.findIndex(g => g.id === gid);
+    if (gi < 0 || seen.has(gid)) return;
+    seen.add(gid);
+    doc.graphs[gi].nodes.forEach((n, ni) => {
+      if (n.type === 'Anchor') rows.push({ gi, ni, label: n.label || n.id, value: String(n.params.anchorId ?? '') });
+      else if (n.type === 'Group') walk(String(n.params.graphId ?? ''));
+    });
+  };
+  walk(graphId);
+  if (!rows.length) return null;
+  return (
+    <div className="ni-params" role="group" aria-label="Connected anchors">
+      <p className="ni-muted"><strong>Connected anchors</strong> — where this effect starts and aims (add more anchors in the viewport, then pick them here).</p>
+      {rows.map(r => (
+        <label key={`${r.gi}-${r.ni}`} className="ni-row">
+          <span className="ni-name">{r.label}</span>
+          <AnchorSelect id={`ga-${r.gi}-${r.ni}`} disabled={false} doc={doc} value={r.value} onCommit={v => onEdit(`Anchor ${r.label} → ${v}`, [{ op: 'set', path: ['graphs', r.gi, 'nodes', r.ni, 'params', 'anchorId'], value: v }])} />
+        </label>
+      ))}
+    </div>
   );
 }
 
