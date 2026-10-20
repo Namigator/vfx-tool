@@ -1,0 +1,3700 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "lance"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "lance",
+   "durationTicks": 168,
+   "seed": 11
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "lance",
+   "anchorId": "source",
+   "position": [
+    -4.5,
+    1.5,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "lance",
+   "anchorId": "target",
+   "position": [
+    4.2,
+    0.6,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "OffsetAnchor",
+   "id": "floor",
+   "params": {
+    "offset": [
+     0,
+     0,
+     0
+    ],
+    "dropToGround": true
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "node-target.out",
+   "to": "floor.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Schedule",
+   "id": "charge",
+   "params": {
+    "startTicks": 0,
+    "durationTicks": 40,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "gyro0mat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#8A3CFF",
+     "alpha": 1
+    },
+    "emission": 0.6,
+    "opacity": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RingRenderer",
+   "id": "gyro0",
+   "params": {
+    "radius": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.05
+      },
+      {
+       "x": 0.75,
+       "y": 0.55
+      },
+      {
+       "x": 1,
+       "y": 0.42
+      }
+     ]
+    },
+    "width": 0.03,
+    "orientation": [
+     0.7071068,
+     0,
+     0,
+     0.7071068
+    ],
+    "segments": 64
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "node-source.out",
+   "to": "gyro0.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "gyro0mat.material",
+   "to": "gyro0.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "charge.window",
+   "to": "gyro0.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "gyro0.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "gyro1mat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FF4FD8",
+     "alpha": 1
+    },
+    "emission": 0.6,
+    "opacity": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RingRenderer",
+   "id": "gyro1",
+   "params": {
+    "radius": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.044000000000000004
+      },
+      {
+       "x": 0.75,
+       "y": 0.48400000000000004
+      },
+      {
+       "x": 1,
+       "y": 0.3696
+      }
+     ]
+    },
+    "width": 0.022,
+    "orientation": [
+     0,
+     0,
+     0.7071068,
+     0.7071068
+    ],
+    "segments": 64
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "node-source.out",
+   "to": "gyro1.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "gyro1mat.material",
+   "to": "gyro1.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "charge.window",
+   "to": "gyro1.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "gyro1.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "gyro2mat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#5FF0FF",
+     "alpha": 1
+    },
+    "emission": 0.6,
+    "opacity": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RingRenderer",
+   "id": "gyro2",
+   "params": {
+    "radius": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.038000000000000006
+      },
+      {
+       "x": 0.75,
+       "y": 0.41800000000000004
+      },
+      {
+       "x": 1,
+       "y": 0.3192
+      }
+     ]
+    },
+    "width": 0.018,
+    "orientation": [
+     0,
+     0,
+     0,
+     1
+    ],
+    "segments": 64
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "node-source.out",
+   "to": "gyro2.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "gyro2mat.material",
+   "to": "gyro2.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "charge.window",
+   "to": "gyro2.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "gyro2.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "gyro3mat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#8A3CFF",
+     "alpha": 1
+    },
+    "emission": 0.6,
+    "opacity": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RingRenderer",
+   "id": "gyro3",
+   "params": {
+    "radius": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.032
+      },
+      {
+       "x": 0.75,
+       "y": 0.35200000000000004
+      },
+      {
+       "x": 1,
+       "y": 0.2688
+      }
+     ]
+    },
+    "width": 0.014,
+    "orientation": [
+     0,
+     0.7071068,
+     0,
+     0.7071068
+    ],
+    "segments": 64
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "node-source.out",
+   "to": "gyro3.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "gyro3mat.material",
+   "to": "gyro3.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "charge.window",
+   "to": "gyro3.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "gyro3.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Emitter",
+   "id": "motes",
+   "params": {
+    "shape": "sphere",
+    "radius": 1.8,
+    "burst": 0,
+    "rate": 160,
+    "speedMin": 0,
+    "speedMax": 0.3,
+    "lifetimeMin": 0.35,
+    "lifetimeMax": 0.6,
+    "rateOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.3
+      },
+      {
+       "x": 0.8,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "InitialProperties",
+   "id": "moteip",
+   "params": {
+    "sizeMin": 0.02,
+    "sizeMax": 0.04
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Attract",
+   "id": "pull",
+   "params": {
+    "acceleration": 26,
+    "softRadius": 0.2,
+    "killRadius": 0.12
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "motemat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#D8A8FF",
+     "alpha": 1
+    },
+    "emission": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ParticleTrail",
+   "id": "motetrail",
+   "params": {
+    "history": 0.12,
+    "width": 0.014,
+    "endFade": 0.4
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "node-source.out",
+   "to": "motes.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "charge.window",
+   "to": "motes.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "motes.particles",
+   "to": "moteip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "moteip.particles",
+   "to": "pull.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "node-source.out",
+   "to": "pull.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "pull.particles",
+   "to": "motetrail.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "motemat.material",
+   "to": "motetrail.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "motetrail.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ParticlePaths",
+   "id": "tethers",
+   "params": {
+    "maxCount": 5,
+    "samples": 10
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "JaggedPath",
+   "id": "tetherjag",
+   "params": {
+    "amplitude": 0.07,
+    "regenerationHz": 24,
+    "samples": 10
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "pull.particles",
+   "to": "tethers.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "node-source.out",
+   "to": "tethers.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "tethers.paths",
+   "to": "tetherjag.paths"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "tethermat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#E8C8FF",
+     "alpha": 1
+    },
+    "emission": 0.6,
+    "opacity": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RibbonRenderer",
+   "id": "tether",
+   "params": {
+    "width": 0.012,
+    "endFade": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "tetherjag.paths",
+   "to": "tether.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "tethermat.material",
+   "to": "tether.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "charge.window",
+   "to": "tether.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "tether.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Schedule",
+   "id": "beam",
+   "params": {
+    "startTicks": 40,
+    "durationTicks": 46,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "LinePath",
+   "id": "axis",
+   "params": {
+    "samples": 56
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "node-source.out",
+   "to": "axis.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "node-target.out",
+   "to": "axis.end"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "JaggedPath",
+   "id": "trunk",
+   "params": {
+    "amplitude": 0.07,
+    "regenerationHz": 30,
+    "samples": 56
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "axis.paths",
+   "to": "trunk.paths"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "EffectTimeCurve",
+   "id": "shoot",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0.6666666666666666,
+       "y": 0
+      },
+      {
+       "x": 0.7166666666666667,
+       "y": 1
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RevealPath",
+   "id": "trunkrev",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "trunk.paths",
+   "to": "trunkrev.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "shoot.value",
+   "to": "trunkrev.fraction"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RevealPath",
+   "id": "axisrev",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "axis.paths",
+   "to": "axisrev.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "shoot.value",
+   "to": "axisrev.fraction"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Time",
+   "id": "beamclk",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beam.window",
+   "to": "beamclk.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "beamdec",
+   "params": {
+    "operation": "multiply",
+    "b": -2.2,
+    "inputUnit": "second",
+    "unit": "none"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamclk.localSeconds",
+   "to": "beamdec.a"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "beamexp",
+   "params": {
+    "operation": "exp",
+    "unit": "none"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamdec.value",
+   "to": "beamexp.a"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Oscillator",
+   "id": "beamflk",
+   "params": {
+    "waveform": "sine",
+    "frequency": 27,
+    "phase": 0.6,
+    "min": 0.7,
+    "max": 1,
+    "unit": "none"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "beamenv",
+   "params": {
+    "operation": "multiply",
+    "inputUnit": "none",
+    "unit": "none"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamexp.value",
+   "to": "beamenv.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamflk.value",
+   "to": "beamenv.b"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "beamhalomat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#3A0E8A",
+     "alpha": 1
+    },
+    "emission": 0,
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RibbonRenderer",
+   "id": "beamhalo",
+   "params": {
+    "width": 0.95,
+    "endFade": 0.1,
+    "widthOverPath": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.55
+      },
+      {
+       "x": 0.08,
+       "y": 1
+      },
+      {
+       "x": 0.92,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0.7
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "axisrev.paths",
+   "to": "beamhalo.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamhalomat.material",
+   "to": "beamhalo.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beam.window",
+   "to": "beamhalo.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamhalo.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "beamhalolvl",
+   "params": {
+    "operation": "multiply",
+    "b": 0.26,
+    "inputUnit": "none",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamenv.value",
+   "to": "beamhalolvl.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamhalolvl.value",
+   "to": "beamhalomat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "beamoutermat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#8A3CFF",
+     "alpha": 1
+    },
+    "emission": 0,
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RibbonRenderer",
+   "id": "beamouter",
+   "params": {
+    "width": 0.34,
+    "endFade": 0.06,
+    "widthOverPath": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.55
+      },
+      {
+       "x": 0.08,
+       "y": 1
+      },
+      {
+       "x": 0.92,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0.7
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "axisrev.paths",
+   "to": "beamouter.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamoutermat.material",
+   "to": "beamouter.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beam.window",
+   "to": "beamouter.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamouter.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "beamouterlvl",
+   "params": {
+    "operation": "multiply",
+    "b": 0.42,
+    "inputUnit": "none",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamenv.value",
+   "to": "beamouterlvl.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamouterlvl.value",
+   "to": "beamoutermat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "beaminnermat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FF4FD8",
+     "alpha": 1
+    },
+    "emission": 0.2,
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RibbonRenderer",
+   "id": "beaminner",
+   "params": {
+    "width": 0.11,
+    "endFade": 0.06,
+    "widthOverPath": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.55
+      },
+      {
+       "x": 0.08,
+       "y": 1
+      },
+      {
+       "x": 0.92,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0.7
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "trunkrev.paths",
+   "to": "beaminner.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beaminnermat.material",
+   "to": "beaminner.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beam.window",
+   "to": "beaminner.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beaminner.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "beaminnerlvl",
+   "params": {
+    "operation": "multiply",
+    "b": 0.8,
+    "inputUnit": "none",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamenv.value",
+   "to": "beaminnerlvl.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beaminnerlvl.value",
+   "to": "beaminnermat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "beamcoremat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFF4FF",
+     "alpha": 1
+    },
+    "emission": 0.6,
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RibbonRenderer",
+   "id": "beamcore",
+   "params": {
+    "width": 0.035,
+    "endFade": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "trunkrev.paths",
+   "to": "beamcore.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamcoremat.material",
+   "to": "beamcore.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beam.window",
+   "to": "beamcore.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamcore.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "beamcorelvl",
+   "params": {
+    "operation": "multiply",
+    "b": 1,
+    "inputUnit": "none",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamenv.value",
+   "to": "beamcorelvl.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamcorelvl.value",
+   "to": "beamcoremat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "HelixPath",
+   "id": "hx0",
+   "params": {
+    "radius": 0.26,
+    "turns": 7,
+    "phase": 0,
+    "spin": 14,
+    "taper": "both",
+    "samples": 128
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "node-source.out",
+   "to": "hx0.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "node-target.out",
+   "to": "hx0.end"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RevealPath",
+   "id": "hx0rev",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "hx0.paths",
+   "to": "hx0rev.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "shoot.value",
+   "to": "hx0rev.fraction"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "hx0glowmat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#1C8CFF",
+     "alpha": 1
+    },
+    "emission": 0,
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RibbonRenderer",
+   "id": "hx0glow",
+   "params": {
+    "width": 0.13,
+    "endFade": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "hx0rev.paths",
+   "to": "hx0glow.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "hx0glowmat.material",
+   "to": "hx0glow.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beam.window",
+   "to": "hx0glow.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "hx0glow.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "hx0glowlvl",
+   "params": {
+    "operation": "multiply",
+    "b": 0.3,
+    "inputUnit": "none",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamenv.value",
+   "to": "hx0glowlvl.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "hx0glowlvl.value",
+   "to": "hx0glowmat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "hx0linemat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#5FF0FF",
+     "alpha": 1
+    },
+    "emission": 0.5,
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RibbonRenderer",
+   "id": "hx0line",
+   "params": {
+    "width": 0.032,
+    "endFade": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "hx0rev.paths",
+   "to": "hx0line.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "hx0linemat.material",
+   "to": "hx0line.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beam.window",
+   "to": "hx0line.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "hx0line.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "hx0linelvl",
+   "params": {
+    "operation": "multiply",
+    "b": 0.95,
+    "inputUnit": "none",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamenv.value",
+   "to": "hx0linelvl.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "hx0linelvl.value",
+   "to": "hx0linemat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "HelixPath",
+   "id": "hx1",
+   "params": {
+    "radius": 0.26,
+    "turns": 7,
+    "phase": 3.141592653589793,
+    "spin": 14,
+    "taper": "both",
+    "samples": 128
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "node-source.out",
+   "to": "hx1.start"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "node-target.out",
+   "to": "hx1.end"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RevealPath",
+   "id": "hx1rev",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "hx1.paths",
+   "to": "hx1rev.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "shoot.value",
+   "to": "hx1rev.fraction"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "hx1glowmat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#1C8CFF",
+     "alpha": 1
+    },
+    "emission": 0,
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RibbonRenderer",
+   "id": "hx1glow",
+   "params": {
+    "width": 0.13,
+    "endFade": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "hx1rev.paths",
+   "to": "hx1glow.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "hx1glowmat.material",
+   "to": "hx1glow.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beam.window",
+   "to": "hx1glow.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "hx1glow.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "hx1glowlvl",
+   "params": {
+    "operation": "multiply",
+    "b": 0.3,
+    "inputUnit": "none",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamenv.value",
+   "to": "hx1glowlvl.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "hx1glowlvl.value",
+   "to": "hx1glowmat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "hx1linemat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#5FF0FF",
+     "alpha": 1
+    },
+    "emission": 0.5,
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RibbonRenderer",
+   "id": "hx1line",
+   "params": {
+    "width": 0.032,
+    "endFade": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "hx1rev.paths",
+   "to": "hx1line.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "hx1linemat.material",
+   "to": "hx1line.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beam.window",
+   "to": "hx1line.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "hx1line.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "hx1linelvl",
+   "params": {
+    "operation": "multiply",
+    "b": 0.95,
+    "inputUnit": "none",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamenv.value",
+   "to": "hx1linelvl.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "hx1linelvl.value",
+   "to": "hx1linemat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "BranchPath",
+   "id": "forks",
+   "params": {
+    "count": 10,
+    "attachmentMin": 0.08,
+    "attachmentMax": 0.9,
+    "lengthMin": 0.35,
+    "lengthMax": 1.1,
+    "opacityMin": 0.35,
+    "opacityMax": 0.7,
+    "widthMin": 0.25,
+    "widthMax": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "JaggedPath",
+   "id": "forkjag",
+   "params": {
+    "amplitude": 0.09,
+    "regenerationHz": 24,
+    "samples": 12
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "trunk.paths",
+   "to": "forks.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "forks.branches",
+   "to": "forkjag.paths"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RevealPath",
+   "id": "forkrev",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "forkjag.paths",
+   "to": "forkrev.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "shoot.value",
+   "to": "forkrev.fraction"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "forkglowmat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#8A3CFF",
+     "alpha": 1
+    },
+    "emission": 0,
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RibbonRenderer",
+   "id": "forkglow",
+   "params": {
+    "width": 0.08,
+    "endFade": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "forkrev.paths",
+   "to": "forkglow.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "forkglowmat.material",
+   "to": "forkglow.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beam.window",
+   "to": "forkglow.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "forkglow.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "forkglowlvl",
+   "params": {
+    "operation": "multiply",
+    "b": 0.35,
+    "inputUnit": "none",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamenv.value",
+   "to": "forkglowlvl.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "forkglowlvl.value",
+   "to": "forkglowmat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "forklinemat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFC8F4",
+     "alpha": 1
+    },
+    "emission": 0.4,
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RibbonRenderer",
+   "id": "forkline",
+   "params": {
+    "width": 0.018,
+    "endFade": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "forkrev.paths",
+   "to": "forkline.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "forklinemat.material",
+   "to": "forkline.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beam.window",
+   "to": "forkline.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "forkline.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "forklinelvl",
+   "params": {
+    "operation": "multiply",
+    "b": 0.9,
+    "inputUnit": "none",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "beamenv.value",
+   "to": "forklinelvl.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "forklinelvl.value",
+   "to": "forklinemat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Schedule",
+   "id": "impact",
+   "params": {
+    "startTicks": 43,
+    "durationTicks": 90,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RingPath",
+   "id": "wave0",
+   "params": {
+    "radius": 2.2,
+    "samples": 96
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "EffectTimeCurve",
+   "id": "wave0r",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0.7166666666666667,
+       "y": 0.02
+      },
+      {
+       "x": 1.0666666666666667,
+       "y": 0.6
+      },
+      {
+       "x": 1.8166666666666669,
+       "y": 1
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "EffectTimeCurve",
+   "id": "wave0a",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0.7156666666666667,
+       "y": 0
+      },
+      {
+       "x": 0.7166666666666667,
+       "y": 0.85
+      },
+      {
+       "x": 1.1166666666666667,
+       "y": 0.3
+      },
+      {
+       "x": 1.8166666666666669,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "floor.out",
+   "to": "wave0.center"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "wave0r.value",
+   "to": "wave0.radiusScale"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "wave0ribmat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FF4FD8",
+     "alpha": 1
+    },
+    "emission": 0.3,
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RibbonRenderer",
+   "id": "wave0rib",
+   "params": {
+    "width": 0.06,
+    "endFade": 0
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "wave0.paths",
+   "to": "wave0rib.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "wave0ribmat.material",
+   "to": "wave0rib.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "impact.window",
+   "to": "wave0rib.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "wave0rib.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "wave0a.value",
+   "to": "wave0ribmat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RingPath",
+   "id": "wave1",
+   "params": {
+    "radius": 1.6,
+    "samples": 96
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "EffectTimeCurve",
+   "id": "wave1r",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0.8166666666666667,
+       "y": 0.02
+      },
+      {
+       "x": 1.1666666666666665,
+       "y": 0.6
+      },
+      {
+       "x": 1.9166666666666667,
+       "y": 1
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "EffectTimeCurve",
+   "id": "wave1a",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0.8156666666666667,
+       "y": 0
+      },
+      {
+       "x": 0.8166666666666667,
+       "y": 0.85
+      },
+      {
+       "x": 1.2166666666666668,
+       "y": 0.3
+      },
+      {
+       "x": 1.9166666666666667,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "floor.out",
+   "to": "wave1.center"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "wave1r.value",
+   "to": "wave1.radiusScale"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "wave1ribmat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#5FF0FF",
+     "alpha": 1
+    },
+    "emission": 0.3,
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RibbonRenderer",
+   "id": "wave1rib",
+   "params": {
+    "width": 0.035,
+    "endFade": 0
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "wave1.paths",
+   "to": "wave1rib.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "wave1ribmat.material",
+   "to": "wave1rib.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "impact.window",
+   "to": "wave1rib.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "wave1rib.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "wave1a.value",
+   "to": "wave1ribmat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RingPath",
+   "id": "wave2",
+   "params": {
+    "radius": 2.8,
+    "samples": 96
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "EffectTimeCurve",
+   "id": "wave2r",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0.9166666666666666,
+       "y": 0.02
+      },
+      {
+       "x": 1.2666666666666666,
+       "y": 0.6
+      },
+      {
+       "x": 2.0166666666666666,
+       "y": 1
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "EffectTimeCurve",
+   "id": "wave2a",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0.9156666666666666,
+       "y": 0
+      },
+      {
+       "x": 0.9166666666666666,
+       "y": 0.85
+      },
+      {
+       "x": 1.3166666666666667,
+       "y": 0.3
+      },
+      {
+       "x": 2.0166666666666666,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "floor.out",
+   "to": "wave2.center"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "wave2r.value",
+   "to": "wave2.radiusScale"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "wave2ribmat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#8A3CFF",
+     "alpha": 1
+    },
+    "emission": 0.3,
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RibbonRenderer",
+   "id": "wave2rib",
+   "params": {
+    "width": 0.08,
+    "endFade": 0
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "wave2.paths",
+   "to": "wave2rib.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "wave2ribmat.material",
+   "to": "wave2rib.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "impact.window",
+   "to": "wave2rib.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "wave2rib.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "wave2a.value",
+   "to": "wave2ribmat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Schedule",
+   "id": "raywin",
+   "params": {
+    "startTicks": 43,
+    "durationTicks": 26,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RadialPath",
+   "id": "rays",
+   "params": {
+    "mode": "cone",
+    "count": 22,
+    "lengthMin": 0.7,
+    "lengthMax": 2.6,
+    "coneAngle": 0.75
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "JaggedPath",
+   "id": "rayjag",
+   "params": {
+    "amplitude": 0.05,
+    "regenerationHz": 30,
+    "samples": 10
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "node-target.out",
+   "to": "rays.center"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "rays.paths",
+   "to": "rayjag.paths"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Time",
+   "id": "rayclk",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "raywin.window",
+   "to": "rayclk.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "raydec",
+   "params": {
+    "operation": "multiply",
+    "b": -7,
+    "inputUnit": "second",
+    "unit": "none"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "rayclk.localSeconds",
+   "to": "raydec.a"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "rayexp",
+   "params": {
+    "operation": "exp",
+    "unit": "none"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "raydec.value",
+   "to": "rayexp.a"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Oscillator",
+   "id": "rayflk",
+   "params": {
+    "waveform": "sine",
+    "frequency": 35,
+    "phase": 0.6,
+    "min": 0.6,
+    "max": 1,
+    "unit": "none"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "rayenv",
+   "params": {
+    "operation": "multiply",
+    "inputUnit": "none",
+    "unit": "none"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "rayexp.value",
+   "to": "rayenv.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "rayflk.value",
+   "to": "rayenv.b"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "rayglowmat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FF4FD8",
+     "alpha": 1
+    },
+    "emission": 0,
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RibbonRenderer",
+   "id": "rayglow",
+   "params": {
+    "width": 0.09,
+    "endFade": 0.06,
+    "widthOverPath": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0.1
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "rayjag.paths",
+   "to": "rayglow.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "rayglowmat.material",
+   "to": "rayglow.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "raywin.window",
+   "to": "rayglow.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "rayglow.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "rayglowlvl",
+   "params": {
+    "operation": "multiply",
+    "b": 0.4,
+    "inputUnit": "none",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "rayenv.value",
+   "to": "rayglowlvl.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "rayglowlvl.value",
+   "to": "rayglowmat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "raylinemat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFF4FF",
+     "alpha": 1
+    },
+    "emission": 0.5,
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RibbonRenderer",
+   "id": "rayline",
+   "params": {
+    "width": 0.022,
+    "endFade": 0.06,
+    "widthOverPath": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0.1
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "rayjag.paths",
+   "to": "rayline.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "raylinemat.material",
+   "to": "rayline.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "raywin.window",
+   "to": "rayline.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "rayline.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "raylinelvl",
+   "params": {
+    "operation": "multiply",
+    "b": 1,
+    "inputUnit": "none",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "rayenv.value",
+   "to": "raylinelvl.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "raylinelvl.value",
+   "to": "raylinemat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Emitter",
+   "id": "sparks",
+   "params": {
+    "shape": "cone",
+    "direction": [
+     0,
+     1,
+     0
+    ],
+    "coneAngle": 1.2,
+    "radius": 0.1,
+    "burst": 110,
+    "rate": 0,
+    "speedMin": 2,
+    "speedMax": 8,
+    "lifetimeMin": 0.4,
+    "lifetimeMax": 1.3
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "InitialProperties",
+   "id": "sparkip",
+   "params": {
+    "sizeMin": 0.02,
+    "sizeMax": 0.03
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Gravity",
+   "id": "sparkg",
+   "params": {
+    "acceleration": [
+     0,
+     -9,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Drag",
+   "id": "sparkdrag",
+   "params": {
+    "coefficient": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "GroundCollision",
+   "id": "sparkfloor",
+   "params": {
+    "mode": "bounce",
+    "restitution": 0.35,
+    "friction": 0.4
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "sparkmat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFB8F0",
+     "alpha": 1
+    },
+    "emission": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ParticleTrail",
+   "id": "sparktrail",
+   "params": {
+    "history": 0.09,
+    "width": 0.016,
+    "endFade": 0.35
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "node-target.out",
+   "to": "sparks.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "impact.start",
+   "to": "sparks.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "sparks.particles",
+   "to": "sparkip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "sparkip.particles",
+   "to": "sparkg.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "sparkg.particles",
+   "to": "sparkdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "sparkdrag.particles",
+   "to": "sparkfloor.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "sparkfloor.particles",
+   "to": "sparktrail.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "sparkmat.material",
+   "to": "sparktrail.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "sparktrail.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Schedule",
+   "id": "srclightwin",
+   "params": {
+    "startTicks": 0,
+    "durationTicks": 48,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "PointLight",
+   "id": "srclight",
+   "params": {
+    "color": {
+     "srgb": "#B070FF",
+     "alpha": 1
+    },
+    "intensity": 20,
+    "range": 4.5,
+    "flicker": 0.25,
+    "intensityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.06
+      },
+      {
+       "x": 0.8,
+       "y": 0.6
+      },
+      {
+       "x": 0.88,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "node-source.out",
+   "to": "srclight.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "srclightwin.window",
+   "to": "srclight.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "srclight.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "PointLight",
+   "id": "hitlight",
+   "params": {
+    "color": {
+     "srgb": "#FF5CE0",
+     "alpha": 1
+    },
+    "intensity": 70,
+    "range": 7,
+    "flicker": 0.2,
+    "intensityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 1
+      },
+      {
+       "x": 0.08,
+       "y": 0.6
+      },
+      {
+       "x": 0.3,
+       "y": 0.18
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "floor.out",
+   "to": "hitlight.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "impact.window",
+   "to": "hitlight.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "hitlight.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScreenFlash",
+   "id": "flash",
+   "params": {
+    "color": {
+     "srgb": "#F2D8FF",
+     "alpha": 1
+    },
+    "alpha": 0.15,
+    "durationTicks": 5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "CameraImpulse",
+   "id": "shake",
+   "params": {
+    "durationTicks": 10,
+    "translation": 0.05,
+    "rotation": 0.01
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "impact.start",
+   "to": "flash.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "impact.start",
+   "to": "shake.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "flash.presentation",
+   "to": "node-output.presentation"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "shake.presentation",
+   "to": "node-output.presentation"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Schedule",
+   "id": "residue",
+   "params": {
+    "startTicks": 53,
+    "durationTicks": 115,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RadialPath",
+   "id": "arcs",
+   "params": {
+    "mode": "sphere",
+    "count": 7,
+    "lengthMin": 0.25,
+    "lengthMax": 0.85
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "JaggedPath",
+   "id": "arcjag",
+   "params": {
+    "amplitude": 0.08,
+    "regenerationHz": 18,
+    "samples": 8
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "node-target.out",
+   "to": "arcs.center"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "arcs.paths",
+   "to": "arcjag.paths"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Time",
+   "id": "resclk",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "residue.window",
+   "to": "resclk.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "resdec",
+   "params": {
+    "operation": "multiply",
+    "b": -1.6,
+    "inputUnit": "second",
+    "unit": "none"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "resclk.localSeconds",
+   "to": "resdec.a"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "resexp",
+   "params": {
+    "operation": "exp",
+    "unit": "none"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "resdec.value",
+   "to": "resexp.a"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Oscillator",
+   "id": "resflk",
+   "params": {
+    "waveform": "sine",
+    "frequency": 11,
+    "phase": 0.6,
+    "min": 0.15,
+    "max": 1,
+    "unit": "none"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "resenv",
+   "params": {
+    "operation": "multiply",
+    "inputUnit": "none",
+    "unit": "none"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "resexp.value",
+   "to": "resenv.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "resflk.value",
+   "to": "resenv.b"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "arcglowmat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#8A3CFF",
+     "alpha": 1
+    },
+    "emission": 0,
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RibbonRenderer",
+   "id": "arcglow",
+   "params": {
+    "width": 0.06,
+    "endFade": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "arcjag.paths",
+   "to": "arcglow.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "arcglowmat.material",
+   "to": "arcglow.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "residue.window",
+   "to": "arcglow.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "arcglow.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "arcglowlvl",
+   "params": {
+    "operation": "multiply",
+    "b": 0.4,
+    "inputUnit": "none",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "resenv.value",
+   "to": "arcglowlvl.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "arcglowlvl.value",
+   "to": "arcglowmat.opacity"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "Material",
+   "id": "arclinemat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#F0C8FF",
+     "alpha": 1
+    },
+    "emission": 0.4,
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "RibbonRenderer",
+   "id": "arcline",
+   "params": {
+    "width": 0.014,
+    "endFade": 0.06
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "arcjag.paths",
+   "to": "arcline.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "arclinemat.material",
+   "to": "arcline.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "residue.window",
+   "to": "arcline.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "arcline.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lance",
+   "type": "ScalarMath",
+   "id": "arclinelvl",
+   "params": {
+    "operation": "multiply",
+    "b": 0.9,
+    "inputUnit": "none",
+    "unit": "normalized"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "resenv.value",
+   "to": "arclinelvl.a"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lance",
+   "from": "arclinelvl.value",
+   "to": "arclinemat.opacity"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "lance"
+  }
+ ],
+ [
+  "vfx_render_frames",
+  {
+   "docId": "lance",
+   "ticks": [
+    30,
+    44,
+    50,
+    70,
+    120
+   ]
+  }
+ ]
+]

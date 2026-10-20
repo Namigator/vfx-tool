@@ -3,7 +3,7 @@
 
 # Component reference
 
-All 50 ready-made components. A component is a complete pre-wired node graph inserted into an effect; you change it through its published controls (knobs), not by editing its nodes. Every control below was read from an actual insertion into a blank document, so ids, types and ranges are exactly what the tools will report.
+All 51 ready-made components. A component is a complete pre-wired node graph inserted into an effect; you change it through its published controls (knobs), not by editing its nodes. Every control below was read from an actual insertion into a blank document, so ids, types and ranges are exactly what the tools will report.
 
 Controls come in two kinds:
 - **automatic**: every component gets **Start at** (`ctl-<id>-start-at`, ticks: delays the whole component so it can play after another one; becomes "Delay after event" when started from an event), **Colour** (`ctl-<id>-colour-shift`: rotates every colour of the component around the colour wheel in degrees -180..180; the editor shows it as a colour picker of the swatch shown, and `vfx_set_control` also accepts a "#RRGGBB" string) and, when the component has two or more visual parts, one colour picker per part (`ctl-<id>-colour-<part>`: Flame, Embers, Smoke & dust, Flash & rings, Light...; each takes a "#RRGGBB" and recolours only that part).
@@ -69,11 +69,12 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
   - [energy-bolt — Energy: charged bolt](#energy-bolt)
   - [energy-needle — Energy: fast needle](#energy-needle)
   - [energy-orb — Energy: heavy orb](#energy-orb)
-- [Generic (4)](#generic)
+- [Generic (5)](#generic)
   - [spark-burst — Spark burst](#spark-burst)
   - [smoke-plume — Smoke plume](#smoke-plume)
   - [impact-flash — Impact flash](#impact-flash)
   - [spark-aftershock — Spark aftershock](#spark-aftershock)
+  - [arcane-lance — Arcane Lance](#arcane-lance)
 
 ## Fire
 
@@ -1370,3 +1371,29 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 | `ctl-spark-aftershock-delay` | Aftershock delay | knob | integer | tick | `14` | 0..600 step 1 | resample |  | later.delayTicks |
 | `ctl-spark-aftershock-speed` | Spark speed | knob | number | metersPerSecond | `4` | 0..100 | resample |  | sparks.speedMax, sparks.speedMin ×0.5 |
 | `ctl-spark-aftershock-dust` | Dust size | knob | number | meter | `0.35` | 0.00175439..20 | resample |  | dip.sizeMax, dip.sizeMin ×0.57 |
+
+### arcane-lance
+
+**Arcane Lance** — No-sprite showcase: gyroscope rings and inward streaks charge at Source, then a jagged magenta lance with braided cyan helix strands and forks hits Target with floor shockwaves, a ray burst, ribbon sparks, light, flash, shake and crackling residue.
+
+- Family: Generic; travels from Source to Target.
+- Duration: 168 ticks (2.8 s) minimum; the document grows to fit it.
+- Size: 123 nodes, 194 links.
+- Node types used: Attract, BranchPath, CameraImpulse, Drag, EffectTimeCurve ×7, Emitter ×2, Gravity, GroundCollision, HelixPath ×2, InitialProperties ×2, JaggedPath ×5, LinePath, Material ×24, OffsetAnchor, Oscillator ×3, ParticlePaths, ParticleTrail ×2, PointLight ×2, RadialPath ×2, RevealPath ×5, RibbonRenderer ×18, RingPath ×3, RingRenderer ×4, ScalarMath ×23, Schedule ×6, ScreenFlash, Time ×3.
+- Add with `vfx_add_component` (component "arcane-lance") or open as a new effect with `vfx_new_document` component="arcane-lance". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "arcane-lance", a second copy gets "arcane-lance-2").
+
+**Controls**
+
+| control id | label | kind | type | unit | default | range | edit | colour | drives (node.parameter) |
+|---|---|---|---|---|---|---|---|---|---|
+| `ctl-arcane-lance-start-at` | Start at | automatic | integer | tick | `0` | 0..547 step 1 | resample |  | charge.startTicks, beam.startTicks +40, impact.startTicks +43, raywin.startTicks +43, srclightwin.startTicks, residue.startTicks +53 |
+| `ctl-arcane-lance-colour-shift` | Colour | automatic | number | — | `0` | -180..180 step 1 | live | picker, swatch #1C8CFF | gyro0mat.hueShift, gyro1mat.hueShift, gyro2mat.hueShift, gyro3mat.hueShift, motemat.hueShift, tethermat.hueShift, beamhalomat.hueShift, beamoutermat.hueShift, beaminnermat.hueShift, beamcoremat.hueShift, hx0glowmat.hueShift, hx0linemat.hueShift, hx1glowmat.hueShift, hx1linemat.hueShift, forkglowmat.hueShift, forklinemat.hueShift, wave0ribmat.hueShift, wave1ribmat.hueShift, wave2ribmat.hueShift, rayglowmat.hueShift, raylinemat.hueShift, sparkmat.hueShift, srclight.hueShift, hitlight.hueShift, arcglowmat.hueShift, arclinemat.hueShift |
+| `ctl-arcane-lance-colour-main` | Bolt colour | automatic | color | — | `#1C8CFF` | — | live | picker (#RRGGBB) | gyro0mat.recolorTo, gyro1mat.recolorTo, gyro2mat.recolorTo, gyro3mat.recolorTo, tethermat.recolorTo, beamhalomat.recolorTo, beamoutermat.recolorTo, beaminnermat.recolorTo, beamcoremat.recolorTo, hx0glowmat.recolorTo, hx0linemat.recolorTo, hx1glowmat.recolorTo, hx1linemat.recolorTo, forkglowmat.recolorTo, forklinemat.recolorTo, wave0ribmat.recolorTo, wave1ribmat.recolorTo, wave2ribmat.recolorTo, rayglowmat.recolorTo, raylinemat.recolorTo, arcglowmat.recolorTo, arclinemat.recolorTo |
+| `ctl-arcane-lance-colour-sparks` | Sparks colour | automatic | color | — | `#D8A8FF` | — | live | picker (#RRGGBB) | motemat.recolorTo, sparkmat.recolorTo |
+| `ctl-arcane-lance-colour-light` | Light colour | automatic | color | — | `#FF5CE0` | — | live | picker (#RRGGBB) | srclight.recolorTo, hitlight.recolorTo |
+| `ctl-arcane-lance-turns` | Helix turns | knob | number | — | `7` | -16..16 | resample |  | hx0.turns, hx1.turns |
+| `ctl-arcane-lance-width` | Lance width | knob | number | meter | `0.035` | 0.001..0.36842 | live |  | beamcore.width, beaminner.width ×3.1429, beamouter.width ×9.7143, beamhalo.width ×27.1429 |
+| `ctl-arcane-lance-forks` | Fork count | knob | integer | — | `10` | 0..64 step 1 | resample |  | forks.count |
+| `ctl-arcane-lance-sparks` | Impact sparks | knob | integer | — | `110` | 0..4096 step 1 | resample |  | sparks.burst |
+| `ctl-arcane-lance-shock` | Shockwave size | knob | number | meter | `2.2` | 0.00137495..39.2866 | resample |  | wave0.radius, wave1.radius ×0.7273, wave2.radius ×1.2727 |
+| `ctl-arcane-lance-light` | Impact light | knob | number | linearGain | `70` | 0..100 | live |  | hitlight.intensity |
