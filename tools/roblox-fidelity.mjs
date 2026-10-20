@@ -14,6 +14,7 @@
 // 3. Writes side-by-side frames, a sheet (editor | roblox per tick) and metrics.json (luma, bright area, bbox).
 // Needs: vite dev server, Chrome, rojo, ffmpeg, Roblox Studio. The capture is the primary monitor: do not use the PC.
 import { spawnSync } from 'node:child_process';
+import { captureRun } from './captureStatus.node.ts';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
@@ -49,13 +50,15 @@ const chrome = ['C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Pro
 // ---- 1. editor frames ----
 const docUrl = '/' + resolve(docPath).slice(ROOT.length + 1).replace(/\\/g, '/');
 for (const t of [...ticks, 'plate']) {
+  const capture = captureRun(ROOT, t === 'plate' ? 0 : t, editor);
   rmSync(join(out, `editor-${t}.png`), { force: true });
   // The plate solos a node that does not exist: same camera and stage, no effect (for background subtraction).
   const url = `${editor}/capture.html?doc=${encodeURIComponent(docUrl)}&tick=${t === 'plate' ? 0 : t}&cam=${cam.join(',')}&look=${look.join(',')}&fov=${fov}${t === 'plate' ? '&solo=__none__' : ''}`;
   const png = join(out, `editor-${t}.png`);
-  // Chrome sometimes writes the screenshot and then never exits: a timeout plus the file is success.
-  spawnSync(chrome, ['--headless=new', '--hide-scrollbars', `--window-size=${W},${H}`, '--virtual-time-budget=20000', `--screenshot=${png}`, url], { timeout: 60_000, killSignal: 'SIGKILL' });
+  // A timeout still needs both the PNG and a matching success beacon.
+  spawnSync(chrome, ['--headless=new', '--hide-scrollbars', `--window-size=${W},${H}`, '--virtual-time-budget=20000', `--screenshot=${png}`, `${url}&run=${capture.run}`], { timeout: 60_000, killSignal: 'SIGKILL' });
   if (!existsSync(png)) throw new Error(`editor capture failed at tick ${t}`);
+  capture.check(png);
 }
 
 // ---- 2. Roblox place + recording ----

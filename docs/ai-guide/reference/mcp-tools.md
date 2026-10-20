@@ -557,7 +557,7 @@ URL that opens this document in the running editor (vite dev server) for visual 
 
 ## vfx_render_frames
 
-Render effect frames to PNG with headless Chrome (needs the vite dev server) and return the images. Look at them before claiming anything about the visual result. Glow (bloom) is on by default and is tuned per effect on the EffectOutput node (glowStrength, glowRadius, glowThreshold, glowLimit — see vfx_describe_node_type EffectOutput); glow:false shows the raw shapes.
+Render effect frames to PNG with headless Chrome (needs the vite dev server) and return the images. Fails when the frame reports a render or validation error, when a stale/prebuilt editor does not report capture status, or when editor and MCP node definitions differ. Failed captures retain the PNG for inspection. Look at them before claiming anything about the visual result. Glow (bloom) is on by default and is tuned per effect on the EffectOutput node (glowStrength, glowRadius, glowThreshold, glowLimit — see vfx_describe_node_type EffectOutput); glow:false shows the raw shapes.
 
 | parameter | type | required | description / constraints |
 |---|---|---|---|

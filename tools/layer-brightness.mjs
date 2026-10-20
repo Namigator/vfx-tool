@@ -14,6 +14,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { unrealEffectFrom } from '../src/export/unreal/fromPlan.ts';
+import { captureRun } from './captureStatus.node.ts';
 
 // --engine unreal (2026-10-17): the same comparison against an imported Unreal package. Needs --ue-pkg <package dir>
 // (written by tools/unreal-export.mjs) already imported at --ue-dest </Game/... folder> (tools/unreal-check.mjs). One
@@ -62,10 +63,12 @@ if (!layers.length) throw new Error(`no layers (have: ${all.map(l => l.editor).j
 const docUrl = '/' + resolve(spec.doc).slice(ROOT.length + 1).replace(/\\/g, '/');
 const cam = spec.camera;
 function editorShot(solo, glow, png) {
+  const capture = captureRun(ROOT, tick, editor);
   rmSync(png, { force: true });
   const url = `${editor}/capture.html?doc=${encodeURIComponent(docUrl)}&tick=${tick}&cam=${cam.position.join(',')}&look=${cam.target.join(',')}&fov=${cam.fov ?? 50}&solo=${encodeURIComponent(solo)}&glow=${glow}`;
-  spawnSync(chrome, ['--headless=new', '--hide-scrollbars', `--window-size=${W},${H}`, '--virtual-time-budget=20000', `--screenshot=${png}`, url], { timeout: 60_000, killSignal: 'SIGKILL' });
+  spawnSync(chrome, ['--headless=new', '--hide-scrollbars', `--window-size=${W},${H}`, '--virtual-time-budget=20000', `--screenshot=${png}`, `${url}&run=${capture.run}`], { timeout: 60_000, killSignal: 'SIGKILL' });
   if (!existsSync(png)) throw new Error(`editor capture failed (${solo})`);
+  capture.check(png);
 }
 function godotShot(keep, glow, png) {
   const dir = join(out, 'godot-movie');

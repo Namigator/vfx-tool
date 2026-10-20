@@ -4,6 +4,7 @@
 import type { Diagnostic } from './model/types.ts';
 import { validateDocument } from './model/document.ts';
 import { createRegistry } from './graph/registry.ts';
+import { registrySignature } from './graph/registrySignature.ts';
 import { compileParticlePreview } from './graph/toParticles.ts';
 import { compilePathPreview } from './graph/toPaths.ts';
 import { choosePreviewMode, hasRootAudio } from './render/previewMode.ts';
@@ -15,16 +16,31 @@ import { glowSettings } from './graph/glow.ts';
 import { soloMask } from './graph/solo.ts';
 const q = new URLSearchParams(location.search);
 const msg = document.getElementById('msg') as HTMLElement;
-const fail = (text: string) => { document.title = `ERROR ${text.slice(0, 200)}`; msg.textContent = text; };
+const tick = Math.max(0, Math.floor(Number(q.get('tick') ?? '0')));
+const registry = createRegistry(), signature = registrySignature(registry);
+let failed = false, pending = Promise.resolve();
+function report(state: 'ok' | 'error', message?: string): Promise<void> {
+  if (!q.has('run')) return pending;
+  // Serialize reports so a late viewport error cannot be overwritten by success.
+  pending = pending.then(async () => {
+    if (state === 'ok' && failed) return;
+    try { await fetch('/__vfx/capture-status', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ run: q.get('run'), tick, state, message, registry: signature }) }); } catch { /* MCP rejects missing status. */ }
+  });
+  return pending;
+}
+const fail = async (text: string): Promise<void> => {
+  failed = true; msg.textContent = text;
+  await report('error', text);
+  document.title = `ERROR ${text.slice(0, 200)}`;
+};
 const fmt = (e: Diagnostic[]) => e.map(d => `${d.nodeId ?? ''} ${d.message}`).join(' | ');
 
 async function main(): Promise<void> {
   const url = q.get('doc');
   if (!url) return fail('missing ?doc=');
-  const tick = Math.max(0, Math.floor(Number(q.get('tick') ?? '0')));
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) return fail(`HTTP ${res.status} for ${url}`);
-  const v = validateDocument(JSON.parse(await res.text()), { registry: createRegistry() });
+  const v = validateDocument(JSON.parse(await res.text()), { registry });
   if (!v.ok) return fail(fmt(v.errors));
   const d = v.value;
   // Bundle assets are served beside the document (the MCP writes them to work/mcp/assets/).
@@ -95,7 +111,9 @@ async function main(): Promise<void> {
   await new Promise(r => setTimeout(r, 1200));
   vp.seek(Math.min(tick, d.durationTicks - 1));
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-  document.title = `READY ${tick}`;
+  if (failed) { await pending; return; }
+  await report('ok');
+  if (!failed) document.title = `READY ${tick}`;
 }
 
 main().catch(e => fail(e instanceof Error ? e.message : String(e)));

@@ -8,6 +8,9 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
+import { classifyCaptureStatus } from './captureStatus.ts';
+import { registrySignature } from '../src/graph/registrySignature.ts';
 import { chromeEval } from './chromeEval.ts';
 import { MEDIA_FORMATS, mediaExtension, resolveMediaOptions, type MediaFormat } from '../src/export/media/layout.ts';
 import { compositeChecker } from '../src/export/media/matte.ts';
@@ -722,23 +725,34 @@ ${md}`);
     if (!chrome) return bad('No Chrome/Edge found; set VFX_CHROME to its executable path.');
     const dir = join(root, 'work', 'mcp', 'frames'); mkdirSync(dir, { recursive: true });
     const content: Content[] = [], paths: string[] = [], stats: string[] = [];
+    const signature = registrySignature(createRegistry());
     for (const tick of ticks) {
+      const nonce = randomUUID(), statusPath = join(dir, 'status', `${nonce}.json`);
       const out = join(dir, `${docId}-t${tick}${background === 'light' ? '-light' : ''}.png`), profile = mkdtempSync(join(tmpdir(), 'vfx-chrome-'));
       rmSync(out, { force: true });
       const url = new URL(`capture.html?doc=/work/mcp/${encodeURIComponent(docId)}.json&tick=${tick}&label=1${glow === false ? '&glow=0' : ''}${background === 'light' ? '&bg=light' : ''}${solo?.length ? `&solo=${solo.map(encodeURIComponent).join(',')}` : ''}${orbit && !camera ? `&orbit=${orbit.yaw},${orbit.pitch},${orbit.distance ?? 1}` : ''}${camera ? `&cam=${camera.position.join(',')}&look=${camera.target.join(',')}${camera.fov ? `&fov=${camera.fov}` : ''}` : ''}`, editorUrl).href;
       const run = await runChrome(chrome, ['--headless=new', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--hide-scrollbars', '--no-first-run', '--no-default-browser-check',
-        `--user-data-dir=${profile}`, `--window-size=${width ?? 960},${height ?? 540}`, '--virtual-time-budget=6000', `--screenshot=${out}`, url], RENDER_TIMEOUT_MS);
+        `--user-data-dir=${profile}`, `--window-size=${width ?? 960},${height ?? 540}`, '--virtual-time-budget=6000', `--screenshot=${out}`, `${url}&run=${nonce}`], RENDER_TIMEOUT_MS);
       try { rmSync(profile, { recursive: true, force: true }); } catch { /* Chrome may still hold files briefly */ }
+      let raw: string | undefined;
+      try { if (existsSync(statusPath)) raw = readFileSync(statusPath, 'utf8'); }
+      finally { rmSync(statusPath, { force: true }); }
       if (run === 'timeout' && !existsSync(out)) return bad(`Rendering tick ${tick} took longer than ${RENDER_TIMEOUT_MS / 1000} s, so Chrome was stopped. Nothing is wrong with the document necessarily: retry once; if it repeats, check the dev server at ${editorUrl}.`);
       if (!existsSync(out)) return bad(`Chrome produced no image for tick ${tick}. Is the dev server running at ${editorUrl}?`);
       const bytes = readFileSync(out);
+      const status = classifyCaptureStatus(raw, signature, tick, editorUrl);
+      if (!status.ok) {
+        const result = bad(`${status.message}\nPNG for inspection: ${out}`);
+        result.content.push({ type: 'image', data: bytes.toString('base64'), mimeType: 'image/png' });
+        return result;
+      }
       content.push({ type: 'image', data: bytes.toString('base64'), mimeType: 'image/png' }); paths.push(out);
       stats.push(describeFrameStats(tick, pngFrameStats(bytes)));
     }
     content.unshift({ type: 'text', text: `Rendered ${ticks.length} frame(s): ${paths.join(', ')}\n${stats.join('\n')}` });
     return { content };
   };
-  tool('vfx_render_frames', 'Render effect frames to PNG with headless Chrome (needs the vite dev server) and return the images. Look at them before claiming anything about the visual result. Glow (bloom) is on by default and is tuned per effect on the EffectOutput node (glowStrength, glowRadius, glowThreshold, glowLimit — see vfx_describe_node_type EffectOutput); glow:false shows the raw shapes.', {
+  tool('vfx_render_frames', 'Render effect frames to PNG with headless Chrome (needs the vite dev server) and return the images. Fails when the frame reports a render or validation error, when a stale/prebuilt editor does not report capture status, or when editor and MCP node definitions differ. Failed captures retain the PNG for inspection. Look at them before claiming anything about the visual result. Glow (bloom) is on by default and is tuned per effect on the EffectOutput node (glowStrength, glowRadius, glowThreshold, glowLimit — see vfx_describe_node_type EffectOutput); glow:false shows the raw shapes.', {
     docId: z.string(), ticks: z.array(z.number().int().min(0)).min(1).max(8), width: z.number().int().min(160).max(1920).optional(), height: z.number().int().min(120).max(1080).optional(), glow: z.boolean().optional(), background: z.enum(['dark', 'light']).optional(),
     camera: z.object({ position: z.tuple([z.number(), z.number(), z.number()]), target: z.tuple([z.number(), z.number(), z.number()]), fov: z.number().min(5).max(120).optional() }).optional(),
     solo: z.array(z.string()).optional().describe('Show only these nodes (renderers, lights or whole components/Group nodes), like the editor Outline Solo. The effect is unchanged.'),
