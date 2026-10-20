@@ -115,6 +115,8 @@ export type ParticleTrailLayer = {
   colorOverWindow?: GradientValue; window?: [number, number];
   /** MotionTrail Width over trail (absent = constant), 0 = tail to 1 = head. */
   widthOverTrail?: CurveValue;
+  /** MotionTrail Spiral (render/trailSpiral.ts); absent when Spiral radius is 0. */
+  spiral?: { radius: number; turns: number; spin: number; phase: number; radiusOverTrail?: CurveValue };
 };
 /** 05 PointLight: lights the preview ground over its window. */
 export type PointLightLayer = {
@@ -923,6 +925,12 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
           blend: param(m, 'blend') as ParticleTrailLayer['blend'], alphaCutoff: num(m, 'alphaCutoff'), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
           ...tintField(tintOf(anchorNode)), ...(cowOn ? { colorOverWindow: structuredClone(cow), window: [start, start + len] as [number, number] } : {}),
           ...(() => { const w = param(b, 'widthOverTrail') as CurveValue | undefined; return w && w.keys.some(k => k.y !== 1) ? { widthOverTrail: structuredClone(w) } : {}; })(),
+          ...(() => {
+            const r = num(b, 'spiralRadius');
+            if (!(r > 0)) return {};
+            const rc = param(b, 'spiralRadiusOverTrail') as CurveValue;
+            return { spiral: { radius: r * scale, turns: num(b, 'spiralTurns'), spin: num(b, 'spiralSpin'), phase: num(b, 'spiralPhase'), ...(rc.keys.some(k => k.y !== 1) ? { radiusOverTrail: structuredClone(rc) } : {}) } };
+          })(),
         });
         continue;
       }

@@ -39,6 +39,7 @@ import { MAX_PREVIEW_POINTS, type PathPreviewLayer, type PathPreviewPlan } from 
 import { DEFAULT_MAX_LIVE_PARTICLES, PARTICLE_DT, ParticleSimulation, type ParticleState } from '../runtime/particles.ts';
 import { PlaybackClock } from '../runtime/clock.ts';
 import { DEFAULT_RIBBON_END_FADE, framePoints, RibbonGeometry, ribbonSoftness, ribbonWidthShape, type FramePointSet } from './RibbonGeometry.ts';
+import { spiralPoints } from './trailSpiral.ts';
 import { pathViewDirection } from './pathView.ts';
 import { appendFrameSets, collectTimelineFrameSets, currentParticleFrameSets, particleFrameSets } from './pathFraming.ts';
 import { layerRenderOrder } from './layerOrder.ts';
@@ -1627,7 +1628,8 @@ export class PreviewViewport {
         if (ts.cow && w) { sampleLifeGradient(ts.cow, Math.min(1, Math.max(0, (tick + alpha - w[0]) / Math.max(1, w[1] - w[0]))), rgbaScratch); own[0] *= rgbaScratch[0]; own[1] *= rgbaScratch[1]; own[2] *= rgbaScratch[2]; }
         for (const p of paths) { const c = tintTarget(own, ts, t.layer.pathTint, p.track, tick + alpha); p.tint = [c[0] / Math.max(0.02, ts.base[0]), c[1] / Math.max(0.02, ts.base[1]), c[2] / Math.max(0.02, ts.base[2])]; }
       }
-      t.ribbon.update(paths, { cameraPosition, width: t.layer.width, endFade: t.layer.endFade, fadeHead: false, ...ribbonWidthShape(t.layer.widthOverTrail) });
+      const sp = t.layer.spiral, drawn = sp ? paths.map(p => ({ ...p, points: spiralPoints(p.points, sp, (tick + alpha) * PARTICLE_DT) })) : paths;
+      t.ribbon.update(drawn, { cameraPosition, width: t.layer.width, endFade: t.layer.endFade, fadeHead: false, ...ribbonWidthShape(t.layer.widthOverTrail) });
     }
   }
 

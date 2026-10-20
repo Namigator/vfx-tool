@@ -1,10 +1,10 @@
 // Writes mcp/examples/force-lance.steps.json: "Force Lance", a thrown, lance-shaped energy projectile (no sprites).
 // The lance is a short MotionTrail (LAG ticks of history) behind a PathFollower on the Source→Target line, drawn
 // with a spear-shaped Width over trail: it stretches out of the hand on release, flies rigid, and plunges into
-// Target tip first. Two riders on tight helices, in step with the head, draw strands wrapped around it. Layers, in breakdown order:
+// Target tip first. Two spiralled trails (MotionTrail Spiral) wrap strands around it, closed at the tip. Layers, in breakdown order:
 //   1 charge   gyroscope rings + inward streaks at Source
 //   2 lance    spear-shaped core/inner/outer/halo ribbons
-//   3 helix    two thin strands wrapped tight around the lance
+//   3 helix    two strands spiralling around the lance, closed at the tip
 //   4 trail    motion-trail ribbons + ribbon sparks shed backwards along the flight
 //   5 impact   floor shockwaves, ray burst, ribbon sparks
 //   6 light    hand glow, travelling light, impact light, flash, shake
@@ -17,11 +17,11 @@ const DOC = 'flance';
 const { S, add, wire, out, curve, col, ribbon, envelope } = recipe(DOC);
 const T = 60, sec = t => t / T;
 const Q_X90 = [0.7071068, 0, 0, 0.7071068], Q_Z90 = [0, 0, 0.7071068, 0.7071068], Q_Y90 = [0, 0.7071068, 0, 0.7071068];
-const VIOLET = '#8A3CFF', MAGENTA = '#FF4FD8', CYAN = '#5FF0FF', WHITE = '#FFF6FF';
+const VIOLET = '#8A3CFF', MAGENTA = '#FF4FD8', CYAN = '#B89CFF', WHITE = '#FFF6FF';
+const STRAND = '#D2A8FF';   // light purple helix strands (owner: cyan -> more purplish)
 
 // Timeline (ticks). FLIGHT = head travel time; LAG = lance length in ticks of travel.
 const CHARGE = 34, THROW = 34, FLIGHT = 26, LAG = 7, END = 170;
-const HELIX_TURNS = 4;   // wraps over the whole flight line; ~1 wrap per lance length
 const HIT = THROW + FLIGHT;
 
 S.push(['vfx_new_document', { template: 'blank', id: DOC }]);
@@ -70,16 +70,14 @@ lanceLayer('lanceinner', MAGENTA, 0.36, 0.5, 0);
 lanceLayer('lancecore', '#F4E8FF', 0.11, 0.55, 0);
 
 // ── 3 HELIX ──────────────────────────────────────────────────────────────────────────────────────
-// Two riders on tight helices around the flight line, in step with the head: a short trail behind each is a
-// strand wrapped around the lance.
+// Two strands that spiral around the lance itself (MotionTrail Spiral): closed onto the tip, circling wider toward
+// the middle and back, spinning as it flies.
+const helixOpen = curve([[0, 0.75], [0.4, 1], [0.75, 0.55], [1, 0]]);
 for (const [i, phase] of [[0, 0], [1, Math.PI]]) {
-  add('HelixPath', `hx${i}`, { radius: 0.12, turns: HELIX_TURNS, phase, spin: 0, taper: 'none', samples: 128 });
-  wire('node-source.out', `hx${i}.start`); wire('node-target.out', `hx${i}.end`);
-  add('PathFollower', `rider${i}`, { durationTicks: FLIGHT, easing: 'linear' });
-  wire(`hx${i}.paths`, `rider${i}.paths`); wire('headwin.window', `rider${i}.window`);
-  add('Material', `hx${i}mat`, { template: 'RibbonUnlit', blend: 'additive', tint: col(CYAN), opacity: 0.95, emission: 0.6 });
-  add('MotionTrail', `hx${i}line`, { history: LANCE_S * 0.9, maxPoints: 32, width: 0.022, endFade: 0.3 });
-  wire(`rider${i}.anchor`, `hx${i}line.anchor`); wire(`hx${i}mat.material`, `hx${i}line.material`); wire('flight.window', `hx${i}line.window`); out(`hx${i}line`);
+  add('Material', `hx${i}mat`, { template: 'RibbonUnlit', blend: 'additive', tint: col(STRAND), opacity: 0.95, emission: 0.5 });
+  add('MotionTrail', `hx${i}line`, { history: LANCE_S, maxPoints: 32, width: 0.02, endFade: 0.25,
+    spiralRadius: 0.17, spiralTurns: 1.75, spiralSpin: 18, spiralPhase: phase, spiralRadiusOverTrail: helixOpen });
+  wire('head.anchor', `hx${i}line.anchor`); wire(`hx${i}mat.material`, `hx${i}line.material`); wire('flight.window', `hx${i}line.window`); out(`hx${i}line`);
 }
 
 // ── 4 TRAIL ──────────────────────────────────────────────────────────────────────────────────────

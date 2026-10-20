@@ -1229,6 +1229,11 @@ Draws a smooth trail behind a moving anchor (a projectile core from PathFollower
 | `width` | Width | number | meter | `0.12` | 0.001..5 | — | live | constant | scalarSignal | Trail width at the head (m). |
 | `endFade` | End fade | number | normalized | `0.35` | 0..0.5 | — | live | constant | scalarSignal | Fraction of the trail length that fades out at the tail (0..0.5). |
 | `widthOverTrail` | Width over trail | curve | normalized | `curve normalized/linear: 0:1 1:1` | 0..1 (normalized curve) | — | live | constant | curveValue | Width multiplier along the trail, 0 = oldest point (tail) to 1 = the anchor (head). A short trail with a pointed profile draws a flying spear or bolt. |
+| `spiralRadius` | Spiral radius | number | meter | `0` | 0..5 | — | live | constant | scalarSignal | Above 0, the trail winds around its own centre line at this distance: strands wrapped around a flying lance or bolt. 0 = off. |
+| `spiralTurns` | Spiral turns | number | — | `1.5` | 0..20 | — | live | constant | scalarSignal | Full turns over the trail length. |
+| `spiralSpin` | Spiral spin | number | perSecond | `0` | -60..60 | — | live | constant | scalarSignal | Radians per second the spiral rotates as it flies (negative = the other way). |
+| `spiralPhase` | Spiral phase | number | radian | `0` | -6.28319..6.28319 | — | live | constant | scalarSignal | Start angle: two trails at 0 and π braid. |
+| `spiralRadiusOverTrail` | Spiral radius over trail | curve | normalized | `curve normalized/linear: 0:1 1:1` | 0..1 (normalized curve) | — | live | constant | curveValue | Spiral radius multiplier along the trail, 0 = tail .. 1 = head (0 at 1 closes the spiral at the tip). |
 | `colorOverWindow` | Colour over window | gradient | — | `gradient: 0:#FFFFFF 1:#FFFFFF` | — | — | live | constant | gradientValue | Multiplies the material colour across the window (0 = window start, 1 = end). White = unchanged. |
 | `renderOrderOffset` | Render order offset | integer | — | `0` | -32..32 step 1 | — | live | constant | scalarSignal | Draw order tweak: higher draws on top of lower among layers of the same blend (-32..32). |
 

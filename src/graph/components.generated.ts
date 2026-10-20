@@ -44269,7 +44269,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "template": "RibbonUnlit",
      "blend": "additive",
      "tint": {
-      "srgb": "#5FF0FF",
+      "srgb": "#B89CFF",
       "alpha": 1
      },
      "emission": 0.6,
@@ -44699,67 +44699,53 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     }
    },
    {
-    "id": "hx0",
-    "type": "HelixPath",
-    "params": {
-     "radius": 0.12,
-     "turns": 4,
-     "phase": 0,
-     "spin": 0,
-     "taper": "none",
-     "samples": 128
-    }
-   },
-   {
-    "id": "rider0",
-    "type": "PathFollower",
-    "params": {
-     "durationTicks": 26,
-     "easing": "linear"
-    }
-   },
-   {
     "id": "hx0mat",
     "type": "Material",
     "params": {
      "template": "RibbonUnlit",
      "blend": "additive",
      "tint": {
-      "srgb": "#5FF0FF",
+      "srgb": "#D2A8FF",
       "alpha": 1
      },
      "opacity": 0.95,
-     "emission": 0.6
+     "emission": 0.5
     }
    },
    {
     "id": "hx0line",
     "type": "MotionTrail",
     "params": {
-     "history": 0.10500000000000001,
+     "history": 0.11666666666666667,
      "maxPoints": 32,
-     "width": 0.022,
-     "endFade": 0.3
-    }
-   },
-   {
-    "id": "hx1",
-    "type": "HelixPath",
-    "params": {
-     "radius": 0.12,
-     "turns": 4,
-     "phase": 3.141592653589793,
-     "spin": 0,
-     "taper": "none",
-     "samples": 128
-    }
-   },
-   {
-    "id": "rider1",
-    "type": "PathFollower",
-    "params": {
-     "durationTicks": 26,
-     "easing": "linear"
+     "width": 0.02,
+     "endFade": 0.25,
+     "spiralRadius": 0.17,
+     "spiralTurns": 1.75,
+     "spiralSpin": 18,
+     "spiralPhase": 0,
+     "spiralRadiusOverTrail": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.75
+       },
+       {
+        "x": 0.4,
+        "y": 1
+       },
+       {
+        "x": 0.75,
+        "y": 0.55
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
     }
    },
    {
@@ -44769,21 +44755,47 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "template": "RibbonUnlit",
      "blend": "additive",
      "tint": {
-      "srgb": "#5FF0FF",
+      "srgb": "#D2A8FF",
       "alpha": 1
      },
      "opacity": 0.95,
-     "emission": 0.6
+     "emission": 0.5
     }
    },
    {
     "id": "hx1line",
     "type": "MotionTrail",
     "params": {
-     "history": 0.10500000000000001,
+     "history": 0.11666666666666667,
      "maxPoints": 32,
-     "width": 0.022,
-     "endFade": 0.3
+     "width": 0.02,
+     "endFade": 0.25,
+     "spiralRadius": 0.17,
+     "spiralTurns": 1.75,
+     "spiralSpin": 18,
+     "spiralPhase": 3.141592653589793,
+     "spiralRadiusOverTrail": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.75
+       },
+       {
+        "x": 0.4,
+        "y": 1
+       },
+       {
+        "x": 0.75,
+        "y": 0.55
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
     }
    },
    {
@@ -45056,7 +45068,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "template": "RibbonUnlit",
      "blend": "additive",
      "tint": {
-      "srgb": "#5FF0FF",
+      "srgb": "#B89CFF",
       "alpha": 1
      },
      "emission": 0.3,
@@ -45827,23 +45839,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "node-output.visual"
    ],
    [
-    "node-source.out",
-    "hx0.start"
-   ],
-   [
-    "node-target.out",
-    "hx0.end"
-   ],
-   [
-    "hx0.paths",
-    "rider0.paths"
-   ],
-   [
-    "headwin.window",
-    "rider0.window"
-   ],
-   [
-    "rider0.anchor",
+    "head.anchor",
     "hx0line.anchor"
    ],
    [
@@ -45859,23 +45855,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "node-output.visual"
    ],
    [
-    "node-source.out",
-    "hx1.start"
-   ],
-   [
-    "node-target.out",
-    "hx1.end"
-   ],
-   [
-    "hx1.paths",
-    "rider1.paths"
-   ],
-   [
-    "headwin.window",
-    "rider1.window"
-   ],
-   [
-    "rider1.anchor",
+    "head.anchor",
     "hx1line.anchor"
    ],
    [
@@ -46270,14 +46250,6 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       "parameter": "durationTicks"
      },
      {
-      "node": "rider0",
-      "parameter": "durationTicks"
-     },
-     {
-      "node": "rider1",
-      "parameter": "durationTicks"
-     },
-     {
       "node": "headwin",
       "parameter": "durationTicks",
       "offset": 1
@@ -46313,15 +46285,15 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    {
     "id": "helix",
     "label": "Helix radius",
-    "value": 0.12,
+    "value": 0.17,
     "bindings": [
      {
-      "node": "hx0",
-      "parameter": "radius"
+      "node": "hx0line",
+      "parameter": "spiralRadius"
      },
      {
-      "node": "hx1",
-      "parameter": "radius"
+      "node": "hx1line",
+      "parameter": "spiralRadius"
      }
     ]
    },

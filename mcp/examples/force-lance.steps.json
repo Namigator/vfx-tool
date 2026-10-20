@@ -265,7 +265,7 @@
     "template": "RibbonUnlit",
     "blend": "additive",
     "tint": {
-     "srgb": "#5FF0FF",
+     "srgb": "#B89CFF",
      "alpha": 1
     },
     "emission": 0.6,
@@ -1067,77 +1067,17 @@
   "vfx_add_node",
   {
    "docId": "flance",
-   "type": "HelixPath",
-   "id": "hx0",
-   "params": {
-    "radius": 0.12,
-    "turns": 4,
-    "phase": 0,
-    "spin": 0,
-    "taper": "none",
-    "samples": 128
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "flance",
-   "from": "node-source.out",
-   "to": "hx0.start"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "flance",
-   "from": "node-target.out",
-   "to": "hx0.end"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "flance",
-   "type": "PathFollower",
-   "id": "rider0",
-   "params": {
-    "durationTicks": 26,
-    "easing": "linear"
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "flance",
-   "from": "hx0.paths",
-   "to": "rider0.paths"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "flance",
-   "from": "headwin.window",
-   "to": "rider0.window"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "flance",
    "type": "Material",
    "id": "hx0mat",
    "params": {
     "template": "RibbonUnlit",
     "blend": "additive",
     "tint": {
-     "srgb": "#5FF0FF",
+     "srgb": "#D2A8FF",
      "alpha": 1
     },
     "opacity": 0.95,
-    "emission": 0.6
+    "emission": 0.5
    }
   }
  ],
@@ -1148,10 +1088,36 @@
    "type": "MotionTrail",
    "id": "hx0line",
    "params": {
-    "history": 0.10500000000000001,
+    "history": 0.11666666666666667,
     "maxPoints": 32,
-    "width": 0.022,
-    "endFade": 0.3
+    "width": 0.02,
+    "endFade": 0.25,
+    "spiralRadius": 0.17,
+    "spiralTurns": 1.75,
+    "spiralSpin": 18,
+    "spiralPhase": 0,
+    "spiralRadiusOverTrail": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.75
+      },
+      {
+       "x": 0.4,
+       "y": 1
+      },
+      {
+       "x": 0.75,
+       "y": 0.55
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
    }
   }
  ],
@@ -1159,7 +1125,7 @@
   "vfx_connect",
   {
    "docId": "flance",
-   "from": "rider0.anchor",
+   "from": "head.anchor",
    "to": "hx0line.anchor"
   }
  ],
@@ -1191,77 +1157,17 @@
   "vfx_add_node",
   {
    "docId": "flance",
-   "type": "HelixPath",
-   "id": "hx1",
-   "params": {
-    "radius": 0.12,
-    "turns": 4,
-    "phase": 3.141592653589793,
-    "spin": 0,
-    "taper": "none",
-    "samples": 128
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "flance",
-   "from": "node-source.out",
-   "to": "hx1.start"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "flance",
-   "from": "node-target.out",
-   "to": "hx1.end"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "flance",
-   "type": "PathFollower",
-   "id": "rider1",
-   "params": {
-    "durationTicks": 26,
-    "easing": "linear"
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "flance",
-   "from": "hx1.paths",
-   "to": "rider1.paths"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "flance",
-   "from": "headwin.window",
-   "to": "rider1.window"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "flance",
    "type": "Material",
    "id": "hx1mat",
    "params": {
     "template": "RibbonUnlit",
     "blend": "additive",
     "tint": {
-     "srgb": "#5FF0FF",
+     "srgb": "#D2A8FF",
      "alpha": 1
     },
     "opacity": 0.95,
-    "emission": 0.6
+    "emission": 0.5
    }
   }
  ],
@@ -1272,10 +1178,36 @@
    "type": "MotionTrail",
    "id": "hx1line",
    "params": {
-    "history": 0.10500000000000001,
+    "history": 0.11666666666666667,
     "maxPoints": 32,
-    "width": 0.022,
-    "endFade": 0.3
+    "width": 0.02,
+    "endFade": 0.25,
+    "spiralRadius": 0.17,
+    "spiralTurns": 1.75,
+    "spiralSpin": 18,
+    "spiralPhase": 3.141592653589793,
+    "spiralRadiusOverTrail": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.75
+      },
+      {
+       "x": 0.4,
+       "y": 1
+      },
+      {
+       "x": 0.75,
+       "y": 0.55
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
    }
   }
  ],
@@ -1283,7 +1215,7 @@
   "vfx_connect",
   {
    "docId": "flance",
-   "from": "rider1.anchor",
+   "from": "head.anchor",
    "to": "hx1line.anchor"
   }
  ],
@@ -1808,7 +1740,7 @@
     "template": "RibbonUnlit",
     "blend": "additive",
     "tint": {
-     "srgb": "#5FF0FF",
+     "srgb": "#B89CFF",
      "alpha": 1
     },
     "emission": 0.3,
