@@ -41695,14 +41695,14 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       "srgb": "#FFC070",
       "alpha": 1
      },
-     "emission": 1.5
+     "emission": 1
     }
    },
    {
     "id": "core",
     "type": "SpriteRenderer",
     "params": {
-     "size": 1.4,
+     "size": 0.9,
      "spin": 6
     }
    },
@@ -41710,26 +41710,27 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "trailem",
     "type": "Emitter",
     "params": {
-     "shape": "sphere",
-     "radius": 0.12,
-     "rate": 520,
+     "shape": "cone",
+     "radius": 0.15,
+     "rate": 650,
      "burst": 0,
-     "speedMin": 0.2,
-     "speedMax": 0.8,
-     "lifetimeMin": 0.3,
-     "lifetimeMax": 0.55
+     "speedMin": 1.5,
+     "speedMax": 4,
+     "lifetimeMin": 0.35,
+     "lifetimeMax": 0.7,
+     "coneAngle": 0.18
     }
    },
    {
     "id": "trailip",
     "type": "InitialProperties",
     "params": {
-     "sizeMin": 0.7,
-     "sizeMax": 1.2,
-     "rotationMin": -3,
-     "rotationMax": 3,
-     "angularVelocityMin": -2,
-     "angularVelocityMax": 2
+     "sizeMin": 0.22,
+     "sizeMax": 0.4,
+     "rotationMin": 0,
+     "rotationMax": 0,
+     "angularVelocityMin": 0,
+     "angularVelocityMax": 0
     }
    },
    {
@@ -41738,7 +41739,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "acceleration": [
       0,
-      1.5,
+      0.4,
       0
      ]
     }
@@ -41747,7 +41748,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "turb",
     "type": "NoiseForce",
     "params": {
-     "amplitude": 3,
+     "amplitude": 1.2,
      "frequency": 1.2,
      "evolution": 1.5
     }
@@ -41757,9 +41758,9 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "Material",
     "params": {
      "template": "SpriteTextured",
-     "sprite": "sim-flame",
+     "sprite": "flame-tongue-a",
      "blend": "additive",
-     "opacity": 0.85
+     "opacity": 0.32
     }
    },
    {
@@ -41773,15 +41774,15 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       "keys": [
        {
         "x": 0,
-        "y": 0.8
+        "y": 1.1
        },
        {
-        "x": 0.4,
-        "y": 1.4
+        "x": 0.3,
+        "y": 1
        },
        {
         "x": 1,
-        "y": 0.6
+        "y": 0.35
        }
       ]
      },
@@ -41804,33 +41805,42 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
        {
         "position": 0,
         "color": {
-         "srgb": "#FFF2D0",
+         "srgb": "#FFD880",
          "alpha": 1
         }
        },
        {
-        "position": 0.35,
+        "position": 0.15,
         "color": {
-         "srgb": "#FFA040",
+         "srgb": "#FFA030",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 0.4,
+        "color": {
+         "srgb": "#F05A10",
          "alpha": 1
         }
        },
        {
         "position": 0.75,
         "color": {
-         "srgb": "#C03808",
+         "srgb": "#A01810",
          "alpha": 1
         }
        },
        {
         "position": 1,
         "color": {
-         "srgb": "#401004",
+         "srgb": "#4A0610",
          "alpha": 1
         }
        }
       ]
-     }
+     },
+     "alignment": "velocity",
+     "stretchRatio": 7
     }
    },
    {
@@ -41841,7 +41851,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       "srgb": "#FF9040",
       "alpha": 1
      },
-     "intensity": 30,
+     "intensity": 12,
      "range": 5,
      "flicker": 0.3,
      "intensityOverWindow": {
@@ -42183,7 +42193,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       "alpha": 1
      },
      "emission": 1,
-     "opacity": 0.9
+     "opacity": 0.45
     }
    },
    {
@@ -42191,7 +42201,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "MotionTrail",
     "params": {
      "history": 0.3,
-     "width": 0.35,
+     "width": 0.22,
      "endFade": 0.45
     }
    },
@@ -42206,14 +42216,15 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       "srgb": "#FFB060",
       "alpha": 1
      },
-     "emission": 1.3
+     "emission": 0.9,
+     "opacity": 0.8
     }
    },
    {
     "id": "body",
     "type": "SpriteRenderer",
     "params": {
-     "size": 1.1,
+     "size": 0.9,
      "spin": 4
     }
    },
@@ -42303,6 +42314,101 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
        {
         "x": 1,
         "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "emberem",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.3,
+     "rate": 70,
+     "burst": 0,
+     "speedMin": 0.3,
+     "speedMax": 1.4,
+     "lifetimeMin": 0.5,
+     "lifetimeMax": 1.1
+    }
+   },
+   {
+    "id": "emberip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.03,
+     "sizeMax": 0.07,
+     "rotationMin": 0,
+     "rotationMax": 0,
+     "angularVelocityMin": 0,
+     "angularVelocityMax": 0
+    }
+   },
+   {
+    "id": "emberturb",
+    "type": "NoiseForce",
+    "params": {
+     "amplitude": 2.5,
+     "frequency": 1.5,
+     "evolution": 2
+    }
+   },
+   {
+    "id": "embermat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "spark-streak",
+     "blend": "additive"
+    }
+   },
+   {
+    "id": "embers",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 2,
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.7,
+        "y": 0.8
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     },
+     "colorOverLife": {
+      "stops": [
+       {
+        "position": 0,
+        "color": {
+         "srgb": "#FFE080",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 0.5,
+        "color": {
+         "srgb": "#FF7020",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 1,
+        "color": {
+         "srgb": "#801008",
+         "alpha": 1
+        }
        }
       ]
      }
@@ -42640,6 +42746,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "node-output.visual"
    ],
    [
+    "node-source.out",
+    "trailem.aim"
+   ],
+   [
     "ball.anchor",
     "body.anchor"
    ],
@@ -42684,6 +42794,34 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "node-output.visual"
    ],
    [
+    "ball.anchor",
+    "emberem.anchor"
+   ],
+   [
+    "flight.window",
+    "emberem.window"
+   ],
+   [
+    "emberem.particles",
+    "emberip.particles"
+   ],
+   [
+    "emberip.particles",
+    "emberturb.particles"
+   ],
+   [
+    "emberturb.particles",
+    "embers.particles"
+   ],
+   [
+    "embermat.material",
+    "embers.material"
+   ],
+   [
+    "embers.visual",
+    "node-output.visual"
+   ],
+   [
     "ball.arrival",
     "blastem.trigger"
    ],
@@ -42724,7 +42862,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    {
     "id": "trail",
     "label": "Trail density",
-    "value": 520,
+    "value": 650,
     "bindings": [
      {
       "node": "trailem",
@@ -42746,7 +42884,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    {
     "id": "core",
     "label": "Core size",
-    "value": 1.4,
+    "value": 0.9,
     "bindings": [
      {
       "node": "core",
@@ -42790,7 +42928,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    {
     "id": "light",
     "label": "Ball light",
-    "value": 30,
+    "value": 12,
     "bindings": [
      {
       "node": "balllight",

@@ -13,16 +13,30 @@ const grad = stops => ({ stops: stops.map(([position, srgb, alpha = 1]) => ({ po
 const add = (type, id, params) => ['vfx_add_node', { docId: DOC, type, id, params }];
 const wire = (from, to) => ['vfx_connect', { docId: DOC, from, to }];
 
-// Flame trail: simulated flame tongues, additive, bigger and fewer.
-Object.assign(node('flamemat'), { sprite: 'sim-flame', blend: 'additive', opacity: 0.85 });
-Object.assign(node('trailip'), { sizeMin: 0.7, sizeMax: 1.2 });
-Object.assign(node('trailem'), { rate: 520, lifetimeMin: 0.3, lifetimeMax: 0.55 });
-node('flames').colorOverLife = grad([[0, '#FFF2D0'], [0.35, '#FFA040'], [0.75, '#C03808'], [1, '#401004']]);
+// Flame trail: thin sharp strands shot backwards (aimed at Source) and stretched along their velocity, so every
+// strand points back along the flight path; no spin. White-hot at the ball, cooling to crimson at the tail.
+const TRAIL_SPRITE = process.env.TRAIL_SPRITE ?? 'flame-tongue-a';
+Object.assign(node('flamemat'), { sprite: TRAIL_SPRITE, blend: 'additive', opacity: Number(process.env.TRAIL_OPACITY ?? 0.32) });
+Object.assign(node('trailip'), { sizeMin: 0.22, sizeMax: 0.4, rotationMin: 0, rotationMax: 0, angularVelocityMin: 0, angularVelocityMax: 0 });
+Object.assign(node('trailem'), { shape: 'cone', coneAngle: 0.18, radius: 0.15, rate: Number(process.env.TRAIL_RATE ?? 650), speedMin: 1.5, speedMax: 4,
+  lifetimeMin: 0.35, lifetimeMax: 0.7 });
+Object.assign(node('flames'), { alignment: 'velocity', stretchRatio: Number(process.env.TRAIL_STRETCH ?? 7) });
+node('flames').sizeOverLife = curve([[0, 1.1], [0.3, 1], [1, 0.35]]);
+node('flames').colorOverLife = grad([[0, '#FFD880'], [0.15, '#FFA030'], [0.4, '#F05A10'], [0.75, '#A01810'], [1, '#4A0610']]);
+Object.assign(node('lift'), { acceleration: [0, 0.4, 0] });
+Object.assign(node('turb'), { amplitude: 1.2 });
+steps.splice(steps.findIndex(([t]) => t === 'vfx_compile'), 0, wire('node-source.out', 'trailem.aim'));
+// Less wash: smaller, dimmer glow and lights so the strands read instead of one white bloom.
+Object.assign(node('core'), { size: 0.9 });
+Object.assign(node('coremat'), { emission: 1 });
+Object.assign(node('balllight'), { intensity: 12 });
+Object.assign(node('streak'), { width: 0.22 });
+Object.assign(node('streakmat'), { opacity: 0.45 });
 
 // Core: a rolling simulated fireball body over the soft glow.
 const extra = [
-  add('Material', 'bodymat', { template: 'SpriteTextured', sprite: 'sim-fireball', blend: 'additive', tint: { srgb: '#FFB060', alpha: 1 }, emission: 1.3 }),
-  add('SpriteRenderer', 'body', { size: 1.1, spin: 4 }),
+  add('Material', 'bodymat', { template: 'SpriteTextured', sprite: 'sim-fireball', blend: 'additive', tint: { srgb: '#FFB060', alpha: 1 }, emission: 0.9, opacity: 0.8 }),
+  add('SpriteRenderer', 'body', { size: 0.9, spin: 4 }),
   wire('ball.anchor', 'body.anchor'), wire('bodymat.material', 'body.material'), wire('flight.window', 'body.window'),
   wire('body.visual', 'node-output.visual'),
 
@@ -36,6 +50,17 @@ const extra = [
   wire('ball.anchor', 'smokeem.anchor'), wire('flight.window', 'smokeem.window'),
   wire('smokeem.particles', 'smokeip.particles'), wire('smokeip.particles', 'smokelift.particles'), wire('smokelift.particles', 'smoke.particles'),
   wire('smokemat.material', 'smoke.material'), wire('smoke.visual', 'node-output.visual'),
+
+  // Embers: small hot specks shed along the trail, drifting and flickering out.
+  add('Emitter', 'emberem', { shape: 'sphere', radius: 0.3, rate: 70, burst: 0, speedMin: 0.3, speedMax: 1.4, lifetimeMin: 0.5, lifetimeMax: 1.1 }),
+  add('InitialProperties', 'emberip', { sizeMin: 0.03, sizeMax: 0.07, rotationMin: 0, rotationMax: 0, angularVelocityMin: 0, angularVelocityMax: 0 }),
+  add('NoiseForce', 'emberturb', { amplitude: 2.5, frequency: 1.5, evolution: 2 }),
+  add('Material', 'embermat', { template: 'SpriteTextured', sprite: 'spark-streak', blend: 'additive' }),
+  add('BillboardRenderer', 'embers', { alignment: 'velocity', stretchRatio: 2,
+    opacityOverLife: curve([[0, 1], [0.7, 0.8], [1, 0]]), colorOverLife: grad([[0, '#FFE080'], [0.5, '#FF7020'], [1, '#801008']]) }),
+  wire('ball.anchor', 'emberem.anchor'), wire('flight.window', 'emberem.window'),
+  wire('emberem.particles', 'emberip.particles'), wire('emberip.particles', 'emberturb.particles'), wire('emberturb.particles', 'embers.particles'),
+  wire('embermat.material', 'embers.material'), wire('embers.visual', 'node-output.visual'),
 
   // Impact: a few big simulated explosion puffs at the hit.
   add('Emitter', 'blastem', { shape: 'sphere', radius: 0.3, burst: 7, rate: 0, speedMin: 0.6, speedMax: 1.8, lifetimeMin: 0.55, lifetimeMax: 0.9, useEventPosition: true }),
