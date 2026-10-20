@@ -12,24 +12,29 @@ const curve = keys => ({ domain: 'normalized', interpolation: 'linear', keys: ke
 const grad = stops => ({ stops: stops.map(([position, srgb, alpha = 1]) => ({ position, color: { srgb, alpha } })) });
 const add = (type, id, params) => ['vfx_add_node', { docId: DOC, type, id, params }];
 const wire = (from, to) => ['vfx_connect', { docId: DOC, from, to }];
+/** Trail layers fade in over the first few flight ticks, so nothing is shed before the ball is moving. */
+const RAMP = curve([[0, 0], [0.1, 1], [1, 1]]);
+
+// A thrown fireball leaves fast and keeps its speed (easeIn accelerated like a rocket and stood still at frame 0).
+Object.assign(node('ball'), { easing: 'linear' });
 
 // Flame trail: thin sharp strands shot backwards along the ball's motion and stretched along their velocity, so every
 // strand points back along the flight path; no spin. White-hot at the ball, cooling to crimson at the tail.
 const TRAIL_SPRITE = process.env.TRAIL_SPRITE ?? 'flame-tongue-a';
 Object.assign(node('flamemat'), { sprite: TRAIL_SPRITE, blend: 'additive', opacity: Number(process.env.TRAIL_OPACITY ?? 0.22) });
-Object.assign(node('trailip'), { sizeMin: 0.22, sizeMax: 0.4, rotationMin: 0, rotationMax: 0, angularVelocityMin: 0, angularVelocityMax: 0 });
-Object.assign(node('trailem'), { shape: 'cone', coneAngle: 0.18, radius: 0.15, rate: Number(process.env.TRAIL_RATE ?? 650), speedMin: 1, speedMax: 2.5,
+Object.assign(node('trailip'), { sizeMin: 0.12, sizeMax: 0.22, rotationMin: 0, rotationMax: 0, angularVelocityMin: 0, angularVelocityMax: 0 });
+Object.assign(node('trailem'), { shape: 'cone', coneAngle: 0.15, radius: 0.28, rateOverWindow: RAMP, rate: Number(process.env.TRAIL_RATE ?? 650), speedMin: 1, speedMax: 2.5,
   lifetimeMin: 0.18, lifetimeMax: 0.35 });
 // pivot 0: each strand starts at its birth point and extends backwards, so nothing pokes out ahead of the ball.
-Object.assign(node('flames'), { alignment: 'velocity', stretchRatio: Number(process.env.TRAIL_STRETCH ?? 7), pivot: 0 });
+Object.assign(node('flames'), { alignment: 'velocity', stretchRatio: Number(process.env.TRAIL_STRETCH ?? 5), pivot: 0 });
 node('flames').sizeOverLife = curve([[0, 1.1], [0.3, 1], [1, 0.35]]);
 node('flames').colorOverLife = grad([[0, '#FFD880'], [0.15, '#FFA030'], [0.4, '#F05A10'], [0.75, '#A01810'], [1, '#4A0610']]);
 Object.assign(node('lift'), { acceleration: [0, 0, 0] });   // no lift: it bends strands off the trajectory
-Object.assign(node('turb'), { amplitude: 0.5 });
+Object.assign(node('turb'), { amplitude: 0.9 });   // a little wobble: licking flames, not an exhaust jet
 // Emit axis follows the ball's motion each tick (reversed): strands line up with the arc at every point.
 node('trailem').axisMode = 'motionBackward';
 // Less wash: smaller, dimmer glow and lights so the strands read instead of one white bloom.
-Object.assign(node('core'), { size: 0.8 });
+Object.assign(node('core'), { size: 0.45 });   // small hot centre; the burning body is the ball
 Object.assign(node('coremat'), { emission: 0.7 });
 Object.assign(node('balllight'), { intensity: 12 });
 Object.assign(node('streak'), { width: 0.22 });
@@ -37,13 +42,13 @@ Object.assign(node('streakmat'), { opacity: 0.3 });
 
 // Core: a rolling simulated fireball body over the soft glow.
 const extra = [
-  add('Material', 'bodymat', { template: 'SpriteTextured', sprite: 'sim-fireball', blend: 'additive', tint: { srgb: '#FFB060', alpha: 1 }, emission: 0.6, opacity: 0.6 }),
-  add('SpriteRenderer', 'body', { size: 0.9, spin: 4 }),
+  add('Material', 'bodymat', { template: 'SpriteTextured', sprite: 'sim-fireball', blend: 'additive', tint: { srgb: '#FFB060', alpha: 1 }, emission: 0.85, opacity: 0.95 }),
+  add('SpriteRenderer', 'body', { size: 1.05, spin: 3 }),
   wire('ball.anchor', 'body.anchor'), wire('bodymat.material', 'body.material'), wire('flight.window', 'body.window'),
   wire('body.visual', 'node-output.visual'),
 
   // Smoke trail: dark wisps shed behind the flames, rising and spreading.
-  add('Emitter', 'smokeem', { shape: 'sphere', radius: 0.2, rate: 90, burst: 0, speedMin: 0.1, speedMax: 0.4, lifetimeMin: 0.8, lifetimeMax: 1.4 }),
+  add('Emitter', 'smokeem', { shape: 'sphere', radius: 0.2, rate: 90, rateOverWindow: RAMP, burst: 0, speedMin: 0.1, speedMax: 0.4, lifetimeMin: 0.8, lifetimeMax: 1.4 }),
   add('InitialProperties', 'smokeip', { sizeMin: 0.9, sizeMax: 1.5, rotationMin: -3, rotationMax: 3, angularVelocityMin: -0.6, angularVelocityMax: 0.6 }),
   add('Gravity', 'smokelift', { acceleration: [0, 0.8, 0] }),
   add('Material', 'smokemat', { template: 'SpriteTextured', sprite: 'sim-smoke-wispy', blend: 'normal', tint: { srgb: '#3A302A', alpha: 1 }, opacity: 0.55 }),
@@ -54,7 +59,7 @@ const extra = [
   wire('smokemat.material', 'smoke.material'), wire('smoke.visual', 'node-output.visual'),
 
   // Embers: small hot specks shed along the trail, drifting and flickering out.
-  add('Emitter', 'emberem', { shape: 'sphere', radius: 0.3, rate: 220, burst: 0, speedMin: 0.4, speedMax: 1.8, lifetimeMin: 0.4, lifetimeMax: 0.9 }),
+  add('Emitter', 'emberem', { shape: 'sphere', radius: 0.3, rate: 220, rateOverWindow: RAMP, burst: 0, speedMin: 0.4, speedMax: 1.8, lifetimeMin: 0.4, lifetimeMax: 0.9 }),
   add('InitialProperties', 'emberip', { sizeMin: 0.04, sizeMax: 0.09, rotationMin: 0, rotationMax: 0, angularVelocityMin: 0, angularVelocityMax: 0 }),
   add('NoiseForce', 'emberturb', { amplitude: 2.5, frequency: 1.5, evolution: 2 }),
   add('Material', 'embermat', { template: 'SpriteTextured', sprite: 'spark-streak', blend: 'additive' }),

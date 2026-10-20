@@ -41680,7 +41680,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "PathFollower",
     "params": {
      "durationTicks": 40,
-     "easing": "easeIn"
+     "easing": "linear"
     }
    },
    {
@@ -41702,7 +41702,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "core",
     "type": "SpriteRenderer",
     "params": {
-     "size": 0.8,
+     "size": 0.45,
      "spin": 6
     }
    },
@@ -41711,14 +41711,32 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "Emitter",
     "params": {
      "shape": "cone",
-     "radius": 0.15,
+     "radius": 0.28,
      "rate": 650,
      "burst": 0,
      "speedMin": 1,
      "speedMax": 2.5,
      "lifetimeMin": 0.18,
      "lifetimeMax": 0.35,
-     "coneAngle": 0.18,
+     "coneAngle": 0.15,
+     "rateOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.1,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     },
      "axisMode": "motionBackward"
     }
    },
@@ -41726,8 +41744,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "trailip",
     "type": "InitialProperties",
     "params": {
-     "sizeMin": 0.22,
-     "sizeMax": 0.4,
+     "sizeMin": 0.12,
+     "sizeMax": 0.22,
      "rotationMin": 0,
      "rotationMax": 0,
      "angularVelocityMin": 0,
@@ -41749,7 +41767,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "turb",
     "type": "NoiseForce",
     "params": {
-     "amplitude": 0.5,
+     "amplitude": 0.9,
      "frequency": 1.2,
      "evolution": 1.5
     }
@@ -41841,7 +41859,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       ]
      },
      "alignment": "velocity",
-     "stretchRatio": 7,
+     "stretchRatio": 5,
      "pivot": 0
     }
    },
@@ -42218,16 +42236,16 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       "srgb": "#FFB060",
       "alpha": 1
      },
-     "emission": 0.6,
-     "opacity": 0.6
+     "emission": 0.85,
+     "opacity": 0.95
     }
    },
    {
     "id": "body",
     "type": "SpriteRenderer",
     "params": {
-     "size": 0.9,
-     "spin": 4
+     "size": 1.05,
+     "spin": 3
     }
    },
    {
@@ -42237,6 +42255,24 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "shape": "sphere",
      "radius": 0.2,
      "rate": 90,
+     "rateOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.1,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     },
      "burst": 0,
      "speedMin": 0.1,
      "speedMax": 0.4,
@@ -42328,6 +42364,24 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "shape": "sphere",
      "radius": 0.3,
      "rate": 220,
+     "rateOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.1,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     },
      "burst": 0,
      "speedMin": 0.4,
      "speedMax": 1.8,
@@ -42882,7 +42936,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    {
     "id": "core",
     "label": "Core size",
-    "value": 0.8,
+    "value": 0.45,
     "bindings": [
      {
       "node": "core",
