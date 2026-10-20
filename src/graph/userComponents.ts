@@ -92,6 +92,18 @@ export function insertUserComponent(doc: EffectDocumentV2, comp: UserComponent, 
     target.edges.push({ id: `${p}-e-out-${port.id}`, source: { nodeId: groupNodeId, port: port.id }, target: { nodeId: out.id, port: port.type }, order });
   }
   const layout = d.editor.graphs[graphId]?.nodes;
+  // Source/Target anchor inputs (components.ts) start wired to this graph's Anchor node of the same name.
+  for (const port of comp.graphs[0].inputs) {
+    if (port.type !== 'anchor' || (port.id !== 'source' && port.id !== 'target')) continue;
+    let a = target.nodes.find(n => n.type === 'Anchor' && n.params.anchorId === port.id)?.id;
+    if (!a) {
+      a = `${p}-anchor-${port.id}`;
+      target.nodes.push({ id: a, type: 'Anchor', definitionVersion: 1, label: port.label, enabled: true, randomStreamId: `rs-${a}`, params: { anchorId: port.id } });
+      if (layout) layout[a] = { x: -600, y: Math.max(0, ...Object.values(layout).map(v => v.y)) + 160 };
+    }
+    if (!d.anchors.some(x => x.id === port.id)) d.anchors.push({ id: port.id, name: port.id, position: port.id === 'source' ? [-2, 1, 0] : [2, 1, 0] });
+    target.edges.push({ id: `${p}-e-in-${port.id}`, source: { nodeId: a, port: 'out' }, target: { nodeId: groupNodeId, port: port.id }, order: 0 });
+  }
   if (layout) layout[groupNodeId] = { x: -300, y: Math.max(0, ...Object.values(layout).map(v => v.y)) + 160 };
   if (comp.durationTicks > d.durationTicks) d.durationTicks = comp.durationTicks;
   return { doc: d, groupNodeId };

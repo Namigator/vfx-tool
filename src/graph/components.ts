@@ -153,7 +153,26 @@ export function insertComponent(doc: EffectDocumentV2, componentId: string | Com
 
   // Endpoints: Source/Target Anchor nodes (reused in the root; own copies inside a group) and the root EffectOutput.
   const endpoint = new Map<string, string>(), endpointGraph = new Map<string, GraphDefinition>();
+  // Grouped: the component's Source/Target become anchor inputs on the Group box (user 2026-10-21: "how can I connect
+  // these to each other?"), wired to the root's Anchor node so any other Anchor node can be dragged onto them.
+  const anchorInputs: { rootAnchor: string; port: string }[] = [];
   for (const [key, want] of Object.entries(RESERVED)) {
+    if (child && want.anchorId && c.edges.some(([from]) => from.startsWith(`${key}.`))) {
+      let ra = root.nodes.find(n => n.type === 'Anchor' && n.params.anchorId === want.anchorId)?.id;
+      if (!ra) {
+        ra = taken.has(key) ? `${p}-root-${want.anchorId}` : key;
+        newNode(root, ra, 'Anchor', want.anchorId[0].toUpperCase() + want.anchorId.slice(1), { anchorId: want.anchorId });
+        const rl = d.editor.graphs[root.id]?.nodes;
+        if (rl) rl[ra] = { x: -600, y: Math.max(0, ...Object.values(rl).map(v => v.y)) + 160 };
+      }
+      if (!d.anchors.some(a => a.id === want.anchorId)) d.anchors.push({ id: want.anchorId, name: want.anchorId, position: want.anchorId === 'source' ? [-2, 1, 0] : [2, 1, 0] });
+      const port = want.anchorId, bridge = `${p}-in-${port}`;
+      child.inputs.push({ id: port, label: port[0].toUpperCase() + port.slice(1), type: 'anchor', cardinality: 'one', required: false, direction: 'input' });
+      newNode(child, bridge, 'GroupInput', `In: ${port}`, { portId: port });
+      endpoint.set(key, bridge); endpointGraph.set(key, child);
+      anchorInputs.push({ rootAnchor: ra, port });
+      continue;
+    }
     const g = want.type === 'EffectOutput' ? root : homeOfType(want.type);
     const found = g.nodes.find(n => n.type === want.type && (!want.anchorId || n.params.anchorId === want.anchorId));
     endpointGraph.set(key, g);
@@ -298,6 +317,7 @@ export function insertComponent(doc: EffectDocumentV2, componentId: string | Com
   const groupId = p;
   newNode(root, groupId, 'Group', c.label, { graphId: child.id });
   for (const x of crossings) addEdge(root, `${p}-e-group-${x.port}`, { nodeId: groupId, port: x.port }, x.target);
+  for (const a of anchorInputs) addEdge(root, `${p}-e-${a.port}-in`, { nodeId: a.rootAnchor, port: 'out' }, { nodeId: groupId, port: a.port });
   const rl = d.editor.graphs[root.id]?.nodes;
   if (rl) rl[groupId] = { x: -300, y: Math.max(0, ...Object.values(rl).map(v => v.y)) + 160 };
   return { doc: d, prefix: p, groupNodeId: groupId };

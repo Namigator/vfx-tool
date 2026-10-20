@@ -3,6 +3,7 @@
 import { defineConfig } from 'vite';
 import { cpSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { captureStatusPlugin } from './tools/captureStatusPlugin.ts';
 
 export default defineConfig({
   base: './',
@@ -12,7 +13,7 @@ export default defineConfig({
   },
   plugins: (() => {
     let outDir = resolve(__dirname, 'dist');
-    return [{
+    return [captureStatusPlugin(), {
       name: 'copy-sprite-library',
       apply: 'build' as const,
       configResolved(c: { root: string; build: { outDir: string } }) { outDir = resolve(c.root, c.build.outDir); },

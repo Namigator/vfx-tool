@@ -179,8 +179,22 @@ export function ControlsPanel({ document: doc, onEdit, followers = [], tick = 0 
     let n = 1;
     while (doc.anchors.some(a => a.id === `anchor-${n}`)) n++;
     const source = doc.anchors.find(a => a.id === 'source')?.position ?? [0, 1, 0];
-    onEdit(`Add Anchor ${n}`, [{ op: 'splice', path: ['anchors'], index: doc.anchors.length, deleteCount: 0,
-      insert: [{ id: `anchor-${n}`, name: `Anchor ${n}`, position: [source[0] + n * 0.6, source[1], source[2] + 0.6] }] }]);
+    // Also an Anchor node in the root graph (user 2026-10-21: "when I add an anchor I don't see it in the graph"), ready
+    // to drag onto a component's Source/Target input.
+    const gi = doc.graphs.findIndex(g => g.id === doc.rootGraphId), root = doc.graphs[gi];
+    const ids = new Set(doc.graphs.flatMap(g => g.nodes.map(x => x.id)));
+    let nid = `anchor-${n}-node`;
+    for (let i = 2; ids.has(nid); i++) nid = `anchor-${n}-node-${i}`;
+    const layout = doc.editor.graphs[doc.rootGraphId]?.nodes ?? {};
+    const anchorsAt = root.nodes.filter(x => x.type === 'Anchor').map(x => layout[x.id]).filter(Boolean);
+    const at = anchorsAt.length ? { x: Math.min(...anchorsAt.map(v => v.x)), y: Math.max(...anchorsAt.map(v => v.y)) + 160 } : { x: -600, y: 0 };
+    onEdit(`Add Anchor ${n}`, [
+      { op: 'splice', path: ['anchors'], index: doc.anchors.length, deleteCount: 0,
+        insert: [{ id: `anchor-${n}`, name: `Anchor ${n}`, position: [source[0] + n * 0.6, source[1], source[2] + 0.6] }] },
+      { op: 'splice', path: ['graphs', gi, 'nodes'], index: root.nodes.length, deleteCount: 0,
+        insert: [{ id: nid, type: 'Anchor', definitionVersion: 1, label: `Anchor ${n}`, enabled: true, randomStreamId: `rs-${nid}`, params: { anchorId: `anchor-${n}` } }] },
+      { op: 'set', path: ['editor', 'graphs', doc.rootGraphId, 'nodes', nid], value: at },
+    ]);
   };
   return (
     <div className="cp-root">
