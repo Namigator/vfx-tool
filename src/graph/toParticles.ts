@@ -113,6 +113,8 @@ export type ParticleTrailLayer = {
   pathTint?: PathTint;
   /** MotionTrail Colour over window (multiplies the colour; absent = white) over [start, end) ticks. */
   colorOverWindow?: GradientValue; window?: [number, number];
+  /** MotionTrail Width over trail (absent = constant), 0 = tail to 1 = head. */
+  widthOverTrail?: CurveValue;
 };
 /** 05 PointLight: lights the preview ground over its window. */
 export type PointLightLayer = {
@@ -920,6 +922,7 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
           width: num(b, 'width') * scale, endFade: num(b, 'endFade'), color: param(m, 'tint') as ColorValue, hueShift: num(m, 'hueShift'), ...gradeField(m), ...depthOf(m), opacity: num(m, 'opacity'), emission: num(m, 'emission'),
           blend: param(m, 'blend') as ParticleTrailLayer['blend'], alphaCutoff: num(m, 'alphaCutoff'), renderOrderOffset: num(b, 'renderOrderOffset'), visualOrder,
           ...tintField(tintOf(anchorNode)), ...(cowOn ? { colorOverWindow: structuredClone(cow), window: [start, start + len] as [number, number] } : {}),
+          ...(() => { const w = param(b, 'widthOverTrail') as CurveValue | undefined; return w && w.keys.some(k => k.y !== 1) ? { widthOverTrail: structuredClone(w) } : {}; })(),
         });
         continue;
       }

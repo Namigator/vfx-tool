@@ -1627,7 +1627,7 @@ export class PreviewViewport {
         if (ts.cow && w) { sampleLifeGradient(ts.cow, Math.min(1, Math.max(0, (tick + alpha - w[0]) / Math.max(1, w[1] - w[0]))), rgbaScratch); own[0] *= rgbaScratch[0]; own[1] *= rgbaScratch[1]; own[2] *= rgbaScratch[2]; }
         for (const p of paths) { const c = tintTarget(own, ts, t.layer.pathTint, p.track, tick + alpha); p.tint = [c[0] / Math.max(0.02, ts.base[0]), c[1] / Math.max(0.02, ts.base[1]), c[2] / Math.max(0.02, ts.base[2])]; }
       }
-      t.ribbon.update(paths, { cameraPosition, width: t.layer.width, endFade: t.layer.endFade, fadeHead: false });
+      t.ribbon.update(paths, { cameraPosition, width: t.layer.width, endFade: t.layer.endFade, fadeHead: false, ...ribbonWidthShape(t.layer.widthOverTrail) });
     }
   }
 

@@ -1228,6 +1228,7 @@ Draws a smooth trail behind a moving anchor (a projectile core from PathFollower
 | `maxPoints` | Max points | integer | — | `48` | 2..128 step 1 | — | resample | constant | scalarSignal | Most samples kept in the trail. |
 | `width` | Width | number | meter | `0.12` | 0.001..5 | — | live | constant | scalarSignal | Trail width at the head (m). |
 | `endFade` | End fade | number | normalized | `0.35` | 0..0.5 | — | live | constant | scalarSignal | Fraction of the trail length that fades out at the tail (0..0.5). |
+| `widthOverTrail` | Width over trail | curve | normalized | `curve normalized/linear: 0:1 1:1` | 0..1 (normalized curve) | — | live | constant | curveValue | Width multiplier along the trail, 0 = oldest point (tail) to 1 = the anchor (head). A short trail with a pointed profile draws a flying spear or bolt. |
 | `colorOverWindow` | Colour over window | gradient | — | `gradient: 0:#FFFFFF 1:#FFFFFF` | — | — | live | constant | gradientValue | Multiplies the material colour across the window (0 = window start, 1 = end). White = unchanged. |
 | `renderOrderOffset` | Render order offset | integer | — | `0` | -32..32 step 1 | — | live | constant | scalarSignal | Draw order tweak: higher draws on top of lower among layers of the same blend (-32..32). |
 

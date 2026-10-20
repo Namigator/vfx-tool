@@ -3,7 +3,7 @@
 
 # Component reference
 
-All 51 ready-made components. A component is a complete pre-wired node graph inserted into an effect; you change it through its published controls (knobs), not by editing its nodes. Every control below was read from an actual insertion into a blank document, so ids, types and ranges are exactly what the tools will report.
+All 52 ready-made components. A component is a complete pre-wired node graph inserted into an effect; you change it through its published controls (knobs), not by editing its nodes. Every control below was read from an actual insertion into a blank document, so ids, types and ranges are exactly what the tools will report.
 
 Controls come in two kinds:
 - **automatic**: every component gets **Start at** (`ctl-<id>-start-at`, ticks: delays the whole component so it can play after another one; becomes "Delay after event" when started from an event), **Colour** (`ctl-<id>-colour-shift`: rotates every colour of the component around the colour wheel in degrees -180..180; the editor shows it as a colour picker of the swatch shown, and `vfx_set_control` also accepts a "#RRGGBB" string) and, when the component has two or more visual parts, one colour picker per part (`ctl-<id>-colour-<part>`: Flame, Embers, Smoke & dust, Flash & rings, Light...; each takes a "#RRGGBB" and recolours only that part).
@@ -69,12 +69,13 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
   - [energy-bolt — Energy: charged bolt](#energy-bolt)
   - [energy-needle — Energy: fast needle](#energy-needle)
   - [energy-orb — Energy: heavy orb](#energy-orb)
-- [Generic (5)](#generic)
+- [Generic (6)](#generic)
   - [spark-burst — Spark burst](#spark-burst)
   - [smoke-plume — Smoke plume](#smoke-plume)
   - [impact-flash — Impact flash](#impact-flash)
   - [spark-aftershock — Spark aftershock](#spark-aftershock)
   - [arcane-lance — Arcane Lance](#arcane-lance)
+  - [force-lance — Force Lance](#force-lance)
 
 ## Fire
 
@@ -1397,3 +1398,29 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 | `ctl-arcane-lance-sparks` | Impact sparks | knob | integer | — | `110` | 0..4096 step 1 | resample |  | sparks.burst |
 | `ctl-arcane-lance-shock` | Shockwave size | knob | number | meter | `2.2` | 0.00137495..39.2866 | resample |  | wave0.radius, wave1.radius ×0.7273, wave2.radius ×1.2727 |
 | `ctl-arcane-lance-light` | Impact light | knob | number | linearGain | `70` | 0..100 | live |  | hitlight.intensity |
+
+### force-lance
+
+**Force Lance** — No-sprite thrown spear of force: charge rings at Source, then a spear-shaped lance with a tight helix flies to Target trailing a wake and shed sparks, plunges in tip first, and hits with floor shockwaves, a ray burst, sparks, light, flash, shake and crackling residue.
+
+- Family: Generic; travels from Source to Target.
+- Duration: 170 ticks (2.83333 s) minimum; the document grows to fit it.
+- Size: 99 nodes, 153 links.
+- Node types used: Attract, CameraImpulse, Drag ×2, EffectTimeCurve ×6, Emitter ×3, Gravity, GroundCollision, HelixPath ×2, InitialProperties ×3, JaggedPath ×2, LinePath, Material ×21, MotionTrail ×7, OffsetAnchor, Oscillator ×2, ParticleTrail ×3, PathFollower ×3, PointLight ×3, RadialPath ×2, RibbonRenderer ×7, RingPath ×3, RingRenderer ×4, ScalarMath ×10, Schedule ×7, ScreenFlash, Time ×2.
+- Add with `vfx_add_component` (component "force-lance") or open as a new effect with `vfx_new_document` component="force-lance". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "force-lance", a second copy gets "force-lance-2").
+
+**Controls**
+
+| control id | label | kind | type | unit | default | range | edit | colour | drives (node.parameter) |
+|---|---|---|---|---|---|---|---|---|---|
+| `ctl-force-lance-start-at` | Start at | automatic | integer | tick | `0` | 0..530 step 1 | resample |  | charge.startTicks, headwin.startTicks +34, flight.startTicks +34, impact.startTicks +60, raywin.startTicks +60, handwin.startTicks, residue.startTicks +70 |
+| `ctl-force-lance-colour-shift` | Colour | automatic | number | — | `0` | -180..180 step 1 | live | picker, swatch #8A3CFF | gyro0mat.hueShift, gyro1mat.hueShift, gyro2mat.hueShift, gyro3mat.hueShift, motemat.hueShift, lancehalomat.hueShift, lanceoutermat.hueShift, lanceinnermat.hueShift, lancecoremat.hueShift, hx0mat.hueShift, hx1mat.hueShift, wakemat.hueShift, shedmat.hueShift, wave0ribmat.hueShift, wave1ribmat.hueShift, wave2ribmat.hueShift, rayglowmat.hueShift, raylinemat.hueShift, sparkmat.hueShift, handlight.hueShift, lancelight.hueShift, hitlight.hueShift, arcglowmat.hueShift, arclinemat.hueShift |
+| `ctl-force-lance-colour-main` | Main colour | automatic | color | — | `#8A3CFF` | — | live | picker (#RRGGBB) | gyro0mat.recolorTo, gyro1mat.recolorTo, gyro2mat.recolorTo, gyro3mat.recolorTo, lancehalomat.recolorTo, lanceoutermat.recolorTo, lanceinnermat.recolorTo, lancecoremat.recolorTo, hx0mat.recolorTo, hx1mat.recolorTo, wakemat.recolorTo, wave0ribmat.recolorTo, wave1ribmat.recolorTo, wave2ribmat.recolorTo, rayglowmat.recolorTo, raylinemat.recolorTo, arcglowmat.recolorTo, arclinemat.recolorTo |
+| `ctl-force-lance-colour-sparks` | Sparks colour | automatic | color | — | `#D8A8FF` | — | live | picker (#RRGGBB) | motemat.recolorTo, shedmat.recolorTo, sparkmat.recolorTo |
+| `ctl-force-lance-colour-light` | Light colour | automatic | color | — | `#FF5CE0` | — | live | picker (#RRGGBB) | handlight.recolorTo, lancelight.recolorTo, hitlight.recolorTo |
+| `ctl-force-lance-flight` | Flight ticks | knob | integer | tick | `26` | 1..599 step 1 | resample |  | head.durationTicks, rider0.durationTicks, rider1.durationTicks, headwin.durationTicks +1 |
+| `ctl-force-lance-width` | Lance width | knob | number | meter | `0.11` | 0.001..0.5 | live |  | lancecore.width, lanceinner.width ×3.2727, lanceouter.width ×6.8182, lancehalo.width ×10 |
+| `ctl-force-lance-helix` | Helix radius | knob | number | meter | `0.12` | 0..20 | resample |  | hx0.radius, hx1.radius |
+| `ctl-force-lance-sparks` | Impact sparks | knob | integer | — | `110` | 0..4096 step 1 | resample |  | sparks.burst |
+| `ctl-force-lance-shock` | Shockwave size | knob | number | meter | `2.2` | 0.00137495..39.2866 | resample |  | wave0.radius, wave1.radius ×0.7273, wave2.radius ×1.2727 |
+| `ctl-force-lance-light` | Impact light | knob | number | linearGain | `70` | 0..100 | live |  | hitlight.intensity |

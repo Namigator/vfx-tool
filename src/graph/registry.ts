@@ -591,6 +591,11 @@ function motionTrail(): NodeSpec {
       param({ id: 'maxPoints', label: 'Max points', type: 'integer', unit: 'none', default: 48, min: 2, max: 128, step: 1 }),
       param({ id: 'width', label: 'Width', type: 'number', unit: 'meter', default: 0.12, min: 0.001, max: 5, editPolicy: 'live' }),
       param({ id: 'endFade', label: 'End fade', type: 'number', unit: 'normalized', default: 0.35, min: 0, max: 0.5, editPolicy: 'live' }),
+      param({
+        id: 'widthOverTrail', label: 'Width over trail', type: 'curve', unit: 'normalized', curveDomain: 'normalized',
+        default: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] },
+        min: 0, max: 1, editPolicy: 'live', description: 'Width multiplier along the trail, 0 = oldest point (tail) to 1 = the anchor (head). A short trail with a pointed profile draws a flying spear or bolt.',
+      }),
       param({ id: 'colorOverWindow', label: 'Colour over window', type: 'gradient', unit: 'none', default: { stops: [{ position: 0, color: white() }, { position: 1, color: white() }] }, editPolicy: 'live', description: 'Multiplies the material colour across the window (0 = window start, 1 = end). White = unchanged.' }),
       param({ id: 'renderOrderOffset', label: 'Render order offset', type: 'integer', unit: 'none', default: 0, min: -32, max: 32, step: 1, editPolicy: 'live' }),
     ],
