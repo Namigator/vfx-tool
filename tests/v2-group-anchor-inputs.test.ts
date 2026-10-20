@@ -28,3 +28,25 @@ test('grouped component exposes Source/Target anchor inputs wired from the root 
   if (!p.ok) assert.fail(JSON.stringify(p.errors.slice(0, 3)));
   assert.notEqual(JSON.stringify(p.value), JSON.stringify(before.value), 'rewiring Target changes the compiled effect');
 });
+
+test('Controls From/To: re-point a socketed component and an older group with inner anchor copies', async () => {
+  const { componentAnchorSlots, setComponentAnchor } = await import('../src/graph/componentAnchors.ts');
+  let { doc: d, groupNodeId } = insertComponent(createBlankDocument(), 'energy-bolt', undefined, { group: true });
+  d.anchors.push({ id: 'anchor-1', name: 'Anchor 1', position: [0, 5, 4] });
+  assert.deepEqual(componentAnchorSlots(d, groupNodeId!), [{ role: 'source', anchorId: 'source' }, { role: 'target', anchorId: 'target' }]);
+  d = setComponentAnchor(d, groupNodeId!, 'target', 'anchor-1');
+  assert.deepEqual(componentAnchorSlots(d, groupNodeId!).map(s => s.anchorId), ['source', 'anchor-1']);
+  assert.ok(compileParticlePreview(d, { ribbonsHandled: true, audioHandled: true }).ok);
+  // Older layout: the group keeps Anchor copies inside (ids ending -source/-target).
+  const old = structuredClone(d), root = old.graphs.find(g => g.id === old.rootGraphId)!;
+  const child = old.graphs.find(g => g.id === root.nodes.find(n => n.id === groupNodeId)!.params.graphId)!;
+  child.inputs = child.inputs.filter(p => p.type !== 'anchor');
+  root.edges = root.edges.filter(e => e.target.nodeId !== groupNodeId || (e.target.port !== 'source' && e.target.port !== 'target'));
+  for (const role of ['source', 'target']) {
+    const bridge = child.nodes.find(n => n.type === 'GroupInput' && n.params.portId === role)!;
+    Object.assign(bridge, { id: `${groupNodeId}-${role}`, type: 'Anchor', params: { anchorId: role } });
+    for (const e of child.edges) if (e.source.nodeId === `${groupNodeId}-in-${role}`) e.source.nodeId = bridge.id;
+  }
+  const moved = setComponentAnchor(old, groupNodeId!, 'source', 'anchor-1');
+  assert.deepEqual(componentAnchorSlots(moved, groupNodeId!).map(s => s.anchorId), ['anchor-1', 'target']);
+});

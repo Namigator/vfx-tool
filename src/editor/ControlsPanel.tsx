@@ -9,6 +9,7 @@ import type { FollowerTravel } from '../graph/toParticles.ts';
 import { hueRotate, hueShiftToward } from '../graph/recolor.ts';
 import { canKeyframe, controlValueAt, removeKeyAt, setKeyAt } from '../graph/keyframes.ts';
 import { anchorColor } from './anchorColor.ts';
+import { componentAnchorSlots, groupOfScope, setComponentAnchor } from '../graph/componentAnchors.ts';
 
 const UNIT_LABEL: Record<string, string> = { meter: 'm', second: 's', tick: 'ticks', radian: 'rad', metersPerSecond: 'm/s', metersPerSecondSquared: 'm/s²', hertz: 'Hz', perSecond: '/s', linearGain: '×', normalized: '', none: '' };
 
@@ -171,6 +172,23 @@ function AnchorCoordinate({ value, label, onCommit }: { value: number; label: st
     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } if (e.key === 'Escape') setDraft(null); }} />;
 }
 
+/** From / To anchor pickers at the top of a component's section. */
+function ComponentAnchorRows({ doc, groupNodeId, onEdit }: { doc: Props['document']; groupNodeId: string | undefined; onEdit: Props['onEdit'] }) {
+  if (!groupNodeId) return null;
+  const slots = componentAnchorSlots(doc, groupNodeId);
+  const name = (id: string) => id === 'source' ? 'Source' : id === 'target' ? 'Target' : doc.anchors.find(a => a.id === id)?.name ?? id;
+  return <>{slots.map(s => (
+    <label key={s.role} className="cp-row cp-row-value">
+      <span className="cp-label">{s.role === 'source' ? 'From' : 'To'}</span>
+      <select aria-label={`${groupNodeId} ${s.role === 'source' ? 'from' : 'to'} anchor`} value={s.anchorId ?? ''} title="Which anchor this effect starts from / aims at. Add more anchors above."
+        onChange={e => { const next = setComponentAnchor(doc, groupNodeId, s.role, e.currentTarget.value); onEdit(`${s.role === 'source' ? 'From' : 'To'} ${name(e.currentTarget.value)}`, [{ op: 'set', path: ['graphs'], value: next.graphs }, { op: 'set', path: ['editor', 'graphs'], value: next.editor.graphs }]); }}>
+        {s.anchorId === undefined && <option value="">(not connected)</option>}
+        {doc.anchors.map(a => <option key={a.id} value={a.id}>{name(a.id)}</option>)}
+      </select>
+    </label>
+  ))}</>;
+}
+
 export function ControlsPanel({ document: doc, onEdit, followers = [], tick = 0 }: Props) {
   const all = doc.controls.map((c, i) => [c, i] as const);
   const sections = [...new Set(all.map(([c]) => c.section))];
@@ -240,6 +258,7 @@ export function ControlsPanel({ document: doc, onEdit, followers = [], tick = 0 
       {sections.map(s => (
         <fieldset key={s} className="cp-section">
           <legend>{s}</legend>
+          <ComponentAnchorRows doc={doc} groupNodeId={groupOfScope(doc, all.filter(([c]) => c.section === s).map(([c]) => c.scopeGraphId))} onEdit={onEdit} />
           {all.filter(([c]) => c.section === s).map(([c, i]) => c.swatch && isNumber(c)
             ? <HueRow key={c.id} c={c} index={i} onEdit={onEdit} tick={tick} />
             : isNumber(c)
