@@ -24,7 +24,7 @@ async function run(request: MediaRequest & { verifyMatte?: boolean }) {
   const pic = previewPicture(result);
   return {
     container: result.container, frameCount: result.frameCount, width: result.width, height: result.height, fps: result.fps, ticks: result.ticks,
-    notes: result.notes, timing: result.timing, sidecar: result.sidecar ?? null,
+    notes: result.notes, timing: result.timing, sidecar: result.sidecar ?? null, camera: result.camera,
     files: result.files.map(f => ({ name: f.name, mime: f.mime, bytes: f.bytes.length, base64: b64(f.bytes) })),
     preview: { width: pic.width, height: pic.height, base64: b64(pic.png) },
   };

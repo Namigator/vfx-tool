@@ -38,6 +38,8 @@ export type MediaResult = {
   /** A few evenly spaced frames (straight RGBA8) for contact strips / previews. */
   previews: PreviewFrame[];
   timing: { renderMs: number; encodeMs: number };
+  /** The camera pose the frames were rendered from (after the automatic fit): pass it back as `camera` to match framing. */
+  camera: { position: Vec3; target: Vec3; fov: number };
 };
 
 export class ExportCancelled extends Error { constructor() { super('Export cancelled.'); } }
@@ -178,6 +180,7 @@ export async function renderMedia(doc: EffectDocumentV2, request: MediaRequest, 
         vp.setCameraPose([p.target[0] + (p.position[0] - p.target[0]) * k, p.target[1] + (p.position[1] - p.target[1]) * k, p.target[2] + (p.position[2] - p.target[2]) * k], p.target);
       }
     } else vp.setCameraPose(cam.position, cam.target, cam.fov);
+    const usedCamera = vp.cameraPose();
 
     // ---- frames ----
     const frames: Uint8ClampedArray[] = [], pngs: Uint8Array[] = [], previewIdx = new Set(Array.from({ length: Math.min(PREVIEW_COUNT, total) }, (_, i) => Math.round((i * (total - 1)) / Math.max(1, Math.min(PREVIEW_COUNT, total) - 1))));
@@ -215,7 +218,7 @@ export async function renderMedia(doc: EffectDocumentV2, request: MediaRequest, 
         files.push({ name: `${base}.${videoPlan.container}`, mime: videoPlan.container === 'mp4' ? 'video/mp4' : 'video/webm', bytes: await video.finish() });
       }
       encodeMs += performance.now() - s;
-      return { files, format: options.format, container, frameCount: total, width, height, fps: options.fps, ticks, options, ...(sidecar ? { sidecar } : {}), notes, previews, timing: { renderMs: performance.now() - t0 - encodeMs, encodeMs } };
+      return { files, format: options.format, container, frameCount: total, width, height, fps: options.fps, ticks, options, ...(sidecar ? { sidecar } : {}), notes, previews, camera: usedCamera, timing: { renderMs: performance.now() - t0 - encodeMs, encodeMs } };
     } catch (e) { video?.abort(); throw e; }
   } finally {
     try { vp.endExport(); } catch { /* disposed below */ }
