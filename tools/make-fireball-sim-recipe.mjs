@@ -16,11 +16,12 @@ const wire = (from, to) => ['vfx_connect', { docId: DOC, from, to }];
 // Flame trail: thin sharp strands shot backwards along the ball's motion and stretched along their velocity, so every
 // strand points back along the flight path; no spin. White-hot at the ball, cooling to crimson at the tail.
 const TRAIL_SPRITE = process.env.TRAIL_SPRITE ?? 'flame-tongue-a';
-Object.assign(node('flamemat'), { sprite: TRAIL_SPRITE, blend: 'additive', opacity: Number(process.env.TRAIL_OPACITY ?? 0.32) });
+Object.assign(node('flamemat'), { sprite: TRAIL_SPRITE, blend: 'additive', opacity: Number(process.env.TRAIL_OPACITY ?? 0.22) });
 Object.assign(node('trailip'), { sizeMin: 0.22, sizeMax: 0.4, rotationMin: 0, rotationMax: 0, angularVelocityMin: 0, angularVelocityMax: 0 });
-Object.assign(node('trailem'), { shape: 'cone', coneAngle: 0.18, radius: 0.15, rate: Number(process.env.TRAIL_RATE ?? 650), speedMin: 1.5, speedMax: 4,
-  lifetimeMin: 0.35, lifetimeMax: 0.7 });
-Object.assign(node('flames'), { alignment: 'velocity', stretchRatio: Number(process.env.TRAIL_STRETCH ?? 7) });
+Object.assign(node('trailem'), { shape: 'cone', coneAngle: 0.18, radius: 0.15, rate: Number(process.env.TRAIL_RATE ?? 650), speedMin: 1, speedMax: 2.5,
+  lifetimeMin: 0.18, lifetimeMax: 0.35 });
+// pivot 0: each strand starts at its birth point and extends backwards, so nothing pokes out ahead of the ball.
+Object.assign(node('flames'), { alignment: 'velocity', stretchRatio: Number(process.env.TRAIL_STRETCH ?? 7), pivot: 0 });
 node('flames').sizeOverLife = curve([[0, 1.1], [0.3, 1], [1, 0.35]]);
 node('flames').colorOverLife = grad([[0, '#FFD880'], [0.15, '#FFA030'], [0.4, '#F05A10'], [0.75, '#A01810'], [1, '#4A0610']]);
 Object.assign(node('lift'), { acceleration: [0, 0, 0] });   // no lift: it bends strands off the trajectory
@@ -28,15 +29,15 @@ Object.assign(node('turb'), { amplitude: 0.5 });
 // Emit axis follows the ball's motion each tick (reversed): strands line up with the arc at every point.
 node('trailem').axisMode = 'motionBackward';
 // Less wash: smaller, dimmer glow and lights so the strands read instead of one white bloom.
-Object.assign(node('core'), { size: 0.9 });
-Object.assign(node('coremat'), { emission: 1 });
+Object.assign(node('core'), { size: 0.8 });
+Object.assign(node('coremat'), { emission: 0.7 });
 Object.assign(node('balllight'), { intensity: 12 });
 Object.assign(node('streak'), { width: 0.22 });
-Object.assign(node('streakmat'), { opacity: 0.45 });
+Object.assign(node('streakmat'), { opacity: 0.3 });
 
 // Core: a rolling simulated fireball body over the soft glow.
 const extra = [
-  add('Material', 'bodymat', { template: 'SpriteTextured', sprite: 'sim-fireball', blend: 'additive', tint: { srgb: '#FFB060', alpha: 1 }, emission: 0.9, opacity: 0.8 }),
+  add('Material', 'bodymat', { template: 'SpriteTextured', sprite: 'sim-fireball', blend: 'additive', tint: { srgb: '#FFB060', alpha: 1 }, emission: 0.6, opacity: 0.6 }),
   add('SpriteRenderer', 'body', { size: 0.9, spin: 4 }),
   wire('ball.anchor', 'body.anchor'), wire('bodymat.material', 'body.material'), wire('flight.window', 'body.window'),
   wire('body.visual', 'node-output.visual'),
@@ -53,8 +54,8 @@ const extra = [
   wire('smokemat.material', 'smoke.material'), wire('smoke.visual', 'node-output.visual'),
 
   // Embers: small hot specks shed along the trail, drifting and flickering out.
-  add('Emitter', 'emberem', { shape: 'sphere', radius: 0.3, rate: 70, burst: 0, speedMin: 0.3, speedMax: 1.4, lifetimeMin: 0.5, lifetimeMax: 1.1 }),
-  add('InitialProperties', 'emberip', { sizeMin: 0.03, sizeMax: 0.07, rotationMin: 0, rotationMax: 0, angularVelocityMin: 0, angularVelocityMax: 0 }),
+  add('Emitter', 'emberem', { shape: 'sphere', radius: 0.3, rate: 220, burst: 0, speedMin: 0.4, speedMax: 1.8, lifetimeMin: 0.4, lifetimeMax: 0.9 }),
+  add('InitialProperties', 'emberip', { sizeMin: 0.04, sizeMax: 0.09, rotationMin: 0, rotationMax: 0, angularVelocityMin: 0, angularVelocityMax: 0 }),
   add('NoiseForce', 'emberturb', { amplitude: 2.5, frequency: 1.5, evolution: 2 }),
   add('Material', 'embermat', { template: 'SpriteTextured', sprite: 'spark-streak', blend: 'additive' }),
   add('BillboardRenderer', 'embers', { alignment: 'velocity', stretchRatio: 2,

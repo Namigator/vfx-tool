@@ -263,7 +263,7 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 | `ctl-fireball-sim-travel` | Travel ticks | knob | integer | tick | `40` | 1..598 step 1 | resample |  | ball.durationTicks, flight.durationTicks +2 |
 | `ctl-fireball-sim-trail` | Trail density | knob | number | perSecond | `650` | 0..4096 | resample |  | trailem.rate |
 | `ctl-fireball-sim-smoke` | Smoke density | knob | number | perSecond | `90` | 0..4096 | resample |  | smokeem.rate |
-| `ctl-fireball-sim-core` | Core size | knob | number | meter | `0.9` | 0.001..20 | live |  | core.size |
+| `ctl-fireball-sim-core` | Core size | knob | number | meter | `0.8` | 0.001..20 | live |  | core.size |
 | `ctl-fireball-sim-blast` | Impact fire | knob | integer | — | `7` | 0..4096 step 1 | resample |  | blastem.burst |
 | `ctl-fireball-sim-impact` | Impact sparks | knob | integer | — | `120` | 0..4096 step 1 | resample |  | boom.burst |
 | `ctl-fireball-sim-flash` | Flash size | knob | number | meter | `3` | 0.001..20 | live |  | flash.size |

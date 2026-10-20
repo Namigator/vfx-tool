@@ -41695,14 +41695,14 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       "srgb": "#FFC070",
       "alpha": 1
      },
-     "emission": 1
+     "emission": 0.7
     }
    },
    {
     "id": "core",
     "type": "SpriteRenderer",
     "params": {
-     "size": 0.9,
+     "size": 0.8,
      "spin": 6
     }
    },
@@ -41714,10 +41714,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "radius": 0.15,
      "rate": 650,
      "burst": 0,
-     "speedMin": 1.5,
-     "speedMax": 4,
-     "lifetimeMin": 0.35,
-     "lifetimeMax": 0.7,
+     "speedMin": 1,
+     "speedMax": 2.5,
+     "lifetimeMin": 0.18,
+     "lifetimeMax": 0.35,
      "coneAngle": 0.18,
      "axisMode": "motionBackward"
     }
@@ -41761,7 +41761,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "template": "SpriteTextured",
      "sprite": "flame-tongue-a",
      "blend": "additive",
-     "opacity": 0.32
+     "opacity": 0.22
     }
    },
    {
@@ -41841,7 +41841,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       ]
      },
      "alignment": "velocity",
-     "stretchRatio": 7
+     "stretchRatio": 7,
+     "pivot": 0
     }
    },
    {
@@ -42194,7 +42195,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       "alpha": 1
      },
      "emission": 1,
-     "opacity": 0.45
+     "opacity": 0.3
     }
    },
    {
@@ -42217,8 +42218,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       "srgb": "#FFB060",
       "alpha": 1
      },
-     "emission": 0.9,
-     "opacity": 0.8
+     "emission": 0.6,
+     "opacity": 0.6
     }
    },
    {
@@ -42326,20 +42327,20 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "shape": "sphere",
      "radius": 0.3,
-     "rate": 70,
+     "rate": 220,
      "burst": 0,
-     "speedMin": 0.3,
-     "speedMax": 1.4,
-     "lifetimeMin": 0.5,
-     "lifetimeMax": 1.1
+     "speedMin": 0.4,
+     "speedMax": 1.8,
+     "lifetimeMin": 0.4,
+     "lifetimeMax": 0.9
     }
    },
    {
     "id": "emberip",
     "type": "InitialProperties",
     "params": {
-     "sizeMin": 0.03,
-     "sizeMax": 0.07,
+     "sizeMin": 0.04,
+     "sizeMax": 0.09,
      "rotationMin": 0,
      "rotationMax": 0,
      "angularVelocityMin": 0,
@@ -42881,7 +42882,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    {
     "id": "core",
     "label": "Core size",
-    "value": 0.9,
+    "value": 0.8,
     "bindings": [
      {
       "node": "core",
