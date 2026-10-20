@@ -94,6 +94,7 @@ function emitter(): NodeSpec {
       param({ id: 'speedMin', label: 'Speed min', type: 'number', unit: 'metersPerSecond', default: 1, min: 0, max: 100 }),
       param({ id: 'speedMax', label: 'Speed max', type: 'number', unit: 'metersPerSecond', default: 3, min: 0, max: 100 }),
       param({ id: 'direction', label: 'Direction', type: 'vec3', unit: 'none', default: [1, 0, 0], min: -1, max: 1, description: 'Spread direction (local +X axis); normalized at compile time. Ignored when the Aim input is connected.' }),
+      param({ id: 'axisMode', label: 'Axis', type: 'enum', unit: 'none', default: 'fixed', choices: ['fixed', 'motionBackward', 'motionForward'], description: 'fixed = Aim/Direction. motionBackward/motionForward = the emit axis of each particle is the movement of the anchor that tick (reversed or not), so a trail shed by a projectile follows its curved path. Falls back to Aim/Direction while the anchor stands still.' }),
       param({ id: 'space', label: 'Space', type: 'enum', unit: 'none', default: 'world', choices: ['world', 'local'], description: 'world only for now (local is reserved); the emit axis always follows Aim/Direction.' }),
       param({ id: 'useEventPosition', label: 'Use event position', type: 'boolean', unit: 'none', default: true }),
       param({ id: 'inheritVelocity', label: 'Inherit velocity', type: 'number', unit: 'normalized', default: 0, min: 0, max: 1, description: 'Particle-event triggers only: fraction of the parent particle velocity added to each child (e.g. debris carried along by a moving spark).' }),

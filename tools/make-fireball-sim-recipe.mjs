@@ -13,7 +13,7 @@ const grad = stops => ({ stops: stops.map(([position, srgb, alpha = 1]) => ({ po
 const add = (type, id, params) => ['vfx_add_node', { docId: DOC, type, id, params }];
 const wire = (from, to) => ['vfx_connect', { docId: DOC, from, to }];
 
-// Flame trail: thin sharp strands shot backwards (aimed at Source) and stretched along their velocity, so every
+// Flame trail: thin sharp strands shot backwards along the ball's motion and stretched along their velocity, so every
 // strand points back along the flight path; no spin. White-hot at the ball, cooling to crimson at the tail.
 const TRAIL_SPRITE = process.env.TRAIL_SPRITE ?? 'flame-tongue-a';
 Object.assign(node('flamemat'), { sprite: TRAIL_SPRITE, blend: 'additive', opacity: Number(process.env.TRAIL_OPACITY ?? 0.32) });
@@ -23,9 +23,10 @@ Object.assign(node('trailem'), { shape: 'cone', coneAngle: 0.18, radius: 0.15, r
 Object.assign(node('flames'), { alignment: 'velocity', stretchRatio: Number(process.env.TRAIL_STRETCH ?? 7) });
 node('flames').sizeOverLife = curve([[0, 1.1], [0.3, 1], [1, 0.35]]);
 node('flames').colorOverLife = grad([[0, '#FFD880'], [0.15, '#FFA030'], [0.4, '#F05A10'], [0.75, '#A01810'], [1, '#4A0610']]);
-Object.assign(node('lift'), { acceleration: [0, 0.4, 0] });
-Object.assign(node('turb'), { amplitude: 1.2 });
-steps.splice(steps.findIndex(([t]) => t === 'vfx_compile'), 0, wire('node-source.out', 'trailem.aim'));
+Object.assign(node('lift'), { acceleration: [0, 0, 0] });   // no lift: it bends strands off the trajectory
+Object.assign(node('turb'), { amplitude: 0.5 });
+// Emit axis follows the ball's motion each tick (reversed): strands line up with the arc at every point.
+node('trailem').axisMode = 'motionBackward';
 // Less wash: smaller, dimmer glow and lights so the strands read instead of one white bloom.
 Object.assign(node('core'), { size: 0.9 });
 Object.assign(node('coremat'), { emission: 1 });

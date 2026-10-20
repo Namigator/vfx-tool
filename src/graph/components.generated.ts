@@ -41718,7 +41718,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "speedMax": 4,
      "lifetimeMin": 0.35,
      "lifetimeMax": 0.7,
-     "coneAngle": 0.18
+     "coneAngle": 0.18,
+     "axisMode": "motionBackward"
     }
    },
    {
@@ -41739,7 +41740,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "acceleration": [
       0,
-      0.4,
+      0,
       0
      ]
     }
@@ -41748,7 +41749,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "id": "turb",
     "type": "NoiseForce",
     "params": {
-     "amplitude": 1.2,
+     "amplitude": 0.5,
      "frequency": 1.2,
      "evolution": 1.5
     }
@@ -42744,10 +42745,6 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    [
     "streak.visual",
     "node-output.visual"
-   ],
-   [
-    "node-source.out",
-    "trailem.aim"
    ],
    [
     "ball.anchor",

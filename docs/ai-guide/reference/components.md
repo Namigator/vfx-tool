@@ -246,7 +246,7 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Fire; travels from Source to Target.
 - Duration: 126 ticks (2.1 s) minimum; the document grows to fit it.
-- Size: 53 nodes, 80 links.
+- Size: 53 nodes, 79 links.
 - Node types used: AudioEnvelope ×4, AudioFilter ×3, AudioMix, AudioOutput, AudioSource ×4, BezierPath, BillboardRenderer ×5, Drag, Emitter ×5, Gravity ×3, GroundCollision, InitialProperties ×5, Material ×8, MotionTrail, NoiseForce ×2, PathFollower, PointLight ×2, Schedule ×2, SpriteRenderer ×3.
 - Add with `vfx_add_component` (component "fireball-sim") or open as a new effect with `vfx_new_document` component="fireball-sim". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "fireball-sim", a second copy gets "fireball-sim-2").
 

@@ -829,6 +829,11 @@ function compileStatic(input: unknown, options: ParticlePreviewOptions = {}): Va
       if (r.some(v => v !== 0) || w.some(v => v !== 0)) d.spin = { rotation: { min: r[0], max: r[1] }, angularVelocity: { min: w[0], max: w[1] } };
     }
     if (shaped && shape !== 'path') d.emission = { shape: d.shape, axis, radius: num(em, 'radius') * scale, coneAngle: num(em, 'coneAngle'), speed: { min: speedMin * scale, max: speedMax * scale } };
+    const follow = param(em, 'axisMode');
+    if (follow === 'motionBackward' || follow === 'motionForward') {
+      if (d.emission && d.emission.shape !== 'path') d.emission.followMotion = follow === 'motionBackward' ? 'backward' : 'forward';
+      else report('INVALID_VALUE', 'Axis "follow motion" needs a shaped emitter (cone/sphere/disc/box or a speed range), not a point or path.', id, 'axisMode');
+    }
     if (shape === 'path' && pathIns.length === 1 && pathIns[0].source.kind === 'node') {
       // The path is evaluated (world space) at the first emission tick; later path motion does not move births.
       const t0 = Math.min(...bursts.map(b => b.tick), rate ? rate.startTick : Infinity);

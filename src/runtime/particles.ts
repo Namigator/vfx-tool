@@ -43,7 +43,12 @@ export type EmitterShape = 'point' | 'cone' | 'sphere' | 'disc' | 'box' | 'path'
  * in a cube of half-extent `radius`, direction along axis. Speed is sampled uniformly per particle.
  */
 /** `paths` (shape "path" only): world-space polylines; births sample normalized arc length uniformly across all of them (24). */
-export type ParticleEmission = { shape: EmitterShape; axis: Vec3; radius: number; coneAngle: number; speed: { min: number; max: number }; paths?: Vec3[][] };
+export type ParticleEmission = {
+  shape: EmitterShape; axis: Vec3; radius: number; coneAngle: number; speed: { min: number; max: number }; paths?: Vec3[][];
+  /** Moving sources only: the emit axis at each birth is the source's motion that tick (forward) or its reverse (backward),
+   * instead of `axis` (which stays the fallback while the source stands still). E.g. a projectile trail along its arc. */
+  followMotion?: 'forward' | 'backward';
+};
 const SHAPES: readonly EmitterShape[] = ['point', 'cone', 'sphere', 'disc', 'box', 'path'];
 const MAX_EMISSION_PATH_POINTS = 4096;
 
@@ -358,7 +363,7 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
   } else if (!isObj(em)) e.push(err('INVALID_VALUE', 'emission must be an object.', `${p}.emission`));
   else {
     const ep = `${p}.emission`;
-    checkKeys(em, ['shape', 'axis', 'radius', 'coneAngle', 'speed', 'paths'], ep, e);
+    checkKeys(em, ['shape', 'axis', 'radius', 'coneAngle', 'speed', 'paths', 'followMotion'], ep, e);
     let ok = true;
     let paths: Vec3[][] | undefined;
     if (em.shape === 'path' || em.paths !== undefined) {
@@ -374,7 +379,9 @@ export function validateParticleDescriptor(input: unknown, options?: Partial<Par
     const sp = em.speed;
     if (!isObj(sp) || !isFiniteNum(sp.min) || !isFiniteNum(sp.max) || sp.min < 0 || sp.max < sp.min || sp.max > 100) { ok = false; e.push(err('INVALID_VALUE', 'emission.speed must be {min,max} with 0 <= min <= max <= 100.', `${ep}.speed`)); }
     else checkKeys(sp, ['min', 'max'], `${ep}.speed`, e);
-    if (ok) emission = { shape: em.shape as EmitterShape, axis: cloneVec(em.axis as Vec3), radius: em.radius as number, coneAngle: em.coneAngle as number, speed: { min: (sp as Record<string, number>).min, max: (sp as Record<string, number>).max }, ...(paths ? { paths } : {}) };
+    if (em.followMotion !== undefined && em.followMotion !== 'forward' && em.followMotion !== 'backward') { ok = false; e.push(err('INVALID_VALUE', 'emission.followMotion must be "forward" or "backward".', `${ep}.followMotion`)); }
+    if (ok) emission = { shape: em.shape as EmitterShape, axis: cloneVec(em.axis as Vec3), radius: em.radius as number, coneAngle: em.coneAngle as number, speed: { min: (sp as Record<string, number>).min, max: (sp as Record<string, number>).max }, ...(paths ? { paths } : {}),
+      ...(em.followMotion ? { followMotion: em.followMotion as 'forward' | 'backward' } : {}) };
   }
   if (!isVec3(input.sourcePosition)) e.push(err('INVALID_VALUE', 'sourcePosition must be a finite vec3.', `${p}.sourcePosition`));
 
@@ -814,6 +821,19 @@ export class ParticleSimulation {
     return r.ok ? { ok: true, value: this.snapshot(), warnings: [] } : r;
   }
 
+  /** followMotion: unit source motion over the tick ending at n (or starting at n when n is the first), signed; undefined while still. */
+  #motionAxis(n: number, track: number): Vec3 | undefined {
+    const fm = this.#cur.emission?.followMotion;
+    if (!fm || !(track > 0 ? this.#cur.extraSourceTracks?.[track - 1] : this.#cur.sourceTrack)) return undefined;
+    let p0 = this.#source(n - 1, track), p1 = this.#source(n, track);
+    let v: Vec3 = [p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]];
+    if (Math.hypot(v[0], v[1], v[2]) < 1e-9) { p0 = p1; p1 = this.#source(n + 1, track); v = [p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]]; }
+    const l = Math.hypot(v[0], v[1], v[2]);
+    if (l < 1e-9) return undefined;
+    const k = (fm === 'backward' ? -1 : 1) / l;
+    return [v[0] * k, v[1] * k, v[2] * k];
+  }
+
   /** Source position at tick n: the track (clamped) or the fixed sourcePosition. */
   #source(n: number, track = 0): Vec3 {
     const t = track > 0 ? this.#cur.extraSourceTracks?.[track - 1] : this.#cur.sourceTrack;
@@ -838,12 +858,12 @@ export class ParticleSimulation {
   }
 
   /** Shaped birth position/velocity from stable per-particle samples; burst payload velocity wins when given. */
-  #kinematics(eventRandomKey: string, entityOrdinal: number, base: Vec3, fixedVelocity: Vec3 | undefined, fallback: Vec3): [Vec3, Vec3] {
+  #kinematics(eventRandomKey: string, entityOrdinal: number, base: Vec3, fixedVelocity: Vec3 | undefined, fallback: Vec3, axis?: Vec3): [Vec3, Vec3] {
     const em = this.#cur.emission;
     if (!em) return [base, fixedVelocity ?? fallback];
     const s = (k: string) => this.#sample(eventRandomKey, entityOrdinal, k);
     const K = PARTICLE_PROPERTY_KEYS;
-    const a = em.axis, [b1, b2] = basis(a);
+    const a = axis ?? em.axis, [b1, b2] = basis(a);
     const u = s(K.dirU), az = 2 * Math.PI * s(K.dirV);
     const comb = (x: number, y: number, z: number): Vec3 => [a[0] * x + b1[0] * y + b2[0] * z, a[1] * x + b1[1] * y + b2[1] * z, a[2] * x + b1[2] * y + b2[2] * z];
     let dir: Vec3 = a, off: Vec3 = [0, 0, 0];
@@ -902,7 +922,7 @@ export class ParticleSimulation {
     const lifetime = lmin + Math.min(lmax - lmin, Math.floor(this.#sample(eventRandomKey, entityOrdinal, PARTICLE_PROPERTY_KEYS.lifetime) * (lmax - lmin + 1)));
     const size = d.size.min === d.size.max ? d.size.min
       : d.size.min + this.#sample(eventRandomKey, entityOrdinal, PARTICLE_PROPERTY_KEYS.size) * (d.size.max - d.size.min);
-    const [position, velocity] = this.#kinematics(eventRandomKey, entityOrdinal, basePosition, fixedVelocity, fallbackVelocity);
+    const [position, velocity] = this.#kinematics(eventRandomKey, entityOrdinal, basePosition, fixedVelocity, fallbackVelocity, this.#motionAxis(n, track));
     if (addVelocity) { velocity[0] += addVelocity[0]; velocity[1] += addVelocity[1]; velocity[2] += addVelocity[2]; }
     const id = emission === 'burst' ? burstParticleId(d.emitterId, eventRandomKey, entityOrdinal) : `${d.emitterId}:rate:${track > 0 ? `t${track}:` : ''}${entityOrdinal}`;
     this.#particles.push({
