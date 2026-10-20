@@ -4,8 +4,8 @@
 // outDir, src/assets/builtinSprites.generated.ts (the compiler's typed copy of the manifest).
 // Usage: node tools/bake-sprites.mjs [outDir=assets/sprites]
 import { deflateSync } from 'node:zlib';
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 
 const outDir = process.argv[2] ?? 'assets/sprites';
 const writeTs = process.argv[2] === undefined;
@@ -257,6 +257,14 @@ function pnoise(x, y, p, s) { const i = Math.floor(x), j = Math.floor(y), fx = x
 
 // 10 "Include ... intended usage and license/provenance": every entry records its generator, seed policy and rights.
 for (const sp of manifest.sprites) Object.assign(sp, { provenance: { origin: 'authored', generator: 'tools/bake-sprites.mjs', seed: 'fixed seeds in the generator (deterministic bake)' }, license: 'VFX Studio included asset (procedural, no third-party rights)', thumbnail: 'assets/sprites/preview.html' });
+
+// Third-party sheets (tools/import-flipbooks.mjs) are not baked: append their entries (own license/provenance) and
+// copy their committed PNGs when baking somewhere else, so every manifest file exists in outDir.
+const thirdParty = 'assets/sprites/third-party.json';
+if (existsSync(thirdParty)) for (const sp of JSON.parse(readFileSync(thirdParty, 'utf8')).sprites) {
+  manifest.sprites.push(sp);
+  if (resolve(outDir) !== resolve('assets/sprites')) for (const f of [sp.file, sp.greyFile].filter(Boolean)) copyFileSync(join('assets/sprites', f), join(outDir, f));
+}
 
 writeFileSync(join(outDir, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
 if (writeTs) {

@@ -816,6 +816,155 @@
       },
       "license": "VFX Studio included asset (procedural, no third-party rights)",
       "thumbnail": "assets/sprites/preview.html"
+    },
+    {
+      "id": "sim-fireball",
+      "file": "sim-fireball.png",
+      "kind": "flipbook",
+      "cell": [
+        256,
+        256
+      ],
+      "columns": 4,
+      "rows": 4,
+      "meanColor": "#FFD0A3",
+      "greyFile": "sim-fireball.grey.png",
+      "blend": "additive",
+      "usage": "simulated rolling fireball (Houdini), loops; ball core or dense trail puffs; play at fps or over life",
+      "provenance": {
+        "origin": "third-party",
+        "source": "https://unity.com/blog/engine-platform/free-vfx-image-sequences-flipbooks",
+        "sourceFile": "FireBall01_8x8.tga",
+        "sourceGrid": "8x8",
+        "importer": "tools/import-flipbooks.mjs",
+        "frames": "16 evenly spaced of 64"
+      },
+      "license": "CC0 1.0 (public domain), Unity Labs Paris \"Free VFX image sequences and flipbooks\" (2016)",
+      "thumbnail": "assets/sprites/preview.html"
+    },
+    {
+      "id": "sim-fireball-b",
+      "file": "sim-fireball-b.png",
+      "kind": "flipbook",
+      "cell": [
+        256,
+        256
+      ],
+      "columns": 4,
+      "rows": 4,
+      "meanColor": "#FFD26A",
+      "greyFile": "sim-fireball-b.grey.png",
+      "blend": "additive",
+      "usage": "second simulated fireball loop, different silhouette; mix with sim-fireball to avoid repeats",
+      "provenance": {
+        "origin": "third-party",
+        "source": "https://unity.com/blog/engine-platform/free-vfx-image-sequences-flipbooks",
+        "sourceFile": "FireBall03_8x8.tga",
+        "sourceGrid": "8x8",
+        "importer": "tools/import-flipbooks.mjs",
+        "frames": "16 evenly spaced of 64"
+      },
+      "license": "CC0 1.0 (public domain), Unity Labs Paris \"Free VFX image sequences and flipbooks\" (2016)",
+      "thumbnail": "assets/sprites/preview.html"
+    },
+    {
+      "id": "sim-flame",
+      "file": "sim-flame.png",
+      "kind": "flipbook",
+      "cell": [
+        256,
+        256
+      ],
+      "columns": 4,
+      "rows": 4,
+      "meanColor": "#C3894C",
+      "greyFile": "sim-flame.grey.png",
+      "blend": "additive",
+      "usage": "simulated tall flame, base at the bottom, wispy top; torches, jets, flame tongues in a trail",
+      "provenance": {
+        "origin": "third-party",
+        "source": "https://unity.com/blog/engine-platform/free-vfx-image-sequences-flipbooks",
+        "sourceFile": "Flame02_16x4.tga",
+        "sourceGrid": "16x4",
+        "importer": "tools/import-flipbooks.mjs",
+        "frames": "16 evenly spaced of 64"
+      },
+      "license": "CC0 1.0 (public domain), Unity Labs Paris \"Free VFX image sequences and flipbooks\" (2016)",
+      "thumbnail": "assets/sprites/preview.html"
+    },
+    {
+      "id": "sim-flame-small",
+      "file": "sim-flame-small.png",
+      "kind": "flipbook",
+      "cell": [
+        256,
+        256
+      ],
+      "columns": 4,
+      "rows": 4,
+      "meanColor": "#CD9357",
+      "greyFile": "sim-flame-small.grey.png",
+      "blend": "additive",
+      "usage": "simulated small flame; embers of fire, candle-sized tongues, trail licks",
+      "provenance": {
+        "origin": "third-party",
+        "source": "https://unity.com/blog/engine-platform/free-vfx-image-sequences-flipbooks",
+        "sourceFile": "Flame03_16x4.tga",
+        "sourceGrid": "16x4",
+        "importer": "tools/import-flipbooks.mjs",
+        "frames": "16 evenly spaced of 64"
+      },
+      "license": "CC0 1.0 (public domain), Unity Labs Paris \"Free VFX image sequences and flipbooks\" (2016)",
+      "thumbnail": "assets/sprites/preview.html"
+    },
+    {
+      "id": "sim-smoke-wispy",
+      "file": "sim-smoke-wispy.png",
+      "kind": "flipbook",
+      "cell": [
+        256,
+        256
+      ],
+      "columns": 4,
+      "rows": 4,
+      "meanColor": "#606060",
+      "blend": "normal",
+      "usage": "simulated wispy smoke, white; tint dark for fire smoke trails, light for steam; over life",
+      "provenance": {
+        "origin": "third-party",
+        "source": "https://unity.com/blog/engine-platform/free-vfx-image-sequences-flipbooks",
+        "sourceFile": "WispySmoke01_8x8.tga",
+        "sourceGrid": "8x8",
+        "importer": "tools/import-flipbooks.mjs",
+        "frames": "16 evenly spaced of 64"
+      },
+      "license": "CC0 1.0 (public domain), Unity Labs Paris \"Free VFX image sequences and flipbooks\" (2016)",
+      "thumbnail": "assets/sprites/preview.html"
+    },
+    {
+      "id": "sim-explosion",
+      "file": "sim-explosion.png",
+      "kind": "flipbook",
+      "cell": [
+        256,
+        256
+      ],
+      "columns": 4,
+      "rows": 4,
+      "meanColor": "#44372D",
+      "greyFile": "sim-explosion.grey.png",
+      "blend": "additive",
+      "usage": "simulated fiery explosion burst over life; impacts, fireball hits",
+      "provenance": {
+        "origin": "third-party",
+        "source": "https://unity.com/blog/engine-platform/free-vfx-image-sequences-flipbooks",
+        "sourceFile": "Explosion01_5x5.tga",
+        "sourceGrid": "5x5",
+        "importer": "tools/import-flipbooks.mjs",
+        "frames": "16 evenly spaced of 25"
+      },
+      "license": "CC0 1.0 (public domain), Unity Labs Paris \"Free VFX image sequences and flipbooks\" (2016)",
+      "thumbnail": "assets/sprites/preview.html"
     }
   ]
 }

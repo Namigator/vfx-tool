@@ -41641,5 +41641,1175 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     0
    ]
   }
+ },
+ {
+  "id": "fireball-sim",
+  "label": "Fireball: simulated",
+  "description": "Fireball on simulated flipbooks (Unity Labs CC0): rolling fire body, flame trail, dark smoke trail, moving light, impact fire burst, sparks, flash and light.",
+  "durationTicks": 126,
+  "anchors": [],
+  "nodes": [
+   {
+    "id": "arc",
+    "type": "BezierPath",
+    "params": {
+     "startHandle": [
+      1.5,
+      1.6,
+      0
+     ],
+     "endHandle": [
+      -1,
+      1.2,
+      0
+     ],
+     "samples": 48
+    }
+   },
+   {
+    "id": "flight",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 42,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "ball",
+    "type": "PathFollower",
+    "params": {
+     "durationTicks": 40,
+     "easing": "easeIn"
+    }
+   },
+   {
+    "id": "coremat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "soft-glow",
+     "variant": 1,
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFC070",
+      "alpha": 1
+     },
+     "emission": 1.5
+    }
+   },
+   {
+    "id": "core",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1.4,
+     "spin": 6
+    }
+   },
+   {
+    "id": "trailem",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.12,
+     "rate": 520,
+     "burst": 0,
+     "speedMin": 0.2,
+     "speedMax": 0.8,
+     "lifetimeMin": 0.3,
+     "lifetimeMax": 0.55
+    }
+   },
+   {
+    "id": "trailip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.7,
+     "sizeMax": 1.2,
+     "rotationMin": -3,
+     "rotationMax": 3,
+     "angularVelocityMin": -2,
+     "angularVelocityMax": 2
+    }
+   },
+   {
+    "id": "lift",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      1.5,
+      0
+     ]
+    }
+   },
+   {
+    "id": "turb",
+    "type": "NoiseForce",
+    "params": {
+     "amplitude": 3,
+     "frequency": 1.2,
+     "evolution": 1.5
+    }
+   },
+   {
+    "id": "flamemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "sim-flame",
+     "blend": "additive",
+     "opacity": 0.85
+    }
+   },
+   {
+    "id": "flames",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.8
+       },
+       {
+        "x": 0.4,
+        "y": 1.4
+       },
+       {
+        "x": 1,
+        "y": 0.6
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     },
+     "colorOverLife": {
+      "stops": [
+       {
+        "position": 0,
+        "color": {
+         "srgb": "#FFF2D0",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 0.35,
+        "color": {
+         "srgb": "#FFA040",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 0.75,
+        "color": {
+         "srgb": "#C03808",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 1,
+        "color": {
+         "srgb": "#401004",
+         "alpha": 1
+        }
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "balllight",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#FF9040",
+      "alpha": 1
+     },
+     "intensity": 30,
+     "range": 5,
+     "flicker": 0.3,
+     "intensityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 1
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "boom",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.1,
+     "burst": 120,
+     "rate": 0,
+     "speedMin": 2,
+     "speedMax": 7,
+     "lifetimeMin": 0.4,
+     "lifetimeMax": 1,
+     "useEventPosition": true
+    }
+   },
+   {
+    "id": "boomip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.02,
+     "sizeMax": 0.04,
+     "rotationMin": 0,
+     "rotationMax": 0,
+     "angularVelocityMin": 0,
+     "angularVelocityMax": 0
+    }
+   },
+   {
+    "id": "boomgrav",
+    "type": "Gravity"
+   },
+   {
+    "id": "boomdrag",
+    "type": "Drag",
+    "params": {
+     "coefficient": 1.2
+    }
+   },
+   {
+    "id": "boomground",
+    "type": "GroundCollision",
+    "params": {
+     "mode": "bounce",
+     "restitution": 0.3,
+     "friction": 0.5
+    }
+   },
+   {
+    "id": "sparkmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "spark-streak",
+     "blend": "additive"
+    }
+   },
+   {
+    "id": "sparks",
+    "type": "BillboardRenderer",
+    "params": {
+     "alignment": "velocity",
+     "stretchRatio": 5,
+     "pivot": 0.8,
+     "colorOverLife": {
+      "stops": [
+       {
+        "position": 0,
+        "color": {
+         "srgb": "#FFFFFF",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 0.5,
+        "color": {
+         "srgb": "#FFA040",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 1,
+        "color": {
+         "srgb": "#A02000",
+         "alpha": 0
+        }
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "impactwin",
+    "type": "Schedule",
+    "params": {
+     "startTicks": 0,
+     "durationTicks": 30,
+     "mode": "window"
+    }
+   },
+   {
+    "id": "flash",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 3,
+     "sizeOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.3
+       },
+       {
+        "x": 0.2,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1.3
+       }
+      ]
+     },
+     "opacityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     },
+     "colorOverWindow": {
+      "stops": [
+       {
+        "position": 0,
+        "color": {
+         "srgb": "#FFFFFF",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 0.3,
+        "color": {
+         "srgb": "#FFA050",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 1,
+        "color": {
+         "srgb": "#FF3010",
+         "alpha": 1
+        }
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "impactlight",
+    "type": "PointLight",
+    "params": {
+     "color": {
+      "srgb": "#FFA050",
+      "alpha": 1
+     },
+     "intensity": 80,
+     "range": 7,
+     "intensityOverWindow": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "whoosh",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "pink",
+     "durationTicks": 44,
+     "gain": 1.6
+    }
+   },
+   {
+    "id": "whooshband",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "bandpass",
+     "cutoffHz": 350,
+     "cutoffEndHz": 1800,
+     "q": 1.3
+    }
+   },
+   {
+    "id": "whooshenv",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.12,
+     "hold": 0.45,
+     "release": 0.18,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "boomsound",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "brown",
+     "durationTicks": 70,
+     "gain": 1.6
+    }
+   },
+   {
+    "id": "boomlow",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "lowpass",
+     "cutoffHz": 1400,
+     "cutoffEndHz": 140,
+     "q": 0.8
+    }
+   },
+   {
+    "id": "boomenv",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.003,
+     "hold": 0.05,
+     "release": 1,
+     "curve": "exponential"
+    }
+   },
+   {
+    "id": "thump",
+    "type": "AudioSource",
+    "params": {
+     "source": "chirp",
+     "chirpStartHz": 120,
+     "chirpEndHz": 40,
+     "chirpSweep": "exponential",
+     "durationTicks": 30,
+     "gain": 1
+    }
+   },
+   {
+    "id": "thumpenv",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.002,
+     "hold": 0.02,
+     "release": 0.45,
+     "curve": "exponential"
+    }
+   },
+   {
+    "id": "crackle",
+    "type": "AudioSource",
+    "params": {
+     "source": "noise",
+     "noiseColor": "white",
+     "durationTicks": 24,
+     "gain": 0.5
+    }
+   },
+   {
+    "id": "cracklehp",
+    "type": "AudioFilter",
+    "params": {
+     "mode": "highpass",
+     "cutoffHz": 2500,
+     "cutoffEndHz": 5000,
+     "q": 0.9
+    }
+   },
+   {
+    "id": "crackleenv",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.001,
+     "hold": 0.03,
+     "release": 0.3,
+     "curve": "exponential"
+    }
+   },
+   {
+    "id": "mix",
+    "type": "AudioMix",
+    "params": {
+     "masterGain": 0.9
+    }
+   },
+   {
+    "id": "audioout",
+    "type": "AudioOutput",
+    "params": {}
+   },
+   {
+    "id": "streakmat",
+    "type": "Material",
+    "params": {
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FF9A40",
+      "alpha": 1
+     },
+     "emission": 1,
+     "opacity": 0.9
+    }
+   },
+   {
+    "id": "streak",
+    "type": "MotionTrail",
+    "params": {
+     "history": 0.3,
+     "width": 0.35,
+     "endFade": 0.45
+    }
+   },
+   {
+    "id": "bodymat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "sim-fireball",
+     "blend": "additive",
+     "tint": {
+      "srgb": "#FFB060",
+      "alpha": 1
+     },
+     "emission": 1.3
+    }
+   },
+   {
+    "id": "body",
+    "type": "SpriteRenderer",
+    "params": {
+     "size": 1.1,
+     "spin": 4
+    }
+   },
+   {
+    "id": "smokeem",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.2,
+     "rate": 90,
+     "burst": 0,
+     "speedMin": 0.1,
+     "speedMax": 0.4,
+     "lifetimeMin": 0.8,
+     "lifetimeMax": 1.4
+    }
+   },
+   {
+    "id": "smokeip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 0.9,
+     "sizeMax": 1.5,
+     "rotationMin": -3,
+     "rotationMax": 3,
+     "angularVelocityMin": -0.6,
+     "angularVelocityMax": 0.6
+    }
+   },
+   {
+    "id": "smokelift",
+    "type": "Gravity",
+    "params": {
+     "acceleration": [
+      0,
+      0.8,
+      0
+     ]
+    }
+   },
+   {
+    "id": "smokemat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "sim-smoke-wispy",
+     "blend": "normal",
+     "tint": {
+      "srgb": "#3A302A",
+      "alpha": 1
+     },
+     "opacity": 0.55
+    }
+   },
+   {
+    "id": "smoke",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "renderOrderOffset": -1,
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.6
+       },
+       {
+        "x": 1,
+        "y": 1.9
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0
+       },
+       {
+        "x": 0.2,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "blastem",
+    "type": "Emitter",
+    "params": {
+     "shape": "sphere",
+     "radius": 0.3,
+     "burst": 7,
+     "rate": 0,
+     "speedMin": 0.6,
+     "speedMax": 1.8,
+     "lifetimeMin": 0.55,
+     "lifetimeMax": 0.9,
+     "useEventPosition": true
+    }
+   },
+   {
+    "id": "blastip",
+    "type": "InitialProperties",
+    "params": {
+     "sizeMin": 1.6,
+     "sizeMax": 2.6,
+     "rotationMin": -3,
+     "rotationMax": 3,
+     "angularVelocityMin": -1,
+     "angularVelocityMax": 1
+    }
+   },
+   {
+    "id": "blastmat",
+    "type": "Material",
+    "params": {
+     "template": "SpriteTextured",
+     "sprite": "sim-explosion",
+     "blend": "additive",
+     "opacity": 0.95
+    }
+   },
+   {
+    "id": "blast",
+    "type": "BillboardRenderer",
+    "params": {
+     "flipbookMode": "overLife",
+     "sizeOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 0.5
+       },
+       {
+        "x": 0.3,
+        "y": 1
+       },
+       {
+        "x": 1,
+        "y": 1.3
+       }
+      ]
+     },
+     "opacityOverLife": {
+      "domain": "normalized",
+      "interpolation": "linear",
+      "keys": [
+       {
+        "x": 0,
+        "y": 1
+       },
+       {
+        "x": 0.6,
+        "y": 0.8
+       },
+       {
+        "x": 1,
+        "y": 0
+       }
+      ]
+     },
+     "colorOverLife": {
+      "stops": [
+       {
+        "position": 0,
+        "color": {
+         "srgb": "#FFFFFF",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 0.4,
+        "color": {
+         "srgb": "#FFB050",
+         "alpha": 1
+        }
+       },
+       {
+        "position": 1,
+        "color": {
+         "srgb": "#802008",
+         "alpha": 1
+        }
+       }
+      ]
+     }
+    }
+   }
+  ],
+  "edges": [
+   [
+    "node-source.out",
+    "arc.start"
+   ],
+   [
+    "node-target.out",
+    "arc.end"
+   ],
+   [
+    "arc.paths",
+    "ball.paths"
+   ],
+   [
+    "flight.window",
+    "ball.window"
+   ],
+   [
+    "ball.anchor",
+    "core.anchor"
+   ],
+   [
+    "coremat.material",
+    "core.material"
+   ],
+   [
+    "flight.window",
+    "core.window"
+   ],
+   [
+    "ball.anchor",
+    "trailem.anchor"
+   ],
+   [
+    "flight.window",
+    "trailem.window"
+   ],
+   [
+    "trailem.particles",
+    "trailip.particles"
+   ],
+   [
+    "trailip.particles",
+    "lift.particles"
+   ],
+   [
+    "lift.particles",
+    "turb.particles"
+   ],
+   [
+    "turb.particles",
+    "flames.particles"
+   ],
+   [
+    "flamemat.material",
+    "flames.material"
+   ],
+   [
+    "ball.anchor",
+    "balllight.anchor"
+   ],
+   [
+    "flight.window",
+    "balllight.window"
+   ],
+   [
+    "ball.arrival",
+    "boom.trigger"
+   ],
+   [
+    "boom.particles",
+    "boomip.particles"
+   ],
+   [
+    "boomip.particles",
+    "boomgrav.particles"
+   ],
+   [
+    "boomgrav.particles",
+    "boomdrag.particles"
+   ],
+   [
+    "boomdrag.particles",
+    "boomground.particles"
+   ],
+   [
+    "boomground.particles",
+    "sparks.particles"
+   ],
+   [
+    "sparkmat.material",
+    "sparks.material"
+   ],
+   [
+    "ball.arrival",
+    "impactwin.trigger"
+   ],
+   [
+    "node-target.out",
+    "flash.anchor"
+   ],
+   [
+    "coremat.material",
+    "flash.material"
+   ],
+   [
+    "impactwin.window",
+    "flash.window"
+   ],
+   [
+    "node-target.out",
+    "impactlight.anchor"
+   ],
+   [
+    "impactwin.window",
+    "impactlight.window"
+   ],
+   [
+    "flames.visual",
+    "node-output.visual"
+   ],
+   [
+    "core.visual",
+    "node-output.visual"
+   ],
+   [
+    "sparks.visual",
+    "node-output.visual"
+   ],
+   [
+    "flash.visual",
+    "node-output.visual"
+   ],
+   [
+    "balllight.visual",
+    "node-output.visual"
+   ],
+   [
+    "impactlight.visual",
+    "node-output.visual"
+   ],
+   [
+    "flight.start",
+    "whoosh.trigger"
+   ],
+   [
+    "whoosh.audio",
+    "whooshband.audio"
+   ],
+   [
+    "whooshband.audio",
+    "whooshenv.audio"
+   ],
+   [
+    "whooshenv.audio",
+    "mix.inputs"
+   ],
+   [
+    "impactwin.start",
+    "boomsound.trigger"
+   ],
+   [
+    "boomsound.audio",
+    "boomlow.audio"
+   ],
+   [
+    "boomlow.audio",
+    "boomenv.audio"
+   ],
+   [
+    "boomenv.audio",
+    "mix.inputs"
+   ],
+   [
+    "impactwin.start",
+    "thump.trigger"
+   ],
+   [
+    "thump.audio",
+    "thumpenv.audio"
+   ],
+   [
+    "thumpenv.audio",
+    "mix.inputs"
+   ],
+   [
+    "impactwin.start",
+    "crackle.trigger"
+   ],
+   [
+    "crackle.audio",
+    "cracklehp.audio"
+   ],
+   [
+    "cracklehp.audio",
+    "crackleenv.audio"
+   ],
+   [
+    "crackleenv.audio",
+    "mix.inputs"
+   ],
+   [
+    "mix.audio",
+    "audioout.audio"
+   ],
+   [
+    "audioout.audio",
+    "node-output.audio"
+   ],
+   [
+    "ball.anchor",
+    "streak.anchor"
+   ],
+   [
+    "streakmat.material",
+    "streak.material"
+   ],
+   [
+    "flight.window",
+    "streak.window"
+   ],
+   [
+    "streak.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.anchor",
+    "body.anchor"
+   ],
+   [
+    "bodymat.material",
+    "body.material"
+   ],
+   [
+    "flight.window",
+    "body.window"
+   ],
+   [
+    "body.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.anchor",
+    "smokeem.anchor"
+   ],
+   [
+    "flight.window",
+    "smokeem.window"
+   ],
+   [
+    "smokeem.particles",
+    "smokeip.particles"
+   ],
+   [
+    "smokeip.particles",
+    "smokelift.particles"
+   ],
+   [
+    "smokelift.particles",
+    "smoke.particles"
+   ],
+   [
+    "smokemat.material",
+    "smoke.material"
+   ],
+   [
+    "smoke.visual",
+    "node-output.visual"
+   ],
+   [
+    "ball.arrival",
+    "blastem.trigger"
+   ],
+   [
+    "blastem.particles",
+    "blastip.particles"
+   ],
+   [
+    "blastip.particles",
+    "blast.particles"
+   ],
+   [
+    "blastmat.material",
+    "blast.material"
+   ],
+   [
+    "blast.visual",
+    "node-output.visual"
+   ]
+  ],
+  "knobs": [
+   {
+    "id": "travel",
+    "label": "Travel ticks",
+    "value": 40,
+    "bindings": [
+     {
+      "node": "ball",
+      "parameter": "durationTicks"
+     },
+     {
+      "node": "flight",
+      "parameter": "durationTicks",
+      "offset": 2
+     }
+    ]
+   },
+   {
+    "id": "trail",
+    "label": "Trail density",
+    "value": 520,
+    "bindings": [
+     {
+      "node": "trailem",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "smoke",
+    "label": "Smoke density",
+    "value": 90,
+    "bindings": [
+     {
+      "node": "smokeem",
+      "parameter": "rate"
+     }
+    ]
+   },
+   {
+    "id": "core",
+    "label": "Core size",
+    "value": 1.4,
+    "bindings": [
+     {
+      "node": "core",
+      "parameter": "size"
+     }
+    ]
+   },
+   {
+    "id": "blast",
+    "label": "Impact fire",
+    "value": 7,
+    "bindings": [
+     {
+      "node": "blastem",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "impact",
+    "label": "Impact sparks",
+    "value": 120,
+    "bindings": [
+     {
+      "node": "boom",
+      "parameter": "burst"
+     }
+    ]
+   },
+   {
+    "id": "flash",
+    "label": "Flash size",
+    "value": 3,
+    "bindings": [
+     {
+      "node": "flash",
+      "parameter": "size"
+     }
+    ]
+   },
+   {
+    "id": "light",
+    "label": "Ball light",
+    "value": 30,
+    "bindings": [
+     {
+      "node": "balllight",
+      "parameter": "intensity"
+     }
+    ]
+   }
+  ],
+  "layout": {
+   "source": [
+    -3,
+    1.2,
+    0
+   ],
+   "target": [
+    3,
+    0.3,
+    0
+   ]
+  }
  }
 ];

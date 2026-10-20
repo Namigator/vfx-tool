@@ -3,7 +3,7 @@
 
 # Sprite library
 
-The included sprite library (17 sheets, all procedural and free to use). Use one by setting the Material `template` to "SpriteTextured" and its `sprite` parameter to the id (BillboardRenderer/RibbonRenderer/ParticleTrail/SpriteRenderer then draw with it). Cells are read row-major; the sheet's UV v=0 is the top row. Glow/mask sheets are grey-scale: tint them with the Material tint; sheets with a baked palette (flames) are recoloured with colour over life or the component Colour knob.
+The included sprite library (23 sheets, all procedural and free to use). Use one by setting the Material `template` to "SpriteTextured" and its `sprite` parameter to the id (BillboardRenderer/RibbonRenderer/ParticleTrail/SpriteRenderer then draw with it). Cells are read row-major; the sheet's UV v=0 is the top row. Glow/mask sheets are grey-scale: tint them with the Material tint; sheets with a baked palette (flames) are recoloured with colour over life or the component Colour knob.
 
 ## Contents
 
@@ -26,6 +26,12 @@ The included sprite library (17 sheets, all procedural and free to use). Use one
   - [dark-wisp](#dark-wisp)
   - [star-ray](#star-ray)
   - [gradient](#gradient)
+  - [sim-fireball](#sim-fireball)
+  - [sim-fireball-b](#sim-fireball-b)
+  - [sim-flame](#sim-flame)
+  - [sim-flame-small](#sim-flame-small)
+  - [sim-smoke-wispy](#sim-smoke-wispy)
+  - [sim-explosion](#sim-explosion)
 
 ## Summary table
 
@@ -48,6 +54,12 @@ The included sprite library (17 sheets, all procedural and free to use). Use one
 | `dark-wisp` | dark-wisp.png | flipbook | 4×4 of 256×256px | 16 | normal | dark smoke tendril curling and dissipating over 16 frames (DarkVolumeSprite) |
 | `star-ray` | star-ray.png | variants | 2×2 of 256×256px | 4 | additive | star (0), ray burst (1), thin ring (2) and cross flare (3) masks for glints, holy light, impacts |
 | `gradient` | gradient.png | variants | 2×2 of 256×256px | 4 | normal | neutral gradient utilities: linear (0), radial (1), band (2), diagonal (3); tint or use as masks |
+| `sim-fireball` | sim-fireball.png | flipbook | 4×4 of 256×256px | 16 | additive | simulated rolling fireball (Houdini), loops; ball core or dense trail puffs; play at fps or over life |
+| `sim-fireball-b` | sim-fireball-b.png | flipbook | 4×4 of 256×256px | 16 | additive | second simulated fireball loop, different silhouette; mix with sim-fireball to avoid repeats |
+| `sim-flame` | sim-flame.png | flipbook | 4×4 of 256×256px | 16 | additive | simulated tall flame, base at the bottom, wispy top; torches, jets, flame tongues in a trail |
+| `sim-flame-small` | sim-flame-small.png | flipbook | 4×4 of 256×256px | 16 | additive | simulated small flame; embers of fire, candle-sized tongues, trail licks |
+| `sim-smoke-wispy` | sim-smoke-wispy.png | flipbook | 4×4 of 256×256px | 16 | normal | simulated wispy smoke, white; tint dark for fire smoke trails, light for steam; over life |
+| `sim-explosion` | sim-explosion.png | flipbook | 4×4 of 256×256px | 16 | additive | simulated fiery explosion burst over life; impacts, fireball hits |
 
 ## Per sprite
 
@@ -220,3 +232,63 @@ neutral gradient utilities: linear (0), radial (1), band (2), diagonal (3); tint
 - Baked colour: neutral white/grey mask: colour it with the Material tint.
 - Playback: 4 independent still variants: each particle picks one cell at random and keeps it for its whole life (SpriteRenderer/BillboardRenderer variant setting can fix one).
 - License: VFX Studio included asset (procedural, no third-party rights).
+
+### sim-fireball
+
+simulated rolling fireball (Houdini), loops; ball core or dense trail puffs; play at fps or over life
+
+- File: assets/sprites/sim-fireball.png; kind: flipbook; 4×4 cells of 256×256 px (16 cells).
+- Recommended blend: additive (set on the Material as `blend`).
+- Baked colour: neutral white/grey mask: colour it with the Material tint.
+- Playback: A 16-frame animation: BillboardRenderer flipbookMode "overLife" plays it once across each particle's life (last frame at death), "fps" loops it, "first" holds frame 0. Set randomFrameStart on InitialProperties to desynchronise particles.
+- License: CC0 1.0 (public domain), Unity Labs Paris "Free VFX image sequences and flipbooks" (2016).
+
+### sim-fireball-b
+
+second simulated fireball loop, different silhouette; mix with sim-fireball to avoid repeats
+
+- File: assets/sprites/sim-fireball-b.png; kind: flipbook; 4×4 cells of 256×256 px (16 cells).
+- Recommended blend: additive (set on the Material as `blend`).
+- Baked colour: neutral white/grey mask: colour it with the Material tint.
+- Playback: A 16-frame animation: BillboardRenderer flipbookMode "overLife" plays it once across each particle's life (last frame at death), "fps" loops it, "first" holds frame 0. Set randomFrameStart on InitialProperties to desynchronise particles.
+- License: CC0 1.0 (public domain), Unity Labs Paris "Free VFX image sequences and flipbooks" (2016).
+
+### sim-flame
+
+simulated tall flame, base at the bottom, wispy top; torches, jets, flame tongues in a trail
+
+- File: assets/sprites/sim-flame.png; kind: flipbook; 4×4 cells of 256×256 px (16 cells).
+- Recommended blend: additive (set on the Material as `blend`).
+- Baked colour: neutral white/grey mask: colour it with the Material tint.
+- Playback: A 16-frame animation: BillboardRenderer flipbookMode "overLife" plays it once across each particle's life (last frame at death), "fps" loops it, "first" holds frame 0. Set randomFrameStart on InitialProperties to desynchronise particles.
+- License: CC0 1.0 (public domain), Unity Labs Paris "Free VFX image sequences and flipbooks" (2016).
+
+### sim-flame-small
+
+simulated small flame; embers of fire, candle-sized tongues, trail licks
+
+- File: assets/sprites/sim-flame-small.png; kind: flipbook; 4×4 cells of 256×256 px (16 cells).
+- Recommended blend: additive (set on the Material as `blend`).
+- Baked colour: neutral white/grey mask: colour it with the Material tint.
+- Playback: A 16-frame animation: BillboardRenderer flipbookMode "overLife" plays it once across each particle's life (last frame at death), "fps" loops it, "first" holds frame 0. Set randomFrameStart on InitialProperties to desynchronise particles.
+- License: CC0 1.0 (public domain), Unity Labs Paris "Free VFX image sequences and flipbooks" (2016).
+
+### sim-smoke-wispy
+
+simulated wispy smoke, white; tint dark for fire smoke trails, light for steam; over life
+
+- File: assets/sprites/sim-smoke-wispy.png; kind: flipbook; 4×4 cells of 256×256 px (16 cells).
+- Recommended blend: normal (set on the Material as `blend`).
+- Baked colour: neutral white/grey mask: colour it with the Material tint.
+- Playback: A 16-frame animation: BillboardRenderer flipbookMode "overLife" plays it once across each particle's life (last frame at death), "fps" loops it, "first" holds frame 0. Set randomFrameStart on InitialProperties to desynchronise particles.
+- License: CC0 1.0 (public domain), Unity Labs Paris "Free VFX image sequences and flipbooks" (2016).
+
+### sim-explosion
+
+simulated fiery explosion burst over life; impacts, fireball hits
+
+- File: assets/sprites/sim-explosion.png; kind: flipbook; 4×4 cells of 256×256 px (16 cells).
+- Recommended blend: additive (set on the Material as `blend`).
+- Baked colour: neutral white/grey mask: colour it with the Material tint.
+- Playback: A 16-frame animation: BillboardRenderer flipbookMode "overLife" plays it once across each particle's life (last frame at death), "fps" loops it, "first" holds frame 0. Set randomFrameStart on InitialProperties to desynchronise particles.
+- License: CC0 1.0 (public domain), Unity Labs Paris "Free VFX image sequences and flipbooks" (2016).

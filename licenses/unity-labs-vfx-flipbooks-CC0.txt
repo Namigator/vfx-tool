@@ -1,0 +1,11 @@
+Unity Labs "Free VFX image sequences and flipbooks" (Thomas Iché, Unity Technologies, 2016)
+Source: https://unity.com/blog/engine-platform/free-vfx-image-sequences-flipbooks
+Files from https://unity3d.com/files/labs/downloads/vfx/assets01/<Name>/<Name>-flipbooks.zip (downloaded 2026-10-21)
+
+License: CC0 1.0 Universal (public domain dedication), as stated on the source page:
+"Here are some image sequences we want to share with you under CC0 license. Feel free to use them in your projects!"
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Used in VFX Studio as assets/sprites/sim-*.png, converted by tools/import-flipbooks.mjs
+(16 evenly spaced frames resampled into 4x4 / 256 px atlases; alpha from brightness for sheets without alpha).
+Sources: FireBall01, FireBall03, Flame02, Flame03, WispySmoke01, Explosion01.

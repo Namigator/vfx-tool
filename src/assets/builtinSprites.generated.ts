@@ -19,4 +19,10 @@ export const BUILTIN_SPRITES: readonly SpriteSheet[] = [
   { id: "dark-wisp", file: "dark-wisp.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "normal", meanColor: "#1F1A29", greyFile: "dark-wisp.grey.png" },
   { id: "star-ray", file: "star-ray.png", kind: "variants", cell: [256,256], columns: 2, rows: 2, blend: "additive", meanColor: "#FFFFFF", lineProfile: [[0,0.378],[0.01,0.344],[0.02,0.295],[0.03,0.256],[0.045,0.214],[0.065,0.175],[0.09,0.142],[0.13,0.107],[0.2,0.07],[0.35,0.048],[0.6,0.056],[1,0]] },
   { id: "gradient", file: "gradient.png", kind: "variants", cell: [256,256], columns: 2, rows: 2, blend: "normal", meanColor: "#838383", lineProfile: [[0,1],[0.01,1],[0.02,1],[0.03,1],[0.045,1],[0.065,1],[0.09,1],[0.13,1],[0.2,1],[0.35,1],[0.6,1],[1,0]] },
+  { id: "sim-fireball", file: "sim-fireball.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "additive", meanColor: "#FFD0A3", greyFile: "sim-fireball.grey.png" },
+  { id: "sim-fireball-b", file: "sim-fireball-b.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "additive", meanColor: "#FFD26A", greyFile: "sim-fireball-b.grey.png" },
+  { id: "sim-flame", file: "sim-flame.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "additive", meanColor: "#C3894C", greyFile: "sim-flame.grey.png" },
+  { id: "sim-flame-small", file: "sim-flame-small.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "additive", meanColor: "#CD9357", greyFile: "sim-flame-small.grey.png" },
+  { id: "sim-smoke-wispy", file: "sim-smoke-wispy.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "normal", meanColor: "#606060" },
+  { id: "sim-explosion", file: "sim-explosion.png", kind: "flipbook", cell: [256,256], columns: 4, rows: 4, blend: "additive", meanColor: "#44372D", greyFile: "sim-explosion.grey.png" },
 ];

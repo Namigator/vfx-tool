@@ -3,7 +3,7 @@
 
 # Component reference
 
-All 49 ready-made components. A component is a complete pre-wired node graph inserted into an effect; you change it through its published controls (knobs), not by editing its nodes. Every control below was read from an actual insertion into a blank document, so ids, types and ranges are exactly what the tools will report.
+All 50 ready-made components. A component is a complete pre-wired node graph inserted into an effect; you change it through its published controls (knobs), not by editing its nodes. Every control below was read from an actual insertion into a blank document, so ids, types and ranges are exactly what the tools will report.
 
 Controls come in two kinds:
 - **automatic**: every component gets **Start at** (`ctl-<id>-start-at`, ticks: delays the whole component so it can play after another one; becomes "Delay after event" when started from an event), **Colour** (`ctl-<id>-colour-shift`: rotates every colour of the component around the colour wheel in degrees -180..180; the editor shows it as a colour picker of the swatch shown, and `vfx_set_control` also accepts a "#RRGGBB" string) and, when the component has two or more visual parts, one colour picker per part (`ctl-<id>-colour-<part>`: Flame, Embers, Smoke & dust, Flash & rings, Light...; each takes a "#RRGGBB" and recolours only that part).
@@ -13,13 +13,14 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 ## Contents
 
-- [Fire (6)](#fire)
+- [Fire (7)](#fire)
   - [flame-jet — Flame jet](#flame-jet)
   - [fire-jet — Fire: jet](#fire-jet)
   - [fire-torch — Fire: compact torch](#fire-torch)
   - [fire-burst — Fire: wide burst](#fire-burst)
   - [flamethrower — Fire: flamethrower](#flamethrower)
   - [fireball — Fireball](#fireball)
+  - [fireball-sim — Fireball: simulated](#fireball-sim)
 - [Lightning (5)](#lightning)
   - [arc-beam — Arc beam](#arc-beam)
   - [charge-tethers — Charge tethers](#charge-tethers)
@@ -238,6 +239,35 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 | `ctl-fireball-impact` | Impact sparks | knob | integer | — | `120` | 0..4096 step 1 | resample |  | boom.burst |
 | `ctl-fireball-flash` | Flash size | knob | number | meter | `3` | 0.001..20 | live |  | flash.size |
 | `ctl-fireball-light` | Ball light | knob | number | linearGain | `30` | 0..100 | live |  | balllight.intensity |
+
+### fireball-sim
+
+**Fireball: simulated** — Fireball on simulated flipbooks (Unity Labs CC0): rolling fire body, flame trail, dark smoke trail, moving light, impact fire burst, sparks, flash and light.
+
+- Family: Fire; travels from Source to Target.
+- Duration: 126 ticks (2.1 s) minimum; the document grows to fit it.
+- Size: 48 nodes, 72 links.
+- Node types used: AudioEnvelope ×4, AudioFilter ×3, AudioMix, AudioOutput, AudioSource ×4, BezierPath, BillboardRenderer ×4, Drag, Emitter ×4, Gravity ×3, GroundCollision, InitialProperties ×4, Material ×7, MotionTrail, NoiseForce, PathFollower, PointLight ×2, Schedule ×2, SpriteRenderer ×3.
+- Add with `vfx_add_component` (component "fireball-sim") or open as a new effect with `vfx_new_document` component="fireball-sim". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "fireball-sim", a second copy gets "fireball-sim-2").
+
+**Controls**
+
+| control id | label | kind | type | unit | default | range | edit | colour | drives (node.parameter) |
+|---|---|---|---|---|---|---|---|---|---|
+| `ctl-fireball-sim-start-at` | Start at | automatic | integer | tick | `0` | 0..600 step 1 | resample |  | flight.startTicks |
+| `ctl-fireball-sim-colour-shift` | Colour | automatic | number | — | `0` | -180..180 step 1 | live | picker, swatch #FF2407 | coremat.hueShift, flamemat.hueShift, balllight.hueShift, sparkmat.hueShift, impactlight.hueShift, streakmat.hueShift, bodymat.hueShift, smokemat.hueShift, blastmat.hueShift |
+| `ctl-fireball-sim-colour-main` | Flame colour | automatic | color | — | `#FF2407` | — | live | picker (#RRGGBB) | coremat.recolorTo, flamemat.recolorTo, bodymat.recolorTo, blastmat.recolorTo |
+| `ctl-fireball-sim-colour-sparks` | Embers colour | automatic | color | — | `#FFA040` | — | live | picker (#RRGGBB) | sparkmat.recolorTo, streakmat.recolorTo |
+| `ctl-fireball-sim-colour-smoke` | Smoke & dust colour | automatic | color | — | `#3A302A` | — | live | picker (#RRGGBB) | smokemat.recolorTo |
+| `ctl-fireball-sim-colour-light` | Light colour | automatic | color | — | `#FF9040` | — | live | picker (#RRGGBB) | balllight.recolorTo, impactlight.recolorTo |
+| `ctl-fireball-sim-travel` | Travel ticks | knob | integer | tick | `40` | 1..598 step 1 | resample |  | ball.durationTicks, flight.durationTicks +2 |
+| `ctl-fireball-sim-trail` | Trail density | knob | number | perSecond | `520` | 0..4096 | resample |  | trailem.rate |
+| `ctl-fireball-sim-smoke` | Smoke density | knob | number | perSecond | `90` | 0..4096 | resample |  | smokeem.rate |
+| `ctl-fireball-sim-core` | Core size | knob | number | meter | `1.4` | 0.001..20 | live |  | core.size |
+| `ctl-fireball-sim-blast` | Impact fire | knob | integer | — | `7` | 0..4096 step 1 | resample |  | blastem.burst |
+| `ctl-fireball-sim-impact` | Impact sparks | knob | integer | — | `120` | 0..4096 step 1 | resample |  | boom.burst |
+| `ctl-fireball-sim-flash` | Flash size | knob | number | meter | `3` | 0.001..20 | live |  | flash.size |
+| `ctl-fireball-sim-light` | Ball light | knob | number | linearGain | `30` | 0..100 | live |  | balllight.intensity |
 
 ## Lightning
 
