@@ -50,17 +50,49 @@ if os.environ.get("VFX_SHOW_MESH"):
 # VFX_CAM_X (look-at X, default 220) and VFX_CAM_DIST (default 620) frame long effects (a 15 m bolt: 700 / 1600).
 CAM_X = float(os.environ.get("VFX_CAM_X", "220"))
 CAM_DIST = float(os.environ.get("VFX_CAM_DIST", "620"))
-cap_actor = el.spawn_actor_from_class(unreal.SceneCapture2D, unreal.Vector(CAM_X, -CAM_DIST, 200), unreal.Rotator(0, 0, 0))
-cap_actor.set_actor_rotation((unreal.Vector(CAM_X, 0, 110) - cap_actor.get_actor_location()).rotator(), False)
+vec = lambda s: unreal.Vector(*[float(v) for v in s.split(",")])
+# VFX_CAM_POS / VFX_CAM_LOOK ("x,y,z", Unreal world cm) + VFX_FOV (horizontal degrees) place the camera exactly
+# (tools/layer-brightness.mjs --engine unreal matches the editor's camera this way).
+cam_pos = vec(os.environ["VFX_CAM_POS"]) if os.environ.get("VFX_CAM_POS") else unreal.Vector(CAM_X, -CAM_DIST, 200)
+cam_look = vec(os.environ["VFX_CAM_LOOK"]) if os.environ.get("VFX_CAM_LOOK") else unreal.Vector(CAM_X, 0, 110)
+cap_actor = el.spawn_actor_from_class(unreal.SceneCapture2D, cam_pos, unreal.Rotator(0, 0, 0))
+cap_actor.set_actor_rotation((cam_look - cam_pos).rotator(), False)
 cap = cap_actor.capture_component2d
 rt = unreal.RenderingLibrary.create_render_target2d(world, W, H, unreal.TextureRenderTargetFormat.RTF_RGBA8, unreal.LinearColor(0, 0, 0, 1))
 cap.set_editor_property("texture_target", rt)
 cap.set_editor_property("capture_every_frame", False)
 cap.set_editor_property("capture_on_movement", False)
 cap.set_editor_property("capture_source", unreal.SceneCaptureSource.SCS_FINAL_COLOR_LDR)
-cap.set_editor_property("fov_angle", 60.0)
+cap.set_editor_property("fov_angle", float(os.environ.get("VFX_FOV", "60")))
 
-state = {"frames": 0, "start": time.time(), "phase": "compile", "handle": None}
+# Solo shots: VFX_SHOTS = "a,b;c;-" renders one image per ";" set (unreal_capture_0, _1, ...) with only those emitters
+# enabled ("-" = none: the empty plate, "*" = all); VFX_EMITTERS lists every emitter name. Unset = one shot, all on.
+EMITTERS = [e for e in os.environ.get("VFX_EMITTERS", "").split(",") if e]
+SHOTS = os.environ["VFX_SHOTS"].split(";") if os.environ.get("VFX_SHOTS") else None
+
+def apply_solo(shot):
+    keep = set(EMITTERS) if shot == "*" else set(e for e in shot.split(",") if e and e != "-")
+    if not hasattr(comp, "set_emitter_enable"):
+        print("VFXCAP ERROR set_emitter_enable n/a: solo shots are NOT solo")
+        return
+    for e in EMITTERS:
+        comp.set_emitter_enable(e, e in keep)
+    print("VFXCAP solo", shot, "->", len(keep), "of", len(EMITTERS))
+
+state = {"frames": 0, "start": time.time(), "phase": "compile", "handle": None, "shot": 0}
+
+def start_shot():
+    comp.set_paused(False)
+    comp.reinitialize_system()
+    comp.activate(True)
+    if SHOTS is not None:
+        apply_solo(SHOTS[state["shot"]])
+    comp.advance_simulation(max(1, int(round(SECONDS * 60))), 1.0 / 60.0)
+    # Freeze it there: the render ticks below would otherwise keep simulating (~0.3 s late captures).
+    try:
+        comp.set_paused(True)
+    except Exception as e:
+        print("VFXCAP set_paused n/a", e)
 
 def shaders_pending():
     try:
@@ -74,15 +106,7 @@ def on_tick(dt):
     if state["phase"] == "compile":
         # Let materials/Niagara scripts compile: at least 120 editor ticks and 20 s, at most 240 s.
         if (state["frames"] >= 120 and elapsed >= 20 and shaders_pending() == 0) or elapsed > 240:
-            comp.reinitialize_system()
-            comp.activate(True)
-            print("VFXCAP after activate", comp.is_active())
-            comp.advance_simulation(max(1, int(SECONDS * 60)), 1.0 / 60.0)
-            # Freeze it there: the render ticks below would otherwise keep simulating (~0.3 s late captures).
-            try:
-                comp.set_paused(True)
-            except Exception as e:
-                print("VFXCAP set_paused n/a", e)
+            start_shot()
             print("VFXCAP active", comp.is_active(), "after", round(elapsed, 1), "s")
             state["phase"] = "render"; state["frames"] = 0
         return
@@ -95,9 +119,14 @@ def on_tick(dt):
         state["phase"] = "export"; state["frames"] = 0
         return
     if state["phase"] == "export" and state["frames"] >= 3:
-        name = "unreal_capture"
+        name = "unreal_capture" if SHOTS is None else "unreal_capture_%d" % state["shot"]
         unreal.RenderingLibrary.export_render_target(world, rt, OUT_DIR, name)
         print("VFXCAP exported", OUT_DIR, name, "after", round(elapsed, 1), "s")
+        if SHOTS is not None and state["shot"] + 1 < len(SHOTS):
+            state["shot"] += 1
+            start_shot()
+            state["phase"] = "render"; state["frames"] = 0
+            return
         state["phase"] = "done"
         unreal.unregister_slate_post_tick_callback(state["handle"])
         unreal.SystemLibrary.quit_editor()
