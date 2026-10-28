@@ -91,7 +91,8 @@ if (process.platform === 'win32') {
 const capture = spawnSync(EDITOR, [TEST_PROJECT, '-windowed', '-WinX=-4000', '-WinY=0', '-ResX=1280', '-ResY=720', '-nosplash', '-NoLiveCoding',
   '-ini:EditorPerProjectUserSettings:[/Script/UnrealEd.EditorPerformanceSettings]:bThrottleCPUWhenNotForeground=False',
   ...(process.env.VFX_UE_EDITOR_ARGS ?? '').split(/\s+/).filter(Boolean),
-  `-ExecCmds=py ${join(root, 'tools', 'unreal-capture.py')}`, '-log'], {
+  // VFX_UE_CAPTURE=mrq renders through Movie Render Queue (tools/unreal-capture-mrq.py): fixed-step and shader-blocking.
+  `-ExecCmds=py ${join(root, 'tools', process.env.VFX_UE_CAPTURE === 'mrq' ? 'unreal-capture-mrq.py' : 'unreal-capture.py')}`, '-log'], {
   env: { ...process.env, MSYS_NO_PATHCONV: '1', VFX_NS: nsPath, VFX_OUT: capDir, VFX_SECONDS: seconds }, timeout: 480_000,
 });
 const shot = join(capDir, 'unreal_capture');

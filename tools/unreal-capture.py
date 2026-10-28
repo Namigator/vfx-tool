@@ -115,6 +115,12 @@ def on_tick(dt):
             print("VFXCAP tick", state["frames"], "active", comp.is_active())
         if state["frames"] < int(os.environ.get("VFX_RENDER_TICKS", "10")):
             return  # a few ticks so the renderer picks up the simulated particles
+        # Particle/ribbon materials compile on their first draw, after the pre-shot wait: capturing mid-compile gave
+        # random blank effects run to run (2026-10-28). Hold the frozen frame until the queue drains (max 120 s).
+        if shaders_pending() > 0 and state["frames"] < 7200:
+            if state["frames"] % 600 == 0:
+                print("VFXCAP waiting on", shaders_pending(), "shader jobs before capture")
+            return
         cap.capture_scene()
         state["phase"] = "export"; state["frames"] = 0
         return
