@@ -23,7 +23,7 @@ const packaged = (d: ReturnType<typeof createBlankDocument>) => {
   return { files, ir: JSON.parse(files.find(f => f.path === 'effect.json')!.bytes as string) as UnrealEffect };
 };
 
-test('Unreal soft sprites: additive material samples texture and particle alpha as opacity; cached instances refresh their parent', () => {
+test('Unreal soft sprites: additive material applies texture and particle alpha in emissive like trails; cached instances refresh their parent', () => {
   const { ir, files } = packaged(insertComponent(createBlankDocument(), 'energy-orb', undefined, { group: true }).doc);
   const soft = ir.emitters.filter(e => e.textureFile === 'soft-glow.png' && e.blend === 'additive');
   assert.ok(soft.length > 0);
@@ -33,9 +33,11 @@ test('Unreal soft sprites: additive material samples texture and particle alpha 
   assert.match(material, /bUsedWithNiagaraSprites = true/);
   assert.match(material, /ConnectMaterialExpressions\(TexExpr, TEXT\("A"\), AlphaExpr, TEXT\("A"\)\)/);
   assert.match(material, /ConnectMaterialExpressions\(ParticleColorExpr, TEXT\("A"\), AlphaExpr, TEXT\("B"\)\)/);
-  assert.match(material, /ConnectMaterialProperty\(AlphaExpr, TEXT\(""\), MP_Opacity\)/);
-  assert.match(material, /ConnectMaterialProperty\(MulRgbExpr, TEXT\(""\), MP_EmissiveColor\)/);
-  assert.doesNotMatch(material, /FadeExpr/); // Alpha is applied once by the additive blend, not twice.
+  assert.match(material, /M_VfxStudio_Additive_A4/);
+  assert.match(material, /ConnectMaterialExpressions\(MulRgbExpr, TEXT\(""\), FadeExpr, TEXT\("A"\)\)/);
+  assert.match(material, /ConnectMaterialExpressions\(AlphaExpr, TEXT\(""\), FadeExpr, TEXT\("B"\)\)/);
+  assert.match(material, /ConnectMaterialProperty\(FadeExpr, TEXT\(""\), MP_EmissiveColor\)/);
+  assert.doesNotMatch(material, /ConnectMaterialProperty\(AlphaExpr, TEXT\(""\), MP_Opacity\)/); // Fade once, as in the working additive trail path.
   const instance = section('UMaterialInstanceConstant* GetOrCreateTextureMaterial(', 'UTexture2D* ImportTexture(');
   assert.match(instance, /SetMaterialInstanceParent\(Existing, Base\)/);
   assert.match(instance, /SetMaterialInstanceTextureParameterValue\(Existing, TEXT\("Texture"\), Texture\)/);
@@ -133,6 +135,11 @@ test('Unreal burst windows stop spawning without killing live particles; baked b
   assert.match(beam, /TEXT\("Mesh Scale Mode"\), TEXT\("NewEnumerator3"\)/);
   assert.match(beam, /TEXT\("Mesh Uniform Scale"\), F, TEXT\("1\.0"\)/);
   assert.match(beam, /TEXT\("Color Mode"\), TEXT\("NewEnumerator1"\)/);
+  assert.match(beam, /GetVec3Def\(\), TEXT\("Particles.Scale"\)/);
+  assert.match(beam, /GetQuatDef\(\), TEXT\("Particles.MeshOrientation"\)/);
+  assert.match(beam, /Defaults.Add\(TEXT\("1.0,1.0,1.0"\)\)/);
+  assert.match(beam, /Defaults.Add\(TEXT\("0.0,0.0,0.0,1.0"\)\)/);
+  assert.match(beam, /AddParameterModuleToStack\(Vars, \*Out, INDEX_NONE, Defaults\)/);
 });
 
 test('Unreal moving lights use the same position track as sprite riders and explicitly initialize their colour', () => {

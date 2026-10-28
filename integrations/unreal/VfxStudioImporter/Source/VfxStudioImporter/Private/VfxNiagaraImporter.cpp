@@ -175,8 +175,8 @@ namespace
 		// Flipbooks sample through a Particle SubUV node (the frame comes from the particle's SubImageIndex, the grid from
 		// the sprite renderer's SubImage Size), so one SubUV base serves every grid.
 		const FString Grid = (Columns > 1 || Rows > 1) ? FString(TEXT("_SubUV")) : FString();
-		// A3 uses texture x particle alpha as the additive blend weight, just like the editor's SrcAlpha/One.
-		const FString Name = FString(bAdditive ? TEXT("M_VfxStudio_Additive_A3") : TEXT("M_VfxStudio_Translucent")) + Grid;
+		// Match the working particle-trail material: apply the soft mask once in emissive, with opacity left at one.
+		const FString Name = FString(bAdditive ? TEXT("M_VfxStudio_Additive_A4") : TEXT("M_VfxStudio_Translucent")) + Grid;
 		const FString PackagePath = DestRoot / TEXT("_Materials");
 		const FString AssetPath = PackagePath / Name;
 		if (UMaterial* Existing = LoadObject<UMaterial>(nullptr, *(AssetPath + TEXT(".") + Name)))
@@ -217,7 +217,10 @@ namespace
 			UMaterialExpression* AlphaExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionMultiply::StaticClass(), 0, 200);
 			UMaterialEditingLibrary::ConnectMaterialExpressions(TexExpr, TEXT("A"), AlphaExpr, TEXT("A"));
 			UMaterialEditingLibrary::ConnectMaterialExpressions(ParticleColorExpr, TEXT("A"), AlphaExpr, TEXT("B"));
-			UMaterialEditingLibrary::ConnectMaterialProperty(AlphaExpr, TEXT(""), MP_Opacity);
+			UMaterialExpression* FadeExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionMultiply::StaticClass(), 200, 0);
+			UMaterialEditingLibrary::ConnectMaterialExpressions(MulRgbExpr, TEXT(""), FadeExpr, TEXT("A"));
+			UMaterialEditingLibrary::ConnectMaterialExpressions(AlphaExpr, TEXT(""), FadeExpr, TEXT("B"));
+			UMaterialEditingLibrary::ConnectMaterialProperty(FadeExpr, TEXT(""), MP_EmissiveColor);
 		}
 		UMaterialEditingLibrary::RecompileMaterial(Mat);
 		SaveAssetObj(Mat);
@@ -705,6 +708,21 @@ namespace
 		SetStaticSwitch(Graph, TEXT("InitializeParticle"), TEXT("Mesh Scale Mode"), TEXT("NewEnumerator3")); // Uniform
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Mesh Uniform Scale"), F, TEXT("1.0"));
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Color"), FNiagaraTypeDefinition::GetColorDef(), ColorLit(S.Color));
+		// Write the mesh renderer's actual attributes after the sprite initializer. Its mesh switches can be
+		// hidden by the template's renderer selection, so setting a hidden input alone does not establish a scale.
+		UNiagaraScript* Spawn = Data->SpawnScriptProps.Script;
+		UNiagaraNodeOutput* Out = Graph && Spawn ? Graph->FindEquivalentOutputNode(ENiagaraScriptUsage::ParticleSpawnScript, Spawn->GetUsageId()) : nullptr;
+		if (Out)
+		{
+			TArray<FNiagaraVariable> Vars;
+			Vars.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("Particles.Scale")));
+			Vars.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetQuatDef(), TEXT("Particles.MeshOrientation")));
+			TArray<FString> Defaults;
+			Defaults.Add(TEXT("1.0,1.0,1.0"));
+			Defaults.Add(TEXT("0.0,0.0,0.0,1.0"));
+			FNiagaraStackGraphUtilities::AddParameterModuleToStack(Vars, *Out, INDEX_NONE, Defaults);
+		}
+		else UE_LOG(LogVfxImporter, Error, TEXT("   ribbon slice %s: no particle spawn output for mesh attributes"), *S.Name);
 		SetScaleAlphaCurve(Graph, &S.AlphaKeys);
 		for (UNiagaraRendererProperties* R : Data->GetRenderers()) if (R) R->SetIsEnabled(false);
 		const FVersionedNiagaraEmitter Inst = Handle.GetInstance();
