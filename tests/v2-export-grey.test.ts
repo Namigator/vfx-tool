@@ -44,7 +44,7 @@ for (const name of ['ab07-arcane-helix', 'ab08-arcane-arc']) {
       assert.ok(distance(want, 310) < 40, `comparison colour is pink/purple: ${want}`);
       const id = l.nodeId.replace(/[^A-Za-z0-9_]/g, '_').slice(0, 60);
       const ribbon = written.ribbons.find(b => b.name === id)!;
-      const beam = rb.value.beams.find(b => b.name === id)!;
+      const beam: (typeof rb.value.beams)[number] = rb.value.beams.find(b => b.name === id)!;
       const godot = data.layers.find(b => b.name === id)!;
       assert.equal(ribbon.textureFile, file);
       assert.equal(beam.textureKey, key);
