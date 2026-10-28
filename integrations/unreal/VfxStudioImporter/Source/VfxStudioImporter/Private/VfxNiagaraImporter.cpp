@@ -608,6 +608,8 @@ namespace
 	void SetEmitterWindow(UNiagaraGraph* Graph, int32 StartTick, int32 EndTick)
 	{
 		const auto F = FNiagaraTypeDefinition::GetFloatDef();
+		// End spawning at the window boundary, but let already-born sprites/trail points finish their lives.
+		SetStaticSwitch(Graph, TEXT("EmitterState"), TEXT("Inactive Response"), TEXT("NewEnumerator0")); // Complete
 		SetStaticSwitch(Graph, TEXT("EmitterState"), TEXT("Loop Behavior"), TEXT("NewEnumerator1"));    // Once
 		SetStaticSwitch(Graph, TEXT("EmitterState"), TEXT("Loop Duration Mode"), TEXT("NewEnumerator0")); // Fixed
 		SetStaticSwitch(Graph, TEXT("EmitterState"), TEXT("Life Cycle Mode"), TEXT("NewEnumerator1"));    // Self
@@ -618,6 +620,8 @@ namespace
 			OverrideLiteral(Graph, TEXT("EmitterState"), TEXT("Loop Delay"), F, FloatLit(StartTick / 60.0));
 		}
 	}
+
+	bool ApplyPositionTrack(FVersionedNiagaraEmitterData* Data, const TArray<TSharedPtr<FJsonValue>>& Track);
 
 	/** A light: one particle born when the light turns on, living until it turns off, drawn only by a Light renderer
 	 *  (colour x peak intensity, radius, brightness following the intensity track through Scale Alpha). */
@@ -644,6 +648,7 @@ namespace
 		SetStaticSwitch(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Mode"), TEXT("NewEnumerator1")); // Random: reads Min/Max (SimpleSpriteBurst ships Direct Set)
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Min"), F, FloatLit(Life));
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Max"), F, FloatLit(Life));
+		SetStaticSwitch(Graph, TEXT("InitializeParticle"), TEXT("Color Mode"), TEXT("NewEnumerator1")); // Direct Set
 		const TArray<TSharedPtr<FJsonValue>>* LightPos = nullptr;
 		if (L->TryGetArrayField(TEXT("positionCm"), LightPos) && !JsonVec3(LightPos).IsNearlyZero())
 		{
@@ -666,6 +671,9 @@ namespace
 			Keys.Add(MakeShared<FJsonValueObject>(K));
 		}
 		SetScaleAlphaCurve(Graph, &Keys);
+		const TArray<TSharedPtr<FJsonValue>>* SourceTrack = nullptr;
+		if (L->TryGetArrayField(TEXT("sourceTrack"), SourceTrack) && SourceTrack->Num() > 0)
+			if (!ApplyPositionTrack(Data, *SourceTrack)) UE_LOG(LogVfxImporter, Warning, TEXT("   light update track could not be set: %s"), *L->GetStringField(TEXT("name")));
 		for (UNiagaraRendererProperties* R : Data->GetRenderers()) if (R) R->SetIsEnabled(false); // no visible sprite
 		const FVersionedNiagaraEmitter Inst = Handle.GetInstance();
 		UNiagaraLightRendererProperties* Light = NewObject<UNiagaraLightRendererProperties>(Inst.Emitter, NAME_None, RF_Transactional);
@@ -692,6 +700,10 @@ namespace
 		SetStaticSwitch(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Mode"), TEXT("NewEnumerator1")); // Random: reads Min/Max (SimpleSpriteBurst ships Direct Set)
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Min"), F, FloatLit(Life));
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Max"), F, FloatLit(Life));
+		SetStaticSwitch(Graph, TEXT("InitializeParticle"), TEXT("Color Mode"), TEXT("NewEnumerator1")); // Direct Set
+		// A sprite template need not initialize MeshScale. The baked mesh is already in centimetres.
+		SetStaticSwitch(Graph, TEXT("InitializeParticle"), TEXT("Mesh Scale Mode"), TEXT("NewEnumerator3")); // Uniform
+		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Mesh Uniform Scale"), F, TEXT("1.0"));
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Color"), FNiagaraTypeDefinition::GetColorDef(), ColorLit(S.Color));
 		SetScaleAlphaCurve(Graph, &S.AlphaKeys);
 		for (UNiagaraRendererProperties* R : Data->GetRenderers()) if (R) R->SetIsEnabled(false);
@@ -735,7 +747,10 @@ namespace
 			return false;
 		}
 		const FNiagaraParameterHandle Handle = FNiagaraParameterHandle::CreateAliasedModuleParameterHandle(FNiagaraParameterHandle::CreateModuleParameterHandle(FName(InputName)), Fn);
-		FNiagaraStackGraphUtilities::GetOrCreateStackFunctionInputOverridePin(*Fn, Handle, Type, FGuid(), FGuid()).DefaultValue = Literal;
+		UEdGraphPin& Pin = FNiagaraStackGraphUtilities::GetOrCreateStackFunctionInputOverridePin(*Fn, Handle, Type, FGuid(), FGuid());
+		// A linked dynamic input takes precedence over DefaultValue (as in OverrideLiteral above).
+		Pin.BreakAllPinLinks();
+		Pin.DefaultValue = Literal;
 		UE_LOG(LogVfxImporter, Display, TEXT("    %s.%s = %s"), *Fn->GetFunctionName(), InputName, *Literal);
 		return true;
 	}
@@ -1026,6 +1041,24 @@ namespace
 		return true;
 	}
 
+	/** Attached sprites and lights both follow absolute effect-time tracks in component-local centimetres. */
+	bool ApplyPositionTrack(FVersionedNiagaraEmitterData* Data, const TArray<TSharedPtr<FJsonValue>>& Track)
+	{
+		Data->bLocalSpace = true;
+		UNiagaraScript* Update = Data->UpdateScriptProps.Script;
+		UNiagaraScriptSource* Src = Update ? Cast<UNiagaraScriptSource>(Update->GetLatestSource()) : nullptr;
+		UNiagaraNodeOutput* Out = Src && Src->NodeGraph ? Src->NodeGraph->FindEquivalentOutputNode(ENiagaraScriptUsage::ParticleUpdateScript, Update->GetUsageId()) : nullptr;
+		UNiagaraScript* Convert = LoadObject<UNiagaraScript>(nullptr, TEXT("/Niagara/DynamicInputs/Transforms/ConvertVectorToPosition.ConvertVectorToPosition"));
+		if (!Out || !Convert) return false;
+		const auto P3 = FNiagaraTypeDefinition::GetPositionDef();
+		TArray<FNiagaraVariable> Vars; Vars.Add(FNiagaraVariable(P3, TEXT("Particles.Position")));
+		TArray<FString> Defaults; Defaults.Add(TEXT("0.0,0.0,0.0"));
+		auto* Set = FNiagaraStackGraphUtilities::AddParameterModuleToStack(Vars, *Out, INDEX_NONE, Defaults);
+		UNiagaraNodeFunctionCall* Dyn = nullptr;
+		if (Set) FNiagaraStackGraphUtilities::SetDynamicInputForFunctionInput(TrailInputPin(Set, TEXT("Particles.Position"), P3), Convert, Dyn);
+		return Dyn && SetSourceTrackCurve(Dyn, TEXT("Input Position"), Track);
+	}
+
 	/** Trail points sample only at birth; old points stay where they were emitted. */
 	bool SetTrailSourceTrack(UNiagaraGraph* Graph, const TArray<TSharedPtr<FJsonValue>>& Track, bool bPoint = true)
 	{
@@ -1056,23 +1089,8 @@ namespace
 			UE_LOG(LogVfxImporter, Warning, TEXT("   attached sprite with independent motion exports its spawn track only: %s"), *E->GetStringField(TEXT("name")));
 			return;
 		}
-		Data->bLocalSpace = true; // IR positions are relative to the Niagara component, not absolute world positions.
 		SetStaticSwitch(Src ? Src->NodeGraph : nullptr, TEXT("EmitterState"), TEXT("Inactive Response"), TEXT("NewEnumerator0")); // Complete: the burst window is shorter than the rider's life.
-		UNiagaraScript* Update = Data->UpdateScriptProps.Script;
-		UNiagaraScriptSource* UpdateSrc = Update ? Cast<UNiagaraScriptSource>(Update->GetLatestSource()) : nullptr;
-		UNiagaraNodeOutput* Out = UpdateSrc && UpdateSrc->NodeGraph ? UpdateSrc->NodeGraph->FindEquivalentOutputNode(ENiagaraScriptUsage::ParticleUpdateScript, Update->GetUsageId()) : nullptr;
-		UNiagaraScript* Convert = LoadObject<UNiagaraScript>(nullptr, TEXT("/Niagara/DynamicInputs/Transforms/ConvertVectorToPosition.ConvertVectorToPosition"));
-		bool bUpdate = false;
-		if (Out && Convert)
-		{
-			const auto P3 = FNiagaraTypeDefinition::GetPositionDef();
-			TArray<FNiagaraVariable> Vars; Vars.Add(FNiagaraVariable(P3, TEXT("Particles.Position")));
-			TArray<FString> Defaults; Defaults.Add(TEXT("0.0,0.0,0.0"));
-			auto* Set = FNiagaraStackGraphUtilities::AddParameterModuleToStack(Vars, *Out, INDEX_NONE, Defaults);
-			UNiagaraNodeFunctionCall* Dyn = nullptr;
-			if (Set) FNiagaraStackGraphUtilities::SetDynamicInputForFunctionInput(TrailInputPin(Set, TEXT("Particles.Position"), P3), Convert, Dyn);
-			if (Dyn) bUpdate = SetSourceTrackCurve(Dyn, TEXT("Input Position"), *Track);
-		}
+		const bool bUpdate = ApplyPositionTrack(Data, *Track);
 		if (!bUpdate) UE_LOG(LogVfxImporter, Warning, TEXT("   attached sprite update track could not be set: %s"), *E->GetStringField(TEXT("name")));
 	}
 
@@ -1153,6 +1171,7 @@ namespace
 		const bool bSource = SetTrailSourceTrack(Graph, E->GetArrayField(TEXT("sourceTrack")));
 		double Emission = 0.0; Trail->TryGetNumberField(TEXT("emission"), Emission);
 		const float Gain = (float)(1.0 + FMath::Max(0.0, Emission));
+		SetStaticSwitch(Graph, TEXT("InitializeParticle"), TEXT("Color Mode"), TEXT("NewEnumerator1")); // Direct Set
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Color"), FNiagaraTypeDefinition::GetColorDef(), ColorLit(FLinearColor(Gain, Gain, Gain, 1.0f)));
 
 		const TArray<TSharedPtr<FJsonValue>>* Width = nullptr; Trail->TryGetArrayField(TEXT("widthOverTrail"), Width);
@@ -1207,6 +1226,10 @@ namespace
 		const auto V3 = FNiagaraTypeDefinition::GetVec3Def();
 		const auto Col = FNiagaraTypeDefinition::GetColorDef();
 
+		SetStaticSwitch(Graph, TEXT("InitializeParticle"), TEXT("Color Mode"), TEXT("NewEnumerator1")); // Direct Set
+		// SimpleSpriteBurst uses Uniform (the singular input), not Random Uniform (Min/Max).
+		// Select the mode that actually reads the exported range instead of inheriting template defaults.
+		SetStaticSwitch(Graph, TEXT("InitializeParticle"), TEXT("Sprite Size Mode"), TEXT("NewEnumerator1")); // Random Uniform
 		SetStaticSwitch(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Mode"), TEXT("NewEnumerator1")); // Random: reads Min/Max (SimpleSpriteBurst ships Direct Set)
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Min"), F, FloatLit(E->GetNumberField(TEXT("lifetimeSecMin"))));
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Lifetime Max"), F, FloatLit(E->GetNumberField(TEXT("lifetimeSecMax"))));
@@ -1219,7 +1242,7 @@ namespace
 		const double SizeScale = (SizeKeys && SizeKeys->Num() > 1 ? SampleKeys(SizeKeys, 0.0, TEXT("v"), SMid) : AverageKeys(SizeKeys, SMid)) / SMid;
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Sprite Size Min"), V2, Vec2Lit(SMin * SizeScale, SMin * SizeScale));
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Sprite Size Max"), V2, Vec2Lit(SMax * SizeScale, SMax * SizeScale));
-		// The stock templates size sprites in "uniform" mode, which reads these instead of the Vector2 pair above.
+		// Random Uniform reads the scalar range instead of the Vector2 pair above.
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Uniform Sprite Size Min"), F, FloatLit(SMin * SizeScale));
 		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Uniform Sprite Size Max"), F, FloatLit(SMax * SizeScale));
 		// Velocity-stretched sprites (sparks, rain): a velocity-aligned sprite's Y runs along the motion, so a random
@@ -1252,11 +1275,13 @@ namespace
 		const TArray<TSharedPtr<FJsonValue>>* OpacityKeys = nullptr;
 		E->TryGetArrayField(TEXT("opacityOverLife"), OpacityKeys);
 		// Exact colour + opacity over life when Scale Color takes a colour curve (it multiplies the birth colour, so the
-		// birth colour becomes white); otherwise the averaged body colour and the exact opacity curve.
-		if (SetColorOverLifeCurve(Graph, ColorKeys, OpacityKeys)) OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Color"), Col, ColorLit(FLinearColor::White));
+		// birth colour becomes white with HDR emission gain); otherwise the averaged body colour and exact opacity curve.
+		double Emission = 0.0; E->TryGetNumberField(TEXT("emission"), Emission);
+		const float Gain = (float)(1.0 + FMath::Max(0.0, Emission));
+		if (SetColorOverLifeCurve(Graph, ColorKeys, OpacityKeys)) OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Color"), Col, ColorLit(FLinearColor(Gain, Gain, Gain, 1.0f)));
 		else
 		{
-			OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Color"), Col, ColorLit(FLinearColor(Body.R, Body.G, Body.B, 1.0f)));
+			OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Color"), Col, ColorLit(FLinearColor(Body.R * Gain, Body.G * Gain, Body.B * Gain, 1.0f)));
 			if (OpacityKeys) SetScaleAlphaCurve(Graph, OpacityKeys);
 		}
 

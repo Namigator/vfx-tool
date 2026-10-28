@@ -9,7 +9,7 @@ import type { UnrealEffect } from '../src/export/unreal/types.ts';
 import { unrealEffectFrom } from '../src/export/unreal/fromPlan.ts';
 import { buildUnrealPackage } from '../src/export/unreal/package.ts';
 
-const importer = readFileSync(new URL('../integrations/unreal/VfxStudioImporter/Source/VfxStudioImporter/Private/VfxNiagaraImporter.cpp', import.meta.url), 'utf8');
+const importer = readFileSync(new URL('../integrations/unreal/VfxStudioImporter/Source/VfxStudioImporter/Private/VfxNiagaraImporter.cpp', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 const section = (start: string, end: string) => {
   const a = importer.indexOf(start), b = importer.indexOf(end, a + start.length);
   assert.ok(a >= 0 && b > a, `importer section ${start}`);
@@ -98,11 +98,13 @@ for (const count of [1, 3]) {
     }
     const rider = section('void ApplySpriteSourceTrack(', 'bool ParticleTrailWindow(');
     assert.match(rider, /if \(!bAttached\) return/);
-    assert.match(rider, /Data->bLocalSpace = true/);
     assert.match(rider, /TEXT\("Inactive Response"\), TEXT\("NewEnumerator0"\)/);
-    assert.match(rider, /ParticleUpdateScript/);
-    assert.match(rider, /TEXT\("Particles.Position"\)/);
-    assert.match(rider, /SetSourceTrackCurve\(Dyn, TEXT\("Input Position"\), \*Track\)/);
+    assert.match(rider, /ApplyPositionTrack\(Data, \*Track\)/);
+    const position = section('bool ApplyPositionTrack(FVersionedNiagaraEmitterData* Data, const TArray<TSharedPtr<FJsonValue>>& Track)\n\t{', '/** Trail points sample only at birth');
+    assert.match(position, /Data->bLocalSpace = true/);
+    assert.match(position, /ParticleUpdateScript/);
+    assert.match(position, /TEXT\("Particles.Position"\)/);
+    assert.match(position, /SetSourceTrackCurve\(Dyn, TEXT\("Input Position"\), Track\)/);
     const curve = section('bool SetSourceTrackCurve(', 'bool SetTrailSourceTrack(');
     assert.match(curve, /TEXT\("Engine.System.Age"\)/);
     assert.match(curve, /Pair\[0\]->AsNumber\(\) \/ 60\.0/);
@@ -112,3 +114,30 @@ for (const count of [1, 3]) {
     assert.ok(sprites.indexOf('ApplySpriteSourceTrack(Data, E)') > sprites.indexOf('ApplyForces(Data, E)'));
   });
 }
+
+test('Unreal literal overrides replace dynamic links; sprite modes read exported centimetre ranges and HDR gain', () => {
+  const override = section('bool OverrideOnNode(', '/** Adds a stock module');
+  assert.ok(override.indexOf('Pin.BreakAllPinLinks()') < override.indexOf('Pin.DefaultValue = Literal'));
+  const sprite = section('void ApplyEmitterOverrides(', '\nbool UVfxNiagaraImporter::ImportPackage(');
+  assert.match(sprite, /TEXT\("Color Mode"\), TEXT\("NewEnumerator1"\)/);
+  assert.match(sprite, /TEXT\("Sprite Size Mode"\), TEXT\("NewEnumerator1"\)/);
+  assert.match(sprite, /TEXT\("Uniform Sprite Size Min"\), F, FloatLit\(SMin \* SizeScale\)/);
+  assert.match(sprite, /FLinearColor\(Gain, Gain, Gain, 1\.0f\)/);
+  assert.match(sprite, /Body\.R \* Gain/);
+});
+
+test('Unreal burst windows stop spawning without killing live particles; baked beams initialize unit mesh scale', () => {
+  const window = section('void SetEmitterWindow(', 'bool ApplyPositionTrack(');
+  assert.match(window, /TEXT\("Inactive Response"\), TEXT\("NewEnumerator0"\)/);
+  const beam = section('void BuildRibbonEmitter(', 'TArray<UNiagaraNodeFunctionCall*> OrderedModules(');
+  assert.match(beam, /TEXT\("Mesh Scale Mode"\), TEXT\("NewEnumerator3"\)/);
+  assert.match(beam, /TEXT\("Mesh Uniform Scale"\), F, TEXT\("1\.0"\)/);
+  assert.match(beam, /TEXT\("Color Mode"\), TEXT\("NewEnumerator1"\)/);
+});
+
+test('Unreal moving lights use the same position track as sprite riders and explicitly initialize their colour', () => {
+  const light = section('void BuildLightEmitter(', 'void BuildRibbonEmitter(');
+  assert.match(light, /TEXT\("Color Mode"\), TEXT\("NewEnumerator1"\)/);
+  assert.match(light, /TryGetArrayField\(TEXT\("sourceTrack"\), SourceTrack\)/);
+  assert.match(light, /ApplyPositionTrack\(Data, \*SourceTrack\)/);
+});
