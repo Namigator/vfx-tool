@@ -175,8 +175,8 @@ namespace
 		// Flipbooks sample through a Particle SubUV node (the frame comes from the particle's SubImageIndex, the grid from
 		// the sprite renderer's SubImage Size), so one SubUV base serves every grid.
 		const FString Grid = (Columns > 1 || Rows > 1) ? FString(TEXT("_SubUV")) : FString();
-		// "_A2": additive glows weight by the texture's alpha (renamed so projects with the old cached material rebuild it).
-		const FString Name = FString(bAdditive ? TEXT("M_VfxStudio_Additive_A2") : TEXT("M_VfxStudio_Translucent")) + Grid;
+		// A3 uses texture x particle alpha as the additive blend weight, just like the editor's SrcAlpha/One.
+		const FString Name = FString(bAdditive ? TEXT("M_VfxStudio_Additive_A3") : TEXT("M_VfxStudio_Translucent")) + Grid;
 		const FString PackagePath = DestRoot / TEXT("_Materials");
 		const FString AssetPath = PackagePath / Name;
 		if (UMaterial* Existing = LoadObject<UMaterial>(nullptr, *(AssetPath + TEXT(".") + Name)))
@@ -195,7 +195,7 @@ namespace
 		const bool bSubUV = Columns > 1 || Rows > 1;
 		UMaterialExpression* TexExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, bSubUV ? UMaterialExpressionTextureSampleParameterSubUV::StaticClass() : UMaterialExpressionTextureSampleParameter2D::StaticClass(), -300, 0);
 		if (auto* TexParam = Cast<UMaterialExpressionTextureSampleParameter2D>(TexExpr)) TexParam->ParameterName = TEXT("Texture"); // SubUV derives from it
-		if (bSubUV) Mat->bUsedWithNiagaraSprites = true;
+		Mat->bUsedWithNiagaraSprites = true;
 		UMaterialExpression* ParticleColorExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionParticleColor::StaticClass(), -300, 200);
 		UMaterialExpression* MulRgbExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionMultiply::StaticClass(), 0, 0);
 		UMaterialEditingLibrary::ConnectMaterialExpressions(TexExpr, TEXT("RGB"), MulRgbExpr, TEXT("A"));
@@ -211,16 +211,13 @@ namespace
 		else
 		{
 			// Additive particles weight by the texture's alpha and fade with ParticleColor.A (opacity over life), like the
-			// editor's SrcAlpha/One blend: emissive = texture.rgb * texture.a * colour.rgb * colour.a. Without texture.a the
+			// editor's SrcAlpha/One blend: contribution = texture.rgb * texture.a * colour.rgb * colour.a. Without texture.a the
 			// library glows (white RGB wherever alpha > 0) drew as hard flat discs (side-by-side 2026-10-15).
 			// (Feeding A into the same multiply's B replaced the colour input: glows ignored their colour.)
 			UMaterialExpression* AlphaExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionMultiply::StaticClass(), 0, 200);
 			UMaterialEditingLibrary::ConnectMaterialExpressions(TexExpr, TEXT("A"), AlphaExpr, TEXT("A"));
 			UMaterialEditingLibrary::ConnectMaterialExpressions(ParticleColorExpr, TEXT("A"), AlphaExpr, TEXT("B"));
-			UMaterialExpression* FadeExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionMultiply::StaticClass(), 200, 0);
-			UMaterialEditingLibrary::ConnectMaterialExpressions(MulRgbExpr, TEXT(""), FadeExpr, TEXT("A"));
-			UMaterialEditingLibrary::ConnectMaterialExpressions(AlphaExpr, TEXT(""), FadeExpr, TEXT("B"));
-			UMaterialEditingLibrary::ConnectMaterialProperty(FadeExpr, TEXT(""), MP_EmissiveColor);
+			UMaterialEditingLibrary::ConnectMaterialProperty(AlphaExpr, TEXT(""), MP_Opacity);
 		}
 		UMaterialEditingLibrary::RecompileMaterial(Mat);
 		SaveAssetObj(Mat);
@@ -234,6 +231,10 @@ namespace
 		const FString PackagePath = DestRoot / TEXT("_Materials");
 		if (UMaterialInstanceConstant* Existing = LoadObject<UMaterialInstanceConstant>(nullptr, *((PackagePath / Name) + TEXT(".") + Name)))
 		{
+			// The base name is versioned, but the instance name is not: refresh it after a material fix.
+			UMaterialEditingLibrary::SetMaterialInstanceParent(Existing, Base);
+			UMaterialEditingLibrary::SetMaterialInstanceTextureParameterValue(Existing, TEXT("Texture"), Texture);
+			SaveAssetObj(Existing);
 			return Existing;
 		}
 		IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
@@ -1001,15 +1002,10 @@ namespace
 		return Dyn;
 	}
 
-	/** sourceTrack is in absolute effect ticks. Sample once in Particle Spawn using system age, not particle age or
-	 *  emitter loop age (which would restart a delayed projectile at tick zero). Old points are never reattached. */
-	bool SetTrailSourceTrack(UNiagaraGraph* Graph, const TArray<TSharedPtr<FJsonValue>>& Track)
+	/** sourceTrack is in absolute effect ticks, sampled by system age even for delayed emitters. */
+	bool SetSourceTrackCurve(UNiagaraNodeFunctionCall* Fn, const TCHAR* Input, const TArray<TSharedPtr<FJsonValue>>& Track)
 	{
-		UNiagaraNodeFunctionCall* Shape = nullptr;
-		if (Graph) for (UEdGraphNode* N : Graph->Nodes) if (auto* Fn = Cast<UNiagaraNodeFunctionCall>(N)) if (Fn->GetFunctionName().Contains(TEXT("ShapeLocation"))) { Shape = Fn; break; }
-		SetStaticSwitch(Graph, TEXT("ShapeLocation"), TEXT("Offset Mode"), TEXT("NewEnumerator0"));
-		OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Sphere Radius"), FNiagaraTypeDefinition::GetFloatDef(), TEXT("0.0"));
-		UNiagaraNodeFunctionCall* Dyn = TrailCurveInput(Shape, TEXT("Offset"), FNiagaraTypeDefinition::GetVec3Def(), TEXT("/Niagara/DynamicInputs/ValueFromCurve/VectorFromCurve.VectorFromCurve"), TEXT("Engine.System.Age"));
+		UNiagaraNodeFunctionCall* Dyn = TrailCurveInput(Fn, Input, FNiagaraTypeDefinition::GetVec3Def(), TEXT("/Niagara/DynamicInputs/ValueFromCurve/VectorFromCurve.VectorFromCurve"), TEXT("Engine.System.Age"));
 		if (!Dyn) return false;
 		UNiagaraDataInterface* DI = nullptr;
 		FNiagaraStackGraphUtilities::SetDataInterfaceValueForFunctionInput(TrailInputPin(Dyn, TEXT("VectorCurve"), FNiagaraTypeDefinition(UNiagaraDataInterfaceVectorCurve::StaticClass())), UNiagaraDataInterfaceVectorCurve::StaticClass(), TEXT("TrailSourceTrack"), DI);
@@ -1028,6 +1024,56 @@ namespace
 		}
 		Curve->UpdateLUT();
 		return true;
+	}
+
+	/** Trail points sample only at birth; old points stay where they were emitted. */
+	bool SetTrailSourceTrack(UNiagaraGraph* Graph, const TArray<TSharedPtr<FJsonValue>>& Track, bool bPoint = true)
+	{
+		UNiagaraNodeFunctionCall* Shape = nullptr;
+		if (Graph) for (UEdGraphNode* N : Graph->Nodes) if (auto* Fn = Cast<UNiagaraNodeFunctionCall>(N)) if (Fn->GetFunctionName().Contains(TEXT("ShapeLocation"))) { Shape = Fn; break; }
+		SetStaticSwitch(Graph, TEXT("ShapeLocation"), TEXT("Offset Mode"), TEXT("NewEnumerator0"));
+		if (bPoint) OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Sphere Radius"), FNiagaraTypeDefinition::GetFloatDef(), TEXT("0.0"));
+		return SetSourceTrackCurve(Shape, TEXT("Offset"), Track);
+	}
+
+	/** Sprite heads need their own track, independently of any trail renderer. Stationary attached point particles
+	 *  ride the anchor in local space; moving-source shed particles sample the spawn offset only. */
+	void ApplySpriteSourceTrack(FVersionedNiagaraEmitterData* Data, const TSharedPtr<FJsonObject>& E)
+	{
+		const TArray<TSharedPtr<FJsonValue>>* Track = nullptr;
+		if (!E->TryGetArrayField(TEXT("sourceTrack"), Track) || Track->Num() == 0) return;
+		UNiagaraScript* Spawn = Data->SpawnScriptProps.Script;
+		UNiagaraScriptSource* Src = Spawn ? Cast<UNiagaraScriptSource>(Spawn->GetLatestSource()) : nullptr;
+		const bool bPoint = E->GetObjectField(TEXT("shape"))->GetStringField(TEXT("kind")) == TEXT("point");
+		const bool bSpawn = SetTrailSourceTrack(Src ? Src->NodeGraph : nullptr, *Track, bPoint);
+		bool bAttached = false; E->TryGetBoolField(TEXT("attachToSource"), bAttached);
+		if (!bSpawn) UE_LOG(LogVfxImporter, Warning, TEXT("   sprite source track could not be set: %s"), *E->GetStringField(TEXT("name")));
+		if (!bAttached) return;
+		// Same rider condition as the Godot exporter: these heads have no independent motion to preserve.
+		if (!bPoint || E->GetNumberField(TEXT("speedCmSMax")) != 0.0 || !JsonVec3(&E->GetArrayField(TEXT("acceleration"))).IsNearlyZero()
+			|| E->HasField(TEXT("noise")) || E->HasField(TEXT("attract")) || E->HasField(TEXT("vortex")))
+		{
+			UE_LOG(LogVfxImporter, Warning, TEXT("   attached sprite with independent motion exports its spawn track only: %s"), *E->GetStringField(TEXT("name")));
+			return;
+		}
+		Data->bLocalSpace = true; // IR positions are relative to the Niagara component, not absolute world positions.
+		SetStaticSwitch(Src ? Src->NodeGraph : nullptr, TEXT("EmitterState"), TEXT("Inactive Response"), TEXT("NewEnumerator0")); // Complete: the burst window is shorter than the rider's life.
+		UNiagaraScript* Update = Data->UpdateScriptProps.Script;
+		UNiagaraScriptSource* UpdateSrc = Update ? Cast<UNiagaraScriptSource>(Update->GetLatestSource()) : nullptr;
+		UNiagaraNodeOutput* Out = UpdateSrc && UpdateSrc->NodeGraph ? UpdateSrc->NodeGraph->FindEquivalentOutputNode(ENiagaraScriptUsage::ParticleUpdateScript, Update->GetUsageId()) : nullptr;
+		UNiagaraScript* Convert = LoadObject<UNiagaraScript>(nullptr, TEXT("/Niagara/DynamicInputs/Transforms/ConvertVectorToPosition.ConvertVectorToPosition"));
+		bool bUpdate = false;
+		if (Out && Convert)
+		{
+			const auto P3 = FNiagaraTypeDefinition::GetPositionDef();
+			TArray<FNiagaraVariable> Vars; Vars.Add(FNiagaraVariable(P3, TEXT("Particles.Position")));
+			TArray<FString> Defaults; Defaults.Add(TEXT("0.0,0.0,0.0"));
+			auto* Set = FNiagaraStackGraphUtilities::AddParameterModuleToStack(Vars, *Out, INDEX_NONE, Defaults);
+			UNiagaraNodeFunctionCall* Dyn = nullptr;
+			if (Set) FNiagaraStackGraphUtilities::SetDynamicInputForFunctionInput(TrailInputPin(Set, TEXT("Particles.Position"), P3), Convert, Dyn);
+			if (Dyn) bUpdate = SetSourceTrackCurve(Dyn, TEXT("Input Position"), *Track);
+		}
+		if (!bUpdate) UE_LOG(LogVfxImporter, Warning, TEXT("   attached sprite update track could not be set: %s"), *E->GetStringField(TEXT("name")));
 	}
 
 	/** One ribbon represents one head. Independent spark trails need per-head ribbon IDs/event spawning and are
@@ -1277,7 +1323,7 @@ namespace
 					OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Sphere Radius"), F, FloatLit(R));
 				}
 				else if (Kind == TEXT("box")) { const auto* Ext = &(*ShapeObj)->GetArrayField(TEXT("extentsCm")); OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Box Size"), V3, Vec3Lit(JsonVec3(Ext))); }
-				// 'point': ShapeLocation left at its template default (effectively a point for our purposes at radius 0 is not set -- logged via the module-not-targeted path is unnecessary here, template default is close enough).
+				else if (Kind == TEXT("point")) OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Sphere Radius"), F, TEXT("0.0"));
 			}
 			const double SpeedAvg = (E->GetNumberField(TEXT("speedCmSMin")) + E->GetNumberField(TEXT("speedCmSMax"))) / 2.0;
 			SetRandomRange(Graph, TEXT("AddVelocity"), TEXT("Velocity Speed"), E->GetNumberField(TEXT("speedCmSMin")), E->GetNumberField(TEXT("speedCmSMax")));
@@ -1463,6 +1509,7 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 		if (Source && Source->NodeGraph) ApplyEmitterOverrides(Source->NodeGraph, E, Template);
 		else UE_LOG(LogVfxImporter, Error, TEXT("   no spawn-script graph for %s; module overrides skipped"), *EName);
 		ApplyForces(Data, E);
+		ApplySpriteSourceTrack(Data, E); // After the solver: an attached rider must end the update at its anchor.
 
 		EmitterCount++;
 	}
