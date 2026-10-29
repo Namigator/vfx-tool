@@ -25,10 +25,17 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [x] Feature grid: one test effect per node feature (48), editor vs Unity side by side, scored + eye verdicts (tools/feature-grid/, README there) · [SAW] work/feature-grid/grid.png, [RAN] npm test -- v2-feature-grid · 2026-10-29
 - [x] Box emitters export as boxes in every engine IR (fell back to a point) · [SAW] grid shape-box row · 2026-10-29
 - [x] Unity export reports dropped mesh layers (were silent) · [RAN] v2-unity-export test + grid UNSUPPORTED rows · 2026-10-29
-- [ ] BACKLOG Unity (grid): world-axis billboards + flat SpriteRenderer face the camera instead of lying flat · [SAW] grid world-axis, sprite-flat · 2026-10-29
-- [ ] BACKLOG Unity (grid): untextured SpriteUnlit particles much smaller/dimmer · [SAW] grid untextured · 2026-10-29
-- [ ] BACKLOG Unity (grid): variant cell differs (Unity ring vs editor soft dot) · [SAW] grid variant · 2026-10-29
-- [ ] BACKLOG Unity (grid): point light floor pool much dimmer/smaller · [SAW] grid light · 2026-10-29
-- [ ] BACKLOG Unity (grid): Attract - Unity streams to the point, editor stays near Source; find which is wrong · [SAW] grid attract · 2026-10-29
-- [ ] BACKLOG all engines (grid): path-shaped emitters export as a point at the path start · [SAW] grid shape-path · 2026-10-29
-- [ ] BACKLOG grid: mesh particles, prop meshes, screen flash not exported to Unity (reported); sub-emitter case needs a better tick; Godot/Unreal/Roblox columns not built · 2026-10-29
+- [x] Flat (world-axis) billboards + flat SpriteRenderer lie flat in Unity and Godot (IR facingAxis) · [SAW] grid world-axis, sprite-flat · 2026-10-29
+- [x] Untextured sprites ship soft-disc.png (editor procedural disc) in every IR engine · [SAW] grid untextured Unity+Godot · 2026-10-29
+- [x] Unity static sheet cells (startFrame is a fraction) - variant cell matches · [SAW] grid variant + 4-cell probe · 2026-10-29
+- [x] Unity point light pool brightness/size (x0.15, range x1.3) · [SAW] grid light · 2026-10-29
+- [x] Path-shaped emitters export as emitters spaced along the path · [SAW] grid shape-path Unity+Godot · 2026-10-29
+- [x] Mesh particles + prop meshes export to Unity and Godot (built-in meshes as OBJ) · [SAW] grid mesh-particles, prop-mesh · 2026-10-29
+- [x] Godot: attraction, ground collision, positioned bursts (sub-emitters), drag reach, noise strength · [SAW] grid rows · 2026-10-29
+- [x] Static ribbons hold to the effect end (closing IR frame) · [RAN] v2-unity-export test; Unreal re-render pending · 2026-10-29
+- [ ] BACKLOG Unity (grid): Attract spreads particles further right than the editor at t30 (strength probe ruled out) · [SAW] grid attract · 2026-10-29
+- [ ] BACKLOG Unity (grid): light a little yellower than the editor; flat rings a little dimmer · [SAW] grid · 2026-10-29
+- [ ] BACKLOG Godot (grid): vortex not exported; flat sprite draws 2-3 overlapping rings; tumbling meshes spin about one axis · [SAW] grid · 2026-10-29
+- [ ] BACKLOG Unreal (grid): flat sprites stand up; meshes, screen flash and trail-only systems fail/drop; vortex rises; untextured small; textured beam (uv-scroll) missing · [SAW] grid unreal column · 2026-10-29
+- [ ] Unreal (grid): box/disc primitive + point cone fixes in VfxNiagaraImporter.cpp · [UNVERIFIED] not built yet · 2026-10-29
+- [ ] BACKLOG grid: screen flash not exported anywhere (reported) · 2026-10-29

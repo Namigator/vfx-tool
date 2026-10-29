@@ -1461,7 +1461,17 @@ namespace
 			if (E->TryGetObjectField(TEXT("shape"), ShapeObj))
 			{
 				const FString Kind = (*ShapeObj)->GetStringField(TEXT("kind"));
-				if (Kind == TEXT("sphere") || Kind == TEXT("disc")) OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Sphere Radius"), F, FloatLit((*ShapeObj)->GetNumberField(TEXT("radiusCm"))));
+				// Shape Location's primitive (ENiagara_ShapePrimitive): Box/Plane 0, Cylinder 1, Ring/Disc 2, Sphere 3. Templates
+				// ship Sphere, so a box only set Box Size and drew one blob, a disc filled a ball (feature grid, 2026-10-29).
+				if (Kind == TEXT("box")) SetStaticSwitch(Graph, TEXT("ShapeLocation"), TEXT("Shape Primitive"), TEXT("NewEnumerator0"));
+				else if (Kind == TEXT("disc")) SetStaticSwitch(Graph, TEXT("ShapeLocation"), TEXT("Shape Primitive"), TEXT("NewEnumerator2"));
+				else SetStaticSwitch(Graph, TEXT("ShapeLocation"), TEXT("Shape Primitive"), TEXT("NewEnumerator3"));
+				if (Kind == TEXT("disc"))
+				{
+					OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Ring Radius"), F, FloatLit((*ShapeObj)->GetNumberField(TEXT("radiusCm"))));
+					OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Disc Coverage"), F, TEXT("1.0"));
+				}
+				if (Kind == TEXT("sphere")) OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Sphere Radius"), F, FloatLit((*ShapeObj)->GetNumberField(TEXT("radiusCm"))));
 				else if (Kind == TEXT("cone"))
 				{
 					// A cone spreads the launch DIRECTIONS (Add Velocity in cone mode) from a small sphere of positions.
@@ -1469,8 +1479,14 @@ namespace
 					double R = 0.0; (*ShapeObj)->TryGetNumberField(TEXT("radiusCm"), R);
 					OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Sphere Radius"), F, FloatLit(R));
 				}
-				else if (Kind == TEXT("box")) { const auto* Ext = &(*ShapeObj)->GetArrayField(TEXT("extentsCm")); OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Box Size"), V3, Vec3Lit(JsonVec3(Ext))); }
-				else if (Kind == TEXT("point")) OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Sphere Radius"), F, TEXT("0.0"));
+				// Box Size is the full size; the IR carries half extents.
+				else if (Kind == TEXT("box")) { const auto* Ext = &(*ShapeObj)->GetArrayField(TEXT("extentsCm")); OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Box Size"), V3, Vec3Lit(JsonVec3(Ext) * 2.0)); }
+				else if (Kind == TEXT("point"))
+				{
+					// A point launches straight along its axis in the editor: no cone (the template's spread fanned it out).
+					OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Sphere Radius"), F, TEXT("0.0"));
+					OverrideLiteral(Graph, TEXT("AddVelocity"), TEXT("Cone Angle"), F, TEXT("0.0"));
+				}
 			}
 			const double SpeedAvg = (E->GetNumberField(TEXT("speedCmSMin")) + E->GetNumberField(TEXT("speedCmSMax"))) / 2.0;
 			SetRandomRange(Graph, TEXT("AddVelocity"), TEXT("Velocity Speed"), E->GetNumberField(TEXT("speedCmSMin")), E->GetNumberField(TEXT("speedCmSMax")));
