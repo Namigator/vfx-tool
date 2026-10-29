@@ -235,3 +235,13 @@ test('mesh particles: the IR carries them, Unity and Godot draw the built-in mes
   assert.match(g.tscn, /path="res:\/\/vfx_studio\/[^"]*\/Meshes\/rock-a\.obj"/);
   assert.match(g.tscn, /material_override = SubResource/);
 });
+
+test('a static ribbon holds to the end of the effect (closing empty frame; Unreal gave a lone frame one tick)', () => {
+  const doc = JSON.parse(readFileSync('tests/fixtures/feature-ribbon.json', 'utf8'));
+  const r = unrealEffectFrom(doc);
+  assert.ok(r.ok);
+  const f = r.value.ribbons[0].frames;
+  assert.deepEqual(f.map(x => x.tick), [0, doc.durationTicks]);
+  assert.ok(f[0].points.length > 1);
+  assert.deepEqual(f[1].points, []);
+});

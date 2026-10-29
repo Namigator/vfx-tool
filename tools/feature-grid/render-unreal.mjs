@@ -27,7 +27,9 @@ for (const c of CASES) {
   if (process.env.FG_RESUME && existsSync(dst)) { console.log(`have ${c.id}`); continue; }
   const name = `fg_${c.id.replace(/-/g, '_')}`, pkg = join(G, 'unreal-pkg', name);
   rmSync(pkg, { recursive: true, force: true }); mkdirSync(join(pkg, 'Textures'), { recursive: true });
-  const r = unrealEffectFrom(JSON.parse(readFileSync(doc, 'utf8')));
+  // The importer fails on a system with no sprite emitter: the empty plate is the point case with every particle invisible.
+  const r = unrealEffectFrom(JSON.parse(readFileSync(c.id === 'empty' ? join(G, 'docs', 'shape-point.json') : doc, 'utf8')));
+  if (c.id === 'empty' && r.ok) for (const e of r.value.emitters) e.opacityOverLife = e.opacityOverLife.map(k => ({ ...k, v: 0 }));
   // report.json lives at unreal-pkg/<id>/ for the scorer; the package itself at unreal-pkg/<name>/.
   const rdir = join(G, 'unreal-pkg', c.id); mkdirSync(rdir, { recursive: true });
   if (!r.ok) { writeFileSync(join(rdir, 'report.json'), JSON.stringify({ exportError: r.message })); console.log(`EXPORT FAIL ${c.id}`); continue; }

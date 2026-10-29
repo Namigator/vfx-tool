@@ -298,6 +298,10 @@ function ribbonsFrom(doc: EffectDocumentV2, origin: readonly number[], report: U
     }
   }
   const out = [...layers.values()].map(({ last: _l, ...b }) => b);
+  // A frame holds until the next one; the last visible frame holds to the end of the effect, said with a closing empty
+  // frame. Without it the Unreal importer gave a lone frame one tick of life: every ribbon without a Schedule window
+  // (a static beam) vanished there (feature grid ribbon rows, 2026-10-29).
+  for (const b of out) { const last = b.frames.at(-1); if (last && last.points.length && last.tick < doc.durationTicks) b.frames.push({ tick: doc.durationTicks, points: [], paths: [] }); }
   if (out.some(b => b.frames.length > 400)) report.push({ level: 'info', item: 'ribbons', message: 'A ribbon layer has a large number of geometry frames; Niagara has no hard limit but consider a NiagaraDataChannel driver instead of per-frame CPU data for production.' });
   return out;
 }

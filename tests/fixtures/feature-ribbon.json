@@ -1,0 +1,227 @@
+{
+  "format": "vfx-studio",
+  "schemaVersion": 2,
+  "runtimeVersion": "2.0.0",
+  "id": "fg-ribbon-line",
+  "name": "fg-ribbon-line",
+  "tags": [],
+  "seed": 7,
+  "rootTransform": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "scale": 1
+  },
+  "anchors": [
+    {
+      "id": "source",
+      "name": "Source",
+      "position": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "id": "target",
+      "name": "Target",
+      "position": [
+        2.5,
+        1,
+        0
+      ]
+    }
+  ],
+  "durationTicks": 90,
+  "rootGraphId": "graph-root",
+  "graphs": [
+    {
+      "id": "graph-root",
+      "inputs": [],
+      "outputs": [],
+      "nodes": [
+        {
+          "id": "node-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Source",
+          "enabled": true,
+          "randomStreamId": "rs-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "node-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Target",
+          "enabled": true,
+          "randomStreamId": "rs-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "node-output",
+          "type": "EffectOutput",
+          "definitionVersion": 1,
+          "label": "Output",
+          "enabled": true,
+          "randomStreamId": "rs-output",
+          "params": {}
+        },
+        {
+          "id": "line",
+          "type": "LinePath",
+          "definitionVersion": 1,
+          "label": "line",
+          "enabled": true,
+          "randomStreamId": "rs-line",
+          "params": {
+            "samples": 32
+          }
+        },
+        {
+          "id": "ribmat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "ribmat",
+          "enabled": true,
+          "randomStreamId": "rs-ribmat",
+          "params": {
+            "template": "RibbonUnlit",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#B48CFF",
+              "alpha": 1
+            },
+            "emission": 0.6
+          }
+        },
+        {
+          "id": "rib",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "rib",
+          "enabled": true,
+          "randomStreamId": "rs-rib",
+          "params": {
+            "width": 0.08,
+            "endFade": 0.1
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-node-source-line",
+          "source": {
+            "nodeId": "node-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "line",
+            "port": "start"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-node-target-line",
+          "source": {
+            "nodeId": "node-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "line",
+            "port": "end"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-line-rib",
+          "source": {
+            "nodeId": "line",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "rib",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-ribmat-rib",
+          "source": {
+            "nodeId": "ribmat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "rib",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-rib-node-output",
+          "source": {
+            "nodeId": "rib",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "node-output",
+            "port": "visual"
+          },
+          "order": 0
+        }
+      ]
+    }
+  ],
+  "controls": [],
+  "assets": [],
+  "editor": {
+    "graphs": {
+      "graph-root": {
+        "nodes": {
+          "node-source": {
+            "x": 0,
+            "y": 0
+          },
+          "node-target": {
+            "x": 0,
+            "y": 160
+          },
+          "node-output": {
+            "x": 1040,
+            "y": 0
+          },
+          "line": {
+            "x": 780,
+            "y": 320
+          },
+          "ribmat": {
+            "x": 1040,
+            "y": 320
+          },
+          "rib": {
+            "x": 1300,
+            "y": 320
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      }
+    },
+    "openedGraphId": "graph-root"
+  }
+}
