@@ -1610,6 +1610,20 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 	UNiagaraSystem* System = Cast<UNiagaraSystem>(NewAsset);
 	if (!System) { UE_LOG(LogVfxImporter, Error, TEXT("CreateAsset(NiagaraSystem) failed (may already exist at %s/%s)"), *DestPath, *SystemName); return false; }
 
+	// Fixed bounds over the whole effect, on the system and every emitter, so offset sprites (Bolt's impact flash 8 m
+	// out) are never culled by dynamic bounds that lag behind them. It fixed the flash next to Bolt's track-following
+	// light in a seek-to-last-frame capture (work/unreal/bisF); the remaining vanishing there was the capture's seek,
+	// not the asset (see tools/unreal-capture-mrq.py).
+	FBox EffectBounds(ForceInit); EffectBounds += FVector::ZeroVector;
+	{
+		double Margin = 0.0;
+		GrowEffectBounds(MakeShared<FJsonValueObject>(Root), EffectBounds, Margin);
+		EffectBounds = EffectBounds.ExpandBy(Margin + 100.0);
+		System->bFixedBounds = true;
+		System->SetFixedBounds(EffectBounds);
+		UE_LOG(LogVfxImporter, Display, TEXT("Fixed bounds %s (margin %.0f cm)"), *EffectBounds.ToString(), Margin + 100.0);
+	}
+
 	int32 EmitterCount = 0;
 	TArray<FNiagaraEmitterHandle>& Handles = System->GetEmitterHandles();
 	if (Handles.Num() != Pending.Num()) UE_LOG(LogVfxImporter, Error, TEXT("Expected %d emitters in the new system, found %d"), Pending.Num(), Handles.Num());
@@ -1624,6 +1638,8 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 
 		FVersionedNiagaraEmitterData* Data = Handle.GetEmitterData();
 		if (!Data) { UE_LOG(LogVfxImporter, Error, TEXT("   no emitter data for %s"), *EName); continue; }
+		Data->CalculateBoundsMode = ENiagaraEmitterCalculateBoundMode::Fixed;
+		Data->FixedBounds = EffectBounds;
 		if (Pending[i].bLight) { BuildLightEmitter(Handle, Data, E); EmitterCount++; continue; }
 		if (Pending[i].Slice >= 0) { BuildRibbonEmitter(Handle, Data, Slices[Pending[i].Slice]); EmitterCount++; continue; }
 		if (Pending[i].bTrail) { BuildParticleTrailEmitter(Handle, Data, E, DestPath, Textures); EmitterCount++; continue; }
@@ -1660,18 +1676,6 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 		ApplySpriteSourceTrack(Data, E); // After the solver: an attached rider must end the update at its anchor.
 
 		EmitterCount++;
-	}
-
-	// Fixed bounds over the whole effect: dynamic bounds culled late, offset sprites (Bolt's impact flash at 8 m
-	// vanished whenever the system also held a track-following light or rider).
-	{
-		FBox Box(ForceInit); Box += FVector::ZeroVector;
-		double Margin = 0.0;
-		GrowEffectBounds(MakeShared<FJsonValueObject>(Root), Box, Margin);
-		Box = Box.ExpandBy(Margin + 100.0);
-		System->bFixedBounds = true;
-		System->SetFixedBounds(Box);
-		UE_LOG(LogVfxImporter, Display, TEXT("Fixed bounds %s (margin %.0f cm)"), *Box.ToString(), Margin + 100.0);
 	}
 
 	System->RequestCompile(true);

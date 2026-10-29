@@ -69,6 +69,9 @@ actor = el.spawn_actor_from_class(unreal.NiagaraActor, unreal.Vector(0, 0, float
 comp = actor.niagara_component
 comp.set_asset(ns)
 comp.set_auto_activate(False)  # the sequence's life-cycle track activates it on frame 0
+if os.environ.get("VFX_DUMP_SYSTEM"):  # diagnostic: log system + emitter execution state every system tick
+    unreal.SystemLibrary.execute_console_command(None, "fx.DumpSystemData 1"); unreal.SystemLibrary.execute_console_command(None, "fx.DumpParticleData 1")
+    log("fx.DumpSystemData 1")
 if os.environ.get("VFX_FIXED_BOUNDS"):  # diagnostic: rule out bounds culling with a huge fixed box (cm)
     r = float(os.environ["VFX_FIXED_BOUNDS"])
     comp.set_system_fixed_bounds(unreal.Box(unreal.Vector(-r, -r, -r), unreal.Vector(r, r, r)))
@@ -163,9 +166,11 @@ aa.temporal_sample_count = 1
 aa.engine_warm_up_count = 0
 aa.render_warm_up_count = 0
 aa.use_camera_cut_for_warm_up = False
-# Only the last frame matters: render just it, the Niagara track's desired-age mode simulates up to it.
 out.use_custom_playback_range = True
-out.custom_start_frame = FRAMES
+# Render every frame from 0, ticking like real play. Seeking straight to the last frame (VFX_SEEK=1) leaves the
+# component's visibility bounds stale after the jump: Bolt's impact flash, glow and sparks were alive at t72 but not
+# drawn (2026-10-29, work/unreal/bisP-frames.png).
+out.custom_start_frame = FRAMES if os.environ.get("VFX_SEEK") else 0
 out.custom_end_frame = FRAMES + 1
 
 state = {}
