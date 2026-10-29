@@ -724,5 +724,247 @@
    "note": "local pool after range x0.5 / brightness x0.1; a little dimmer",
    "date": "2026-10-30"
   }
+ },
+ "unreal": {
+  "shape-point": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "shape-sphere": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "shape-box": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "shape-cone": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "shape-disc": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "shape-path": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "gravity": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "drag": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "noise": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "attract": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "vortex": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "collision": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "overlife": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "bb-size-opacity": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "spin": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "velocity-stretch": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "blend-normal": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "emission-hot": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "untextured": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "variant": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "sprite": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "ring": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "projectile": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "motion-trail": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "value-nodes": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-30"
+  },
+  "burst": {
+   "eye": "OK",
+   "note": "a little glowier",
+   "date": "2026-10-30"
+  },
+  "flipbook": {
+   "eye": "OK",
+   "note": "glowier than the editor (Unreal lighting)",
+   "date": "2026-10-30"
+  },
+  "ribbon-line": {
+   "eye": "OK",
+   "note": "purple after the sRGB fix; a little paler",
+   "date": "2026-10-30"
+  },
+  "ribbon-bezier": {
+   "eye": "OK",
+   "note": "purple after the sRGB fix; a little paler",
+   "date": "2026-10-30"
+  },
+  "ribbon-helix": {
+   "eye": "OK",
+   "note": "purple after the sRGB fix; a little paler",
+   "date": "2026-10-30"
+  },
+  "jagged": {
+   "eye": "OK",
+   "note": "purple after the sRGB fix; a little paler",
+   "date": "2026-10-30"
+  },
+  "branch": {
+   "eye": "OK",
+   "note": "purple after the sRGB fix; a little paler",
+   "date": "2026-10-30"
+  },
+  "radial": {
+   "eye": "OK",
+   "note": "purple after the sRGB fix; a little paler",
+   "date": "2026-10-30"
+  },
+  "ring-path": {
+   "eye": "OK",
+   "note": "purple after the sRGB fix; a little paler",
+   "date": "2026-10-30"
+  },
+  "reveal": {
+   "eye": "OK",
+   "note": "purple after the sRGB fix; a little paler",
+   "date": "2026-10-30"
+  },
+  "path-ops": {
+   "eye": "OK",
+   "note": "purple after the sRGB fix; a little paler",
+   "date": "2026-10-30"
+  },
+  "driven-opacity": {
+   "eye": "OK",
+   "note": "purple after the sRGB fix; a little paler",
+   "date": "2026-10-30"
+  },
+  "effect-time-opacity": {
+   "eye": "OK",
+   "note": "purple after the sRGB fix; a little paler",
+   "date": "2026-10-30"
+  },
+  "particle-paths": {
+   "eye": "OK",
+   "note": "purple after the sRGB fix; a little paler",
+   "date": "2026-10-30"
+  },
+  "uv-scroll": {
+   "eye": "OK",
+   "note": "textured beam draws, whiter core than the editor",
+   "date": "2026-10-30"
+  },
+  "world-axis": {
+   "eye": "OK",
+   "note": "flat after the SpriteFacing module",
+   "date": "2026-10-30"
+  },
+  "sprite-flat": {
+   "eye": "OK",
+   "note": "flat after the SpriteFacing module",
+   "date": "2026-10-30"
+  },
+  "light": {
+   "eye": "OK",
+   "note": "pool a little smaller after scale 0.3 / exponent 3",
+   "date": "2026-10-30"
+  },
+  "sub-emitter": {
+   "eye": "OK",
+   "note": "children at the parents death points after the package split",
+   "date": "2026-10-30"
+  },
+  "mesh-particles": {
+   "eye": "WRONG",
+   "note": "import fails: the importer has no mesh renderer and rejects systems without sprites",
+   "date": "2026-10-30"
+  },
+  "prop-mesh": {
+   "eye": "WRONG",
+   "note": "import fails: the importer has no mesh renderer and rejects systems without sprites",
+   "date": "2026-10-30"
+  },
+  "screen-flash": {
+   "eye": "WRONG",
+   "note": "import fails on a system with no emitters (flash is dropped anyway)",
+   "date": "2026-10-30"
+  },
+  "particle-trail": {
+   "eye": "WRONG",
+   "note": "import fails: trail-only system (no sprite emitter)",
+   "date": "2026-10-30"
+  }
  }
 }

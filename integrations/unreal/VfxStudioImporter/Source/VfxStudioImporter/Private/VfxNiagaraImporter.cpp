@@ -48,6 +48,7 @@
 #include "Materials/MaterialExpressionConstantBiasScale.h"
 #include "Materials/MaterialExpressionTextureSampleParameterSubUV.h"
 #include "NiagaraSpriteRendererProperties.h"
+#include "NiagaraConstants.h"
 #include "NiagaraRibbonRendererProperties.h"
 #include "NiagaraLightRendererProperties.h"
 #include "NiagaraMeshRendererProperties.h"
@@ -488,6 +489,10 @@ namespace
 	 *  shown as this many shapes, each held for its share of the layer's visible time, flicker kept in the alpha. */
 	constexpr int32 MaxRibbonSlices = 6;
 
+	/** Preview intensity -> light colour scale and falloff exponent. Colour x peak (x1, exponent 2) lit a pool much wider and
+	 *  brighter than the editor's (feature grid light row and the Arcane side-by-side, 2026-10-30). */
+	constexpr float UeLightScale = 0.3f, UeLightExponent = 3.0f;
+
 	void BuildRibbonSlices(const FString& DestRoot, const TSharedPtr<FJsonObject>& R, TArray<FRibbonSlice>& Out)
 	{
 		const FString RName = R->GetStringField(TEXT("name"));
@@ -694,7 +699,7 @@ namespace
 		}
 		const TArray<TSharedPtr<FJsonValue>>* Rgb = nullptr; L->TryGetArrayField(TEXT("color"), Rgb);
 		const FLinearColor Base = (Rgb && Rgb->Num() >= 3) ? FLinearColor(FColor((uint8)((*Rgb)[0]->AsNumber() * 255), (uint8)((*Rgb)[1]->AsNumber() * 255), (uint8)((*Rgb)[2]->AsNumber() * 255))) : FLinearColor::White;
-		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Color"), FNiagaraTypeDefinition::GetColorDef(), ColorLit(FLinearColor(Base.R * Peak, Base.G * Peak, Base.B * Peak, 1.0f)));
+		OverrideLiteral(Graph, TEXT("InitializeParticle"), TEXT("Color"), FNiagaraTypeDefinition::GetColorDef(), ColorLit(FLinearColor(Base.R * Peak * UeLightScale, Base.G * Peak * UeLightScale, Base.B * Peak * UeLightScale, 1.0f)));
 		// Intensity over the light's life -> Scale Alpha (normalized age), with alpha scaling the light's brightness.
 		TArray<TSharedPtr<FJsonValue>> Keys;
 		if (Track) for (const auto& Entry : *Track)
@@ -718,7 +723,7 @@ namespace
 		Light->bAlphaScalesBrightness = true;
 		// Exponent falloff: colour x peak is the brightness at the centre (inverse-square needs lumen-scale values).
 		Light->bUseInverseSquaredFalloff = false;
-		Light->DefaultExponent = 2.0f;
+		Light->DefaultExponent = UeLightExponent;
 		Inst.Emitter->AddRenderer(Light, Inst.Version);
 		UE_LOG(LogVfxImporter, Display, TEXT("   light %s: ticks %d-%d, peak %.2f, radius %.0f cm"), *L->GetStringField(TEXT("name")), On, Off, Peak, L->GetNumberField(TEXT("radiusCm")));
 	}
@@ -1686,6 +1691,21 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 				else UE_LOG(LogVfxImporter, Warning, TEXT("   no texture for %s; keeping the template's default sprite material"), *EName);
 				if (E->GetStringField(TEXT("alignment")) == TEXT("velocity")) Sprite->Alignment = ENiagaraSpriteAlignment::VelocityAligned;
 			}
+		}
+		// Flat quads (editor worldAxis, IR facingAxis): face Particles.SpriteFacing, aligned to Particles.SpriteAlignment, both
+		// written once at spawn by a Set Parameters module. They stood upright facing the camera (feature grid, 2026-10-30).
+		const TArray<TSharedPtr<FJsonValue>>* Facing = nullptr;
+		if (E->TryGetArrayField(TEXT("facingAxis"), Facing) && Facing->Num() >= 3)
+		{
+			const FVector N = JsonVec3(Facing).GetSafeNormal(), Up = FMath::Abs(N.X) > 0.9 ? FVector(0, 0, 1) : FVector(1, 0, 0);
+			for (UNiagaraRendererProperties* Renderer : Data->GetRenderers())
+				if (auto* Sprite = Cast<UNiagaraSpriteRendererProperties>(Renderer)) { Sprite->FacingMode = ENiagaraSpriteFacingMode::CustomFacingVector; Sprite->Alignment = ENiagaraSpriteAlignment::CustomAlignment; }
+			UNiagaraScript* Spawn = Data->SpawnScriptProps.Script;
+			UNiagaraScriptSource* Src = Spawn ? Cast<UNiagaraScriptSource>(Spawn->GetLatestSource()) : nullptr;
+			UNiagaraNodeOutput* Out = Src && Src->NodeGraph ? Src->NodeGraph->FindEquivalentOutputNode(ENiagaraScriptUsage::ParticleSpawnScript, Spawn->GetUsageId()) : nullptr;
+			const auto Str = [](const FVector& V) { return FString::Printf(TEXT("%f,%f,%f"), V.X, V.Y, V.Z); };
+			if (Out) FNiagaraStackGraphUtilities::AddParameterModuleToStack({ SYS_PARAM_PARTICLES_SPRITE_FACING, SYS_PARAM_PARTICLES_SPRITE_ALIGNMENT }, *Out, INDEX_NONE, { Str(N), Str(Up) });
+			UE_LOG(LogVfxImporter, Display, TEXT("   flat sprite %s: facing %s"), *EName, *Str(N));
 		}
 
 		UNiagaraScript* SpawnScript = Data->SpawnScriptProps.Script;
