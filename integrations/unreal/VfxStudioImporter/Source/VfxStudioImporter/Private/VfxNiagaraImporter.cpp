@@ -41,6 +41,11 @@
 #include "NiagaraDataInterfaceVectorCurve.h"
 #include "NiagaraNodeAssignment.h"
 #include "Materials/MaterialExpressionTextureCoordinate.h"
+#include "Materials/MaterialExpressionAbs.h"
+#include "Materials/MaterialExpressionComponentMask.h"
+#include "Materials/MaterialExpressionOneMinus.h"
+#include "Materials/MaterialExpressionSmoothStep.h"
+#include "Materials/MaterialExpressionConstantBiasScale.h"
 #include "Materials/MaterialExpressionTextureSampleParameterSubUV.h"
 #include "NiagaraSpriteRendererProperties.h"
 #include "NiagaraRibbonRendererProperties.h"
@@ -170,11 +175,12 @@ namespace
 
 	/** Builds (once) the shared Additive/Translucent unlit sprite base materials under DestRoot/_Materials, or loads
 	 *  them if already present from a previous import into the same project. */
-	UMaterial* GetOrCreateBaseMaterial(const FString& DestRoot, bool bAdditive, int32 Columns = 1, int32 Rows = 1)
+	UMaterial* GetOrCreateBaseMaterial(const FString& DestRoot, bool bAdditive, int32 Columns = 1, int32 Rows = 1, bool bStaticCell = false)
 	{
 		// Flipbooks sample through a Particle SubUV node (the frame comes from the particle's SubImageIndex, the grid from
 		// the sprite renderer's SubImage Size), so one SubUV base serves every grid.
-		const FString Grid = (Columns > 1 || Rows > 1) ? FString(TEXT("_SubUV")) : FString();
+		// Static-cell sheets (StaticSheetCell) sample one cell without blending into the next: their own base.
+		const FString Grid = (Columns > 1 || Rows > 1) ? FString(bStaticCell ? TEXT("_SubUVCell") : TEXT("_SubUV")) : FString();
 		// Match the working particle-trail material: apply the soft mask once in emissive, with opacity left at one.
 		const FString Name = FString(bAdditive ? TEXT("M_VfxStudio_Additive_A4") : TEXT("M_VfxStudio_Translucent")) + Grid;
 		const FString PackagePath = DestRoot / TEXT("_Materials");
@@ -195,6 +201,7 @@ namespace
 		const bool bSubUV = Columns > 1 || Rows > 1;
 		UMaterialExpression* TexExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, bSubUV ? UMaterialExpressionTextureSampleParameterSubUV::StaticClass() : UMaterialExpressionTextureSampleParameter2D::StaticClass(), -300, 0);
 		if (auto* TexParam = Cast<UMaterialExpressionTextureSampleParameter2D>(TexExpr)) TexParam->ParameterName = TEXT("Texture"); // SubUV derives from it
+		if (auto* SubUV = Cast<UMaterialExpressionTextureSampleParameterSubUV>(TexExpr)) SubUV->bBlend = !bStaticCell;
 		Mat->bUsedWithNiagaraSprites = true;
 		UMaterialExpression* ParticleColorExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionParticleColor::StaticClass(), -300, 200);
 		UMaterialExpression* MulRgbExpr = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionMultiply::StaticClass(), 0, 0);
@@ -809,6 +816,49 @@ namespace
 	}
 
 	/** Turbulence, attraction, swirl and ground collision: stock force/collision modules in the update stack. */
+	/** A variants sheet (soft-glow: four glow styles, not animation frames) or an fps-0 sheet draws ONE cell per
+	 *  particle in the editor (spriteCell): variantFrame / startFrame, else a random cell (-1) when randomStartFrame or
+	 *  variantFrame -1, else cell 0. Playing such a sheet as a flipbook morphed the Orb's ball into the ring cell and
+	 *  lost it (2026-10-29). Returns false for a real flipbook. */
+	UEdGraphPin& TrailInputPin(UNiagaraNodeFunctionCall* Fn, const TCHAR* Input, const FNiagaraTypeDefinition& Type);
+
+	bool StaticSheetCell(const TSharedPtr<FJsonObject>& Flip, int32& OutCell)
+	{
+		double Variant = 0.0, Start = 0.0;
+		const bool bVariant = Flip->TryGetNumberField(TEXT("variantFrame"), Variant);
+		if (!bVariant && Flip->GetNumberField(TEXT("fps")) > 0.0) return false;
+		bool bRandom = false; Flip->TryGetBoolField(TEXT("randomStartFrame"), bRandom);
+		if (bVariant && Variant >= 0.0) OutCell = (int32)Variant;
+		else if (!bVariant && Flip->TryGetNumberField(TEXT("startFrame"), Start) && Start >= 0.0) OutCell = (int32)Start;
+		else OutCell = (bVariant || bRandom) ? -1 : 0;
+		return true;
+	}
+
+	/** Particles.SubImageIndex at spawn: the cell, or uniform [0, Frames) when Cell is -1. The static-cell SubUV base
+	 *  material samples without blending, so the fraction never mixes two cells. */
+	bool SetSpawnSubImage(FVersionedNiagaraEmitterData* Data, int32 Cell, int32 Frames)
+	{
+		UNiagaraScript* Spawn = Data->SpawnScriptProps.Script;
+		UNiagaraScriptSource* Src = Spawn ? Cast<UNiagaraScriptSource>(Spawn->GetLatestSource()) : nullptr;
+		UNiagaraNodeOutput* Out = Src && Src->NodeGraph ? Src->NodeGraph->FindEquivalentOutputNode(ENiagaraScriptUsage::ParticleSpawnScript, Spawn->GetUsageId()) : nullptr;
+		if (!Out) return false;
+		const auto F = FNiagaraTypeDefinition::GetFloatDef();
+		TArray<FNiagaraVariable> Vars; Vars.Add(FNiagaraVariable(F, TEXT("Particles.SubImageIndex")));
+		TArray<FString> Defaults; Defaults.Add(FloatLit(FMath::Max(0, Cell) + 0.01));
+		auto* Set = FNiagaraStackGraphUtilities::AddParameterModuleToStack(Vars, *Out, INDEX_NONE, Defaults);
+		if (!Set) return false;
+		UE_LOG(LogVfxImporter, Display, TEXT("    static sheet cell %s of %d"), Cell < 0 ? TEXT("random") : *FString::FromInt(Cell), Frames);
+		if (Cell >= 0) return true;
+		UNiagaraScript* Range = LoadObject<UNiagaraScript>(nullptr, TEXT("/Niagara/DynamicInputs/UniformRange/UniformRangedFloat.UniformRangedFloat"));
+		UNiagaraNodeFunctionCall* Dyn = nullptr;
+		if (Range) FNiagaraStackGraphUtilities::SetDynamicInputForFunctionInput(TrailInputPin(Set, TEXT("Particles.SubImageIndex"), F), Range, Dyn);
+		if (!Dyn) return false;
+		const bool bMin = OverrideOnNode(Dyn, TEXT("Minimum"), F, TEXT("0.0"));
+		const bool bMax = OverrideOnNode(Dyn, TEXT("Maximum"), F, FloatLit(Frames - 0.01));
+		if (!bMin || !bMax) LogModule(Dyn);
+		return bMin && bMax;
+	}
+
 	void ApplyForces(FVersionedNiagaraEmitterData* Data, const TSharedPtr<FJsonObject>& E)
 	{
 		const auto F = FNiagaraTypeDefinition::GetFloatDef();
@@ -840,9 +890,16 @@ namespace
 			}
 			if (Bursts->Num() > N) UE_LOG(LogVfxImporter, Warning, TEXT("    %d burst(s) beyond %d not exported"), Bursts->Num() - N, N);
 		}
+		// Static cells (variants sheets, fps 0): one fixed cell per particle instead of playback.
+		int32 Cell = 0;
+		if (E->TryGetObjectField(TEXT("flipbook"), O) && StaticSheetCell(*O, Cell))
+		{
+			const int32 Frames = (int32)((*O)->GetNumberField(TEXT("columns")) * (*O)->GetNumberField(TEXT("rows")));
+			if (!SetSpawnSubImage(Data, Cell, Frames)) UE_LOG(LogVfxImporter, Warning, TEXT("    static sheet cell could not be set"));
+		}
 		// Flipbook playback: SubUV Animation (V2) in Infinite Loop mode at the sheet's frames per second, wrapping
 		// (looping sheets) or holding the last frame; grid read from the sprite renderer's SubImage Size.
-		if (E->TryGetObjectField(TEXT("flipbook"), O) && (*O)->GetNumberField(TEXT("fps")) > 0.0) // fps 0: hold the first cell
+		else if (E->TryGetObjectField(TEXT("flipbook"), O) && (*O)->GetNumberField(TEXT("fps")) > 0.0)
 			if (UNiagaraNodeFunctionCall* Fn = AddForceModule(Data, TEXT("/Niagara/Modules/Update/SubUV/V2/SubUVAnimation.SubUVAnimation")))
 			{
 				UNiagaraGraph* G = Cast<UNiagaraGraph>(Fn->GetGraph());
@@ -967,7 +1024,7 @@ namespace
 	 *  not the trail's authored colour. Keep a separate material/cache name so existing beam assets are unchanged. */
 	UMaterial* GetOrCreateParticleTrailMaterial(const FString& DestRoot, bool bAdditive, bool bTextured)
 	{
-		const FString Name = FString(bAdditive ? TEXT("M_VfxStudio_ParticleTrailAdd") : TEXT("M_VfxStudio_ParticleTrailTrans")) + (bTextured ? TEXT("_Tex") : TEXT(""));
+		const FString Name = FString(bAdditive ? TEXT("M_VfxStudio_ParticleTrailAdd_Soft") : TEXT("M_VfxStudio_ParticleTrailTrans")) + (bTextured ? TEXT("_Tex") : TEXT(""));
 		const FString PackagePath = DestRoot / TEXT("_Materials");
 		if (UMaterial* Existing = LoadObject<UMaterial>(nullptr, *((PackagePath / Name) + TEXT(".") + Name))) return Existing;
 		IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
@@ -992,6 +1049,30 @@ namespace
 			UMaterialEditingLibrary::ConnectMaterialExpressions(Pc, TEXT("A"), Alpha, TEXT("A"));
 			UMaterialEditingLibrary::ConnectMaterialExpressions(Tex, TEXT("A"), Alpha, TEXT("B"));
 			RgbPin.Empty(); AlphaPin.Empty();
+		}
+		else if (bAdditive)
+		{
+			// The editor's untextured additive trail strip (RIBBON_FRAGMENT, softness 1): brightness across the width
+			// 1 - smoothstep(0, 1, |v|), v = -1..1 edge to edge (ribbon UV.y 0..1). A flat full-width strip drew hard
+			// two-tone bands where a narrow trail sits on a wider sheath (Orb, Bolt; 2026-10-29).
+			UMaterialExpression* Uv = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionTextureCoordinate::StaticClass(), -1200, 300);
+			auto* V = Cast<UMaterialExpressionComponentMask>(UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionComponentMask::StaticClass(), -1050, 300));
+			V->R = false; V->G = true; V->B = false; V->A = false;
+			auto* Centre = Cast<UMaterialExpressionConstantBiasScale>(UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionConstantBiasScale::StaticClass(), -900, 300));
+			Centre->Bias = -0.5f; Centre->Scale = 2.0f; // (v - 0.5) * 2
+			UMaterialExpression* AbsV = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionAbs::StaticClass(), -750, 300);
+			auto* Smooth = Cast<UMaterialExpressionSmoothStep>(UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionSmoothStep::StaticClass(), -600, 300));
+			Smooth->ConstMin = 0.0f; Smooth->ConstMax = 1.0f;
+			UMaterialExpression* Soft = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionOneMinus::StaticClass(), -450, 300);
+			UMaterialEditingLibrary::ConnectMaterialExpressions(Uv, TEXT(""), V, TEXT(""));
+			UMaterialEditingLibrary::ConnectMaterialExpressions(V, TEXT(""), Centre, TEXT(""));
+			UMaterialEditingLibrary::ConnectMaterialExpressions(Centre, TEXT(""), AbsV, TEXT(""));
+			UMaterialEditingLibrary::ConnectMaterialExpressions(AbsV, TEXT(""), Smooth, TEXT("Value"));
+			UMaterialEditingLibrary::ConnectMaterialExpressions(Smooth, TEXT(""), Soft, TEXT(""));
+			Alpha = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionMultiply::StaticClass(), -300, 200);
+			UMaterialEditingLibrary::ConnectMaterialExpressions(Pc, TEXT("A"), Alpha, TEXT("A"));
+			UMaterialEditingLibrary::ConnectMaterialExpressions(Soft, TEXT(""), Alpha, TEXT("B"));
+			AlphaPin.Empty();
 		}
 		if (bAdditive)
 		{
@@ -1531,18 +1612,19 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 		UTexture2D** FoundTex = TexFile.IsEmpty() ? nullptr : Textures.Find(TexFile);
 		int32 Cols = 1, Rows = 1;
 		const TSharedPtr<FJsonObject>* Flip = nullptr;
-		if (E->TryGetObjectField(TEXT("flipbook"), Flip)) { Cols = (int32)(*Flip)->GetNumberField(TEXT("columns")); Rows = (int32)(*Flip)->GetNumberField(TEXT("rows")); }
-		UMaterial* Base = (Cols > 1 || Rows > 1) ? GetOrCreateBaseMaterial(DestPath, bAdditive, Cols, Rows) : (bAdditive ? AdditiveBase : TranslucentBase);
-		const FString Tag = FString(bAdditive ? TEXT("Add") : TEXT("Trans")) + ((Cols > 1 || Rows > 1) ? FString(TEXT("SubUV")) : FString());
+		int32 StaticCell = 0; bool bStaticCell = false;
+		if (E->TryGetObjectField(TEXT("flipbook"), Flip)) { Cols = (int32)(*Flip)->GetNumberField(TEXT("columns")); Rows = (int32)(*Flip)->GetNumberField(TEXT("rows")); bStaticCell = StaticSheetCell(*Flip, StaticCell); }
+		UMaterial* Base = (Cols > 1 || Rows > 1) ? GetOrCreateBaseMaterial(DestPath, bAdditive, Cols, Rows, bStaticCell) : (bAdditive ? AdditiveBase : TranslucentBase);
+		const FString Tag = FString(bAdditive ? TEXT("Add") : TEXT("Trans")) + ((Cols > 1 || Rows > 1) ? FString(bStaticCell ? TEXT("SubUVCell") : TEXT("SubUV")) : FString());
 		UMaterialInstanceConstant* MIC = FoundTex ? GetOrCreateTextureMaterial(DestPath, Base, *FoundTex, Tag) : nullptr;
 		for (UNiagaraRendererProperties* Renderer : Data->GetRenderers())
 		{
 			if (auto* Sprite = Cast<UNiagaraSpriteRendererProperties>(Renderer))
 			{
-				if (MIC) Sprite->Material = MIC;
 				if (Cols > 1 || Rows > 1) Sprite->SubImageSize = FVector2D(Cols, Rows);
-				if (E->GetStringField(TEXT("alignment")) == TEXT("velocity")) Sprite->Alignment = ENiagaraSpriteAlignment::VelocityAligned;
+				if (MIC) Sprite->Material = MIC;
 				else UE_LOG(LogVfxImporter, Warning, TEXT("   no texture for %s; keeping the template's default sprite material"), *EName);
+				if (E->GetStringField(TEXT("alignment")) == TEXT("velocity")) Sprite->Alignment = ENiagaraSpriteAlignment::VelocityAligned;
 			}
 		}
 

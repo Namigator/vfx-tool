@@ -13,6 +13,6 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [ ] Engine exports of follow motion / trail width / spiral (Roblox, Godot, Unreal, Unity) · not built (gap) · 2026-10-21
 - [x] Layer clips for breakdown videos (tools/render-layer-clips.ts) · [SAW] 7 clips · 2026-10-21
 - [x] Godot export of the 10 Arcane effects matches the tool (Helix/Arc pink, Summon riders + trails) · [SAW] work/compare/cmp3-*.png · 2026-10-28
-- [ ] Unreal export of the 10 Arcane effects: all 10 render; Needle/Pulse/Helix/Arc close; glow halos weak, Orb is a flat ribbon, Bolt head missing, Summon riders thin · [SAW] work/compare/ue-vs-tool.png · 2026-10-29
+- [ ] Unreal export of the 10 Arcane effects: all 10 render, trails soft, Orb/Needle/Pulse/Helix/Arc/Summon close; still off: Bolt/Needle/Orb head glow sprite missing, Charge spark burst missing, Blessing halo ring missing, Nova haze + node glows missing, floor reads grey with a strong light pool · [SAW] work/compare/fix1-vs-tool.png · 2026-10-29
 - [x] Unreal capture is reliable (Movie Render Queue, VFX_UE_CAPTURE=mrq) · [RAN] 2 passes, max 0.25% pixels differ · 2026-10-29
 - [ ] Roblox side-by-side of current pack · untested (old capture used stale files) · 2026-10-28

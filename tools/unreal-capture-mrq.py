@@ -39,12 +39,29 @@ for p in (MAP_PATH, CAP_ROOT + "/LS_cap"):
 unreal.EditorLoadingAndSavingUtils.new_blank_map(False)
 el.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 500), unreal.Rotator(-40, -30, 0))
 el.spawn_actor_from_class(unreal.SkyLight, unreal.Vector(0, 0, 300), unreal.Rotator(0, 0, 0))
-ref = el.spawn_actor_from_class(unreal.StaticMeshActor, unreal.Vector(0, 250, 0), unreal.Rotator(0, 0, 0))
-ref.static_mesh_component.set_static_mesh(unreal.EditorAssetLibrary.load_asset("/Engine/BasicShapes/Cube.Cube"))
-ref.set_actor_scale3d(unreal.Vector(0.4, 0.4, 0.4))
+# VFX_LOOK=editor: the VFX Studio editor's stage, for side-by-sides (as tools/build-godot-compare.mjs does for Godot):
+# its dark 16 x 10 m ground at VFX_FLOOR_Z under the camera's look-at, no reference cube, and its post (below).
+EDITOR_LOOK = os.environ.get("VFX_LOOK") == "editor"
+if not EDITOR_LOOK:
+    ref = el.spawn_actor_from_class(unreal.StaticMeshActor, unreal.Vector(0, 250, 0), unreal.Rotator(0, 0, 0))
+    ref.static_mesh_component.set_static_mesh(unreal.EditorAssetLibrary.load_asset("/Engine/BasicShapes/Cube.Cube"))
+    ref.set_actor_scale3d(unreal.Vector(0.4, 0.4, 0.4))
 floor = el.spawn_actor_from_class(unreal.StaticMeshActor, unreal.Vector(250, 0, -10), unreal.Rotator(0, 0, 0))
 floor.static_mesh_component.set_static_mesh(unreal.EditorAssetLibrary.load_asset("/Engine/BasicShapes/Plane.Plane"))
 floor.set_actor_scale3d(unreal.Vector(12, 8, 1))
+if EDITOR_LOOK:
+    look_x = float(os.environ["VFX_CAM_LOOK"].split(",")[0]) if os.environ.get("VFX_CAM_LOOK") else 0.0
+    floor.set_actor_location(unreal.Vector(look_x, 0, float(os.environ.get("VFX_FLOOR_Z", "0"))), False, False)
+    floor.set_actor_scale3d(unreal.Vector(16, 10, 1))
+    # The editor's ground colour 0x10131a (linear ~0.005, 0.007, 0.010) on the stock shape material.
+    mi_path = CAP_ROOT + "/MI_floor"
+    if unreal.EditorAssetLibrary.does_asset_exist(mi_path):
+        unreal.EditorAssetLibrary.delete_asset(mi_path)
+    mi = tools.create_asset("MI_floor", CAP_ROOT, unreal.MaterialInstanceConstant, unreal.MaterialInstanceConstantFactoryNew())
+    unreal.MaterialEditingLibrary.set_material_instance_parent(mi, unreal.EditorAssetLibrary.load_asset("/Engine/BasicShapes/BasicShapeMaterial"))
+    unreal.MaterialEditingLibrary.set_material_instance_vector_parameter_value(mi, "Color", unreal.LinearColor(0.0052, 0.0065, 0.0103, 1))
+    unreal.EditorAssetLibrary.save_loaded_asset(mi)
+    floor.static_mesh_component.set_material(0, mi)
 
 ns = unreal.EditorAssetLibrary.load_asset(NS_PATH)
 log("asset", NS_PATH, bool(ns))
@@ -76,6 +93,17 @@ for k, v in (("auto_exposure_method", unreal.AutoExposureMethod.AEM_HISTOGRAM), 
              ("auto_exposure_max_brightness", 1.0), ("auto_exposure_bias", 0.0), ("auto_exposure_apply_physical_camera_exposure", False)):
     pp.set_editor_property("override_" + k, True)
     pp.set_editor_property(k, v)
+if EDITOR_LOOK:
+    # The editor's post (PreviewViewport): three's ACES (exposure 1/0.6) + UnrealBloom strength 0.8, radius 0.45,
+    # threshold 1, five blurred mips of sigma ~6/20/56/144/352 px at 1280 wide, each weighted ~0.48 (sum 2.4).
+    # Unreal's filmic curve is its ACES fit; bloom sizes are % of screen width. VFX_BLOOM scales the intensity.
+    post = [("auto_exposure_bias", math.log2(1 / 0.6)), ("bloom_method", unreal.BloomMethod.BM_SOG),
+            ("bloom_intensity", float(os.environ.get("VFX_BLOOM", "1.0"))), ("bloom_threshold", 1.0), ("bloom_size_scale", 1.0)]
+    for i, (size, w) in enumerate([(1.0, 0.51), (3.0, 0.50), (9.0, 0.48), (22.0, 0.46), (55.0, 0.45), (64.0, 0.0)]):
+        post += [("bloom%d_size" % (i + 1), size), ("bloom%d_tint" % (i + 1), unreal.LinearColor(w, w, w, 1))]
+    for k, v in post:
+        pp.set_editor_property("override_" + k, True)
+        pp.set_editor_property(k, v)
 cc.set_editor_property("post_process_settings", pp)
 
 world = el.get_editor_world()
