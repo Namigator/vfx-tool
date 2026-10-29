@@ -320,7 +320,9 @@ function settleLight(l: PointLightLayer, report: RbxReportItem[]): PointLightLay
 
 /** Preview intensity -> Roblox PointLight Brightness. 0.15 lit the whole grid floor (feature grid light row and the Arcane
  *  side-by-side both found the floor pools too strong, 2026-10-29). */
-export const ROBLOX_LIGHT_SCALE = 0.05;
+export const ROBLOX_LIGHT_SCALE = 0.1;
+/** Roblox light falls off almost linearly to its range; the editor's (inverse square) pool is about half as wide. */
+export const ROBLOX_LIGHT_RANGE = 0.5;
 
 function lightFrom(l: PointLightLayer, origin: Vec3, duration: number, report: RbxReportItem[]): RbxLight {
   const rel = (p: readonly number[]): Vec3 => [r3((p[0] - origin[0]) * S), r3((p[1] - origin[1]) * S), r3((p[2] - origin[2]) * S)];
@@ -335,7 +337,7 @@ function lightFrom(l: PointLightLayer, origin: Vec3, duration: number, report: R
     if (v !== last) { brightness.push([t, v]); last = v; }
   }
   if (l.flicker > 0) report.push({ level: 'approximated', item: l.nodeId, message: 'Light flicker is baked as its average brightness.' });
-  const range = l.range * S;
+  const range = l.range * S * ROBLOX_LIGHT_RANGE;
   if (range > 60) report.push({ level: 'approximated', item: l.nodeId, message: `Light range ${r3(range)} studs is capped at Roblox's 60.` });
   return {
     name: safeName(l.nodeId), color: hex(l.color).map(r3) as [number, number, number], range: r3(Math.min(60, range)), position: rel(l.position), brightness,

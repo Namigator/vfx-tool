@@ -680,9 +680,9 @@
    "date": "2026-10-29"
   },
   "shape-path": {
-   "eye": "WRONG",
-   "note": "one dot: Roblox exporter spawns path emitters at a point",
-   "date": "2026-10-29"
+   "eye": "OK",
+   "note": "spread around the ring after the shared split",
+   "date": "2026-10-30"
   },
   "world-axis": {
    "eye": "WRONG",
@@ -691,13 +691,13 @@
   },
   "flipbook": {
    "eye": "WRONG",
-   "note": "wrong image: mottled brown sheet instead of the fireball",
-   "date": "2026-10-29"
+   "note": "sim-fireball texture has no Roblox asset id (not uploaded)",
+   "date": "2026-10-30"
   },
   "spin": {
    "eye": "WRONG",
-   "note": "a soft blob, star sprite and spin not visible",
-   "date": "2026-10-29"
+   "note": "star-ray texture has no Roblox asset id (not uploaded): Studio default sprite",
+   "date": "2026-10-30"
   },
   "sprite": {
    "eye": "WRONG",
@@ -720,9 +720,9 @@
    "date": "2026-10-29"
   },
   "light": {
-   "eye": "WRONG",
-   "note": "floor light pool covers the whole floor",
-   "date": "2026-10-29"
+   "eye": "OK",
+   "note": "local pool after range x0.5 / brightness x0.1; a little dimmer",
+   "date": "2026-10-30"
   }
  }
 }
