@@ -201,6 +201,8 @@ export type RobloxEffect = {
   trails: RbxTrail[];
   /** Mesh particles as Parts on baked trajectories. */
   meshes: RbxMeshLayer[];
+  /** Screen flashes: [tick, durationTicks, r, g, b (sRGB 0..1), alpha]; the player fades the strongest one linearly. */
+  flashes?: [number, number, number, number, number, number][];
   /**
    * Retargeting (user 2026-09-30 "fix the targeting"): the authored Source and Target points (origin-relative studs).
    * The player maps the effect onto a runtime source → target: positions stretch along the Source→Target line and

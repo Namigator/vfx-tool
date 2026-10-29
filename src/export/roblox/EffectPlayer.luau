@@ -962,6 +962,10 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 	end
 
 	local function cleanup()
+		if flashGui then
+			flashGui:Destroy()
+			flashGui, flashFrame = nil, nil
+		end
 		if connection then
 			connection:Disconnect()
 			connection = nil
@@ -975,6 +979,48 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 		releaseAllMeshes()
 		meshRig:Destroy()
 		rig:Destroy()
+	end
+
+	-- Screen flashes (client only): a full-screen frame, the strongest flash at this tick fading linearly like the editor.
+	local flashes = data.flashes
+	local flashGui: ScreenGui? = nil
+	local flashFrame: Frame? = nil
+	local function stepFlash(a: number)
+		if not flashes or #flashes == 0 or not RunService:IsClient() then
+			return
+		end
+		local best, color = 0, Color3.new(1, 1, 1)
+		for _, f in ipairs(flashes) do
+			local u = (a - f[1]) / math.max(1, f[2])
+			if u >= 0 and u < 1 and f[6] * (1 - u) > best then
+				best = f[6] * (1 - u)
+				color = Color3.new(f[3], f[4], f[5])
+			end
+		end
+		if not flashFrame then
+			if best <= 0 then
+				return
+			end
+			local lp = game:GetService("Players").LocalPlayer
+			local pg = lp and lp:FindFirstChildOfClass("PlayerGui")
+			if not pg then
+				return
+			end
+			local gui = Instance.new("ScreenGui")
+			gui.Name = "VfxFlash"
+			gui.IgnoreGuiInset = true
+			gui.ResetOnSpawn = false
+			gui.DisplayOrder = 100
+			local frame = Instance.new("Frame")
+			frame.Size = UDim2.fromScale(1, 1)
+			frame.BorderSizePixel = 0
+			frame.Parent = gui
+			gui.Parent = pg
+			flashGui, flashFrame = gui, frame
+		end
+		local frame = flashFrame :: Frame
+		frame.BackgroundColor3 = color
+		frame.BackgroundTransparency = 1 - best
 	end
 
 	local player = {}
@@ -1000,6 +1046,7 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 				stepTrail(t, tick, a)
 			end
 			updateMeshes(a)
+			stepFlash(a)
 			if tick >= duration then
 				finishRun()
 			end

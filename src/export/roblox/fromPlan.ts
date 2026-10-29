@@ -637,7 +637,9 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
     else report.push({ level: 'dropped', item: t.nodeId, message: 'A trail on particles with no visible sprite cannot be exported.' });
   }
   const meshes = bakeMeshes(plan.value.meshes, systems, origin, plan.value.durationTicks, unique, report);
-  if (plan.value.presentation.flashes.length) report.push({ level: 'dropped', item: 'presentation', message: 'Screen flashes are not exported (a client-side ScreenGui flash can be added later).' });
+  // Screen flashes: a full-screen ScreenGui frame the player fades on the client (they were dropped; feature grid 2026-10-30).
+  const flashes = plan.value.presentation.flashes.map(f => [f.tick, f.durationTicks, ...[1, 3, 5].map(i => r3(parseInt(f.color.srgb.slice(i, i + 2), 16) / 255)), r3(f.alpha)] as [number, number, number, number, number, number]);
+  if (flashes.length) report.push({ level: 'approximated', item: 'presentation', message: 'Screen flashes become a full-screen ScreenGui frame on the client (server-side players draw none).' });
   if (plan.value.presentation.impulses.length) report.push({ level: 'dropped', item: 'presentation', message: 'Camera shake is not exported.' });
   const lights = plan.value.lights.map(l => lightFrom(settleLight(l, report), origin, plan.value.durationTicks, report));
   for (const m of meshes) if (unlitDebris(m)) report.push({ level: 'approximated', item: m.name, message: 'Lit rock debris is Neon at its own colour (no shading): the editor lights it with a studio key light, and in a dark Roblox place it rendered black.' });
@@ -652,7 +654,7 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
     name: safeName(doc.name || 'Effect'), durationTicks: plan.value.durationTicks, studsPerMeter: r3(S), emitters, beams, lights,
     anchors: { source: rel(src), target: rel(tgt) },
     ...(flight ? { travel: { startTick: flight.startTick, travelTicks: flight.travelTicks } } : {}),
-    trails, meshes,
+    trails, meshes, ...(flashes.length ? { flashes } : {}),
     textures, report,
   } };
 }

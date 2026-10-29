@@ -671,8 +671,8 @@
   },
   "screen-flash": {
    "eye": "OK",
-   "note": "nothing drawn, as reported",
-   "date": "2026-10-29"
+   "note": "ScreenGui frame tints the view (client only)",
+   "date": "2026-10-30"
   },
   "particle-trail": {
    "eye": "OK",

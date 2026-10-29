@@ -452,6 +452,7 @@ function effectDataSource(effect: RobloxEffect, names: { e: string[]; b: string[
     beams: beams as unknown as LuaValue,
     lights: lights as unknown as LuaValue,
     meshes: meshes as unknown as LuaValue,
+    flashes: effect.flashes as unknown as LuaValue,
     trails: (effect.trails ?? []).map((t, i) => ({
       name: names.t[i], pos: t.position, on: t.window[0], off: t.window[1],
       path: t.path.length ? byTick(t.path.map(([k, p]) => [k, ...p] as [number, ...number[]])) : undefined,
