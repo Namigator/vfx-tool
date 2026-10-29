@@ -69,6 +69,10 @@ actor = el.spawn_actor_from_class(unreal.NiagaraActor, unreal.Vector(0, 0, float
 comp = actor.niagara_component
 comp.set_asset(ns)
 comp.set_auto_activate(False)  # the sequence's life-cycle track activates it on frame 0
+if os.environ.get("VFX_FIXED_BOUNDS"):  # diagnostic: rule out bounds culling with a huge fixed box (cm)
+    r = float(os.environ["VFX_FIXED_BOUNDS"])
+    comp.set_system_fixed_bounds(unreal.Box(unreal.Vector(-r, -r, -r), unreal.Vector(r, r, r)))
+    log("fixed bounds", r)
 
 CAM_X = float(os.environ.get("VFX_CAM_X", "220"))
 CAM_DIST = float(os.environ.get("VFX_CAM_DIST", "620"))

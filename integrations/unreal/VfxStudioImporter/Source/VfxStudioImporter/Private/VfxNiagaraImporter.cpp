@@ -609,6 +609,29 @@ namespace
 		return true;
 	}
 
+	/** Grows Box by every x,y,z triple in the package (positions, burst points, source/light tracks, ribbon points),
+	 *  and Margin by the largest sprite size and particle travel (speed x life). Colours/directions also land in the
+	 *  box; that only enlarges it. */
+	void GrowEffectBounds(const TSharedPtr<FJsonValue>& V, FBox& Box, double& Margin)
+	{
+		if (!V.IsValid()) return;
+		if (V->Type == EJson::Array)
+		{
+			const auto& A = V->AsArray();
+			if (A.Num() == 3 && A[0]->Type == EJson::Number && A[1]->Type == EJson::Number && A[2]->Type == EJson::Number)
+				Box += FVector(A[0]->AsNumber(), A[1]->AsNumber(), A[2]->AsNumber());
+			else for (const auto& C : A) GrowEffectBounds(C, Box, Margin);
+		}
+		else if (V->Type == EJson::Object)
+		{
+			const auto O = V->AsObject();
+			double Size = 0.0, Speed = 0.0, Life = 0.0;
+			if (O->TryGetNumberField(TEXT("sizeCmMax"), Size)) Margin = FMath::Max(Margin, Size);
+			if (O->TryGetNumberField(TEXT("speedCmSMax"), Speed) && O->TryGetNumberField(TEXT("lifetimeSecMax"), Life)) Margin = FMath::Max(Margin, Speed * Life);
+			for (const auto& Kv : O->Values) GrowEffectBounds(Kv.Value, Box, Margin);
+		}
+	}
+
 	/** Effect length of the package being imported (ticks), for windows that run to the end. */
 	int32 GDocTicks = 600;
 
@@ -1637,6 +1660,18 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 		ApplySpriteSourceTrack(Data, E); // After the solver: an attached rider must end the update at its anchor.
 
 		EmitterCount++;
+	}
+
+	// Fixed bounds over the whole effect: dynamic bounds culled late, offset sprites (Bolt's impact flash at 8 m
+	// vanished whenever the system also held a track-following light or rider).
+	{
+		FBox Box(ForceInit); Box += FVector::ZeroVector;
+		double Margin = 0.0;
+		GrowEffectBounds(MakeShared<FJsonValueObject>(Root), Box, Margin);
+		Box = Box.ExpandBy(Margin + 100.0);
+		System->bFixedBounds = true;
+		System->SetFixedBounds(Box);
+		UE_LOG(LogVfxImporter, Display, TEXT("Fixed bounds %s (margin %.0f cm)"), *Box.ToString(), Margin + 100.0);
 	}
 
 	System->RequestCompile(true);
