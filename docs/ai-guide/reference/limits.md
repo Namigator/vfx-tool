@@ -155,6 +155,7 @@ The ones that matter most when building effects.
 
 | constant | value | meaning | defined in |
 |---|---|---|---|
+| `MAX_PLACED_BURSTS` | 16 | Above this many positioned bursts an emitter stays one node (a steady stream from its origin) to bound the scene size. | src/export/godot/scene.ts |
 | `MAX_SHEET_SIDE` | 16384 | Longest side of an exported sprite sheet in pixels (above this common engines cannot use it as a texture). | src/export/media/layout.ts |
 | `MAX_SHEET_PIXELS` | 67108864 | Most pixels (64 M) in one exported sprite sheet: keeps the PNG encode within browser memory. | src/export/media/layout.ts |
 | `MAX_FRAME_SIDE` | 4096 | Largest frame width or height in pixels for exported media. | src/export/media/layout.ts |

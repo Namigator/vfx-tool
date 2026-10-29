@@ -236,8 +236,8 @@
    "date": "2026-10-29"
   },
   "sub-emitter": {
-   "eye": "UNSURE",
-   "note": "both nearly empty at t50; the case needs a better tick",
+   "eye": "OK",
+   "note": "children burst where the parents die (t42)",
    "date": "2026-10-29"
   }
  },
@@ -478,8 +478,8 @@
    "date": "2026-10-29"
   },
   "sub-emitter": {
-   "eye": "UNSURE",
-   "note": "both nearly empty at t50",
+   "eye": "OK",
+   "note": "children at the parents death points after one-shot nodes per burst",
    "date": "2026-10-29"
   }
  }

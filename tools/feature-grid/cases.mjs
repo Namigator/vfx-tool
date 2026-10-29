@@ -138,12 +138,12 @@ export const CASES = [
     k.wire('f.anchor', 't.anchor'); k.wire('m.material', 't.material'); k.wire('fly.window', 't.window'); k.out('t');
   } },
   { id: 'particle-trail', feature: 'ParticleTrail on many sparks', covers: ['ParticleTrail'], build: k => k.particles({ emitter: { shape: 'point', direction: [1, 1, 0], speedMin: 2, speedMax: 3 }, mods: [['Gravity', 'g', { acceleration: [0, -4, 0] }]], renderer: 'ParticleTrail', rendererParams: { history: 0.25, width: 0.03 }, material: { template: 'RibbonUnlit', sprite: undefined, tint: col('#FFC060') } }) },
-  { id: 'sub-emitter', feature: 'ParticleEvents: each dying particle bursts children (delayed, merged)', covers: ['ParticleEvents', 'EventDelay', 'MergeEvents'], tick: 50, build(k) {
-    k.particles({ emitter: { rate: 4, speedMin: 2, speedMax: 2.5, lifetimeMin: 0.4, lifetimeMax: 0.5 } });
+  { id: 'sub-emitter', feature: 'ParticleEvents: each dying particle bursts children (delayed, merged)', covers: ['ParticleEvents', 'EventDelay', 'MergeEvents'], tick: 42, build(k) {
+    k.particles({ emitter: { rate: 12, speedMin: 2, speedMax: 2.5, lifetimeMin: 0.4, lifetimeMax: 0.5 } });
     k.add('ParticleEvents', 'ev'); k.wire('ip.particles', 'ev.particles');
     k.add('EventDelay', 'dl', { delayTicks: 2 }); k.wire('ev.death', 'dl.events');
     k.add('MergeEvents', 'mg'); k.wire('dl.event', 'mg.events');
-    k.add('Emitter', 'kid', { shape: 'point', burst: 12, rate: 0, speedMin: 0.8, speedMax: 1.2, lifetimeMin: 0.4, lifetimeMax: 0.6 }); k.wire('mg.event', 'kid.trigger');
+    k.add('Emitter', 'kid', { shape: 'point', burst: 20, rate: 0, speedMin: 0.8, speedMax: 1.2, lifetimeMin: 0.4, lifetimeMax: 0.6 }); k.wire('mg.event', 'kid.trigger');
     k.add('InitialProperties', 'kip', { sizeMin: 0.06, sizeMax: 0.1 }); k.wire('kid.particles', 'kip.particles');
     k.mat('km', { tint: col('#FF7FD0') }); k.add('BillboardRenderer', 'kbb'); k.wire('kip.particles', 'kbb.particles'); k.wire('km.material', 'kbb.material'); k.out('kbb');
   } },

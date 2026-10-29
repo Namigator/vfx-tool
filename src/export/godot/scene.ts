@@ -293,6 +293,8 @@ void process() {
   return attractor ? `${node.join('\n')}\n\n${attractor}` : node.join('\n');
 }
 const attractorCount = new WeakMap<Resources, number>();
+/** Above this many positioned bursts an emitter stays one node (a steady stream from its origin) to bound the scene size. */
+const MAX_PLACED_BURSTS = 16;
 
 /**
  * Preview light intensity (candela) -> Godot OmniLight3D light_energy. The editor's three.js PointLight is physical:
@@ -318,7 +320,18 @@ export function godotSceneFrom(e: UnrealEffect, resRoot = `res://vfx_studio/${e.
   const res = new Resources(), tracks: Track[] = [], report: GodotReportItem[] = [];
   const duration = e.durationTicks;
   const nodes = [`[node name=${str(nodeName(e.name))} type="Node3D"]`];
-  for (const em of e.emitters) nodes.push(emitterNode(res, em, `${resRoot}/Textures`, duration, tracks, report));
+  for (const em of e.emitters) {
+    // Bursts born at their own positions (children where a parent particle died): one one-shot node per burst at that
+    // point. As a single emitter they streamed from its origin, the floor (feature grid sub-emitter row, 2026-10-29).
+    const placed = em.bursts.filter(b => b.count > 0);
+    if (placed.some(b => b.positionCm) && placed.length <= MAX_PLACED_BURSTS) {
+      placed.forEach((b, i) => nodes.push(emitterNode(res, { ...em, name: `${em.name}_b${i + 1}`, position: b.positionCm ?? em.position, rateOverTime: [],
+        bursts: [{ tick: b.tick, count: b.count }], sourceTrack: undefined }, `${resRoot}/Textures`, duration, tracks, report)));
+      report.push({ level: 'approximated', item: em.name, message: `${placed.length} bursts at their own positions become ${placed.length} one-shot emitters.` });
+      continue;
+    }
+    nodes.push(emitterNode(res, em, `${resRoot}/Textures`, duration, tracks, report));
+  }
   for (const trail of e.trails ?? []) nodes.push(emitterNode(res, trail.emitter, `${resRoot}/Textures`, duration, tracks, report, trail));
   // A light on several paths (Nova's 8 shards) is one IR light per path under the same name: same-named sibling nodes
   // left the animation driving only one of them (Nova's floor light 0.34x, 2026-10-19). Like emitters: <name>_path<k>.

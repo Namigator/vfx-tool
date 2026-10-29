@@ -204,3 +204,15 @@ test('Godot exports attraction (attractor on its own layer) and ground collision
   assert.match(g.tscn, /type="GPUParticlesCollisionBox3D"[\s\S]*?position = Vector3\(0, -1.5, 0\)/);
   assert.ok(!g.report.some(x => x.level === 'dropped' && /Attraction|collision/i.test(x.message)));
 });
+
+test('Godot: bursts at their own positions become one-shot nodes there (children streamed from the floor)', async () => {
+  const { godotSceneFrom } = await import('../src/export/godot/scene.ts');
+  const ir = irOf('flamethrower');
+  ir.emitters = [{ ...ir.emitters[0], name: 'kids', rateOverTime: [[10, 30], [40, 0]], bursts: [{ tick: 10, count: 5, positionCm: [100, 0, 200] }, { tick: 20, count: 5, positionCm: [200, 0, 250] }] }];
+  const g = godotSceneFrom(ir);
+  const node = (n: string) => g.tscn.split(`[node name="${n}"`)[1]?.split('\n[')[0] ?? '';
+  assert.match(node('kids_b1'), /one_shot = true/);
+  assert.match(node('kids_b1'), /position = Vector3\(1(\.0)?, 2(\.0)?, -?0(\.0)?\)/);
+  assert.match(node('kids_b2'), /position = Vector3\(2(\.0)?, 2\.5, -?0(\.0)?\)/);
+  assert.doesNotMatch(g.tscn, /\[node name="kids" /);
+});
