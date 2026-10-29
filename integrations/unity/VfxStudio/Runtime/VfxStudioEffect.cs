@@ -224,7 +224,9 @@ namespace VfxStudio
             float a = Mathf.Clamp01(path.alpha), fade = Mathf.Clamp(layer.endFade, 0f, 0.5f);
             var g = new Gradient();
             _ck[0] = new GradientColorKey(c, 0f); _ck[1] = new GradientColorKey(c, 1f);
-            g.SetKeys(_ck, fade > 0.001f
+            g.SetKeys(_ck, fade > 0.001f && layer.keepHead
+                ? new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(a, fade), new GradientAlphaKey(a, 1f) }
+                : fade > 0.001f
                 ? new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(a, fade), new GradientAlphaKey(a, 1f - fade), new GradientAlphaKey(0f, 1f) }
                 : new[] { new GradientAlphaKey(a, 0f), new GradientAlphaKey(a, 1f) });
             lr.colorGradient = g;

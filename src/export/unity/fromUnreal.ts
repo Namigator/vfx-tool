@@ -1,6 +1,6 @@
 // Unity export: the engine-neutral IR (src/export/unreal/fromPlan.ts, also behind the Godot export) converted to
 // Unity units and axes (types.ts header): Unreal cm, (x, y=our z, z=our y) -> Unity m, (x, y, -z).
-import type { UeColorKey, UeEmitter, UeFloatKey, UeLight, UeRibbon, UnrealEffect, Vec3Width } from '../unreal/types.ts';
+import type { UeColorKey, UeEmitter, UeFloatKey, UeLight, UeParticleTrail, UeRibbon, UnrealEffect, Vec3Width } from '../unreal/types.ts';
 import type { UnityEffect, UnityEmitter, UnityLight, UnityReportItem, UnityRibbon } from './types.ts';
 
 const r4 = (x: number) => Math.round(x * 10000) / 10000;
@@ -43,9 +43,11 @@ function emitterFrom(e: UeEmitter, report: UnityReportItem[]): UnityEmitter {
     spinMinDeg: r4(e.spinDegMin), spinMaxDeg: r4(e.spinDegMax), angularVelocityMinDeg: r4(e.angularVelocityDegSMin), angularVelocityMaxDeg: r4(e.angularVelocityDegSMax),
     alignment: e.alignment === 'worldUpCameraFacing' ? 'worldUp' : e.alignment, stretchRatio: r4(e.stretchRatio), blend: e.blend, emission: r4(e.emission ?? 0),
     texture: e.textureFile ?? '',
-    flipColumns: e.flipbook?.columns ?? 1, flipRows: e.flipbook?.rows ?? 1, flipFps: e.flipbook?.fps ?? 0,
+    // Variants sheets (soft-glow: dot, ring, ...) are one static cell per particle, never animated (as Godot/Unreal):
+    // variantFrame = the editor's cell, -1 = random per particle. Blessing's halo animated from the dot cell instead.
+    flipColumns: e.flipbook?.columns ?? 1, flipRows: e.flipbook?.rows ?? 1, flipFps: e.flipbook?.variantFrame !== undefined ? 0 : e.flipbook?.fps ?? 0,
     flipLoop: e.flipbook?.loop ?? false, flipRandomStart: e.flipbook?.randomStartFrame ?? false,
-    flipStartFrame: e.flipbook?.startFrame ?? (e.flipbook?.randomStartFrame === false ? 0 : -1),
+    flipStartFrame: e.flipbook?.variantFrame ?? e.flipbook?.startFrame ?? (e.flipbook?.randomStartFrame === false ? 0 : -1),
     attachToSource: e.attachToSource === true,
     trackTicks: (e.sourceTrack ?? []).map(([t]) => t), trackPositions: (e.sourceTrack ?? []).flatMap(([, p]) => pos(p)),
   };
@@ -91,16 +93,71 @@ function ribbonFrom(b: UeRibbon): UnityRibbon {
   };
 }
 
+/** Linear interpolation of float keys at t (clamped to the end keys; 1 when there are none). */
+function keyAt(keys: UeFloatKey[], t: number): number {
+  if (!keys.length) return 1;
+  if (t <= keys[0].t) return keys[0].v;
+  for (let i = 1; i < keys.length; i++) if (t <= keys[i].t) { const a = keys[i - 1], b = keys[i]; return a.v + (b.v - a.v) * ((t - a.t) / Math.max(1e-6, b.t - a.t)); }
+  return keys[keys.length - 1].v;
+}
+
+/**
+ * A moving-head particle trail (Bolt/Needle/Orb streak, Summon/Nova strokes) baked into a ribbon layer, like the
+ * Unreal importer builds one ribbon per head: each tick the path is the head's track over the last lifetimeSec, oldest
+ * tail first, width = widthCm x widthOverTrail, the tail-only fade as endFade with keepHead. The head lives from its first
+ * burst for lifetimeSecMax; after it dies the remaining trail drains away. Trails without a track (many-particle
+ * spark/shed trails) return null.
+ */
+export function trailRibbonFrom(tr: UeParticleTrail, durationTicks: number): UnityRibbon | null {
+  const track = tr.emitter.sourceTrack ?? [];
+  if (track.length < 2) return null;
+  const at = (tick: number): number[] => {
+    if (tick <= track[0][0]) return pos(track[0][1]);
+    for (let i = 1; i < track.length; i++) if (tick <= track[i][0]) {
+      const [t0, a] = track[i - 1], [t1, b] = track[i], f = (tick - t0) / Math.max(1, t1 - t0);
+      return pos([0, 1, 2].map(k => a[k] + (b[k] - a[k]) * f));
+    }
+    return pos(track[track.length - 1][1]);
+  };
+  const born = tr.emitter.bursts.length ? Math.min(...tr.emitter.bursts.map(b => b.tick)) : track[0][0];
+  const dies = tr.emitter.bursts.length ? born + Math.round(tr.emitter.lifetimeSecMax * 60) : durationTicks;
+  const history = Math.max(1, Math.round(tr.lifetimeSec * 60));
+  const step = Math.max(1, Math.ceil(history / Math.max(2, tr.maxPoints)));
+  const peak = Math.max(...tr.opacityOverTrail.map(k => k.v), 0) || 1;
+  const frames: UnityRibbon['frames'] = [];
+  const r3 = (x: number) => Math.round(x * 1000) / 1000;
+  for (let tick = born; tick <= Math.min(durationTicks, dies + history + 1); tick++) {
+    const from = Math.max(born, tick - history), to = Math.min(tick, dies);
+    const pts: number[][] = [];
+    for (let k = from; k <= to; k += step) pts.push(at(k));
+    if (to > from && (to - from) % step) pts.push(at(to));
+    const dedup = pts.filter((p, i) => i === 0 || Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1], p[2] - pts[i - 1][2]) > 1e-4);
+    const n = dedup.length;
+    const points = n < 2 ? [] : dedup.flatMap((p, i) => [r3(p[0]), r3(p[1]), r3(p[2]), r3(tr.widthCm / 100 * keyAt(tr.widthOverTrail, i / (n - 1)))]);
+    frames.push({ tick, paths: points.length ? [{ alpha: r4(Math.min(1, peak)), cell: 0, points }] : [] });
+  }
+  const c = tr.colorOverTrail[tr.colorOverTrail.length - 1] ?? { r: 1, g: 1, b: 1 };
+  return {
+    name: tr.name, color: [r4(c.r), r4(c.g), r4(c.b)], additive: tr.blend === 'additive', emission: r4(tr.emission ?? 0), texture: tr.textureFile ?? '',
+    endFade: r4(Math.min(0.5, tr.endFade)), keepHead: true, grid: [1, 1], cell: 0, tile: 0, scroll: [0, 0], softness: tr.textureFile ? 0 : 1, frames,
+  };
+}
+
 export function unityEffectFrom(e: UnrealEffect): { effect: UnityEffect; report: UnityReportItem[] } {
   const report: UnityReportItem[] = [];
+  const trailRibbons: UnityRibbon[] = [];
+  for (const t of e.trails ?? []) {
+    const r = trailRibbonFrom(t, e.durationTicks);
+    if (r) trailRibbons.push(r);
+    else report.push({ level: 'dropped', item: t.name, message: 'Trail left by many particles (sparks/shed) is not exported to Unity yet: only trails behind a moving head are baked (as beam layers).' });
+  }
   const effect: UnityEffect = {
     format: 'vfx-studio-unity', version: 1, name: e.name, durationTicks: e.durationTicks, ticksPerSecond: 60, sourceHeight: r4((e.sourceHeightCm ?? 0) / 100),
-    emitters: e.emitters.map(x => emitterFrom(x, report)), lights: e.lights.map(lightFrom), ribbons: e.ribbons.map(ribbonFrom), textures: e.textures,
+    emitters: e.emitters.map(x => emitterFrom(x, report)), lights: e.lights.map(lightFrom), ribbons: [...e.ribbons.map(ribbonFrom), ...trailRibbons], textures: e.textures,
   };
   // The shared IR's own notes that still apply (meshes, flashes, keyframes, multi-path...), minus Unreal-specific ones.
   for (const r of e.report) if (!/Niagara|Unreal|importer|UE 5|Shape Location|template/i.test(r.message)) report.push(r);
-  // Per-particle trails (Bolt/Needle/Orb streaks, Summon/Nova strokes) have no Unity importer path yet: say so.
-  for (const t of e.trails ?? []) report.push({ level: 'dropped', item: t.name, message: 'Particle trail is not exported to Unity yet (no Trails module support in the importer); the streak/stroke it draws in the editor is missing.' });
+  if (trailRibbons.length) report.push({ level: 'approximated', item: 'trails', message: `${trailRibbons.length} particle trail(s) behind moving heads are baked as beam layers (head track over the trail history, width/fade like the editor; head stays full, tail fades).` });
   if (e.ribbons.length) report.push({ level: 'info', item: 'ribbons', message: `${e.ribbons.length} beam/ribbon layer(s) are drawn by LineRenderers from baked per-frame geometry (camera-facing; one sheet cell per path, tiled or stretched, UV scroll and soft edges like the editor; no distortion).` });
   report.push({ level: 'info', item: 'scale', message: 'Unity uses metres and +Y up; Z is mirrored (Unity is left-handed). The prefab origin is the Source anchor. Light intensity = preview intensity x 0.1 (built-in pipeline scale).' });
   return { effect, report };

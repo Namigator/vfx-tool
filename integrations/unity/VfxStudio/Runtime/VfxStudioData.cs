@@ -67,6 +67,7 @@ namespace VfxStudio
         public float tile;
         public float[] scroll;
         public float softness;
+        public bool keepHead; // baked particle trails: only the start (old tail) fades, the head stays full
         public VfxRibbonFrame[] frames;
         public int Columns => grid != null && grid.Length > 0 ? Mathf.Max(1, grid[0]) : 1;
         public int Rows => grid != null && grid.Length > 1 ? Mathf.Max(1, grid[1]) : 1;

@@ -132,6 +132,8 @@ export type UnityRibbon = {
   tile: number;
   scroll: number[];
   softness: number;
+  /** Trails baked as ribbons: only the start (old tail) fades, the last point (the head) stays full. Absent = both ends. */
+  keepHead?: boolean;
   frames: UnityRibbonFrame[];
 };
 

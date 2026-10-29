@@ -102,3 +102,32 @@ test('Unity: particle trails are reported as dropped, not lost silently', () => 
   const { report } = unityEffectFrom(ir);
   assert.ok(report.some(x => x.level === 'dropped' && x.item === 'fake_trail'));
 });
+
+test('Unity: variants sheets draw the static editor cell (no flipping)', () => {
+  const ir = irOf('flamethrower');
+  ir.emitters[0] = { ...ir.emitters[0], flipbook: { columns: 2, rows: 2, fps: 4.4, loop: false, randomStartFrame: false, variantFrame: 3 } };
+  ir.emitters[1] = { ...ir.emitters[1], flipbook: { columns: 2, rows: 2, fps: 4.4, loop: false, randomStartFrame: true, variantFrame: -1 } };
+  const { effect } = unityEffectFrom(ir);
+  assert.deepEqual([effect.emitters[0].flipFps, effect.emitters[0].flipStartFrame], [0, 3]);
+  assert.deepEqual([effect.emitters[1].flipFps, effect.emitters[1].flipStartFrame], [0, -1]);
+});
+
+test('Unity: a moving-head trail is baked as a ribbon (tail first, head last and full, drains after the head dies)', () => {
+  const ir = irOf('flamethrower');
+  const track: [number, [number, number, number]][] = Array.from({ length: 11 }, (_, i) => [10 + i, [i * 100, 0, 0]]);
+  ir.trails = [{ name: 'head_trail', emitter: { ...ir.emitters[0], sourceTrack: track, bursts: [{ tick: 10, count: 1 }], lifetimeSecMax: 10 / 60 },
+    lifetimeSec: 5 / 60, maxPoints: 16, widthCm: 20, endFade: 0.3,
+    widthOverTrail: [{ t: 0, v: 0 }, { t: 1, v: 1 }], colorOverTrail: [{ t: 0, r: 1, g: 0, b: 1, a: 1 }, { t: 1, r: 1, g: 0, b: 1, a: 1 }],
+    opacityOverTrail: [{ t: 0, v: 0 }, { t: 1, v: 0.8 }], blend: 'additive' }];
+  const { effect } = unityEffectFrom(ir);
+  const r = effect.ribbons.find(x => x.name === 'head_trail');
+  assert.ok(r);
+  assert.equal(r.keepHead, true);
+  assert.deepEqual(r.color, [1, 0, 1]);
+  const at = (tick: number) => r.frames.find(f => f.tick === tick)!.paths[0]?.points ?? [];
+  const p = at(18); // history 5 ticks: track ticks 13..18 -> x 3..8 m, tail first
+  assert.deepEqual([p[0], p.at(-4)], [3, 8]);
+  assert.equal(p.at(-1), 0.2); // head at full width
+  assert.equal(p[3], 0); // tail tapers
+  assert.equal(r.frames.find(f => f.tick === 20 + 5 + 1)!.paths.length, 0); // dies at 20, drained 5 ticks later
+});
