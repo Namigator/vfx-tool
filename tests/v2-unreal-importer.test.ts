@@ -148,3 +148,14 @@ test('Unreal moving lights use the same position track as sprite riders and expl
   assert.match(light, /TryGetArrayField\(TEXT\("sourceTrack"\), SourceTrack\)/);
   assert.match(light, /ApplyPositionTrack\(Data, \*SourceTrack\)/);
 });
+
+test('Unreal package: bursts at their own positions become one-burst emitters there (children streamed from the floor)', async () => {
+  const { placedBurstsSplit } = await import('../src/export/unreal/package.ts');
+  const base = { name: 'kids', suggestedTemplate: 'Fountain', position: [0, 0, 0], rateOverTime: [[10, 30], [40, 0]],
+    bursts: [{ tick: 10, count: 5, positionCm: [100, 0, 200] }, { tick: 20, count: 5, positionCm: [200, 0, 250] }] };
+  const e = placedBurstsSplit({ name: 'x', durationTicks: 60, ticksPerSecond: 60, emitters: [base, { ...base, name: 'plain', bursts: [{ tick: 0, count: 3 }] }], ribbons: [], lights: [], textures: [], report: [] } as never);
+  assert.deepEqual(e.emitters.map(x => x.name), ['kids_b1', 'kids_b2', 'plain']);
+  assert.deepEqual(e.emitters[1].position, [200, 0, 250]);
+  assert.deepEqual(e.emitters[1].rateOverTime, []);
+  assert.equal(e.emitters[0].suggestedTemplate, 'SimpleSpriteBurst');
+});

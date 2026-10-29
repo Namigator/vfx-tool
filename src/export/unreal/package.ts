@@ -41,10 +41,26 @@ export function readmeMarkdown(e: UnrealEffect): string {
   ].join('\n') + '\n';
 }
 
+/** Above this many positioned bursts an emitter stays one stream (bounds the Niagara system's emitter count). */
+export const UE_MAX_PLACED_BURSTS = 16;
+
+/** The importer spawns from each emitter's own position, so bursts born at their own positions (children where a parent
+ *  died) became a steady stream from the emitter origin, the floor. Up to UE_MAX_PLACED_BURSTS of them each become a
+ *  one-burst emitter at that position (feature grid sub-emitter row, 2026-10-30; Godot does the same). */
+export function placedBurstsSplit(e: UnrealEffect): UnrealEffect {
+  const emitters = e.emitters.flatMap(em => {
+    const placed = em.bursts.filter(b => b.count > 0);
+    if (!placed.some(b => b.positionCm) || placed.length > UE_MAX_PLACED_BURSTS) return [em];
+    return placed.map((b, i) => ({ ...em, name: `${em.name}_b${i + 1}`, suggestedTemplate: 'SimpleSpriteBurst' as const, position: b.positionCm ?? em.position,
+      rateOverTime: [], bursts: [{ tick: b.tick, count: b.count }], sourceTrack: undefined }));
+  });
+  return emitters.length === e.emitters.length ? e : { ...e, emitters };
+}
+
 /** Assembles the package files; `textureBytes` maps sheet filename -> PNG bytes (caller resolves from disk/fetch). */
 export function buildUnrealPackage(e: UnrealEffect, textureBytes: Map<string, Uint8Array>): UnrealPackageFile[] {
   const files: UnrealPackageFile[] = [
-    { path: 'effect.json', bytes: JSON.stringify(e, null, 2) },
+    { path: 'effect.json', bytes: JSON.stringify(placedBurstsSplit(e), null, 2) },
     { path: 'README.md', bytes: readmeMarkdown(e) },
     { path: 'report.md', bytes: reportMarkdown(e) },
   ];
