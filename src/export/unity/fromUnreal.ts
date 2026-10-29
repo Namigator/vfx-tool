@@ -2,6 +2,7 @@
 // Unity units and axes (types.ts header): Unreal cm, (x, y=our z, z=our y) -> Unity m, (x, y, -z).
 import type { UeColorKey, UeEmitter, UeFloatKey, UeLight, UeParticleTrail, UeRibbon, UnrealEffect, Vec3Width } from '../unreal/types.ts';
 import type { UnityEffect, UnityEmitter, UnityLight, UnityReportItem, UnityRibbon } from './types.ts';
+import { builtinMeshObj, isBuiltinMesh } from '../meshObj.ts';
 
 const r4 = (x: number) => Math.round(x * 10000) / 10000;
 /** Unreal cm (x, our z, our y) -> Unity m (x, y, -z). */
@@ -149,7 +150,8 @@ export function trailRibbonFrom(tr: UeParticleTrail, durationTicks: number): Uni
   };
 }
 
-export function unityEffectFrom(e: UnrealEffect): { effect: UnityEffect; report: UnityReportItem[] } {
+/** effect.unity.json plus the files that ship next to it (Meshes/*.obj); textures are copied from the sprite library by the caller. */
+export function unityEffectFrom(e: UnrealEffect): { effect: UnityEffect; report: UnityReportItem[]; files: { path: string; text: string }[] } {
   const report: UnityReportItem[] = [];
   const trailRibbons: UnityRibbon[] = [], trailEmitters: UnityEmitter[] = [];
   for (const t of e.trails ?? []) {
@@ -167,13 +169,24 @@ export function unityEffectFrom(e: UnrealEffect): { effect: UnityEffect; report:
     } });
   }
   if (trailEmitters.length) report.push({ level: 'approximated', item: 'trails', message: `${trailEmitters.length} trail(s) left by many particles use Unity's per-particle Trails module (trail length as a share of the particle's life).` });
+  // Mesh particles: the built-in mesh as OBJ under Meshes/, drawn by the Particle System in Mesh render mode.
+  const meshEmitters: UnityEmitter[] = [], meshFiles = new Set<string>();
+  for (const me of e.meshEmitters ?? []) {
+    if (!isBuiltinMesh(me.mesh)) { report.push({ level: 'dropped', item: me.emitter.name, message: `Mesh "${me.mesh}" is not a built-in mesh.` }); continue; }
+    const em = emitterFrom(me.emitter, report), file = `${me.mesh}.obj`;
+    meshFiles.add(file);
+    meshEmitters.push({ ...em, sizeMin: r4(em.sizeMin * me.scale), sizeMax: r4(em.sizeMax * me.scale), texture: '', flipColumns: 1, flipRows: 1, flipFps: 0,
+      mesh: { file, scaleY: r4(me.scaleY), orientation: me.orientation, direction: me.direction ? dir(me.direction) : [0, 1, 0], tilt: r4(me.tilt), lit: me.lit } });
+  }
+  if (meshEmitters.length) report.push({ level: 'approximated', item: 'meshes', message: `${meshEmitters.length} mesh-particle layer(s) use the Particle System's Mesh render mode with the built-in mesh (Meshes/*.obj); tumbling uses random 3D start rotations.` });
   const effect: UnityEffect = {
     format: 'vfx-studio-unity', version: 1, name: e.name, durationTicks: e.durationTicks, ticksPerSecond: 60, sourceHeight: r4((e.sourceHeightCm ?? 0) / 100),
-    emitters: [...e.emitters.map(x => emitterFrom(x, report)), ...trailEmitters], lights: e.lights.map(lightFrom), ribbons: [...e.ribbons.map(ribbonFrom), ...trailRibbons], textures: e.textures,
+    emitters: [...e.emitters.map(x => emitterFrom(x, report)), ...trailEmitters, ...meshEmitters], lights: e.lights.map(lightFrom), ribbons: [...e.ribbons.map(ribbonFrom), ...trailRibbons], textures: e.textures, meshes: [...meshFiles],
   };
   // The shared IR's own notes that still apply (meshes, flashes, keyframes, multi-path...), minus Unreal-specific ones.
   const ueOnly = /Niagara|Unreal|importer|UE 5|Shape Location|template/i;
   for (const r of e.report) {
+    if (r.item === 'meshes' && meshEmitters.length) continue; // drawn here (the IR's drop is about the Unreal importer)
     if (!ueOnly.test(r.message)) report.push(r);
     // A drop is never hidden just because its wording names Unreal (meshes vanished silently; feature grid 2026-10-29).
     else if (r.level === 'dropped') { const first = r.message.replace(/;.*$/s, '.'); report.push({ ...r, message: ueOnly.test(first) ? `${r.item} is not exported to Unity.` : first }); }
@@ -181,7 +194,7 @@ export function unityEffectFrom(e: UnrealEffect): { effect: UnityEffect; report:
   if (trailRibbons.length) report.push({ level: 'approximated', item: 'trails', message: `${trailRibbons.length} particle trail(s) behind moving heads are baked as beam layers (head track over the trail history, width/fade like the editor; head stays full, tail fades).` });
   if (e.ribbons.length) report.push({ level: 'info', item: 'ribbons', message: `${e.ribbons.length} beam/ribbon layer(s) are drawn by LineRenderers from baked per-frame geometry (camera-facing; one sheet cell per path, tiled or stretched, UV scroll and soft edges like the editor; no distortion).` });
   report.push({ level: 'info', item: 'scale', message: 'Unity uses metres and +Y up; Z is mirrored (Unity is left-handed). The prefab origin is the Source anchor. Light intensity = preview intensity x 0.1 (built-in pipeline scale).' });
-  return { effect, report };
+  return { effect, report, files: [...meshFiles].map(f => ({ path: `Meshes/${f}`, text: builtinMeshObj(f.replace(/\.obj$/, '') as Parameters<typeof builtinMeshObj>[0]) })) };
 }
 
 export function unityReportMarkdown(name: string, report: UnityReportItem[]): string {

@@ -11,12 +11,13 @@ export async function exportUnityZip(doc: EffectDocumentV2): Promise<UnityExport
   ]);
   const r = unrealEffectFrom(doc);
   if (!r.ok) throw new Error(`Unity export failed: ${r.message}`);
-  const { effect, report } = unityEffectFrom(r.value), name = effect.name;
+  const { effect, report, files: extra } = unityEffectFrom(r.value), name = effect.name;
   const enc = new TextEncoder(), files: Record<string, Uint8Array> = {
     [`${name}/effect.unity.json`]: enc.encode(JSON.stringify(effect)),
     [`${name}/README.md`]: enc.encode(unityReadme(name)),
     [`${name}/report.md`]: enc.encode(unityReportMarkdown(name, report)),
   };
+  for (const f of extra) files[`${name}/${f.path}`] = enc.encode(f.text);
   let missing = 0;
   for (const t of effect.textures) {
     const res = await fetch(spriteUrl(t)).catch(() => null);

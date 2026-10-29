@@ -16,7 +16,7 @@ const scene = (component: string) => {
 test('Godot: flamethrower becomes GPUParticles3D emitters, an autoplaying animation, textures under res://vfx_studio', () => {
   const { ir, g } = scene('flamethrower');
   assert.match(g.tscn, /^\[gd_scene load_steps=\d+ format=3\]/);
-  assert.equal((g.tscn.match(/type="GPUParticles3D"/g) ?? []).length, ir.emitters.length + (ir.trails?.length ?? 0));
+  assert.equal((g.tscn.match(/type="GPUParticles3D"/g) ?? []).length, ir.emitters.length + (ir.trails?.length ?? 0) + (ir.meshEmitters?.length ?? 0));
   assert.equal((g.tscn.match(/type="OmniLight3D"/g) ?? []).length, ir.lights.length);
   assert.match(g.tscn, /\[node name="AnimationPlayer" type="AnimationPlayer" parent="\."\][\s\S]*autoplay = &"play"/);
   for (const t of g.textures) assert.ok(g.tscn.includes(`path="res://vfx_studio/flamethrower/Textures/${t}"`), t);

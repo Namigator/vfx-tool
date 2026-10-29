@@ -30,10 +30,11 @@ for (const c of CASES) {
   rmSync(pkg, { recursive: true, force: true }); mkdirSync(join(pkg, 'Textures'), { recursive: true });
   const r = unrealEffectFrom(JSON.parse(readFileSync(docFile, 'utf8')));
   if (!r.ok) { writeFileSync(join(pkg, 'report.json'), JSON.stringify({ exportError: r.message })); console.log(`EXPORT FAIL ${c.id}: ${r.message}`); continue; }
-  const { effect, report } = unityEffectFrom(r.value);
+  const { effect, report, files } = unityEffectFrom(r.value);
   writeFileSync(join(pkg, 'effect.unity.json'), JSON.stringify(effect));
   writeFileSync(join(pkg, 'report.json'), JSON.stringify({ report, counts: { emitters: effect.emitters.length, ribbons: effect.ribbons.length, lights: effect.lights.length } }));
   for (const t of effect.textures) copyFileSync(join(ROOT, 'assets', 'sprites', t), join(pkg, 'Textures', t));
+  for (const f of files) { mkdirSync(join(pkg, f.path, '..'), { recursive: true }); writeFileSync(join(pkg, f.path), f.text); }
   const tick = c.tick ?? DEFAULT_TICK;
   names[c.id] = { file: `${effect.name.replace(/[^A-Za-z0-9_-]/g, '_')}-t${tick}.png` };
   lines.push(`${pkg.replace(/\\/g, '/')}|${tick}|${cam}`);

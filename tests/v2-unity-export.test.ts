@@ -152,11 +152,11 @@ test('box emitters keep their box (they fell through to a point; feature grid 20
 
 test('Unity: drops worded for Unreal are still reported (mesh layers vanished silently; feature grid 2026-10-29)', () => {
   const ir = irOf('flamethrower');
-  ir.report = [...ir.report, { level: 'dropped', item: 'meshes', message: '2 mesh-particle layer(s) are not exported; see report for manual Niagara Mesh Renderer setup.' }];
+  ir.report = [...ir.report, { level: 'dropped', item: 'decals', message: '2 decal layer(s) are not exported; see report for manual Niagara Mesh Renderer setup.' }];
   const { report } = unityEffectFrom(ir);
-  const m = report.find(x => x.item === 'meshes');
+  const m = report.find(x => x.item === 'decals');
   assert.ok(m && m.level === 'dropped');
-  assert.equal(m.message, '2 mesh-particle layer(s) are not exported.');
+  assert.equal(m.message, '2 decal layer(s) are not exported.');
 });
 
 test('flat (world-axis) quads stay flat: Unity Horizontal Billboard, Godot Y-facing quad (they stood upright; feature grid 2026-10-29)', async () => {
@@ -215,4 +215,23 @@ test('Godot: bursts at their own positions become one-shot nodes there (children
   assert.match(node('kids_b1'), /position = Vector3\(1(\.0)?, 2(\.0)?, -?0(\.0)?\)/);
   assert.match(node('kids_b2'), /position = Vector3\(2(\.0)?, 2\.5, -?0(\.0)?\)/);
   assert.doesNotMatch(g.tscn, /\[node name="kids" /);
+});
+
+test('mesh particles: the IR carries them, Unity and Godot draw the built-in mesh from Meshes/*.obj (they were dropped)', async () => {
+  const { godotSceneFrom } = await import('../src/export/godot/scene.ts');
+  const r = unrealEffectFrom(JSON.parse(readFileSync('tests/fixtures/feature-mesh.json', 'utf8')));
+  assert.ok(r.ok);
+  const me = r.value.meshEmitters?.[0];
+  assert.ok(me && me.mesh === 'rock-a' && me.orientation === 'tumble' && me.lit);
+  assert.ok(r.value.report.some(x => x.item === 'meshes' && x.level === 'dropped' && /Unreal importer/.test(x.message)), 'still dropped for Unreal');
+  const u = unityEffectFrom(r.value);
+  const um = u.effect.emitters.find(e => e.mesh);
+  assert.equal(um?.mesh?.file, 'rock-a.obj');
+  assert.deepEqual(u.effect.meshes, ['rock-a.obj']);
+  assert.match(u.files[0].text, /^# VFX Studio built-in mesh "rock-a"[\s\S]*\nv [\s\S]*\nvn [\s\S]*\nf 1\/\/1 2\/\/2 3\/\/3/);
+  assert.ok(!u.report.some(x => x.item === 'meshes' && x.level === 'dropped'));
+  const g = godotSceneFrom(r.value);
+  assert.ok(g.files.some(f => f.path === 'Meshes/rock-a.obj'));
+  assert.match(g.tscn, /path="res:\/\/vfx_studio\/[^"]*\/Meshes\/rock-a\.obj"/);
+  assert.match(g.tscn, /material_override = SubResource/);
 });

@@ -169,6 +169,19 @@ export type UeParticleTrail = {
   textureFile?: string;
 };
 
+/** Mesh particles (MeshRenderer / PropMesh): a built-in mesh per particle. Consumed by Unity and Godot; the Unreal importer
+ *  does not build mesh renderers yet (reported dropped there). `emitter` holds spawn/motion/size/colour as for sprites. */
+export type UeMeshEmitter = {
+  emitter: UeEmitter;
+  /** Built-in mesh id (src/render/builtinMeshes.ts); exporters ship it as Meshes/<mesh>.obj (src/export/meshObj.ts). */
+  mesh: string;
+  /** Instance size = particle size x scale; scaleY stretches the height. */
+  scale: number; scaleY: number;
+  /** tumble = random axis + spin; velocity = +Y along travel; upright = +Y up, random yaw, lean up to `tilt` rad; fixed = +Y along `direction` (Unreal space). */
+  orientation: 'tumble' | 'velocity' | 'upright' | 'fixed'; direction?: Vec3; tilt: number;
+  lit: boolean;
+};
+
 export type UeLight = {
   name: string;
   color: [number, number, number];
@@ -189,6 +202,8 @@ export type UnrealEffect = {
   ribbons: UeRibbon[];
   /** Absent for effects without particle trails, preserving existing serialized IR. */
   trails?: UeParticleTrail[];
+  /** Absent for effects without mesh particles. */
+  meshEmitters?: UeMeshEmitter[];
   lights: UeLight[];
   /** Effect origin in world space isn't needed here (the package is authored at the origin; the importer places the actor). */
   textures: string[];

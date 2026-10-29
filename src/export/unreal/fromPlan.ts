@@ -19,7 +19,7 @@ import { settledColor } from '../../graph/pathColor.ts';
 import {
   CM_PER_METER, toUe, toUeDir,
   type UeColorKey, type UeEmitter, type UeFloatKey, type UeFlipbook, type UeLight, type UeReportItem, type UeRibbon,
-  type UeSpawnShape, type UeStepTrack, type UeParticleTrail, type UnrealEffect, type Vec3, type Vec3Width,
+  type UeSpawnShape, type UeStepTrack, type UeParticleTrail, type UeMeshEmitter, type UnrealEffect, type Vec3, type Vec3Width,
 } from './types.ts';
 
 const r3 = (x: number) => Math.round(x * 1000) / 1000;
@@ -410,7 +410,26 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
     });
   }
   if (plan.value.trails.length) report.push({ level: 'approximated', item: 'trails', message: `${plan.value.trails.length} trail layer(s) exported as particle trails: the importer builds one Niagara ribbon per moving head (sourceTrack); trails left by many particles (spark/shed trails) are skipped (one ribbon per particle is not supported yet).` });
-  if (plan.value.meshes.length) report.push({ level: 'dropped', item: 'meshes', message: `${plan.value.meshes.length} mesh-particle layer(s) are not exported; see report for manual Niagara Mesh Renderer setup (out of scope this pass — "meshes -> report item unless cheap" per spec).` });
+  // Mesh particles: spawn/motion/size/colour through the sprite path (a neutral layer), plus the mesh and its orientation.
+  // Unity and Godot draw them (built-in meshes shipped as OBJ); imported GLB meshes are not exported (feature grid 2026-10-29).
+  const meshEmitters: UeMeshEmitter[] = [];
+  for (const m of plan.value.meshes) {
+    const d = systems.get(m.systemId);
+    if (!d) continue;
+    if (m.meshAsset) { report.push({ level: 'dropped', item: m.nodeId, message: 'An imported mesh (GLB) is not exported; only the built-in meshes are.' }); continue; }
+    const neutral: ParticlePreviewLayer = {
+      nodeId: m.nodeId, systemId: m.systemId, color: m.color, opacity: m.opacity, emission: m.emission, blend: m.blend, alphaCutoff: 0.5,
+      renderOrderOffset: 0, visualOrder: 0, alignment: 'camera', worldAxis: [0, 1, 0], stretchRatio: 1, pivot: 0.5,
+      sizeOverLife: m.sizeOverLife, colorOverLife: m.colorOverLife,
+      opacityOverLife: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 1 }, { x: 1, y: 1 }] },
+    };
+    const emitter = emitterFrom(neutral, d, origin, plan.value.durationTicks, unique(m.nodeId), report);
+    delete emitter.textureFile; delete emitter.flipbook;
+    if (m.blend !== 'additive' && m.opacity >= 1) emitter.blend = 'opaque';
+    meshEmitters.push({ emitter, mesh: m.mesh, scale: r3(m.scale), scaleY: r3(m.scaleY ?? 1), orientation: m.orientation, tilt: r3(m.tilt ?? 0.2), lit: m.lit,
+      ...(m.orientation === 'fixed' ? { direction: toUeDir(m.direction ?? [0, 1, 0]) } : {}) });
+  }
+  if (meshEmitters.length) report.push({ level: 'dropped', item: 'meshes', message: `${meshEmitters.length} mesh-particle layer(s) are not built by the Unreal importer yet (add a Niagara Mesh Renderer by hand); Unity and Godot exports draw them.` });
   if (plan.value.presentation.flashes.length) report.push({ level: 'dropped', item: 'presentation', message: 'Screen flashes are not exported (add a post-process/camera-shake Blueprint on impact if needed).' });
   if (plan.value.presentation.impulses.length) report.push({ level: 'dropped', item: 'presentation', message: 'Camera shake is not exported (use a UE Camera Shake asset triggered on impact if needed).' });
   const lights = plan.value.lights.map(l => {
@@ -424,6 +443,6 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
   report.push({ level: 'info', item: 'scale', message: `1 m = ${CM_PER_METER} cm. Axis mapping: ue.x=src.x*100, ue.y=src.z*100, ue.z=src.y*100 (our +Y up -> Unreal +Z up). The NiagaraSystem's origin is the Source anchor: place or attach the actor at the caster / nozzle.` });
   return { ok: true, value: {
     name: safeName(doc.name || 'Effect'), durationTicks: plan.value.durationTicks, ticksPerSecond: 60,
-    emitters, ribbons, ...(trails.length ? { trails } : {}), lights, textures, report, sourceHeightCm: r3(origin[1] * CM_PER_METER),
+    emitters, ribbons, ...(trails.length ? { trails } : {}), ...(meshEmitters.length ? { meshEmitters } : {}), lights, textures, report, sourceHeightCm: r3(origin[1] * CM_PER_METER),
   } };
 }

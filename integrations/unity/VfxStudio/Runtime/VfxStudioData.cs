@@ -37,6 +37,18 @@ namespace VfxStudio
         public int[] trackTicks; public float[] trackPositions;
         public VfxTrailData trail; // per-particle trails (sparks); JsonUtility fills an empty one when absent: lifetime 0 = none
         public bool HasTrail => trail != null && trail.lifetime > 0f;
+        public VfxMeshData mesh; // mesh particles; empty file = billboards
+        public bool HasMesh => mesh != null && !string.IsNullOrEmpty(mesh.file);
+    }
+
+    /// <summary>Mesh particles: Meshes/&lt;file&gt; per particle. orientation: tumble | velocity | upright | fixed (+Y along direction).</summary>
+    [Serializable]
+    public class VfxMeshData
+    {
+        public string file, orientation;
+        public float scaleY, tilt;
+        public float[] direction;
+        public bool lit;
     }
 
     /// <summary>Unity Trails module settings. Curves run from the head (0, the particle) to the oldest tail (1).</summary>
@@ -100,6 +112,7 @@ namespace VfxStudio
         public VfxLightData[] lights;
         public VfxRibbonData[] ribbons;
         public string[] textures;
+        public string[] meshes; // OBJ files under Meshes/
 
         public static VfxEffectData Parse(string json)
         {

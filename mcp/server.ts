@@ -634,12 +634,13 @@ ${md}`);
     const d = getDoc(docId);
     const r = unrealEffectFrom(d);
     if (!r.ok) return bad(r.message);
-    const { effect, report } = unityEffectFrom(r.value);
+    const { effect, report, files: extra } = unityEffectFrom(r.value);
     const outDir = safeProjectPath(path ?? `work/unity/${docId}`);
     mkdirSync(join(outDir, 'Textures'), { recursive: true });
     writeFileSync(join(outDir, 'effect.unity.json'), JSON.stringify(effect));
     writeFileSync(join(outDir, 'README.md'), unityReadme(effect.name));
     writeFileSync(join(outDir, 'report.md'), unityReportMarkdown(effect.name, report));
+    for (const f of extra) { mkdirSync(join(outDir, f.path, '..'), { recursive: true }); writeFileSync(join(outDir, f.path), f.text); }
     const missing: string[] = [];
     for (const t of effect.textures) {
       const f = join(root, 'assets', 'sprites', t);

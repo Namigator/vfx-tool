@@ -26,7 +26,7 @@ for (const c of CASES) {
   if (!r.ok) { writeFileSync(join(pkg, 'report.json'), JSON.stringify({ exportError: r.message })); console.log(`EXPORT FAIL ${c.id}`); continue; }
   const g = godotSceneFrom(r.value);
   // The IR's own drops (meshes, screen flash...) count for Godot too, unless worded for Unreal only.
-  const irDrops = r.value.report.filter(x => x.level === 'dropped').map(x => ({ ...x, message: x.message.replace(/;.*$/s, '.') }));
+  const irDrops = r.value.report.filter(x => x.level === 'dropped' && !(x.item === 'meshes' && r.value.meshEmitters?.length)).map(x => ({ ...x, message: x.message.replace(/;.*$/s, '.') }));
   writeFileSync(join(pkg, 'report.json'), JSON.stringify({ report: [...irDrops, ...g.report] }));
   names[c.id] = r.value.name;
   spec.push({ name: c.id, doc: `work/feature-grid/docs/${c.id}.json`, ticks: [c.tick ?? DEFAULT_TICK], camera: CAMERA });

@@ -123,7 +123,8 @@ namespace VfxStudio.EditorTools
                 var systems = new List<ParticleSystem>();
                 foreach (var e in d.emitters)
                 {
-                    var ps = BuildEmitter(root.transform, e, d, MaterialFor(e.texture, e.blend, e.emission, e.alignment == "velocity" ? e : null));
+                    var ps = BuildEmitter(root.transform, e, d, e.HasMesh ? MeshMaterial(folder, e) : MaterialFor(e.texture, e.blend, e.emission, e.alignment == "velocity" ? e : null));
+                    if (e.HasMesh) SetupMesh(ps, e, MeshFor(folder, e));
                     if (e.HasTrail)
                     {
                         // Trail strip: the sheet stretched along it, or (untextured) the editor's soft band across its width.
@@ -486,6 +487,81 @@ namespace VfxStudio.EditorTools
                 if (t.trailOnly) r.renderMode = ParticleSystemRenderMode.None;
             }
             return ps;
+        }
+
+        /// <summary>The OBJ under Meshes/, baked for this emitter: Y stretched by scaleY and, for velocity-aligned pieces, turned
+        /// so the editor's +Y (along travel) becomes Unity's +Z (Velocity alignment points the mesh's forward along travel).</summary>
+        static Mesh MeshFor(string folder, VfxEmitterData e)
+        {
+            var src = $"{folder}/Meshes/{e.mesh.file}";
+            AssetDatabase.ImportAsset(src, ImportAssetOptions.ForceSynchronousImport);
+            var baseMesh = AssetDatabase.LoadAllAssetsAtPath(src).OfType<Mesh>().FirstOrDefault();
+            if (!baseMesh) { Debug.LogWarning($"[VfxStudio] mesh {src} missing: {e.name} draws billboards"); return null; }
+            var m = UnityEngine.Object.Instantiate(baseMesh);
+            var turn = e.mesh.orientation == "velocity" ? Quaternion.Euler(90f, 0f, 0f) : Quaternion.identity;
+            var sy = e.mesh.scaleY > 0f ? e.mesh.scaleY : 1f;
+            m.vertices = m.vertices.Select(v => turn * new Vector3(v.x, v.y * sy, v.z)).ToArray();
+            m.normals = m.normals.Select(n => (turn * new Vector3(n.x, n.y / sy, n.z)).normalized).ToArray();
+            m.RecalculateBounds();
+            var path = $"{folder}/Meshes/{Safe(e.name)}_mesh.asset";
+            AssetDatabase.DeleteAsset(path); AssetDatabase.CreateAsset(m, path);
+            return m;
+        }
+
+        /// <summary>Particle-surface material: lit (Standard Surface) or unlit, colour from the particle (colour over life).</summary>
+        static Material MeshMaterial(string folder, VfxEmitterData e)
+        {
+            if (e.blend == "additive") return MakeMaterial(DefaultParticleTexture(), "additive", e.emission);
+            var m = new Material(Shader.Find(e.mesh.lit ? "Particles/Standard Surface" : "Particles/Standard Unlit") ?? Shader.Find("Standard"));
+            m.color = Color.white;
+            if (e.emission > 0f) { m.EnableKeyword("_EMISSION"); m.SetColor("_EmissionColor", Color.white * e.emission * 0.25f); }
+            var path = $"{folder}/Materials/{Safe(e.name)}_mesh.mat";
+            AssetDatabase.DeleteAsset(path); AssetDatabase.CreateAsset(m, path);
+            return m;
+        }
+
+        /// <summary>Mesh render mode and the editor's orientations: tumble = random 3D rotation + spin on every axis; velocity =
+        /// along travel; upright = random yaw with a lean up to tilt; fixed = +Y along direction.</summary>
+        static void SetupMesh(ParticleSystem ps, VfxEmitterData e, Mesh mesh)
+        {
+            if (!mesh) return;
+            var r = ps.GetComponent<ParticleSystemRenderer>();
+            r.renderMode = ParticleSystemRenderMode.Mesh; r.mesh = mesh;
+            r.shadowCastingMode = ShadowCastingMode.Off; r.receiveShadows = false;
+            var main = ps.main; main.startRotation3D = true;
+            const float TAU = Mathf.PI * 2f;
+            switch (e.mesh.orientation)
+            {
+                case "velocity":
+                    r.alignment = ParticleSystemRenderSpace.Velocity;
+                    main.startRotationX = main.startRotationY = main.startRotationZ = new ParticleSystem.MinMaxCurve(0f);
+                    break;
+                case "upright":
+                    r.alignment = ParticleSystemRenderSpace.World;
+                    main.startRotationX = new ParticleSystem.MinMaxCurve(-e.mesh.tilt, e.mesh.tilt); main.startRotationZ = new ParticleSystem.MinMaxCurve(-e.mesh.tilt, e.mesh.tilt);
+                    main.startRotationY = new ParticleSystem.MinMaxCurve(0f, TAU);
+                    break;
+                case "fixed":
+                {
+                    r.alignment = ParticleSystemRenderSpace.World;
+                    var q = Quaternion.FromToRotation(Vector3.up, VfxEffectData.V(e.mesh.direction).sqrMagnitude > 1e-8f ? VfxEffectData.V(e.mesh.direction).normalized : Vector3.up).eulerAngles * Mathf.Deg2Rad;
+                    main.startRotationX = new ParticleSystem.MinMaxCurve(q.x); main.startRotationY = new ParticleSystem.MinMaxCurve(q.y); main.startRotationZ = new ParticleSystem.MinMaxCurve(q.z);
+                    break;
+                }
+                default:
+                {
+                    r.alignment = ParticleSystemRenderSpace.World;
+                    main.startRotationX = main.startRotationY = main.startRotationZ = new ParticleSystem.MinMaxCurve(0f, TAU);
+                    if (e.angularVelocityMinDeg != 0f || e.angularVelocityMaxDeg != 0f)
+                    {
+                        var rot = ps.rotationOverLifetime; rot.enabled = true; rot.separateAxes = true;
+                        var w = Range(e.angularVelocityMinDeg * Mathf.Deg2Rad, e.angularVelocityMaxDeg * Mathf.Deg2Rad);
+                        rot.x = w; rot.y = w; rot.z = w;
+                    }
+                    break;
+                }
+            }
+            if (e.mesh.orientation != "tumble") { var rot = ps.rotationOverLifetime; rot.enabled = false; }
         }
 
         static Light BuildLight(Transform root, VfxLightData l)

@@ -6,7 +6,8 @@
 // stock templates, Godot's ParticleProcessMaterial takes size, colour and alpha over life as curves directly, so those
 // export exactly. Timing (when each emitter runs, when bursts fire, a moving source, light intensity) lives in one
 // "play" animation that autoplays. The scene origin is the Source anchor.
-import type { UeEmitter, UeLight, UeParticleTrail, UeRibbon, UnrealEffect } from '../unreal/types.ts';
+import type { UeEmitter, UeLight, UeMeshEmitter, UeParticleTrail, UeRibbon, UnrealEffect } from '../unreal/types.ts';
+import { builtinMeshObj, isBuiltinMesh } from '../meshObj.ts';
 import { VFX_RIBBONS_GD } from './vfx_ribbons.gd.ts';
 
 /** Linear -> sRGB encoding, also above 1 (Godot decodes source_color values with the same curve). */
@@ -106,7 +107,10 @@ function colorRamp(res: Resources, e: Pick<UeEmitter, 'colorOverLife' | 'opacity
 // interp 0 = nearest (holds each key until the next: UeStepTrack values), 1 = linear (positions).
 type Track = { path: string; interp: 0 | 1; update: 0 | 1; keys: [number, string][] };
 
-function emitterNode(res: Resources, e: UeEmitter, texRoot: string, duration: number, tracks: Track[], report: GodotReportItem[], trail?: UeParticleTrail): string {
+/** Mesh particles: the OBJ under Meshes/ as the draw pass (see godotSceneFrom). */
+type MeshPass = { file: string; orientation: UeMeshEmitter['orientation']; direction?: [number, number, number]; lit: boolean };
+
+function emitterNode(res: Resources, e: UeEmitter, texRoot: string, duration: number, tracks: Track[], report: GodotReportItem[], trail?: UeParticleTrail, mesh?: MeshPass): string {
   const name = nodeName(trail ? `${trail.name}_Trail` : e.name);
   const lifeMax = Math.max(0.017, e.lifetimeSecMax), lifeMin = Math.min(lifeMax, Math.max(0.017, e.lifetimeSecMin));
   const speedMin = e.speedCmSMin / 100, speedMax = e.speedCmSMax / 100, speedAvg = (speedMin + speedMax) / 2;
@@ -174,6 +178,10 @@ function emitterNode(res: Resources, e: UeEmitter, texRoot: string, duration: nu
   const flat = !trail && !velocity && !!e.facingAxis && Math.abs(e.facingAxis[2]) > 0.9;
   if (!trail && !velocity && e.facingAxis && !flat) report.push({ level: 'approximated', item: e.name, message: 'A flat quad facing a sideways axis is drawn as a camera-facing billboard.' });
   if (flat) ppm.push('particle_flag_rotate_y = true');
+  // Mesh particles: velocity = +Y along travel (Align Y); tumble/upright spin about Y with a random yaw (Godot particles
+  // turn about one axis only, so tumbling pieces do not roll over).
+  if (mesh?.orientation === 'velocity') ppm.push('particle_flag_align_y = true');
+  else if (mesh && mesh.orientation !== 'fixed') ppm.push('particle_flag_rotate_y = true', ...(e.spinDegMin || e.spinDegMax ? [] : ['angle_min = 0.0', 'angle_max = 360.0']));
   // Trails too: the ribbon's width axes are the particle's X/Z, so Y must follow the motion (see the rider shader below).
   if (velocity || trail) ppm.push('particle_flag_align_y = true');
   const fb = trail ? undefined : e.flipbook;
@@ -250,9 +258,11 @@ void process() {
     else if (trail.blend === 'additive') mat.push('detail_enabled = true', 'detail_blend_mode = 3', `detail_albedo = ${softBand(res)}`);
   } else if (e.textureFile) mat.push(`albedo_texture = ${res.extTexture(`${texRoot}/${e.textureFile}`)}`);
   if (fb && (fb.columns > 1 || fb.rows > 1)) mat.push(`particles_anim_h_frames = ${fb.columns}`, `particles_anim_v_frames = ${fb.rows}`, `particles_anim_loop = ${fb.loop}`);
-  const material = res.add('StandardMaterial3D', mat);
+  const material = res.add('StandardMaterial3D', mesh
+    ? [`transparency = ${e.blend === 'opaque' ? 0 : 1}`, `blend_mode = ${e.blend === 'additive' ? 1 : 0}`, `shading_mode = ${mesh.lit ? 1 : 0}`, 'vertex_color_use_as_albedo = true', 'vertex_color_is_srgb = true', 'roughness = 0.75']
+    : mat);
   const sections = trail ? Math.max(2, Math.min(128, trail.maxPoints - 1)) : 0;
-  const quad = trail ? res.add('RibbonTrailMesh', [`material = ${material}`, ...(followsAnchor ? ['shape = 0'] : []), `size = ${n(trail.widthCm / 100)}`,
+  const quad = mesh ? res.extOf('Mesh', `${texRoot.replace(/Textures$/, 'Meshes')}/${mesh.file}`) : trail ? res.add('RibbonTrailMesh', [`material = ${material}`, ...(followsAnchor ? ['shape = 0'] : []), `size = ${n(trail.widthCm / 100)}`,
     `sections = ${sections}`, 'section_segments = 1', `section_length = ${n(Math.max(0.001, speedAvg * trail.lifetimeSec / sections))}`,
     `curve = ${curve(res, trail.widthOverTrail.map(k => ({ t: 1 - k.t, v: k.v })).reverse(), false)}`])
     // Velocity stretch: like the editor's billboard, the quad is r times longer along its local +Y (= the velocity with
@@ -287,6 +297,13 @@ void process() {
   // Size/colour differ, but do not change spawn/velocity random sampling in ParticleProcessMaterial.
   node.push('use_fixed_seed = true', `seed = ${seedOf(trail?.parentEmitterName ?? e.name)}`);
   if (layerBit) node.push(`layers = ${layerBit}`);
+  if (mesh) node.push(`material_override = ${material}`);
+  if (mesh?.orientation === 'fixed' && mesh.direction) {
+    // +Y along the direction: the rotation taking (0,1,0) to d (shortest arc), as a quaternion.
+    const d = mesh.direction, c = d[1], ax = [d[2], 0, -d[0]], s = Math.hypot(ax[0], ax[2]);
+    const q = s < 1e-6 ? (c > 0 ? [0, 0, 0, 1] : [1, 0, 0, 0]) : (() => { const a = Math.acos(Math.max(-1, Math.min(1, c))) / 2, k = Math.sin(a) / s; return [ax[0] * k, 0, ax[2] * k, Math.cos(a)]; })();
+    node.push(`quaternion = Quaternion(${q.map(n).join(', ')})`);
+  }
   if (trail) node.push('trail_enabled = true', `trail_lifetime = ${n(Math.max(0.017, trail.lifetimeSec))}`);
   if (e.sourceTrack?.length) tracks.push({ path: `${name}:position`, interp: 1, update: 0, keys: e.sourceTrack.map(([tick, p]) => [t(tick), vec3(fromUe(p))] as [number, string]) });
   if (velocity && e.stretchRatio > 1.05) report.push({ level: 'approximated', item: e.name, message: `Velocity stretch x${e.stretchRatio} is a quad that long along the velocity (Align Y); unlike the editor it does not turn to face the camera.` });
@@ -333,6 +350,18 @@ export function godotSceneFrom(e: UnrealEffect, resRoot = `res://vfx_studio/${e.
     nodes.push(emitterNode(res, em, `${resRoot}/Textures`, duration, tracks, report));
   }
   for (const trail of e.trails ?? []) nodes.push(emitterNode(res, trail.emitter, `${resRoot}/Textures`, duration, tracks, report, trail));
+  // Mesh particles: each built-in mesh (height-stretched copy per scaleY) ships as Meshes/<id>.obj, Godot's OBJ importer
+  // makes it a Mesh for the draw pass. Imported GLB meshes are dropped by the IR.
+  const meshFiles = new Map<string, string>();
+  for (const me of e.meshEmitters ?? []) {
+    if (!isBuiltinMesh(me.mesh)) { report.push({ level: 'dropped', item: me.emitter.name, message: `Mesh "${me.mesh}" is not a built-in mesh.` }); continue; }
+    const file = me.scaleY !== 1 ? `${me.mesh}_y${me.scaleY}.obj` : `${me.mesh}.obj`;
+    meshFiles.set(file, builtinMeshObj(me.mesh, me.scaleY));
+    const em = { ...me.emitter, sizeCmMin: me.emitter.sizeCmMin * me.scale, sizeCmMax: me.emitter.sizeCmMax * me.scale };
+    nodes.push(emitterNode(res, em, `${resRoot}/Textures`, duration, tracks, report, undefined,
+      { file, orientation: me.orientation, ...(me.direction ? { direction: fromUe(me.direction) as [number, number, number] } : {}), lit: me.lit }));
+  }
+  if (meshFiles.size) report.push({ level: 'approximated', item: 'meshes', message: `${e.meshEmitters!.length} mesh-particle layer(s) draw the built-in mesh (Meshes/*.obj); tumbling pieces turn about one axis only.` });
   // A light on several paths (Nova's 8 shards) is one IR light per path under the same name: same-named sibling nodes
   // left the animation driving only one of them (Nova's floor light 0.34x, 2026-10-19). Like emitters: <name>_path<k>.
   const lightNames = new Map<string, number>();
@@ -343,7 +372,7 @@ export function godotSceneFrom(e: UnrealEffect, resRoot = `res://vfx_studio/${e.
   }
   const floor = [...e.emitters, ...(e.trails ?? []).map(t => t.emitter)].find(em => em.groundCollision)?.groundCollision;
   if (floor) nodes.push(['[node name="FloorCollision" type="GPUParticlesCollisionBox3D" parent="."]', `position = Vector3(0, ${n(floor.groundZCm / 100 - 0.5)}, 0)`, 'size = Vector3(60, 1, 60)'].join('\n'));
-  const files: GodotScene['files'] = [];
+  const files: GodotScene['files'] = [...meshFiles].map(([f, text]) => ({ path: `Meshes/${f}`, text }));
   if (e.ribbons.length) {
     // Beams: baked per-tick geometry (every path: trunk + branches, with its flicker/decay opacity) drawn by a small
     // script as camera-facing strips, synced to the "play" animation.

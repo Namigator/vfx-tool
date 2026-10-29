@@ -217,12 +217,12 @@
   },
   "mesh-particles": {
    "eye": "OK",
-   "note": "nothing drawn, as the report says",
+   "note": "built-in rock mesh, tumbling, lit like the editor",
    "date": "2026-10-29"
   },
   "prop-mesh": {
    "eye": "OK",
-   "note": "nothing drawn, as the report says",
+   "note": "crystal upright, stretched, lit like the editor",
    "date": "2026-10-29"
   },
   "screen-flash": {
@@ -434,12 +434,12 @@
   },
   "mesh-particles": {
    "eye": "OK",
-   "note": "nothing drawn, as the report says",
+   "note": "built-in rock mesh, tumbling, lit like the editor",
    "date": "2026-10-29"
   },
   "prop-mesh": {
    "eye": "OK",
-   "note": "nothing drawn, as the report says",
+   "note": "crystal upright, stretched, lit like the editor",
    "date": "2026-10-29"
   },
   "screen-flash": {

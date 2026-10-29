@@ -103,6 +103,10 @@ export type UnityEmitter = {
     colorKeysT: number[]; colorKeysRgb: number[]; alphaKeysT: number[]; alphaKeysV: number[];
     blend: 'additive' | 'translucent' | 'opaque'; emission: number; texture: string; trailOnly: boolean; seedName: string;
   };
+  /** Mesh particles: Meshes/<file> per particle (sizeMin/Max already include the layer scale). orientation as the editor:
+   *  tumble (random 3D rotation + spin), velocity (+Y along travel), upright (+Y up, random yaw, lean up to tilt rad),
+   *  fixed (+Y along direction). Absent = billboards. */
+  mesh?: { file: string; scaleY: number; orientation: 'tumble' | 'velocity' | 'upright' | 'fixed'; direction: number[]; tilt: number; lit: boolean };
 };
 
 export type UnityLight = {
@@ -157,4 +161,6 @@ export type UnityEffect = {
   lights: UnityLight[];
   ribbons: UnityRibbon[];
   textures: string[];
+  /** Mesh files under Meshes/ (OBJ, written next to effect.unity.json by every exporter: see unityEffectFrom's files). */
+  meshes: string[];
 };

@@ -53,16 +53,18 @@ namespace VfxStudio.EditorTools
         {
             Directory.CreateDirectory(outDir);
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            // Near-black stage like the editor's: dim flat ambient, no sky reflections (the default skybox lit the floor grey).
-            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.12f, 0.12f, 0.13f);
+            // The editor's stage light: AmbientLight 0.6 + HemisphereLight (sky #bfd0ff, ground #3a3128) 0.8, as a trilight
+            // ambient in linear values (lit mesh particles were near-black under the former dim flat ambient). No sky reflections.
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
+            Color L(float r, float g, float b) => new Color(Mathf.LinearToGammaSpace(r), Mathf.LinearToGammaSpace(g), Mathf.LinearToGammaSpace(b));
+            RenderSettings.ambientSkyColor = L(1.02f, 1.10f, 1.40f); RenderSettings.ambientEquatorColor = L(0.82f, 0.86f, 1.01f); RenderSettings.ambientGroundColor = L(0.63f, 0.62f, 0.62f);
             RenderSettings.defaultReflectionMode = UnityEngine.Rendering.DefaultReflectionMode.Custom;
             RenderSettings.skybox = null;
             var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
             floor.transform.localScale = new Vector3(4f, 1f, 4f);
             floor.transform.position = new Vector3(0f, -0.01f, 0f); // just under ground-level rings
             var floorMat = new Material(Shader.Find("Standard") ?? Shader.Find("Universal Render Pipeline/Lit"));
-            floorMat.color = new Color(0.09f, 0.09f, 0.1f);
+            floorMat.color = new Color(0.063f, 0.075f, 0.102f); // the editor's ground, 0x10131a
             floorMat.SetFloat("_Glossiness", 0f); floorMat.SetFloat("_Smoothness", 0f);
             floor.GetComponent<Renderer>().sharedMaterial = floorMat;
 

@@ -18,11 +18,12 @@ const out = resolve(process.argv[3] ?? join(ROOT, 'work', 'unity', id));
 const doc = id.endsWith('.json') ? JSON.parse(readFileSync(id, 'utf8')) : { ...insertComponent(createBlankDocument(`unity-${id}`, id), id, undefined, { group: true }).doc, name: id };
 const r = unrealEffectFrom(doc);
 if (!r.ok) { console.error(r.message); process.exit(1); }
-const { effect, report } = unityEffectFrom(r.value);
+const { effect, report, files } = unityEffectFrom(r.value);
 rmSync(out, { recursive: true, force: true });
 mkdirSync(join(out, 'Textures'), { recursive: true });
 writeFileSync(join(out, 'effect.unity.json'), JSON.stringify(effect));
 writeFileSync(join(out, 'README.md'), unityReadme(effect.name));
 writeFileSync(join(out, 'report.md'), unityReportMarkdown(effect.name, report));
 for (const t of effect.textures) copyFileSync(join(ROOT, 'assets', 'sprites', t), join(out, 'Textures', t));
+for (const f of files) { mkdirSync(dirname(join(out, f.path)), { recursive: true }); writeFileSync(join(out, f.path), f.text); }
 console.log(`${out}: ${effect.emitters.length} emitters, ${effect.ribbons.length} ribbons, ${effect.lights.length} lights`);
