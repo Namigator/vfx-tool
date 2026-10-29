@@ -135,10 +135,11 @@ function emitterNode(res: Resources, e: UeEmitter, texRoot: string, duration: nu
   }
   if (e.noise) {
     // Godot turbulence steers velocity toward a noise field (influence 0..1): far stronger than our additive curl noise,
-    // so keep the influence small (3 m/s^2 of noise -> ~0.03), or a fast jet turns into a slow drifting wall.
+    // so keep the influence small: amplitude / 600 (6 m/s^2 -> 0.01). The grid noise row probed 0 / 0.01 / 0.03 / 0.05
+    // (amp / 120 before): 0.05 held a rising column in a blob at the Source, 0.01 matched the editor (2026-10-29).
     const amp = e.noise.amplitudeCmS2 / 100;
     ppm.push('turbulence_enabled = true', 'turbulence_noise_strength = 1.0', `turbulence_noise_scale = ${n(Math.max(0.5, Math.min(10, 1 / Math.max(0.05, e.noise.frequency))))}`,
-      `turbulence_influence_min = ${n(Math.min(0.08, amp / 120))}`, `turbulence_influence_max = ${n(Math.min(0.12, amp / 80))}`);
+      `turbulence_influence_min = ${n(Math.min(0.08, amp / 600))}`, `turbulence_influence_max = ${n(Math.min(0.12, amp / 400))}`);
     report.push({ level: 'approximated', item: e.name, message: 'Curl noise becomes Godot turbulence (strength matched roughly; check the look).' });
   }
   // Attraction: a GPUParticlesAttractorSphere3D at the point, attenuation 0 = the same pull everywhere inside its radius

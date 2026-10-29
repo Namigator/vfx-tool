@@ -453,8 +453,8 @@
    "date": "2026-10-29"
   },
   "noise": {
-   "eye": "WRONG",
-   "note": "a tight blob: turbulence barely scatters",
+   "eye": "OK",
+   "note": "column rises like the editor after the influence fix; scatters less",
    "date": "2026-10-29"
   },
   "world-axis": {
