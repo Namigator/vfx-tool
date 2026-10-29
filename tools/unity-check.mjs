@@ -2,7 +2,7 @@
 // Syncs integrations/unity/VfxStudio into the test project's Assets/VfxStudio, runs Unity in batch mode (with the GPU:
 // no -nographics) to import the package into a prefab and render the chosen ticks to PNG, and prints the frame paths.
 // Env: VFX_UNITY_EXE (default F:/tools/Unity/6000.6.4f1/Editor/Unity.exe), VFX_UNITY_PROJECT (default F:/Dev2/UnityVFXLab,
-// created on first use). Exit 0 = frames written, 1 = Unity reported a failure, 2 = Unity missing.
+// created on first use), VFX_UNITY_CAM="px,py,pz,tx,ty,tz,fov" fixed camera in Unity metres (see VfxStudioCapture.cs). Exit 0 = frames written, 1 = Unity reported a failure, 2 = Unity missing.
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
@@ -30,7 +30,8 @@ cpSync(resolve('integrations/unity/VfxStudio'), join(project, 'Assets/VfxStudio'
 const out = resolve('work/unity/frames');
 const log = join(logs, `${name}.log`);
 const r = run(['-projectPath', project, '-executeMethod', 'VfxStudio.EditorTools.VfxStudioCapture.ImportAndCaptureCli',
-  '-vfxPackage', pkg, '-vfxOut', out, '-vfxTicks', ticks, '-vfxYaw', yaw, '-vfxPitch', pitch, '-vfxZoom', zoom], log);
+  '-vfxPackage', pkg, '-vfxOut', out, '-vfxTicks', ticks, '-vfxYaw', yaw, '-vfxPitch', pitch, '-vfxZoom', zoom,
+  ...(process.env.VFX_UNITY_CAM ? ['-vfxCam', process.env.VFX_UNITY_CAM] : [])], log);
 const lines = r.text.split(/\r?\n/);
 const errors = lines.filter(l => /error CS\d+|CAPTURE FAILED|Exception/.test(l));
 for (const l of lines.filter(l => l.includes('[VfxStudio]'))) console.log(l.trim());

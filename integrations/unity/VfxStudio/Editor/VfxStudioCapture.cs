@@ -86,6 +86,16 @@ namespace VfxStudio.EditorTools
             var look = Quaternion.Euler(pitch, yaw, 0f);
             cam.transform.position = b.center + look * new Vector3(0f, 0f, -dist);
             cam.transform.rotation = look;
+            // Optional fixed camera "px,py,pz,tx,ty,tz,fov" in Unity world metres (floor at y=0, Source anchor above the
+            // origin) to match a VFX Studio view: tool point (x,y,z) -> (x - sourceX, y, -(z - sourceZ)); fov vertical.
+            var camArg = VfxStudioImporter.Arg("-vfxCam");
+            if (camArg != null)
+            {
+                var c = camArg.Split(',').Select(s => float.Parse(s, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+                cam.transform.position = new Vector3(c[0], c[1], c[2]);
+                cam.transform.LookAt(new Vector3(c[3], c[4], c[5]));
+                cam.fieldOfView = c[6];
+            }
             var rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
             cam.targetTexture = rt;
             var img = new Texture2D(width, height, TextureFormat.RGB24, false);

@@ -99,6 +99,8 @@ export function unityEffectFrom(e: UnrealEffect): { effect: UnityEffect; report:
   };
   // The shared IR's own notes that still apply (meshes, flashes, keyframes, multi-path...), minus Unreal-specific ones.
   for (const r of e.report) if (!/Niagara|Unreal|importer|UE 5|Shape Location|template/i.test(r.message)) report.push(r);
+  // Per-particle trails (Bolt/Needle/Orb streaks, Summon/Nova strokes) have no Unity importer path yet: say so.
+  for (const t of e.trails ?? []) report.push({ level: 'dropped', item: t.name, message: 'Particle trail is not exported to Unity yet (no Trails module support in the importer); the streak/stroke it draws in the editor is missing.' });
   if (e.ribbons.length) report.push({ level: 'info', item: 'ribbons', message: `${e.ribbons.length} beam/ribbon layer(s) are drawn by LineRenderers from baked per-frame geometry (camera-facing; one sheet cell per path, tiled or stretched, UV scroll and soft edges like the editor; no distortion).` });
   report.push({ level: 'info', item: 'scale', message: 'Unity uses metres and +Y up; Z is mirrored (Unity is left-handed). The prefab origin is the Source anchor. Light intensity = preview intensity x 0.1 (built-in pipeline scale).' });
   return { effect, report };

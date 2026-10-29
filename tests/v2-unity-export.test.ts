@@ -94,3 +94,11 @@ test('Unity: short faded paths are resampled so the end fade has interior vertic
   const { effect } = unityEffectFrom(ir);
   for (const r of effect.ribbons) if (r.endFade > 0) for (const f of r.frames) for (const p of f.paths) assert.ok(p.points.length / 4 >= MIN_FADE_POINTS, `${r.name}: ${p.points.length / 4} points`);
 });
+
+test('Unity: particle trails are reported as dropped, not lost silently', () => {
+  const ir = irOf('flamethrower');
+  ir.trails = [{ name: 'fake_trail', emitter: ir.emitters[0], lifetimeSec: 0.3, maxPoints: 16, widthCm: 10, endFade: 0,
+    widthOverTrail: [], colorOverTrail: [], opacityOverTrail: [], blend: 'additive' }];
+  const { report } = unityEffectFrom(ir);
+  assert.ok(report.some(x => x.level === 'dropped' && x.item === 'fake_trail'));
+});
