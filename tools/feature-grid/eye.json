@@ -227,8 +227,8 @@
   },
   "screen-flash": {
    "eye": "OK",
-   "note": "nothing drawn, as the report says",
-   "date": "2026-10-29"
+   "note": "full-screen quad tints the frame like the editor",
+   "date": "2026-10-30"
   },
   "particle-trail": {
    "eye": "OK",
@@ -444,8 +444,8 @@
   },
   "screen-flash": {
    "eye": "OK",
-   "note": "nothing drawn, as the report says",
-   "date": "2026-10-29"
+   "note": "ColorRect flash tints the frame",
+   "date": "2026-10-30"
   },
   "drag": {
    "eye": "OK",

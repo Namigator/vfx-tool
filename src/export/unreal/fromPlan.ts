@@ -415,7 +415,8 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
       ...(m.orientation === 'fixed' ? { direction: toUeDir(m.direction ?? [0, 1, 0]) } : {}) });
   }
   if (meshEmitters.length) report.push({ level: 'approximated', item: 'meshes', message: `${meshEmitters.length} mesh-particle layer(s) draw the built-in mesh (Meshes/*.obj); in Unreal at the mean particle size (random size and size over life are not kept).` });
-  if (plan.value.presentation.flashes.length) report.push({ level: 'dropped', item: 'presentation', message: 'Screen flashes are not exported (add a post-process/camera-shake Blueprint on impact if needed).' });
+  const flashes = plan.value.presentation.flashes.map(f => ({ name: f.nodeId, tick: f.tick, durationTicks: f.durationTicks, color: [1, 3, 5].map(i => r3(parseInt(f.color.srgb.slice(i, i + 2), 16) / 255)) as [number, number, number], alpha: r3(f.alpha) }));
+  if (flashes.length) report.push({ level: 'dropped', item: 'flashes', message: 'Screen flashes are not built by the Unreal importer (add a post-process Blueprint on impact); Unity and Godot exports draw them.' });
   if (plan.value.presentation.impulses.length) report.push({ level: 'dropped', item: 'presentation', message: 'Camera shake is not exported (use a UE Camera Shake asset triggered on impact if needed).' });
   const lights = plan.value.lights.map(l => {
     if (!l.pathTint && !l.colorOverWindow) return lightFrom(l, origin, plan.value.durationTicks, report);
@@ -428,6 +429,6 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
   report.push({ level: 'info', item: 'scale', message: `1 m = ${CM_PER_METER} cm. Axis mapping: ue.x=src.x*100, ue.y=src.z*100, ue.z=src.y*100 (our +Y up -> Unreal +Z up). The NiagaraSystem's origin is the Source anchor: place or attach the actor at the caster / nozzle.` });
   return { ok: true, value: {
     name: safeName(doc.name || 'Effect'), durationTicks: plan.value.durationTicks, ticksPerSecond: 60,
-    emitters, ribbons, ...(trails.length ? { trails } : {}), ...(meshEmitters.length ? { meshEmitters } : {}), lights, textures, report, sourceHeightCm: r3(origin[1] * CM_PER_METER),
+    emitters, ribbons, ...(trails.length ? { trails } : {}), ...(meshEmitters.length ? { meshEmitters } : {}), ...(flashes.length ? { flashes } : {}), lights, textures, report, sourceHeightCm: r3(origin[1] * CM_PER_METER),
   } };
 }

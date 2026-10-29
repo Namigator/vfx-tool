@@ -182,11 +182,13 @@ export function unityEffectFrom(e: UnrealEffect): { effect: UnityEffect; report:
   const effect: UnityEffect = {
     format: 'vfx-studio-unity', version: 1, name: e.name, durationTicks: e.durationTicks, ticksPerSecond: 60, sourceHeight: r4((e.sourceHeightCm ?? 0) / 100),
     emitters: [...e.emitters.map(x => emitterFrom(x, report)), ...trailEmitters, ...meshEmitters], lights: e.lights.map(lightFrom), ribbons: [...e.ribbons.map(ribbonFrom), ...trailRibbons], textures: e.textures, meshes: [...meshFiles],
+    flashes: (e.flashes ?? []).map(f => ({ tick: f.tick, durationTicks: f.durationTicks, color: f.color.map(r4), alpha: r4(f.alpha) })),
   };
   // The shared IR's own notes that still apply (meshes, flashes, keyframes, multi-path...), minus Unreal-specific ones.
   const ueOnly = /Niagara|Unreal|importer|UE 5|Shape Location|template/i;
   for (const r of e.report) {
     if (r.item === 'meshes' && meshEmitters.length) continue; // drawn here (the IR's drop is about the Unreal importer)
+    if (r.item === 'flashes') { report.push({ level: 'approximated', item: 'flashes', message: 'Screen flashes become a full-screen quad in front of the camera (VfxStudioEffect.flashCamera, else Camera.main).' }); continue; }
     if (!ueOnly.test(r.message)) report.push(r);
     // A drop is never hidden just because its wording names Unreal (meshes vanished silently; feature grid 2026-10-29).
     else if (r.level === 'dropped') { const first = r.message.replace(/;.*$/s, '.'); report.push({ ...r, message: ueOnly.test(first) ? `${r.item} is not exported to Unity.` : first }); }

@@ -376,6 +376,18 @@ export function godotSceneFrom(e: UnrealEffect, resRoot = `res://vfx_studio/${e.
     lightNames.set(l.name, k);
     nodes.push(lightNode(l, duration, tracks, nodeName(k > 1 ? `${l.name}_path${k}` : l.name)));
   }
+  // Screen flashes: a full-screen ColorRect on a CanvasLayer whose colour alpha the animation fades from the flash's
+  // alpha to 0 over its duration, like the editor (they were dropped; feature grid screen-flash, 2026-10-30).
+  if (e.flashes?.length) {
+    nodes.push('[node name="Flash" type="CanvasLayer" parent="."]', '[node name="Rect" type="ColorRect" parent="Flash"]\nanchors_preset = 15\nanchor_right = 1.0\nanchor_bottom = 1.0\nmouse_filter = 2\ncolor = Color(1, 1, 1, 0)');
+    const keys: [number, string][] = [[0, 'Color(1, 1, 1, 0)']];
+    for (const f of [...e.flashes].sort((a, b) => a.tick - b.tick)) {
+      const c = f.color.map(n).join(', ');
+      keys.push([Math.min(duration, f.tick) / 60, `Color(${c}, ${n(f.alpha)})`], [Math.min(duration, f.tick + f.durationTicks) / 60, `Color(${c}, 0)`]);
+    }
+    tracks.push({ path: 'Flash/Rect:color', interp: 1, update: 0, keys });
+    report.push({ level: 'approximated', item: 'flashes', message: `${e.flashes.length} screen flash(es) become a full-screen ColorRect faded by the animation.` });
+  }
   const floor = [...e.emitters, ...(e.trails ?? []).map(t => t.emitter)].find(em => em.groundCollision)?.groundCollision;
   if (floor) nodes.push(['[node name="FloorCollision" type="GPUParticlesCollisionBox3D" parent="."]', `position = Vector3(0, ${n(floor.groundZCm / 100 - 0.5)}, 0)`, 'size = Vector3(60, 1, 60)'].join('\n'));
   const files: GodotScene['files'] = [...meshFiles].map(([f, text]) => ({ path: `Meshes/${f}`, text }));

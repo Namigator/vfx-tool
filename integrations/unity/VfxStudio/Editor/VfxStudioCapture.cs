@@ -126,6 +126,7 @@ namespace VfxStudio.EditorTools
             cam.targetTexture = rt;
             var img = new Texture2D(width, height, TextureFormat.RGB24, false);
 
+            fx.flashCamera = cam;
             fx.Play();
             for (int t = 1; t <= last; t++)
             {

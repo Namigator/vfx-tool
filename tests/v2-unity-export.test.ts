@@ -245,3 +245,16 @@ test('a static ribbon holds to the end of the effect (closing empty frame; Unrea
   assert.ok(f[0].points.length > 1);
   assert.deepEqual(f[1].points, []);
 });
+
+test('screen flashes reach Unity and Godot (they were dropped everywhere)', async () => {
+  const { godotSceneFrom } = await import('../src/export/godot/scene.ts');
+  const r = unrealEffectFrom(JSON.parse(readFileSync('tests/fixtures/feature-flash.json', 'utf8')));
+  assert.ok(r.ok);
+  assert.deepEqual(r.value.flashes, [{ name: 'f', tick: 28, durationTicks: 6, color: [1, 1, 1], alpha: 0.15 }]);
+  const u = unityEffectFrom(r.value);
+  assert.deepEqual(u.effect.flashes, [{ tick: 28, durationTicks: 6, color: [1, 1, 1], alpha: 0.15 }]);
+  assert.ok(!u.report.some(x => x.level === 'dropped' && x.item === 'flashes'));
+  const g = godotSceneFrom(r.value).tscn;
+  assert.match(g, /\[node name="Rect" type="ColorRect" parent="Flash"\]/);
+  assert.match(g, /NodePath\("Flash\/Rect:color"\)/);
+});

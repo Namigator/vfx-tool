@@ -23,6 +23,7 @@ namespace VfxStudio
         public bool playOnEnable = true;
         public bool loop;
         [Min(0f)] public float speed = 1f;
+        [Tooltip("Camera that shows the effect's screen flashes (empty = Camera.main).")] public Camera flashCamera;
 
         VfxEffectData _data;
         Vector3[] _homes = new Vector3[0];
@@ -115,6 +116,43 @@ namespace VfxStudio
             }
             Move(fractionalTick);
             DrawRibbons(tick);
+            DrawFlash(tick);
+        }
+
+        // ---- screen flashes: a quad just in front of the camera, the strongest flash at this tick ----
+        Renderer _flash;
+        void DrawFlash(int tick)
+        {
+            var fl = Data.flashes;
+            if (fl == null || fl.Length == 0) return;
+            float best = 0f; var c = Color.white;
+            foreach (var f in fl)
+            {
+                float u = (tick - f.tick) / Mathf.Max(1f, f.durationTicks);
+                if (u >= 0f && u < 1f && f.alpha * (1f - u) > best) { best = f.alpha * (1f - u); c = new Color(f.color[0], f.color[1], f.color[2]); }
+            }
+            var cam = flashCamera ? flashCamera : Camera.main;
+            if (!_flash)
+            {
+                if (best <= 0f || !cam) return;
+                var q = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                if (q.TryGetComponent<Collider>(out var col)) { if (Application.isPlaying) Destroy(col); else DestroyImmediate(col); }
+                q.name = "ScreenFlash"; q.hideFlags = HideFlags.DontSave;
+                _flash = q.GetComponent<Renderer>();
+                _flash.sharedMaterial = new Material(Shader.Find("Sprites/Default"));
+                _flash.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            if (cam && _flash.transform.parent != cam.transform)
+            {
+                float dist = cam.nearClipPlane * 1.5f, h = 2.2f * dist * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad);
+                _flash.transform.SetParent(cam.transform, false);
+                _flash.transform.localPosition = new Vector3(0f, 0f, dist);
+                _flash.transform.localRotation = Quaternion.identity;
+                _flash.transform.localScale = new Vector3(h * cam.aspect, h, 1f);
+            }
+            c.a = best;
+            _flash.sharedMaterial.color = c;
+            _flash.enabled = best > 0f;
         }
 
         void Move(float tick)

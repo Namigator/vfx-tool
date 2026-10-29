@@ -62,6 +62,9 @@ namespace VfxStudio
         public bool trailOnly;
     }
 
+    /// <summary>Screen flash: the view tinted color (sRGB) at alpha from tick, fading linearly to 0 over durationTicks.</summary>
+    [Serializable] public class VfxFlashData { public int tick, durationTicks; public float[] color; public float alpha; }
+
     [Serializable]
     public class VfxLightData
     {
@@ -113,13 +116,14 @@ namespace VfxStudio
         public VfxRibbonData[] ribbons;
         public string[] textures;
         public string[] meshes; // OBJ files under Meshes/
+        public VfxFlashData[] flashes;
 
         public static VfxEffectData Parse(string json)
         {
             var d = JsonUtility.FromJson<VfxEffectData>(json);
             if (d == null || d.format != "vfx-studio-unity") throw new Exception("Not a VFX Studio Unity export (format must be vfx-studio-unity).");
             if (d.version > 1) Debug.LogWarning($"[VfxStudio] effect version {d.version} is newer than this importer (1); some features may be missing.");
-            d.emitters ??= new VfxEmitterData[0]; d.lights ??= new VfxLightData[0]; d.ribbons ??= new VfxRibbonData[0];
+            d.flashes ??= new VfxFlashData[0]; d.emitters ??= new VfxEmitterData[0]; d.lights ??= new VfxLightData[0]; d.ribbons ??= new VfxRibbonData[0];
             if (d.ticksPerSecond <= 0) d.ticksPerSecond = 60;
             return d;
         }

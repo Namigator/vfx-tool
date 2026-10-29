@@ -1,0 +1,175 @@
+{
+  "format": "vfx-studio",
+  "schemaVersion": 2,
+  "runtimeVersion": "2.0.0",
+  "id": "fg-screen-flash",
+  "name": "fg-screen-flash",
+  "tags": [],
+  "seed": 7,
+  "rootTransform": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "scale": 1
+  },
+  "anchors": [
+    {
+      "id": "source",
+      "name": "Source",
+      "position": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "id": "target",
+      "name": "Target",
+      "position": [
+        2.5,
+        1,
+        0
+      ]
+    }
+  ],
+  "durationTicks": 90,
+  "rootGraphId": "graph-root",
+  "graphs": [
+    {
+      "id": "graph-root",
+      "inputs": [],
+      "outputs": [],
+      "nodes": [
+        {
+          "id": "node-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Source",
+          "enabled": true,
+          "randomStreamId": "rs-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "node-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Target",
+          "enabled": true,
+          "randomStreamId": "rs-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "node-output",
+          "type": "EffectOutput",
+          "definitionVersion": 1,
+          "label": "Output",
+          "enabled": true,
+          "randomStreamId": "rs-output",
+          "params": {}
+        },
+        {
+          "id": "go",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "go",
+          "enabled": true,
+          "randomStreamId": "rs-go",
+          "params": {
+            "startTicks": 28,
+            "mode": "once"
+          }
+        },
+        {
+          "id": "f",
+          "type": "ScreenFlash",
+          "definitionVersion": 1,
+          "label": "f",
+          "enabled": true,
+          "randomStreamId": "rs-f",
+          "params": {
+            "color": {
+              "srgb": "#FFFFFF",
+              "alpha": 1
+            },
+            "alpha": 0.15,
+            "durationTicks": 6
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-go-f",
+          "source": {
+            "nodeId": "go",
+            "port": "start"
+          },
+          "target": {
+            "nodeId": "f",
+            "port": "trigger"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-f-node-output",
+          "source": {
+            "nodeId": "f",
+            "port": "presentation"
+          },
+          "target": {
+            "nodeId": "node-output",
+            "port": "presentation"
+          },
+          "order": 0
+        }
+      ]
+    }
+  ],
+  "controls": [],
+  "assets": [],
+  "editor": {
+    "graphs": {
+      "graph-root": {
+        "nodes": {
+          "node-source": {
+            "x": 0,
+            "y": 0
+          },
+          "node-target": {
+            "x": 0,
+            "y": 160
+          },
+          "node-output": {
+            "x": 1040,
+            "y": 0
+          },
+          "go": {
+            "x": 780,
+            "y": 320
+          },
+          "f": {
+            "x": 1040,
+            "y": 320
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      }
+    },
+    "openedGraphId": "graph-root"
+  }
+}

@@ -163,4 +163,6 @@ export type UnityEffect = {
   textures: string[];
   /** Mesh files under Meshes/ (OBJ, written next to effect.unity.json by every exporter: see unityEffectFrom's files). */
   meshes: string[];
+  /** Screen flashes (the IR's): sRGB colour, alpha fading linearly to 0 over durationTicks from tick. */
+  flashes: { tick: number; durationTicks: number; color: number[]; alpha: number }[];
 };
