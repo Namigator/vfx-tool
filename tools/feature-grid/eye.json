@@ -966,5 +966,247 @@
    "note": "import fails: trail-only system (no sprite emitter)",
    "date": "2026-10-30"
   }
+ },
+ "unity-urp": {
+  "shape-point": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "shape-sphere": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "shape-box": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "shape-cone": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "shape-disc": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "burst": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "gravity": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "drag": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "noise": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "vortex": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "collision": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "bb-size-opacity": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "spin": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "velocity-stretch": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "blend-normal": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "emission-hot": {
+   "eye": "WRONG",
+   "note": "URP: whiter and smaller",
+   "date": "2026-10-30"
+  },
+  "flipbook": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "uv-scroll": {
+   "eye": "OK",
+   "note": "URP: colour right after the gamma-encoded gain",
+   "date": "2026-10-30"
+  },
+  "sprite": {
+   "eye": "WRONG",
+   "note": "URP: dimmer and greyer than the editor",
+   "date": "2026-10-30"
+  },
+  "ring": {
+   "eye": "OK",
+   "note": "URP: colour right after the gamma-encoded gain",
+   "date": "2026-10-30"
+  },
+  "projectile": {
+   "eye": "WRONG",
+   "note": "URP: dimmer and greyer",
+   "date": "2026-10-30"
+  },
+  "motion-trail": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "ribbon-line": {
+   "eye": "OK",
+   "note": "URP: colour right after the gamma-encoded gain",
+   "date": "2026-10-30"
+  },
+  "ribbon-bezier": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "ribbon-helix": {
+   "eye": "OK",
+   "note": "URP: colour right after the gamma-encoded gain",
+   "date": "2026-10-30"
+  },
+  "jagged": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "radial": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "ring-path": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "reveal": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "path-ops": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "driven-opacity": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "value-nodes": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "effect-time-opacity": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "overlife": {
+   "eye": "OK",
+   "note": "Unity a little greener mid-life",
+   "date": "2026-10-29"
+  },
+  "particle-paths": {
+   "eye": "OK",
+   "note": "beams match; particle dots sit elsewhere (different random spawns)",
+   "date": "2026-10-29"
+  },
+  "branch": {
+   "eye": "OK",
+   "note": "trunk matches; branches faint in both",
+   "date": "2026-10-29"
+  },
+  "world-axis": {
+   "eye": "OK",
+   "note": "flat after the facingAxis fix",
+   "date": "2026-10-29"
+  },
+  "sprite-flat": {
+   "eye": "OK",
+   "note": "URP: flat, dimmer",
+   "date": "2026-10-30"
+  },
+  "variant": {
+   "eye": "OK",
+   "note": "wide glow cell after the start-frame unit fix (a little smaller)",
+   "date": "2026-10-29"
+  },
+  "untextured": {
+   "eye": "OK",
+   "note": "soft-disc texture: size and brightness match",
+   "date": "2026-10-29"
+  },
+  "light": {
+   "eye": "OK",
+   "note": "pool size/brightness match after tuning; a little yellower",
+   "date": "2026-10-29"
+  },
+  "attract": {
+   "eye": "WRONG",
+   "note": "particles spread right too far at t30; strength probe x1/x0.5/x0.25 looked the same, so not the strength",
+   "date": "2026-10-29"
+  },
+  "shape-path": {
+   "eye": "OK",
+   "note": "particles spread around the ring after the split (a little fainter)",
+   "date": "2026-10-29"
+  },
+  "mesh-particles": {
+   "eye": "OK",
+   "note": "URP Particles/Lit",
+   "date": "2026-10-30"
+  },
+  "prop-mesh": {
+   "eye": "OK",
+   "note": "URP Particles/Lit",
+   "date": "2026-10-30"
+  },
+  "screen-flash": {
+   "eye": "OK",
+   "note": "nothing drawn, as the report says",
+   "date": "2026-10-29"
+  },
+  "particle-trail": {
+   "eye": "OK",
+   "note": "Unity Trails module: arc, colour and taper match",
+   "date": "2026-10-29"
+  },
+  "sub-emitter": {
+   "eye": "OK",
+   "note": "children burst where the parents die (t42)",
+   "date": "2026-10-29"
+  }
  }
 }

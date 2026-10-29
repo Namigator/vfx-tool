@@ -63,7 +63,7 @@ namespace VfxStudio.EditorTools
             var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
             floor.transform.localScale = new Vector3(4f, 1f, 4f);
             floor.transform.position = new Vector3(0f, -0.01f, 0f); // just under ground-level rings
-            var floorMat = new Material(Shader.Find("Standard") ?? Shader.Find("Universal Render Pipeline/Lit"));
+            var floorMat = new Material(UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline ? Shader.Find("Universal Render Pipeline/Lit") : Shader.Find("Standard")); // Standard draws magenta under URP
             floorMat.color = new Color(0.063f, 0.075f, 0.102f); // the editor's ground, 0x10131a
             floorMat.SetFloat("_Glossiness", 0f); floorMat.SetFloat("_Smoothness", 0f);
             floor.GetComponent<Renderer>().sharedMaterial = floorMat;

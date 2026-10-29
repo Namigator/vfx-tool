@@ -286,12 +286,16 @@ namespace VfxStudio.EditorTools
                 var sh = Shader.Find("Universal Render Pipeline/Particles/Unlit") ?? throw new Exception("URP Particles/Unlit shader not found");
                 m = new Material(sh);
                 m.SetTexture("_BaseMap", tex);
-                m.SetColor("_BaseColor", new Color(boost, boost, boost, 1f));
+                // Material colours are sRGB: encode the linear gain or (1 + emission) became ~gain^2.2 and clipped to white
+                // (URP grid column: purple beams, gold rings and cyan sprites all drew white, 2026-10-30).
+                float g = Mathf.LinearToGammaSpace(boost);
+                m.SetColor("_BaseColor", new Color(g, g, g, 1f));
                 m.SetFloat("_Surface", 1f); m.SetFloat("_Blend", additive ? 2f : 0f);
                 m.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha); m.SetFloat("_DstBlend", (float)(additive ? BlendMode.One : BlendMode.OneMinusSrcAlpha));
                 m.SetFloat("_ZWrite", 0f);
                 m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
-                if (additive) m.EnableKeyword("_ALPHAMODULATE_ON");
+                // No _ALPHAMODULATE_ON: that is the Multiply mode keyword and pulled every additive colour toward white as its
+                // alpha fell (URP grid column, 2026-10-30). _Blend 2 alone is URP additive.
                 m.renderQueue = (int)RenderQueue.Transparent;
             }
             else
@@ -512,7 +516,11 @@ namespace VfxStudio.EditorTools
         static Material MeshMaterial(string folder, VfxEmitterData e)
         {
             if (e.blend == "additive") return MakeMaterial(DefaultParticleTexture(), "additive", e.emission);
-            var m = new Material(Shader.Find(e.mesh.lit ? "Particles/Standard Surface" : "Particles/Standard Unlit") ?? Shader.Find("Standard"));
+            // URP needs its own particle shaders (the built-in ones draw magenta there; URP grid column, 2026-10-30).
+            var m = new Material(GraphicsSettings.currentRenderPipeline
+                ? Shader.Find(e.mesh.lit ? "Universal Render Pipeline/Particles/Lit" : "Universal Render Pipeline/Particles/Unlit")
+                : Shader.Find(e.mesh.lit ? "Particles/Standard Surface" : "Particles/Standard Unlit") ?? Shader.Find("Standard"));
+            m.SetColor("_BaseColor", Color.white);
             m.color = Color.white;
             if (e.emission > 0f) { m.EnableKeyword("_EMISSION"); m.SetColor("_EmissionColor", Color.white * e.emission * 0.25f); }
             var path = $"{folder}/Materials/{Safe(e.name)}_mesh.mat";

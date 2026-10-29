@@ -16,6 +16,8 @@ const exe = process.env.VFX_UNITY_EXE ?? 'F:/tools/Unity/6000.6.4f1/Editor/Unity
 const project = process.env.VFX_UNITY_PROJECT ?? 'F:/Dev2/UnityVFXLab';
 const G = join(ROOT, 'work/feature-grid');
 const only = process.argv[2];
+// FG_UNITY_COLUMN names the grid column (e.g. unity-urp with VFX_UNITY_PROJECT pointing at a URP project).
+const COL = process.env.FG_UNITY_COLUMN ?? 'unity';
 
 // Tool point -> Unity metres: the prefab origin is the Source anchor, Z mirrored.
 const s = STAGE.source, u = p => [p[0] - s[0], p[1], -(p[2] - s[2])];
@@ -26,7 +28,7 @@ for (const c of CASES) {
   if (only && !c.id.includes(only)) continue;
   const docFile = join(G, 'docs', `${c.id}.json`);
   if (!existsSync(docFile)) { console.log(`skip ${c.id} (no doc)`); continue; }
-  const pkg = join(G, 'unity-pkg', c.id);
+  const pkg = join(G, `${COL}-pkg`, c.id);
   rmSync(pkg, { recursive: true, force: true }); mkdirSync(join(pkg, 'Textures'), { recursive: true });
   const r = unrealEffectFrom(JSON.parse(readFileSync(docFile, 'utf8')));
   if (!r.ok) { writeFileSync(join(pkg, 'report.json'), JSON.stringify({ exportError: r.message })); console.log(`EXPORT FAIL ${c.id}: ${r.message}`); continue; }
@@ -39,24 +41,24 @@ for (const c of CASES) {
   names[c.id] = { file: `${effect.name.replace(/[^A-Za-z0-9_-]/g, '_')}-t${tick}.png` };
   lines.push(`${pkg.replace(/\\/g, '/')}|${tick}|${cam}`);
 }
-const batch = join(G, 'unity-batch.txt');
+const batch = join(G, `${COL}-batch.txt`);
 writeFileSync(batch, lines.join('\n'));
 if (!existsSync(exe)) { console.error(`Unity not found at ${exe}`); process.exit(2); }
 
 rmSync(join(project, 'Assets/VfxStudio'), { recursive: true, force: true });
 cpSync(join(ROOT, 'integrations/unity/VfxStudio'), join(project, 'Assets/VfxStudio'), { recursive: true });
 rmSync(join(project, 'Assets/VfxStudioEffects'), { recursive: true, force: true }); // stale cases would shadow renamed ones
-const frames = join(G, 'unity-frames'); rmSync(frames, { recursive: true, force: true }); mkdirSync(frames, { recursive: true });
-const log = join(G, 'unity.log');
+const frames = join(G, `${COL}-frames`); rmSync(frames, { recursive: true, force: true }); mkdirSync(frames, { recursive: true });
+const log = join(G, `${COL}.log`);
 console.log(`Unity: ${lines.length} packages in one batch ...`);
 const r = spawnSync(exe, ['-batchmode', '-quit', '-logFile', log, '-projectPath', project, '-executeMethod', 'VfxStudio.EditorTools.VfxStudioCapture.ImportAndCaptureCli',
   '-vfxBatch', batch, '-vfxOut', frames], { stdio: 'inherit', timeout: 40 * 60 * 1000 });
 const text = existsSync(log) ? readFileSync(log, 'utf8') : '';
 for (const l of text.split(/\r?\n/).filter(l => /error CS\d+|ITEM FAILED|CAPTURE FAILED/.test(l))) console.log(l.trim());
-mkdirSync(join(G, 'unity'), { recursive: true });
+mkdirSync(join(G, COL), { recursive: true });
 let missing = 0;
 for (const [id, { file }] of Object.entries(names)) {
-  const src = join(frames, file), dst = join(G, 'unity', `${id}.png`);
+  const src = join(frames, file), dst = join(G, COL, `${id}.png`);
   rmSync(dst, { force: true });
   if (existsSync(src)) copyFileSync(src, dst); else { missing++; console.log(`no Unity frame for ${id} (${file})`); }
 }
