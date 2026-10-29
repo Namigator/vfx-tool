@@ -156,7 +156,12 @@ export function unityEffectFrom(e: UnrealEffect): { effect: UnityEffect; report:
     emitters: e.emitters.map(x => emitterFrom(x, report)), lights: e.lights.map(lightFrom), ribbons: [...e.ribbons.map(ribbonFrom), ...trailRibbons], textures: e.textures,
   };
   // The shared IR's own notes that still apply (meshes, flashes, keyframes, multi-path...), minus Unreal-specific ones.
-  for (const r of e.report) if (!/Niagara|Unreal|importer|UE 5|Shape Location|template/i.test(r.message)) report.push(r);
+  const ueOnly = /Niagara|Unreal|importer|UE 5|Shape Location|template/i;
+  for (const r of e.report) {
+    if (!ueOnly.test(r.message)) report.push(r);
+    // A drop is never hidden just because its wording names Unreal (meshes vanished silently; feature grid 2026-10-29).
+    else if (r.level === 'dropped') { const first = r.message.replace(/;.*$/s, '.'); report.push({ ...r, message: ueOnly.test(first) ? `${r.item} is not exported to Unity.` : first }); }
+  }
   if (trailRibbons.length) report.push({ level: 'approximated', item: 'trails', message: `${trailRibbons.length} particle trail(s) behind moving heads are baked as beam layers (head track over the trail history, width/fade like the editor; head stays full, tail fades).` });
   if (e.ribbons.length) report.push({ level: 'info', item: 'ribbons', message: `${e.ribbons.length} beam/ribbon layer(s) are drawn by LineRenderers from baked per-frame geometry (camera-facing; one sheet cell per path, tiled or stretched, UV scroll and soft edges like the editor; no distortion).` });
   report.push({ level: 'info', item: 'scale', message: 'Unity uses metres and +Y up; Z is mirrored (Unity is left-handed). The prefab origin is the Source anchor. Light intensity = preview intensity x 0.1 (built-in pipeline scale).' });

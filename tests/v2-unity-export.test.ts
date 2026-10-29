@@ -1,5 +1,6 @@
 // Unity exporter (src/export/unity/fromUnreal.ts): engine-neutral IR -> effect.unity.json shape.
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { insertComponent } from '../src/graph/components.ts';
 import { createBlankDocument } from '../src/graph/fixtures.ts';
@@ -130,4 +131,22 @@ test('Unity: a moving-head trail is baked as a ribbon (tail first, head last and
   assert.equal(p.at(-1), 0.2); // head at full width
   assert.equal(p[3], 0); // tail tapers
   assert.equal(r.frames.find(f => f.tick === 20 + 5 + 1)!.paths.length, 0); // dies at 20, drained 5 ticks later
+});
+
+test('box emitters keep their box (they fell through to a point; feature grid 2026-10-29)', () => {
+  const doc = JSON.parse(readFileSync('tests/fixtures/feature-box.json', 'utf8'));
+  const r = unrealEffectFrom(doc);
+  assert.ok(r.ok);
+  const s = r.value.emitters[0].shape;
+  assert.deepEqual(s, { kind: 'box', extentsCm: [70, 70, 70] });
+  assert.deepEqual(unityEffectFrom(r.value).effect.emitters[0].boxSize, [1.4, 1.4, 1.4]);
+});
+
+test('Unity: drops worded for Unreal are still reported (mesh layers vanished silently; feature grid 2026-10-29)', () => {
+  const ir = irOf('flamethrower');
+  ir.report = [...ir.report, { level: 'dropped', item: 'meshes', message: '2 mesh-particle layer(s) are not exported; see report for manual Niagara Mesh Renderer setup.' }];
+  const { report } = unityEffectFrom(ir);
+  const m = report.find(x => x.item === 'meshes');
+  assert.ok(m && m.level === 'dropped');
+  assert.equal(m.message, '2 mesh-particle layer(s) are not exported.');
 });

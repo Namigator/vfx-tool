@@ -21,4 +21,14 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [ ] BACKLOG Unity: Arc beam thinner with small upright kinks vs tool · not investigated · 2026-10-29
 - [ ] BACKLOG Unity: Play mode (not batch Advance) and URP never checked · untested · 2026-10-29
 - [ ] BACKLOG Unity: trails left by many particles (spark/shed trails without a head track) are dropped (none in the 10 Arcane effects) · not built · 2026-10-29
-- [ ] BACKLOG Unity capture: floor lit grey (ambient 0.25) vs the tool's near-black grid floor - capture scene only · not built · 2026-10-29
+- [x] Unity capture stage near-black (dim flat ambient, no sky reflections) · [SAW] work/feature-grid/grid.png · 2026-10-29
+- [x] Feature grid: one test effect per node feature (48), editor vs Unity side by side, scored + eye verdicts (tools/feature-grid/, README there) · [SAW] work/feature-grid/grid.png, [RAN] npm test -- v2-feature-grid · 2026-10-29
+- [x] Box emitters export as boxes in every engine IR (fell back to a point) · [SAW] grid shape-box row · 2026-10-29
+- [x] Unity export reports dropped mesh layers (were silent) · [RAN] v2-unity-export test + grid UNSUPPORTED rows · 2026-10-29
+- [ ] BACKLOG Unity (grid): world-axis billboards + flat SpriteRenderer face the camera instead of lying flat · [SAW] grid world-axis, sprite-flat · 2026-10-29
+- [ ] BACKLOG Unity (grid): untextured SpriteUnlit particles much smaller/dimmer · [SAW] grid untextured · 2026-10-29
+- [ ] BACKLOG Unity (grid): variant cell differs (Unity ring vs editor soft dot) · [SAW] grid variant · 2026-10-29
+- [ ] BACKLOG Unity (grid): point light floor pool much dimmer/smaller · [SAW] grid light · 2026-10-29
+- [ ] BACKLOG Unity (grid): Attract - Unity streams to the point, editor stays near Source; find which is wrong · [SAW] grid attract · 2026-10-29
+- [ ] BACKLOG all engines (grid): path-shaped emitters export as a point at the path start · [SAW] grid shape-path · 2026-10-29
+- [ ] BACKLOG grid: mesh particles, prop meshes, screen flash not exported to Unity (reported); sub-emitter case needs a better tick; Godot/Unreal/Roblox columns not built · 2026-10-29

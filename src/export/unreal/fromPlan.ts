@@ -118,7 +118,9 @@ const shapeOf = (em: NonNullable<ParticleEmitterDescriptor['emission']>, report:
     case 'sphere': return { kind: 'sphere', radiusCm: rCm };
     case 'disc': return { kind: 'disc', radiusCm: rCm };
     case 'cone': return { kind: 'cone', angleDeg: deg(em.coneAngle), radiusCm: rCm };
-    case 'path': report.push({ level: 'approximated', item: nodeId, message: 'Emission along a path becomes a point emitter at the path start (Niagara point spawn).' }); return { kind: 'point' };
+    // The editor fills a cube of half-size Radius (runtime/particles.ts); it fell through to a point before (feature grid 2026-10-29).
+    case 'box': return { kind: 'box', extentsCm: [rCm, rCm, rCm] };
+    case 'path': report.push({ level: 'approximated', item: nodeId, message: 'Emission along a path becomes a point emitter at the path start.' }); return { kind: 'point' };
     default: return { kind: 'point' };
   }
 };

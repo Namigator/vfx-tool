@@ -2,6 +2,8 @@
 // simulated tick by tick through VfxStudioEffect.Advance) and renders chosen ticks to PNG with an auto-framed camera.
 // Unity -batchmode -quit -projectPath <p> -executeMethod VfxStudio.EditorTools.VfxStudioCapture.ImportAndCaptureCli
 //   -vfxPackage <dir> -vfxOut <dir> [-vfxTicks 30,60,90] [-vfxSize 960x540] [-vfxYaw 0] [-vfxPitch 15] [-vfxZoom 1]
+//   or -vfxBatch <file> -vfxOut <dir>: one Unity launch for many packages, one "package|ticks|px,py,pz,tx,ty,tz,fov" per
+//   line; a failing package logs "[VfxStudio] ITEM FAILED <package>" and the batch goes on (feature grid, 2026-10-29).
 // Run WITHOUT -nographics (rendering needs the GPU). Prints "[VfxStudio] FRAME <path>" and a "[VfxStudio] STATS" line.
 using System;
 using System.IO;
@@ -18,27 +20,50 @@ namespace VfxStudio.EditorTools
         {
             try
             {
+                var batch = VfxStudioImporter.Arg("-vfxBatch");
+                if (batch != null) { CaptureBatch(batch); EditorApplication.Exit(0); return; }
                 var prefab = VfxStudioImporter.Import(VfxStudioImporter.ToAssetFolder(VfxStudioImporter.Arg("-vfxPackage") ?? throw new ArgumentException("-vfxPackage required")));
                 var outDir = VfxStudioImporter.Arg("-vfxOut") ?? Path.Combine(Path.GetDirectoryName(Application.dataPath), "VfxCaptures");
                 var ticks = (VfxStudioImporter.Arg("-vfxTicks") ?? "30,60,90").Split(',').Select(s => int.Parse(s.Trim())).OrderBy(x => x).ToArray();
                 var size = (VfxStudioImporter.Arg("-vfxSize") ?? "960x540").Split('x').Select(int.Parse).ToArray();
                 float yaw = float.Parse(VfxStudioImporter.Arg("-vfxYaw") ?? "0"), pitch = float.Parse(VfxStudioImporter.Arg("-vfxPitch") ?? "15"), zoom = float.Parse(VfxStudioImporter.Arg("-vfxZoom") ?? "1");
-                Capture(prefab, outDir, ticks, size[0], size[1], yaw, pitch, zoom);
+                Capture(prefab, outDir, ticks, size[0], size[1], yaw, pitch, zoom, VfxStudioImporter.Arg("-vfxCam"));
                 EditorApplication.Exit(0);
             }
             catch (Exception ex) { Debug.LogError("[VfxStudio] CAPTURE FAILED " + ex); EditorApplication.Exit(1); }
         }
 
-        public static void Capture(GameObject prefab, string outDir, int[] ticks, int width, int height, float yaw, float pitch, float zoom = 1f)
+        static void CaptureBatch(string file)
+        {
+            var outDir = VfxStudioImporter.Arg("-vfxOut") ?? Path.Combine(Path.GetDirectoryName(Application.dataPath), "VfxCaptures");
+            foreach (var line in File.ReadAllLines(file).Where(l => l.Trim().Length > 0))
+            {
+                var f = line.Split('|');
+                try
+                {
+                    var prefab = VfxStudioImporter.Import(VfxStudioImporter.ToAssetFolder(f[0]));
+                    var ticks = f[1].Split(',').Select(s => int.Parse(s.Trim())).OrderBy(x => x).ToArray();
+                    Capture(prefab, outDir, ticks, 960, 540, 0f, 15f, 1f, f.Length > 2 ? f[2] : null);
+                }
+                catch (Exception ex) { Debug.LogError($"[VfxStudio] ITEM FAILED {f[0]} {ex.Message}"); }
+            }
+        }
+
+        public static void Capture(GameObject prefab, string outDir, int[] ticks, int width, int height, float yaw, float pitch, float zoom = 1f, string camArg = null)
         {
             Directory.CreateDirectory(outDir);
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            RenderSettings.ambientLight = new Color(0.25f, 0.25f, 0.28f);
+            // Near-black stage like the editor's: dim flat ambient, no sky reflections (the default skybox lit the floor grey).
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.12f, 0.12f, 0.13f);
+            RenderSettings.defaultReflectionMode = UnityEngine.Rendering.DefaultReflectionMode.Custom;
+            RenderSettings.skybox = null;
             var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
             floor.transform.localScale = new Vector3(4f, 1f, 4f);
             floor.transform.position = new Vector3(0f, -0.01f, 0f); // just under ground-level rings
             var floorMat = new Material(Shader.Find("Standard") ?? Shader.Find("Universal Render Pipeline/Lit"));
             floorMat.color = new Color(0.09f, 0.09f, 0.1f);
+            floorMat.SetFloat("_Glossiness", 0f); floorMat.SetFloat("_Smoothness", 0f);
             floor.GetComponent<Renderer>().sharedMaterial = floorMat;
 
             var inst = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
@@ -88,7 +113,6 @@ namespace VfxStudio.EditorTools
             cam.transform.rotation = look;
             // Optional fixed camera "px,py,pz,tx,ty,tz,fov" in Unity world metres (floor at y=0, Source anchor above the
             // origin) to match a VFX Studio view: tool point (x,y,z) -> (x - sourceX, y, -(z - sourceZ)); fov vertical.
-            var camArg = VfxStudioImporter.Arg("-vfxCam");
             if (camArg != null)
             {
                 var c = camArg.Split(',').Select(s => float.Parse(s, System.Globalization.CultureInfo.InvariantCulture)).ToArray();

@@ -1,0 +1,285 @@
+{
+  "format": "vfx-studio",
+  "schemaVersion": 2,
+  "runtimeVersion": "2.0.0",
+  "id": "fg-shape-box",
+  "name": "fg-shape-box",
+  "tags": [],
+  "seed": 7,
+  "rootTransform": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "scale": 1
+  },
+  "anchors": [
+    {
+      "id": "source",
+      "name": "Source",
+      "position": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "id": "target",
+      "name": "Target",
+      "position": [
+        2.5,
+        1,
+        0
+      ]
+    }
+  ],
+  "durationTicks": 90,
+  "rootGraphId": "graph-root",
+  "graphs": [
+    {
+      "id": "graph-root",
+      "inputs": [],
+      "outputs": [],
+      "nodes": [
+        {
+          "id": "node-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Source",
+          "enabled": true,
+          "randomStreamId": "rs-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "node-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Target",
+          "enabled": true,
+          "randomStreamId": "rs-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "node-output",
+          "type": "EffectOutput",
+          "definitionVersion": 1,
+          "label": "Output",
+          "enabled": true,
+          "randomStreamId": "rs-output",
+          "params": {}
+        },
+        {
+          "id": "emit",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "emit",
+          "enabled": true,
+          "randomStreamId": "rs-emit",
+          "params": {
+            "shape": "box",
+            "coneAngle": 0.2,
+            "radius": 0.7,
+            "burst": 0,
+            "rate": 60,
+            "speedMin": 0.1,
+            "speedMax": 0.3,
+            "direction": [
+              0,
+              1,
+              0
+            ],
+            "lifetimeMin": 0.8,
+            "lifetimeMax": 1
+          }
+        },
+        {
+          "id": "win",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "win",
+          "enabled": true,
+          "randomStreamId": "rs-win",
+          "params": {
+            "startTicks": 0,
+            "durationTicks": 60,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "ip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "ip",
+          "enabled": true,
+          "randomStreamId": "rs-ip",
+          "params": {
+            "sizeMin": 0.12,
+            "sizeMax": 0.2,
+            "angularVelocityMin": 0,
+            "angularVelocityMax": 0
+          }
+        },
+        {
+          "id": "mat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "mat",
+          "enabled": true,
+          "randomStreamId": "rs-mat",
+          "params": {
+            "template": "SpriteTextured",
+            "sprite": "soft-glow",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#7FD4FF",
+              "alpha": 1
+            },
+            "emission": 0.5
+          }
+        },
+        {
+          "id": "draw",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "draw",
+          "enabled": true,
+          "randomStreamId": "rs-draw",
+          "params": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-node-source-emit",
+          "source": {
+            "nodeId": "node-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "emit",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-win-emit",
+          "source": {
+            "nodeId": "win",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "emit",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-emit-ip",
+          "source": {
+            "nodeId": "emit",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-ip-draw",
+          "source": {
+            "nodeId": "ip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "draw",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-mat-draw",
+          "source": {
+            "nodeId": "mat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "draw",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-draw-node-output",
+          "source": {
+            "nodeId": "draw",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "node-output",
+            "port": "visual"
+          },
+          "order": 0
+        }
+      ]
+    }
+  ],
+  "controls": [],
+  "assets": [],
+  "editor": {
+    "graphs": {
+      "graph-root": {
+        "nodes": {
+          "node-source": {
+            "x": 0,
+            "y": 0
+          },
+          "node-target": {
+            "x": 0,
+            "y": 160
+          },
+          "node-output": {
+            "x": 1040,
+            "y": 0
+          },
+          "emit": {
+            "x": 780,
+            "y": 320
+          },
+          "win": {
+            "x": 1040,
+            "y": 320
+          },
+          "ip": {
+            "x": 1300,
+            "y": 320
+          },
+          "mat": {
+            "x": 1560,
+            "y": 320
+          },
+          "draw": {
+            "x": 0,
+            "y": 500
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      }
+    },
+    "openedGraphId": "graph-root"
+  }
+}
