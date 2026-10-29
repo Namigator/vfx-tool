@@ -173,3 +173,13 @@ test('untextured sprites ship the soft disc the editor draws (not the tight soft
   assert.equal(r.value.emitters[0].textureFile, 'soft-disc.png');
   assert.equal(r.value.emitters[0].flipbook, undefined);
 });
+
+test('path emitters export as emitters spaced along the path (they collapsed to one point at the start)', () => {
+  const r = unrealEffectFrom(JSON.parse(readFileSync('tests/fixtures/feature-path.json', 'utf8')));
+  assert.ok(r.ok);
+  const es = r.value.emitters;
+  assert.equal(es.length, 12); // ring radius 0.8 m: 5 m of path, one emitter per ~30 cm, capped at 12
+  assert.ok(es.every(e => Math.abs(Math.hypot(e.position[0], e.position[1]) - 80) < 3), 'all on the ring');
+  assert.ok(es.every(e => e.rateOverTime[0][1] === 5), 'rate split 60/s -> 12 x 5/s');
+  assert.ok(r.value.report.some(x => /spaced along it/.test(x.message)));
+});

@@ -112,6 +112,26 @@ function rateTrack(d: ParticleEmitterDescriptor, duration: number): UeStepTrack 
   return out;
 }
 
+/** Engines have no "spawn along a polyline" shape: a path emitter becomes K small cone emitters spaced evenly along the
+ *  path's arc length (K ~ one per 30 cm, 2..12), each with 1/K of the rate and bursts. It exported as ONE point at the
+ *  path start before (feature grid shape-path row, 2026-10-29). Returns undefined for any other emitter. */
+export function alongPath(d: ParticleEmitterDescriptor): ParticleEmitterDescriptor[] | undefined {
+  const em = d.emission;
+  if (!em || em.shape !== 'path' || !em.paths?.length) return undefined;
+  const segs: [Vec3, Vec3, number][] = [];
+  for (const line of em.paths) for (let i = 1; i < line.length; i++) segs.push([line[i - 1], line[i], Math.hypot(...line[i].map((v, k) => v - line[i - 1][k]))]);
+  const total = segs.reduce((n, sg) => n + sg[2], 0);
+  if (!(total > 1e-6)) return undefined;
+  const K = Math.max(2, Math.min(12, Math.round(total / 0.3)));
+  const pointAt = (u: number): Vec3 => { let want = u * total; for (const sg of segs) { const [a, b, l] = sg; if (want <= l || sg === segs.at(-1)) { const t = l > 0 ? Math.min(1, want / l) : 0; return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; } want -= l; } return segs.at(-1)![1]; };
+  return Array.from({ length: K }, (_, i) => ({
+    ...d, sourcePosition: pointAt((i + 0.5) / K), sourceTrack: undefined, extraSourceTracks: undefined,
+    emission: { ...em, shape: 'cone' as const, radius: total / K / 2, paths: undefined },
+    rate: d.rate ? { ...d.rate, perSecond: d.rate.perSecond / K } : undefined,
+    bursts: d.bursts.map(b => ({ ...b, count: Math.max(1, Math.round(b.count / K)) })),
+  }));
+}
+
 const shapeOf = (em: NonNullable<ParticleEmitterDescriptor['emission']>, report: UeReportItem[], nodeId: string): UeSpawnShape => {
   const rCm = em.radius * CM_PER_METER;
   switch (em.shape) {
@@ -120,7 +140,7 @@ const shapeOf = (em: NonNullable<ParticleEmitterDescriptor['emission']>, report:
     case 'cone': return { kind: 'cone', angleDeg: deg(em.coneAngle), radiusCm: rCm };
     // The editor fills a cube of half-size Radius (runtime/particles.ts); it fell through to a point before (feature grid 2026-10-29).
     case 'box': return { kind: 'box', extentsCm: [rCm, rCm, rCm] };
-    case 'path': report.push({ level: 'approximated', item: nodeId, message: 'Emission along a path becomes a point emitter at the path start.' }); return { kind: 'point' };
+    case 'path': return { kind: 'point' }; // only reached without paths: alongPath() splits real path emitters first
     default: return { kind: 'point' };
   }
 };
@@ -333,6 +353,14 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
     else usedBy.set(layer.systemId, layer.nodeId);
     const at = (k: number) => (layer.pathTint ? { ...layer, color: settledColor(layer.color, layer.pathTint, k) } : layer);
     if (layer.pathTint) report.push({ level: 'approximated', item: layer.nodeId, message: 'Colour by path / colour over window: each path exports the colour it settles on (the fade from the original colour is not exported).' });
+    const split = alongPath(d);
+    if (split) {
+      report.push({ level: 'approximated', item: layer.nodeId, message: `Emission along a path becomes ${split.length} small emitters spaced along it.` });
+      const parts = split.map((p, k) => emitterFrom(layer, p, origin, plan.value.durationTicks, unique(k ? `${layer.nodeId}_along${k + 1}` : layer.nodeId), report));
+      emitters.push(...parts);
+      if (!systemEmitters.has(layer.systemId)) systemEmitters.set(layer.systemId, parts);
+      continue;
+    }
     const first = emitterFrom(at(0), d, origin, plan.value.durationTicks, unique(layer.nodeId), report);
     emitters.push(first);
     const matching = [first];

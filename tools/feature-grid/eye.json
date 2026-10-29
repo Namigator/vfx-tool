@@ -211,8 +211,8 @@
    "date": "2026-10-29"
   },
   "shape-path": {
-   "eye": "WRONG",
-   "note": "one dot: the export spawns path emitters at the path start (reported approximation)",
+   "eye": "OK",
+   "note": "particles spread around the ring after the split (a little fainter)",
    "date": "2026-10-29"
   },
   "mesh-particles": {
@@ -473,8 +473,8 @@
    "date": "2026-10-29"
   },
   "shape-path": {
-   "eye": "WRONG",
-   "note": "one dot: path emitters export as a point",
+   "eye": "OK",
+   "note": "particles spread around the ring after the split",
    "date": "2026-10-29"
   },
   "sub-emitter": {
