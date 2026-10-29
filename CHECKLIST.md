@@ -39,7 +39,7 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [ ] BACKLOG Unity (grid): Attract flings particles both ways at t30. Known: attract off matches the editor; strength x0.25-x1 looks the same; gravityFocus 1 is worse (default 0 = centre). Next idea: read Unity's ForceField gravity falloff (endRange 100 m) · [SAW] grid attract + probes · 2026-10-30
 - [ ] BACKLOG Unity (grid): light a little yellower than the editor; flat rings a little dimmer · [SAW] grid · 2026-10-29
 - [x] Godot flat sprite cell (UV cut), positioned bursts, attract, collision, noise, drag, screen flash · [SAW] grid · 2026-10-30
-- [ ] BACKLOG Godot (grid): vortex not exported; random-cell flat quads draw the whole sheet; tumbling meshes spin about one axis · [SAW] grid · 2026-10-30
+- [ ] BACKLOG Godot (grid): vortex not exported (orbit_velocity has no effect in 3D: probed 0 / 0.39 / 4 identical); random-cell flat quads draw the whole sheet; tumbling meshes spin about one axis · [SAW] grid · 2026-10-30
 - [x] Unreal: shape primitives, point cone, static ribbons, sRGB ribbon colour, flat sprites, light scale, positioned bursts, mesh particles · [SAW] grid unreal · 2026-10-30
 - [ ] BACKLOG Unreal (grid): trail-only systems (many-particle trails) fail to import; screen flash dropped; mesh particles at mean size, no tumble · [SAW] grid · 2026-10-30
 - [x] Screen flashes in Unity, Godot and Roblox (Unreal reports them dropped) · [SAW] grid screen-flash · 2026-10-30
