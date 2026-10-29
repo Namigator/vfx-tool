@@ -20,7 +20,9 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [ ] BACKLOG Unity: bloom/glow halo size + brightness vs tool (built-in pipeline has no bloom; Summon/Nova node glows weakest) · not built · 2026-10-29
 - [x] Unity Arc kinks: LineRenderer corner vertices drew hourglass loops at zigzags (now 0) · [SAW] work/compare/arc-corners.png, unity2-vs-tool.png · 2026-10-29
 - [ ] BACKLOG Unity: Arc thinner and less glowy than the tool (no bloom) · [SAW] work/compare/unity2-vs-tool.png · 2026-10-29
-- [ ] BACKLOG Unity: Play mode (not batch Advance) and URP never checked · untested · 2026-10-29
+- [x] Unity URP: grid column unity-urp (F:/Dev2/UnityVFXLabURP); additive colours, gain encoding and mesh shaders fixed · [SAW] grid unity-urp · 2026-10-30
+- [ ] BACKLOG Unity URP: emission-boosted sprites dimmer/greyer than the editor (sprite, projectile, emission-hot) · [SAW] grid unity-urp · 2026-10-30
+- [ ] BACKLOG Unity: Play mode (not batch Advance) never checked · untested · 2026-10-29
 - [x] Unity: trails left by many particles (sparks) export via the per-particle Trails module · [SAW] grid particle-trail row · 2026-10-29
 - [x] Unity capture stage near-black (dim flat ambient, no sky reflections) · [SAW] work/feature-grid/grid.png · 2026-10-29
 - [x] Feature grid: one test effect per node feature (48), editor vs Unity side by side, scored + eye verdicts (tools/feature-grid/, README there) · [SAW] work/feature-grid/grid.png, [RAN] npm test -- v2-feature-grid · 2026-10-29
@@ -36,7 +38,11 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [x] Static ribbons hold to the effect end (closing IR frame) · [RAN] v2-unity-export test; Unreal re-render pending · 2026-10-29
 - [ ] BACKLOG Unity (grid): Attract flings particles both ways at t30. Known: attract off matches the editor; strength x0.25-x1 looks the same; gravityFocus 1 is worse (default 0 = centre). Next idea: read Unity's ForceField gravity falloff (endRange 100 m) · [SAW] grid attract + probes · 2026-10-30
 - [ ] BACKLOG Unity (grid): light a little yellower than the editor; flat rings a little dimmer · [SAW] grid · 2026-10-29
-- [ ] BACKLOG Godot (grid): vortex not exported; flat sprite draws 2-3 overlapping rings; tumbling meshes spin about one axis · [SAW] grid · 2026-10-29
-- [ ] BACKLOG Unreal (grid): flat sprites stand up; meshes, screen flash and trail-only systems fail/drop; vortex rises; untextured small; textured beam (uv-scroll) missing · [SAW] grid unreal column · 2026-10-29
-- [ ] Unreal (grid): box/disc primitive + point cone fixes in VfxNiagaraImporter.cpp · [UNVERIFIED] not built yet · 2026-10-29
-- [ ] BACKLOG grid: screen flash not exported anywhere (reported) · 2026-10-29
+- [x] Godot flat sprite cell (UV cut), positioned bursts, attract, collision, noise, drag, screen flash · [SAW] grid · 2026-10-30
+- [ ] BACKLOG Godot (grid): vortex not exported; random-cell flat quads draw the whole sheet; tumbling meshes spin about one axis · [SAW] grid · 2026-10-30
+- [x] Unreal: shape primitives, point cone, static ribbons, sRGB ribbon colour, flat sprites, light scale, positioned bursts, mesh particles · [SAW] grid unreal · 2026-10-30
+- [ ] BACKLOG Unreal (grid): trail-only systems (many-particle trails) fail to import; screen flash dropped; mesh particles at mean size, no tumble · [SAW] grid · 2026-10-30
+- [x] Screen flashes in Unity, Godot and Roblox (Unreal reports them dropped) · [SAW] grid screen-flash · 2026-10-30
+- [x] Roblox: path split, light range/brightness, beam alphaTrack (driven opacity), positioned bursts from a part copy · [SAW] grid roblox · 2026-10-30
+- [ ] BACKLOG Roblox (grid): world-axis billboards stand up; prop mesh dark (capture ambient); glow halo hides the ring sprite · [SAW] grid · 2026-10-30
+- [ ] NEEDS OWNER: upload star-ray and sim-fireball textures to Roblox (tools/roblox-upload-textures.mjs) - spin/flipbook rows show the default sprite · 2026-10-30
