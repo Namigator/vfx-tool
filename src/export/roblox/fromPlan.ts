@@ -350,12 +350,18 @@ const MIN_BEAM_POINTS = 5;
 
 function beamsFrom(doc: EffectDocumentV2, origin: Vec3, report: RbxReportItem[]): RbxBeamLayer[] {
   const layers = new Map<string, RbxBeamLayer & { last: string; fullFrame?: NonNullable<RbxBeamLayer['frames'][number]['paths']> }>();
+  // Layer opacity per tick: a driven or keyframed opacity changes over time. It was frozen at its tick-0 value in the base
+  // transparency (0.2 for an oscillator: the beam nearly vanished; feature grid driven-opacity, 2026-10-30). Kept apart
+  // from the geometry frames so layers sharing a bolt still match.
+  const opacity = new Map<string, [number, number][]>();
   for (let tick = 0; tick < doc.durationTicks; tick++) {
     const r = compilePathPreview(doc, tick, { audioHandled: true });
     if (!r.ok) { report.push({ level: 'dropped', item: 'paths', message: `Paths failed to compile at tick ${tick}: ${r.errors[0]?.message}` }); break; }
     for (const l of r.value.layers) {
       let b = layers.get(l.nodeId);
       if (!b) { b = beamLayer(l, report); layers.set(l.nodeId, b); }
+      const la = r3(Math.min(1, l.opacity * l.color.alpha)), track = opacity.get(l.nodeId) ?? [];
+      if (track.at(-1)?.[1] !== la) { track.push([tick, la]); opacity.set(l.nodeId, track); }
       const wCurve = compileLifeCurve(l.widthOverPath);
       const paths = (l.active ? l.paths : []).filter(p => p.points.length >= 2).map(p => {
         // A 2-3 point path (a straight ray) with an end fade had zero width at every point and vanished in Roblox.
@@ -383,7 +389,10 @@ function beamsFrom(doc: EffectDocumentV2, origin: Vec3, report: RbxReportItem[])
       b.maxSegments = Math.max(b.maxSegments, paths.reduce((n, p) => n + p.points.length - 1, 0));
           }
   }
-  const out: RbxBeamLayer[] = [...layers.values()].map(({ last: _, fullFrame: __, ...b }) => b);
+  const out: RbxBeamLayer[] = [...layers.entries()].map(([id, { last: _, fullFrame: __, ...b }]) => {
+    const track = opacity.get(id) ?? [], peak = Math.max(0, ...track.map(([, v]) => v));
+    return track.length > 1 && peak > 0 ? { ...b, transparency: r3(1 - peak), alphaTrack: track.map(([t, v]) => [t, r3(v / peak)] as [number, number]) } : b;
+  });
   for (const b of out) simplifyInTime(b);
   // Layers drawing the same paths at a constant width ratio (MergePaths passes) keep one copy of the geometry.
   // Each group points at its first member (never at a layer that itself points elsewhere).

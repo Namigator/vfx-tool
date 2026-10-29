@@ -710,9 +710,9 @@
    "date": "2026-10-29"
   },
   "driven-opacity": {
-   "eye": "WRONG",
-   "note": "beam nearly invisible",
-   "date": "2026-10-29"
+   "eye": "OK",
+   "note": "beam visible after the per-beam alphaTrack",
+   "date": "2026-10-30"
   },
   "sub-emitter": {
    "eye": "WRONG",

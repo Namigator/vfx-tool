@@ -87,6 +87,9 @@ export type RbxBeamLayer = {
   color: [number, number, number];
   /** 0 = opaque. */
   transparency: number;
+  /** Layer opacity over time relative to its peak (the base transparency): [tick, multiplier] steps, absent = constant.
+   *  A driven or keyframed opacity; the player multiplies it into every path alpha. */
+  alphaTrack?: [number, number][];
   lightEmission: number;
   brightness: number;
   textureKey?: string;

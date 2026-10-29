@@ -575,10 +575,23 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 			idx = lo
 		end
 		local key = if layer.interp then tick else idx
-		if key == layer.key then
+		-- Layer opacity over time (alphaTrack: [tick, multiplier] steps of a driven or keyframed opacity).
+		local am = 1
+		local track = layer.d.alphaTrack
+		if track then
+			for i = 1, #track do
+				if track[i][1] <= tick then
+					am = track[i][2]
+				else
+					break
+				end
+			end
+		end
+		if key == layer.key and am == layer.am then
 			return
 		end
 		layer.key = key
+		layer.am = am
 		local a = if idx > 0 then layer.fullIdx[idx] else 0
 		if a == 0 then
 			hideLayer(layer)
@@ -616,6 +629,7 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 			if pb then
 				alpha = alpha + (pb[1] - alpha) * f
 			end
+			alpha *= am
 			local n = #ptsA // 4
 			local function pos(o)
 				if ptsB then
