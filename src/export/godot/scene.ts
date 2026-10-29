@@ -137,9 +137,27 @@ function emitterNode(res: Resources, e: UeEmitter, texRoot: string, duration: nu
       `turbulence_influence_min = ${n(Math.min(0.08, amp / 120))}`, `turbulence_influence_max = ${n(Math.min(0.12, amp / 80))}`);
     report.push({ level: 'approximated', item: e.name, message: 'Curl noise becomes Godot turbulence (strength matched roughly; check the look).' });
   }
-  if (e.attract) report.push({ level: 'dropped', item: e.name, message: 'Attraction is not exported (add a GPUParticlesAttractorSphere3D by hand).' });
+  // Attraction: a GPUParticlesAttractorSphere3D at the point, attenuation 0 = the same pull everywhere inside its radius
+  // (the editor's pull is near-constant outside the soft radius). Attractors act on every particle node sharing a
+  // visual layer, so each attracted emitter gets its own layer bit (2..20) and its attractor that cull mask.
+  let attractor = '', layerBit = 0;
+  if (e.attract) {
+    const k = (attractorCount.get(res) ?? 0) + 1;
+    attractorCount.set(res, k);
+    if (k <= 19) {
+      layerBit = 1 << k;
+      attractor = [`[node name=${str(`${name}_attract`)} type="GPUParticlesAttractorSphere3D" parent="."]`, `position = ${vec3(fromUe(e.attract.positionCm))}`,
+        `strength = ${n(e.attract.strengthCmS2 / 100)}`, 'attenuation = 0.0', 'radius = 50.0', `cull_mask = ${layerBit}`].join('\n');
+      report.push({ level: 'approximated', item: e.name, message: 'Attraction becomes a GPUParticlesAttractorSphere3D (constant pull, no kill radius).' });
+    } else report.push({ level: 'dropped', item: e.name, message: 'Attraction is not exported (more than 19 attracted emitters; add a GPUParticlesAttractorSphere3D by hand).' });
+  }
   if (e.vortex) report.push({ level: 'dropped', item: e.name, message: 'Vortex swirl is not exported (add a GPUParticlesAttractorVectorField3D or turbulence by hand).' });
-  if (e.groundCollision) report.push({ level: 'dropped', item: e.name, message: 'Ground collision is not exported (add a GPUParticlesCollisionBox3D floor by hand).' });
+  // Ground collision: the process collides with the scene's floor box (godotSceneFrom adds one GPUParticlesCollisionBox3D).
+  if (e.groundCollision) {
+    const gc = e.groundCollision;
+    ppm.push(`collision_mode = ${gc.mode === 'kill' ? 2 : 1}`, `collision_bounce = ${n(gc.mode === 'bounce' ? gc.restitution : 0)}`, 'collision_friction = 0.5', 'collision_use_scale = false');
+    report.push({ level: 'approximated', item: e.name, message: 'Ground collision collides with a GPUParticlesCollisionBox3D floor (stop = no bounce).' });
+  }
   // Size: quad is 1 m; scale_min/max = birth size, the curve multiplies over life (keys relative to the mid size).
   // The curve is normalised to 0..1 (Godot clamps curve values to its range) and its peak moves into scale_min/max.
   const mid = Math.max(1e-4, (e.sizeCmMin + e.sizeCmMax) / 2);
@@ -268,11 +286,13 @@ void process() {
   // process with the same seed and timing instead of a sub-emitter (which introduces a birth delay).
   // Size/colour differ, but do not change spawn/velocity random sampling in ParticleProcessMaterial.
   node.push('use_fixed_seed = true', `seed = ${seedOf(trail?.parentEmitterName ?? e.name)}`);
+  if (layerBit) node.push(`layers = ${layerBit}`);
   if (trail) node.push('trail_enabled = true', `trail_lifetime = ${n(Math.max(0.017, trail.lifetimeSec))}`);
   if (e.sourceTrack?.length) tracks.push({ path: `${name}:position`, interp: 1, update: 0, keys: e.sourceTrack.map(([tick, p]) => [t(tick), vec3(fromUe(p))] as [number, string]) });
   if (velocity && e.stretchRatio > 1.05) report.push({ level: 'approximated', item: e.name, message: `Velocity stretch x${e.stretchRatio} is a quad that long along the velocity (Align Y); unlike the editor it does not turn to face the camera.` });
-  return node.join('\n');
+  return attractor ? `${node.join('\n')}\n\n${attractor}` : node.join('\n');
 }
+const attractorCount = new WeakMap<Resources, number>();
 
 /**
  * Preview light intensity (candela) -> Godot OmniLight3D light_energy. The editor's three.js PointLight is physical:
@@ -308,6 +328,8 @@ export function godotSceneFrom(e: UnrealEffect, resRoot = `res://vfx_studio/${e.
     lightNames.set(l.name, k);
     nodes.push(lightNode(l, duration, tracks, nodeName(k > 1 ? `${l.name}_path${k}` : l.name)));
   }
+  const floor = [...e.emitters, ...(e.trails ?? []).map(t => t.emitter)].find(em => em.groundCollision)?.groundCollision;
+  if (floor) nodes.push(['[node name="FloorCollision" type="GPUParticlesCollisionBox3D" parent="."]', `position = Vector3(0, ${n(floor.groundZCm / 100 - 0.5)}, 0)`, 'size = Vector3(60, 1, 60)'].join('\n'));
   const files: GodotScene['files'] = [];
   if (e.ribbons.length) {
     // Beams: baked per-tick geometry (every path: trunk + branches, with its flicker/decay opacity) drawn by a small

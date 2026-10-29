@@ -207,7 +207,7 @@
   },
   "attract": {
    "eye": "WRONG",
-   "note": "Unity particles stream to the point 1.5 m right, editor ones stay near Source; unclear which side is wrong",
+   "note": "particles spread right too far at t30; strength probe x1/x0.5/x0.25 looked the same, so not the strength",
    "date": "2026-10-29"
   },
   "shape-path": {
@@ -419,7 +419,7 @@
   },
   "attract": {
    "eye": "OK",
-   "note": "force not applied, as the report says (looks close at this tick anyway)",
+   "note": "attractor exported; cluster drifts right like the editor",
    "date": "2026-10-29"
   },
   "vortex": {
@@ -429,7 +429,7 @@
   },
   "collision": {
    "eye": "OK",
-   "note": "force not applied, as the report says (looks close at this tick anyway)",
+   "note": "floor collision exported; looks like the editor at t45 (bounce itself not distinguishable)",
    "date": "2026-10-29"
   },
   "mesh-particles": {

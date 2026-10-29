@@ -183,3 +183,16 @@ test('path emitters export as emitters spaced along the path (they collapsed to 
   assert.ok(es.every(e => e.rateOverTime[0][1] === 5), 'rate split 60/s -> 12 x 5/s');
   assert.ok(r.value.report.some(x => /spaced along it/.test(x.message)));
 });
+
+test('Godot exports attraction (attractor on its own layer) and ground collision (floor box) instead of dropping them', async () => {
+  const { godotSceneFrom } = await import('../src/export/godot/scene.ts');
+  const ir = irOf('flamethrower');
+  ir.emitters = [{ ...ir.emitters[0], name: 'pulled', attract: { positionCm: [150, 0, 0], strengthCmS2: 800 }, groundCollision: { groundZCm: -100, restitution: 0.6, mode: 'bounce' } }, { ...ir.emitters[0], name: 'free' }];
+  const g = godotSceneFrom(ir);
+  assert.match(g.tscn, /type="GPUParticlesAttractorSphere3D"[\s\S]*?strength = 8\b[\s\S]*?cull_mask = 2/);
+  assert.match(g.tscn, /\[node name="pulled" type="GPUParticles3D"[^\[]*layers = 2/);
+  assert.doesNotMatch(g.tscn.split('[node name="free"')[1].split('[node')[0], /layers = /);
+  assert.match(g.tscn, /collision_mode = 1[\s\S]*?collision_bounce = 0.6/);
+  assert.match(g.tscn, /type="GPUParticlesCollisionBox3D"[\s\S]*?position = Vector3\(0, -1.5, 0\)/);
+  assert.ok(!g.report.some(x => x.level === 'dropped' && /Attraction|collision/i.test(x.message)));
+});
