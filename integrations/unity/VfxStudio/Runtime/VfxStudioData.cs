@@ -35,6 +35,19 @@ namespace VfxStudio
         public int flipStartFrame; // static sheets: authored cell, -1 = random per particle
         public bool attachToSource;
         public int[] trackTicks; public float[] trackPositions;
+        public VfxTrailData trail; // per-particle trails (sparks); JsonUtility fills an empty one when absent: lifetime 0 = none
+        public bool HasTrail => trail != null && trail.lifetime > 0f;
+    }
+
+    /// <summary>Unity Trails module settings. Curves run from the head (0, the particle) to the oldest tail (1).</summary>
+    [Serializable]
+    public class VfxTrailData
+    {
+        public float lifetime, width;
+        public float[] widthKeysT, widthKeysV, colorKeysT, colorKeysRgb, alphaKeysT, alphaKeysV;
+        public string blend, texture, seedName;
+        public float emission;
+        public bool trailOnly;
     }
 
     [Serializable]

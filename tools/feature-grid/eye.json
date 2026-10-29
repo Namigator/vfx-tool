@@ -232,7 +232,7 @@
   },
   "particle-trail": {
    "eye": "OK",
-   "note": "nothing drawn, as the report says",
+   "note": "Unity Trails module: arc, colour and taper match",
    "date": "2026-10-29"
   },
   "sub-emitter": {

@@ -96,12 +96,20 @@ test('Unity: short faded paths are resampled so the end fade has interior vertic
   for (const r of effect.ribbons) if (r.endFade > 0) for (const f of r.frames) for (const p of f.paths) assert.ok(p.points.length / 4 >= MIN_FADE_POINTS, `${r.name}: ${p.points.length / 4} points`);
 });
 
-test('Unity: particle trails are reported as dropped, not lost silently', () => {
+test('Unity: trails left by many particles use the per-particle Trails module (head-first curves; were dropped)', () => {
   const ir = irOf('flamethrower');
-  ir.trails = [{ name: 'fake_trail', emitter: ir.emitters[0], lifetimeSec: 0.3, maxPoints: 16, widthCm: 10, endFade: 0,
-    widthOverTrail: [], colorOverTrail: [], opacityOverTrail: [], blend: 'additive' }];
-  const { report } = unityEffectFrom(ir);
-  assert.ok(report.some(x => x.level === 'dropped' && x.item === 'fake_trail'));
+  ir.trails = [{ name: 'sparks', emitter: ir.emitters[0], lifetimeSec: 0.3, maxPoints: 16, widthCm: 10, endFade: 0,
+    widthOverTrail: [{ t: 0, v: 0 }, { t: 1, v: 1 }], colorOverTrail: [{ t: 0, r: 1, g: 0, b: 0, a: 1 }, { t: 1, r: 0, g: 0, b: 1, a: 1 }],
+    opacityOverTrail: [{ t: 0, v: 0 }, { t: 1, v: 0.8 }], blend: 'additive' }];
+  const { effect, report } = unityEffectFrom(ir);
+  const t = effect.emitters.find(x => x.name === 'sparks_Trail')?.trail;
+  assert.ok(t, 'a trail emitter');
+  assert.equal(t.width, 0.1);
+  assert.deepEqual([t.widthKeysT, t.widthKeysV], [[0, 1], [1, 0]], 'head (Unity 0) full width, tail thin');
+  assert.deepEqual(t.colorKeysRgb.slice(0, 3), [0, 0, 1], 'head colour first');
+  assert.deepEqual(t.alphaKeysV, [0.8, 0]);
+  assert.equal(t.trailOnly, true);
+  assert.ok(!report.some(x => x.level === 'dropped' && x.item === 'sparks'));
 });
 
 test('Unity: variants sheets draw the static editor cell (no flipping)', () => {

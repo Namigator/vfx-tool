@@ -121,7 +121,20 @@ namespace VfxStudio.EditorTools
                 var fx = root.AddComponent<VfxStudioEffect>();
                 fx.effectJson = json;
                 var systems = new List<ParticleSystem>();
-                foreach (var e in d.emitters) systems.Add(BuildEmitter(root.transform, e, d, MaterialFor(e.texture, e.blend, e.emission, e.alignment == "velocity" ? e : null)));
+                foreach (var e in d.emitters)
+                {
+                    var ps = BuildEmitter(root.transform, e, d, MaterialFor(e.texture, e.blend, e.emission, e.alignment == "velocity" ? e : null));
+                    if (e.HasTrail)
+                    {
+                        // Trail strip: the sheet stretched along it, or (untextured) the editor's soft band across its width.
+                        var t = e.trail;
+                        var tm = MakeMaterial(textures.TryGetValue(t.texture ?? "", out var ttex) && ttex ? ttex : BandTexture(1f), t.blend, t.emission);
+                        var tpath = $"{folder}/Materials/{Safe(e.name)}_trail.mat";
+                        AssetDatabase.DeleteAsset(tpath); AssetDatabase.CreateAsset(tm, tpath);
+                        ps.GetComponent<ParticleSystemRenderer>().trailMaterial = tm;
+                    }
+                    systems.Add(ps);
+                }
                 fx.systems = systems.ToArray();
                 fx.lights = d.lights.Select(l => BuildLight(root.transform, l)).ToArray();
                 fx.ribbonMaterials = ribbonMats.ToArray(); fx.ribbonMaterialFirst = ribbonFirst; fx.ribbonMaterialCount = ribbonCount;
@@ -314,22 +327,24 @@ namespace VfxStudio.EditorTools
             return keep.ToArray();
         }
 
-        static Gradient ColorOverLife(VfxEmitterData e)
+        static Gradient ColorOverLife(VfxEmitterData e) => MakeGradient(e.colorKeysT, e.colorKeysRgb, e.alphaKeysT, e.alphaKeysV);
+
+        static Gradient MakeGradient(float[] colorT, float[] rgb, float[] alphaT, float[] alphaV)
         {
             var g = new Gradient();
             GradientColorKey[] ck;
-            if (e.colorKeysT != null && e.colorKeysT.Length > 0)
+            if (colorT != null && colorT.Length > 0)
             {
-                Color C(int i) => new Color(e.colorKeysRgb[i * 3], e.colorKeysRgb[i * 3 + 1], e.colorKeysRgb[i * 3 + 2]);
-                var idx = Pick(e.colorKeysT, i => { var a = C(i - 1); var b = C(i + 1); float u = Mathf.InverseLerp(e.colorKeysT[i - 1], e.colorKeysT[i + 1], e.colorKeysT[i]); var m = Color.Lerp(a, b, u); var c = C(i); return Mathf.Abs(c.r - m.r) + Mathf.Abs(c.g - m.g) + Mathf.Abs(c.b - m.b); });
-                ck = idx.Select(i => new GradientColorKey(C(i), e.colorKeysT[i])).ToArray();
+                Color C(int i) => new Color(rgb[i * 3], rgb[i * 3 + 1], rgb[i * 3 + 2]);
+                var idx = Pick(colorT, i => { var a = C(i - 1); var b = C(i + 1); float u = Mathf.InverseLerp(colorT[i - 1], colorT[i + 1], colorT[i]); var m = Color.Lerp(a, b, u); var c = C(i); return Mathf.Abs(c.r - m.r) + Mathf.Abs(c.g - m.g) + Mathf.Abs(c.b - m.b); });
+                ck = idx.Select(i => new GradientColorKey(C(i), colorT[i])).ToArray();
             }
             else ck = new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) };
             GradientAlphaKey[] ak;
-            if (e.alphaKeysT != null && e.alphaKeysT.Length > 0)
+            if (alphaT != null && alphaT.Length > 0)
             {
-                var idx = Pick(e.alphaKeysT, i => Mathf.Abs(e.alphaKeysV[i] - Mathf.Lerp(e.alphaKeysV[i - 1], e.alphaKeysV[i + 1], Mathf.InverseLerp(e.alphaKeysT[i - 1], e.alphaKeysT[i + 1], e.alphaKeysT[i]))));
-                ak = idx.Select(i => new GradientAlphaKey(e.alphaKeysV[i], e.alphaKeysT[i])).ToArray();
+                var idx = Pick(alphaT, i => Mathf.Abs(alphaV[i] - Mathf.Lerp(alphaV[i - 1], alphaV[i + 1], Mathf.InverseLerp(alphaT[i - 1], alphaT[i + 1], alphaT[i]))));
+                ak = idx.Select(i => new GradientAlphaKey(alphaV[i], alphaT[i])).ToArray();
             }
             else ak = new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) };
             g.SetKeys(ck, ak);
@@ -457,6 +472,19 @@ namespace VfxStudio.EditorTools
             else if (e.alignment == "worldUp") r.renderMode = ParticleSystemRenderMode.VerticalBillboard;
             else r.renderMode = ParticleSystemRenderMode.Billboard;
             r.sortMode = e.blend == "translucent" ? ParticleSystemSortMode.Distance : ParticleSystemSortMode.None;
+            if (e.HasTrail)
+            {
+                // Sparks' trails: Unity's per-particle Trails module. Trail length is a share of the particle's life here.
+                var t = e.trail;
+                ps.randomSeed = (uint)((string.IsNullOrEmpty(t.seedName) ? e.name : t.seedName).GetHashCode() & 0x7fffffff);
+                var tr = ps.trails; tr.enabled = true; tr.mode = ParticleSystemTrailMode.PerParticle; tr.ratio = 1f;
+                tr.lifetime = Mathf.Clamp01(t.lifetime / ((lifeMin + lifeMax) / 2f));
+                tr.minVertexDistance = 0.02f; tr.dieWithParticles = true; tr.sizeAffectsWidth = false; tr.inheritParticleColor = false;
+                tr.textureMode = ParticleSystemTrailTextureMode.Stretch; tr.worldSpace = true;
+                tr.widthOverTrail = t.widthKeysT != null && t.widthKeysT.Length > 0 ? new ParticleSystem.MinMaxCurve(t.width, Linear(t.widthKeysT, t.widthKeysV, 1f)) : new ParticleSystem.MinMaxCurve(t.width);
+                tr.colorOverTrail = new ParticleSystem.MinMaxGradient(MakeGradient(t.colorKeysT, t.colorKeysRgb, t.alphaKeysT, t.alphaKeysV));
+                if (t.trailOnly) r.renderMode = ParticleSystemRenderMode.None;
+            }
             return ps;
         }
 

@@ -151,15 +151,25 @@ export function trailRibbonFrom(tr: UeParticleTrail, durationTicks: number): Uni
 
 export function unityEffectFrom(e: UnrealEffect): { effect: UnityEffect; report: UnityReportItem[] } {
   const report: UnityReportItem[] = [];
-  const trailRibbons: UnityRibbon[] = [];
+  const trailRibbons: UnityRibbon[] = [], trailEmitters: UnityEmitter[] = [];
   for (const t of e.trails ?? []) {
     const r = trailRibbonFrom(t, e.durationTicks);
-    if (r) trailRibbons.push(r);
-    else report.push({ level: 'dropped', item: t.name, message: 'Trail left by many particles (sparks/shed) is not exported to Unity yet: only trails behind a moving head are baked (as beam layers).' });
+    if (r) { trailRibbons.push(r); continue; }
+    // Trails left by many particles (sparks): Unity's own per-particle Trails module on a copy of the spawning emitter
+    // (same seed name as its billboard so both draw the same particles). They were dropped before (feature grid 2026-10-29).
+    const em = emitterFrom(t.emitter, report), flip = (keys: { t: number }[]) => [...keys].reverse().map(k => r4(1 - k.t));
+    trailEmitters.push({ ...em, name: `${t.name}_Trail`, trail: {
+      lifetime: r4(t.lifetimeSec), width: r4(t.widthCm / 100),
+      widthKeysT: flip(t.widthOverTrail), widthKeysV: [...t.widthOverTrail].reverse().map(k => r4(k.v)),
+      colorKeysT: flip(t.colorOverTrail), colorKeysRgb: [...t.colorOverTrail].reverse().flatMap(k => [r4(k.r), r4(k.g), r4(k.b)]),
+      alphaKeysT: flip(t.opacityOverTrail), alphaKeysV: [...t.opacityOverTrail].reverse().map(k => r4(k.v)),
+      blend: t.blend, emission: r4(t.emission ?? 0), texture: t.textureFile ?? '', trailOnly: !t.parentEmitterName, seedName: t.parentEmitterName ?? t.emitter.name,
+    } });
   }
+  if (trailEmitters.length) report.push({ level: 'approximated', item: 'trails', message: `${trailEmitters.length} trail(s) left by many particles use Unity's per-particle Trails module (trail length as a share of the particle's life).` });
   const effect: UnityEffect = {
     format: 'vfx-studio-unity', version: 1, name: e.name, durationTicks: e.durationTicks, ticksPerSecond: 60, sourceHeight: r4((e.sourceHeightCm ?? 0) / 100),
-    emitters: e.emitters.map(x => emitterFrom(x, report)), lights: e.lights.map(lightFrom), ribbons: [...e.ribbons.map(ribbonFrom), ...trailRibbons], textures: e.textures,
+    emitters: [...e.emitters.map(x => emitterFrom(x, report)), ...trailEmitters], lights: e.lights.map(lightFrom), ribbons: [...e.ribbons.map(ribbonFrom), ...trailRibbons], textures: e.textures,
   };
   // The shared IR's own notes that still apply (meshes, flashes, keyframes, multi-path...), minus Unreal-specific ones.
   const ueOnly = /Niagara|Unreal|importer|UE 5|Shape Location|template/i;

@@ -96,6 +96,13 @@ export type UnityEmitter = {
   /** Moving spawn origin (projectiles): position per tick, changed ticks only (3 floats per tick). */
   trackTicks: number[];
   trackPositions: number[];
+  /** Per-particle trails (Unity Trails module), for trails left by many particles (sparks). Absent = none. Curves run from
+   *  the HEAD (0, the particle) to the oldest tail (1), Unity's order. Width in metres; trailOnly = no quad at the head. */
+  trail?: {
+    lifetime: number; width: number; widthKeysT: number[]; widthKeysV: number[];
+    colorKeysT: number[]; colorKeysRgb: number[]; alphaKeysT: number[]; alphaKeysV: number[];
+    blend: 'additive' | 'translucent' | 'opaque'; emission: number; texture: string; trailOnly: boolean; seedName: string;
+  };
 };
 
 export type UnityLight = {
