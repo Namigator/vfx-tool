@@ -258,7 +258,12 @@ void process() {
     // Untextured additive trails: the editor's soft transverse falloff (a flat full-width strip drew ~2x the light).
     else if (trail.blend === 'additive') mat.push('detail_enabled = true', 'detail_blend_mode = 3', `detail_albedo = ${softBand(res)}`);
   } else if (e.textureFile) mat.push(`albedo_texture = ${res.extTexture(`${texRoot}/${e.textureFile}`)}`);
-  if (fb && (fb.columns > 1 || fb.rows > 1)) mat.push(`particles_anim_h_frames = ${fb.columns}`, `particles_anim_v_frames = ${fb.rows}`, `particles_anim_loop = ${fb.loop}`);
+  // Godot reads particles_anim_* only on particle billboards: a flat quad (billboard off) drew the whole sheet, several
+  // partial rings (feature grid sprite-flat, 2026-10-30). Its static cell is cut out through the UVs instead.
+  const flatCell = flat && fb ? (fb.variantFrame ?? (fb.fps === 0 ? fb.startFrame : undefined)) : undefined;
+  if (fb && (fb.columns > 1 || fb.rows > 1) && flatCell !== undefined && flatCell >= 0)
+    mat.push(`uv1_scale = Vector3(${n(1 / fb.columns)}, ${n(1 / fb.rows)}, 1)`, `uv1_offset = Vector3(${n((flatCell % fb.columns) / fb.columns)}, ${n(Math.floor(flatCell / fb.columns) / fb.rows)}, 0)`);
+  else if (fb && (fb.columns > 1 || fb.rows > 1)) mat.push(`particles_anim_h_frames = ${fb.columns}`, `particles_anim_v_frames = ${fb.rows}`, `particles_anim_loop = ${fb.loop}`);
   const material = res.add('StandardMaterial3D', mesh
     ? [`transparency = ${e.blend === 'opaque' ? 0 : 1}`, `blend_mode = ${e.blend === 'additive' ? 1 : 0}`, `shading_mode = ${mesh.lit ? 1 : 0}`, 'vertex_color_use_as_albedo = true', 'vertex_color_is_srgb = true', 'roughness = 0.75']
     : mat);

@@ -459,13 +459,13 @@
   },
   "world-axis": {
    "eye": "OK",
-   "note": "flat after the facingAxis fix",
-   "date": "2026-10-29"
+   "note": "flat; random-cell flat quads draw the whole sheet (rings look finer)",
+   "date": "2026-10-30"
   },
   "sprite-flat": {
-   "eye": "WRONG",
-   "note": "flat now, but two or three overlapping partial rings instead of one",
-   "date": "2026-10-29"
+   "eye": "OK",
+   "note": "one ring after the UV-cut static cell",
+   "date": "2026-10-30"
   },
   "untextured": {
    "eye": "OK",
