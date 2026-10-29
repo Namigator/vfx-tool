@@ -770,16 +770,31 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 		if bursts then
 			while s.burstI <= #bursts and bursts[s.burstI][1] <= tick do
 				local e = bursts[s.burstI]
-				local atOther = e[3] ~= nil
-				if atOther then
-					placePart(s, Vector3.new(e[3], e[4], e[5]))
-				end
-				em:Emit(e[2])
-				if onEmit then
-					onEmit(em, e[2])
-				end
-				if atOther then
-					placePart(s, s.pos)
+				if e[3] ~= nil then
+					-- A burst at its own position (children where a parent died): a short-lived copy of the emitter's part
+					-- stands there and emits. Moving the part there and straight back spawned them at its origin (the
+					-- floor): Emit takes effect on the next simulation step (feature grid sub-emitter, 2026-10-30).
+					local copy = s.part:Clone()
+					copy.CFrame = CFrame.new(toWorld(Vector3.new(e[3], e[4], e[5]))) * worldRot * s.rot
+					for _, x in copy:GetDescendants() do
+						if x:IsA("ParticleEmitter") then
+							x.Enabled = false
+						end
+					end
+					copy.Parent = s.part.Parent
+					local twin = copy:FindFirstChild(em.Name, true) :: ParticleEmitter?
+					if twin then
+						twin:Emit(e[2])
+						if onEmit then
+							onEmit(twin, e[2])
+						end
+					end
+					game:GetService("Debris"):AddItem(copy, em.Lifetime.Max + 1)
+				else
+					em:Emit(e[2])
+					if onEmit then
+						onEmit(em, e[2])
+					end
 				end
 				s.burstI += 1
 			end

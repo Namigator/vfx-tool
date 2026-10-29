@@ -715,9 +715,9 @@
    "date": "2026-10-30"
   },
   "sub-emitter": {
-   "eye": "WRONG",
-   "note": "children burst near the floor, not where the parents die",
-   "date": "2026-10-29"
+   "eye": "OK",
+   "note": "children at the parents death points after the part-copy burst; denser than the editor",
+   "date": "2026-10-30"
   },
   "light": {
    "eye": "OK",
