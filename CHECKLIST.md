@@ -34,7 +34,7 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [x] Mesh particles + prop meshes export to Unity and Godot (built-in meshes as OBJ) · [SAW] grid mesh-particles, prop-mesh · 2026-10-29
 - [x] Godot: attraction, ground collision, positioned bursts (sub-emitters), drag reach, noise strength · [SAW] grid rows · 2026-10-29
 - [x] Static ribbons hold to the effect end (closing IR frame) · [RAN] v2-unity-export test; Unreal re-render pending · 2026-10-29
-- [ ] BACKLOG Unity (grid): Attract spreads particles further right than the editor at t30 (strength probe ruled out) · [SAW] grid attract · 2026-10-29
+- [ ] BACKLOG Unity (grid): Attract flings particles both ways at t30. Known: attract off matches the editor; strength x0.25-x1 looks the same; gravityFocus 1 is worse (default 0 = centre). Next idea: read Unity's ForceField gravity falloff (endRange 100 m) · [SAW] grid attract + probes · 2026-10-30
 - [ ] BACKLOG Unity (grid): light a little yellower than the editor; flat rings a little dimmer · [SAW] grid · 2026-10-29
 - [ ] BACKLOG Godot (grid): vortex not exported; flat sprite draws 2-3 overlapping rings; tumbling meshes spin about one axis · [SAW] grid · 2026-10-29
 - [ ] BACKLOG Unreal (grid): flat sprites stand up; meshes, screen flash and trail-only systems fail/drop; vortex rises; untextured small; textured beam (uv-scroll) missing · [SAW] grid unreal column · 2026-10-29
