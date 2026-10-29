@@ -149,6 +149,10 @@ function emitterNode(res: Resources, e: UeEmitter, texRoot: string, duration: nu
   if (e.spinDegMin || e.spinDegMax) ppm.push(`angle_min = ${n(e.spinDegMin)}`, `angle_max = ${n(e.spinDegMax)}`);
   if (e.angularVelocityDegSMin || e.angularVelocityDegSMax) ppm.push(`angular_velocity_min = ${n(e.angularVelocityDegSMin)}`, `angular_velocity_max = ${n(e.angularVelocityDegSMax)}`);
   const velocity = !trail && e.alignment === 'velocity';
+  // Flat quads (editor worldAxis, lying on the ground): no billboard, a Y-facing quad spun about Y (feature grid 2026-10-29).
+  const flat = !trail && !velocity && !!e.facingAxis && Math.abs(e.facingAxis[2]) > 0.9;
+  if (!trail && !velocity && e.facingAxis && !flat) report.push({ level: 'approximated', item: e.name, message: 'A flat quad facing a sideways axis is drawn as a camera-facing billboard.' });
+  if (flat) ppm.push('particle_flag_rotate_y = true');
   // Trails too: the ribbon's width axes are the particle's X/Z, so Y must follow the motion (see the rider shader below).
   if (velocity || trail) ppm.push('particle_flag_align_y = true');
   const fb = trail ? undefined : e.flipbook;
@@ -206,7 +210,7 @@ void process() {
   // cores", measured per layer with tools/layer-brightness.mjs, 2026-10-17).
   const mat = [`transparency = 1`, `blend_mode = ${(trail?.blend ?? e.blend) === 'additive' ? 1 : 0}`, 'shading_mode = 0', 'vertex_color_use_as_albedo = true', 'vertex_color_is_srgb = true',
     // Velocity-aligned: no billboard + Align Y (Godot's Y-billboard uses world up, so it would stand every flame upright).
-    `billboard_mode = ${trail || velocity ? 0 : 3}`, 'billboard_keep_scale = true', 'cull_mode = 2'];
+    `billboard_mode = ${trail || velocity || flat ? 0 : 3}`, 'billboard_keep_scale = true', 'cull_mode = 2'];
   if (!trail && e.emission) {
     // albedo_color is decoded sRGB -> linear by Godot: encode the editor's LINEAR (1 + emission) gain (1.5 stayed 2.53).
     const gain = n(srgbEncode(1 + e.emission));
@@ -235,6 +239,7 @@ void process() {
     // Charge motes (x6) were 2-3 cm dots instead of streaks (Godot side-by-side 2026-10-17).
     : velocity && e.stretchRatio > 1.05 ? res.add('QuadMesh', [`material = ${material}`, `size = Vector2(1, ${n(e.stretchRatio)})`,
       `center_offset = ${vec3([0, (0.5 - (e.pivot ?? 0.5)) * e.stretchRatio, 0])}`])
+    : flat ? res.add('QuadMesh', [`material = ${material}`, 'orientation = 1'])
     : res.add('QuadMesh', [`material = ${material}`]);
   // ---- timing: continuous rate or one burst ----
   const node: string[] = [`[node name=${str(name)} type="GPUParticles3D" parent="."]`];

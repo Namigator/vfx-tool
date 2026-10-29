@@ -74,7 +74,8 @@ export type UnityEmitter = {
   spinMaxDeg: number;
   angularVelocityMinDeg: number;
   angularVelocityMaxDeg: number;
-  alignment: 'camera' | 'velocity' | 'worldUp';
+  /** flat = lying on the ground (Horizontal Billboard): the editor's worldAxis quads facing world up. */
+  alignment: 'camera' | 'velocity' | 'worldUp' | 'flat';
   /** Length/width of velocity-aligned sprites (1 = square). */
   stretchRatio: number;
   blend: 'additive' | 'translucent' | 'opaque';

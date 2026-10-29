@@ -26,7 +26,7 @@ namespace VfxStudio
         public float sizeMin, sizeMax;
         public float[] sizeKeysT, sizeKeysV, colorKeysT, colorKeysRgb, alphaKeysT, alphaKeysV;
         public float spinMinDeg, spinMaxDeg, angularVelocityMinDeg, angularVelocityMaxDeg;
-        public string alignment; // camera | velocity | worldUp
+        public string alignment; // camera | velocity | worldUp | flat (lying on the ground)
         public float stretchRatio;
         public string blend; // additive | translucent | opaque
         public float emission; // colour x (1 + emission)

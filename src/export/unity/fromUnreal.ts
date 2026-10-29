@@ -19,6 +19,9 @@ function emitterFrom(e: UeEmitter, report: UnityReportItem[]): UnityEmitter {
   if (e.vortex) report.push({ level: 'approximated', item: e.name, message: 'Vortex swirl becomes a Unity Particle System Force Field (rotation speed); its turning direction may be mirrored by the Z flip - flip the sign by hand if it spins the wrong way.' });
   if (e.noise) report.push({ level: 'approximated', item: e.name, message: 'Curl noise becomes the Noise module (strength matched roughly; check the look).' });
   if (e.attract) report.push({ level: 'approximated', item: e.name, message: 'Attraction becomes a Particle System Force Field (gravity); particles are not killed on arrival unless the kill radius is set.' });
+  // Flat quads: Unity's Horizontal Billboard lies on the ground; other facing axes have no billboard mode.
+  const flatQuad = !!e.facingAxis && Math.abs(e.facingAxis[2]) > 0.9;
+  if (e.facingAxis && !flatQuad) report.push({ level: 'approximated', item: e.name, message: 'A flat quad facing a sideways axis is drawn facing the camera (Unity billboards lie flat only on the ground).' });
   if (e.groundCollision) report.push({ level: 'approximated', item: e.name, message: 'Ground collision becomes the Collision module against a world plane at the floor height.' });
   return {
     name: e.name, position: pos(e.position), direction: dir(e.direction),
@@ -41,7 +44,7 @@ function emitterFrom(e: UeEmitter, report: UnityReportItem[]): UnityEmitter {
     colorKeysT: colors.map(k => r4(k.t)), colorKeysRgb: colors.flatMap(k => [r4(k.r), r4(k.g), r4(k.b)]),
     alphaKeysT: alpha.t, alphaKeysV: alpha.v,
     spinMinDeg: r4(e.spinDegMin), spinMaxDeg: r4(e.spinDegMax), angularVelocityMinDeg: r4(e.angularVelocityDegSMin), angularVelocityMaxDeg: r4(e.angularVelocityDegSMax),
-    alignment: e.alignment === 'worldUpCameraFacing' ? 'worldUp' : e.alignment, stretchRatio: r4(e.stretchRatio), blend: e.blend, emission: r4(e.emission ?? 0),
+    alignment: flatQuad ? 'flat' : e.facingAxis ? 'camera' : e.alignment === 'worldUpCameraFacing' ? 'worldUp' : e.alignment, stretchRatio: r4(e.stretchRatio), blend: e.blend, emission: r4(e.emission ?? 0),
     texture: e.textureFile ?? '',
     // Variants sheets (soft-glow: dot, ring, ...) are one static cell per particle, never animated (as Godot/Unreal):
     // variantFrame = the editor's cell, -1 = random per particle. Blessing's halo animated from the dot cell instead.

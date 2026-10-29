@@ -96,7 +96,7 @@ for (const count of [1, 3]) {
       assert.ok(head.sourceTrack && head.sourceTrack.length > 1);
       assert.ok(head.sourceTrack.some(([, p]) => p.some((v, i) => v !== head.sourceTrack![0][1][i])));
       assert.equal(head.bursts[0].tick, 10);
-      assert.equal(head.textureFile, 'soft-glow.png');
+      assert.equal(head.textureFile, 'soft-disc.png'); // untextured sprite = the editor's procedural disc (feature grid 2026-10-29)
     }
     const rider = section('void ApplySpriteSourceTrack(', 'bool ParticleTrailWindow(');
     assert.match(rider, /if \(!bAttached\) return/);

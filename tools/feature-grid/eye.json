@@ -181,13 +181,13 @@
    "date": "2026-10-29"
   },
   "world-axis": {
-   "eye": "WRONG",
-   "note": "rings stand facing the camera instead of lying flat",
+   "eye": "OK",
+   "note": "flat after the facingAxis fix",
    "date": "2026-10-29"
   },
   "sprite-flat": {
-   "eye": "WRONG",
-   "note": "ring faces the camera instead of lying flat",
+   "eye": "OK",
+   "note": "flat after the fix; ring a little smaller/fainter",
    "date": "2026-10-29"
   },
   "variant": {
@@ -196,8 +196,8 @@
    "date": "2026-10-29"
   },
   "untextured": {
-   "eye": "WRONG",
-   "note": "Unity particles much smaller and dimmer",
+   "eye": "OK",
+   "note": "soft-disc texture: size and brightness match",
    "date": "2026-10-29"
   },
   "light": {
@@ -238,6 +238,248 @@
   "sub-emitter": {
    "eye": "UNSURE",
    "note": "both nearly empty at t50; the case needs a better tick",
+   "date": "2026-10-29"
+  }
+ },
+ "godot": {
+  "shape-point": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "shape-sphere": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "shape-box": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "shape-cone": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "shape-disc": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "burst": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "gravity": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "bb-size-opacity": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "spin": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "blend-normal": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "emission-hot": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "flipbook": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "variant": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "uv-scroll": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "sprite": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "light": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "ring": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "projectile": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "motion-trail": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "particle-trail": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "ribbon-line": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "ribbon-bezier": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "ribbon-helix": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "jagged": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "branch": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "radial": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "ring-path": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "reveal": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "path-ops": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "driven-opacity": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "effect-time-opacity": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "overlife": {
+   "eye": "OK",
+   "note": "a little greener mid-life (Unity too)",
+   "date": "2026-10-29"
+  },
+  "value-nodes": {
+   "eye": "OK",
+   "note": "greener than the editor (Unity too)",
+   "date": "2026-10-29"
+  },
+  "velocity-stretch": {
+   "eye": "OK",
+   "note": "streak drawn as two thin parallel lines",
+   "date": "2026-10-29"
+  },
+  "particle-paths": {
+   "eye": "OK",
+   "note": "beams match; particle dots elsewhere",
+   "date": "2026-10-29"
+  },
+  "attract": {
+   "eye": "OK",
+   "note": "force not applied, as the report says (looks close at this tick anyway)",
+   "date": "2026-10-29"
+  },
+  "vortex": {
+   "eye": "OK",
+   "note": "force not applied, as the report says (looks close at this tick anyway)",
+   "date": "2026-10-29"
+  },
+  "collision": {
+   "eye": "OK",
+   "note": "force not applied, as the report says (looks close at this tick anyway)",
+   "date": "2026-10-29"
+  },
+  "mesh-particles": {
+   "eye": "OK",
+   "note": "nothing drawn, as the report says",
+   "date": "2026-10-29"
+  },
+  "prop-mesh": {
+   "eye": "OK",
+   "note": "nothing drawn, as the report says",
+   "date": "2026-10-29"
+  },
+  "screen-flash": {
+   "eye": "OK",
+   "note": "nothing drawn, as the report says",
+   "date": "2026-10-29"
+  },
+  "drag": {
+   "eye": "WRONG",
+   "note": "particles bunch at the start instead of travelling then stopping",
+   "date": "2026-10-29"
+  },
+  "noise": {
+   "eye": "WRONG",
+   "note": "a tight blob: turbulence barely scatters",
+   "date": "2026-10-29"
+  },
+  "world-axis": {
+   "eye": "OK",
+   "note": "flat after the facingAxis fix",
+   "date": "2026-10-29"
+  },
+  "sprite-flat": {
+   "eye": "WRONG",
+   "note": "flat now, but two or three overlapping partial rings instead of one",
+   "date": "2026-10-29"
+  },
+  "untextured": {
+   "eye": "OK",
+   "note": "soft-disc texture: size and brightness match",
+   "date": "2026-10-29"
+  },
+  "shape-path": {
+   "eye": "WRONG",
+   "note": "one dot: path emitters export as a point",
+   "date": "2026-10-29"
+  },
+  "sub-emitter": {
+   "eye": "UNSURE",
+   "note": "both nearly empty at t50",
    "date": "2026-10-29"
   }
  }

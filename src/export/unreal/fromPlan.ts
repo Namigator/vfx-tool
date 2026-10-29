@@ -212,15 +212,19 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     spinDegMin: spin ? r3(deg(spin.rotation.min)) : 0, spinDegMax: spin ? r3(deg(spin.rotation.max)) : 0,
     angularVelocityDegSMin: spin ? r3(deg(spin.angularVelocity.min)) : 0, angularVelocityDegSMax: spin ? r3(deg(spin.angularVelocity.max)) : 0,
     alignment: velocityAligned ? 'velocity' : layer.alignment === 'worldAxis' ? 'worldUpCameraFacing' : 'camera',
+    // The editor's worldAxis quad LIES in the plane facing this axis (ground rings); 'worldUpCameraFacing' alone made
+    // Unity/Godot stand it upright facing the camera (feature grid 2026-10-29).
+    ...(!velocityAligned && layer.alignment === 'worldAxis' ? { facingAxis: toUeDir(layer.worldAxis).map(r3) as Vec3 } : {}),
     stretchRatio: r3(stretchRatio),
     ...(stretchRatio > 1 && layer.pivot !== 0.5 ? { pivot: r3(layer.pivot) } : {}),
     blend: layer.blend === 'additive' ? 'additive' : 'translucent',
     ...(layer.emission ? { emission: r3(layer.emission) } : {}),
-    // Procedural sprites (no texture: the editor draws a soft round glow) ship the built-in soft-glow sheet.
+    // Procedural sprites (no texture: the editor draws a soft round disc) ship soft-disc.png, that disc as a texture
+    // (tools/make-soft-disc.py). The soft-glow dot cell shipped before drew them small and ~5x dimmer (feature grid 2026-10-29).
     ...(layer.sprite ? (() => {
       const fb = flipbookOf(layer, (life[0] + life[1]) / 2, report, grey?.file), cell = singleParticleVariant(d, fb.flipbook);
       return cell === undefined ? fb : { ...fb, flipbook: { ...fb.flipbook!, variantFrame: cell } };
-    })() : { textureFile: 'soft-glow.png', flipbook: { columns: 2, rows: 2, fps: 0, loop: false, randomStartFrame: false, startFrame: 0 } }), // its first cell: the tight glow
+    })() : { textureFile: 'soft-disc.png' }),
     loop: false,
     ...(sourceTrack ? { sourceTrack } : {}),
     attachToSource: d.attachToSource === true,

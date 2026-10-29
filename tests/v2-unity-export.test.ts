@@ -150,3 +150,26 @@ test('Unity: drops worded for Unreal are still reported (mesh layers vanished si
   assert.ok(m && m.level === 'dropped');
   assert.equal(m.message, '2 mesh-particle layer(s) are not exported.');
 });
+
+test('flat (world-axis) quads stay flat: Unity Horizontal Billboard, Godot Y-facing quad (they stood upright; feature grid 2026-10-29)', async () => {
+  const { godotSceneFrom } = await import('../src/export/godot/scene.ts');
+  const ir = irOf('flamethrower');
+  ir.emitters = [{ ...ir.emitters[0], alignment: 'worldUpCameraFacing', facingAxis: [0, 0, 1] }];
+  assert.equal(unityEffectFrom(ir).effect.emitters[0].alignment, 'flat');
+  const tscn = godotSceneFrom(ir).tscn;
+  assert.match(tscn, /orientation = 1/);
+  assert.match(tscn, /particle_flag_rotate_y = true/);
+  ir.emitters = [{ ...ir.emitters[0], facingAxis: [1, 0, 0] }];
+  const side = unityEffectFrom(ir);
+  assert.equal(side.effect.emitters[0].alignment, 'camera');
+  assert.ok(side.report.some(x => x.level === 'approximated' && /sideways/.test(x.message)));
+});
+
+test('untextured sprites ship the soft disc the editor draws (not the tight soft-glow dot)', () => {
+  const doc = JSON.parse(readFileSync('tests/fixtures/feature-box.json', 'utf8'));
+  for (const n of doc.graphs[0].nodes) if (n.type === 'Material') { n.params.template = 'SpriteUnlit'; delete n.params.sprite; }
+  const r = unrealEffectFrom(doc);
+  assert.ok(r.ok);
+  assert.equal(r.value.emitters[0].textureFile, 'soft-disc.png');
+  assert.equal(r.value.emitters[0].flipbook, undefined);
+});

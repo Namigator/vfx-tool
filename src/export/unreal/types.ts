@@ -99,6 +99,8 @@ export type UeEmitter = {
   angularVelocityDegSMin: number;
   angularVelocityDegSMax: number;
   alignment: UeAlignment;
+  /** Flat quads (editor worldAxis): the unit normal the quad faces, Unreal space ([0,0,1] = lying on the ground). */
+  facingAxis?: Vec3;
   /** Velocity-aligned stretch ratio (>1 = stretched along travel direction); 1 = no stretch. */
   stretchRatio: number;
   /** Where the particle sits along a stretched sprite: 0 trailing end, 1 leading tip (editor default 0.5 = centred). */

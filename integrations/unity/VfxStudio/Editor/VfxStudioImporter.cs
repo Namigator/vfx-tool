@@ -451,6 +451,7 @@ namespace VfxStudio.EditorTools
             r.minParticleSize = 0f; r.maxParticleSize = 5f;
             r.alignment = ParticleSystemRenderSpace.View;
             if (velocity) { r.renderMode = ParticleSystemRenderMode.Stretch; r.velocityScale = 0f; r.lengthScale = Mathf.Max(1f, e.stretchRatio); r.rotateWithStretchDirection = true; }
+            else if (e.alignment == "flat") r.renderMode = ParticleSystemRenderMode.HorizontalBillboard; // lying on the ground
             else if (e.alignment == "worldUp") r.renderMode = ParticleSystemRenderMode.VerticalBillboard;
             else r.renderMode = ParticleSystemRenderMode.Billboard;
             r.sortMode = e.blend == "translucent" ? ParticleSystemSortMode.Distance : ParticleSystemSortMode.None;
