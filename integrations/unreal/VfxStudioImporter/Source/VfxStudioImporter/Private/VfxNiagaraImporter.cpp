@@ -852,6 +852,130 @@ namespace
 	 *  particle in the editor (spriteCell): variantFrame / startFrame, else a random cell (-1) when randomStartFrame or
 	 *  variantFrame -1, else cell 0. Playing such a sheet as a flipbook morphed the Orb's ball into the ring cell and
 	 *  lost it (2026-10-29). Returns false for a real flipbook. */
+	/** Mesh particles: lit (or unlit) surface whose colour is the particle colour (colour over life). */
+	UMaterial* GetOrCreateMeshParticleMaterial(const FString& DestRoot, bool bLit)
+	{
+		const FString Name = bLit ? TEXT("M_VfxStudio_MeshParticleLit") : TEXT("M_VfxStudio_MeshParticleUnlit");
+		const FString PackagePath = DestRoot / TEXT("_Materials");
+		if (UMaterial* Existing = LoadObject<UMaterial>(nullptr, *((PackagePath / Name) + TEXT(".") + Name))) return Existing;
+		IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
+		UMaterial* Mat = Cast<UMaterial>(AssetTools.CreateAsset(Name, PackagePath, UMaterial::StaticClass(), nullptr));
+		if (!Mat) return nullptr;
+		Mat->SetShadingModel(bLit ? MSM_DefaultLit : MSM_Unlit);
+		Mat->BlendMode = BLEND_Opaque;
+		Mat->TwoSided = true;
+		Mat->bUsedWithNiagaraMeshParticles = true;
+		UMaterialExpression* Pc = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionParticleColor::StaticClass(), -400, 0);
+		UMaterialEditingLibrary::ConnectMaterialProperty(Pc, TEXT("RGB"), bLit ? MP_BaseColor : MP_EmissiveColor);
+		UMaterialEditingLibrary::RecompileMaterial(Mat);
+		SaveAssetObj(Mat);
+		return Mat;
+	}
+
+	/** A built-in mesh shipped as Meshes/<file>.obj (editor metres, +Y up, right-handed): editor -> Unreal is
+	 *  (x, z, y) x 100 with the height stretched by ScaleY; the axis swap mirrors, so each triangle's winding is reversed. */
+	UStaticMesh* BuildObjMesh(const FString& DestRoot, const FString& AssetName, const FString& ObjText, double ScaleY, UMaterialInterface* Mat)
+	{
+		TArray<FVector> V, N;
+		TArray<FIntVector> FacesV, FacesN;
+		TArray<FString> Lines;
+		ObjText.ParseIntoArrayLines(Lines);
+		for (const FString& L : Lines)
+		{
+			TArray<FString> T;
+			L.ParseIntoArrayWS(T);
+			if (T.Num() >= 4 && T[0] == TEXT("v")) V.Add(FVector(FCString::Atod(*T[1]) * 100.0, FCString::Atod(*T[3]) * 100.0, FCString::Atod(*T[2]) * 100.0 * ScaleY));
+			else if (T.Num() >= 4 && T[0] == TEXT("vn")) N.Add(FVector(FCString::Atod(*T[1]), FCString::Atod(*T[3]), FCString::Atod(*T[2]) / FMath::Max(1e-3, ScaleY)).GetSafeNormal());
+			else if (T.Num() >= 4 && T[0] == TEXT("f"))
+			{
+				int32 Vi[3], Ni[3];
+				for (int32 k = 0; k < 3; k++) { TArray<FString> P; T[k + 1].ParseIntoArray(P, TEXT("/"), false); Vi[k] = FCString::Atoi(*P[0]) - 1; Ni[k] = P.Num() >= 3 ? FCString::Atoi(*P[2]) - 1 : Vi[k]; }
+				FacesV.Add(FIntVector(Vi[0], Vi[2], Vi[1])); FacesN.Add(FIntVector(Ni[0], Ni[2], Ni[1]));
+			}
+		}
+		if (!FacesV.Num()) return nullptr;
+		UPackage* Package = CreatePackage(*((DestRoot / TEXT("Meshes")) / AssetName));
+		UStaticMesh* Mesh = NewObject<UStaticMesh>(Package, FName(*AssetName), RF_Public | RF_Standalone);
+		Mesh->GetStaticMaterials().Add(FStaticMaterial(Mat, FName("Surface"), FName("Surface")));
+		FStaticMeshSourceModel& Src = Mesh->AddSourceModel();
+		Src.BuildSettings.bRecomputeNormals = N.Num() == 0;
+		Src.BuildSettings.bRecomputeTangents = true;
+		Src.BuildSettings.bGenerateLightmapUVs = false;
+		FMeshDescription* MD = Mesh->CreateMeshDescription(0);
+		FStaticMeshAttributes Attr(*MD);
+		Attr.Register();
+		const FPolygonGroupID Group = MD->CreatePolygonGroup();
+		Attr.GetPolygonGroupMaterialSlotNames()[Group] = FName("Surface");
+		auto Positions = Attr.GetVertexPositions();
+		auto Normals = Attr.GetVertexInstanceNormals();
+		auto Colors = Attr.GetVertexInstanceColors();
+		TArray<FVertexID> Ids;
+		for (const FVector& P : V) { const FVertexID Id = MD->CreateVertex(); Positions[Id] = FVector3f(P); Ids.Add(Id); }
+		for (int32 f = 0; f < FacesV.Num(); f++)
+		{
+			TArray<FVertexInstanceID> Tri;
+			for (int32 k = 0; k < 3; k++)
+			{
+				const int32 Vi = FacesV[f][k], Ni = FacesN[f][k];
+				if (!V.IsValidIndex(Vi)) break;
+				const FVertexInstanceID VI = MD->CreateVertexInstance(Ids[Vi]);
+				if (N.IsValidIndex(Ni)) Normals[VI] = FVector3f(N[Ni]);
+				Colors[VI] = FVector4f(1.f, 1.f, 1.f, 1.f);
+				Tri.Add(VI);
+			}
+			if (Tri.Num() == 3) MD->CreateTriangle(Group, Tri);
+		}
+		Mesh->CommitMeshDescription(0);
+		Mesh->Build(true);
+		FStaticMeshCompilingManager::Get().FinishCompilation({ Mesh });
+		Mesh->PostEditChange();
+		FAssetRegistryModule::AssetCreated(Mesh);
+		SaveAssetObj(Mesh);
+		return Mesh;
+	}
+
+	/** Mesh particles (IR meshEmitters): the sprite emitter's spawn/motion/colour, drawn through a mesh renderer. The size
+	 *  is the mean particle size (the mesh renderer's static scale): random sizes and size over life are not kept. */
+	void ConfigureMeshParticles(FNiagaraEmitterHandle& Handle, FVersionedNiagaraEmitterData* Data, const TSharedPtr<FJsonObject>& ME, const TSharedPtr<FJsonObject>& E, const FString& PackageDir, const FString& DestRoot)
+	{
+		const FString MeshId = ME->GetStringField(TEXT("mesh"));
+		const double ScaleY = ME->HasField(TEXT("scaleY")) ? ME->GetNumberField(TEXT("scaleY")) : 1.0;
+		FString Obj;
+		if (!FFileHelper::LoadFileToString(Obj, *FPaths::Combine(PackageDir, TEXT("Meshes"), MeshId + TEXT(".obj")))) { UE_LOG(LogVfxImporter, Error, TEXT("   mesh %s.obj missing in the package"), *MeshId); return; }
+		bool bLit = true; ME->TryGetBoolField(TEXT("lit"), bLit);
+		UMaterial* Mat = GetOrCreateMeshParticleMaterial(DestRoot, bLit);
+		UStaticMesh* Mesh = BuildObjMesh(DestRoot, FString::Printf(TEXT("SM_%s_%s"), *MeshId.Replace(TEXT("-"), TEXT("_")), *E->GetStringField(TEXT("name"))), Obj, ScaleY, Mat);
+		if (!Mesh) { UE_LOG(LogVfxImporter, Error, TEXT("   mesh %s: no triangles"), *MeshId); return; }
+		UNiagaraScript* Spawn = Data->SpawnScriptProps.Script;
+		UNiagaraScriptSource* Src = Spawn ? Cast<UNiagaraScriptSource>(Spawn->GetLatestSource()) : nullptr;
+		UNiagaraNodeOutput* Out = Src && Src->NodeGraph ? Src->NodeGraph->FindEquivalentOutputNode(ENiagaraScriptUsage::ParticleSpawnScript, Spawn->GetUsageId()) : nullptr;
+		// Orientation: fixed = +Z (the mesh's up) along the direction; upright/tumble/velocity keep the mesh upright.
+		FQuat Q = FQuat::Identity;
+		const TArray<TSharedPtr<FJsonValue>>* Dir = nullptr;
+		if (ME->GetStringField(TEXT("orientation")) == TEXT("fixed") && ME->TryGetArrayField(TEXT("direction"), Dir)) Q = FQuat::FindBetweenNormals(FVector::ZAxisVector, JsonVec3(Dir).GetSafeNormal());
+		if (Out)
+		{
+			TArray<FNiagaraVariable> Vars;
+			Vars.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("Particles.Scale")));
+			Vars.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetQuatDef(), TEXT("Particles.MeshOrientation")));
+			TArray<FString> Defaults;
+			Defaults.Add(TEXT("1.0,1.0,1.0"));
+			Defaults.Add(FString::Printf(TEXT("%f,%f,%f,%f"), Q.X, Q.Y, Q.Z, Q.W));
+			FNiagaraStackGraphUtilities::AddParameterModuleToStack(Vars, *Out, INDEX_NONE, Defaults);
+		}
+		for (UNiagaraRendererProperties* R : Data->GetRenderers()) if (R) R->SetIsEnabled(false);
+		const double Size = (E->GetNumberField(TEXT("sizeCmMin")) + E->GetNumberField(TEXT("sizeCmMax"))) / 2.0 / 100.0 * (ME->HasField(TEXT("scale")) ? ME->GetNumberField(TEXT("scale")) : 1.0);
+		const FVersionedNiagaraEmitter Inst = Handle.GetInstance();
+		UNiagaraMeshRendererProperties* MeshR = NewObject<UNiagaraMeshRendererProperties>(Inst.Emitter, NAME_None, RF_Transactional);
+		FNiagaraMeshRendererMeshProperties M;
+		M.Mesh = Mesh;
+		M.Scale = FVector(Size);
+		MeshR->Meshes.Reset();
+		MeshR->Meshes.Add(M);
+		Inst.Emitter->AddRenderer(MeshR, Inst.Version);
+		UE_LOG(LogVfxImporter, Display, TEXT("   mesh particles %s: %s x %.2f"), *E->GetStringField(TEXT("name")), *MeshId, Size);
+	}
+
 	UEdGraphPin& TrailInputPin(UNiagaraNodeFunctionCall* Fn, const TCHAR* Input, const FNiagaraTypeDefinition& Type);
 
 	bool StaticSheetCell(const TSharedPtr<FJsonObject>& Flip, int32& OutCell)
@@ -1560,7 +1684,7 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 	if (Root->TryGetArrayField(TEXT("ribbons"), RibbonList))
 		for (const auto& Item : *RibbonList) BuildRibbonSlices(DestPath, Item->AsObject(), Slices);
 
-	struct FPending { TSharedPtr<FJsonObject> E; FString Name; FString Template; bool bLight = false; int32 Slice = -1; bool bTrail = false; };
+	struct FPending { TSharedPtr<FJsonObject> E; FString Name; FString Template; bool bLight = false; int32 Slice = -1; bool bTrail = false; TSharedPtr<FJsonObject> Mesh; };
 	TArray<FPending> Pending;
 	UNiagaraSystemFactoryNew* SysFactory = NewObject<UNiagaraSystemFactoryNew>();
 	SysFactory->AddToRoot(); // mesh builds below can run a garbage collection
@@ -1580,6 +1704,22 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 			if (!Tmpl) { UE_LOG(LogVfxImporter, Error, TEXT("Skipping emitter %s: template load failed"), *EName); continue; }
 			SysFactory->EmittersToAddToNewSystem.Add(FVersionedNiagaraEmitter(Tmpl, Tmpl->GetExposedVersion().VersionGuid));
 			Pending.Add({ E, EName, Template });
+		}
+	}
+	// Mesh particles: their emitter goes through the sprite path, then ConfigureMeshParticles swaps in a mesh renderer.
+	const TArray<TSharedPtr<FJsonValue>>* MeshEmitters = nullptr;
+	if (Root->TryGetArrayField(TEXT("meshEmitters"), MeshEmitters))
+	{
+		for (const auto& Item : *MeshEmitters)
+		{
+			const TSharedPtr<FJsonObject> ME = Item->AsObject();
+			const TSharedPtr<FJsonObject>* EO = nullptr;
+			if (!ME->TryGetObjectField(TEXT("emitter"), EO)) continue;
+			const FString Template = (*EO)->GetStringField(TEXT("suggestedTemplate")) == TEXT("SimpleSpriteBurst") ? TEXT("SimpleSpriteBurst") : TEXT("Fountain");
+			UNiagaraEmitter* Tmpl = LoadTemplate(Template == TEXT("SimpleSpriteBurst") ? TEXT("/Niagara/DefaultAssets/Templates/Emitters/SimpleSpriteBurst.SimpleSpriteBurst") : TEXT("/Niagara/DefaultAssets/Templates/Emitters/Fountain.Fountain"));
+			if (!Tmpl) continue;
+			SysFactory->EmittersToAddToNewSystem.Add(FVersionedNiagaraEmitter(Tmpl, Tmpl->GetExposedVersion().VersionGuid));
+			Pending.Add({ *EO, (*EO)->GetStringField(TEXT("name")), Template, false, -1, false, ME });
 		}
 	}
 	// Particle trails: Fountain supplies continuous spawning and the standard age/colour update modules.
@@ -1715,6 +1855,7 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 		else UE_LOG(LogVfxImporter, Error, TEXT("   no spawn-script graph for %s; module overrides skipped"), *EName);
 		ApplyForces(Data, E);
 		ApplySpriteSourceTrack(Data, E); // After the solver: an attached rider must end the update at its anchor.
+		if (Pending[i].Mesh.IsValid()) ConfigureMeshParticles(Handle, Data, Pending[i].Mesh, E, PackageDir, DestPath);
 
 		EmitterCount++;
 	}

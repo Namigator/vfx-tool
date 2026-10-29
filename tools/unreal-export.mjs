@@ -21,5 +21,5 @@ if (!r.ok) { console.error(r.message); process.exit(1); }
 const bytes = new Map(r.value.textures.map(t => [t, readFileSync(join(ROOT, 'assets', 'sprites', t))]));
 rmSync(out, { recursive: true, force: true });
 mkdirSync(join(out, 'Textures'), { recursive: true });
-for (const f of buildUnrealPackage(r.value, bytes)) writeFileSync(join(out, f.path), f.bytes);
+for (const f of buildUnrealPackage(r.value, bytes)) { mkdirSync(dirname(join(out, f.path)), { recursive: true }); writeFileSync(join(out, f.path), f.bytes); }
 console.log(`${out}: ${r.value.emitters.length} emitters, ${r.value.ribbons.length} ribbon layers, ${r.value.lights.length} lights`);

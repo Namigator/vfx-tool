@@ -35,7 +35,7 @@ for (const c of CASES) {
   if (!r.ok) { writeFileSync(join(rdir, 'report.json'), JSON.stringify({ exportError: r.message })); console.log(`EXPORT FAIL ${c.id}`); continue; }
   writeFileSync(join(rdir, 'report.json'), JSON.stringify({ report: r.value.report }));
   const bytes = new Map(r.value.textures.map(t => [t, readFileSync(join(ROOT, 'assets', 'sprites', t))]));
-  for (const f of buildUnrealPackage(r.value, bytes)) writeFileSync(join(pkg, f.path), f.bytes);
+  for (const f of buildUnrealPackage(r.value, bytes)) { mkdirSync(join(pkg, f.path, ".."), { recursive: true }); writeFileSync(join(pkg, f.path), f.bytes); }
   rmSync(join(LAB, 'Content/VFXStudio', name), { recursive: true, force: true });
   rmSync(join(ROOT, 'work/unreal', `${name}.png`), { force: true });
   const tick = c.tick ?? DEFAULT_TICK;

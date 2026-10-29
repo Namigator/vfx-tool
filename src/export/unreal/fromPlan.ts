@@ -414,7 +414,7 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
     meshEmitters.push({ emitter, mesh: m.mesh, scale: r3(m.scale), scaleY: r3(m.scaleY ?? 1), orientation: m.orientation, tilt: r3(m.tilt ?? 0.2), lit: m.lit,
       ...(m.orientation === 'fixed' ? { direction: toUeDir(m.direction ?? [0, 1, 0]) } : {}) });
   }
-  if (meshEmitters.length) report.push({ level: 'dropped', item: 'meshes', message: `${meshEmitters.length} mesh-particle layer(s) are not built by the Unreal importer yet (add a Niagara Mesh Renderer by hand); Unity and Godot exports draw them.` });
+  if (meshEmitters.length) report.push({ level: 'approximated', item: 'meshes', message: `${meshEmitters.length} mesh-particle layer(s) draw the built-in mesh (Meshes/*.obj); in Unreal at the mean particle size (random size and size over life are not kept).` });
   if (plan.value.presentation.flashes.length) report.push({ level: 'dropped', item: 'presentation', message: 'Screen flashes are not exported (add a post-process/camera-shake Blueprint on impact if needed).' });
   if (plan.value.presentation.impulses.length) report.push({ level: 'dropped', item: 'presentation', message: 'Camera shake is not exported (use a UE Camera Shake asset triggered on impact if needed).' });
   const lights = plan.value.lights.map(l => {

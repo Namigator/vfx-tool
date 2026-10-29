@@ -3,6 +3,7 @@
 // editor (fetch + File System/download); callers supply the texture bytes already resolved.
 import type { UnrealEffect } from './types.ts';
 import { reportMarkdown } from './report.ts';
+import { builtinMeshObj, isBuiltinMesh } from '../meshObj.ts';
 
 export type UnrealPackageFile = { path: string; bytes: Uint8Array | string };
 
@@ -68,5 +69,7 @@ export function buildUnrealPackage(e: UnrealEffect, textureBytes: Map<string, Ui
     const bytes = textureBytes.get(t);
     if (bytes) files.push({ path: `Textures/${t}`, bytes });
   }
+  // Mesh particles: the built-in meshes as OBJ (the importer builds static meshes from them).
+  for (const m of new Set((e.meshEmitters ?? []).map(x => x.mesh))) if (isBuiltinMesh(m)) files.push({ path: `Meshes/${m}.obj`, bytes: builtinMeshObj(m) });
   return files;
 }

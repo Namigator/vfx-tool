@@ -223,7 +223,7 @@ test('mesh particles: the IR carries them, Unity and Godot draw the built-in mes
   assert.ok(r.ok);
   const me = r.value.meshEmitters?.[0];
   assert.ok(me && me.mesh === 'rock-a' && me.orientation === 'tumble' && me.lit);
-  assert.ok(r.value.report.some(x => x.item === 'meshes' && x.level === 'dropped' && /Unreal importer/.test(x.message)), 'still dropped for Unreal');
+  assert.ok(r.value.report.some(x => x.item === 'meshes' && x.level === 'approximated' && /mean particle size/.test(x.message)), 'Unreal draws them at the mean size');
   const u = unityEffectFrom(r.value);
   const um = u.effect.emitters.find(e => e.mesh);
   assert.equal(um?.mesh?.file, 'rock-a.obj');

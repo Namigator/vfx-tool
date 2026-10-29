@@ -947,13 +947,13 @@
    "date": "2026-10-30"
   },
   "mesh-particles": {
-   "eye": "WRONG",
-   "note": "import fails: the importer has no mesh renderer and rejects systems without sprites",
+   "eye": "OK",
+   "note": "rock meshes rise like the editor (mean size, no tumble)",
    "date": "2026-10-30"
   },
   "prop-mesh": {
-   "eye": "WRONG",
-   "note": "import fails: the importer has no mesh renderer and rejects systems without sprites",
+   "eye": "OK",
+   "note": "crystal at Source, lit",
    "date": "2026-10-30"
   },
   "screen-flash": {
