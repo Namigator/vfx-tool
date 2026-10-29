@@ -1461,11 +1461,12 @@ namespace
 			if (E->TryGetObjectField(TEXT("shape"), ShapeObj))
 			{
 				const FString Kind = (*ShapeObj)->GetStringField(TEXT("kind"));
-				// Shape Location's primitive (ENiagara_ShapePrimitive): Box/Plane 0, Cylinder 1, Ring/Disc 2, Sphere 3. Templates
-				// ship Sphere, so a box only set Box Size and drew one blob, a disc filled a ball (feature grid, 2026-10-29).
-				if (Kind == TEXT("box")) SetStaticSwitch(Graph, TEXT("ShapeLocation"), TEXT("Shape Primitive"), TEXT("NewEnumerator0"));
-				else if (Kind == TEXT("disc")) SetStaticSwitch(Graph, TEXT("ShapeLocation"), TEXT("Shape Primitive"), TEXT("NewEnumerator2"));
-				else SetStaticSwitch(Graph, TEXT("ShapeLocation"), TEXT("Shape Primitive"), TEXT("NewEnumerator3"));
+				// Shape Location's primitive (/Niagara/Enums/Location/ENiagara_LocationShapes, read from the asset): Sphere 0,
+				// Cylinder 1, Box/Plane 2, Torus 3, Ring/Disc 4, Cone 5. Templates ship Sphere, so a box only set Box Size and
+				// drew one blob, a disc filled a ball (feature grid, 2026-10-29).
+				if (Kind == TEXT("box")) SetStaticSwitch(Graph, TEXT("ShapeLocation"), TEXT("Shape Primitive"), TEXT("NewEnumerator2"));
+				else if (Kind == TEXT("disc")) SetStaticSwitch(Graph, TEXT("ShapeLocation"), TEXT("Shape Primitive"), TEXT("NewEnumerator4"));
+				else SetStaticSwitch(Graph, TEXT("ShapeLocation"), TEXT("Shape Primitive"), TEXT("NewEnumerator0"));
 				if (Kind == TEXT("disc"))
 				{
 					OverrideLiteral(Graph, TEXT("ShapeLocation"), TEXT("Ring Radius"), F, FloatLit((*ShapeObj)->GetNumberField(TEXT("radiusCm"))));

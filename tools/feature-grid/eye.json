@@ -482,5 +482,247 @@
    "note": "children at the parents death points after one-shot nodes per burst",
    "date": "2026-10-29"
   }
+ },
+ "roblox": {
+  "shape-sphere": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "shape-box": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "shape-cone": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "shape-disc": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "gravity": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "drag": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "blend-normal": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "untextured": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "variant": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "uv-scroll": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "ring": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "motion-trail": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "ribbon-line": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "ribbon-bezier": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "ribbon-helix": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "jagged": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "branch": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "radial": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "ring-path": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "reveal": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "path-ops": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "particle-paths": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "value-nodes": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "effect-time-opacity": {
+   "eye": "OK",
+   "note": "",
+   "date": "2026-10-29"
+  },
+  "shape-point": {
+   "eye": "OK",
+   "note": "shape matches; Studio bloom makes it brighter/softer",
+   "date": "2026-10-29"
+  },
+  "burst": {
+   "eye": "OK",
+   "note": "shape matches; Studio bloom makes it brighter/softer",
+   "date": "2026-10-29"
+  },
+  "emission-hot": {
+   "eye": "OK",
+   "note": "shape matches; Studio bloom makes it brighter/softer",
+   "date": "2026-10-29"
+  },
+  "velocity-stretch": {
+   "eye": "OK",
+   "note": "shape matches; Studio bloom makes it brighter/softer",
+   "date": "2026-10-29"
+  },
+  "bb-size-opacity": {
+   "eye": "OK",
+   "note": "shape matches; Studio bloom makes it brighter/softer",
+   "date": "2026-10-29"
+  },
+  "projectile": {
+   "eye": "OK",
+   "note": "shape matches; Studio bloom makes it brighter/softer",
+   "date": "2026-10-29"
+  },
+  "overlife": {
+   "eye": "OK",
+   "note": "a little greener",
+   "date": "2026-10-29"
+  },
+  "sprite-flat": {
+   "eye": "OK",
+   "note": "lies flat",
+   "date": "2026-10-29"
+  },
+  "mesh-particles": {
+   "eye": "OK",
+   "note": "rock shapes; lighter colour",
+   "date": "2026-10-29"
+  },
+  "noise": {
+   "eye": "OK",
+   "note": "force not applied (reported); looks close at this tick",
+   "date": "2026-10-29"
+  },
+  "attract": {
+   "eye": "OK",
+   "note": "force not applied (reported); looks close at this tick",
+   "date": "2026-10-29"
+  },
+  "vortex": {
+   "eye": "OK",
+   "note": "force not applied (reported); looks close at this tick",
+   "date": "2026-10-29"
+  },
+  "collision": {
+   "eye": "OK",
+   "note": "force not applied (reported); looks close at this tick",
+   "date": "2026-10-29"
+  },
+  "screen-flash": {
+   "eye": "OK",
+   "note": "nothing drawn, as reported",
+   "date": "2026-10-29"
+  },
+  "particle-trail": {
+   "eye": "OK",
+   "note": "nothing drawn, as reported (trail-only)",
+   "date": "2026-10-29"
+  },
+  "shape-path": {
+   "eye": "WRONG",
+   "note": "one dot: Roblox exporter spawns path emitters at a point",
+   "date": "2026-10-29"
+  },
+  "world-axis": {
+   "eye": "WRONG",
+   "note": "rings stand upright facing the camera",
+   "date": "2026-10-29"
+  },
+  "flipbook": {
+   "eye": "WRONG",
+   "note": "wrong image: mottled brown sheet instead of the fireball",
+   "date": "2026-10-29"
+  },
+  "spin": {
+   "eye": "WRONG",
+   "note": "a soft blob, star sprite and spin not visible",
+   "date": "2026-10-29"
+  },
+  "sprite": {
+   "eye": "WRONG",
+   "note": "a glow ball instead of the ring sprite",
+   "date": "2026-10-29"
+  },
+  "prop-mesh": {
+   "eye": "WRONG",
+   "note": "crystal nearly invisible (dark)",
+   "date": "2026-10-29"
+  },
+  "driven-opacity": {
+   "eye": "WRONG",
+   "note": "beam nearly invisible",
+   "date": "2026-10-29"
+  },
+  "sub-emitter": {
+   "eye": "WRONG",
+   "note": "children burst near the floor, not where the parents die",
+   "date": "2026-10-29"
+  },
+  "light": {
+   "eye": "WRONG",
+   "note": "floor light pool covers the whole floor",
+   "date": "2026-10-29"
+  }
  }
 }

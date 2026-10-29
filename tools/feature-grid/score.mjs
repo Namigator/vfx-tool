@@ -86,6 +86,8 @@ if (import.meta.main) {
       const report = existsSync(rep) ? JSON.parse(readFileSync(rep, 'utf8')) : {};
       const dropped = (report.report ?? []).filter(x => x.level === 'dropped').map(x => `${x.item}: ${x.message}`);
       const approximated = (report.report ?? []).filter(x => x.level === 'approximated').map(x => `exporter: ${x.message}`);
+      // Roblox: textures never uploaded have no asset id, so Studio draws its default sprite (not an exporter fault).
+      if (report.missingAssetIds?.length) approximated.unshift(`no Roblox asset id for ${report.missingAssetIds.join(', ')} (upload: tools/roblox-upload-textures.mjs)`);
       if (report.exportError) { row.engines[e] = { v: 'EXPORT FAIL', why: report.exportError }; continue; }
       if (!tool || !existsSync(ep)) { row.engines[e] = { v: 'NOT RUN', why: !tool ? 'no tool render' : 'no engine render' }; continue; }
       const m = compare(tool, stats(added(raw(ep), raw(join(G, e, 'empty.png')))));

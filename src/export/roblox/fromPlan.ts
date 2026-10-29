@@ -11,6 +11,7 @@ import { applyGrade, greyTextured, hueRotate, sheetGrey, type ColorGrade } from 
 import { trackValue, type LayerAnimation } from '../../graph/keyframes.ts';
 import { bakeMeshes } from './meshBake.ts';
 import { settledColor } from '../../graph/pathColor.ts';
+import { alongPath } from '../alongPath.ts';
 import {
   MAX_SEQUENCE_KEYS, STUDS_PER_METER,
   type RbxBeamLayer, type RbxColorKey, type RbxTrail, type RbxEmitter, type RbxFlipbook, type RbxLight, type RbxMeshLayer, type RbxNumberKey, type RbxReportItem, type RbxStepTrack, type RobloxEffect, type Vec3,
@@ -177,7 +178,6 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     const rr = Math.max(0.05, em.radius * S * 2);
     partSize = em.shape === 'cone' || em.shape === 'disc' ? [rr, 0.05, rr] : [rr, rr, rr];
     if (em.shape === 'disc') report.push({ level: 'approximated', item: layer.nodeId, message: 'Disc emission (outward in a plane) becomes a Roblox Disc shape emitting along its normal.' });
-    if (em.shape === 'path') report.push({ level: 'approximated', item: layer.nodeId, message: 'Emission along a path becomes a point emitter at the path start.' });
   } else if (d.initialVelocity.kind === 'vector') {
     const v = d.initialVelocity.value, n = Math.hypot(v[0], v[1], v[2]);
     if (n > 1e-9) direction = [v[0] / n, v[1] / n, v[2] / n];
@@ -318,6 +318,10 @@ function settleLight(l: PointLightLayer, report: RbxReportItem[]): PointLightLay
   return { ...l, color: settledColor(l.color, l.pathTint, l.pathTrack ?? 0, l.colorOverWindow) };
 }
 
+/** Preview intensity -> Roblox PointLight Brightness. 0.15 lit the whole grid floor (feature grid light row and the Arcane
+ *  side-by-side both found the floor pools too strong, 2026-10-29). */
+export const ROBLOX_LIGHT_SCALE = 0.05;
+
 function lightFrom(l: PointLightLayer, origin: Vec3, duration: number, report: RbxReportItem[]): RbxLight {
   const rel = (p: readonly number[]): Vec3 => [r3((p[0] - origin[0]) * S), r3((p[1] - origin[1]) * S), r3((p[2] - origin[2]) * S)];
   const curve = compileLifeCurve(l.intensityOverWindow);
@@ -327,7 +331,7 @@ function lightFrom(l: PointLightLayer, origin: Vec3, duration: number, report: R
     const inside = t >= l.startTick && t < l.endTick;
     const intensity = l.animation ? (layerAt(l, t).intensity) : l.intensity;
     // Preview intensity (candela-like, ~20 typical) → Roblox Brightness (~0..5); flicker is baked as its average.
-    const v = inside ? Math.round(intensity * 0.15 * sampleLifeCurve(curve, (t - l.startTick) / Math.max(1, l.endTick - l.startTick)) * (1 - l.flicker / 2) * 20) / 20 : 0;
+    const v = inside ? Math.round(intensity * ROBLOX_LIGHT_SCALE * sampleLifeCurve(curve, (t - l.startTick) / Math.max(1, l.endTick - l.startTick)) * (1 - l.flicker / 2) * 20) / 20 : 0;
     if (v !== last) { brightness.push([t, v]); last = v; }
   }
   if (l.flicker > 0) report.push({ level: 'approximated', item: l.nodeId, message: 'Light flicker is baked as its average brightness.' });
@@ -557,7 +561,11 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
     else usedBy.set(layer.systemId, layer.nodeId);
     const at = (k: number) => (layer.pathTint ? { ...layer, color: settledColor(layer.color, layer.pathTint, k) } : layer);
     if (layer.pathTint) report.push({ level: 'approximated', item: layer.nodeId, message: 'Colour by path / colour over window: each path exports the colour it settles on (the fade from the original colour is not exported).' });
-    const own = [emitterFrom(at(0), d, origin, plan.value.durationTicks, unique(layer.nodeId), report)];
+    // Path emission: emitters spaced along the path (src/export/alongPath.ts); it was one point at the path start.
+    const split = alongPath(d);
+    if (split) report.push({ level: 'approximated', item: layer.nodeId, message: `Emission along a path becomes ${split.length} small emitters spaced along it.` });
+    const own = split ? split.map((p, k) => emitterFrom(at(0), p, origin, plan.value.durationTicks, unique(k ? `${layer.nodeId}_along${k + 1}` : layer.nodeId), report))
+      : [emitterFrom(at(0), d, origin, plan.value.durationTicks, unique(layer.nodeId), report)];
     // A PathFollower over several paths: one source per path, each emitting the full amount (as in the editor).
     (d.extraSourceTracks ?? []).forEach((track, k) => own.push(emitterFrom(at(k + 1), { ...d, sourceTrack: track, extraSourceTracks: undefined }, origin, plan.value.durationTicks, unique(`${layer.nodeId}_path${k + 2}`), report)));
     for (const e of own) {
