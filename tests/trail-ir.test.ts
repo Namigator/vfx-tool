@@ -60,9 +60,13 @@ test('static variant metadata preserves legacy overLife flipbook fields', () => 
     Object.assign(graph.nodes.find(n => n.id === 'node-billboard')!.params, { flipbookMode: 'overLife' });
     const result = unrealEffectFrom(doc);
     assert.ok(result.ok);
-    assert.deepEqual(result.value.emitters[0].flipbook, {
-      columns: 2, rows: 2, fps: 4, loop: false, randomStartFrame: false, variantFrame: variant,
+    // F01 births one particle, so a random variant (-1) exports the cell the editor draws for it (0..3).
+    const fb = result.value.emitters[0].flipbook!;
+    assert.deepEqual({ ...fb, variantFrame: undefined }, {
+      columns: 2, rows: 2, fps: 4, loop: false, randomStartFrame: false, variantFrame: undefined,
     });
+    if (variant >= 0) assert.equal(fb.variantFrame, variant);
+    else assert.ok(Number.isInteger(fb.variantFrame) && fb.variantFrame! >= 0 && fb.variantFrame! < 4);
     graph.nodes.find(n => n.id === 'node-material')!.params.sprite = 'lightning-charge';
     const animated = unrealEffectFrom(doc);
     assert.ok(animated.ok);

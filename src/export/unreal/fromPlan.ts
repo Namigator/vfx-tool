@@ -13,7 +13,7 @@ import { compileParticlePreview, multiplyColors, type ParticlePreviewLayer, type
 import { compilePathPreview, type PathPreviewLayer } from '../../graph/toPaths.ts';
 import type { ParticleEmitterDescriptor } from '../../runtime/particles.ts';
 import { compileLifeCurve, compileLifeGradient, sampleLifeCurve, sampleLifeGradient } from '../../render/billboardLife.ts';
-import { fnv1a32Utf8 } from '../../runtime/random.ts';
+import { emitterParentRandomKey, fnv1a32Utf8 } from '../../runtime/random.ts';
 import { applyGrade, greyTextured, hueRotate, type ColorGrade } from '../../graph/recolor.ts';
 import { settledColor } from '../../graph/pathColor.ts';
 import {
@@ -81,6 +81,18 @@ function flipbookOf(layer: ParticlePreviewLayer, meanLifeSeconds: number, report
   if (sp.mode === 'first') return { textureFile: file, flipbook: { columns, rows, fps: 0, loop: false, randomStartFrame: sp.sheet.kind === 'variants' || sp.variant < 0, ...(sp.variant >= 0 ? { startFrame: sp.variant } : {}), ...variant } };
   if (sp.mode === 'overLife') { const fps = r3(frames / Math.max(0.05, meanLifeSeconds)); return { textureFile: file, flipbook: { columns, rows, fps, loop: false, randomStartFrame: sp.randomStart, ...variant } }; }
   return { textureFile: file, flipbook: { columns, rows, fps: sp.fps, loop: sp.loop !== false, randomStartFrame: sp.randomStart, ...variant } };
+}
+
+/** A random-variant sheet on an emitter that births exactly one particle: the cell the editor draws for it (its
+ *  parentRandomKey hash, as spriteCell picks), so a lone halo or core keeps the editor's glow style instead of a
+ *  per-run random one (a ring vs a tight dot changes the look). Undefined when there is more than one particle. */
+function singleParticleVariant(d: ParticleEmitterDescriptor, flipbook: UeFlipbook | undefined): number | undefined {
+  if (!flipbook || flipbook.variantFrame !== -1 || d.rate) return undefined;
+  const live = d.bursts.filter(b => b.count > 0);
+  if (live.length !== 1 || live[0].count !== 1) return undefined;
+  const n = flipbook.columns * flipbook.rows;
+  const key = emitterParentRandomKey({ documentSeed: d.documentSeed, randomStreamId: d.randomStreamId, eventRandomKey: live[0].eventRandomKey, entityOrdinal: 0 });
+  return Math.min(n - 1, Math.floor((fnv1a32Utf8(key) / 4294967296) * n));
 }
 
 function rateTrack(d: ParticleEmitterDescriptor, duration: number): UeStepTrack {
@@ -203,7 +215,10 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     blend: layer.blend === 'additive' ? 'additive' : 'translucent',
     ...(layer.emission ? { emission: r3(layer.emission) } : {}),
     // Procedural sprites (no texture: the editor draws a soft round glow) ship the built-in soft-glow sheet.
-    ...(layer.sprite ? flipbookOf(layer, (life[0] + life[1]) / 2, report, grey?.file) : { textureFile: 'soft-glow.png', flipbook: { columns: 2, rows: 2, fps: 0, loop: false, randomStartFrame: false, startFrame: 0 } }), // its first cell: the tight glow
+    ...(layer.sprite ? (() => {
+      const fb = flipbookOf(layer, (life[0] + life[1]) / 2, report, grey?.file), cell = singleParticleVariant(d, fb.flipbook);
+      return cell === undefined ? fb : { ...fb, flipbook: { ...fb.flipbook!, variantFrame: cell } };
+    })() : { textureFile: 'soft-glow.png', flipbook: { columns: 2, rows: 2, fps: 0, loop: false, randomStartFrame: false, startFrame: 0 } }), // its first cell: the tight glow
     loop: false,
     ...(sourceTrack ? { sourceTrack } : {}),
     attachToSource: d.attachToSource === true,
