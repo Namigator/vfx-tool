@@ -507,7 +507,11 @@ namespace
 			// colour x (1 + emission) gain (HDR colour).
 			double Emission = 0.0; R->TryGetNumberField(TEXT("emission"), Emission);
 			const float Gain = (float)(1.0 + FMath::Max(0.0, Emission));
-			Color = FLinearColor((float)(*C)->GetNumberField(TEXT("r")) * Gain, (float)(*C)->GetNumberField(TEXT("g")) * Gain, (float)(*C)->GetNumberField(TEXT("b")) * Gain, 1.f);
+			// The IR colour is sRGB: decode it like the sprites do (FLinearColor(FColor)). Raw sRGB values as linear washed
+			// every beam toward white (purple #B48CFF drew lavender; feature grid ribbon rows, 2026-10-30).
+			const auto Byte = [&](const TCHAR* K) { return (uint8)FMath::Clamp(FMath::RoundToInt((*C)->GetNumberField(K) * 255.0), 0, 255); };
+			Color = FLinearColor(FColor(Byte(TEXT("r")), Byte(TEXT("g")), Byte(TEXT("b")))) * Gain;
+			Color.A = 1.f;
 		}
 		const TArray<TSharedPtr<FJsonValue>>* Frames = nullptr;
 		if (!R->TryGetArrayField(TEXT("frames"), Frames)) return;
