@@ -121,10 +121,13 @@ function emitterNode(res: Resources, e: UeEmitter, texRoot: string, duration: nu
   else if (s.kind === 'cone') ppm.push(`spread = ${n(s.angleDeg)}`, ...(s.radiusCm > 0.5 ? ['emission_shape = 1', `emission_sphere_radius = ${n(s.radiusCm / 100)}`] : []));
   else ppm.push('spread = 0.0');
   if (e.drag > 0) {
-    // Godot damping is a constant deceleration (m/s^2), ours is proportional to speed: match the initial slow-down.
-    const d = e.drag * speedAvg;
+    // Godot damping is a constant deceleration (m/s^2), ours is proportional to speed. Match the DISTANCE travelled over
+    // a lifetime, v0 (1 - e^-kL) / k = v0^2 / 2d: matching the initial slow-down (d = k v0) stopped particles at half
+    // the editor's reach, bunched at the start (feature grid drag row, 2026-10-29).
+    const L = (lifeMin + lifeMax) / 2, reach = (1 - Math.exp(-e.drag * L)) / e.drag;
+    const d = speedAvg / (2 * Math.max(1e-3, reach));
     ppm.push(`damping_min = ${n(d * 0.8)}`, `damping_max = ${n(d * 1.2)}`);
-    report.push({ level: 'approximated', item: e.name, message: 'Drag (proportional to speed) becomes Godot damping (a constant deceleration matched at launch speed).' });
+    report.push({ level: 'approximated', item: e.name, message: 'Drag (proportional to speed) becomes Godot damping (a constant deceleration matched to the distance travelled).' });
   }
   if (e.noise) {
     // Godot turbulence steers velocity toward a noise field (influence 0..1): far stronger than our additive curl noise,

@@ -440,9 +440,11 @@ namespace VfxStudio.EditorTools
                     float cycles = e.flipFps * (lifeMin + lifeMax) / 2f / frames;
                     if (cycles >= 1f) { ts.cycleCount = Mathf.Max(1, Mathf.RoundToInt(e.flipLoop ? cycles : 1f)); ts.frameOverTime = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0f, 1f, 1f)); }
                     else { ts.cycleCount = 1; ts.frameOverTime = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0f, 1f, cycles)); }
-                    ts.startFrame = e.flipRandomStart ? new ParticleSystem.MinMaxCurve(0f, frames - 1) : new ParticleSystem.MinMaxCurve(0f);
+                    ts.startFrame = e.flipRandomStart ? new ParticleSystem.MinMaxCurve(0f, (frames - 0.5f) / frames) : new ParticleSystem.MinMaxCurve(0f); // fraction of the sheet, see below
                 }
-                else { ts.frameOverTime = new ParticleSystem.MinMaxCurve(0f); ts.startFrame = e.flipStartFrame >= 0 ? new ParticleSystem.MinMaxCurve(Mathf.Min(e.flipStartFrame, frames - 1)) : new ParticleSystem.MinMaxCurve(0f, frames - 1); }
+                // Static cells: startFrame as a FRACTION of the sheet (cell / frames, mid-cell). Whole frame numbers drew every
+                // cell >= 1 as the last cell (soft-glow cell 1, the wide glow, came out as the ring; feature grid 2026-10-29).
+                else { ts.frameOverTime = new ParticleSystem.MinMaxCurve(0f); ts.startFrame = e.flipStartFrame >= 0 ? new ParticleSystem.MinMaxCurve((Mathf.Min(e.flipStartFrame, frames - 1) + 0.5f) / frames) : new ParticleSystem.MinMaxCurve(0f, (frames - 0.5f) / frames); }
             }
 
             var r = go.GetComponent<ParticleSystemRenderer>();

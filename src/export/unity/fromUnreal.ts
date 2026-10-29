@@ -7,8 +7,11 @@ const r4 = (x: number) => Math.round(x * 10000) / 10000;
 /** Unreal cm (x, our z, our y) -> Unity m (x, y, -z). */
 const pos = (p: readonly number[]): number[] => [r4(p[0] / 100), r4(p[2] / 100), r4(-p[1] / 100)];
 const dir = (p: readonly number[]): number[] => { const v = [p[0], p[2], -p[1]], l = Math.hypot(v[0], v[1], v[2]) || 1; return v.map(x => r4(x / l)); };
-/** Preview light intensity (Three.js, ~candela at metre scale) -> Unity built-in Light.intensity (0..8 typical). */
-export const UNITY_LIGHT_SCALE = 0.1;
+/** Preview light intensity (Three.js, ~candela at metre scale) -> Unity built-in Light.intensity (0..8 typical), and the
+ *  range stretch: Unity's built-in falloff reaches zero at the range, three's decays smoothly past it. Measured on the
+ *  feature grid light row (pool brightness x1.08, lit area x0.96 vs the editor; 0.1 / x1 gave x0.46 / x0.28), 2026-10-29. */
+export const UNITY_LIGHT_SCALE = 0.15;
+export const UNITY_LIGHT_RANGE = 1.3;
 
 function emitterFrom(e: UeEmitter, report: UnityReportItem[]): UnityEmitter {
   const s = e.shape, mid = Math.max(1e-6, (e.sizeCmMin + e.sizeCmMax) / 2);
@@ -59,7 +62,7 @@ function emitterFrom(e: UeEmitter, report: UnityReportItem[]): UnityEmitter {
 function lightFrom(l: UeLight): UnityLight {
   return {
     name: l.name, color: l.color.map(r4), intensityTicks: l.intensity.map(([t]) => t), intensityValues: l.intensity.map(([, v]) => r4(v * UNITY_LIGHT_SCALE)),
-    range: r4(Math.max(0.1, l.radiusCm / 100)), position: pos(l.positionCm),
+    range: r4(Math.max(0.1, l.radiusCm / 100 * UNITY_LIGHT_RANGE)), position: pos(l.positionCm),
     trackTicks: (l.sourceTrack ?? []).map(([t]) => t), trackPositions: (l.sourceTrack ?? []).flatMap(([, p]) => pos(p)),
   };
 }

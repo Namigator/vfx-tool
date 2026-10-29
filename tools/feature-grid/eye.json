@@ -191,8 +191,8 @@
    "date": "2026-10-29"
   },
   "variant": {
-   "eye": "WRONG",
-   "note": "Unity draws the ring cell, the editor a soft dot",
+   "eye": "OK",
+   "note": "wide glow cell after the start-frame unit fix (a little smaller)",
    "date": "2026-10-29"
   },
   "untextured": {
@@ -201,8 +201,8 @@
    "date": "2026-10-29"
   },
   "light": {
-   "eye": "WRONG",
-   "note": "floor light pool much dimmer and smaller",
+   "eye": "OK",
+   "note": "pool size/brightness match after tuning; a little yellower",
    "date": "2026-10-29"
   },
   "attract": {
@@ -448,8 +448,8 @@
    "date": "2026-10-29"
   },
   "drag": {
-   "eye": "WRONG",
-   "note": "particles bunch at the start instead of travelling then stopping",
+   "eye": "OK",
+   "note": "reach matches after the distance-matched damping; a little shorter",
    "date": "2026-10-29"
   },
   "noise": {
