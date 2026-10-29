@@ -192,7 +192,7 @@ namespace VfxStudio
             lr.useWorldSpace = false;
             lr.alignment = LineAlignment.View;
             lr.textureMode = layer.tile > 0f ? LineTextureMode.Tile : LineTextureMode.Stretch; // Tile: u = metres along the line
-            lr.numCapVertices = 0; lr.numCornerVertices = 1;
+            lr.numCapVertices = 0; lr.numCornerVertices = 0; // corner fans drew hourglass loops at lightning zigzags (Arc kinks, 2026-10-29)
             lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; lr.receiveShadows = false;
             return lr;
         }
