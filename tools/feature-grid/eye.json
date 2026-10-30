@@ -957,13 +957,13 @@
    "date": "2026-10-30"
   },
   "screen-flash": {
-   "eye": "WRONG",
-   "note": "import fails on a system with no emitters (flash is dropped anyway)",
+   "eye": "OK",
+   "note": "whole view tinted by the flash sprite",
    "date": "2026-10-30"
   },
   "particle-trail": {
-   "eye": "WRONG",
-   "note": "import fails: trail-only system (no sprite emitter)",
+   "eye": "OK",
+   "note": "baked spark trails, same shape; brighter/oranger (Unreal bloom)",
    "date": "2026-10-30"
   }
  },

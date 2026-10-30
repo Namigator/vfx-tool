@@ -1707,6 +1707,9 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 	const TArray<TSharedPtr<FJsonValue>>* RibbonList = nullptr;
 	if (Root->TryGetArrayField(TEXT("ribbons"), RibbonList))
 		for (const auto& Item : *RibbonList) BuildRibbonSlices(DestPath, Item->AsObject(), Slices);
+	// Many-particle trails baked from the editor simulation (IR trailRibbons): drawn exactly like ribbons.
+	if (Root->TryGetArrayField(TEXT("trailRibbons"), RibbonList))
+		for (const auto& Item : *RibbonList) BuildRibbonSlices(DestPath, Item->AsObject(), Slices);
 
 	struct FPending { TSharedPtr<FJsonObject> E; FString Name; FString Template; bool bLight = false; int32 Slice = -1; bool bTrail = false; TSharedPtr<FJsonObject> Mesh; bool bFlash = false; };
 	TArray<FPending> Pending;

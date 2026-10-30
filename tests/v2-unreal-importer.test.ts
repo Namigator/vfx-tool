@@ -159,3 +159,15 @@ test('Unreal package: bursts at their own positions become one-burst emitters th
   assert.deepEqual(e.emitters[1].rateOverTime, []);
   assert.equal(e.emitters[0].suggestedTemplate, 'SimpleSpriteBurst');
 });
+
+test('Unreal many-particle trails: baked from the editor simulation into trailRibbons the importer draws like ribbons', () => {
+  const r = unrealEffectFrom(JSON.parse(readFileSync(new URL('./fixtures/feature-ptrail.json', import.meta.url), 'utf8')));
+  assert.ok(r.ok);
+  const t = r.value.trailRibbons!;
+  assert.equal(t.length, 1);
+  assert.ok(Math.max(...t[0].frames.map(f => f.paths?.length ?? 0)) > 10, 'one path per live spark');
+  const path = t[0].frames.find(f => f.paths?.length)!.paths![0].points;
+  assert.equal(path[0][3], 0, 'the old tail tapers to zero width');
+  assert.equal(t[0].frames.at(-1)!.points.length, 0, 'hidden after the effect');
+  assert.match(importer, /TryGetArrayField\(TEXT\("trailRibbons"\), RibbonList\)/);
+});

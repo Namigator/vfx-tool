@@ -11,7 +11,7 @@ import type { ColorValue, EffectDocumentV2 } from '../../model/types.ts';
 import { TICKS_PER_SECOND } from '../../model/types.ts';
 import { compileParticlePreview, multiplyColors, type ParticlePreviewLayer, type PointLightLayer } from '../../graph/toParticles.ts';
 import { compilePathPreview, type PathPreviewLayer } from '../../graph/toPaths.ts';
-import type { ParticleEmitterDescriptor } from '../../runtime/particles.ts';
+import { ParticleSimulation, type ParticleEmitterDescriptor } from '../../runtime/particles.ts';
 import { compileLifeCurve, compileLifeGradient, sampleLifeCurve, sampleLifeGradient } from '../../render/billboardLife.ts';
 import { emitterParentRandomKey, fnv1a32Utf8 } from '../../runtime/random.ts';
 import { applyGrade, greyTextured, hueRotate, type ColorGrade } from '../../graph/recolor.ts';
@@ -30,6 +30,8 @@ const srgbToLinear = (s: number) => (s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1
 const safeName = (id: string) => id.replace(/[^A-Za-z0-9_]/g, '_').slice(0, 60);
 /** Screen-flash sprite size (cm): covers the view from up to ~100 m away at a 90° field of view. */
 const FLASH_SIZE_CM = 20000;
+/** Baked many-particle trails (trailRibbons): one ribbon frame every this many ticks. */
+const TRAIL_BAKE_STEP = 2;
 /** The preview's transverse soft edge of untextured ribbons (RibbonGeometry.ts ribbonSoftness; not imported: it pulls in three). */
 const ribbonSoftness = (blend: string) => (blend === 'additive' ? 1 : blend === 'normal' ? 0.25 : 0);
 /** UeRibbon.crossSection: the editor's smoothstep soft edge for untextured strips, a variant sheet's straightened line. */
@@ -397,7 +399,37 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
       });
     });
   }
-  if (plan.value.trails.length) report.push({ level: 'approximated', item: 'trails', message: `${plan.value.trails.length} trail layer(s) exported as particle trails: the importer builds one Niagara ribbon per moving head (sourceTrack); trails left by many particles (spark/shed trails) are skipped (one ribbon per particle is not supported yet).` });
+  // Trails left by many particles (sparks): the importer builds Niagara ribbons only for one moving head, so these are
+  // baked from the editor's own simulation into ribbon frames (one path per live particle every TRAIL_BAKE_STEP ticks),
+  // drawn like beams. Unreal only: Unity and Godot have native per-particle trails (feature grid 2026-10-30).
+  const trailRibbons: UeRibbon[] = [];
+  for (const layer of plan.value.trails) {
+    const d = systems.get(layer.systemId);
+    if (!d || d.sourceTrack) continue;
+    const created = ParticleSimulation.create(d);
+    if (!created.ok) continue;
+    const sim = created.value, history = new Map<string, { tick: number; p: Vec3 }[]>(), frames: UeRibbon['frames'] = [];
+    const h = Math.max(1, layer.historyTicks), widthCm = layer.width * CM_PER_METER;
+    const fade = (u: number) => { const f = layer.endFade > 0 ? Math.min(1, u / layer.endFade) : 1; return f * f * (3 - 2 * f); };
+    const c = hueRotate(applyGrade(layer.color, layer.grade), layer.hueShift ?? 0);
+    while (sim.tick < plan.value.durationTicks) {
+      const live = sim.snapshot().particles, tick = sim.tick;
+      for (const p of live) { const list = history.get(p.id) ?? []; list.push({ tick, p: toUe([p.position[0] - origin[0], p.position[1] - origin[1], p.position[2] - origin[2]]) }); history.set(p.id, list.filter(x => x.tick > tick - h)); }
+      if (tick % TRAIL_BAKE_STEP === 0) {
+        const paths = live.map(p => history.get(p.id)!).filter(l => l.length > 1).map(l => {
+          const pts = l.length > layer.maxPoints ? l.filter((_, i) => i % Math.ceil(l.length / layer.maxPoints) === 0 || i === l.length - 1) : l;
+          return { points: pts.map((x, i): Vec3Width => [r3(x.p[0]), r3(x.p[1]), r3(x.p[2]), r3(widthCm * fade(i / (pts.length - 1)))]), alpha: r3(Math.min(1, layer.opacity * c.alpha)) };
+        });
+        frames.push({ tick, points: paths[0]?.points ?? [], ...(paths.length ? { paths } : {}) });
+      }
+      if (!sim.step().ok) break;
+    }
+    frames.push({ tick: plan.value.durationTicks, points: [] });
+    const rgb = [1, 3, 5].map(i => r3(parseInt(c.srgb.slice(i, i + 2), 16) / 255));
+    trailRibbons.push({ name: unique(`${layer.nodeId}_baked`), color: { t: 0, r: rgb[0], g: rgb[1], b: rgb[2], a: 1 }, blend: layer.blend === 'additive' ? 'additive' : 'translucent',
+      ...(layer.emission ? { emission: r3(layer.emission) } : {}), widthCm: r3(widthCm), endFade: 0, softness: layer.blend === 'additive' ? 1 : 0.25, frames });
+  }
+  if (plan.value.trails.length) report.push({ level: 'approximated', item: 'trails', message: `${plan.value.trails.length} trail layer(s) exported as particle trails: the importer builds one Niagara ribbon per moving head (sourceTrack); trails left by many particles (spark/shed trails) are baked from the editor simulation into ribbon frames every ${TRAIL_BAKE_STEP} ticks (trailRibbons).` });
   // Mesh particles: spawn/motion/size/colour through the sprite path (a neutral layer), plus the mesh and its orientation.
   // Unity and Godot draw them (built-in meshes shipped as OBJ); imported GLB meshes are not exported (feature grid 2026-10-29).
   const meshEmitters: UeMeshEmitter[] = [];
@@ -443,6 +475,6 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
   report.push({ level: 'info', item: 'scale', message: `1 m = ${CM_PER_METER} cm. Axis mapping: ue.x=src.x*100, ue.y=src.z*100, ue.z=src.y*100 (our +Y up -> Unreal +Z up). The NiagaraSystem's origin is the Source anchor: place or attach the actor at the caster / nozzle.` });
   return { ok: true, value: {
     name: safeName(doc.name || 'Effect'), durationTicks: plan.value.durationTicks, ticksPerSecond: 60,
-    emitters, ribbons, ...(trails.length ? { trails } : {}), ...(meshEmitters.length ? { meshEmitters } : {}), ...(flashes.length ? { flashes, flashEmitters } : {}), lights, textures, report, sourceHeightCm: r3(origin[1] * CM_PER_METER),
+    emitters, ribbons, ...(trails.length ? { trails } : {}), ...(meshEmitters.length ? { meshEmitters } : {}), ...(flashes.length ? { flashes, flashEmitters } : {}), ...(trailRibbons.length ? { trailRibbons } : {}), lights, textures, report, sourceHeightCm: r3(origin[1] * CM_PER_METER),
   } };
 }

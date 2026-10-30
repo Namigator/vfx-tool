@@ -209,6 +209,8 @@ export type UnrealEffect = {
   flashes?: { name: string; tick: number; durationTicks: number; color: [number, number, number]; alpha: number }[];
   /** Unreal importer only: `flashes` as huge camera-facing sprites drawn with a depth-test-off flash material. */
   flashEmitters?: UeEmitter[];
+  /** Unreal importer only: many-particle trails baked from the editor simulation into ribbon frames (drawn like `ribbons`). */
+  trailRibbons?: UeRibbon[];
   lights: UeLight[];
   /** Effect origin in world space isn't needed here (the package is authored at the origin; the importer places the actor). */
   textures: string[];
