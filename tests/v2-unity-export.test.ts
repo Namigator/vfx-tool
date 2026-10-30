@@ -267,3 +267,16 @@ test('screen flashes reach Unity and Godot (they were dropped everywhere)', asyn
   assert.match(g, /\[node name="Rect" type="ColorRect" parent="Flash"\]/);
   assert.match(g, /NodePath\("Flash\/Rect:color"\)/);
 });
+
+test('Godot vortex: the editor swirl sampled into a GPUParticlesAttractorVectorField3D on the emitter layer', async () => {
+  const { godotSceneFrom } = await import('../src/export/godot/scene.ts');
+  const r = unrealEffectFrom(JSON.parse(readFileSync('tests/fixtures/feature-vortex.json', 'utf8')));
+  assert.ok(r.ok);
+  const g = godotSceneFrom(r.value);
+  assert.match(g.tscn, /type="GPUParticlesAttractorVectorField3D"/);
+  assert.match(g.tscn, /\[sub_resource type="ImageTexture3D"/);
+  assert.equal((g.tscn.match(/\[sub_resource type="Image" /g) ?? []).length, 16);
+  const mask = g.tscn.match(/cull_mask = (\d+)/)![1];
+  assert.match(g.tscn, new RegExp(`layers = ${mask}`));
+  assert.ok(!g.report.some(x => x.level === 'dropped' && /Vortex/.test(x.message)));
+});

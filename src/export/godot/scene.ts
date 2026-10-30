@@ -146,17 +146,24 @@ function emitterNode(res: Resources, e: UeEmitter, texRoot: string, duration: nu
   // (the editor's pull is near-constant outside the soft radius). Attractors act on every particle node sharing a
   // visual layer, so each attracted emitter gets its own layer bit (2..20) and its attractor that cull mask.
   let attractor = '', layerBit = 0;
-  if (e.attract) {
+  if (e.attract || e.vortex) {
     const k = (attractorCount.get(res) ?? 0) + 1;
     attractorCount.set(res, k);
-    if (k <= 19) {
-      layerBit = 1 << k;
+    if (k <= 19) layerBit = 1 << k;
+  }
+  if (e.attract) {
+    if (layerBit) {
       attractor = [`[node name=${str(`${name}_attract`)} type="GPUParticlesAttractorSphere3D" parent="."]`, `position = ${vec3(fromUe(e.attract.positionCm))}`,
         `strength = ${n(e.attract.strengthCmS2 / 100)}`, 'attenuation = 0.0', 'radius = 50.0', `cull_mask = ${layerBit}`].join('\n');
       report.push({ level: 'approximated', item: e.name, message: 'Attraction becomes a GPUParticlesAttractorSphere3D (constant pull, no kill radius).' });
     } else report.push({ level: 'dropped', item: e.name, message: 'Attraction is not exported (more than 19 attracted emitters; add a GPUParticlesAttractorSphere3D by hand).' });
   }
-  if (e.vortex) report.push({ level: 'dropped', item: e.name, message: 'Vortex swirl is not exported (add a GPUParticlesAttractorVectorField3D or turbulence by hand).' });
+  // Vortex: Godot has no swirl force (orbit_velocity is 2D only), so the editor's field is sampled into a 3D texture
+  // for a GPUParticlesAttractorVectorField3D on the emitter's own layer bit (feature grid 2026-10-30).
+  if (e.vortex && layerBit) {
+    attractor = [attractor, vortexField(res, `${name}_vortex`, e.vortex, layerBit)].filter(Boolean).join('\n\n');
+    report.push({ level: 'approximated', item: e.name, message: `Vortex becomes a GPUParticlesAttractorVectorField3D (the swirl sampled on a ${VORTEX_RES}³ grid).` });
+  } else if (e.vortex) report.push({ level: 'dropped', item: e.name, message: 'Vortex is not exported (more than 19 force-field emitters).' });
   // Ground collision: the process collides with the scene's floor box (godotSceneFrom adds one GPUParticlesCollisionBox3D).
   if (e.groundCollision) {
     const gc = e.groundCollision;
@@ -316,6 +323,35 @@ void process() {
   return attractor ? `${node.join('\n')}\n\n${attractor}` : node.join('\n');
 }
 const attractorCount = new WeakMap<Resources, number>();
+
+/** Vortex vector field: VORTEX_RES voxels per side over a box VORTEX_FALLOFFS falloffs (at least 2 m) around the centre. */
+const VORTEX_RES = 16, VORTEX_FALLOFFS = 3;
+
+/** A GPUParticlesAttractorVectorField3D holding the editor's vortex acceleration (runtime/particles.ts): tangential
+ *  (axis x radial) minus inward, both x exp(-rho / falloff). Godot reads a texel as s = rgb * -2 + 1 (direction =
+ *  normalize(s), amount = length(s)) x strength, so the field is stored as (1 - f / max) / 2 with strength = max. */
+function vortexField(res: Resources, name: string, v: NonNullable<UeEmitter['vortex']>, cullMask: number): string {
+  const c = fromUe(v.positionCm), a = dirFromUe(v.axis), tang = v.strengthCmS2 / 100, inward = (v.inwardCmS2 ?? 0) / 100;
+  const falloff = Math.max(0.05, (v.falloffCm ?? 100) / 100), half = Math.max(2, VORTEX_FALLOFFS * falloff), N = VORTEX_RES;
+  const field: V3[] = [];
+  for (let z = 0; z < N; z++) for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const p = [x, y, z].map(i => ((i + 0.5) / N * 2 - 1) * half) as V3, along = p[0] * a[0] + p[1] * a[1] + p[2] * a[2];
+    const q: V3 = [p[0] - a[0] * along, p[1] - a[1] * along, p[2] - a[2] * along], rho = Math.hypot(...q);
+    if (rho < 1e-6) { field.push([0, 0, 0]); continue; }
+    const u: V3 = [q[0] / rho, q[1] / rho, q[2] / rho], t: V3 = [a[1] * u[2] - a[2] * u[1], a[2] * u[0] - a[0] * u[2], a[0] * u[1] - a[1] * u[0]];
+    const fall = Math.exp(-rho / falloff);
+    field.push([0, 1, 2].map(i => fall * (tang * t[i] - inward * u[i])) as V3);
+  }
+  const max = Math.max(1e-6, ...field.map(f => Math.hypot(...f)));
+  const byte = (s: number) => Math.max(0, Math.min(255, Math.round((1 - s / max) / 2 * 255)));
+  const images = Array.from({ length: N }, (_, z) => {
+    const bytes = field.slice(z * N * N, (z + 1) * N * N).flatMap(f => f.map(byte));
+    return res.add('Image', [`data = {"data": PackedByteArray(${bytes.join(', ')}), "format": "RGB8", "height": ${N}, "mipmaps": false, "width": ${N}}`]);
+  });
+  const tex = res.add('ImageTexture3D', [`_images = Array[Image]([${images.join(', ')}])`]);
+  return [`[node name=${str(name)} type="GPUParticlesAttractorVectorField3D" parent="."]`, `position = ${vec3(c)}`, `size = ${vec3([half * 2, half * 2, half * 2])}`,
+    `texture = ${tex}`, `strength = ${n(max)}`, 'attenuation = 0.0', 'directionality = 1.0', `cull_mask = ${cullMask}`].join('\n');
+}
 /** Above this many positioned bursts an emitter stays one node (a steady stream from its origin) to bound the scene size. */
 const MAX_PLACED_BURSTS = 16;
 
