@@ -487,187 +487,187 @@
   "shape-sphere": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "shape-box": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "shape-cone": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "shape-disc": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "gravity": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "drag": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "blend-normal": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "untextured": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "variant": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "uv-scroll": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "ring": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "motion-trail": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "ribbon-line": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "ribbon-bezier": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "ribbon-helix": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "jagged": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "branch": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "radial": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "ring-path": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "reveal": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "path-ops": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "particle-paths": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "value-nodes": {
    "eye": "OK",
-   "note": "",
-   "date": "2026-10-29"
+   "note": "Studio bloom merges the sparks into one glow, a little greener",
+   "date": "2026-10-30"
   },
   "effect-time-opacity": {
    "eye": "OK",
    "note": "",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "shape-point": {
    "eye": "OK",
    "note": "shape matches; Studio bloom makes it brighter/softer",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "burst": {
    "eye": "OK",
    "note": "shape matches; Studio bloom makes it brighter/softer",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "emission-hot": {
    "eye": "OK",
    "note": "shape matches; Studio bloom makes it brighter/softer",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "velocity-stretch": {
    "eye": "OK",
    "note": "shape matches; Studio bloom makes it brighter/softer",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "bb-size-opacity": {
    "eye": "OK",
    "note": "shape matches; Studio bloom makes it brighter/softer",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "projectile": {
    "eye": "OK",
    "note": "shape matches; Studio bloom makes it brighter/softer",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "overlife": {
    "eye": "OK",
    "note": "a little greener",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "sprite-flat": {
    "eye": "OK",
    "note": "lies flat",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "mesh-particles": {
    "eye": "OK",
    "note": "rock shapes; lighter colour",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "noise": {
    "eye": "OK",
    "note": "force not applied (reported); looks close at this tick",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "attract": {
    "eye": "OK",
    "note": "force not applied (reported); looks close at this tick",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "vortex": {
    "eye": "OK",
    "note": "force not applied (reported); looks close at this tick",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "collision": {
    "eye": "OK",
    "note": "force not applied (reported); looks close at this tick",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "screen-flash": {
    "eye": "OK",
@@ -677,7 +677,7 @@
   "particle-trail": {
    "eye": "OK",
    "note": "nothing drawn, as reported (trail-only)",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "shape-path": {
    "eye": "OK",
@@ -687,7 +687,7 @@
   "world-axis": {
    "eye": "WRONG",
    "note": "rings stand upright facing the camera",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "flipbook": {
    "eye": "WRONG",
@@ -702,7 +702,7 @@
   "sprite": {
    "eye": "WRONG",
    "note": "a glow ball instead of the ring sprite",
-   "date": "2026-10-29"
+   "date": "2026-10-30"
   },
   "prop-mesh": {
    "eye": "WRONG",
