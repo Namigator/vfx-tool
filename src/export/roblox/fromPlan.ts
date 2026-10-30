@@ -151,7 +151,7 @@ function flipbookOf(layer: ParticlePreviewLayer, meanLifeSeconds: number, report
     return sp.variant <= 0 ? { textureKey: file, flipbook: held } : { textureKey: `${file}#${sp.variant}`, flipbook: held };
   }
   // 'first' holds one cell: a random static cell when the sheet is a variant set (variant < 0), else cell 0.
-  if (sp.mode === 'first') return { textureKey: file, flipbook: { layout, mode: 'Loop', framerate: [0, 0], startRandom: sp.sheet.kind === 'variants' || sp.variant < 0 } };
+  if (sp.mode === 'first') return { textureKey: file, flipbook: { layout, mode: 'Loop', framerate: [0, 0], startRandom: sp.variant < 0 } };
   if (sp.mode === 'overLife') { const fps = r3(frames / Math.max(0.05, meanLifeSeconds)); return { textureKey: file, flipbook: { layout, mode: 'OneShot', framerate: [fps, fps], startRandom: sp.randomStart } }; }
   return { textureKey: file, flipbook: { layout, mode: sp.loop === false ? 'OneShot' : 'Loop', framerate: [sp.fps, sp.fps], startRandom: sp.randomStart } };
 }

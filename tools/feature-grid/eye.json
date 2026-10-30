@@ -486,22 +486,22 @@
  "roblox": {
   "shape-sphere": {
    "eye": "OK",
-   "note": "",
+   "note": "random soft-glow cell per particle as in the editor; Roblox particles bigger so ring cells show",
    "date": "2026-10-30"
   },
   "shape-box": {
    "eye": "OK",
-   "note": "",
+   "note": "random soft-glow cell per particle as in the editor; Roblox particles bigger so ring cells show",
    "date": "2026-10-30"
   },
   "shape-cone": {
    "eye": "OK",
-   "note": "",
+   "note": "random soft-glow cell per particle as in the editor; Roblox particles bigger so ring cells show",
    "date": "2026-10-30"
   },
   "shape-disc": {
    "eye": "OK",
-   "note": "",
+   "note": "random soft-glow cell per particle as in the editor; Roblox particles bigger so ring cells show",
    "date": "2026-10-30"
   },
   "gravity": {
@@ -511,7 +511,7 @@
   },
   "drag": {
    "eye": "OK",
-   "note": "",
+   "note": "random soft-glow cell per particle as in the editor; Roblox particles bigger so ring cells show",
    "date": "2026-10-30"
   },
   "blend-normal": {
@@ -656,12 +656,12 @@
   },
   "attract": {
    "eye": "OK",
-   "note": "force not applied (reported); looks close at this tick",
+   "note": "random soft-glow cell per particle as in the editor; Roblox particles bigger so ring cells show",
    "date": "2026-10-30"
   },
   "vortex": {
    "eye": "OK",
-   "note": "force not applied (reported); looks close at this tick",
+   "note": "random soft-glow cell per particle as in the editor; Roblox particles bigger so ring cells show",
    "date": "2026-10-30"
   },
   "collision": {
@@ -681,7 +681,7 @@
   },
   "shape-path": {
    "eye": "OK",
-   "note": "spread around the ring after the shared split",
+   "note": "random soft-glow cell per particle as in the editor; Roblox particles bigger so ring cells show",
    "date": "2026-10-30"
   },
   "world-axis": {
@@ -700,8 +700,8 @@
    "date": "2026-10-30"
   },
   "sprite": {
-   "eye": "WRONG",
-   "note": "a glow ball instead of the ring sprite",
+   "eye": "OK",
+   "note": "ring sprite held (variant cells no longer animate); bigger + glow halo",
    "date": "2026-10-30"
   },
   "prop-mesh": {
