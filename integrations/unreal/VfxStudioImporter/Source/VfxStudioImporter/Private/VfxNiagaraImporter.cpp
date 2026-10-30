@@ -68,6 +68,7 @@
 #include "Materials/MaterialExpressionTextureSampleParameter2D.h"
 #include "Materials/MaterialExpressionParticleColor.h"
 #include "Materials/MaterialExpressionMultiply.h"
+#include "Materials/MaterialExpressionConstant.h"
 #include "MaterialEditingLibrary.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogVfxImporter, Log, All);
@@ -876,6 +877,8 @@ namespace
 	 *  particle in the editor (spriteCell): variantFrame / startFrame, else a random cell (-1) when randomStartFrame or
 	 *  variantFrame -1, else cell 0. Playing such a sheet as a flipbook morphed the Orb's ball into the ring cell and
 	 *  lost it (2026-10-29). Returns false for a real flipbook. */
+	/** Ambient fill of lit mesh particles (emissive = MeshAmbient x particle colour). */
+	constexpr float MeshAmbient = 0.3f;
 	/** Mesh particles: lit (or unlit) surface whose colour is the particle colour (colour over life). */
 	UMaterial* GetOrCreateMeshParticleMaterial(const FString& DestRoot, bool bLit)
 	{
@@ -891,6 +894,17 @@ namespace
 		Mat->bUsedWithNiagaraMeshParticles = true;
 		UMaterialExpression* Pc = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionParticleColor::StaticClass(), -400, 0);
 		UMaterialEditingLibrary::ConnectMaterialProperty(Pc, TEXT("RGB"), bLit ? MP_BaseColor : MP_EmissiveColor);
+		if (bLit)
+		{
+			// The editor's ambient fill: faces turned from the light keep MeshAmbient x colour (randomly oriented rocks
+			// showed black sides next to blown-out ones, feature grid 2026-10-30).
+			auto* K = Cast<UMaterialExpressionConstant>(UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionConstant::StaticClass(), -400, 200));
+			K->R = MeshAmbient;
+			UMaterialExpression* Amb = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionMultiply::StaticClass(), -200, 100);
+			UMaterialEditingLibrary::ConnectMaterialExpressions(Pc, TEXT("RGB"), Amb, TEXT("A"));
+			UMaterialEditingLibrary::ConnectMaterialExpressions(K, TEXT(""), Amb, TEXT("B"));
+			UMaterialEditingLibrary::ConnectMaterialProperty(Amb, TEXT(""), MP_EmissiveColor);
+		}
 		UMaterialEditingLibrary::RecompileMaterial(Mat);
 		SaveAssetObj(Mat);
 		return Mat;
@@ -960,6 +974,8 @@ namespace
 
 	/** Mesh particles (IR meshEmitters): the sprite emitter's spawn/motion/colour, drawn through a mesh renderer. The size
 	 *  is the mean particle size (the mesh renderer's static scale): random sizes and size over life are not kept. */
+	UEdGraphPin& TrailInputPin(UNiagaraNodeFunctionCall* Fn, const TCHAR* Input, const FNiagaraTypeDefinition& Type);
+
 	void ConfigureMeshParticles(FNiagaraEmitterHandle& Handle, FVersionedNiagaraEmitterData* Data, const TSharedPtr<FJsonObject>& ME, const TSharedPtr<FJsonObject>& E, const FString& PackageDir, const FString& DestRoot)
 	{
 		const FString MeshId = ME->GetStringField(TEXT("mesh"));
@@ -985,7 +1001,44 @@ namespace
 			TArray<FString> Defaults;
 			Defaults.Add(TEXT("1.0,1.0,1.0"));
 			Defaults.Add(FString::Printf(TEXT("%f,%f,%f,%f"), Q.X, Q.Y, Q.Z, Q.W));
-			FNiagaraStackGraphUtilities::AddParameterModuleToStack(Vars, *Out, INDEX_NONE, Defaults);
+			UNiagaraNodeFunctionCall* Set = FNiagaraStackGraphUtilities::AddParameterModuleToStack(Vars, *Out, INDEX_NONE, Defaults);
+			const double SMin = E->GetNumberField(TEXT("sizeCmMin")), SMax = E->GetNumberField(TEXT("sizeCmMax")), SMean = FMath::Max(0.001, (SMin + SMax) / 2.0);
+			// Random size: a uniform Particles.Scale in [min, max] / mean (the renderer scale holds the mean). They were all
+			// the mean size (feature grid 2026-10-30).
+			if (Set && SMax > SMin * 1.01)
+			{
+				const auto F = FNiagaraTypeDefinition::GetFloatDef();
+				UNiagaraNodeFunctionCall* Vec = nullptr, *Range = nullptr;
+				if (UNiagaraScript* S = LoadObject<UNiagaraScript>(nullptr, TEXT("/Niagara/DynamicInputs/TypeConversions/VectorFromFloat.VectorFromFloat")))
+					FNiagaraStackGraphUtilities::SetDynamicInputForFunctionInput(TrailInputPin(Set, TEXT("Particles.Scale"), FNiagaraTypeDefinition::GetVec3Def()), S, Vec);
+				UNiagaraScript* R = LoadObject<UNiagaraScript>(nullptr, TEXT("/Niagara/DynamicInputs/UniformRange/UniformRangedFloat.UniformRangedFloat"));
+				if (Vec && R) FNiagaraStackGraphUtilities::SetDynamicInputForFunctionInput(TrailInputPin(Vec, TEXT("Value"), F), R, Range);
+				const bool bOk = Range && OverrideOnNode(Range, TEXT("Minimum"), F, FloatLit(SMin / SMean)) && OverrideOnNode(Range, TEXT("Maximum"), F, FloatLit(SMax / SMean));
+				if (Vec) LogModule(Vec);
+				if (!bOk) UE_LOG(LogVfxImporter, Warning, TEXT("   mesh random size not wired"));
+			}
+			// Tumble: the editor draws each mesh at its own random axis and angle (Particles.MeshOrientation was identity
+			// for all of them).
+			if (Set && ME->GetStringField(TEXT("orientation")) == TEXT("tumble"))
+			{
+				// Axis-angle (a unit quaternion): RandomQuaternion's raw output sheared the rocks into slivers.
+				const auto F = FNiagaraTypeDefinition::GetFloatDef(), V3 = FNiagaraTypeDefinition::GetVec3Def();
+				UNiagaraNodeFunctionCall* Rq = nullptr, *Axis = nullptr, *Angle = nullptr;
+				if (UNiagaraScript* S = LoadObject<UNiagaraScript>(nullptr, TEXT("/Niagara/DynamicInputs/TypeConversions/MakeQuatFromAxisAngle.MakeQuatFromAxisAngle")))
+					FNiagaraStackGraphUtilities::SetDynamicInputForFunctionInput(TrailInputPin(Set, TEXT("Particles.MeshOrientation"), FNiagaraTypeDefinition::GetQuatDef()), S, Rq);
+				if (Rq)
+				{
+					LogModule(Rq);
+					if (UNiagaraScript* RV = LoadObject<UNiagaraScript>(nullptr, TEXT("/Niagara/DynamicInputs/UniformRange/UniformRangedVector.UniformRangedVector")))
+						FNiagaraStackGraphUtilities::SetDynamicInputForFunctionInput(TrailInputPin(Rq, TEXT("Axis"), V3), RV, Axis);
+					if (UNiagaraScript* RF = LoadObject<UNiagaraScript>(nullptr, TEXT("/Niagara/DynamicInputs/UniformRange/UniformRangedFloat.UniformRangedFloat")))
+						FNiagaraStackGraphUtilities::SetDynamicInputForFunctionInput(TrailInputPin(Rq, TEXT("AngleInDegrees"), F), RF, Angle);
+					OverrideOnNode(Rq, TEXT("NormalizeAxis"), FNiagaraTypeDefinition::GetBoolDef(), TEXT("true"));
+					const bool bAxis = Axis && OverrideOnNode(Axis, TEXT("Minimum"), V3, TEXT("-1.0,-1.0,-1.0")) && OverrideOnNode(Axis, TEXT("Maximum"), V3, TEXT("1.0,1.0,1.0"));
+					const bool bAngle = Angle && OverrideOnNode(Angle, TEXT("Minimum"), F, TEXT("0.0")) && OverrideOnNode(Angle, TEXT("Maximum"), F, TEXT("360.0"));
+					UE_LOG(LogVfxImporter, Display, TEXT("   mesh tumble: random axis %d, angle %d"), bAxis ? 1 : 0, bAngle ? 1 : 0);
+				}
+			}
 		}
 		for (UNiagaraRendererProperties* R : Data->GetRenderers()) if (R) R->SetIsEnabled(false);
 		const double Size = (E->GetNumberField(TEXT("sizeCmMin")) + E->GetNumberField(TEXT("sizeCmMax"))) / 2.0 / 100.0 * (ME->HasField(TEXT("scale")) ? ME->GetNumberField(TEXT("scale")) : 1.0);

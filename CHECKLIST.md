@@ -44,7 +44,8 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [x] Godot flat sprite cell (UV cut), positioned bursts, attract, collision, noise, drag, screen flash · [SAW] grid · 2026-10-30
 - [ ] BACKLOG Godot (grid): vortex not exported (orbit_velocity has no effect in 3D: probed 0 / 0.39 / 4 identical); random-cell flat quads draw the whole sheet; tumbling meshes spin about one axis · [SAW] grid · 2026-10-30
 - [x] Unreal: shape primitives, point cone, static ribbons, sRGB ribbon colour, flat sprites, light scale, positioned bursts, mesh particles · [SAW] grid unreal · 2026-10-30
-- [ ] BACKLOG Unreal (grid): mesh particles at mean size, no tumble · [SAW] grid · 2026-10-30
+- [x] Unreal mesh particles: random size, random orientation (axis-angle), ambient fill in the lit material · [SAW] work/compare/ue-mesh-zoom.png · 2026-10-30
+- [ ] BACKLOG Unreal (grid): mesh rocks paler (cream vs tan) than the editor · [SAW] ue-mesh-zoom · 2026-10-30
 - [x] Screen flashes in Unity, Godot and Roblox · [SAW] grid screen-flash · 2026-10-30
 - [x] Roblox: path split, light range/brightness, beam alphaTrack (driven opacity), positioned bursts from a part copy · [SAW] grid roblox · 2026-10-30
 - [x] Roblox lightning holds each bolt until the next (interpolation averaged random bolts flat) · [SAW] work/fidelity/rbx-arc-ticks2/sheet.png · 2026-10-30
