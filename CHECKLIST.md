@@ -21,7 +21,7 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [x] Unity Arc kinks: LineRenderer corner vertices drew hourglass loops at zigzags (now 0) · [SAW] work/compare/arc-corners.png, unity2-vs-tool.png · 2026-10-29
 - [ ] BACKLOG Unity: Arc thinner and less glowy than the tool (no bloom) · [SAW] work/compare/unity2-vs-tool.png · 2026-10-29
 - [x] Unity URP: grid column unity-urp (F:/Dev2/UnityVFXLabURP); additive colours, gain encoding and mesh shaders fixed · [SAW] grid unity-urp · 2026-10-30
-- [ ] BACKLOG Unity URP: emission-boosted sprites dimmer/greyer than the editor (sprite, projectile, emission-hot) · [SAW] grid unity-urp · 2026-10-30
+- [ ] BACKLOG Unity URP: emission-boosted sprites dimmer/greyer than the editor (sprite, projectile, emission-hot). 3 tries, stopped: emission is not the cause; projects are Gamma space, and raw gain (no LinearToGamma) brightens sprites but washes rings/beams to white (needs per-channel HDR or a tone curve, not a gain) · [SAW] grid unity-urp · 2026-10-30
 - [ ] BACKLOG Unity: Play mode (not batch Advance) never checked · untested · 2026-10-29
 - [x] Unity: trails left by many particles (sparks) export via the per-particle Trails module · [SAW] grid particle-trail row · 2026-10-29
 - [x] Unity capture stage near-black (dim flat ambient, no sky reflections) · [SAW] work/feature-grid/grid.png · 2026-10-29
