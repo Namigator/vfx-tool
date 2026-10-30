@@ -271,7 +271,7 @@ void process() {
   if (fb && (fb.columns > 1 || fb.rows > 1) && flatCell !== undefined && flatCell >= 0)
     mat.push(`uv1_scale = Vector3(${n(1 / fb.columns)}, ${n(1 / fb.rows)}, 1)`, `uv1_offset = Vector3(${n((flatCell % fb.columns) / fb.columns)}, ${n(Math.floor(flatCell / fb.columns) / fb.rows)}, 0)`);
   else if (fb && (fb.columns > 1 || fb.rows > 1)) mat.push(`particles_anim_h_frames = ${fb.columns}`, `particles_anim_v_frames = ${fb.rows}`, `particles_anim_loop = ${fb.loop}`);
-  const material = res.add('StandardMaterial3D', mesh
+  const material = mesh?.orientation === 'tumble' ? tumbleMaterial(res, mesh.lit, e.blend) : res.add('StandardMaterial3D', mesh
     ? [`transparency = ${e.blend === 'opaque' ? 0 : 1}`, `blend_mode = ${e.blend === 'additive' ? 1 : 0}`, `shading_mode = ${mesh.lit ? 1 : 0}`, 'vertex_color_use_as_albedo = true', 'vertex_color_is_srgb = true', 'roughness = 0.75']
     : mat);
   const sections = trail ? Math.max(2, Math.min(128, trail.maxPoints - 1)) : 0;
@@ -323,6 +323,26 @@ void process() {
   return attractor ? `${node.join('\n')}\n\n${attractor}` : node.join('\n');
 }
 const attractorCount = new WeakMap<Resources, number>();
+
+/** Tumbling mesh pieces: Godot particles turn about one axis only (rotate_y), so the draw pass adds a random rotation
+ *  per particle (axis and angle hashed from its spawn angle + instance) in the vertex shader, as the editor draws each
+ *  piece at its own random axis (feature grid 2026-10-30). Colours as StandardMaterial3D vertex_color_is_srgb. */
+function tumbleMaterial(res: Resources, lit: boolean, blend: UeEmitter['blend']): string {
+  const modes = ['cull_disabled', ...(lit ? [] : ['unshaded']), ...(blend === 'additive' ? ['blend_add'] : [])].join(', ');
+  const code = [
+    'shader_type spatial;', `render_mode ${modes};`,
+    'vec3 rot(vec3 v, vec3 a, float t) { return v * cos(t) + cross(a, v) * sin(t) + a * dot(a, v) * (1.0 - cos(t)); }',
+    'void vertex() {',
+    '  float h = INSTANCE_CUSTOM.x * 0.1591549 + float(INSTANCE_ID) * 0.618034;',
+    '  vec3 r = fract(sin(vec3(h * 127.1 + 1.3, h * 311.7 + 7.1, h * 74.7 + 3.7)) * 43758.5453);',
+    '  vec3 axis = normalize(r * 2.0 - 1.0 + vec3(1e-4));',
+    '  float t = r.z * 6.2831853;',
+    '  VERTEX = rot(VERTEX, axis, t);', '  NORMAL = rot(NORMAL, axis, t);', '}',
+    'void fragment() {', '  ALBEDO = pow(COLOR.rgb, vec3(2.2));', ...(lit ? ['  ROUGHNESS = 0.75;'] : []), ...(blend === 'opaque' ? [] : ['  ALPHA = COLOR.a;']), '}',
+  ].join('\n');
+  const shader = res.add('Shader', [`code = ${str(code)}`]);
+  return res.add('ShaderMaterial', [`shader = ${shader}`]);
+}
 
 /** Vortex vector field: VORTEX_RES voxels per side over a box VORTEX_FALLOFFS falloffs (at least 2 m) around the centre. */
 const VORTEX_RES = 16, VORTEX_FALLOFFS = 3;
@@ -403,7 +423,7 @@ export function godotSceneFrom(e: UnrealEffect, resRoot = `res://vfx_studio/${e.
     nodes.push(emitterNode(res, em, `${resRoot}/Textures`, duration, tracks, report, undefined,
       { file, orientation: me.orientation, ...(me.direction ? { direction: fromUe(me.direction) as [number, number, number] } : {}), lit: me.lit }));
   }
-  if (meshFiles.size) report.push({ level: 'approximated', item: 'meshes', message: `${e.meshEmitters!.length} mesh-particle layer(s) draw the built-in mesh (Meshes/*.obj); tumbling pieces turn about one axis only.` });
+  if (meshFiles.size) report.push({ level: 'approximated', item: 'meshes', message: `${e.meshEmitters!.length} mesh-particle layer(s) draw the built-in mesh (Meshes/*.obj); tumbling pieces get a random rotation per particle in the vertex shader (fixed, not spinning).` });
   // A light on several paths (Nova's 8 shards) is one IR light per path under the same name: same-named sibling nodes
   // left the animation driving only one of them (Nova's floor light 0.34x, 2026-10-19). Like emitters: <name>_path<k>.
   const lightNames = new Map<string, number>();

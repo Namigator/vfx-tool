@@ -42,7 +42,7 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [ ] BACKLOG Unity (grid): Attract flings particles both ways at t30. Known: attract off matches the editor; strength x0.25-x1 looks the same; gravityFocus 1 is worse (default 0 = centre). Next idea: read Unity's ForceField gravity falloff (endRange 100 m) · [SAW] grid attract + probes · 2026-10-30
 - [ ] BACKLOG Unity (grid): light a little yellower than the editor; flat rings a little dimmer · [SAW] grid · 2026-10-29
 - [x] Godot flat sprite cell (UV cut), positioned bursts, attract, collision, noise, drag, screen flash · [SAW] grid · 2026-10-30
-- [ ] BACKLOG Godot (grid): random-cell flat quads draw the whole sheet; tumbling meshes spin about one axis · [SAW] grid · 2026-10-30
+- [ ] BACKLOG Godot (grid): random-cell flat quads draw the whole sheet · [SAW] grid · 2026-10-30
 - [x] Unreal: shape primitives, point cone, static ribbons, sRGB ribbon colour, flat sprites, light scale, positioned bursts, mesh particles · [SAW] grid unreal · 2026-10-30
 - [x] Unreal mesh particles: random size, random orientation (axis-angle), ambient fill in the lit material · [SAW] work/compare/ue-mesh-zoom.png · 2026-10-30
 - [ ] BACKLOG Unreal (grid): mesh rocks paler (cream vs tan) than the editor · [SAW] ue-mesh-zoom · 2026-10-30
@@ -55,3 +55,4 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [x] Unreal screen flash: huge camera-facing sprite, depth-test-off flash material, opacity linearised (IR flashEmitters) · [SAW] grid screen-flash (mean 37 vs editor 33) · 2026-10-30
 - [x] Unreal many-particle trails (sparks) baked from the editor simulation into ribbon frames (IR trailRibbons) · [SAW] grid particle-trail · 2026-10-30
 - [x] Godot vortex: editor swirl sampled into a GPUParticlesAttractorVectorField3D (16³ texture) · [SAW] g-vortex-gain.png (x20 probe swirls) + grid OK · 2026-10-30
+- [x] Godot tumbling mesh pieces: random rotation per particle in the draw-pass vertex shader · [SAW] work/compare/g-mesh-zoom.png · 2026-10-30

@@ -449,7 +449,7 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
     meshEmitters.push({ emitter, mesh: m.mesh, scale: r3(m.scale), scaleY: r3(m.scaleY ?? 1), orientation: m.orientation, tilt: r3(m.tilt ?? 0.2), lit: m.lit,
       ...(m.orientation === 'fixed' ? { direction: toUeDir(m.direction ?? [0, 1, 0]) } : {}) });
   }
-  if (meshEmitters.length) report.push({ level: 'approximated', item: 'meshes', message: `${meshEmitters.length} mesh-particle layer(s) draw the built-in mesh (Meshes/*.obj); in Unreal at the mean particle size (random size and size over life are not kept).` });
+  if (meshEmitters.length) report.push({ level: 'approximated', item: 'meshes', message: `${meshEmitters.length} mesh-particle layer(s) draw the built-in mesh (Meshes/*.obj); in Unreal with a random size and orientation per particle (size over life is not kept).` });
   const flashes = plan.value.presentation.flashes.map(f => ({ name: f.nodeId, tick: f.tick, durationTicks: f.durationTicks, color: [1, 3, 5].map(i => r3(parseInt(f.color.srgb.slice(i, i + 2), 16) / 255)) as [number, number, number], alpha: r3(f.alpha) }));
   // Unreal: each flash is one huge camera-facing sprite at the Source that the importer draws with a depth-test-off flash
   // material, so it tints the whole view while the Source is in front of the camera (they were dropped; feature grid 2026-10-30).

@@ -223,7 +223,7 @@ test('mesh particles: the IR carries them, Unity and Godot draw the built-in mes
   assert.ok(r.ok);
   const me = r.value.meshEmitters?.[0];
   assert.ok(me && me.mesh === 'rock-a' && me.orientation === 'tumble' && me.lit);
-  assert.ok(r.value.report.some(x => x.item === 'meshes' && x.level === 'approximated' && /mean particle size/.test(x.message)), 'Unreal draws them at the mean size');
+  assert.ok(r.value.report.some(x => x.item === 'meshes' && x.level === 'approximated' && /random size and orientation per particle/.test(x.message)), 'Unreal: random size + orientation');
   const u = unityEffectFrom(r.value);
   const um = u.effect.emitters.find(e => e.mesh);
   assert.equal(um?.mesh?.file, 'rock-a.obj');
@@ -233,7 +233,8 @@ test('mesh particles: the IR carries them, Unity and Godot draw the built-in mes
   const g = godotSceneFrom(r.value);
   assert.ok(g.files.some(f => f.path === 'Meshes/rock-a.obj'));
   assert.match(g.tscn, /path="res:\/\/vfx_studio\/[^"]*\/Meshes\/rock-a\.obj"/);
-  assert.match(g.tscn, /material_override = SubResource/);
+  assert.ok(g.tscn.includes('material_override = SubResource("ShaderMaterial_'));
+  assert.ok(g.tscn.includes('VERTEX = rot(VERTEX, axis, t)'), 'Godot: tumble = random rotation per particle');
 });
 
 test('a static ribbon holds to the end of the effect (closing empty frame; Unreal gave a lone frame one tick)', () => {

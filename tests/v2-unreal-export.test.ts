@@ -82,7 +82,7 @@ test('Unreal map: lightning-strike exports ribbon layers with per-tick point geo
 
 test('Unreal map: meshes and presentation are reported, not silently dropped', () => {
   const earth = effect('earth-upheaval');
-  assert.ok(earth.report.some(r => r.level === 'approximated' && r.item === 'meshes' && /mean particle size/.test(r.message)), 'mesh layers are reported (drawn at the mean size)');
+  assert.ok(earth.report.some(r => r.level === 'approximated' && r.item === 'meshes' && /random size and orientation per particle/.test(r.message)), 'mesh layers are reported');
 });
 
 test('Unreal package: buildUnrealPackage writes effect.json, README.md and report.md; textures included when bytes are supplied', () => {
