@@ -117,7 +117,7 @@ test('audio nodes follow plans 11, 24 and 25', () => {
   assert.deepEqual(bounds('AudioSource', 'pitchRatio'), ['none', 0.25, 4]);
   assert.deepEqual(bounds('AudioSource', 'frequencyHz'), ['hertz', 20, 16000]);
   assert.deepEqual(bounds('AudioSource', 'pulseDuty'), ['normalized', 0.05, 0.95]);
-  assert.deepEqual(spec('AudioSource').parameters.find(p => p.id === 'source')!.choices, ['oscillator', 'noise', 'chirp']);
+  assert.deepEqual(spec('AudioSource').parameters.find(p => p.id === 'source')!.choices, ['oscillator', 'noise', 'chirp', 'sample']);
   assert.deepEqual(spec('AudioOutput').parameters, []);
   assert.deepEqual(spec('AudioMix').parameters.map(p => p.id), ['masterGain'], 'per-input gain/pan live on edge.mix');
   const master = spec('AudioMix').parameters[0];

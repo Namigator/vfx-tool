@@ -150,6 +150,7 @@ The ones that matter most when building effects.
 | `MAX_VOICES` | 64 | Audio: most simultaneous voices in a render. | src/audio/synthesis.ts |
 | `MAX_TOTAL_VOICE_SAMPLES` | 4800000 | Audio: samples of voice audio per render (100 s at 48 kHz). | src/audio/synthesis.ts |
 | `MAX_WAV_FRAMES` | 1073741814 | RIFF size fields are uint32; cap so the data chunk and RIFF length both fit. | src/audio/wav.ts |
+| `MAX_SAMPLE_SECONDS` | 30 | Longest accepted sound (seconds): library sounds are short one-shots and beds. | src/audio/wavDecode.ts |
 
 ## Export
 

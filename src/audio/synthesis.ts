@@ -33,7 +33,10 @@ export type ChirpSweep = 'linear' | 'exponential';
 export interface OscillatorSource { kind: 'oscillator'; waveform: OscillatorWaveform; frequencyHz: number; pulseDuty?: number }
 export interface NoiseSource { kind: 'noise'; color: NoiseColor; randomStreamId: string }
 export interface ChirpSource { kind: 'chirp'; startHz: number; endHz: number; sweep: ChirpSweep }
-export type SynthSource = OscillatorSource | NoiseSource | ChirpSource;
+/** A recorded library sound (assets/sounds, 48 kHz mono): played from its start at pitchRatio speed, cut to the voice
+ *  duration, or repeated to fill it when `loop`. `data` is the decoded PCM the caller loaded (compileAudio options). */
+export interface SampleSource { kind: 'sample'; soundId: string; data: Float32Array; loop: boolean }
+export type SynthSource = OscillatorSource | NoiseSource | ChirpSource | SampleSource;
 
 /** 11 AudioEnvelope: seconds; linear or exponential release; silent after attack+hold+release. */
 export interface VoiceEnvelope { attack: number; hold: number; release: number; curve: 'linear' | 'exponential' }
@@ -93,6 +96,9 @@ export function validateVoice(spec: VoiceSpec): void {
       if (s.sweep !== 'linear' && s.sweep !== 'exponential') throw new TypeError('sweep is not supported.');
       assertRange(s.startHz, MIN_FREQUENCY_HZ, MAX_FREQUENCY_HZ, 'startHz');
       assertRange(s.endHz, MIN_FREQUENCY_HZ, MAX_FREQUENCY_HZ, 'endHz');
+      break;
+    case 'sample':
+      if (!(s.data instanceof Float32Array) || s.data.length < 2) throw new TypeError(`sound "${s.soundId}" has no decoded audio.`);
       break;
     default:
       throw new TypeError('source kind is not supported.');
@@ -276,6 +282,15 @@ export function renderVoice(spec: VoiceSpec, ctx: VoiceRandomContext): RenderedV
       out[n] = Math.sin(2 * Math.PI * x);
       x += clampRenderHz(chirpFrequency(s, n / span) * pitch) / AUDIO_SAMPLE_RATE;
       x -= Math.floor(x);
+    }
+  } else if (s.kind === 'sample') {
+    // Linear-interpolated playback at `pitch` speed; past the end it is silent, or wraps when looping.
+    const d = s.data, n = d.length;
+    for (let i = 0; i < length; i++) {
+      let p = i * pitch;
+      if (p >= n - 1) { if (!s.loop) break; p %= n - 1; }
+      const j = Math.floor(p), f = p - j;
+      out[i] = d[j] + (d[j + 1] - d[j]) * f;
     }
   } else {
     fillNoise(out, s.color, s.randomStreamId, ctx);

@@ -28,7 +28,8 @@ import { CORRUPT_KEY, DRAFT_KEY, REVISIONS_KEY, DRAFT_META_KEY, SHELF_KEY, TRASH
 import { ControlsPanel } from './editor/ControlsPanel.tsx';
 import { anchorColor } from './editor/anchorColor.ts';
 import { OutlinePanel } from './editor/OutlinePanel.tsx';
-import { compileAudio } from './graph/toAudio.ts';
+import { compileAudio, soundsUsed } from './graph/toAudio.ts';
+import { loadSounds } from './audio/sampleLoader.ts';
 import { choosePreviewMode, createLightningAudioDemoDocument, hasRootAudio, ribbonStyleDiagnostics, type PreviewModeChoice } from './render/previewMode.ts';
 import { AudioTransport, type AudioBufferLike, type AudioContextLike, type BufferSourceLike, type PlayResult } from './audio/transport.ts';
 import type { MixResult } from './audio/mix.ts';
@@ -253,6 +254,11 @@ export default function PreviewV2() {
   const [soundStatus, setSoundStatus] = useState('');
   const audioRef = useRef<HeldAudio | null>(null);
   const audioRevisionRef = useRef(0);
+  /** Decoded library sounds for sample sources (loaded on demand, kept for the session). */
+  const samplesRef = useRef(new Map<string, Float32Array>());
+  /** The latest document compile() was asked for, and compile itself (a sound load finishing re-runs it). */
+  const lastAuthoredRef = useRef<EffectDocumentV2 | null>(null);
+  const compileRef = useRef<((d: EffectDocumentV2) => void) | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const transportRef = useRef<AudioTransport | null>(null);
   const soundTokenRef = useRef(0);
@@ -285,6 +291,7 @@ export default function PreviewV2() {
     if (idle) idle(run, { timeout: 500 }); else setTimeout(run, 50);
   };
   const compile = useCallback((authored: EffectDocumentV2) => {
+    lastAuthoredRef.current = authored;
     const cutRev = ++cutRevRef.current;
     // New seed on cast (preview-only): each loop plays a different random pattern; the document keeps its seed.
     const d = seedOffsetRef.current ? { ...authored, seed: (authored.seed + seedOffsetRef.current * 7919) >>> 0 } : authored;
@@ -303,8 +310,15 @@ export default function PreviewV2() {
     };
     let audioWarnings: Diagnostic[] = [];
     const visualOptions: { audioHandled?: boolean } = {};
-    if (hasRootAudio(d)) {
-      const a = compileAudio(d);
+    // Library sounds (sample sources) load once per session; the first compile with a missing one runs silent and
+    // compiles again when they arrive.
+    const needSounds = hasRootAudio(d) ? soundsUsed(d).filter(id => !samplesRef.current.has(id)) : [];
+    if (needSounds.length) {
+      void loadSounds(needSounds).then(m => { for (const [k, v] of m) samplesRef.current.set(k, v); if (lastAuthoredRef.current === authored) compileRef.current?.(authored); })
+        .catch(e => setDiagnostics(prev => [...prev, { code: 'MISSING_REFERENCE', severity: 'warning', message: `Sound library could not load: ${e instanceof Error ? e.message : String(e)}` }]));
+      visualOptions.audioHandled = true;
+    } else if (hasRootAudio(d)) {
+      const a = compileAudio(d, { samples: samplesRef.current });
       if (!a.ok) {
         setMode(choosePreviewMode(d).mode);
         fail(a.errors);
@@ -379,6 +393,7 @@ export default function PreviewV2() {
     vp?.setPlan(result.value); // Starts paused at tick 0.
     restore();
   }, [stopSound]);
+  compileRef.current = compile;
 
   /** User gesture only: lazily creates the AudioContext, loads the current mix and plays it from the start. */
   /** Plays the held mix from `fromTick` (800 samples per tick); the visual transport calls this to stay in sync. */
@@ -493,7 +508,7 @@ export default function PreviewV2() {
       const res = sheet ? await fetch(spriteUrl(sheet.file)).catch(() => null) : null;
       if (sheet && res?.ok) builtins.push({ id, sheet: structuredClone(sheet) as SpriteSheet, bytes: new Uint8Array(await res.arrayBuffer()) });
     }
-    const audio = hasRootAudio(d) ? compileAudio(d) : undefined;
+    const audio = hasRootAudio(d) ? compileAudio(d, { samples: await loadSounds(soundsUsed(d)) }) : undefined;
     const mixWav = audio?.ok ? encodeWavPcm16Stereo(audio.value.mix.left, audio.value.mix.right, audio.value.mix.sampleRate) : undefined;
     const extras = { builtins, ...(mixWav ? { mixWav } : {}) };
     let r = await buildPack(d, bytes, extras);

@@ -78,7 +78,25 @@ const AUDIO_MODIFIERS = ['AudioEnvelope', 'AudioFilter'];
 
 class Fail extends Error {}
 
-export function compileAudio(input: unknown): ValidationResult<AudioCompilePlan> {
+/** Decoded library sounds (48 kHz mono) for `sample` AudioSources, by sound id: load soundsUsed(doc) first
+ *  (src/audio/sampleLoader.ts in the browser, loadSoundsNode in Node). */
+export type AudioCompileOptions = {
+  samples?: ReadonlyMap<string, Float32Array>;
+  /** Validation only (no playback): a sound that is not loaded renders as silence instead of failing. */
+  missingSamplesSilent?: boolean;
+};
+
+/** Library sound ids the document's AudioSources play (source = sample), for loading before compileAudio. */
+export function soundsUsed(input: unknown): string[] {
+  const doc = input as { graphs?: { nodes?: { type: string; params?: Record<string, unknown> }[] }[] };
+  const ids = new Set<string>();
+  for (const g of doc.graphs ?? []) for (const n of g.nodes ?? []) {
+    if (n.type === 'AudioSource' && n.params?.source === 'sample' && typeof n.params.sound === 'string') ids.add(n.params.sound);
+  }
+  return [...ids];
+}
+
+export function compileAudio(input: unknown, options: AudioCompileOptions = {}): ValidationResult<AudioCompilePlan> {
   const { registry, analysis, expansion } = prepareDocument(input); // shared with the visual compilers
   if (!analysis.ok) return analysis;
   if (!expansion?.ok) return expansion!;
@@ -255,6 +273,10 @@ export function compileAudio(input: unknown): ValidationResult<AudioCompilePlan>
       source = { kind, color: param(src, 'noiseColor') as NoiseColor, randomStreamId: src.node.randomStreamId };
     } else if (kind === 'chirp') {
       source = { kind, startHz: num(src, 'chirpStartHz'), endHz: num(src, 'chirpEndHz'), sweep: param(src, 'chirpSweep') as ChirpSweep };
+    } else if (kind === 'sample') {
+      const soundId = String(param(src, 'sound')), data = options.samples?.get(soundId) ?? (options.missingSamplesSilent ? new Float32Array(2) : undefined);
+      if (!data) fail('MISSING_REFERENCE', `Sound "${soundId}" is not loaded; load soundsUsed(doc) and pass them as compileAudio(doc, { samples }).`, sid, 'sound');
+      source = { kind, soundId, data: data!, loop: param(src, 'sampleLoop') === true };
     } else {
       source = fail('INVALID_VALUE', `AudioSource source "${String(kind)}" is not supported.`, sid, 'source');
     }

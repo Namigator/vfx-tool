@@ -43,7 +43,8 @@ import { buildUnrealPackage } from '../src/export/unreal/package.ts';
 import { godotReadme, godotReportMarkdown, godotSceneFrom } from '../src/export/godot/scene.ts';
 import { unityEffectFrom, unityReadme, unityReportMarkdown } from '../src/export/unity/fromUnreal.ts';
 import { timelineInfo, timelineLanes } from '../src/render/timeline.ts';
-import { compileAudio } from '../src/graph/toAudio.ts';
+import { compileAudio, soundsUsed } from '../src/graph/toAudio.ts';
+import { loadSoundsNode } from '../src/audio/sampleLoader.node.ts';
 import { sampleParticlesAtTick } from '../src/runtime/particles.ts';
 import { encodeWavPcm16Stereo } from '../src/audio/wav.ts';
 import { describePack, jsonExportWarning, pinBuiltins, referencedBuiltinSprites } from '../src/model/packBuiltins.ts';
@@ -420,7 +421,7 @@ ${formatMigrationReport(report)}`);
     if (p.ok) for (const f of p.value.followers) out.push(f.pathCount > 1 ? `travel ${f.nodeId}: follows ${f.pathCount} paths (${f.speedMode ? 'speed' : 'duration'} mode), arrivals at ticks ${[...new Set(f.travels.map(t => f.startTick + t))].sort((x, y) => x - y).join(', ')}` : `travel ${f.nodeId}: ${f.lengthMeters.toFixed(2)} m in ${f.travelTicks} ticks = ${(f.lengthMeters / (f.travelTicks / 60)).toFixed(1)} m/s (${f.speedMode ? 'speed' : 'duration'} mode)`);
     const cut = truncationWarning(d);
     if (cut) out.push(`WARNING: ${cut.message}`);
-    if (hasAudio) { const a = compileAudio(d); out.push(a.ok ? `audio OK: ${a.value.kind}, peak ${a.value.mix.postPeak.toFixed(3)}${a.value.mix.severeLimiting ? ' (SEVERE LIMITING)' : ''}` : `audio FAILED:\n${fmtErrors(a.errors)}`); }
+    if (hasAudio) { const a = compileAudio(d, { samples: loadSoundsNode(soundsUsed(d)) }); out.push(a.ok ? `audio OK: ${a.value.kind}, peak ${a.value.mix.postPeak.toFixed(3)}${a.value.mix.severeLimiting ? ' (SEVERE LIMITING)' : ''}` : `audio FAILED:\n${fmtErrors(a.errors)}`); }
     return ok(out.join('\n'));
   });
   tool('vfx_list_timeline', 'One line per inserted component: its active tick span, Start at knob and length knob (Burn time / Travel ticks). Moving a component = vfx_set_control on its Start at; stretching it = its length control.', { docId: z.string() }, ({ docId }) => {
@@ -450,7 +451,7 @@ ${formatMigrationReport(report)}`);
     return ok(out.join('\n') || 'No particle systems.');
   });
   tool('vfx_render_audio', 'Render the root audio mix to a 48 kHz stereo WAV (default work/mcp/<id>.wav) and report peak/limiting.', { docId: z.string(), path: z.string().optional() }, ({ docId, path }) => {
-    const a = compileAudio(getDoc(docId));
+    const a = compileAudio(getDoc(docId), { samples: loadSoundsNode(soundsUsed(getDoc(docId))) });
     if (!a.ok) return bad(fmtErrors(a.errors));
     const m = a.value.mix, p = resolve(root, path ?? join('work', 'mcp', `${docId}.wav`));
     mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, encodeWavPcm16Stereo(m.left, m.right, m.sampleRate));
@@ -689,7 +690,7 @@ ${md}`);
       const sheet = BUILTIN_SPRITES.find(x => x.id === id);
       return sheet ? [{ id, sheet: structuredClone(sheet) as SpriteSheet, bytes: new Uint8Array(readFileSync(join(root, 'assets', 'sprites', sheet.file))) }] : [];
     });
-    const audio = hasRootAudio(d) ? compileAudio(d) : undefined;
+    const audio = hasRootAudio(d) ? compileAudio(d, { samples: loadSoundsNode(soundsUsed(d)) }) : undefined;
     const mixWav = audio?.ok ? encodeWavPcm16Stereo(audio.value.mix.left, audio.value.mix.right, audio.value.mix.sampleRate) : undefined;
     const r = await buildPack(d, bytes, { draft: draft === true, tool: 'vfx-studio-mcp', builtins, ...(mixWav ? { mixWav } : {}) });
     if (!r.ok) return bad(r.message);

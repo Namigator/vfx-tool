@@ -17,6 +17,7 @@ import { MATERIAL_TEMPLATE_IDS } from './materialSprite.ts';
 import type { EvaluationDomain, NodeSpec, ParameterSpec, PortSpec } from '../model/types.ts';
 import { TICKS_PER_SECOND, MAX_DURATION_TICKS } from '../model/types.ts';
 import { BUILTIN_SPRITES } from '../assets/builtinSprites.generated.ts';
+import { SOUND_IDS } from '../audio/soundLibrary.generated.ts';
 
 export const REGISTRY_DEFINITION_VERSION = 1;
 export const MATERIAL_TEMPLATES = [...MATERIAL_TEMPLATE_IDS];
@@ -982,7 +983,9 @@ function audioSource(): NodeSpec {
     ],
     outputs: [audioOut()],
     parameters: [
-      param({ id: 'source', label: 'Source', type: 'enum', unit: 'none', default: 'oscillator', choices: ['oscillator', 'noise', 'chirp'] }),
+      param({ id: 'source', label: 'Source', type: 'enum', unit: 'none', default: 'oscillator', choices: ['oscillator', 'noise', 'chirp', 'sample'], description: 'sample = a recorded sound from the built-in CC0 library (Sound).' }),
+      param({ id: 'sound', label: 'Sound', type: 'enum', unit: 'none', default: SOUND_IDS[0], choices: SOUND_IDS, description: 'Sample only: the library sound (assets/sounds). Pitch ratio plays it faster/higher; it is cut to Duration.' }),
+      param({ id: 'sampleLoop', label: 'Loop sample', type: 'boolean', unit: 'none', default: false, description: 'Sample only: repeat the sound to fill Duration (beds: fire, wind, water).' }),
       param({ id: 'offsetTicks', label: 'Offset', type: 'integer', unit: 'tick', default: 0, min: 0, max: AUDIO_MAX_OFFSET_TICKS, step: 1, description: 'Delay after each cue.' }),
       param({ id: 'durationTicks', label: 'Duration', type: 'integer', unit: 'tick', default: 30, min: 1, max: AUDIO_MAX_DURATION_TICKS, step: 1 }),
       param({ id: 'gain', label: 'Gain', type: 'number', unit: 'linearGain', default: 1, min: 0, max: 2, editPolicy: 'live' }),

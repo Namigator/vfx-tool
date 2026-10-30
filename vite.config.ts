@@ -17,7 +17,7 @@ export default defineConfig({
       name: 'copy-sprite-library',
       apply: 'build' as const,
       configResolved(c: { root: string; build: { outDir: string } }) { outDir = resolve(c.root, c.build.outDir); },
-      closeBundle() { cpSync(resolve(__dirname, 'assets/sprites'), resolve(outDir, 'assets/sprites'), { recursive: true }); },
+      closeBundle() { for (const d of ['sprites', 'sounds']) cpSync(resolve(__dirname, `assets/${d}`), resolve(outDir, `assets/${d}`), { recursive: true }); },
     }];
   })(),
 });

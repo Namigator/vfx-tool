@@ -96,19 +96,19 @@ Emitted from 11 site(s) in 5 file(s):
 
 Something refers to a thing that does not exist or is not connected: an edge to a missing port/node, a missing anchor, an Emitter with no trigger/window, a required group input/output that is unconnected.
 
-Emitted from 103 site(s) in 9 file(s):
+Emitted from 105 site(s) in 9 file(s):
 
 | file | sites | representative message |
 |---|---|---|
 | `src/graph/analyze.ts` | 8 | Node "…" has no output port "…". |
 | `src/graph/expand.ts` | 13 | Graph "…" does not exist. |
 | `src/graph/signature.ts` | 8 | Graph "…" does not exist. |
-| `src/graph/toAudio.ts` | 7 | Node "…" is not in the expanded graph. |
+| `src/graph/toAudio.ts` | 8 | Node "…" is not in the expanded graph. |
 | `src/graph/toParticles.ts` | 33 | Node "…" is not in the expanded graph. |
 | `src/graph/toPaths.ts` | 9 | Node "…" is not in the expanded graph. |
 | `src/model/controls.ts` | 9 | Control scope graph "…" does not exist. |
 | `src/model/document.ts` | 15 | Root graph … does not exist. |
-| `src/PreviewV2.tsx` | 1 | Could not load …: … |
+| `src/PreviewV2.tsx` | 2 | Sound library could not load: … |
 
 ## MISSING_ASSET
 

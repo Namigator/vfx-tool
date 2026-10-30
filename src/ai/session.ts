@@ -24,7 +24,7 @@ export function aiDraftErrors(input: unknown): string[] {
   const structure = validateDocument(input, { registry: createRegistry() });
   if (!structure.ok) return structure.errors.map(e => `${e.fieldPath ?? ''}: ${e.message}`);
   const d = structure.value, opts = { audioHandled: hasRootAudio(d) }, errors: string[] = [];
-  if (opts.audioHandled) { const a = compileAudio(d); if (!a.ok) errors.push(...a.errors.map(e => e.message)); }
+  if (opts.audioHandled) { const a = compileAudio(d, { missingSamplesSilent: true }); if (!a.ok) errors.push(...a.errors.map(e => e.message)); }
   const mode = choosePreviewMode(d).mode;
   if (mode !== 'paths') { const p = compileParticlePreview(d, { ...opts, ribbonsHandled: mode === 'mixed' }); if (!p.ok) errors.push(...p.errors.map(e => e.message)); }
   if (mode === 'paths' || mode === 'mixed') {

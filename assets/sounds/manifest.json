@@ -1,0 +1,2911 @@
+{
+ "builder": "tools/build-sounds.mjs",
+ "sampleRate": 48000,
+ "channels": 1,
+ "sounds": [
+  {
+   "id": "fire-cast-1",
+   "file": "fire-cast-1.wav",
+   "durationSec": 0.65,
+   "tags": [
+    "fire",
+    "cast",
+    "whoosh"
+   ],
+   "usage": "fire spell cast / burst",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/80-cc0-rpg-sfx",
+    "originalFile": "80-cc0-rpg-sfx/unz/spell_fire_01.ogg"
+   }
+  },
+  {
+   "id": "fire-cast-2",
+   "file": "fire-cast-2.wav",
+   "durationSec": 0.53,
+   "tags": [
+    "fire",
+    "cast",
+    "whoosh"
+   ],
+   "usage": "fire spell cast / burst",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/80-cc0-rpg-sfx",
+    "originalFile": "80-cc0-rpg-sfx/unz/spell_fire_02.ogg"
+   }
+  },
+  {
+   "id": "fire-cast-3",
+   "file": "fire-cast-3.wav",
+   "durationSec": 1.32,
+   "tags": [
+    "fire",
+    "cast",
+    "whoosh"
+   ],
+   "usage": "fire spell cast / burst",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/80-cc0-rpg-sfx",
+    "originalFile": "80-cc0-rpg-sfx/unz/spell_fire_03.ogg"
+   }
+  },
+  {
+   "id": "fire-cast-4",
+   "file": "fire-cast-4.wav",
+   "durationSec": 0.91,
+   "tags": [
+    "fire",
+    "cast",
+    "whoosh"
+   ],
+   "usage": "fire spell cast / burst",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/80-cc0-rpg-sfx",
+    "originalFile": "80-cc0-rpg-sfx/unz/spell_fire_04.ogg"
+   }
+  },
+  {
+   "id": "fire-cast-5",
+   "file": "fire-cast-5.wav",
+   "durationSec": 0.88,
+   "tags": [
+    "fire",
+    "cast",
+    "whoosh"
+   ],
+   "usage": "fire spell cast / burst",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/80-cc0-rpg-sfx",
+    "originalFile": "80-cc0-rpg-sfx/unz/spell_fire_05.ogg"
+   }
+  },
+  {
+   "id": "fire-cast-6",
+   "file": "fire-cast-6.wav",
+   "durationSec": 0.74,
+   "tags": [
+    "fire",
+    "cast",
+    "whoosh"
+   ],
+   "usage": "fire spell cast / burst",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/80-cc0-rpg-sfx",
+    "originalFile": "80-cc0-rpg-sfx/unz/spell_fire_06.ogg"
+   }
+  },
+  {
+   "id": "fire-cast-7",
+   "file": "fire-cast-7.wav",
+   "durationSec": 0.41,
+   "tags": [
+    "fire",
+    "cast",
+    "whoosh"
+   ],
+   "usage": "fire spell cast / burst",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/80-cc0-rpg-sfx",
+    "originalFile": "80-cc0-rpg-sfx/unz/spell_fire_07.ogg"
+   }
+  },
+  {
+   "id": "fire-crackle-1",
+   "file": "fire-crackle-1.wav",
+   "durationSec": 2.87,
+   "tags": [
+    "fire",
+    "loop",
+    "bed"
+   ],
+   "usage": "crackling flame bed under a burn",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "AntumDeluge",
+    "source": "https://opengameart.org/content/fire-crackling",
+    "originalFile": "fire-crackling/fire-1.wav"
+   }
+  },
+  {
+   "id": "fire-crackle-2",
+   "file": "fire-crackle-2.wav",
+   "durationSec": 2.94,
+   "tags": [
+    "fire",
+    "loop",
+    "bed"
+   ],
+   "usage": "crackling flame bed under a burn",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "AntumDeluge",
+    "source": "https://opengameart.org/content/fire-crackling",
+    "originalFile": "fire-crackling/fire-1_0.ogg"
+   }
+  },
+  {
+   "id": "fire-roar-1",
+   "file": "fire-roar-1.wav",
+   "durationSec": 4,
+   "tags": [
+    "fire",
+    "loop",
+    "bed"
+   ],
+   "usage": "steady fire roar bed",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "PagDev",
+    "source": "https://opengameart.org/content/fireplace-sound-loop",
+    "originalFile": "fireplace-sound-loop/fire.wav"
+   }
+  },
+  {
+   "id": "boom-1",
+   "file": "boom-1.wav",
+   "durationSec": 0.76,
+   "tags": [
+    "impact",
+    "explosion"
+   ],
+   "usage": "explosion / heavy impact",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/bang_01.ogg"
+   }
+  },
+  {
+   "id": "boom-2",
+   "file": "boom-2.wav",
+   "durationSec": 0.6,
+   "tags": [
+    "impact",
+    "explosion"
+   ],
+   "usage": "explosion / heavy impact",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/bang_02.ogg"
+   }
+  },
+  {
+   "id": "boom-3",
+   "file": "boom-3.wav",
+   "durationSec": 0.78,
+   "tags": [
+    "impact",
+    "explosion"
+   ],
+   "usage": "explosion / heavy impact",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/bang_03.ogg"
+   }
+  },
+  {
+   "id": "boom-4",
+   "file": "boom-4.wav",
+   "durationSec": 0.79,
+   "tags": [
+    "impact",
+    "explosion"
+   ],
+   "usage": "explosion / heavy impact",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/bang_04.ogg"
+   }
+  },
+  {
+   "id": "boom-5",
+   "file": "boom-5.wav",
+   "durationSec": 0.52,
+   "tags": [
+    "impact",
+    "explosion"
+   ],
+   "usage": "explosion / heavy impact",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/bang_05.ogg"
+   }
+  },
+  {
+   "id": "boom-6",
+   "file": "boom-6.wav",
+   "durationSec": 0.87,
+   "tags": [
+    "impact",
+    "explosion"
+   ],
+   "usage": "explosion / heavy impact",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/bang_06.ogg"
+   }
+  },
+  {
+   "id": "boom-7",
+   "file": "boom-7.wav",
+   "durationSec": 0.76,
+   "tags": [
+    "impact",
+    "explosion"
+   ],
+   "usage": "explosion / heavy impact",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/bang_07.ogg"
+   }
+  },
+  {
+   "id": "boom-8",
+   "file": "boom-8.wav",
+   "durationSec": 0.49,
+   "tags": [
+    "impact",
+    "explosion"
+   ],
+   "usage": "explosion / heavy impact",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/bang_08.ogg"
+   }
+  },
+  {
+   "id": "boom-9",
+   "file": "boom-9.wav",
+   "durationSec": 1.11,
+   "tags": [
+    "impact",
+    "explosion"
+   ],
+   "usage": "explosion / heavy impact",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/bang_09.ogg"
+   }
+  },
+  {
+   "id": "boom-10",
+   "file": "boom-10.wav",
+   "durationSec": 0.88,
+   "tags": [
+    "impact",
+    "explosion"
+   ],
+   "usage": "explosion / heavy impact",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/bang_10.ogg"
+   }
+  },
+  {
+   "id": "cannon-1",
+   "file": "cannon-1.wav",
+   "durationSec": 0.82,
+   "tags": [
+    "impact",
+    "launch"
+   ],
+   "usage": "launch thump / cannon",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/cannon_01.ogg"
+   }
+  },
+  {
+   "id": "cannon-2",
+   "file": "cannon-2.wav",
+   "durationSec": 1.04,
+   "tags": [
+    "impact",
+    "launch"
+   ],
+   "usage": "launch thump / cannon",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/cannon_02.ogg"
+   }
+  },
+  {
+   "id": "cannon-3",
+   "file": "cannon-3.wav",
+   "durationSec": 0.6,
+   "tags": [
+    "impact",
+    "launch"
+   ],
+   "usage": "launch thump / cannon",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/cannon_03.ogg"
+   }
+  },
+  {
+   "id": "cannon-4",
+   "file": "cannon-4.wav",
+   "durationSec": 0.69,
+   "tags": [
+    "impact",
+    "launch"
+   ],
+   "usage": "launch thump / cannon",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/cannon_04.ogg"
+   }
+  },
+  {
+   "id": "cannon-5",
+   "file": "cannon-5.wav",
+   "durationSec": 0.57,
+   "tags": [
+    "impact",
+    "launch"
+   ],
+   "usage": "launch thump / cannon",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/cannon_05.ogg"
+   }
+  },
+  {
+   "id": "firework-1",
+   "file": "firework-1.wav",
+   "durationSec": 0.77,
+   "tags": [
+    "impact",
+    "sparkle",
+    "burst"
+   ],
+   "usage": "burst with crackling sparkle tail",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/fw_01.ogg"
+   }
+  },
+  {
+   "id": "firework-2",
+   "file": "firework-2.wav",
+   "durationSec": 0.99,
+   "tags": [
+    "impact",
+    "sparkle",
+    "burst"
+   ],
+   "usage": "burst with crackling sparkle tail",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/fw_02.ogg"
+   }
+  },
+  {
+   "id": "firework-3",
+   "file": "firework-3.wav",
+   "durationSec": 1.04,
+   "tags": [
+    "impact",
+    "sparkle",
+    "burst"
+   ],
+   "usage": "burst with crackling sparkle tail",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/fw_03.ogg"
+   }
+  },
+  {
+   "id": "firework-4",
+   "file": "firework-4.wav",
+   "durationSec": 2.14,
+   "tags": [
+    "impact",
+    "sparkle",
+    "burst"
+   ],
+   "usage": "burst with crackling sparkle tail",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/fw_04.ogg"
+   }
+  },
+  {
+   "id": "firework-5",
+   "file": "firework-5.wav",
+   "durationSec": 0.71,
+   "tags": [
+    "impact",
+    "sparkle",
+    "burst"
+   ],
+   "usage": "burst with crackling sparkle tail",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/fw_05.ogg"
+   }
+  },
+  {
+   "id": "firework-6",
+   "file": "firework-6.wav",
+   "durationSec": 1,
+   "tags": [
+    "impact",
+    "sparkle",
+    "burst"
+   ],
+   "usage": "burst with crackling sparkle tail",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+    "originalFile": "25-cc0-bang-firework-sfx/unz/fw_06.ogg"
+   }
+  },
+  {
+   "id": "splash-1",
+   "file": "splash-1.wav",
+   "durationSec": 0.81,
+   "tags": [
+    "water",
+    "impact"
+   ],
+   "usage": "water splash",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/splash_01.ogg"
+   }
+  },
+  {
+   "id": "splash-2",
+   "file": "splash-2.wav",
+   "durationSec": 0.54,
+   "tags": [
+    "water",
+    "impact"
+   ],
+   "usage": "water splash",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/splash_02.ogg"
+   }
+  },
+  {
+   "id": "splash-3",
+   "file": "splash-3.wav",
+   "durationSec": 0.48,
+   "tags": [
+    "water",
+    "impact"
+   ],
+   "usage": "water splash",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/splash_03.ogg"
+   }
+  },
+  {
+   "id": "splash-4",
+   "file": "splash-4.wav",
+   "durationSec": 0.73,
+   "tags": [
+    "water",
+    "impact"
+   ],
+   "usage": "water splash",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/splash_04.ogg"
+   }
+  },
+  {
+   "id": "splash-5",
+   "file": "splash-5.wav",
+   "durationSec": 0.69,
+   "tags": [
+    "water",
+    "impact"
+   ],
+   "usage": "water splash",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/splash_05.ogg"
+   }
+  },
+  {
+   "id": "splash-6",
+   "file": "splash-6.wav",
+   "durationSec": 0.35,
+   "tags": [
+    "water",
+    "impact"
+   ],
+   "usage": "water splash",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/splash_06.ogg"
+   }
+  },
+  {
+   "id": "splash-7",
+   "file": "splash-7.wav",
+   "durationSec": 1.07,
+   "tags": [
+    "water",
+    "impact"
+   ],
+   "usage": "water splash",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/splash_07.ogg"
+   }
+  },
+  {
+   "id": "splash-8",
+   "file": "splash-8.wav",
+   "durationSec": 0.46,
+   "tags": [
+    "water",
+    "impact"
+   ],
+   "usage": "water splash",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/splash_08.ogg"
+   }
+  },
+  {
+   "id": "splash-9",
+   "file": "splash-9.wav",
+   "durationSec": 0.18,
+   "tags": [
+    "water",
+    "impact"
+   ],
+   "usage": "water splash",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/splash_09.ogg"
+   }
+  },
+  {
+   "id": "splash-10",
+   "file": "splash-10.wav",
+   "durationSec": 0.21,
+   "tags": [
+    "water",
+    "impact"
+   ],
+   "usage": "water splash",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/splash_10.ogg"
+   }
+  },
+  {
+   "id": "splash-11",
+   "file": "splash-11.wav",
+   "durationSec": 1.02,
+   "tags": [
+    "water",
+    "impact"
+   ],
+   "usage": "water splash",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/splash_11.ogg"
+   }
+  },
+  {
+   "id": "splash-12",
+   "file": "splash-12.wav",
+   "durationSec": 0.46,
+   "tags": [
+    "water",
+    "impact"
+   ],
+   "usage": "water splash",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/splash_12.ogg"
+   }
+  },
+  {
+   "id": "splash-13",
+   "file": "splash-13.wav",
+   "durationSec": 0.57,
+   "tags": [
+    "water",
+    "impact"
+   ],
+   "usage": "water splash",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/splash_13.ogg"
+   }
+  },
+  {
+   "id": "splash-14",
+   "file": "splash-14.wav",
+   "durationSec": 0.41,
+   "tags": [
+    "water",
+    "impact"
+   ],
+   "usage": "water splash",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/splash_14.ogg"
+   }
+  },
+  {
+   "id": "splash-15",
+   "file": "splash-15.wav",
+   "durationSec": 0.34,
+   "tags": [
+    "water",
+    "impact"
+   ],
+   "usage": "water splash",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/splash_15.ogg"
+   }
+  },
+  {
+   "id": "water-flow-1",
+   "file": "water-flow-1.wav",
+   "durationSec": 2.98,
+   "tags": [
+    "water",
+    "loop",
+    "bed"
+   ],
+   "usage": "flowing water bed",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/loop_water_01.ogg"
+   }
+  },
+  {
+   "id": "water-flow-2",
+   "file": "water-flow-2.wav",
+   "durationSec": 3,
+   "tags": [
+    "water",
+    "loop",
+    "bed"
+   ],
+   "usage": "flowing water bed",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/loop_water_02.ogg"
+   }
+  },
+  {
+   "id": "water-flow-3",
+   "file": "water-flow-3.wav",
+   "durationSec": 2.94,
+   "tags": [
+    "water",
+    "loop",
+    "bed"
+   ],
+   "usage": "flowing water bed",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/loop_water_03.ogg"
+   }
+  },
+  {
+   "id": "bubbles-1",
+   "file": "bubbles-1.wav",
+   "durationSec": 0.51,
+   "tags": [
+    "water",
+    "poison",
+    "bubble"
+   ],
+   "usage": "bubbling",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/bubble_01.ogg"
+   }
+  },
+  {
+   "id": "bubbles-2",
+   "file": "bubbles-2.wav",
+   "durationSec": 0.21,
+   "tags": [
+    "water",
+    "poison",
+    "bubble"
+   ],
+   "usage": "bubbling",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/bubble_02.ogg"
+   }
+  },
+  {
+   "id": "bubbles-3",
+   "file": "bubbles-3.wav",
+   "durationSec": 0.48,
+   "tags": [
+    "water",
+    "poison",
+    "bubble"
+   ],
+   "usage": "bubbling",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/bubble_03.ogg"
+   }
+  },
+  {
+   "id": "bubbles-4",
+   "file": "bubbles-4.wav",
+   "durationSec": 3,
+   "tags": [
+    "water",
+    "poison",
+    "bubble"
+   ],
+   "usage": "bubbling",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/loop_bubbles_02.ogg"
+   }
+  },
+  {
+   "id": "bubbles-5",
+   "file": "bubbles-5.wav",
+   "durationSec": 2.97,
+   "tags": [
+    "water",
+    "poison",
+    "bubble"
+   ],
+   "usage": "bubbling",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/loop_bubbles_1.ogg"
+   }
+  },
+  {
+   "id": "slime-1",
+   "file": "slime-1.wav",
+   "durationSec": 0.27,
+   "tags": [
+    "poison",
+    "slime",
+    "impact"
+   ],
+   "usage": "wet slime / acid splat",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/slime_01.ogg"
+   }
+  },
+  {
+   "id": "slime-2",
+   "file": "slime-2.wav",
+   "durationSec": 0.24,
+   "tags": [
+    "poison",
+    "slime",
+    "impact"
+   ],
+   "usage": "wet slime / acid splat",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/slime_02.ogg"
+   }
+  },
+  {
+   "id": "slime-3",
+   "file": "slime-3.wav",
+   "durationSec": 0.48,
+   "tags": [
+    "poison",
+    "slime",
+    "impact"
+   ],
+   "usage": "wet slime / acid splat",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/slime_03.ogg"
+   }
+  },
+  {
+   "id": "slime-4",
+   "file": "slime-4.wav",
+   "durationSec": 0.26,
+   "tags": [
+    "poison",
+    "slime",
+    "impact"
+   ],
+   "usage": "wet slime / acid splat",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/slime_04.ogg"
+   }
+  },
+  {
+   "id": "slime-5",
+   "file": "slime-5.wav",
+   "durationSec": 0.33,
+   "tags": [
+    "poison",
+    "slime",
+    "impact"
+   ],
+   "usage": "wet slime / acid splat",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/slime_05.ogg"
+   }
+  },
+  {
+   "id": "slime-6",
+   "file": "slime-6.wav",
+   "durationSec": 0.34,
+   "tags": [
+    "poison",
+    "slime",
+    "impact"
+   ],
+   "usage": "wet slime / acid splat",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/slime_06.ogg"
+   }
+  },
+  {
+   "id": "slime-7",
+   "file": "slime-7.wav",
+   "durationSec": 0.26,
+   "tags": [
+    "poison",
+    "slime",
+    "impact"
+   ],
+   "usage": "wet slime / acid splat",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/slime_07.ogg"
+   }
+  },
+  {
+   "id": "slime-8",
+   "file": "slime-8.wav",
+   "durationSec": 0.36,
+   "tags": [
+    "poison",
+    "slime",
+    "impact"
+   ],
+   "usage": "wet slime / acid splat",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/slime_08.ogg"
+   }
+  },
+  {
+   "id": "slime-9",
+   "file": "slime-9.wav",
+   "durationSec": 0.51,
+   "tags": [
+    "poison",
+    "slime",
+    "impact"
+   ],
+   "usage": "wet slime / acid splat",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/slime_09.ogg"
+   }
+  },
+  {
+   "id": "slime-10",
+   "file": "slime-10.wav",
+   "durationSec": 0.39,
+   "tags": [
+    "poison",
+    "slime",
+    "impact"
+   ],
+   "usage": "wet slime / acid splat",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/slime_10.ogg"
+   }
+  },
+  {
+   "id": "slime-11",
+   "file": "slime-11.wav",
+   "durationSec": 0.32,
+   "tags": [
+    "poison",
+    "slime",
+    "impact"
+   ],
+   "usage": "wet slime / acid splat",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/slime_11.ogg"
+   }
+  },
+  {
+   "id": "slime-12",
+   "file": "slime-12.wav",
+   "durationSec": 0.16,
+   "tags": [
+    "poison",
+    "slime",
+    "impact"
+   ],
+   "usage": "wet slime / acid splat",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/slime_12.ogg"
+   }
+  },
+  {
+   "id": "slime-13",
+   "file": "slime-13.wav",
+   "durationSec": 0.42,
+   "tags": [
+    "poison",
+    "slime",
+    "impact"
+   ],
+   "usage": "wet slime / acid splat",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/slime_13.ogg"
+   }
+  },
+  {
+   "id": "slime-14",
+   "file": "slime-14.wav",
+   "durationSec": 0.28,
+   "tags": [
+    "poison",
+    "slime",
+    "impact"
+   ],
+   "usage": "wet slime / acid splat",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/slime_14.ogg"
+   }
+  },
+  {
+   "id": "slime-15",
+   "file": "slime-15.wav",
+   "durationSec": 0.36,
+   "tags": [
+    "poison",
+    "slime",
+    "impact"
+   ],
+   "usage": "wet slime / acid splat",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/slime_15.ogg"
+   }
+  },
+  {
+   "id": "slime-16",
+   "file": "slime-16.wav",
+   "durationSec": 0.29,
+   "tags": [
+    "poison",
+    "slime",
+    "impact"
+   ],
+   "usage": "wet slime / acid splat",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+    "originalFile": "40-cc0-water-splash-slime-sfx/unz/slime_16.ogg"
+   }
+  },
+  {
+   "id": "rock-break-1",
+   "file": "rock-break-1.wav",
+   "durationSec": 0.4,
+   "tags": [
+    "earth",
+    "impact",
+    "break"
+   ],
+   "usage": "rock cracking / breaking",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_rock_breaking_01.ogg"
+   }
+  },
+  {
+   "id": "rock-break-2",
+   "file": "rock-break-2.wav",
+   "durationSec": 0.8,
+   "tags": [
+    "earth",
+    "impact",
+    "break"
+   ],
+   "usage": "rock cracking / breaking",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_rock_breaking_02.ogg"
+   }
+  },
+  {
+   "id": "rock-break-3",
+   "file": "rock-break-3.wav",
+   "durationSec": 0.39,
+   "tags": [
+    "earth",
+    "impact",
+    "break"
+   ],
+   "usage": "rock cracking / breaking",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_rock_breaking_03.ogg"
+   }
+  },
+  {
+   "id": "rock-fall-1",
+   "file": "rock-fall-1.wav",
+   "durationSec": 0.7,
+   "tags": [
+    "earth",
+    "debris"
+   ],
+   "usage": "rocks falling / debris",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_rock_falling_01.ogg"
+   }
+  },
+  {
+   "id": "rock-fall-2",
+   "file": "rock-fall-2.wav",
+   "durationSec": 0.25,
+   "tags": [
+    "earth",
+    "debris"
+   ],
+   "usage": "rocks falling / debris",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_rock_falling_02.ogg"
+   }
+  },
+  {
+   "id": "rock-fall-3",
+   "file": "rock-fall-3.wav",
+   "durationSec": 0.6,
+   "tags": [
+    "earth",
+    "debris"
+   ],
+   "usage": "rocks falling / debris",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_rock_falling_03.ogg"
+   }
+  },
+  {
+   "id": "rock-fall-4",
+   "file": "rock-fall-4.wav",
+   "durationSec": 0.14,
+   "tags": [
+    "earth",
+    "debris"
+   ],
+   "usage": "rocks falling / debris",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_rock_falling_04.ogg"
+   }
+  },
+  {
+   "id": "rock-fall-5",
+   "file": "rock-fall-5.wav",
+   "durationSec": 0.18,
+   "tags": [
+    "earth",
+    "debris"
+   ],
+   "usage": "rocks falling / debris",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_rock_falling_05.ogg"
+   }
+  },
+  {
+   "id": "rock-fall-6",
+   "file": "rock-fall-6.wav",
+   "durationSec": 0.11,
+   "tags": [
+    "earth",
+    "debris"
+   ],
+   "usage": "rocks falling / debris",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_rock_falling_06.ogg"
+   }
+  },
+  {
+   "id": "glass-break-1",
+   "file": "glass-break-1.wav",
+   "durationSec": 0.36,
+   "tags": [
+    "ice",
+    "shatter",
+    "impact"
+   ],
+   "usage": "shatter (ice crystals)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_glass_breaking_01.ogg"
+   }
+  },
+  {
+   "id": "glass-break-2",
+   "file": "glass-break-2.wav",
+   "durationSec": 0.31,
+   "tags": [
+    "ice",
+    "shatter",
+    "impact"
+   ],
+   "usage": "shatter (ice crystals)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_glass_breaking_02.ogg"
+   }
+  },
+  {
+   "id": "glass-break-3",
+   "file": "glass-break-3.wav",
+   "durationSec": 0.57,
+   "tags": [
+    "ice",
+    "shatter",
+    "impact"
+   ],
+   "usage": "shatter (ice crystals)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_glass_breaking_03.ogg"
+   }
+  },
+  {
+   "id": "glass-break-4",
+   "file": "glass-break-4.wav",
+   "durationSec": 0.58,
+   "tags": [
+    "ice",
+    "shatter",
+    "impact"
+   ],
+   "usage": "shatter (ice crystals)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_glass_breaking_04.ogg"
+   }
+  },
+  {
+   "id": "glass-break-5",
+   "file": "glass-break-5.wav",
+   "durationSec": 0.35,
+   "tags": [
+    "ice",
+    "shatter",
+    "impact"
+   ],
+   "usage": "shatter (ice crystals)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_glass_breaking_05.ogg"
+   }
+  },
+  {
+   "id": "glass-break-6",
+   "file": "glass-break-6.wav",
+   "durationSec": 0.73,
+   "tags": [
+    "ice",
+    "shatter",
+    "impact"
+   ],
+   "usage": "shatter (ice crystals)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_glass_breaking_06.ogg"
+   }
+  },
+  {
+   "id": "hit-1",
+   "file": "hit-1.wav",
+   "durationSec": 0.33,
+   "tags": [
+    "impact"
+   ],
+   "usage": "generic hit",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_hit_01.ogg"
+   }
+  },
+  {
+   "id": "hit-2",
+   "file": "hit-2.wav",
+   "durationSec": 0.46,
+   "tags": [
+    "impact"
+   ],
+   "usage": "generic hit",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_hit_02.ogg"
+   }
+  },
+  {
+   "id": "hit-3",
+   "file": "hit-3.wav",
+   "durationSec": 0.17,
+   "tags": [
+    "impact"
+   ],
+   "usage": "generic hit",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_hit_03.ogg"
+   }
+  },
+  {
+   "id": "hit-4",
+   "file": "hit-4.wav",
+   "durationSec": 0.1,
+   "tags": [
+    "impact"
+   ],
+   "usage": "generic hit",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_hit_04.ogg"
+   }
+  },
+  {
+   "id": "hit-5",
+   "file": "hit-5.wav",
+   "durationSec": 0.07,
+   "tags": [
+    "impact"
+   ],
+   "usage": "generic hit",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_hit_05.ogg"
+   }
+  },
+  {
+   "id": "hit-6",
+   "file": "hit-6.wav",
+   "durationSec": 0.26,
+   "tags": [
+    "impact"
+   ],
+   "usage": "generic hit",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_hit_06.ogg"
+   }
+  },
+  {
+   "id": "hit-7",
+   "file": "hit-7.wav",
+   "durationSec": 0.36,
+   "tags": [
+    "impact"
+   ],
+   "usage": "generic hit",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_hit_07.ogg"
+   }
+  },
+  {
+   "id": "hit-8",
+   "file": "hit-8.wav",
+   "durationSec": 0.17,
+   "tags": [
+    "impact"
+   ],
+   "usage": "generic hit",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_hit_08.ogg"
+   }
+  },
+  {
+   "id": "hit-9",
+   "file": "hit-9.wav",
+   "durationSec": 0.1,
+   "tags": [
+    "impact"
+   ],
+   "usage": "generic hit",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_hit_09.ogg"
+   }
+  },
+  {
+   "id": "hit-10",
+   "file": "hit-10.wav",
+   "durationSec": 0.19,
+   "tags": [
+    "impact"
+   ],
+   "usage": "generic hit",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_hit_10.ogg"
+   }
+  },
+  {
+   "id": "hit-11",
+   "file": "hit-11.wav",
+   "durationSec": 0.14,
+   "tags": [
+    "impact"
+   ],
+   "usage": "generic hit",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_hit_11.ogg"
+   }
+  },
+  {
+   "id": "hit-12",
+   "file": "hit-12.wav",
+   "durationSec": 0.29,
+   "tags": [
+    "impact"
+   ],
+   "usage": "generic hit",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_hit_12.ogg"
+   }
+  },
+  {
+   "id": "hit-13",
+   "file": "hit-13.wav",
+   "durationSec": 0.23,
+   "tags": [
+    "impact"
+   ],
+   "usage": "generic hit",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+    "originalFile": "75-cc0-breaking-falling-hit-sfx/unz/bfh1_hit_13.ogg"
+   }
+  },
+  {
+   "id": "freeze-1",
+   "file": "freeze-1.wav",
+   "durationSec": 1.87,
+   "tags": [
+    "ice",
+    "cast"
+   ],
+   "usage": "freeze spell",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/freeze-spell-0",
+    "originalFile": "freeze-spell-0/freeze.wav"
+   }
+  },
+  {
+   "id": "ice-1",
+   "file": "ice-1.wav",
+   "durationSec": 1.04,
+   "tags": [
+    "ice",
+    "cast",
+    "impact"
+   ],
+   "usage": "ice snap / crystal",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "bart",
+    "source": "https://opengameart.org/content/ice-spells",
+    "originalFile": "ice-spells/unz/coldsnap.wav"
+   }
+  },
+  {
+   "id": "ice-2",
+   "file": "ice-2.wav",
+   "durationSec": 0.55,
+   "tags": [
+    "ice",
+    "cast",
+    "impact"
+   ],
+   "usage": "ice snap / crystal",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "bart",
+    "source": "https://opengameart.org/content/ice-spells",
+    "originalFile": "ice-spells/unz/ice.wav"
+   }
+  },
+  {
+   "id": "spark-1",
+   "file": "spark-1.wav",
+   "durationSec": 0.22,
+   "tags": [
+    "lightning",
+    "spark"
+   ],
+   "usage": "electric spark",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "BMacZero",
+    "source": "https://opengameart.org/content/electricity-sound-effects-0",
+    "originalFile": "electricity-sound-effects-0/continuousspark.wav"
+   }
+  },
+  {
+   "id": "spark-2",
+   "file": "spark-2.wav",
+   "durationSec": 0.11,
+   "tags": [
+    "lightning",
+    "spark"
+   ],
+   "usage": "electric spark",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "BMacZero",
+    "source": "https://opengameart.org/content/electricity-sound-effects-0",
+    "originalFile": "electricity-sound-effects-0/spark.wav"
+   }
+  },
+  {
+   "id": "zap-1",
+   "file": "zap-1.wav",
+   "durationSec": 1.67,
+   "tags": [
+    "lightning",
+    "impact",
+    "zap"
+   ],
+   "usage": "electric zap / strike",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "faxcorp",
+    "source": "https://opengameart.org/content/electricity-game-sound-pack",
+    "originalFile": "electricity-game-sound-pack/death_1.wav"
+   }
+  },
+  {
+   "id": "zap-2",
+   "file": "zap-2.wav",
+   "durationSec": 0.22,
+   "tags": [
+    "lightning",
+    "impact",
+    "zap"
+   ],
+   "usage": "electric zap / strike",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "faxcorp",
+    "source": "https://opengameart.org/content/electricity-game-sound-pack",
+    "originalFile": "electricity-game-sound-pack/groundhit.wav"
+   }
+  },
+  {
+   "id": "zap-3",
+   "file": "zap-3.wav",
+   "durationSec": 1.3,
+   "tags": [
+    "lightning",
+    "impact",
+    "zap"
+   ],
+   "usage": "electric zap / strike",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "faxcorp",
+    "source": "https://opengameart.org/content/electricity-game-sound-pack",
+    "originalFile": "electricity-game-sound-pack/hit.wav"
+   }
+  },
+  {
+   "id": "zap-4",
+   "file": "zap-4.wav",
+   "durationSec": 1.35,
+   "tags": [
+    "lightning",
+    "impact",
+    "zap"
+   ],
+   "usage": "electric zap / strike",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "faxcorp",
+    "source": "https://opengameart.org/content/electricity-game-sound-pack",
+    "originalFile": "electricity-game-sound-pack/shieldhit.wav"
+   }
+  },
+  {
+   "id": "zap-5",
+   "file": "zap-5.wav",
+   "durationSec": 0.68,
+   "tags": [
+    "lightning",
+    "impact",
+    "zap"
+   ],
+   "usage": "electric zap / strike",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "faxcorp",
+    "source": "https://opengameart.org/content/electricity-game-sound-pack",
+    "originalFile": "electricity-game-sound-pack/teleport_1.wav"
+   }
+  },
+  {
+   "id": "electric-loop-1",
+   "file": "electric-loop-1.wav",
+   "durationSec": 0.28,
+   "tags": [
+    "lightning",
+    "loop",
+    "bed"
+   ],
+   "usage": "crackling electricity bed",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "faxcorp",
+    "source": "https://opengameart.org/content/electricity-game-sound-pack",
+    "originalFile": "electricity-game-sound-pack/crackleelectricityloop.wav"
+   }
+  },
+  {
+   "id": "electric-loop-2",
+   "file": "electric-loop-2.wav",
+   "durationSec": 2.93,
+   "tags": [
+    "lightning",
+    "loop",
+    "bed"
+   ],
+   "usage": "crackling electricity bed",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "faxcorp",
+    "source": "https://opengameart.org/content/electricity-game-sound-pack",
+    "originalFile": "electricity-game-sound-pack/snaploop.wav"
+   }
+  },
+  {
+   "id": "charge-1",
+   "file": "charge-1.wav",
+   "durationSec": 2.93,
+   "tags": [
+    "charge",
+    "energy",
+    "rise"
+   ],
+   "usage": "rising charge-up",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "faxcorp",
+    "source": "https://opengameart.org/content/electricity-game-sound-pack",
+    "originalFile": "electricity-game-sound-pack/charge.wav"
+   }
+  },
+  {
+   "id": "charge-2",
+   "file": "charge-2.wav",
+   "durationSec": 2.99,
+   "tags": [
+    "charge",
+    "energy",
+    "rise"
+   ],
+   "usage": "rising charge-up",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "faxcorp",
+    "source": "https://opengameart.org/content/electricity-game-sound-pack",
+    "originalFile": "electricity-game-sound-pack/chargestart.wav"
+   }
+  },
+  {
+   "id": "charge-3",
+   "file": "charge-3.wav",
+   "durationSec": 1.27,
+   "tags": [
+    "charge",
+    "energy",
+    "rise"
+   ],
+   "usage": "rising charge-up",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "faxcorp",
+    "source": "https://opengameart.org/content/electricity-game-sound-pack",
+    "originalFile": "electricity-game-sound-pack/powerup.wav"
+   }
+  },
+  {
+   "id": "power-down-1",
+   "file": "power-down-1.wav",
+   "durationSec": 1.99,
+   "tags": [
+    "energy",
+    "tail"
+   ],
+   "usage": "falling power-down tail",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "faxcorp",
+    "source": "https://opengameart.org/content/electricity-game-sound-pack",
+    "originalFile": "electricity-game-sound-pack/powerdown.wav"
+   }
+  },
+  {
+   "id": "magic-1",
+   "file": "magic-1.wav",
+   "durationSec": 1.59,
+   "tags": [
+    "arcane",
+    "magic",
+    "cast"
+   ],
+   "usage": "magic cast / shimmer",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "JaggedStone",
+    "source": "https://opengameart.org/content/magic-spell-sfx",
+    "originalFile": "magic-spell-sfx/magical_1_0.ogg"
+   }
+  },
+  {
+   "id": "magic-2",
+   "file": "magic-2.wav",
+   "durationSec": 1.38,
+   "tags": [
+    "arcane",
+    "magic",
+    "cast"
+   ],
+   "usage": "magic cast / shimmer",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "JaggedStone",
+    "source": "https://opengameart.org/content/magic-spell-sfx",
+    "originalFile": "magic-spell-sfx/magical_2.ogg"
+   }
+  },
+  {
+   "id": "magic-3",
+   "file": "magic-3.wav",
+   "durationSec": 1.8,
+   "tags": [
+    "arcane",
+    "magic",
+    "cast"
+   ],
+   "usage": "magic cast / shimmer",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "JaggedStone",
+    "source": "https://opengameart.org/content/magic-spell-sfx",
+    "originalFile": "magic-spell-sfx/magical_3.ogg"
+   }
+  },
+  {
+   "id": "magic-4",
+   "file": "magic-4.wav",
+   "durationSec": 1.53,
+   "tags": [
+    "arcane",
+    "magic",
+    "cast"
+   ],
+   "usage": "magic cast / shimmer",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "JaggedStone",
+    "source": "https://opengameart.org/content/magic-spell-sfx",
+    "originalFile": "magic-spell-sfx/magical_4.ogg"
+   }
+  },
+  {
+   "id": "magic-5",
+   "file": "magic-5.wav",
+   "durationSec": 1.36,
+   "tags": [
+    "arcane",
+    "magic",
+    "cast"
+   ],
+   "usage": "magic cast / shimmer",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "JaggedStone",
+    "source": "https://opengameart.org/content/magic-spell-sfx",
+    "originalFile": "magic-spell-sfx/magical_5.ogg"
+   }
+  },
+  {
+   "id": "magic-6",
+   "file": "magic-6.wav",
+   "durationSec": 1.03,
+   "tags": [
+    "arcane",
+    "magic",
+    "cast"
+   ],
+   "usage": "magic cast / shimmer",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "JaggedStone",
+    "source": "https://opengameart.org/content/magic-spell-sfx",
+    "originalFile": "magic-spell-sfx/magical_6_0.ogg"
+   }
+  },
+  {
+   "id": "magic-7",
+   "file": "magic-7.wav",
+   "durationSec": 1.3,
+   "tags": [
+    "arcane",
+    "magic",
+    "cast"
+   ],
+   "usage": "magic cast / shimmer",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "JaggedStone",
+    "source": "https://opengameart.org/content/magic-spell-sfx",
+    "originalFile": "magic-spell-sfx/magical_7_0.ogg"
+   }
+  },
+  {
+   "id": "spell-1",
+   "file": "spell-1.wav",
+   "durationSec": 0.5,
+   "tags": [
+    "arcane",
+    "magic",
+    "cast"
+   ],
+   "usage": "short spell cast",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/80-cc0-rpg-sfx",
+    "originalFile": "80-cc0-rpg-sfx/unz/spell_01.ogg"
+   }
+  },
+  {
+   "id": "spell-2",
+   "file": "spell-2.wav",
+   "durationSec": 0.39,
+   "tags": [
+    "arcane",
+    "magic",
+    "cast"
+   ],
+   "usage": "short spell cast",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/80-cc0-rpg-sfx",
+    "originalFile": "80-cc0-rpg-sfx/unz/spell_02.ogg"
+   }
+  },
+  {
+   "id": "teleport-1",
+   "file": "teleport-1.wav",
+   "durationSec": 3,
+   "tags": [
+    "arcane",
+    "magic",
+    "whoosh"
+   ],
+   "usage": "teleport / portal swirl",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 (dual-licensed CC0 / OGA-BY; used under CC0)",
+    "author": "HaelDB",
+    "source": "https://opengameart.org/content/spell-sounds",
+    "originalFile": "spell-sounds/teleport.ogg"
+   }
+  },
+  {
+   "id": "heal-1",
+   "file": "heal-1.wav",
+   "durationSec": 0.59,
+   "tags": [
+    "light",
+    "holy",
+    "magic"
+   ],
+   "usage": "healing / holy shimmer",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/rpg-sound-pack",
+    "originalFile": "rpg-sound-pack/unz/RPG Sound Pack/battle/magic1.wav"
+   }
+  },
+  {
+   "id": "heal-2",
+   "file": "heal-2.wav",
+   "durationSec": 2.46,
+   "tags": [
+    "light",
+    "holy",
+    "magic"
+   ],
+   "usage": "healing / holy shimmer",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/rpg-sound-pack",
+    "originalFile": "rpg-sound-pack/unz/RPG Sound Pack/battle/spell.wav"
+   }
+  },
+  {
+   "id": "bell-1",
+   "file": "bell-1.wav",
+   "durationSec": 1.06,
+   "tags": [
+    "light",
+    "holy",
+    "ring"
+   ],
+   "usage": "bell / gong ring (holy light)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/100-cc0-sfx",
+    "originalFile": "100-cc0-sfx/unz/bell_01.ogg"
+   }
+  },
+  {
+   "id": "bell-2",
+   "file": "bell-2.wav",
+   "durationSec": 0.36,
+   "tags": [
+    "light",
+    "holy",
+    "ring"
+   ],
+   "usage": "bell / gong ring (holy light)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/100-cc0-sfx",
+    "originalFile": "100-cc0-sfx/unz/bell_02.ogg"
+   }
+  },
+  {
+   "id": "bell-3",
+   "file": "bell-3.wav",
+   "durationSec": 1.16,
+   "tags": [
+    "light",
+    "holy",
+    "ring"
+   ],
+   "usage": "bell / gong ring (holy light)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/100-cc0-sfx",
+    "originalFile": "100-cc0-sfx/unz/bell_03.ogg"
+   }
+  },
+  {
+   "id": "bell-4",
+   "file": "bell-4.wav",
+   "durationSec": 1.24,
+   "tags": [
+    "light",
+    "holy",
+    "ring"
+   ],
+   "usage": "bell / gong ring (holy light)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/100-cc0-sfx",
+    "originalFile": "100-cc0-sfx/unz/gong_01.ogg"
+   }
+  },
+  {
+   "id": "bell-5",
+   "file": "bell-5.wav",
+   "durationSec": 0.81,
+   "tags": [
+    "light",
+    "holy",
+    "ring"
+   ],
+   "usage": "bell / gong ring (holy light)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/100-cc0-sfx",
+    "originalFile": "100-cc0-sfx/unz/gong_02.ogg"
+   }
+  },
+  {
+   "id": "shade-1",
+   "file": "shade-1.wav",
+   "durationSec": 0.37,
+   "tags": [
+    "shadow",
+    "dark",
+    "voice"
+   ],
+   "usage": "dark breathy shade / void moan",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/rpg-sound-pack",
+    "originalFile": "rpg-sound-pack/unz/RPG Sound Pack/NPC/shade/shade1.wav"
+   }
+  },
+  {
+   "id": "shade-2",
+   "file": "shade-2.wav",
+   "durationSec": 0.67,
+   "tags": [
+    "shadow",
+    "dark",
+    "voice"
+   ],
+   "usage": "dark breathy shade / void moan",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/rpg-sound-pack",
+    "originalFile": "rpg-sound-pack/unz/RPG Sound Pack/NPC/shade/shade10.wav"
+   }
+  },
+  {
+   "id": "shade-3",
+   "file": "shade-3.wav",
+   "durationSec": 0.74,
+   "tags": [
+    "shadow",
+    "dark",
+    "voice"
+   ],
+   "usage": "dark breathy shade / void moan",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/rpg-sound-pack",
+    "originalFile": "rpg-sound-pack/unz/RPG Sound Pack/NPC/shade/shade11.wav"
+   }
+  },
+  {
+   "id": "shade-4",
+   "file": "shade-4.wav",
+   "durationSec": 1.06,
+   "tags": [
+    "shadow",
+    "dark",
+    "voice"
+   ],
+   "usage": "dark breathy shade / void moan",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/rpg-sound-pack",
+    "originalFile": "rpg-sound-pack/unz/RPG Sound Pack/NPC/shade/shade12.wav"
+   }
+  },
+  {
+   "id": "shade-5",
+   "file": "shade-5.wav",
+   "durationSec": 0.8,
+   "tags": [
+    "shadow",
+    "dark",
+    "voice"
+   ],
+   "usage": "dark breathy shade / void moan",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/rpg-sound-pack",
+    "originalFile": "rpg-sound-pack/unz/RPG Sound Pack/NPC/shade/shade13.wav"
+   }
+  },
+  {
+   "id": "shade-6",
+   "file": "shade-6.wav",
+   "durationSec": 0.41,
+   "tags": [
+    "shadow",
+    "dark",
+    "voice"
+   ],
+   "usage": "dark breathy shade / void moan",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/rpg-sound-pack",
+    "originalFile": "rpg-sound-pack/unz/RPG Sound Pack/NPC/shade/shade14.wav"
+   }
+  },
+  {
+   "id": "shade-7",
+   "file": "shade-7.wav",
+   "durationSec": 0.48,
+   "tags": [
+    "shadow",
+    "dark",
+    "voice"
+   ],
+   "usage": "dark breathy shade / void moan",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/rpg-sound-pack",
+    "originalFile": "rpg-sound-pack/unz/RPG Sound Pack/NPC/shade/shade15.wav"
+   }
+  },
+  {
+   "id": "shade-8",
+   "file": "shade-8.wav",
+   "durationSec": 0.39,
+   "tags": [
+    "shadow",
+    "dark",
+    "voice"
+   ],
+   "usage": "dark breathy shade / void moan",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/rpg-sound-pack",
+    "originalFile": "rpg-sound-pack/unz/RPG Sound Pack/NPC/shade/shade2.wav"
+   }
+  },
+  {
+   "id": "shade-9",
+   "file": "shade-9.wav",
+   "durationSec": 0.43,
+   "tags": [
+    "shadow",
+    "dark",
+    "voice"
+   ],
+   "usage": "dark breathy shade / void moan",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/rpg-sound-pack",
+    "originalFile": "rpg-sound-pack/unz/RPG Sound Pack/NPC/shade/shade3.wav"
+   }
+  },
+  {
+   "id": "shade-10",
+   "file": "shade-10.wav",
+   "durationSec": 0.52,
+   "tags": [
+    "shadow",
+    "dark",
+    "voice"
+   ],
+   "usage": "dark breathy shade / void moan",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/rpg-sound-pack",
+    "originalFile": "rpg-sound-pack/unz/RPG Sound Pack/NPC/shade/shade4.wav"
+   }
+  },
+  {
+   "id": "shade-11",
+   "file": "shade-11.wav",
+   "durationSec": 0.47,
+   "tags": [
+    "shadow",
+    "dark",
+    "voice"
+   ],
+   "usage": "dark breathy shade / void moan",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/rpg-sound-pack",
+    "originalFile": "rpg-sound-pack/unz/RPG Sound Pack/NPC/shade/shade5.wav"
+   }
+  },
+  {
+   "id": "shade-12",
+   "file": "shade-12.wav",
+   "durationSec": 0.9,
+   "tags": [
+    "shadow",
+    "dark",
+    "voice"
+   ],
+   "usage": "dark breathy shade / void moan",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/rpg-sound-pack",
+    "originalFile": "rpg-sound-pack/unz/RPG Sound Pack/NPC/shade/shade6.wav"
+   }
+  },
+  {
+   "id": "shade-13",
+   "file": "shade-13.wav",
+   "durationSec": 0.89,
+   "tags": [
+    "shadow",
+    "dark",
+    "voice"
+   ],
+   "usage": "dark breathy shade / void moan",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/rpg-sound-pack",
+    "originalFile": "rpg-sound-pack/unz/RPG Sound Pack/NPC/shade/shade7.wav"
+   }
+  },
+  {
+   "id": "shade-14",
+   "file": "shade-14.wav",
+   "durationSec": 1.3,
+   "tags": [
+    "shadow",
+    "dark",
+    "voice"
+   ],
+   "usage": "dark breathy shade / void moan",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/rpg-sound-pack",
+    "originalFile": "rpg-sound-pack/unz/RPG Sound Pack/NPC/shade/shade8.wav"
+   }
+  },
+  {
+   "id": "shade-15",
+   "file": "shade-15.wav",
+   "durationSec": 1.11,
+   "tags": [
+    "shadow",
+    "dark",
+    "voice"
+   ],
+   "usage": "dark breathy shade / void moan",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/rpg-sound-pack",
+    "originalFile": "rpg-sound-pack/unz/RPG Sound Pack/NPC/shade/shade9.wav"
+   }
+  },
+  {
+   "id": "wind-1",
+   "file": "wind-1.wav",
+   "durationSec": 2.92,
+   "tags": [
+    "wind",
+    "loop",
+    "bed"
+   ],
+   "usage": "wind gust bed",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "IgnasD",
+    "source": "https://opengameart.org/content/wind",
+    "originalFile": "wind/unz/wind/Wind.ogg"
+   }
+  },
+  {
+   "id": "wind-2",
+   "file": "wind-2.wav",
+   "durationSec": 2.92,
+   "tags": [
+    "wind",
+    "loop",
+    "bed"
+   ],
+   "usage": "wind gust bed",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "IgnasD",
+    "source": "https://opengameart.org/content/wind",
+    "originalFile": "wind/unz/wind/Wind2.ogg"
+   }
+  },
+  {
+   "id": "wind-3",
+   "file": "wind-3.wav",
+   "durationSec": 1.3,
+   "tags": [
+    "wind",
+    "loop",
+    "bed"
+   ],
+   "usage": "wind gust bed",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "IgnasD",
+    "source": "https://opengameart.org/content/wind",
+    "originalFile": "wind/unz/wind/Wind3.ogg"
+   }
+  },
+  {
+   "id": "swish-1",
+   "file": "swish-1.wav",
+   "durationSec": 0.1,
+   "tags": [
+    "wind",
+    "whoosh",
+    "swing"
+   ],
+   "usage": "fast swish / whoosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/swishes-sound-pack",
+    "originalFile": "swishes-sound-pack/unz/swishes/swish-1.wav"
+   }
+  },
+  {
+   "id": "swish-2",
+   "file": "swish-2.wav",
+   "durationSec": 0.08,
+   "tags": [
+    "wind",
+    "whoosh",
+    "swing"
+   ],
+   "usage": "fast swish / whoosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/swishes-sound-pack",
+    "originalFile": "swishes-sound-pack/unz/swishes/swish-10.wav"
+   }
+  },
+  {
+   "id": "swish-3",
+   "file": "swish-3.wav",
+   "durationSec": 0.07,
+   "tags": [
+    "wind",
+    "whoosh",
+    "swing"
+   ],
+   "usage": "fast swish / whoosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/swishes-sound-pack",
+    "originalFile": "swishes-sound-pack/unz/swishes/swish-11.wav"
+   }
+  },
+  {
+   "id": "swish-4",
+   "file": "swish-4.wav",
+   "durationSec": 0.06,
+   "tags": [
+    "wind",
+    "whoosh",
+    "swing"
+   ],
+   "usage": "fast swish / whoosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/swishes-sound-pack",
+    "originalFile": "swishes-sound-pack/unz/swishes/swish-12.wav"
+   }
+  },
+  {
+   "id": "swish-5",
+   "file": "swish-5.wav",
+   "durationSec": 0.06,
+   "tags": [
+    "wind",
+    "whoosh",
+    "swing"
+   ],
+   "usage": "fast swish / whoosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/swishes-sound-pack",
+    "originalFile": "swishes-sound-pack/unz/swishes/swish-13.wav"
+   }
+  },
+  {
+   "id": "swish-6",
+   "file": "swish-6.wav",
+   "durationSec": 0.07,
+   "tags": [
+    "wind",
+    "whoosh",
+    "swing"
+   ],
+   "usage": "fast swish / whoosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/swishes-sound-pack",
+    "originalFile": "swishes-sound-pack/unz/swishes/swish-2.wav"
+   }
+  },
+  {
+   "id": "swish-7",
+   "file": "swish-7.wav",
+   "durationSec": 0.1,
+   "tags": [
+    "wind",
+    "whoosh",
+    "swing"
+   ],
+   "usage": "fast swish / whoosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/swishes-sound-pack",
+    "originalFile": "swishes-sound-pack/unz/swishes/swish-3.wav"
+   }
+  },
+  {
+   "id": "swish-8",
+   "file": "swish-8.wav",
+   "durationSec": 0.09,
+   "tags": [
+    "wind",
+    "whoosh",
+    "swing"
+   ],
+   "usage": "fast swish / whoosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/swishes-sound-pack",
+    "originalFile": "swishes-sound-pack/unz/swishes/swish-4.wav"
+   }
+  },
+  {
+   "id": "swish-9",
+   "file": "swish-9.wav",
+   "durationSec": 0.09,
+   "tags": [
+    "wind",
+    "whoosh",
+    "swing"
+   ],
+   "usage": "fast swish / whoosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/swishes-sound-pack",
+    "originalFile": "swishes-sound-pack/unz/swishes/swish-5.wav"
+   }
+  },
+  {
+   "id": "swish-10",
+   "file": "swish-10.wav",
+   "durationSec": 0.09,
+   "tags": [
+    "wind",
+    "whoosh",
+    "swing"
+   ],
+   "usage": "fast swish / whoosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/swishes-sound-pack",
+    "originalFile": "swishes-sound-pack/unz/swishes/swish-6.wav"
+   }
+  },
+  {
+   "id": "swish-11",
+   "file": "swish-11.wav",
+   "durationSec": 0.11,
+   "tags": [
+    "wind",
+    "whoosh",
+    "swing"
+   ],
+   "usage": "fast swish / whoosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/swishes-sound-pack",
+    "originalFile": "swishes-sound-pack/unz/swishes/swish-7.wav"
+   }
+  },
+  {
+   "id": "swish-12",
+   "file": "swish-12.wav",
+   "durationSec": 0.12,
+   "tags": [
+    "wind",
+    "whoosh",
+    "swing"
+   ],
+   "usage": "fast swish / whoosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/swishes-sound-pack",
+    "originalFile": "swishes-sound-pack/unz/swishes/swish-8.wav"
+   }
+  },
+  {
+   "id": "swish-13",
+   "file": "swish-13.wav",
+   "durationSec": 0.11,
+   "tags": [
+    "wind",
+    "whoosh",
+    "swing"
+   ],
+   "usage": "fast swish / whoosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "artisticdude",
+    "source": "https://opengameart.org/content/swishes-sound-pack",
+    "originalFile": "swishes-sound-pack/unz/swishes/swish-9.wav"
+   }
+  },
+  {
+   "id": "blade-1",
+   "file": "blade-1.wav",
+   "durationSec": 0.18,
+   "tags": [
+    "wind",
+    "slice",
+    "whoosh"
+   ],
+   "usage": "sharp blade swish (wind cut)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/80-cc0-rpg-sfx",
+    "originalFile": "80-cc0-rpg-sfx/unz/blade_01.ogg"
+   }
+  },
+  {
+   "id": "blade-2",
+   "file": "blade-2.wav",
+   "durationSec": 0.24,
+   "tags": [
+    "wind",
+    "slice",
+    "whoosh"
+   ],
+   "usage": "sharp blade swish (wind cut)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/80-cc0-rpg-sfx",
+    "originalFile": "80-cc0-rpg-sfx/unz/blade_02.ogg"
+   }
+  },
+  {
+   "id": "blade-3",
+   "file": "blade-3.wav",
+   "durationSec": 0.23,
+   "tags": [
+    "wind",
+    "slice",
+    "whoosh"
+   ],
+   "usage": "sharp blade swish (wind cut)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "rubberduck",
+    "source": "https://opengameart.org/content/80-cc0-rpg-sfx",
+    "originalFile": "80-cc0-rpg-sfx/unz/blade_03.ogg"
+   }
+  }
+ ]
+}
