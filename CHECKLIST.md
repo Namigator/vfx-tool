@@ -14,7 +14,7 @@ Full text: docs/v2-plan/17-ACCEPTANCE.md (gitignored copy). Passing = every line
 - [x] H-04 Ten Arcane effects side by side in each engine, no regressions · [SAW] work/compare/*-vs-tool.png · 2026-10-30
 - [x] H-05 Packages import with only the shipped integration; Unity Play mode checked · [SAW] uplay sheets · 2026-10-30
 - [x] H-06 Roblox textures and meshes uploaded and shipped in src/export/roblox/assets.ts · [SAW] grid · 2026-10-30
-- [ ] H-07 Owner approves the grid and the Arcane sheets per engine · needs owner
+- [x] H-07 Owner approves the grid (52 cases x 5 engine columns) · owner: "Approve grid" · 2026-10-30
 
 - [x] Force Lance preset (thrown spear, tight purple helix closed at the tip) · owner: "looks much better" + [SAW] stills · 2026-10-21
 - [ ] Arcane Lance preset (beam version) · [SAW] stills, owner not asked · 2026-10-21
