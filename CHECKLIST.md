@@ -10,7 +10,7 @@ Full text: docs/v2-plan/17-ACCEPTANCE.md (gitignored copy). Passing = every line
 - [x] H-01 Every editor feature has a feature-grid case (52 cases, tools/feature-grid/cases.mjs) · [RAN] grid · 2026-10-30
 - [x] H-01b MotionTrail width over trail + Spiral (baked from the editor into ribbon/Beam frames, src/export/trailBake.ts) and Emitter axis follows motion: all four engines · [SAW] work/compare/new-cases-engines.png, follow.png, rbx-new.png, urp-new.png · 2026-10-30
 - [x] H-02 Every case exports and renders in all four engines (no NOT RUN / EXPORT FAIL) · [RAN] score.mjs · 2026-10-30
-- [ ] H-03 Every case OK by eye or UNSUPPORTED with the reason reported · open: Unity attract, URP sprites · 2026-10-30
+- [ ] H-03 Every case OK by eye or UNSUPPORTED with the reason reported · open: URP sprites · 2026-10-30
 - [x] H-04 Ten Arcane effects side by side in each engine, no regressions · [SAW] work/compare/*-vs-tool.png · 2026-10-30
 - [x] H-05 Packages import with only the shipped integration; Unity Play mode checked · [SAW] uplay sheets · 2026-10-30
 - [x] H-06 Roblox textures and meshes uploaded and shipped in src/export/roblox/assets.ts · [SAW] grid · 2026-10-30
@@ -52,7 +52,8 @@ Full text: docs/v2-plan/17-ACCEPTANCE.md (gitignored copy). Passing = every line
 - [x] Mesh particles + prop meshes export to Unity and Godot (built-in meshes as OBJ) · [SAW] grid mesh-particles, prop-mesh · 2026-10-29
 - [x] Godot: attraction, ground collision, positioned bursts (sub-emitters), drag reach, noise strength · [SAW] grid rows · 2026-10-29
 - [x] Static ribbons hold to the effect end (closing IR frame) · [RAN] v2-unity-export test; Unreal re-render pending · 2026-10-29
-- [ ] BACKLOG Unity (grid): Attract flings particles both ways at t30. Known: attract off matches the editor; strength x0.25-x1 looks the same; gravityFocus 1 is worse (default 0 = centre). Next idea: read Unity's ForceField gravity falloff (endRange 100 m) · [SAW] grid attract + probes · 2026-10-30
+- [x] Unity attract: Force Field gravity x0.03 (Unity pulls far harder per unit; calibrated on the grid case, 1.5 m) · [SAW] grid attract + work/compare/unity-attract-ba.png · 2026-10-30
+- [ ] BACKLOG Unity: Arcane Charge sparks a little tighter than the editor after the attract calibration (Unity force law is not a constant pull) · [SAW] unity-attract-ba.png · 2026-10-30
 - [ ] BACKLOG Unity (grid): light a little yellower than the editor; flat rings a little dimmer · [SAW] grid · 2026-10-29
 - [x] Godot flat sprite cell (UV cut), positioned bursts, attract, collision, noise, drag, screen flash · [SAW] grid · 2026-10-30
 - [ ] Godot: random-cell flat quads now draw one cell (cell 0) instead of the whole sheet, reported as approximated · [PROXY] scene output checked, not rendered · 2026-10-30

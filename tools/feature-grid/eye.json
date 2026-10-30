@@ -206,9 +206,9 @@
    "date": "2026-10-29"
   },
   "attract": {
-   "eye": "WRONG",
-   "note": "particles spread right too far at t30; strength probe x1/x0.5/x0.25 looked the same, so not the strength",
-   "date": "2026-10-29"
+   "eye": "OK",
+   "note": "force field gravity x0.03 (calibrated at 1.5 m): drifts toward the point like the editor",
+   "date": "2026-10-30"
   },
   "shape-path": {
    "eye": "OK",
@@ -1234,9 +1234,9 @@
    "date": "2026-10-29"
   },
   "attract": {
-   "eye": "WRONG",
-   "note": "particles spread right too far at t30; strength probe x1/x0.5/x0.25 looked the same, so not the strength",
-   "date": "2026-10-29"
+   "eye": "OK",
+   "note": "force field gravity x0.03 (calibrated at 1.5 m): drifts toward the point like the editor",
+   "date": "2026-10-30"
   },
   "shape-path": {
    "eye": "OK",

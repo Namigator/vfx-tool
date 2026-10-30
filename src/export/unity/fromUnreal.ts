@@ -12,6 +12,10 @@ const dir = (p: readonly number[]): number[] => { const v = [p[0], p[2], -p[1]],
  *  range stretch: Unity's built-in falloff reaches zero at the range, three's decays smoothly past it. Measured on the
  *  feature grid light row (pool brightness x1.08, lit area x0.96 vs the editor; 0.1 / x1 gave x0.46 / x0.28), 2026-10-29. */
 export const UNITY_LIGHT_SCALE = 0.15;
+/** Particle System Force Field gravity for our attraction (m/s²): Unity pulls far harder per unit, so the grid attract
+ *  case (8 m/s² toward a point 1.5 m away) matched the editor by eye at x0.03 (probed x1 / 0.1 / 0.03 / 0.01, 2026-10-30;
+ *  x1 flung the particles over 2 m). Calibrated on that one distance: the exact Unity force law is not documented. */
+export const UNITY_ATTRACT_SCALE = 0.03;
 export const UNITY_LIGHT_RANGE = 1.3;
 
 function emitterFrom(e: UeEmitter, report: UnityReportItem[]): UnityEmitter {
@@ -38,7 +42,7 @@ function emitterFrom(e: UeEmitter, report: UnityReportItem[]): UnityEmitter {
     lifetimeMin: r4(e.lifetimeSecMin), lifetimeMax: r4(e.lifetimeSecMax), speedMin: r4(e.speedCmSMin / 100), speedMax: r4(e.speedCmSMax / 100),
     acceleration: pos(e.acceleration), drag: r4(e.drag),
     hasNoise: !!e.noise, noiseAmplitude: r4((e.noise?.amplitudeCmS2 ?? 0) / 100), noiseFrequency: r4(e.noise?.frequency ?? 0),
-    hasAttract: !!e.attract, attractPosition: e.attract ? pos(e.attract.positionCm) : [0, 0, 0], attractStrength: r4((e.attract?.strengthCmS2 ?? 0) / 100),
+    hasAttract: !!e.attract, attractPosition: e.attract ? pos(e.attract.positionCm) : [0, 0, 0], attractStrength: r4(((e.attract?.strengthCmS2 ?? 0) / 100) * UNITY_ATTRACT_SCALE),
     attractKillRadius: r4((e.attract?.killRadiusCm ?? 0) / 100),
     hasVortex: !!e.vortex, vortexPosition: e.vortex ? pos(e.vortex.positionCm) : [0, 0, 0], vortexAxis: e.vortex ? dir(e.vortex.axis) : [0, 1, 0],
     vortexStrength: r4((e.vortex?.strengthCmS2 ?? 0) / 100), vortexInward: r4((e.vortex?.inwardCmS2 ?? 0) / 100),
