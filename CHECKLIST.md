@@ -29,6 +29,7 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [x] Box emitters export as boxes in every engine IR (fell back to a point) · [SAW] grid shape-box row · 2026-10-29
 - [x] Unity export reports dropped mesh layers (were silent) · [RAN] v2-unity-export test + grid UNSUPPORTED rows · 2026-10-29
 - [x] Flat (world-axis) billboards + flat SpriteRenderer lie flat in Unity and Godot (IR facingAxis) · [SAW] grid world-axis, sprite-flat · 2026-10-29
+- [x] Roblox: slow-drifting flat billboards (ground rings) lie flat · [SAW] grid world-axis · 2026-10-30
 - [x] Untextured sprites ship soft-disc.png (editor procedural disc) in every IR engine · [SAW] grid untextured Unity+Godot · 2026-10-29
 - [x] Unity static sheet cells (startFrame is a fraction) - variant cell matches · [SAW] grid variant + 4-cell probe · 2026-10-29
 - [x] Unity point light pool brightness/size (x0.15, range x1.3) · [SAW] grid light · 2026-10-29
@@ -46,5 +47,5 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [x] Roblox: path split, light range/brightness, beam alphaTrack (driven opacity), positioned bursts from a part copy · [SAW] grid roblox · 2026-10-30
 - [x] Roblox lightning holds each bolt until the next (interpolation averaged random bolts flat) · [SAW] work/fidelity/rbx-arc-ticks2/sheet.png · 2026-10-30
 - [ ] BACKLOG Roblox: Arc bolt has fewer kinks than the editor (beam segment budget) · [SAW] rbx-arc-ticks2 · 2026-10-30
-- [ ] BACKLOG Roblox (grid): world-axis billboards stand up; prop mesh exports as a plain block (custom MeshParts need uploaded assets); glow halo hides the ring sprite · [SAW] grid · 2026-10-30
+- [ ] BACKLOG Roblox (grid): prop mesh exports as a plain block (custom MeshParts need uploaded assets); glow halo hides the ring sprite · [SAW] grid · 2026-10-30
 - [ ] NEEDS OWNER: upload star-ray and sim-fireball textures to Roblox (tools/roblox-upload-textures.mjs) - spin/flipbook rows show the default sprite · 2026-10-30

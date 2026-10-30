@@ -220,8 +220,11 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
   const { color, transparency, plain } = colourSequences(layer, ts, layer.blend === 'additive' ? 1 + layer.emission : 0, grey?.hue);
   const velocityAligned = layer.alignment === 'velocity';
   // Flat world-facing sprites (ground rings): Roblox VelocityPerpendicular faces a particle along its velocity, so a
-  // sprite that does not move gets a creep speed along its axis and lies flat. Moving ones fall back to the camera.
-  const flat = layer.alignment === 'worldAxis' && speed[1] < 0.05 && acceleration.every(v => Math.abs(v) < 1e-6) && !inward;
+  // sprite that barely moves (under FLAT_MAX_DRIFT_M over its life) gets a creep speed along its axis and lies flat,
+  // its slow drift dropped. Moving ones fall back to the camera.
+  const drift = speed[1] * life[1];
+  const flat = layer.alignment === 'worldAxis' && drift < FLAT_MAX_DRIFT_M * S && acceleration.every(v => Math.abs(v) < 1e-6) && !inward;
+  if (flat && speed[1] >= 0.05) report.push({ level: 'approximated', item: layer.nodeId, message: `Flat sprites lie flat in Roblox only while still: their slow drift (up to ${r3(drift / S)} m) is dropped.` });
   if (flat) { direction = layer.worldAxis.map(r3) as Vec3; speed = [FLAT_CREEP_SPEED, FLAT_CREEP_SPEED]; spread = 0; drag = 0; }
   else if (layer.alignment === 'worldAxis') report.push({ level: 'approximated', item: layer.nodeId, message: 'Flat world-facing sprites that move face the camera in Roblox (only still ones lie flat).' });
   const squash = velocityAligned && layer.stretchRatio > 1.05 ? (() => {
@@ -429,6 +432,8 @@ function beamsFrom(doc: EffectDocumentV2, origin: Vec3, report: RbxReportItem[])
 
 /** Studs per second given to still flat sprites so VelocityPerpendicular lays them flat (invisible drift). */
 const FLAT_CREEP_SPEED = 0.01;
+/** Flat sprites drifting less than this (m over a lifetime) still lie flat; the drift is dropped. */
+const FLAT_MAX_DRIFT_M = 0.3;
 type BeamPoint = [number, number, number, number];
 /** Path alpha x layer opacity (x brightness above 1) below this draws nothing visible on Roblox. */
 const MIN_VISIBLE_OPACITY = 0.04;

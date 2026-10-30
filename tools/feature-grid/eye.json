@@ -685,8 +685,8 @@
    "date": "2026-10-30"
   },
   "world-axis": {
-   "eye": "WRONG",
-   "note": "rings stand upright facing the camera",
+   "eye": "OK",
+   "note": "lies flat (slow drift dropped, VelocityPerpendicular)",
    "date": "2026-10-30"
   },
   "flipbook": {
