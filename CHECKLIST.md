@@ -44,5 +44,7 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [ ] BACKLOG Unreal (grid): trail-only systems (many-particle trails) fail to import; screen flash dropped; mesh particles at mean size, no tumble · [SAW] grid · 2026-10-30
 - [x] Screen flashes in Unity, Godot and Roblox (Unreal reports them dropped) · [SAW] grid screen-flash · 2026-10-30
 - [x] Roblox: path split, light range/brightness, beam alphaTrack (driven opacity), positioned bursts from a part copy · [SAW] grid roblox · 2026-10-30
+- [x] Roblox lightning holds each bolt until the next (interpolation averaged random bolts flat) · [SAW] work/fidelity/rbx-arc-ticks2/sheet.png · 2026-10-30
+- [ ] BACKLOG Roblox: Arc bolt has fewer kinks than the editor (beam segment budget) · [SAW] rbx-arc-ticks2 · 2026-10-30
 - [ ] BACKLOG Roblox (grid): world-axis billboards stand up; prop mesh dark (capture ambient); glow halo hides the ring sprite · [SAW] grid · 2026-10-30
 - [ ] NEEDS OWNER: upload star-ray and sim-fireball textures to Roblox (tools/roblox-upload-textures.mjs) - spin/flipbook rows show the default sprite · 2026-10-30

@@ -484,15 +484,26 @@ function blends(a: Frame, m: Frame, b: Frame): boolean {
 function simplifyInTime(b: RbxBeamLayer): void {
   const f = b.frames;
   if (f.length < 3) return;
-  const kept: Frame[] = [f[0]];
+  const kept: Frame[] = [f[0]], blended = new Set<Frame>();
   let i = 1;
   while (i < f.length) {
     // Extend from the last kept frame as far as every skipped frame still blends.
     let j = i;
     while (j + 1 < f.length && f.slice(i, j + 1).every(m => blends(kept[kept.length - 1], m, f[j + 1]))) j++;
-    if (j > i) { kept.push(f[j]); i = j + 1; } else { kept.push(f[i]); i++; }
+    if (j > i) { kept.push(f[j]); blended.add(f[j]); i = j + 1; } else { kept.push(f[i]); i++; }
   }
-  if (kept.length < f.length) { b.frames = kept; b.interpolate = true; }
+  if (kept.length < f.length) {
+    // The player blends every pair of kept frames once a layer interpolates. A shape the editor holds and then swaps
+    // (lightning regenerating) must still jump: hold it until the tick before the next one. Morphing between two random
+    // bolts averaged them into a near-straight line (Arcane Arc in Roblox, 2026-10-30).
+    const out: Frame[] = [];
+    kept.forEach((k, n) => {
+      out.push(k);
+      const next = kept[n + 1];
+      if (next && !blended.has(next) && k.paths && next.tick - k.tick > 1) out.push({ tick: next.tick - 1, paths: k.paths });
+    });
+    b.frames = out; b.interpolate = true;
+  }
 }
 
 const sameGeometry = (a: RbxBeamLayer, b: RbxBeamLayer) => a.frames.length === b.frames.length && a.frames.every((f, i) => {
