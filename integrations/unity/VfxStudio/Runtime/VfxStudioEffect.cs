@@ -36,6 +36,8 @@ namespace VfxStudio
         public VfxEffectData Data => _data ??= effectJson ? VfxEffectData.Parse(effectJson.text) : null;
         public float Duration => Data != null ? Data.durationTicks / (float)Data.ticksPerSecond : 0f;
         public bool IsPlaying => _playing;
+        /// <summary>The last applied effect tick (-1 before Play).</summary>
+        public int Tick => _tick;
         /// <summary>When true (capture tools), nothing advances in Update; call Advance(dt) and the particles are simulated there.</summary>
         public bool ManualSimulation { get; set; }
 

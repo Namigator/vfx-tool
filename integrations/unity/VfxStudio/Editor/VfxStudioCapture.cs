@@ -27,8 +27,10 @@ namespace VfxStudio.EditorTools
                 var ticks = (VfxStudioImporter.Arg("-vfxTicks") ?? "30,60,90").Split(',').Select(s => int.Parse(s.Trim())).OrderBy(x => x).ToArray();
                 var size = (VfxStudioImporter.Arg("-vfxSize") ?? "960x540").Split('x').Select(int.Parse).ToArray();
                 float yaw = float.Parse(VfxStudioImporter.Arg("-vfxYaw") ?? "0"), pitch = float.Parse(VfxStudioImporter.Arg("-vfxPitch") ?? "15"), zoom = float.Parse(VfxStudioImporter.Arg("-vfxZoom") ?? "1");
-                Capture(prefab, outDir, ticks, size[0], size[1], yaw, pitch, zoom, VfxStudioImporter.Arg("-vfxCam"));
-                EditorApplication.Exit(0);
+                // -vfxPlay: the frames come from real Play mode (Update + Time.deltaTime), launched WITHOUT -quit; it exits itself.
+                bool play = Environment.GetCommandLineArgs().Contains("-vfxPlay");
+                Capture(prefab, outDir, ticks, size[0], size[1], yaw, pitch, zoom, VfxStudioImporter.Arg("-vfxCam"), play);
+                if (!play) EditorApplication.Exit(0);
             }
             catch (Exception ex) { Debug.LogError("[VfxStudio] CAPTURE FAILED " + ex); EditorApplication.Exit(1); }
         }
@@ -49,7 +51,7 @@ namespace VfxStudio.EditorTools
             }
         }
 
-        public static void Capture(GameObject prefab, string outDir, int[] ticks, int width, int height, float yaw, float pitch, float zoom = 1f, string camArg = null)
+        public static void Capture(GameObject prefab, string outDir, int[] ticks, int width, int height, float yaw, float pitch, float zoom = 1f, string camArg = null, bool play = false)
         {
             Directory.CreateDirectory(outDir);
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -127,6 +129,7 @@ namespace VfxStudio.EditorTools
             var img = new Texture2D(width, height, TextureFormat.RGB24, false);
 
             fx.flashCamera = cam;
+            if (play) { PlayModeCapture.Begin(fx, cam, rt, img, ticks, outDir, prefab.name); return; }
             fx.Play();
             for (int t = 1; t <= last; t++)
             {
@@ -143,6 +146,49 @@ namespace VfxStudio.EditorTools
             }
             cam.targetTexture = null;
             UnityEngine.Object.DestroyImmediate(rt);
+        }
+
+        /// <summary>Real Play mode: scene and domain reload off (the built scene stays), Time.captureFramerate 60 so each
+        /// player frame is one 1/60 s step, the effect advancing in its own Update and the Particle Systems playing on
+        /// their own clock, as in a game. Renders when the effect reaches each tick ("PLAYFRAME ... tick N").</summary>
+        static class PlayModeCapture
+        {
+            static VfxStudioEffect _fx; static Camera _cam; static RenderTexture _rt; static Texture2D _img;
+            static int[] _ticks; static string _out, _name; static bool _started; static int _next, _idle;
+
+            public static void Begin(VfxStudioEffect fx, Camera cam, RenderTexture rt, Texture2D img, int[] ticks, string outDir, string name)
+            {
+                _fx = fx; _cam = cam; _rt = rt; _img = img; _ticks = ticks; _out = outDir; _name = name; _started = false; _next = 0; _idle = 0;
+                fx.ManualSimulation = false; fx.playOnEnable = false;
+                EditorSettings.enterPlayModeOptionsEnabled = true;
+                EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload | EnterPlayModeOptions.DisableSceneReload;
+                EditorApplication.update += Update;
+                EditorApplication.isPlaying = true;
+            }
+
+            static void Update()
+            {
+                try
+                {
+                    if (++_idle > 20000) throw new Exception("play mode made no progress");
+                    if (!EditorApplication.isPlaying || !_fx) return;
+                    if (!_started) { Time.captureFramerate = 60; _fx.Play(); _started = true; return; }
+                    while (_next < _ticks.Length && _fx.Tick >= _ticks[_next])
+                    {
+                        _cam.Render();
+                        RenderTexture.active = _rt;
+                        _img.ReadPixels(new Rect(0, 0, _rt.width, _rt.height), 0, 0);
+                        _img.Apply();
+                        RenderTexture.active = null;
+                        var file = Path.Combine(_out, $"{_name}-t{_ticks[_next]}.png");
+                        File.WriteAllBytes(file, _img.EncodeToPNG());
+                        Debug.Log($"[VfxStudio] PLAYFRAME {file} tick {_fx.Tick} frame {Time.frameCount}");
+                        _next++;
+                    }
+                    if (_next >= _ticks.Length) { EditorApplication.update -= Update; EditorApplication.Exit(0); }
+                }
+                catch (Exception ex) { Debug.LogError("[VfxStudio] CAPTURE FAILED " + ex); EditorApplication.update -= Update; EditorApplication.Exit(1); }
+            }
         }
     }
 }

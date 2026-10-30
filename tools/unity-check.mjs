@@ -12,11 +12,13 @@ if (!pkgArg) { console.error('usage: node tools/unity-check.mjs <package-dir> [t
 const exe = process.env.VFX_UNITY_EXE ?? 'F:/tools/Unity/6000.6.4f1/Editor/Unity.exe';
 const project = process.env.VFX_UNITY_PROJECT ?? 'F:/Dev2/UnityVFXLab';
 if (!existsSync(exe)) { console.error(`Unity not found at ${exe} (set VFX_UNITY_EXE)`); process.exit(2); }
+// VFX_UNITY_PLAY=1: frames from real Play mode (Update + Time.deltaTime) instead of the fixed-step Advance; no -quit.
+const play = process.env.VFX_UNITY_PLAY === '1';
 const pkg = resolve(pkgArg);
 const name = JSON.parse(readFileSync(join(pkg, 'effect.unity.json'), 'utf8')).name;
 const logs = resolve('work/unity/logs'); mkdirSync(logs, { recursive: true });
 const run = (args, log) => {
-  const r = spawnSync(exe, ['-batchmode', '-quit', '-logFile', log, ...args], { stdio: 'inherit', timeout: 15 * 60 * 1000 });
+  const r = spawnSync(exe, ['-batchmode', ...(play && args.includes('-vfxPlay') ? [] : ['-quit']), '-logFile', log, ...args], { stdio: 'inherit', timeout: 15 * 60 * 1000 });
   return { code: r.status, text: existsSync(log) ? readFileSync(log, 'utf8') : '' };
 };
 if (!existsSync(join(project, 'Assets'))) {
@@ -31,7 +33,7 @@ const out = resolve('work/unity/frames');
 const log = join(logs, `${name}.log`);
 const r = run(['-projectPath', project, '-executeMethod', 'VfxStudio.EditorTools.VfxStudioCapture.ImportAndCaptureCli',
   '-vfxPackage', pkg, '-vfxOut', out, '-vfxTicks', ticks, '-vfxYaw', yaw, '-vfxPitch', pitch, '-vfxZoom', zoom,
-  ...(process.env.VFX_UNITY_CAM ? ['-vfxCam', process.env.VFX_UNITY_CAM] : [])], log);
+  ...(process.env.VFX_UNITY_CAM ? ['-vfxCam', process.env.VFX_UNITY_CAM] : []), ...(play ? ['-vfxPlay'] : [])], log);
 const lines = r.text.split(/\r?\n/);
 const errors = lines.filter(l => /error CS\d+|CAPTURE FAILED|Exception/.test(l));
 for (const l of lines.filter(l => l.includes('[VfxStudio]'))) console.log(l.trim());
