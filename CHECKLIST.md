@@ -50,7 +50,7 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [x] Roblox: path split, light range/brightness, beam alphaTrack (driven opacity), positioned bursts from a part copy · [SAW] grid roblox · 2026-10-30
 - [x] Roblox lightning holds each bolt until the next (interpolation averaged random bolts flat) · [SAW] work/fidelity/rbx-arc-ticks2/sheet.png · 2026-10-30
 - [ ] BACKLOG Roblox: Arc bolt has fewer kinks than the editor (beam segment budget) · [SAW] rbx-arc-ticks2 · 2026-10-30
-- [ ] BACKLOG Roblox (grid): prop mesh exports as a plain block (custom MeshParts need uploaded assets) · [SAW] grid · 2026-10-30
+- [ ] BLOCKED Roblox (grid): prop mesh / rocks export as plain parts. The 11 built-in meshes are uploaded as Models (tools/roblox-upload-meshes.mjs, ids in work/roblox/mesh-ids.json); using them needs each MeshPart MeshId from the Asset Delivery API = API key scope legacy-asset:manage (owner adds it) · [RAN] uploads · 2026-10-30
 - [x] Unreal screen flash: huge camera-facing sprite, depth-test-off flash material, opacity linearised (IR flashEmitters) · [SAW] grid screen-flash (mean 37 vs editor 33) · 2026-10-30
 - [x] Unreal many-particle trails (sparks) baked from the editor simulation into ribbon frames (IR trailRibbons) · [SAW] grid particle-trail · 2026-10-30
 - [x] Godot vortex: editor swirl sampled into a GPUParticlesAttractorVectorField3D (16³ texture) · [SAW] g-vortex-gain.png (x20 probe swirls) + grid OK · 2026-10-30
