@@ -27,6 +27,8 @@ const r3 = (x: number) => Math.round(x * 1000) / 1000;
 const deg = (rad: number) => (rad * 180) / Math.PI;
 const linToSrgb = (l: number) => (l <= 0.0031308 ? l * 12.92 : 1.055 * l ** (1 / 2.4) - 0.055);
 const safeName = (id: string) => id.replace(/[^A-Za-z0-9_]/g, '_').slice(0, 60);
+/** Screen-flash sprite size (cm): covers the view from up to ~100 m away at a 90° field of view. */
+const FLASH_SIZE_CM = 20000;
 /** The preview's transverse soft edge of untextured ribbons (RibbonGeometry.ts ribbonSoftness; not imported: it pulls in three). */
 const ribbonSoftness = (blend: string) => (blend === 'additive' ? 1 : blend === 'normal' ? 0.25 : 0);
 /** UeRibbon.crossSection: the editor's smoothstep soft edge for untextured strips, a variant sheet's straightened line. */
@@ -416,7 +418,17 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
   }
   if (meshEmitters.length) report.push({ level: 'approximated', item: 'meshes', message: `${meshEmitters.length} mesh-particle layer(s) draw the built-in mesh (Meshes/*.obj); in Unreal at the mean particle size (random size and size over life are not kept).` });
   const flashes = plan.value.presentation.flashes.map(f => ({ name: f.nodeId, tick: f.tick, durationTicks: f.durationTicks, color: [1, 3, 5].map(i => r3(parseInt(f.color.srgb.slice(i, i + 2), 16) / 255)) as [number, number, number], alpha: r3(f.alpha) }));
-  if (flashes.length) report.push({ level: 'dropped', item: 'flashes', message: 'Screen flashes are not built by the Unreal importer (add a post-process Blueprint on impact); Unity and Godot exports draw them.' });
+  // Unreal: each flash is one huge camera-facing sprite at the Source that the importer draws with a depth-test-off flash
+  // material, so it tints the whole view while the Source is in front of the camera (they were dropped; feature grid 2026-10-30).
+  const flashEmitters = flashes.map((f, k): UeEmitter => ({
+    name: unique(`${f.name}_flash${k ? k + 1 : ''}`), suggestedTemplate: 'SimpleSpriteBurst', position: [0, 0, 0], direction: [0, 0, 1], shape: { kind: 'point' },
+    rateOverTime: [], bursts: [{ tick: f.tick, count: 1 }], lifetimeSecMin: r3(Math.max(1, f.durationTicks) / 60), lifetimeSecMax: r3(Math.max(1, f.durationTicks) / 60),
+    speedCmSMin: 0, speedCmSMax: 0, acceleration: [0, 0, 0], drag: 0, sizeCmMin: FLASH_SIZE_CM, sizeCmMax: FLASH_SIZE_CM,
+    sizeOverLife: [{ t: 0, v: 1 }, { t: 1, v: 1 }], colorOverLife: [{ t: 0, r: f.color[0], g: f.color[1], b: f.color[2], a: 1 }, { t: 1, r: f.color[0], g: f.color[1], b: f.color[2], a: 1 }],
+    opacityOverLife: [{ t: 0, v: f.alpha }, { t: 1, v: 0 }], spinDegMin: 0, spinDegMax: 0, angularVelocityDegSMin: 0, angularVelocityDegSMax: 0,
+    alignment: 'camera', stretchRatio: 1, blend: 'translucent', loop: false,
+  }));
+  if (flashes.length) report.push({ level: 'approximated', item: 'flashes', message: 'Screen flashes become a huge camera-facing sprite drawn over everything (depth test off); it tints the view only while the Source is in front of the camera.' });
   if (plan.value.presentation.impulses.length) report.push({ level: 'dropped', item: 'presentation', message: 'Camera shake is not exported (use a UE Camera Shake asset triggered on impact if needed).' });
   const lights = plan.value.lights.map(l => {
     if (!l.pathTint && !l.colorOverWindow) return lightFrom(l, origin, plan.value.durationTicks, report);
@@ -429,6 +441,6 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
   report.push({ level: 'info', item: 'scale', message: `1 m = ${CM_PER_METER} cm. Axis mapping: ue.x=src.x*100, ue.y=src.z*100, ue.z=src.y*100 (our +Y up -> Unreal +Z up). The NiagaraSystem's origin is the Source anchor: place or attach the actor at the caster / nozzle.` });
   return { ok: true, value: {
     name: safeName(doc.name || 'Effect'), durationTicks: plan.value.durationTicks, ticksPerSecond: 60,
-    emitters, ribbons, ...(trails.length ? { trails } : {}), ...(meshEmitters.length ? { meshEmitters } : {}), ...(flashes.length ? { flashes } : {}), lights, textures, report, sourceHeightCm: r3(origin[1] * CM_PER_METER),
+    emitters, ribbons, ...(trails.length ? { trails } : {}), ...(meshEmitters.length ? { meshEmitters } : {}), ...(flashes.length ? { flashes, flashEmitters } : {}), lights, textures, report, sourceHeightCm: r3(origin[1] * CM_PER_METER),
   } };
 }

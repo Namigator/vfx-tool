@@ -207,6 +207,8 @@ export type UnrealEffect = {
   /** Screen flashes: the whole view tinted `color` (sRGB 0..1) at `alpha` from `tick`, fading linearly to 0 over
    *  durationTicks (the editor takes the strongest flash at a time). Absent = none. Unity and Godot draw them. */
   flashes?: { name: string; tick: number; durationTicks: number; color: [number, number, number]; alpha: number }[];
+  /** Unreal importer only: `flashes` as huge camera-facing sprites drawn with a depth-test-off flash material. */
+  flashEmitters?: UeEmitter[];
   lights: UeLight[];
   /** Effect origin in world space isn't needed here (the package is authored at the origin; the importer places the actor). */
   textures: string[];

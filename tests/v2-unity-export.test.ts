@@ -251,7 +251,16 @@ test('screen flashes reach Unity and Godot (they were dropped everywhere)', asyn
   const r = unrealEffectFrom(JSON.parse(readFileSync('tests/fixtures/feature-flash.json', 'utf8')));
   assert.ok(r.ok);
   assert.deepEqual(r.value.flashes, [{ name: 'f', tick: 28, durationTicks: 6, color: [1, 1, 1], alpha: 0.15 }]);
+  // Unreal: one huge single-particle sprite per flash, fading from the flash alpha to 0 over its duration.
+  const fe = r.value.flashEmitters!;
+  assert.equal(fe.length, 1);
+  assert.deepEqual(fe[0].bursts, [{ tick: 28, count: 1 }]);
+  assert.equal(fe[0].lifetimeSecMax, 0.1);
+  assert.deepEqual(fe[0].opacityOverLife, [{ t: 0, v: 0.15 }, { t: 1, v: 0 }]);
+  assert.ok(fe[0].sizeCmMin >= 10000);
+  assert.ok(!r.value.report.some(x => x.level === 'dropped' && x.item === 'flashes'));
   const u = unityEffectFrom(r.value);
+  assert.ok(!u.effect.emitters.some(x => x.name.includes('_flash')), 'flash sprites are Unreal-only');
   assert.deepEqual(u.effect.flashes, [{ tick: 28, durationTicks: 6, color: [1, 1, 1], alpha: 0.15 }]);
   assert.ok(!u.report.some(x => x.level === 'dropped' && x.item === 'flashes'));
   const g = godotSceneFrom(r.value).tscn;

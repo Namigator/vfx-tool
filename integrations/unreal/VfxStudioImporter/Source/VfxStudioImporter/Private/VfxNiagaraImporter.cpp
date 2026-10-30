@@ -367,6 +367,30 @@ namespace
 		return Mat;
 	}
 
+	/** Screen flash (IR flashEmitters): unlit translucent, colour = ParticleColor.rgb, opacity = ParticleColor.a, depth test
+	 *  off and after depth of field, so the huge camera-facing sprite tints the whole view over every other object. */
+	UMaterial* GetOrCreateFlashMaterial(const FString& DestRoot)
+	{
+		const FString Name = TEXT("M_VfxStudio_ScreenFlash");
+		const FString PackagePath = DestRoot / TEXT("_Materials");
+		if (UMaterial* Existing = LoadObject<UMaterial>(nullptr, *((PackagePath / Name) + TEXT(".") + Name))) return Existing;
+		IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
+		UMaterial* Mat = Cast<UMaterial>(AssetTools.CreateAsset(Name, PackagePath, UMaterial::StaticClass(), nullptr));
+		if (!Mat) { UE_LOG(LogVfxImporter, Error, TEXT("CreateAsset(Material %s) failed"), *Name); return nullptr; }
+		Mat->SetShadingModel(MSM_Unlit);
+		Mat->BlendMode = BLEND_Translucent;
+		Mat->TwoSided = true;
+		Mat->bDisableDepthTest = true;
+		Mat->TranslucencyPass = MTP_AfterDOF;
+		Mat->bUsedWithNiagaraSprites = true;
+		UMaterialExpression* Pc = UMaterialEditingLibrary::CreateMaterialExpression(Mat, UMaterialExpressionParticleColor::StaticClass(), -300, 0);
+		UMaterialEditingLibrary::ConnectMaterialProperty(Pc, TEXT("RGB"), MP_EmissiveColor);
+		UMaterialEditingLibrary::ConnectMaterialProperty(Pc, TEXT("A"), MP_Opacity);
+		UMaterialEditingLibrary::RecompileMaterial(Mat);
+		SaveAssetObj(Mat);
+		return Mat;
+	}
+
 	/** One ribbon path: points [x,y,z,width] in cm and its opacity. */
 	struct FRibbonPath { TArray<FVector4> Points; double Alpha = 1.0; };
 	struct FRibbonFrame { int32 Tick = 0; int32 End = 0; TArray<FRibbonPath> Paths; double MaxAlpha = 0.0; double Sum = 0.0; };
@@ -1684,7 +1708,7 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 	if (Root->TryGetArrayField(TEXT("ribbons"), RibbonList))
 		for (const auto& Item : *RibbonList) BuildRibbonSlices(DestPath, Item->AsObject(), Slices);
 
-	struct FPending { TSharedPtr<FJsonObject> E; FString Name; FString Template; bool bLight = false; int32 Slice = -1; bool bTrail = false; TSharedPtr<FJsonObject> Mesh; };
+	struct FPending { TSharedPtr<FJsonObject> E; FString Name; FString Template; bool bLight = false; int32 Slice = -1; bool bTrail = false; TSharedPtr<FJsonObject> Mesh; bool bFlash = false; };
 	TArray<FPending> Pending;
 	UNiagaraSystemFactoryNew* SysFactory = NewObject<UNiagaraSystemFactoryNew>();
 	SysFactory->AddToRoot(); // mesh builds below can run a garbage collection
@@ -1705,6 +1729,18 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 			SysFactory->EmittersToAddToNewSystem.Add(FVersionedNiagaraEmitter(Tmpl, Tmpl->GetExposedVersion().VersionGuid));
 			Pending.Add({ E, EName, Template });
 		}
+	}
+	// Screen flashes: ordinary single-particle sprite emitters, then the flash material (depth test off) below.
+	const TArray<TSharedPtr<FJsonValue>>* FlashEmitters = nullptr;
+	if (Root->TryGetArrayField(TEXT("flashEmitters"), FlashEmitters))
+	{
+		if (UNiagaraEmitter* Tmpl = LoadTemplate(TEXT("/Niagara/DefaultAssets/Templates/Emitters/SimpleSpriteBurst.SimpleSpriteBurst")))
+			for (const auto& Item : *FlashEmitters)
+			{
+				const TSharedPtr<FJsonObject> F = Item->AsObject();
+				SysFactory->EmittersToAddToNewSystem.Add(FVersionedNiagaraEmitter(Tmpl, Tmpl->GetExposedVersion().VersionGuid));
+				Pending.Add({ F, F->GetStringField(TEXT("name")), TEXT("SimpleSpriteBurst"), false, -1, false, nullptr, true });
+			}
 	}
 	// Mesh particles: their emitter goes through the sprite path, then ConfigureMeshParticles swaps in a mesh renderer.
 	const TArray<TSharedPtr<FJsonValue>>* MeshEmitters = nullptr;
@@ -1827,7 +1863,8 @@ bool UVfxNiagaraImporter::ImportPackage(const FString& PackageDir, const FString
 			if (auto* Sprite = Cast<UNiagaraSpriteRendererProperties>(Renderer))
 			{
 				if (Cols > 1 || Rows > 1) Sprite->SubImageSize = FVector2D(Cols, Rows);
-				if (MIC) Sprite->Material = MIC;
+				if (Pending[i].bFlash) Sprite->Material = GetOrCreateFlashMaterial(DestPath);
+				else if (MIC) Sprite->Material = MIC;
 				else UE_LOG(LogVfxImporter, Warning, TEXT("   no texture for %s; keeping the template's default sprite material"), *EName);
 				if (E->GetStringField(TEXT("alignment")) == TEXT("velocity")) Sprite->Alignment = ENiagaraSpriteAlignment::VelocityAligned;
 			}
