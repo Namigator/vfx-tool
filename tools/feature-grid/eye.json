@@ -526,7 +526,7 @@
   },
   "variant": {
    "eye": "OK",
-   "note": "",
+   "note": "soft-glow.png#1 uploaded: the chosen cell exactly",
    "date": "2026-10-30"
   },
   "uv-scroll": {
@@ -690,13 +690,13 @@
    "date": "2026-10-30"
   },
   "flipbook": {
-   "eye": "WRONG",
-   "note": "sim-fireball texture has no Roblox asset id (not uploaded)",
+   "eye": "OK",
+   "note": "sim-fireball uploaded: fireball flipbook plays; bigger and blown out (Studio bloom + additive overlap)",
    "date": "2026-10-30"
   },
   "spin": {
-   "eye": "WRONG",
-   "note": "star-ray texture has no Roblox asset id (not uploaded): Studio default sprite",
+   "eye": "OK",
+   "note": "star-ray uploaded: rayed rings; Studio bloom merges the stack into one glow",
    "date": "2026-10-30"
   },
   "sprite": {

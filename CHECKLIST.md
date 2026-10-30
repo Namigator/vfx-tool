@@ -31,7 +31,7 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [x] Flat (world-axis) billboards + flat SpriteRenderer lie flat in Unity and Godot (IR facingAxis) · [SAW] grid world-axis, sprite-flat · 2026-10-29
 - [x] Roblox: slow-drifting flat billboards (ground rings) lie flat · [SAW] grid world-axis · 2026-10-30
 - [x] Roblox: variant sheets hold one cell per particle (sprite ring no longer animates into a glow ball) · [SAW] grid sprite, variant + Arcane re-check (Blessing/Bolt halo rings now show, no regressions: work/compare/rbx3-cells-compare.png) · 2026-10-30
-- [ ] NEEDS OWNER Roblox: upload soft-glow.png#N cells (tools/roblox-texture-bytes.mjs makes them) so a chosen cell other than 0 shows exactly · 2026-10-30
+- [x] Roblox: soft-glow.png#1-3 cells, star-ray, sim-fireball (+grey) uploaded with owner approval (ids in work/roblox/asset-ids.json) · [SAW] grid spin, flipbook, variant · 2026-10-30
 - [x] Untextured sprites ship soft-disc.png (editor procedural disc) in every IR engine · [SAW] grid untextured Unity+Godot · 2026-10-29
 - [x] Unity static sheet cells (startFrame is a fraction) - variant cell matches · [SAW] grid variant + 4-cell probe · 2026-10-29
 - [x] Unity point light pool brightness/size (x0.15, range x1.3) · [SAW] grid light · 2026-10-29
@@ -51,7 +51,6 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [x] Roblox lightning holds each bolt until the next (interpolation averaged random bolts flat) · [SAW] work/fidelity/rbx-arc-ticks2/sheet.png · 2026-10-30
 - [ ] BACKLOG Roblox: Arc bolt has fewer kinks than the editor (beam segment budget) · [SAW] rbx-arc-ticks2 · 2026-10-30
 - [ ] BACKLOG Roblox (grid): prop mesh exports as a plain block (custom MeshParts need uploaded assets) · [SAW] grid · 2026-10-30
-- [ ] NEEDS OWNER: upload star-ray and sim-fireball textures to Roblox (tools/roblox-upload-textures.mjs) - spin/flipbook rows show the default sprite · 2026-10-30
 - [x] Unreal screen flash: huge camera-facing sprite, depth-test-off flash material, opacity linearised (IR flashEmitters) · [SAW] grid screen-flash (mean 37 vs editor 33) · 2026-10-30
 - [x] Unreal many-particle trails (sparks) baked from the editor simulation into ribbon frames (IR trailRibbons) · [SAW] grid particle-trail · 2026-10-30
 - [x] Godot vortex: editor swirl sampled into a GPUParticlesAttractorVectorField3D (16³ texture) · [SAW] g-vortex-gain.png (x20 probe swirls) + grid OK · 2026-10-30
