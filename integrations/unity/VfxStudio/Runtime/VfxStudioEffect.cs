@@ -168,6 +168,13 @@ namespace VfxStudio
         void MoveEmitter(int i, VfxEmitterData e, float tick)
         {
             if (VfxEffectData.Track(e.trackTicks, e.trackPositions, tick, out var p)) systems[i].transform.localPosition = p;
+            // Axis follows motion (editor axisMode motion*): face the emitter's +Z (its shape axis) along the last tick's travel.
+            if (e.followMotion != 0 && VfxEffectData.Track(e.trackTicks, e.trackPositions, tick - 1f, out var p0) && VfxEffectData.Track(e.trackTicks, e.trackPositions, tick, out var p1))
+            {
+                var v = p1 - p0;
+                if (v.sqrMagnitude < 1e-10f && VfxEffectData.Track(e.trackTicks, e.trackPositions, tick + 1f, out var p2)) v = p2 - p1;
+                if (v.sqrMagnitude > 1e-10f) systems[i].transform.localRotation = Quaternion.FromToRotation(Vector3.forward, v.normalized * e.followMotion);
+            }
         }
 
         // ---- beams: one LineRenderer per path, pooled per layer ----

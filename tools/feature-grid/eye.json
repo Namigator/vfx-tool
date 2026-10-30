@@ -239,6 +239,21 @@
    "eye": "OK",
    "note": "children burst where the parents die (t42)",
    "date": "2026-10-29"
+  },
+  "motion-trail-width": {
+   "eye": "OK",
+   "note": "baked ribbon frames: thin tail, wide middle as the editor",
+   "date": "2026-10-30"
+  },
+  "motion-trail-spiral": {
+   "eye": "OK",
+   "note": "baked ribbon frames: same spiral",
+   "date": "2026-10-30"
+  },
+  "emit-follow-motion": {
+   "eye": "OK",
+   "note": "emitter axis follows the track motion: sparks shed behind",
+   "date": "2026-10-30"
   }
  },
  "godot": {
@@ -481,6 +496,21 @@
    "eye": "OK",
    "note": "children at the parents death points after one-shot nodes per burst",
    "date": "2026-10-29"
+  },
+  "motion-trail-width": {
+   "eye": "OK",
+   "note": "baked ribbon frames: thin tail, wide middle as the editor",
+   "date": "2026-10-30"
+  },
+  "motion-trail-spiral": {
+   "eye": "OK",
+   "note": "baked ribbon frames: same spiral",
+   "date": "2026-10-30"
+  },
+  "emit-follow-motion": {
+   "eye": "OK",
+   "note": "emitter axis follows the track motion: sparks shed behind",
+   "date": "2026-10-30"
   }
  },
  "roblox": {
@@ -722,6 +752,21 @@
   "light": {
    "eye": "OK",
    "note": "local pool after range x0.5 / brightness x0.1; a little dimmer",
+   "date": "2026-10-30"
+  },
+  "motion-trail-width": {
+   "eye": "OK",
+   "note": "baked Beam frames (24 points): shape matches, slightly lumpy",
+   "date": "2026-10-30"
+  },
+  "motion-trail-spiral": {
+   "eye": "OK",
+   "note": "baked Beam frames: same spiral",
+   "date": "2026-10-30"
+  },
+  "emit-follow-motion": {
+   "eye": "OK",
+   "note": "Part Top turned along the path: sparks shed behind",
    "date": "2026-10-30"
   }
  },
@@ -965,6 +1010,21 @@
    "eye": "OK",
    "note": "baked spark trails, same shape; brighter/oranger (Unreal bloom)",
    "date": "2026-10-30"
+  },
+  "motion-trail-width": {
+   "eye": "OK",
+   "note": "baked ribbon frames: thin tail, wide middle as the editor",
+   "date": "2026-10-30"
+  },
+  "motion-trail-spiral": {
+   "eye": "OK",
+   "note": "baked ribbon frames: same spiral",
+   "date": "2026-10-30"
+  },
+  "emit-follow-motion": {
+   "eye": "OK",
+   "note": "emitter axis follows the track motion: sparks shed behind",
+   "date": "2026-10-30"
   }
  },
  "unity-urp": {
@@ -1207,6 +1267,21 @@
    "eye": "OK",
    "note": "children burst where the parents die (t42)",
    "date": "2026-10-29"
+  },
+  "motion-trail-width": {
+   "eye": "OK",
+   "note": "baked ribbon frames: thin tail, wide middle as the editor",
+   "date": "2026-10-30"
+  },
+  "motion-trail-spiral": {
+   "eye": "OK",
+   "note": "baked ribbon frames: same spiral",
+   "date": "2026-10-30"
+  },
+  "emit-follow-motion": {
+   "eye": "OK",
+   "note": "emitter axis follows the track motion: sparks shed behind",
+   "date": "2026-10-30"
   }
  }
 }

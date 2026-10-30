@@ -1,0 +1,305 @@
+{
+  "format": "vfx-studio",
+  "schemaVersion": 2,
+  "runtimeVersion": "2.0.0",
+  "id": "fg-motion-trail-spiral",
+  "name": "fg-motion-trail-spiral",
+  "tags": [],
+  "seed": 7,
+  "rootTransform": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "scale": 1
+  },
+  "anchors": [
+    {
+      "id": "source",
+      "name": "Source",
+      "position": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "id": "target",
+      "name": "Target",
+      "position": [
+        2.5,
+        1,
+        0
+      ]
+    }
+  ],
+  "durationTicks": 90,
+  "rootGraphId": "graph-root",
+  "graphs": [
+    {
+      "id": "graph-root",
+      "inputs": [],
+      "outputs": [],
+      "nodes": [
+        {
+          "id": "node-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Source",
+          "enabled": true,
+          "randomStreamId": "rs-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "node-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Target",
+          "enabled": true,
+          "randomStreamId": "rs-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "node-output",
+          "type": "EffectOutput",
+          "definitionVersion": 1,
+          "label": "Output",
+          "enabled": true,
+          "randomStreamId": "rs-output",
+          "params": {}
+        },
+        {
+          "id": "fly",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "fly",
+          "enabled": true,
+          "randomStreamId": "rs-fly",
+          "params": {
+            "startTicks": 0,
+            "durationTicks": 90,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "arc",
+          "type": "BezierPath",
+          "definitionVersion": 1,
+          "label": "arc",
+          "enabled": true,
+          "randomStreamId": "rs-arc",
+          "params": {
+            "startHandle": [
+              1,
+              1.2,
+              0
+            ],
+            "endHandle": [
+              -1,
+              1.2,
+              0
+            ]
+          }
+        },
+        {
+          "id": "f",
+          "type": "PathFollower",
+          "definitionVersion": 1,
+          "label": "f",
+          "enabled": true,
+          "randomStreamId": "rs-f",
+          "params": {
+            "durationTicks": 50
+          }
+        },
+        {
+          "id": "m",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "m",
+          "enabled": true,
+          "randomStreamId": "rs-m",
+          "params": {
+            "blend": "additive",
+            "tint": {
+              "srgb": "#FF9AE0",
+              "alpha": 1
+            },
+            "emission": 0.8
+          }
+        },
+        {
+          "id": "t",
+          "type": "MotionTrail",
+          "definitionVersion": 1,
+          "label": "t",
+          "enabled": true,
+          "randomStreamId": "rs-t",
+          "params": {
+            "history": 0.5,
+            "width": 0.04,
+            "spiralRadius": 0.15,
+            "spiralTurns": 3
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-node-source-arc",
+          "source": {
+            "nodeId": "node-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "arc",
+            "port": "start"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-node-target-arc",
+          "source": {
+            "nodeId": "node-target",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "arc",
+            "port": "end"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-arc-f",
+          "source": {
+            "nodeId": "arc",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "f",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-fly-f",
+          "source": {
+            "nodeId": "fly",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "f",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-f-t",
+          "source": {
+            "nodeId": "f",
+            "port": "anchor"
+          },
+          "target": {
+            "nodeId": "t",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-m-t",
+          "source": {
+            "nodeId": "m",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "t",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-fly-t",
+          "source": {
+            "nodeId": "fly",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "t",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-t-node-output",
+          "source": {
+            "nodeId": "t",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "node-output",
+            "port": "visual"
+          },
+          "order": 0
+        }
+      ]
+    }
+  ],
+  "controls": [],
+  "assets": [],
+  "editor": {
+    "graphs": {
+      "graph-root": {
+        "nodes": {
+          "node-source": {
+            "x": 0,
+            "y": 0
+          },
+          "node-target": {
+            "x": 0,
+            "y": 160
+          },
+          "node-output": {
+            "x": 1040,
+            "y": 0
+          },
+          "fly": {
+            "x": 780,
+            "y": 320
+          },
+          "arc": {
+            "x": 1040,
+            "y": 320
+          },
+          "f": {
+            "x": 1300,
+            "y": 320
+          },
+          "m": {
+            "x": 1560,
+            "y": 320
+          },
+          "t": {
+            "x": 0,
+            "y": 500
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      }
+    },
+    "openedGraphId": "graph-root"
+  }
+}

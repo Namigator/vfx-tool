@@ -762,6 +762,18 @@ function EffectPlayer.create(model: Model, origin: CFrame?, options: Options?)
 			end
 			local p = pathAt(path, s.pathI, a)
 			if p and p ~= s.pos then
+				-- Axis follows motion (editor axisMode motion*): the Part's Top (its emission direction) along the travel.
+				if d.follow and s.pos then
+					local v = (p - s.pos) * d.follow
+					if v.Magnitude > 1e-6 then
+						local up = v.Unit
+						local right = up:Cross(Vector3.zAxis)
+						if right.Magnitude < 1e-3 then
+							right = up:Cross(Vector3.xAxis)
+						end
+						s.rot = CFrame.fromMatrix(Vector3.zero, right.Unit, up)
+					end
+				end
 				s.pos = p
 				placePart(s, p)
 			end

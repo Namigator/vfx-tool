@@ -93,6 +93,8 @@ export type UnityEmitter = {
   flipStartFrame: number;
   /** Particles move with the emitter (local simulation space). */
   attachToSource: boolean;
+  /** 1 = the emitter axis follows the source track motion, -1 = against it (axisMode motionForward / motionBackward), 0 = fixed. */
+  followMotion: number;
   /** Moving spawn origin (projectiles): position per tick, changed ticks only (3 floats per tick). */
   trackTicks: number[];
   trackPositions: number[];

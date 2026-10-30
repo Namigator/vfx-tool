@@ -74,6 +74,8 @@ export type RbxEmitter = {
   bursts: { tick: number; count: number; position?: Vec3 }[];
   /** Moving source (projectiles): Part position per tick (sparse, changed ticks only). */
   path?: [tick: number, position: Vec3][];
+  /** 1 / -1: the Part's Top (emission direction) turns along (/ against) its path motion each tick. */
+  follow?: 1 | -1;
   /** Keyframed emitter properties the player sets per tick (Speed / Lifetime as [min,max] scale, Acceleration...). */
   tracks?: { property: 'SpeedScale' | 'SizeScale' | 'LifetimeScale' | 'Drag' | 'AccelerationY'; keys: [number, number][] }[];
   /** Colour/transparency keyframes (e.g. an animated Colour knob): same keypoint times as color/transparency. */

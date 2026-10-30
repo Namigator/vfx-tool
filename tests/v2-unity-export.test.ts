@@ -281,3 +281,34 @@ test('Godot vortex: the editor swirl sampled into a GPUParticlesAttractorVectorF
   assert.match(g.tscn, new RegExp(`layers = ${mask}`));
   assert.ok(!g.report.some(x => x.level === 'dropped' && /Vortex/.test(x.message)));
 });
+
+test('spiral / shaped trails are baked into ribbon frames for Unity, Godot and Unreal; Roblox gets Beam frames', async () => {
+  const { godotSceneFrom } = await import('../src/export/godot/scene.ts');
+  const { robloxEffectFrom } = await import('../src/export/roblox/fromPlan.ts');
+  const doc = JSON.parse(readFileSync('tests/fixtures/feature-trail-spiral.json', 'utf8'));
+  const r = unrealEffectFrom(doc);
+  assert.ok(r.ok);
+  assert.equal(r.value.trails?.length ?? 0, 0, 'no native trail for a spiral');
+  const baked = r.value.ribbons.find(b => b.name.endsWith('_baked'));
+  assert.ok(baked && baked.frames.some(f => (f.paths?.[0]?.points.length ?? 0) > 20), 'spiral frames with many points');
+  assert.ok(baked!.maxSlices! > 6, 'Unreal bakes one mesh per frame for a moving trail');
+  const u = unityEffectFrom(r.value);
+  assert.ok(u.effect.ribbons.some(b => b.name.endsWith('_baked')));
+  assert.ok(godotSceneFrom(r.value).files.some(f => f.path.endsWith('ribbons.json') && f.text.includes('_baked')), 'Godot ribbons.json carries the baked trail');
+  const rb = robloxEffectFrom(doc);
+  assert.ok(rb.ok && rb.value.beams.some(b => b.frames.some(f => (f.paths?.[0]?.points.length ?? 0) > 10)), 'Roblox Beam frames');
+});
+
+test('emitter axis follows motion: IR flag, Unity sign, Godot rotation track, Roblox follow', async () => {
+  const { godotSceneFrom } = await import('../src/export/godot/scene.ts');
+  const { robloxEffectFrom } = await import('../src/export/roblox/fromPlan.ts');
+  const doc = JSON.parse(readFileSync('tests/fixtures/feature-follow-motion.json', 'utf8'));
+  const r = unrealEffectFrom(doc);
+  assert.ok(r.ok);
+  const e = r.value.emitters.find(x => x.followMotion);
+  assert.equal(e?.followMotion, 'backward');
+  assert.equal(unityEffectFrom(r.value).effect.emitters.find(x => x.name === e!.name)?.followMotion, -1);
+  assert.match(godotSceneFrom(r.value).tscn, /:quaternion"/);
+  const rb = robloxEffectFrom(doc);
+  assert.ok(rb.ok && rb.value.emitters.some(x => x.follow === -1));
+});

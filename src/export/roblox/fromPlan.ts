@@ -12,6 +12,7 @@ import { trackValue, type LayerAnimation } from '../../graph/keyframes.ts';
 import { bakeMeshes } from './meshBake.ts';
 import { settledColor } from '../../graph/pathColor.ts';
 import { alongPath } from '../alongPath.ts';
+import { bakeTrailFrames, trailNeedsBake } from '../trailBake.ts';
 import {
   MAX_SEQUENCE_KEYS, STUDS_PER_METER,
   type RbxBeamLayer, type RbxColorKey, type RbxTrail, type RbxEmitter, type RbxFlipbook, type RbxLight, type RbxMeshLayer, type RbxNumberKey, type RbxReportItem, type RbxStepTrack, type RobloxEffect, type Vec3,
@@ -297,6 +298,8 @@ function emitterFrom(layer: ParticlePreviewLayer, d: ParticleEmitterDescriptor, 
     plainColor: plain,
     bursts: d.bursts.filter(b => b.count > 0).map(b => ({ tick: b.tick, count: b.count, ...(b.position ? { position: rel(b.position) } : {}) })),
     ...(path ? { path } : {}),
+    // Axis follows motion (editor axisMode motion*): the player turns the Part's Top along its path each tick.
+    ...(path && d.emission?.followMotion ? { follow: d.emission.followMotion === 'backward' ? -1 : 1 } : {}),
     ...(tracks.length ? { tracks } : {}),
     ...(colorFrames ? { colorFrames } : {}),
   };
@@ -361,6 +364,8 @@ function lightFrom(l: PointLightLayer, origin: Vec3, duration: number, report: R
 
 /** Paths with fewer points than this are straight rays: no end fade (it would zero every point). */
 const MIN_BEAM_POINTS = 5;
+/** Most points per baked trail path in Roblox (spiral trails need about this many for three smooth turns). */
+const ROBLOX_TRAIL_POINTS = 24;
 
 function beamsFrom(doc: EffectDocumentV2, origin: Vec3, report: RbxReportItem[]): RbxBeamLayer[] {
   const layers = new Map<string, RbxBeamLayer & { last: string; fullFrame?: NonNullable<RbxBeamLayer['frames'][number]['paths']> }>();
@@ -622,10 +627,31 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
   }
   // Trails: one particle riding a moving source → a native Roblox Trail; trails behind many particles → stretched
   // velocity-aligned particles on that system's emitter (Roblox cannot trail every particle).
-  const trails: RbxTrail[] = [];
+  const trails: RbxTrail[] = [], bakedBeams: RbxBeamLayer[] = [];
   for (const t of plan.value.trails) {
     const d = systems.get(t.systemId);
     if (!d) continue;
+    // A spiral or a width over the trail: a Roblox Trail cannot shape either, so the editor's trail is baked into beam
+    // frames (src/export/trailBake.ts), as for the other engines (feature grid motion-trail-spiral / -width, 2026-10-30).
+    if (trailNeedsBake(t)) {
+      const c = hueRotate(applyGrade(t.color, t.grade), t.hueShift ?? 0), rel = (p: readonly number[]) => [(p[0] - origin[0]) * S, (p[1] - origin[1]) * S, (p[2] - origin[2]) * S];
+      const frames: RbxBeamLayer['frames'] = bakeTrailFrames(t, d, plan.value.durationTicks).map(f => ({
+        // At most ROBLOX_TRAIL_POINTS per path: each segment is its own Beam, and an additive trail of many short
+        // overlapping segments drew hatched (motion-trail-width, 2026-10-30).
+        tick: f.tick, paths: f.paths.map(p => {
+          const n = p.points.length, keep = n <= ROBLOX_TRAIL_POINTS ? p.points.map((_, i) => i) : Array.from({ length: ROBLOX_TRAIL_POINTS }, (_, k) => Math.round(k * (n - 1) / (ROBLOX_TRAIL_POINTS - 1)));
+          return { alpha: r3(p.alpha), points: keep.map(i => { const v = rel(p.points[i]); return [r2(v[0]), r2(v[1]), r2(v[2]), r3(p.widths[i] * S)] as [number, number, number, number]; }) };
+        }),
+      }));
+      bakedBeams.push({
+        name: unique(t.nodeId), color: hex(c).map(r3) as [number, number, number], transparency: r3(1 - Math.min(1, t.opacity * t.color.alpha)),
+        lightEmission: t.blend === 'additive' ? 1 : 0, brightness: r3(1 + t.emission), ...softBeamKey(t.blend),
+        textureMode: 'Stretch', textureLength: 1, textureSpeed: 0, zOffset: 0, frames,
+        maxSegments: Math.max(0, ...frames.map(f => (f.paths ?? []).reduce((n, p) => n + p.points.length - 1, 0))),
+      });
+      report.push({ level: 'approximated', item: t.nodeId, message: `A trail with ${t.spiral ? 'a spiral' : 'a width over the trail'} is baked from the editor into Beam frames (a Roblox Trail cannot shape it).` });
+      continue;
+    }
     const births = d.bursts.reduce((n, b) => n + b.count, 0);
     if (d.attachToSource && d.sourceTrack && !d.rate && births <= 2) {
       if (t.pathTint || t.colorOverWindow) report.push({ level: 'approximated', item: t.nodeId, message: 'Colour by path / colour over window: each path exports the colour it settles on (the fade from the original colour is not exported).' });
@@ -670,7 +696,7 @@ export function robloxEffectFrom(doc: EffectDocumentV2): { ok: true; value: Robl
   if (plan.value.presentation.impulses.length) report.push({ level: 'dropped', item: 'presentation', message: 'Camera shake is not exported.' });
   const lights = plan.value.lights.map(l => lightFrom(settleLight(l, report), origin, plan.value.durationTicks, report));
   for (const m of meshes) if (unlitDebris(m)) report.push({ level: 'approximated', item: m.name, message: 'Lit rock debris is Neon at its own colour (no shading): the editor lights it with a studio key light, and in a dark Roblox place it rendered black.' });
-  const beams = beamsFrom(doc, origin, report);
+  const beams = [...beamsFrom(doc, origin, report), ...bakedBeams];
   report.push({ level: 'info', item: 'scale', message: `1 m = ${r3(S)} studs; the effect origin (model pivot) is the floor point under the Source anchor, so the effect starts ${r3(src[1] * S)} studs above it. Without source/target options it plays exactly as authored; with them it re-aims (see targeting).` });
   const textures = [...new Set([...emitters.flatMap(e => [e.textureKey, e.recolorTexture?.key]), ...beams.map(b => b.textureKey), ...trails.map(t => t.textureKey)].filter((x): x is string => !!x))];
   const rel = (p: readonly number[]): Vec3 => [r3((p[0] - origin[0]) * S), r3((p[1] - origin[1]) * S), r3((p[2] - origin[2]) * S)];

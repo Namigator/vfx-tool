@@ -34,6 +34,7 @@ namespace VfxStudio
         public int flipColumns, flipRows; public float flipFps; public bool flipLoop, flipRandomStart;
         public int flipStartFrame; // static sheets: authored cell, -1 = random per particle
         public bool attachToSource;
+        public int followMotion; // 1 / -1: the emitter axis follows (/ opposes) the track motion each tick; 0 = fixed
         public int[] trackTicks; public float[] trackPositions;
         public VfxTrailData trail; // per-particle trails (sparks); JsonUtility fills an empty one when absent: lifetime 0 = none
         public bool HasTrail => trail != null && trail.lifetime > 0f;

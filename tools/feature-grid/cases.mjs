@@ -29,9 +29,9 @@ function kit(D) {
   const win = (id = 'win', startTicks = 0, durationTicks = 60) => add('Schedule', id, { startTicks, durationTicks, mode: 'window' });
   const mat = (id, extra = {}) => add('Material', id, { template: 'SpriteTextured', sprite: 'soft-glow', blend: 'additive', tint: col('#7FD4FF'), emission: 0.5, ...extra });
   /** Emitter at Source -> InitialProperties -> [mods] -> BillboardRenderer. Returns the last particles port before the renderer. */
-  function particles({ emitter = {}, ip = {}, mods = [], bb = {}, material = {}, window = 'win', trigger, renderer = 'BillboardRenderer', rendererParams } = {}) {
+  function particles({ emitter = {}, ip = {}, mods = [], bb = {}, material = {}, window = 'win', trigger, renderer = 'BillboardRenderer', rendererParams, anchor = 'node-source.out' } = {}) {
     add('Emitter', 'emit', { shape: 'cone', coneAngle: 0.2, radius: 0.05, burst: 0, rate: 60, speedMin: 1, speedMax: 2, direction: [0, 1, 0], lifetimeMin: 0.8, lifetimeMax: 1, ...emitter });
-    if (emitter.shape !== 'path') wire('node-source.out', 'emit.anchor'); // a path emitter takes its positions from the path only
+    if (emitter.shape !== 'path') wire(anchor, 'emit.anchor'); // a path emitter takes its positions from the path only
     if (trigger) wire(trigger, 'emit.trigger'); else { win(window); wire(`${window}.window`, 'emit.window'); }
     add('InitialProperties', 'ip', { sizeMin: 0.12, sizeMax: 0.2, angularVelocityMin: 0, angularVelocityMax: 0, ...ip });
     wire('emit.particles', 'ip.particles');
@@ -56,7 +56,14 @@ function kit(D) {
   }
   /** Source -> Target line path, returns its paths port. */
   const line = (id = 'line', samples = 32) => { add('LinePath', id, { samples }); wire('node-source.out', `${id}.start`); wire('node-target.out', `${id}.end`); return `${id}.paths`; };
-  return { S, doc, add, wire, out, win, mat, particles, ribbon, line };
+  /** A MotionTrail (`params`) behind a point flying a Source -> Target arc. */
+  function motionTrail(params, tint = '#7FFFB0') {
+    win('fly', 0, 90); add('BezierPath', 'arc', { startHandle: [1, 1.2, 0], endHandle: [-1, 1.2, 0] }); wire('node-source.out', 'arc.start'); wire('node-target.out', 'arc.end');
+    add('PathFollower', 'f', { durationTicks: 50 }); wire('arc.paths', 'f.paths'); wire('fly.window', 'f.window');
+    add('Material', 'm', { blend: 'additive', tint: col(tint), emission: 0.8 }); add('MotionTrail', 't', params);
+    wire('f.anchor', 't.anchor'); wire('m.material', 't.material'); wire('fly.window', 't.window'); out('t');
+  }
+  return { S, doc, add, wire, out, win, mat, particles, ribbon, line, motionTrail };
 }
 
 // covers: node types this case exercises; feature: what a reader should see.
@@ -136,6 +143,13 @@ export const CASES = [
     k.add('PathFollower', 'f', { durationTicks: 50 }); k.wire('arc.paths', 'f.paths'); k.wire('fly.window', 'f.window');
     k.add('Material', 'm', { blend: 'additive', tint: col('#7FFFB0'), emission: 0.8 }); k.add('MotionTrail', 't', { history: 0.4, width: 0.12 });
     k.wire('f.anchor', 't.anchor'); k.wire('m.material', 't.material'); k.wire('fly.window', 't.window'); k.out('t');
+  } },
+  { id: 'motion-trail-width', feature: 'MotionTrail width over trail (thin tail, wide middle)', covers: ['MotionTrail'], build: k => k.motionTrail({ history: 0.5, width: 0.3,
+    widthOverTrail: { domain: 'normalized', interpolation: 'linear', keys: [{ x: 0, y: 0.05 }, { x: 0.6, y: 1 }, { x: 1, y: 0.35 }] } }) },
+  { id: 'motion-trail-spiral', feature: 'MotionTrail spiral (strands winding round the flight line)', covers: ['MotionTrail'], build: k => k.motionTrail({ history: 0.5, width: 0.04, spiralRadius: 0.15, spiralTurns: 3 }, '#FF9AE0') },
+  { id: 'emit-follow-motion', feature: 'Emitter on a moving point, axis follows its motion (sparks shed backward)', covers: ['Emitter', 'PathFollower'], build(k) {
+    k.win('fly', 0, 90); k.add('PathFollower', 'f', { durationTicks: 60 }); k.wire(k.line(), 'f.paths'); k.wire('fly.window', 'f.window');
+    k.particles({ anchor: 'f.anchor', emitter: { shape: 'cone', coneAngle: 0.15, axisMode: 'motionBackward', speedMin: 1.5, speedMax: 2, lifetimeMin: 0.4, lifetimeMax: 0.5 }, ip: { sizeMin: 0.06, sizeMax: 0.1 } });
   } },
   { id: 'particle-trail', feature: 'ParticleTrail on many sparks', covers: ['ParticleTrail'], build: k => k.particles({ emitter: { shape: 'point', direction: [1, 1, 0], speedMin: 2, speedMax: 3 }, mods: [['Gravity', 'g', { acceleration: [0, -4, 0] }]], renderer: 'ParticleTrail', rendererParams: { history: 0.25, width: 0.03 }, material: { template: 'RibbonUnlit', sprite: undefined, tint: col('#FFC060') } }) },
   { id: 'sub-emitter', feature: 'ParticleEvents: each dying particle bursts children (delayed, merged)', covers: ['ParticleEvents', 'EventDelay', 'MergeEvents'], tick: 42, build(k) {

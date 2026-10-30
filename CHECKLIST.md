@@ -7,8 +7,8 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 ## Gate H: engine exports (Roblox, Unity, Godot, Unreal), added 2026-10-30
 
 Full text: docs/v2-plan/17-ACCEPTANCE.md (gitignored copy). Passing = every line below ticked.
-- [ ] H-01 Every editor feature has a feature-grid case (49 cases, tools/feature-grid/cases.mjs; the H-01b features are missing) · [RAN] grid · 2026-10-30
-- [ ] H-01b MotionTrail width-over-trail, Spiral and Emitter axisMode motion* have no grid case and no engine export · 2026-10-30
+- [x] H-01 Every editor feature has a feature-grid case (52 cases, tools/feature-grid/cases.mjs) · [RAN] grid · 2026-10-30
+- [x] H-01b MotionTrail width over trail + Spiral (baked from the editor into ribbon/Beam frames, src/export/trailBake.ts) and Emitter axis follows motion: all four engines · [SAW] work/compare/new-cases-engines.png, follow.png, rbx-new.png, urp-new.png · 2026-10-30
 - [x] H-02 Every case exports and renders in all four engines (no NOT RUN / EXPORT FAIL) · [RAN] score.mjs · 2026-10-30
 - [ ] H-03 Every case OK by eye or UNSUPPORTED with the reason reported · open: Unity attract, URP sprites · 2026-10-30
 - [x] H-04 Ten Arcane effects side by side in each engine, no regressions · [SAW] work/compare/*-vs-tool.png · 2026-10-30

@@ -577,13 +577,17 @@ namespace
 		int32 S = MAX_int32, E = 0, Visible = 0;
 		for (const FRibbonFrame& F : Fs) if (F.MaxAlpha > 0.0) { S = FMath::Min(S, F.Tick); E = FMath::Max(E, F.End); Visible++; }
 		if (!Visible) { UE_LOG(LogVfxImporter, Warning, TEXT("   ribbon %s is never visible; skipped"), *RName); return; }
-		const int32 N = FMath::Min(MaxRibbonSlices, Visible);
+		// maxSlices (IR, baked trails): a moving trail needs one mesh per baked frame, each showing its own frame (6 held
+		// shapes froze the flight; feature grid motion-trail-spiral, 2026-10-30).
+		double WantSlices = 0.0; const bool bPerFrame = R->TryGetNumberField(TEXT("maxSlices"), WantSlices) && WantSlices > 0.0;
+		const int32 N = FMath::Min(bPerFrame ? FMath::Min(64, (int32)WantSlices) : MaxRibbonSlices, Visible);
 		for (int32 k = 0; k < N; k++)
 		{
 			const int32 A = S + (E - S) * k / N, B = S + (E - S) * (k + 1) / N;
 			if (B <= A) continue;
 			const FRibbonFrame* Rep = nullptr;
-			for (const FRibbonFrame& F : Fs) if (F.End > A && F.Tick < B && F.MaxAlpha > 0.0 && (!Rep || F.Sum > Rep->Sum)) Rep = &F;
+			if (bPerFrame) { for (const FRibbonFrame& F : Fs) if (F.Tick <= A && F.End > A && F.MaxAlpha > 0.0) Rep = &F; } // the frame showing at the slice start
+			else for (const FRibbonFrame& F : Fs) if (F.End > A && F.Tick < B && F.MaxAlpha > 0.0 && (!Rep || F.Sum > Rep->Sum)) Rep = &F;
 			if (!Rep) continue;
 			FRibbonSlice Slice;
 			Slice.Name = FString::Printf(TEXT("%s_s%d"), *RName, k);
@@ -1707,6 +1711,27 @@ namespace
 			// case a template runs it in linear mode.
 			SetStaticSwitch(Graph, TEXT("AddVelocity"), TEXT("Velocity Mode"), TEXT("NewEnumerator2")); // In Cone
 			if (Dir) OverrideLiteral(Graph, TEXT("AddVelocity"), TEXT("Velocity"), V3, Vec3Lit(JsonVec3(Dir) * SpeedAvg));
+			// Axis follows motion (editor axisMode motion*): Cone Axis = a curve of the travel direction at each track key,
+			// sampled by system age at spawn. It launched along the fixed axis (straight up) behind a moving point.
+			FString Follow; const TArray<TSharedPtr<FJsonValue>>* Track = nullptr;
+			if (E->TryGetStringField(TEXT("followMotion"), Follow) && E->TryGetArrayField(TEXT("sourceTrack"), Track) && Track->Num() > 1)
+			{
+				const double Sign = Follow == TEXT("backward") ? -1.0 : 1.0;
+				TArray<FVector> P; TArray<double> T;
+				for (const auto& V : *Track) { const auto& Pair = V->AsArray(); if (Pair.Num() == 2) { T.Add(Pair[0]->AsNumber()); P.Add(JsonVec3(&Pair[1]->AsArray())); } }
+				TArray<TSharedPtr<FJsonValue>> DirTrack;
+				for (int32 i = 0; i < P.Num(); i++)
+				{
+					const FVector D = ((P[FMath::Max(1, i)] - P[FMath::Max(0, i - 1)]) * Sign).GetSafeNormal();
+					if (D.IsNearlyZero()) continue;
+					TArray<TSharedPtr<FJsonValue>> Pair = { MakeShared<FJsonValueNumber>(T[i]), MakeShared<FJsonValueArray>(TArray<TSharedPtr<FJsonValue>>{ MakeShared<FJsonValueNumber>(D.X), MakeShared<FJsonValueNumber>(D.Y), MakeShared<FJsonValueNumber>(D.Z) }) };
+					DirTrack.Add(MakeShared<FJsonValueArray>(Pair));
+				}
+				UNiagaraNodeFunctionCall* AddVel = nullptr;
+				for (UEdGraphNode* N : Graph->Nodes) if (auto* Fn = Cast<UNiagaraNodeFunctionCall>(N)) if (Fn->GetFunctionName().Contains(TEXT("AddVelocity"))) { AddVel = Fn; break; }
+				const bool bOk = AddVel && DirTrack.Num() && SetSourceTrackCurve(AddVel, TEXT("Cone Axis"), DirTrack);
+				UE_LOG(LogVfxImporter, Display, TEXT("   axis follows motion (%s): %d keys %s"), *Follow, DirTrack.Num(), bOk ? TEXT("wired") : TEXT("NOT wired"));
+			}
 		}
 		// 'Minimal': no spawn module exists on this template; see fromPlan.ts's report item for this case.
 	}

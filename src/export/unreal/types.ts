@@ -116,6 +116,8 @@ export type UeEmitter = {
   /** Moving spawn origin (projectiles / event-born): position per tick, Unreal cm, sparse (changed ticks only). */
   sourceTrack?: [tick: number, positionCm: Vec3][];
   attachToSource?: boolean;
+  /** Emitter axis follows the sourceTrack motion each tick (editor Emitter axisMode motionForward / motionBackward). */
+  followMotion?: 'forward' | 'backward';
 };
 
 /** Ribbon/beam layer (lightning, streams): Niagara Ribbon renderer fed by a per-tick point-cloud data interface. */
@@ -142,6 +144,8 @@ export type UeRibbon = {
    *  0 (centreline) .. 1 (edge) of the half-width, mirrored. Untextured = the soft edge (softness); a variant sheet =
    *  its straightened line (sprite lineProfile). Absent = a uniform strip. */
   crossSection?: [offset: number, alpha: number][];
+  /** Unreal: bake one mesh per frame up to this many (moving baked trails); absent = a few held shapes (lightning). */
+  maxSlices?: number;
   /** Per-tick geometry: `points` = the first path as [x,y,z,widthCm] in Unreal cm (empty = hidden this tick);
    *  `paths` = every path of the layer (trunk + branches...) with its opacity at that tick (layer opacity x the
    *  path's own opacity, e.g. a flickering, decaying bolt). Frames are stored only when something changed. */

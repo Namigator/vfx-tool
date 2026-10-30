@@ -387,6 +387,7 @@ function effectDataSource(effect: RobloxEffect, names: { e: string[]; b: string[
     rate: byTick(e.rate.map(([t, v]) => [t, v] as [number, number])),
     bursts: byTick(e.bursts.map(b => (b.position ? [b.tick, b.count, ...b.position] : [b.tick, b.count]) as [number, ...number[]])),
     path: e.path && e.path.length ? byTick(e.path.map(([t, p]) => [t, ...p] as [number, ...number[]])) : undefined,
+    follow: e.follow,
     tracks: e.tracks && e.tracks.length
       ? Object.fromEntries(e.tracks.filter(t => t.keys.length).map(t => [t.property, byTick(t.keys.map(k => [k[0], k[1]] as [number, number]))]))
       : undefined,

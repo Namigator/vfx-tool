@@ -56,6 +56,7 @@ function emitterFrom(e: UeEmitter, report: UnityReportItem[]): UnityEmitter {
     flipLoop: e.flipbook?.loop ?? false, flipRandomStart: e.flipbook?.randomStartFrame ?? false,
     flipStartFrame: e.flipbook?.variantFrame ?? e.flipbook?.startFrame ?? (e.flipbook?.randomStartFrame === false ? 0 : -1),
     attachToSource: e.attachToSource === true,
+    followMotion: e.followMotion === 'forward' ? 1 : e.followMotion === 'backward' ? -1 : 0,
     trackTicks: (e.sourceTrack ?? []).map(([t]) => t), trackPositions: (e.sourceTrack ?? []).flatMap(([, p]) => pos(p)),
   };
 }

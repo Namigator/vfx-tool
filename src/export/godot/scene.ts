@@ -324,10 +324,32 @@ void process() {
   }
   if (trail) node.push('trail_enabled = true', `trail_lifetime = ${n(Math.max(0.017, trail.lifetimeSec))}`);
   if (e.sourceTrack?.length) tracks.push({ path: `${name}:position`, interp: 1, update: 0, keys: e.sourceTrack.map(([tick, p]) => [t(tick), vec3(fromUe(p))] as [number, string]) });
+  // Axis follows motion (editor axisMode motion*): the node turns its process direction along the track's travel each
+  // key; the process material's velocity follows the emission transform (local_coords off). It emitted straight up.
+  if (e.followMotion && e.sourceTrack && e.sourceTrack.length > 1) {
+    const sign = e.followMotion === 'backward' ? -1 : 1, pts = e.sourceTrack.map(([, p]) => fromUe(p));
+    const keys = e.sourceTrack.map(([tick], i): [number, string] => {
+      const a = pts[Math.max(0, i - 1)], b = pts[Math.max(1, i)], v: V3 = [(b[0] - a[0]) * sign, (b[1] - a[1]) * sign, (b[2] - a[2]) * sign];
+      return [t(tick), `Quaternion(${quatFromTo(dir, v).map(n).join(', ')})`];
+    });
+    tracks.push({ path: `${name}:quaternion`, interp: 1, update: 0, keys });
+    report.push({ level: 'approximated', item: e.name, message: 'The emitter axis follows the source motion through a rotation track (one key per track key).' });
+  }
   if (velocity && e.stretchRatio > 1.05) report.push({ level: 'approximated', item: e.name, message: `Velocity stretch x${e.stretchRatio} is a quad that long along the velocity (Align Y); unlike the editor it does not turn to face the camera.` });
   return attractor ? `${node.join('\n')}\n\n${attractor}` : node.join('\n');
 }
 const attractorCount = new WeakMap<Resources, number>();
+
+/** Shortest-arc rotation taking unit `a` onto the direction of `b`, as [x, y, z, w] (identity when b has no length). */
+function quatFromTo(a: V3, b: V3): [number, number, number, number] {
+  const l = Math.hypot(...b);
+  if (l < 1e-9) return [0, 0, 0, 1];
+  const u: V3 = [b[0] / l, b[1] / l, b[2] / l], d = a[0] * u[0] + a[1] * u[1] + a[2] * u[2];
+  if (d < -0.999999) { const ax: V3 = Math.abs(a[0]) < 0.9 ? [0, -a[2], a[1]] : [-a[2], 0, a[0]], m = Math.hypot(...ax); return [ax[0] / m, ax[1] / m, ax[2] / m, 0]; }
+  const c: V3 = [a[1] * u[2] - a[2] * u[1], a[2] * u[0] - a[0] * u[2], a[0] * u[1] - a[1] * u[0]], q: [number, number, number, number] = [c[0], c[1], c[2], 1 + d];
+  const m = Math.hypot(...q);
+  return [q[0] / m, q[1] / m, q[2] / m, q[3] / m];
+}
 
 /** Tumbling mesh pieces: Godot particles turn about one axis only (rotate_y), so the draw pass adds a random rotation
  *  per particle (axis and angle hashed from its spawn angle + instance) in the vertex shader, as the editor draws each
