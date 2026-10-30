@@ -30,7 +30,7 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [x] Unity export reports dropped mesh layers (were silent) · [RAN] v2-unity-export test + grid UNSUPPORTED rows · 2026-10-29
 - [x] Flat (world-axis) billboards + flat SpriteRenderer lie flat in Unity and Godot (IR facingAxis) · [SAW] grid world-axis, sprite-flat · 2026-10-29
 - [x] Roblox: slow-drifting flat billboards (ground rings) lie flat · [SAW] grid world-axis · 2026-10-30
-- [x] Roblox: variant sheets hold one cell per particle (sprite ring no longer animates into a glow ball) · [SAW] grid sprite, variant · 2026-10-30
+- [x] Roblox: variant sheets hold one cell per particle (sprite ring no longer animates into a glow ball) · [SAW] grid sprite, variant + Arcane re-check (Blessing/Bolt halo rings now show, no regressions: work/compare/rbx3-cells-compare.png) · 2026-10-30
 - [ ] NEEDS OWNER Roblox: upload soft-glow.png#N cells (tools/roblox-texture-bytes.mjs makes them) so a chosen cell other than 0 shows exactly · 2026-10-30
 - [x] Untextured sprites ship soft-disc.png (editor procedural disc) in every IR engine · [SAW] grid untextured Unity+Godot · 2026-10-29
 - [x] Unity static sheet cells (startFrame is a fraction) - variant cell matches · [SAW] grid variant + 4-cell probe · 2026-10-29
