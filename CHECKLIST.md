@@ -16,6 +16,32 @@ Full text: docs/v2-plan/17-ACCEPTANCE.md (gitignored copy). Passing = every line
 - [x] H-06 Roblox textures and meshes uploaded and shipped in src/export/roblox/assets.ts · [SAW] grid · 2026-10-30
 - [x] H-07 Owner approves the grid (52 cases x 5 engine columns) · owner: "Approve grid" · 2026-10-30
 
+## Gates A-G: the plan's acceptance (docs/v2-plan/17-ACCEPTANCE.md, T01-T40 in evidence/TRACEABILITY.md), added 2026-10-30
+Order agreed with the owner: finish A-G (sound included), then Gate P. Open lines only; ticked T-items live in TRACEABILITY.
+- [ ] E / T25 Sound: per-family audition + sync (unparked by the owner 2026-10-30) · needs owner's ears for the final verdict
+- [ ] T18 WAV import (header/limits) · parked with sound, now open
+- [ ] T28 Curve/gradient editing: automated DOM test (mouse + keyboard) · checked by hand only
+- [ ] T29 Graph shortcuts / outline / focus navigation: automated UI test · checked by hand only
+- [ ] T17 Dissolve: a pixel assertion (render-smoke draws it, nothing asserts) · PROXY
+- [ ] T37 Focused-window fps and the 200-node graph benchmark · open
+- [ ] T11 Local simulation space · rejected by design (named error); owner to confirm it stays out
+- [ ] T35 Fire/water/shadow variants · needs owner approval (defaults approved)
+- [ ] T39 A new mixed effect built by the owner without code · needs owner
+- [ ] T40 A-05 model build test run 6 · needs owner's visual verdict
+- [ ] T14 Background simulation worker · parked by measurement (every component < 1 ms/tick); owner to confirm
+
+## Gate P: publishing, added 2026-10-30 (after A-G)
+- [ ] P-01 License chosen for the tool and its exports (and third-party asset licenses listed: assets/sprites provenance)
+- [ ] P-02 Terms / privacy note for the hosted site (what is stored: browser storage only?)
+- [ ] P-03 Public README: what it is, how to run, engine export guides (Roblox, Unity built-in/URP, Godot, Unreal plugin)
+- [ ] P-04 First-time-user check of the deployed site: open, build from Blank, export to each engine, import it
+- [ ] P-05 Landing / store page with a demo clip and screenshots per engine (promo pipeline: F:/Dev2/Promotions)
+- [ ] P-06 Pricing / distribution decision (free site, paid packs, Roblox store, itch.io, Unity Asset Store, Fab) · owner
+- [ ] P-07 Support contact + issue tracker link
+- [ ] P-08 Roblox store items: moderation appeals answered; seller-requirements setting (owner dashboard) · owner
+- [ ] P-09 Version tag + changelog for the first public release
+
+
 - [x] Force Lance preset (thrown spear, tight purple helix closed at the tip) · owner: "looks much better" + [SAW] stills · 2026-10-21
 - [ ] Arcane Lance preset (beam version) · [SAW] stills, owner not asked · 2026-10-21
 - [ ] Fireball: simulated preset · owner: better but not right yet · 2026-10-21
