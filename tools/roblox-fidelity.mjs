@@ -168,7 +168,7 @@ writeFileSync(join(place, 'default.project.json'), JSON.stringify({
       SpawnLocation: { $className: 'SpawnLocation', $properties: { Anchored: true, Size: [6, 1, 6], CFrame: { CFrame: { position: [0, 0.5, 150], orientation: [[1, 0, 0], [0, 1, 0], [0, 0, 1]] } }, Neutral: true, Transparency: 1 } } },
     // A typical dark scene with Roblox's DEFAULT bloom: what a buyer gets without tuning anything.
     Lighting: { $className: 'Lighting', $ignoreUnknownInstances: true,
-      $properties: { Technology: 'Future', ClockTime: 0, Brightness: 1, Ambient: [0.1, 0.1, 0.12], OutdoorAmbient: [0.1, 0.1, 0.12], GlobalShadows: false },
+      $properties: { Technology: 'Future', ClockTime: 0, Brightness: 1, Ambient: [0.5, 0.52, 0.58], OutdoorAmbient: [0.5, 0.52, 0.58], GlobalShadows: false },
       Bloom: { $className: 'BloomEffect', $properties: { Intensity: 1, Size: 24, Threshold: 2 } } },
     ReplicatedStorage: { $className: 'ReplicatedStorage', $ignoreUnknownInstances: true, Effects: { $path: 'effects' } },
     StarterPlayer: { $className: 'StarterPlayer', $ignoreUnknownInstances: true,

@@ -706,8 +706,8 @@
   },
   "prop-mesh": {
    "eye": "WRONG",
-   "note": "crystal nearly invisible (dark)",
-   "date": "2026-10-29"
+   "note": "visible with editor-like capture ambient, but a plain block: Roblox meshes export as simple parts (custom MeshParts need uploaded assets)",
+   "date": "2026-10-30"
   },
   "driven-opacity": {
    "eye": "OK",
