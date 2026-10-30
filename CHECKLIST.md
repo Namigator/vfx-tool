@@ -18,8 +18,8 @@ Full text: docs/v2-plan/17-ACCEPTANCE.md (gitignored copy). Passing = every line
 
 ## Gates A-G: the plan's acceptance (docs/v2-plan/17-ACCEPTANCE.md, T01-T40 in evidence/TRACEABILITY.md), added 2026-10-30
 Order agreed with the owner: finish A-G (sound included), then Gate P. Open lines only; ticked T-items live in TRACEABILITY.
-- [ ] E / T25 Sound: per-family audition + sync (unparked by the owner 2026-10-30) · needs owner's ears for the final verdict
-- [ ] T18 WAV import (header/limits) · parked with sound, now open
+- [ ] E / T25 Sound: all 52 presets now play recorded CC0 samples (165-sound library, assets/sounds; design in tools/preset-sounds.json) · [RAN] every mix renders, no severe limiting · owner listens on the Sound Check page https://claude.ai/artifact/JpbZZML5m8NtssA9x1tquv · 2026-10-30
+- [x] T18 WAV decoding (PCM 8-32 / float, any rate, header + length limits) · [RAN] tests/v2-audio-samples.test.ts · 2026-10-30
 - [ ] T28 Curve/gradient editing: automated DOM test (mouse + keyboard) · checked by hand only
 - [ ] T29 Graph shortcuts / outline / focus navigation: automated UI test · checked by hand only
 - [ ] T17 Dissolve: a pixel assertion (render-smoke draws it, nothing asserts) · PROXY
