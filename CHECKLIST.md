@@ -3,6 +3,19 @@
 One line per user-visible feature. Ticked by the owner's word, or a `[SAW]`/`[RAN]` result. Started 2026-10-21 (older
 features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not yet copied here).
 
+
+## Gate H: engine exports (Roblox, Unity, Godot, Unreal), added 2026-10-30
+
+Full text: docs/v2-plan/17-ACCEPTANCE.md (gitignored copy). Passing = every line below ticked.
+- [ ] H-01 Every editor feature has a feature-grid case (49 cases, tools/feature-grid/cases.mjs; the H-01b features are missing) · [RAN] grid · 2026-10-30
+- [ ] H-01b MotionTrail width-over-trail, Spiral and Emitter axisMode motion* have no grid case and no engine export · 2026-10-30
+- [x] H-02 Every case exports and renders in all four engines (no NOT RUN / EXPORT FAIL) · [RAN] score.mjs · 2026-10-30
+- [ ] H-03 Every case OK by eye or UNSUPPORTED with the reason reported · open: Unity attract, URP sprites · 2026-10-30
+- [x] H-04 Ten Arcane effects side by side in each engine, no regressions · [SAW] work/compare/*-vs-tool.png · 2026-10-30
+- [x] H-05 Packages import with only the shipped integration; Unity Play mode checked · [SAW] uplay sheets · 2026-10-30
+- [x] H-06 Roblox textures and meshes uploaded and shipped in src/export/roblox/assets.ts · [SAW] grid · 2026-10-30
+- [ ] H-07 Owner approves the grid and the Arcane sheets per engine · needs owner
+
 - [x] Force Lance preset (thrown spear, tight purple helix closed at the tip) · owner: "looks much better" + [SAW] stills · 2026-10-21
 - [ ] Arcane Lance preset (beam version) · [SAW] stills, owner not asked · 2026-10-21
 - [ ] Fireball: simulated preset · owner: better but not right yet · 2026-10-21
@@ -50,7 +63,7 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [x] Roblox: path split, light range/brightness, beam alphaTrack (driven opacity), positioned bursts from a part copy · [SAW] grid roblox · 2026-10-30
 - [x] Roblox lightning holds each bolt until the next (interpolation averaged random bolts flat) · [SAW] work/fidelity/rbx-arc-ticks2/sheet.png · 2026-10-30
 - [ ] BACKLOG Roblox: Arc bolt has fewer kinks than the editor (beam segment budget) · [SAW] rbx-arc-ticks2 · 2026-10-30
-- [ ] BACKLOG Roblox (grid): prop mesh / rocks export as plain parts. The 11 built-in meshes are uploaded as Models (tools/roblox-upload-meshes.mjs, ids in work/roblox/mesh-ids.json); using them needs each MeshPart MeshId from the Asset Delivery API = API key scope legacy-asset:manage (owner adds it) · [RAN] uploads · 2026-10-30
+- [x] Roblox real meshes: the 11 built-in meshes uploaded, MeshIds resolved (Asset Delivery), exported as MeshParts; ids shipped in src/export/roblox/assets.ts so the deployed editor uses them too · [SAW] work/compare/rbx-meshes2.png, rbx-rocks-mat.png · 2026-10-30
 - [x] Unreal screen flash: huge camera-facing sprite, depth-test-off flash material, opacity linearised (IR flashEmitters) · [SAW] grid screen-flash (mean 37 vs editor 33) · 2026-10-30
 - [x] Unreal many-particle trails (sparks) baked from the editor simulation into ribbon frames (IR trailRibbons) · [SAW] grid particle-trail · 2026-10-30
 - [x] Godot vortex: editor swirl sampled into a GPUParticlesAttractorVectorField3D (16³ texture) · [SAW] g-vortex-gain.png (x20 probe swirls) + grid OK · 2026-10-30

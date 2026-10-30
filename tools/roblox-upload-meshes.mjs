@@ -8,7 +8,8 @@
 //
 //   node --experimental-strip-types tools/roblox-upload-meshes.mjs --creator-user <userId> [--yes] [kind ...]
 //
-// Needs ROBLOX_OPEN_CLOUD_API_KEY with the "assets" read+write permission (never printed).
+// Needs ROBLOX_OPEN_CLOUD_API_KEY with the "assets" read+write permission (never printed). After --resolve, run
+// node tools/roblox-sync-assets.mjs so the shipped src/export/roblox/assets.ts picks the ids up.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { builtinMeshObj } from '../src/export/meshObj.ts';
@@ -48,6 +49,26 @@ if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}` || proc
   const root = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
   const idsFile = join(root, 'work', 'roblox', 'mesh-ids.json');
   const ids = existsSync(idsFile) ? JSON.parse(readFileSync(idsFile, 'utf8')) : {};
+  // --resolve: download each uploaded model (Asset Delivery, key scope legacy-asset:manage) and record the MeshId its one
+  // MeshPart points at ({ kind: { model, mesh } }). The exporter then writes real MeshParts.
+  if (flag('resolve')) {
+    const key = process.env.ROBLOX_OPEN_CLOUD_API_KEY;
+    if (!key) { console.error('ROBLOX_OPEN_CLOUD_API_KEY is not set.'); process.exit(2); }
+    const { gunzipSync } = await import('node:zlib');
+    for (const [kind, v] of Object.entries(ids)) {
+      if (v.mesh || !v.model) continue;
+      const meta = await (await fetch(`https://apis.roblox.com/asset-delivery-api/v1/assetId/${v.model}`, { headers: { 'x-api-key': key } })).json().catch(() => ({}));
+      if (!meta.location) { console.error(`  ${kind}: no delivery location ${JSON.stringify(meta).slice(0, 200)}`); continue; }
+      let buf = Buffer.from(await (await fetch(meta.location)).arrayBuffer());
+      if (buf[0] === 0x1f && buf[1] === 0x8b) buf = gunzipSync(buf);
+      const found = [...new Set(buf.toString('latin1').match(/rbxassetid:\/\/\d+/g) ?? [])];
+      if (found.length !== 1) { console.error(`  ${kind}: expected one asset id in the model, found ${found.length}`); continue; }
+      v.mesh = found[0].replace('rbxassetid://', '');
+      writeFileSync(idsFile, JSON.stringify(ids, null, 2));
+      console.log(`  ${kind}: mesh ${v.mesh}`);
+    }
+    process.exit(0);
+  }
   const kinds = (args.length ? args : [...BUILTIN_MESHES]).filter(k => !ids[k]?.model);
   console.log(`Meshes to upload: ${kinds.join(' ') || '(none)'}`);
   if (!kinds.length) process.exit(0);

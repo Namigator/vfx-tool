@@ -646,7 +646,7 @@
   },
   "mesh-particles": {
    "eye": "OK",
-   "note": "rock shapes; lighter colour",
+   "note": "real rock MeshParts (SmoothPlastic; Neon MeshParts drew nothing); darker than the editor key light",
    "date": "2026-10-30"
   },
   "noise": {
@@ -705,8 +705,8 @@
    "date": "2026-10-30"
   },
   "prop-mesh": {
-   "eye": "WRONG",
-   "note": "visible with editor-like capture ambient, but a plain block: Roblox meshes export as simple parts (custom MeshParts need uploaded assets)",
+   "eye": "OK",
+   "note": "real crystal MeshPart (uploaded built-in mesh); a darker blue",
    "date": "2026-10-30"
   },
   "driven-opacity": {

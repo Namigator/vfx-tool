@@ -140,12 +140,12 @@ test('Roblox: an unshifted coloured sheet carries its grey variant for recoloure
   assert.ok(hueDist(hh, mh) < 3 && hv > 0.99, `sheet hue ${hh} at ${hv}`);
   assert.ok(r.value.textures.includes('flame-tongue-b.grey.png'), 'the grey sheet is in the upload list');
   const both = { 'flame-tongue-b.png': '1', 'flame-tongue-b.grey.png': '2' };
-  const grey = (ids: Record<string, string>) => effectData(writeRbxmx(r.value, { assetIds: ids, playerSource: '' })).emitters
+  const grey = (ids: Record<string, string>) => effectData(writeRbxmx(r.value, { assetIds: ids, playerSource: '', bundledIds: false })).emitters
     .find((e: { name: string }) => e.name === em.name).grey;
   assert.deepEqual(grey(both), ['rbxassetid://2', ...em.recolorTexture!.hue.map(x => Math.round(x * 1000) / 1000), 'rbxassetid://1']);
   assert.equal(grey({ 'flame-tongue-b.png': '1' }), undefined, 'grey sheet not uploaded: the copy keeps the original');
   // The file holds the sheet the copy plays with (so a game's preload of the model downloads it).
-  const textures = (o: object) => [...writeRbxmx(r.value, { assetIds: both, playerSource: '', ...o }).matchAll(/<Content name="Texture"><url>([^<]*)/g)].map(m => m[1]);
+  const textures = (o: object) => [...writeRbxmx(r.value, { assetIds: both, playerSource: '', bundledIds: false, ...o }).matchAll(/<Content name="Texture"><url>([^<]*)/g)].map(m => m[1]);
   assert.ok(textures({}).includes('rbxassetid://1') && !textures({}).includes('rbxassetid://2'), 'authored copy: original sheet');
   assert.ok(textures({ hueShift: -170 }).includes('rbxassetid://2') && !textures({ hueShift: -170 }).includes('rbxassetid://1'), 'hue-shifted copy: grey sheet');
   assert.ok(textures({ color: [0.2, 0.5, 1] }).includes('rbxassetid://2'), 'coloured copy: grey sheet');
@@ -154,15 +154,16 @@ test('Roblox: an unshifted coloured sheet carries its grey variant for recoloure
 
 // Bug (2026-10-17): Meteor's lit rock debris read as a black clump in a dark Roblox place; the editor lights lit meshes
 // with a studio key light (PreviewViewport), Roblox only with the place's own lighting.
-test('Roblox: lit rock debris is Neon at its own colour; a single lit prop keeps its material', () => {
+test('Roblox: lit rock debris MeshParts stay lit SmoothPlastic (a Neon MeshPart drew nothing); a single lit prop keeps its material', () => {
   const d = { ...insertComponent(createBlankDocument('g-rock', 'rock-burst'), 'rock-burst', undefined, { group: true }).doc, name: 'rocks' };
   const r = robloxEffectFrom(d);
   assert.ok(r.ok);
   const m = r.value.meshes.find(x => x.source.startsWith('rock'));
   assert.ok(m && m.pieces.length >= 4, 'rock-burst has rock debris');
-  assert.equal(m.material, 'Neon');
-  assert.equal(m.castShadow, false);
-  assert.ok(r.value.report.some(x => x.item === m.name && x.message.startsWith('Lit rock debris is Neon')));
+  assert.equal(m.shape, 'Mesh');
+  assert.equal(m.material, 'SmoothPlastic');
+
+
   const ft = robloxEffectFrom(insertComponent(createBlankDocument(), 'flamethrower', undefined, { group: true }).doc);
   assert.ok(ft.ok);
   assert.ok(ft.value.meshes.length && ft.value.meshes.every(x => x.material !== 'Neon' && x.castShadow), 'flamethrower barrel/leg props stay lit');

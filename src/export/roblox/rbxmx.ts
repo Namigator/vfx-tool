@@ -1,6 +1,7 @@
 // RobloxEffect -> .rbxmx (Roblox XML model). See types.ts for the IR; EffectPlayer.luau is the runtime.
 import type { RbxBeamLayer, RbxColorKey, RbxEmitter, RbxLight, RbxMeshLayer, RbxNumberKey, RbxTrail, RobloxEffect, Vec3 } from './types.ts';
 import { MAX_SEQUENCE_KEYS } from './types.ts';
+import { ROBLOX_MESH_IDS, ROBLOX_TEXTURE_IDS } from './assets.ts';
 
 export const DEFAULT_TEXTURE = 'rbxasset://textures/particles/sparkles_main.dds';
 
@@ -27,6 +28,8 @@ export type WriteOptions = {
    * `import('./EffectPlayer.luau?raw')`; Node code passes effectPlayerSource() from ./playerSource.node.ts.
    */
   playerSource: string;
+  /** false: ignore the shipped ids (assets.ts), e.g. to test the not-uploaded fallbacks. Default true. */
+  bundledIds?: boolean;
   /**
    * The model's recolour settings (Studio Properties, no code): VfxColor (Color3Value, white = authored colours) and
    * VfxHueShift (NumberValue, degrees). Colourway exports set them; default white / 0.
@@ -191,7 +194,9 @@ export function builtinFallback(key: string): string {
   if (/smoke|dust|cloud|puff|wisp|vapou?r|fog/.test(k)) return 'rbxasset://textures/particles/smoke_main.dds';
   return DEFAULT_TEXTURE;
 }
-function withFallbacks(effect: RobloxEffect, ids: Record<string, string> = {}): { effect: RobloxEffect; ids: Record<string, string> } {
+function withFallbacks(effect: RobloxEffect, localIds: Record<string, string> = {}, bundled = true): { effect: RobloxEffect; ids: Record<string, string> } {
+  // The shipped ids (assets.ts) under any local ones, so the deployed editor exports uploaded textures too.
+  const ids = { ...(bundled ? ROBLOX_TEXTURE_IDS : {}), ...localIds };
   const all = { ...ids };
   // Not uploaded yet: a grey sheet variant (recoloured part, recolor.ts greyTextured) uses its original sheet, a beam's
   // straightened line ("sheet.png#line") the whole sheet; a generated beam cross-section ("@beam-soft-..") draws solid.
@@ -338,9 +343,10 @@ function meshTemplateItem(refs: Refs, m: RbxMeshLayer, name: string): string {
     P.float('Reflectance', clamp(m.reflectance, 0, 1)),
     P.vec3('Size', [1, 1, 1]),
     coordinateFrame('CFrame', [0, 0, 0]),
-    ...(m.shape === 'Wedge' ? [] : [P.token('shape', ENUM.PartType[m.shape])]),
+    ...(m.shape === 'Wedge' || m.shape === 'Mesh' ? [] : [P.token('shape', ENUM.PartType[m.shape])]),
+    ...(m.shape === 'Mesh' && m.meshId ? [`<Content name="MeshId"><url>rbxassetid://${m.meshId}</url></Content>`] : []),
   ];
-  return item(m.shape === 'Wedge' ? 'WedgePart' : 'Part', refs.next(), props);
+  return item(m.shape === 'Wedge' ? 'WedgePart' : m.shape === 'Mesh' ? 'MeshPart' : 'Part', refs.next(), props);
 }
 
 // ---------- EffectData (JSON in a StringValue) ----------
@@ -473,7 +479,7 @@ EffectPlayer.play(model, nil, { loop = true })
 // ---------- main ----------
 
 export function writeRbxmx(input: RobloxEffect, options: WriteOptions): string {
-  const fb = withFallbacks(input, options.assetIds);
+  const fb = withFallbacks(input, options.assetIds, options.bundledIds !== false);
   const effect = fb.effect, opts = { ...options, assetIds: fb.ids };
   const refs = new Refs();
   const nameE = uniqueNamer();

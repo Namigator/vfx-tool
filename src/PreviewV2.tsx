@@ -516,8 +516,8 @@ export default function PreviewV2() {
   const downloadRoblox = useCallback(async () => {
     const d = historyRef.current!.snapshot();
     setFileNote('Exporting for Roblox…');
-    const [{ robloxEffectFrom }, { writeRbxmx }, { reportMarkdown }, player] = await Promise.all([
-      import('./export/roblox/fromPlan.ts'), import('./export/roblox/rbxmx.ts'), import('./export/roblox/report.ts'), import('./export/roblox/EffectPlayer.luau?raw'),
+    const [{ robloxEffectFrom }, { writeRbxmx }, { reportMarkdown }, player, { ROBLOX_TEXTURE_IDS }] = await Promise.all([
+      import('./export/roblox/fromPlan.ts'), import('./export/roblox/rbxmx.ts'), import('./export/roblox/report.ts'), import('./export/roblox/EffectPlayer.luau?raw'), import('./export/roblox/assets.ts'),
     ]);
     const r = robloxEffectFrom(d);
     if (!r.ok) { setFileNote(`Roblox export failed: ${r.message}`); return; }
@@ -532,7 +532,7 @@ export default function PreviewV2() {
     };
     save(writeRbxmx(r.value, { assetIds, playerSource: player.default }), `${base}.rbxmx`, 'application/xml');
     save(reportMarkdown(r.value, assetIds), `${base}.roblox-report.md`, 'text/markdown');
-    const e = r.value, left = e.report.filter(x => x.level === 'dropped').length, missing = e.textures.filter(t => !assetIds[t]).length;
+    const e = r.value, left = e.report.filter(x => x.level === 'dropped').length, missing = e.textures.filter(t => !assetIds[t] && !ROBLOX_TEXTURE_IDS[t]).length;
     setFileNote(`Roblox export: ${e.emitters.length} emitters, ${e.beams.length} beam layers, ${e.lights.length} lights. ${left} feature(s) left out${missing ? `, ${missing} texture(s) not uploaded yet` : ''} - see the report file.`);
   }, []);
 

@@ -318,6 +318,8 @@ function unlitDebris(m: RbxMeshLayer): boolean {
   if (!m.castShadow || m.material !== 'Slate' || m.pieces.length < DEBRIS_MIN_PIECES) return false;
   const sizes = m.pieces.flatMap(p => p.frames.map(f => Math.max(...f.size))).sort((a, b) => a - b);
   if (sizes[sizes.length >> 1] > DEBRIS_MAX_STUDS) return false;
+  // A Neon MeshPart drew nothing in Studio (feature grid mesh-particles, 2026-10-30): mesh rocks stay lit, SmoothPlastic.
+  if (m.shape === 'Mesh') { m.material = 'SmoothPlastic'; return false; }
   m.material = 'Neon';
   m.castShadow = false;
   return true;

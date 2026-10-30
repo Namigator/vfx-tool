@@ -1,8 +1,10 @@
 // Roblox export conversion report (16-PORTABILITY "the report must name every lost runtime behavior"): plain
 // language for the user, grouped by what happened, with repeated messages folded together.
 import type { RobloxEffect } from './types.ts';
+import { ROBLOX_TEXTURE_IDS } from './assets.ts';
 
-export function reportMarkdown(e: RobloxEffect, assetIds: Record<string, string> = {}): string {
+export function reportMarkdown(e: RobloxEffect, localIds: Record<string, string> = {}, bundled = true): string {
+  const assetIds = { ...(bundled ? ROBLOX_TEXTURE_IDS : {}), ...localIds };
   const lines = [`# Roblox export: ${e.name}`, '',
     `- ${e.emitters.length} particle emitters, ${e.beams.length} beam layers (up to ${e.beams.reduce((n, b) => n + b.maxSegments, 0)} beams at once), ${e.lights.length} lights, ${(e.meshes ?? []).reduce((n, m) => n + m.pieces.length, 0)} mesh pieces (Parts)`,
     `- Length ${(e.durationTicks / 60).toFixed(2)} s (${e.durationTicks} ticks), 1 m = ${e.studsPerMeter} studs`, ''];

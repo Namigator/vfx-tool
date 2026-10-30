@@ -256,7 +256,7 @@ test('trails and untextured beams: soft cross-section texture, solid when not up
   const trailXml = (xml: string) => xml.slice(xml.indexOf('<Item class="Trail"'), xml.indexOf('</Item>', xml.indexOf('<Item class="Trail"')));
   const up = writeRbxmx(e, { assetIds: { 'flame.png': '12345', '@beam-soft-100.png': '777' }, playerSource: PLAYER });
   assert.match(trailXml(up), /<Content name="Texture"><url>rbxassetid:\/\/777<\/url><\/Content>/);
-  const none = writeRbxmx(e, { playerSource: PLAYER });
+  const none = writeRbxmx(e, { playerSource: PLAYER, bundledIds: false });
   assert.match(trailXml(none), /<Content name="Texture"><url><\/url><\/Content>/);
   assert.ok(!trailXml(none).includes(DEFAULT_TEXTURE));
 });

@@ -1,13 +1,16 @@
 // Roblox exporter: mesh particles (rocks, crystals, shards, orbs...) -> Roblox Parts driven by baked trajectories.
 // The preview's per-instance transform (PreviewViewport #updateMeshes) is reproduced here on top of the deterministic
 // ParticleSimulation, sampled every 2 ticks plus birth and death; the Luau player blends between those frames.
-// Roblox has no custom mesh in a plain model, so every kind is approximated by a primitive Part (see KINDS).
+// A built-in kind uploaded to Roblox (assets.ts ROBLOX_MESH_IDS) is a MeshPart with the editor's own geometry; others
+// (and imported GLB models) are approximated by a primitive Part (see KINDS).
 import type { ColorValue } from '../../model/types.ts';
 import { multiplyColors, type MeshLayer } from '../../graph/toParticles.ts';
 import { colorTrackValue, trackValue } from '../../graph/keyframes.ts';
 import { ParticleSimulation, PARTICLE_DT, type ParticleEmitterDescriptor, type ParticleState } from '../../runtime/particles.ts';
 import { fnv1a32Utf8 } from '../../runtime/random.ts';
 import { compileLifeCurve, compileLifeGradient, lifeFraction, sampleLifeCurve, sampleLifeGradient } from '../../render/billboardLife.ts';
+import { builtinMeshObj, isBuiltinMesh } from '../meshObj.ts';
+import { ROBLOX_MESH_IDS } from './assets.ts';
 import { STUDS_PER_METER, type RbxMeshFrame, type RbxMeshLayer, type RbxMeshPiece, type RbxReportItem, type Vec3 } from './types.ts';
 
 const S = STUDS_PER_METER;
@@ -42,6 +45,22 @@ const KINDS: Record<string, { shape: Shape; ext: Vec3; irregular?: boolean }> = 
   plane: { shape: 'Block', ext: [1, 0.03, 1] },
 };
 const IMPORTED = { shape: 'Block' as Shape, ext: [1, 1, 1] as Vec3 };
+
+/** A built-in mesh's bounding box at scale 1 (size units), after the base pivot (lowest point at the origin):
+ *  extents and centre. A MeshPart is centred on its box, the editor's geometry on its own origin. */
+const meshBoxes = new Map<string, { ext: Vec3; centre: Vec3 }>();
+function meshBox(kind: string, base: boolean): { ext: Vec3; centre: Vec3 } {
+  const key = `${kind}:${base}`;
+  let b = meshBoxes.get(key);
+  if (!b) {
+    const v = builtinMeshObj(kind as Parameters<typeof builtinMeshObj>[0]).split(/\r?\n/).filter(l => l.startsWith('v ')).map(l => l.trim().split(/\s+/).slice(1, 4).map(Number));
+    const lo = [0, 1, 2].map(i => Math.min(...v.map(p => p[i]))), hi = [0, 1, 2].map(i => Math.max(...v.map(p => p[i])));
+    const ext = [0, 1, 2].map(i => hi[i] - lo[i]) as Vec3, centre = [0, 1, 2].map(i => (hi[i] + lo[i]) / 2) as Vec3;
+    if (base) centre[1] = ext[1] / 2;
+    b = { ext, centre }; meshBoxes.set(key, b);
+  }
+  return b;
+}
 
 // ---------- quaternion helpers (same conventions as three.js, right-handed, +Y up) ----------
 
@@ -175,8 +194,11 @@ export function bakeMeshes(
       if ('error' in r) { report.push({ level: 'dropped', item: layer.nodeId, message: `Mesh particles could not be simulated for export: ${r.error}` }); continue; }
       sn = r; snaps.set(layer.systemId, r);
     }
-    const kind = layer.meshAsset ? IMPORTED : KINDS[layer.mesh] ?? IMPORTED;
-    if (layer.meshAsset) report.push({ level: 'approximated', item: layer.nodeId, message: 'Imported 3D models become a plain Roblox block of the same size (custom mesh shapes are not exported).' });
+    const meshId = !layer.meshAsset && isBuiltinMesh(layer.mesh) ? ROBLOX_MESH_IDS[layer.mesh]?.mesh : undefined;
+    const box = meshId ? meshBox(layer.mesh, layer.pivot === 'base') : undefined;
+    const kind = box ? { shape: 'Mesh' as Shape, ext: box.ext } : layer.meshAsset ? IMPORTED : KINDS[layer.mesh] ?? IMPORTED;
+    if (box) report.push({ level: 'approximated', item: layer.nodeId, message: "Built-in meshes become MeshParts with the editor's geometry (uploaded mesh asset) moved along the previewed paths." });
+    else if (layer.meshAsset) report.push({ level: 'approximated', item: layer.nodeId, message: 'Imported 3D models become a plain Roblox block of the same size (custom mesh shapes are not exported).' });
     else report.push({ level: 'approximated', item: layer.nodeId, message: 'Rocks, crystals and other meshes become simple Roblox parts moved along the previewed paths; no custom mesh shape.' });
     if (kind.shape === 'Ball' && (layer.scaleY ?? 1) !== 1) report.push({ level: 'approximated', item: layer.nodeId, message: 'Stretched orbs stay round: a Roblox ball cannot be squashed.' });
     if (layer.surface && (layer.surface.reflection > 0 || layer.surface.detail > 0)) report.push({ level: 'dropped', item: layer.nodeId, message: 'Mesh surface reflection and grain detail are not exported.' });
@@ -213,11 +235,12 @@ export function bakeMeshes(
       const ky = k * (layer.scaleY ?? 1);
       // The preview size box (k, ky, k) times the kind's extents; rocks get a stable irregular ratio per piece.
       let ex = kind.ext[0], ey = kind.ext[1], ez = kind.ext[2];
-      if ('irregular' in kind && kind.irregular) { ex *= 0.85 + 0.3 * (((h >>> 3) & 255) / 255); ey *= 0.85 + 0.3 * (((h >>> 11) & 255) / 255); ez *= 0.85 + 0.3 * (((h >>> 19) & 255) / 255); }
+      if (!box && 'irregular' in kind && kind.irregular) { ex *= 0.85 + 0.3 * (((h >>> 3) & 255) / 255); ey *= 0.85 + 0.3 * (((h >>> 11) & 255) / 255); ez *= 0.85 + 0.3 * (((h >>> 19) & 255) / 255); }
       let size: Vec3 = [k * ex, ky * ey, k * ez];
       // Base pivot: the mesh stands on its position, so the Part (centred) sits half a height up its own up axis.
       const up = rotate(q, [0, 1, 0]);
-      const centre: Vec3 = layer.pivot === 'base' ? [p[0] + up[0] * size[1] / 2, p[1] + up[1] * size[1] / 2, p[2] + up[2] * size[1] / 2] : p;
+      const off = box ? rotate(q, [box.centre[0] * k, box.centre[1] * ky, box.centre[2] * k]) : undefined;
+      const centre: Vec3 = off ? [p[0] + off[0], p[1] + off[1], p[2] + off[2]] : layer.pivot === 'base' ? [p[0] + up[0] * size[1] / 2, p[1] + up[1] * size[1] / 2, p[2] + up[2] * size[1] / 2] : p;
       let rot = q;
       if (kind.shape === 'Cylinder') { rot = qMul(q, CYLINDER_TURN); size = [size[1], size[0], size[2]]; }
       else if (kind.shape === 'Ball') { const d = Math.max(size[0], size[2]); size = [d, d, d]; }
@@ -268,7 +291,7 @@ export function bakeMeshes(
     const differs = pieces.some(pc => pc.frames.some(f =>
       Math.abs(f.transparency! - first.transparency!) > 0.01 || f.color!.some((x, i) => Math.abs(x - first.color![i]) > 1 / 255)));
     out.push({
-      name: nameOf(layer.nodeId), shape: kind.shape, material: materialOf(layer), source: layer.meshAsset ? 'imported model' : layer.mesh,
+      name: nameOf(layer.nodeId), shape: kind.shape, ...(meshId ? { meshId } : {}), material: materialOf(layer), source: layer.meshAsset ? 'imported model' : layer.mesh,
       color: first.color!, transparency: first.transparency!, reflectance: r3(Math.min(1, Math.max(0, layer.metalness ?? 0)) * 0.5),
       castShadow: layer.lit, colorVaries: differs, pieces,
     });

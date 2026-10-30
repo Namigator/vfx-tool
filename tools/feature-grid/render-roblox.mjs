@@ -8,6 +8,7 @@ import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { robloxEffectFrom } from '../../src/export/roblox/fromPlan.ts';
 import { writeRbxmx } from '../../src/export/roblox/rbxmx.ts';
+import { ROBLOX_TEXTURE_IDS } from '../../src/export/roblox/assets.ts';
 import { effectPlayerSource } from '../../src/export/roblox/playerSource.node.ts';
 import { CAMERA, CASES, DEFAULT_TICK } from './cases.mjs';
 
@@ -26,7 +27,7 @@ for (const c of CASES) {
   const pkg = join(G, 'roblox-pkg', c.id); mkdirSync(pkg, { recursive: true });
   const r = robloxEffectFrom(JSON.parse(readFileSync(docPath, 'utf8')));
   if (!r.ok) { writeFileSync(join(pkg, 'report.json'), JSON.stringify({ exportError: r.message })); console.log(`EXPORT FAIL ${c.id}`); continue; }
-  const missingIds = r.value.textures?.filter?.(t => !assetIds[t]) ?? [];
+  const missingIds = r.value.textures?.filter?.(t => !assetIds[t] && !ROBLOX_TEXTURE_IDS[t]) ?? [];
   writeFileSync(join(pkg, 'report.json'), JSON.stringify({ report: r.value.report ?? [], missingAssetIds: missingIds }));
   const model = join(pkg, 'Effect.rbxmx');
   writeFileSync(model, writeRbxmx(r.value, { assetIds, playerSource: effectPlayerSource() }));

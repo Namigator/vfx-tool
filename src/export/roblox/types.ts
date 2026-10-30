@@ -175,7 +175,9 @@ export type RbxMeshPiece = { birthTick: number; deathTick: number; frames: RbxMe
  */
 export type RbxMeshLayer = {
   name: string;
-  shape: 'Block' | 'Ball' | 'Cylinder' | 'Wedge';
+  /** Mesh = a MeshPart with the uploaded built-in mesh (assets.ts ROBLOX_MESH_IDS, meshId); else a primitive Part. */
+  shape: 'Block' | 'Ball' | 'Cylinder' | 'Wedge' | 'Mesh';
+  meshId?: string;
   material: 'Slate' | 'Ice' | 'Neon' | 'SmoothPlastic' | 'Metal';
   /** Mesh kind or 'imported model' (documentation only). */
   source: string;

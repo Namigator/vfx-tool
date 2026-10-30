@@ -40,7 +40,7 @@ test('Roblox map: flamethrower becomes emitters with rate windows, event bursts,
   assert.ok(smoke.bursts.length > 10 && smoke.bursts.every(b => b.position), 'smoke is born where flames die');
   assert.ok(e.report.some(r => r.level === 'dropped' && /Turbulence/.test(r.message)));
   assert.ok(e.textures.includes('smoke-puff.png'));
-  const md = reportMarkdown(e, { 'smoke-puff.png': '123' });
+  const md = reportMarkdown(e, { 'smoke-puff.png': '123' }, false);
   assert.match(md, /rbxassetid:\/\/123/);
   assert.match(md, /NOT UPLOADED/);
 });
@@ -90,10 +90,11 @@ for (const id of ['earth-upheaval', 'ice-eruption']) {
     const e = effect(id);
     assert.ok(e.meshes.length > 0, 'has mesh layers');
     assert.ok(!e.report.some(r => /Mesh particles .* not exported/.test(r.message)), 'no longer reported as dropped');
-    assert.ok(e.report.some(r => r.level === 'approximated' && /simple Roblox parts/.test(r.message)));
+    assert.ok(e.report.some(r => r.level === 'approximated' && /MeshParts with the editor's geometry|simple Roblox parts/.test(r.message)));
     let pieces = 0;
     for (const m of e.meshes) {
-      assert.ok(['Block', 'Ball', 'Cylinder', 'Wedge'].includes(m.shape) && m.pieces.length > 0, m.name);
+      assert.ok(['Block', 'Ball', 'Cylinder', 'Wedge', 'Mesh'].includes(m.shape) && m.pieces.length > 0, m.name);
+      if (m.shape === 'Mesh') assert.match(m.meshId ?? '', /^\d+$/, `${m.name} carries its uploaded MeshId`);
       for (const p of m.pieces) {
         pieces++;
         assert.ok(p.deathTick > p.birthTick && p.frames.length >= 2, `${m.name} piece has frames`);
@@ -114,15 +115,13 @@ for (const id of ['earth-upheaval', 'ice-eruption']) {
   });
 }
 
-test('Roblox map: earth-upheaval rocks are Slate blocks with irregular per-piece ratios; ice-eruption crystals are Ice wedges', () => {
+test('Roblox map: earth-upheaval rocks are lit MeshParts (the editor rock mesh); ice-eruption crystals are Ice MeshParts', () => {
   const earth = effect('earth-upheaval'), ice = effect('ice-eruption');
   // The big stones keep Slate; small chips are Neon debris (fromPlan unlitDebris: they rendered black in a dark place).
-  const rocks = earth.meshes.filter(m => m.shape === 'Block' && m.material === 'Slate');
-  assert.ok(earth.meshes.some(m => m.shape === 'Block' && m.material === 'Neon'), 'chips are Neon debris');
-  assert.ok(rocks.length > 0, `rocks: ${earth.meshes.map(m => `${m.source}:${m.shape}/${m.material}`)}`);
-  const ratios = new Set(rocks.flatMap(m => m.pieces.map(p => (p.frames[1].size[1] / p.frames[1].size[0]).toFixed(2))));
-  assert.ok(ratios.size > 1, 'rocks are not all the same proportions');
-  assert.ok(ice.meshes.some(m => m.shape === 'Wedge' && m.material === 'Ice'), `ice: ${ice.meshes.map(m => `${m.source}:${m.shape}/${m.material}`)}`);
+  const rocks = earth.meshes.filter(m => m.shape === 'Mesh' && (m.material === 'Slate' || m.material === 'SmoothPlastic'));
+
+  assert.ok(rocks.length > 0 && rocks.every(m => m.meshId), `rocks: ${earth.meshes.map(m => `${m.source}:${m.shape}/${m.material}`)}`);
+  assert.ok(ice.meshes.some(m => m.shape === 'Mesh' && m.material === 'Ice' && m.meshId), `ice: ${ice.meshes.map(m => `${m.source}:${m.shape}/${m.material}`)}`);
 });
 
 test('velocity stretch → Squash keeps the sprite width (Roblox draws (1+s)x tall, 1/(1+s) wide)', async () => {
