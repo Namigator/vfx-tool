@@ -1614,6 +1614,148 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "AudioMix",
+   "id": "sfx-mix",
+   "params": {
+    "masterGain": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "AudioOutput",
+   "id": "sfx-out",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "AudioSource",
+   "id": "sfx-1",
+   "params": {
+    "source": "sample",
+    "sound": "charge-1",
+    "offsetTicks": 0,
+    "durationTicks": 30,
+    "gain": 0.6,
+    "pitchRatio": 0.85,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "charge.start",
+   "to": "sfx-1.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "sfx-1.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "AudioSource",
+   "id": "sfx-2",
+   "params": {
+    "source": "sample",
+    "sound": "teleport-1",
+    "offsetTicks": 0,
+    "durationTicks": 80,
+    "gain": 0.8,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "flight.start",
+   "to": "sfx-2.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "sfx-2.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyorb",
+   "type": "AudioSource",
+   "id": "sfx-3",
+   "params": {
+    "source": "sample",
+    "sound": "magic-4",
+    "offsetTicks": 0,
+    "durationTicks": 60,
+    "gain": 0.6,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "flight.start",
+   "to": "sfx-3.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "sfx-3.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "sfx-mix.audio",
+   "to": "sfx-out.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyorb",
+   "from": "sfx-out.audio",
+   "to": "node-output.audio"
+  }
+ ],
+ [
+  "vfx_render_audio",
+  {
+   "docId": "energyorb"
+  },
+  true
+ ],
+ [
   "vfx_compile",
   {
    "docId": "energyorb"

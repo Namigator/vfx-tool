@@ -1395,6 +1395,181 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "AudioMix",
+   "id": "sfx-mix",
+   "params": {
+    "masterGain": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "AudioOutput",
+   "id": "sfx-out",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "AudioSource",
+   "id": "sfx-1",
+   "params": {
+    "source": "sample",
+    "sound": "rock-fall-5",
+    "offsetTicks": 0,
+    "durationTicks": 30,
+    "gain": 0.6,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "pulsewin.start",
+   "to": "sfx-1.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "sfx-1.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "AudioSource",
+   "id": "sfx-2",
+   "params": {
+    "source": "sample",
+    "sound": "boom-8",
+    "offsetTicks": 0,
+    "durationTicks": 60,
+    "gain": 0.8,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "erupt.start",
+   "to": "sfx-2.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "sfx-2.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "AudioSource",
+   "id": "sfx-3",
+   "params": {
+    "source": "sample",
+    "sound": "rock-break-3",
+    "offsetTicks": 0,
+    "durationTicks": 50,
+    "gain": 0.8,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "erupt.start",
+   "to": "sfx-3.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "sfx-3.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "earthgravel",
+   "type": "AudioSource",
+   "id": "sfx-4",
+   "params": {
+    "source": "sample",
+    "sound": "rock-fall-6",
+    "offsetTicks": 20,
+    "durationTicks": 50,
+    "gain": 0.8,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "erupt.start",
+   "to": "sfx-4.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "sfx-4.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "sfx-mix.audio",
+   "to": "sfx-out.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "earthgravel",
+   "from": "sfx-out.audio",
+   "to": "node-output.audio"
+  }
+ ],
+ [
+  "vfx_render_audio",
+  {
+   "docId": "earthgravel"
+  },
+  true
+ ],
+ [
   "vfx_compile",
   {
    "docId": "earthgravel"

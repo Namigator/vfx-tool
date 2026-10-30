@@ -245,13 +245,15 @@
   {
    "docId": "beam",
    "type": "AudioSource",
-   "id": "sfx-buzz",
+   "id": "sfx-1",
    "params": {
-    "source": "oscillator",
-    "waveform": "saw",
-    "frequencyHz": 110,
-    "durationTicks": 70,
-    "gain": 0.4
+    "source": "sample",
+    "sound": "spark-2",
+    "offsetTicks": 0,
+    "durationTicks": 20,
+    "gain": 0.8,
+    "pitchRatio": 1,
+    "sampleLoop": false
    }
   }
  ],
@@ -260,58 +262,14 @@
   {
    "docId": "beam",
    "from": "on.start",
-   "to": "sfx-buzz.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "beam",
-   "type": "AudioFilter",
-   "id": "sfx-buzz-f",
-   "params": {
-    "mode": "bandpass",
-    "cutoffHz": 900,
-    "cutoffEndHz": 1300,
-    "q": 2
-   }
+   "to": "sfx-1.trigger"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "beam",
-   "from": "sfx-buzz.audio",
-   "to": "sfx-buzz-f.audio"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "beam",
-   "type": "AudioEnvelope",
-   "id": "sfx-buzz-e",
-   "params": {
-    "attack": 0.02,
-    "hold": 1,
-    "release": 0.12,
-    "curve": "linear"
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "beam",
-   "from": "sfx-buzz-f.audio",
-   "to": "sfx-buzz-e.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "beam",
-   "from": "sfx-buzz-e.audio",
+   "from": "sfx-1.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -320,12 +278,15 @@
   {
    "docId": "beam",
    "type": "AudioSource",
-   "id": "sfx-crackle",
+   "id": "sfx-2",
    "params": {
-    "source": "noise",
-    "noiseColor": "white",
+    "source": "sample",
+    "sound": "electric-loop-2",
+    "offsetTicks": 0,
     "durationTicks": 70,
-    "gain": 0.45
+    "gain": 0.7,
+    "pitchRatio": 1,
+    "sampleLoop": true
    }
   }
  ],
@@ -334,29 +295,7 @@
   {
    "docId": "beam",
    "from": "on.start",
-   "to": "sfx-crackle.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "beam",
-   "type": "AudioFilter",
-   "id": "sfx-crackle-f",
-   "params": {
-    "mode": "highpass",
-    "cutoffHz": 3000,
-    "cutoffEndHz": 3500,
-    "q": 0.8
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "beam",
-   "from": "sfx-crackle.audio",
-   "to": "sfx-crackle-f.audio"
+   "to": "sfx-2.trigger"
   }
  ],
  [
@@ -364,11 +303,11 @@
   {
    "docId": "beam",
    "type": "AudioEnvelope",
-   "id": "sfx-crackle-e",
+   "id": "sfx-2-fade",
    "params": {
-    "attack": 0.01,
-    "hold": 1,
-    "release": 0.12,
+    "attack": 0.03,
+    "hold": 0.8866666666666667,
+    "release": 0.25,
     "curve": "linear"
    }
   }
@@ -377,69 +316,15 @@
   "vfx_connect",
   {
    "docId": "beam",
-   "from": "sfx-crackle-f.audio",
-   "to": "sfx-crackle-e.audio"
+   "from": "sfx-2.audio",
+   "to": "sfx-2-fade.audio"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "beam",
-   "from": "sfx-crackle-e.audio",
-   "to": "sfx-mix.inputs"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "beam",
-   "type": "AudioSource",
-   "id": "sfx-zap",
-   "params": {
-    "source": "chirp",
-    "chirpStartHz": 3000,
-    "chirpEndHz": 300,
-    "chirpSweep": "exponential",
-    "durationTicks": 12,
-    "gain": 0.6
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "beam",
-   "from": "on.start",
-   "to": "sfx-zap.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "beam",
-   "type": "AudioEnvelope",
-   "id": "sfx-zap-e",
-   "params": {
-    "attack": 0.001,
-    "hold": 0.02,
-    "release": 0.15,
-    "curve": "exponential"
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "beam",
-   "from": "sfx-zap.audio",
-   "to": "sfx-zap-e.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "beam",
-   "from": "sfx-zap-e.audio",
+   "from": "sfx-2-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -460,6 +345,13 @@
   }
  ],
  [
+  "vfx_render_audio",
+  {
+   "docId": "beam"
+  },
+  true
+ ],
+ [
   "vfx_compile",
   {
    "docId": "beam"
@@ -473,13 +365,6 @@
    "ticks": [
     30
    ]
-  },
-  true
- ],
- [
-  "vfx_render_audio",
-  {
-   "docId": "beam"
   },
   true
  ]

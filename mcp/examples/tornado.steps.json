@@ -281,12 +281,15 @@
   {
    "docId": "tornado",
    "type": "AudioSource",
-   "id": "sfx-wind",
+   "id": "sfx-1",
    "params": {
-    "source": "noise",
-    "noiseColor": "pink",
+    "source": "sample",
+    "sound": "wind-1",
+    "offsetTicks": 0,
     "durationTicks": 220,
-    "gain": 2
+    "gain": 0.8,
+    "pitchRatio": 0.9,
+    "sampleLoop": true
    }
   }
  ],
@@ -295,29 +298,7 @@
   {
    "docId": "tornado",
    "from": "spin.start",
-   "to": "sfx-wind.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "tornado",
-   "type": "AudioFilter",
-   "id": "sfx-wind-f",
-   "params": {
-    "mode": "bandpass",
-    "cutoffHz": 350,
-    "cutoffEndHz": 900,
-    "q": 1.1
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "tornado",
-   "from": "sfx-wind.audio",
-   "to": "sfx-wind-f.audio"
+   "to": "sfx-1.trigger"
   }
  ],
  [
@@ -325,11 +306,11 @@
   {
    "docId": "tornado",
    "type": "AudioEnvelope",
-   "id": "sfx-wind-e",
+   "id": "sfx-1-fade",
    "params": {
-    "attack": 0.8,
-    "hold": 2.2,
-    "release": 0.7,
+    "attack": 0.03,
+    "hold": 3.3866666666666667,
+    "release": 0.25,
     "curve": "linear"
    }
   }
@@ -338,89 +319,15 @@
   "vfx_connect",
   {
    "docId": "tornado",
-   "from": "sfx-wind-f.audio",
-   "to": "sfx-wind-e.audio"
+   "from": "sfx-1.audio",
+   "to": "sfx-1-fade.audio"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "tornado",
-   "from": "sfx-wind-e.audio",
-   "to": "sfx-mix.inputs"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "tornado",
-   "type": "AudioSource",
-   "id": "sfx-roar",
-   "params": {
-    "source": "noise",
-    "noiseColor": "brown",
-    "durationTicks": 220,
-    "gain": 1.8
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "tornado",
-   "from": "spin.start",
-   "to": "sfx-roar.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "tornado",
-   "type": "AudioFilter",
-   "id": "sfx-roar-f",
-   "params": {
-    "mode": "lowpass",
-    "cutoffHz": 400,
-    "cutoffEndHz": 600,
-    "q": 0.8
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "tornado",
-   "from": "sfx-roar.audio",
-   "to": "sfx-roar-f.audio"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "tornado",
-   "type": "AudioEnvelope",
-   "id": "sfx-roar-e",
-   "params": {
-    "attack": 0.8,
-    "hold": 2.2,
-    "release": 0.7,
-    "curve": "linear"
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "tornado",
-   "from": "sfx-roar-f.audio",
-   "to": "sfx-roar-e.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "tornado",
-   "from": "sfx-roar-e.audio",
+   "from": "sfx-1-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -441,6 +348,13 @@
   }
  ],
  [
+  "vfx_render_audio",
+  {
+   "docId": "tornado"
+  },
+  true
+ ],
+ [
   "vfx_compile",
   {
    "docId": "tornado"
@@ -454,13 +368,6 @@
    "ticks": [
     150
    ]
-  },
-  true
- ],
- [
-  "vfx_render_audio",
-  {
-   "docId": "tornado"
   },
   true
  ]

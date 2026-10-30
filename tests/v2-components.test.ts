@@ -63,16 +63,17 @@ test('components publish bound knobs; changing a knob changes the compiled syste
 });
 
 test('sound-carrying components share one audio mix/output, so several can be combined', async () => {
-  const { compileAudio } = await import('../src/graph/toAudio.ts');
+  const { compileAudio, soundsUsed } = await import('../src/graph/toAudio.ts');
+  const { loadSoundsNode } = await import('../src/audio/sampleLoader.node.ts');
   let d = createBlankDocument();
   d = insertComponent(d, 'fireball').doc;
   d = insertComponent(d, 'fireball').doc;
   const g = d.graphs[0];
   assert.equal(g.nodes.filter(n => n.type === 'AudioMix').length, 1);
   assert.equal(g.nodes.filter(n => n.type === 'AudioOutput').length, 1);
-  const a = compileAudio(valid(d));
+  const a = compileAudio(valid(d), { samples: loadSoundsNode(soundsUsed(d)) });
   if (!a.ok) assert.fail(JSON.stringify(a.errors.slice(0, 3)));
-  assert.equal(a.value.kind === 'mix' && a.value.voices.length, 8, 'both fireballs contribute their four voices');
+  assert.equal(a.value.kind === 'mix' && a.value.voices.length, 6, 'both fireballs contribute their three voices');
 });
 
 test('grouped insertion: one Group node in root, internals in a child graph, same compiled systems, knobs still drive it', () => {
@@ -100,9 +101,10 @@ test('grouped insertion: one Group node in root, internals in a child graph, sam
 });
 
 test('grouped sound components: cues inside the group drive the root audio chain; the mix equals the flat insert', async () => {
-  const { compileAudio } = await import('../src/graph/toAudio.ts');
+  const { compileAudio, soundsUsed } = await import('../src/graph/toAudio.ts');
+  const { loadSoundsNode } = await import('../src/audio/sampleLoader.node.ts');
   for (const c of COMPONENT_TEMPLATES.filter(t => t.nodes.some(n => n.type.startsWith('Audio')))) {
-    const a = compileAudio(insertComponent(createBlankDocument(), c.id).doc), b = compileAudio(insertComponent(createBlankDocument(), c.id, undefined, { group: true }).doc);
+    const da = insertComponent(createBlankDocument(), c.id).doc, s = { samples: loadSoundsNode(soundsUsed(da)) }, a = compileAudio(da, s), b = compileAudio(insertComponent(createBlankDocument(), c.id, undefined, { group: true }).doc, s);
     if (!a.ok || !b.ok) assert.fail(`${c.id}: ${JSON.stringify((!a.ok ? a : b as { errors: unknown[] }).errors?.slice(0, 2))}`);
     assert.deepEqual([...b.value.mix.left], [...a.value.mix.left], c.id);
   }

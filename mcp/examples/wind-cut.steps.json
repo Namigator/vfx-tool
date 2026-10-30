@@ -889,6 +889,170 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "windcut",
+   "type": "AudioMix",
+   "id": "sfx-mix",
+   "params": {
+    "masterGain": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windcut",
+   "type": "AudioOutput",
+   "id": "sfx-out",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windcut",
+   "type": "AudioSource",
+   "id": "sfx-1",
+   "params": {
+    "source": "sample",
+    "sound": "wind-2",
+    "offsetTicks": 0,
+    "durationTicks": 138,
+    "gain": 0.6,
+    "pitchRatio": 1.1,
+    "sampleLoop": true
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windcut",
+   "from": "gust.start",
+   "to": "sfx-1.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windcut",
+   "type": "AudioEnvelope",
+   "id": "sfx-1-fade",
+   "params": {
+    "attack": 0.03,
+    "hold": 2.0199999999999996,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windcut",
+   "from": "sfx-1.audio",
+   "to": "sfx-1-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windcut",
+   "from": "sfx-1-fade.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windcut",
+   "type": "AudioSource",
+   "id": "sfx-2",
+   "params": {
+    "source": "sample",
+    "sound": "blade-3",
+    "offsetTicks": 0,
+    "durationTicks": 20,
+    "gain": 0.9,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windcut",
+   "from": "streakwin.start",
+   "to": "sfx-2.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windcut",
+   "from": "sfx-2.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "windcut",
+   "type": "AudioSource",
+   "id": "sfx-3",
+   "params": {
+    "source": "sample",
+    "sound": "swish-6",
+    "offsetTicks": 20,
+    "durationTicks": 15,
+    "gain": 0.6,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windcut",
+   "from": "streakwin.start",
+   "to": "sfx-3.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windcut",
+   "from": "sfx-3.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windcut",
+   "from": "sfx-mix.audio",
+   "to": "sfx-out.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "windcut",
+   "from": "sfx-out.audio",
+   "to": "node-output.audio"
+  }
+ ],
+ [
+  "vfx_render_audio",
+  {
+   "docId": "windcut"
+  },
+  true
+ ],
+ [
   "vfx_compile",
   {
    "docId": "windcut"

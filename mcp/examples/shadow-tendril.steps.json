@@ -1406,6 +1406,148 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "AudioMix",
+   "id": "sfx-mix",
+   "params": {
+    "masterGain": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "AudioOutput",
+   "id": "sfx-out",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "AudioSource",
+   "id": "sfx-1",
+   "params": {
+    "source": "sample",
+    "sound": "shade-8",
+    "offsetTicks": 0,
+    "durationTicks": 110,
+    "gain": 0.7,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "active.start",
+   "to": "sfx-1.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "sfx-1.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "AudioSource",
+   "id": "sfx-2",
+   "params": {
+    "source": "sample",
+    "sound": "shade-12",
+    "offsetTicks": 0,
+    "durationTicks": 60,
+    "gain": 0.8,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "collapse.start",
+   "to": "sfx-2.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "sfx-2.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tendril",
+   "type": "AudioSource",
+   "id": "sfx-3",
+   "params": {
+    "source": "sample",
+    "sound": "power-down-1",
+    "offsetTicks": 0,
+    "durationTicks": 60,
+    "gain": 0.5,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "collapse.start",
+   "to": "sfx-3.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "sfx-3.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "sfx-mix.audio",
+   "to": "sfx-out.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tendril",
+   "from": "sfx-out.audio",
+   "to": "node-output.audio"
+  }
+ ],
+ [
+  "vfx_render_audio",
+  {
+   "docId": "tendril"
+  },
+  true
+ ],
+ [
   "vfx_compile",
   {
    "docId": "tendril"

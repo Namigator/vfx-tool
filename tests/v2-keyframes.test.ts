@@ -13,7 +13,7 @@ import { ParticleSimulation } from '../src/runtime/particles.ts';
 const registry = createRegistry();
 const flame = () => insertComponent(createBlankDocument(), 'flamethrower', undefined, { group: true }).doc;
 const knob = (d: EffectDocumentV2, label: string): PublicControl => d.controls.find(c => c.label === label)!;
-const plan = (d: unknown) => { const r = compileParticlePreview(d); assert.ok(r.ok, r.ok ? '' : JSON.stringify(r.errors)); return r.value; };
+const plan = (d: unknown) => { const r = compileParticlePreview(d, { audioHandled: true }); assert.ok(r.ok, r.ok ? '' : JSON.stringify(r.errors)); return r.value; };
 const sumBursts = (bursts: { tick: number; count: number }[], from: number, to: number) => bursts.filter(b => b.tick >= from && b.tick < to).reduce((a, b) => a + b.count, 0);
 
 test('controlValueAt: before, between, after, integer rounding', () => {
@@ -75,7 +75,7 @@ test('Colour keyed 0 -> 180: sprite layers animate hueShift, no descriptor track
 test('a timing knob (Burn time) keyed fails with one error naming it', () => {
   const d = flame();
   knob(d, 'Burn time').keys = [{ tick: 0, value: 40 }, { tick: 100, value: 84 }];
-  const r = compileParticlePreview(d);
+  const r = compileParticlePreview(d, { audioHandled: true });
   assert.equal(r.ok, false);
   if (!r.ok) { assert.equal(r.errors.length, 1); assert.match(r.errors[0].message, /Burn time/); }
 });
@@ -103,7 +103,7 @@ test('lightning-strike: a keyed Core width changes the ribbon width between tick
   const d = insertComponent(createBlankDocument(), 'lightning-strike', undefined, { group: true }).doc;
   knob(d, 'Core width').keys = [{ tick: 0, value: 0.02 }, { tick: 100, value: 0.2 }];
   assert.ok(validateDocument(d, { registry }).ok);
-  const widths = (t: number) => { const r = compilePathPreview(d, t); assert.ok(r.ok, r.ok ? '' : JSON.stringify(r.errors)); return r.value.layers.map(l => l.width); };
+  const widths = (t: number) => { const r = compilePathPreview(d, t, { audioHandled: true }); assert.ok(r.ok, r.ok ? '' : JSON.stringify(r.errors)); return r.value.layers.map(l => l.width); };
   const w0 = widths(0), w100 = widths(100), w50 = widths(50);
   assert.notDeepEqual(w0, w100);
   const i = w0.findIndex((w, k) => w !== w100[k]);

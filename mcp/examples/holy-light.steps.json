@@ -460,13 +460,15 @@
   {
    "docId": "light",
    "type": "AudioSource",
-   "id": "sfx-c5",
+   "id": "sfx-1",
    "params": {
-    "source": "oscillator",
-    "waveform": "sine",
-    "frequencyHz": 523.25,
-    "durationTicks": 80,
-    "gain": 0.32
+    "source": "sample",
+    "sound": "heal-2",
+    "offsetTicks": 0,
+    "durationTicks": 70,
+    "gain": 0.8,
+    "pitchRatio": 1,
+    "sampleLoop": false
    }
   }
  ],
@@ -475,36 +477,14 @@
   {
    "docId": "light",
    "from": "pulse.start",
-   "to": "sfx-c5.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "light",
-   "type": "AudioEnvelope",
-   "id": "sfx-c5-e",
-   "params": {
-    "attack": 0.25,
-    "hold": 0.7,
-    "release": 0.4,
-    "curve": "linear"
-   }
+   "to": "sfx-1.trigger"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "light",
-   "from": "sfx-c5.audio",
-   "to": "sfx-c5-e.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "light",
-   "from": "sfx-c5-e.audio",
+   "from": "sfx-1.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -513,13 +493,15 @@
   {
    "docId": "light",
    "type": "AudioSource",
-   "id": "sfx-e5",
+   "id": "sfx-2",
    "params": {
-    "source": "oscillator",
-    "waveform": "sine",
-    "frequencyHz": 659.25,
+    "source": "sample",
+    "sound": "bell-4",
+    "offsetTicks": 10,
     "durationTicks": 80,
-    "gain": 0.26
+    "gain": 0.7,
+    "pitchRatio": 1,
+    "sampleLoop": false
    }
   }
  ],
@@ -528,163 +510,14 @@
   {
    "docId": "light",
    "from": "pulse.start",
-   "to": "sfx-e5.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "light",
-   "type": "AudioEnvelope",
-   "id": "sfx-e5-e",
-   "params": {
-    "attack": 0.3,
-    "hold": 0.65,
-    "release": 0.4,
-    "curve": "linear"
-   }
+   "to": "sfx-2.trigger"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "light",
-   "from": "sfx-e5.audio",
-   "to": "sfx-e5-e.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "light",
-   "from": "sfx-e5-e.audio",
-   "to": "sfx-mix.inputs"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "light",
-   "type": "AudioSource",
-   "id": "sfx-g5",
-   "params": {
-    "source": "oscillator",
-    "waveform": "sine",
-    "frequencyHz": 783.99,
-    "durationTicks": 80,
-    "gain": 0.22
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "light",
-   "from": "pulse.start",
-   "to": "sfx-g5.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "light",
-   "type": "AudioEnvelope",
-   "id": "sfx-g5-e",
-   "params": {
-    "attack": 0.35,
-    "hold": 0.6,
-    "release": 0.4,
-    "curve": "linear"
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "light",
-   "from": "sfx-g5.audio",
-   "to": "sfx-g5-e.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "light",
-   "from": "sfx-g5-e.audio",
-   "to": "sfx-mix.inputs"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "light",
-   "type": "AudioSource",
-   "id": "sfx-shimmer",
-   "params": {
-    "source": "noise",
-    "noiseColor": "white",
-    "durationTicks": 80,
-    "gain": 0.18
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "light",
-   "from": "pulse.start",
-   "to": "sfx-shimmer.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "light",
-   "type": "AudioFilter",
-   "id": "sfx-shimmer-f",
-   "params": {
-    "mode": "highpass",
-    "cutoffHz": 6000,
-    "cutoffEndHz": 8000,
-    "q": 0.8
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "light",
-   "from": "sfx-shimmer.audio",
-   "to": "sfx-shimmer-f.audio"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "light",
-   "type": "AudioEnvelope",
-   "id": "sfx-shimmer-e",
-   "params": {
-    "attack": 0.3,
-    "hold": 0.6,
-    "release": 0.4,
-    "curve": "linear"
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "light",
-   "from": "sfx-shimmer-f.audio",
-   "to": "sfx-shimmer-e.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "light",
-   "from": "sfx-shimmer-e.audio",
+   "from": "sfx-2.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -705,6 +538,13 @@
   }
  ],
  [
+  "vfx_render_audio",
+  {
+   "docId": "light"
+  },
+  true
+ ],
+ [
   "vfx_compile",
   {
    "docId": "light"
@@ -718,13 +558,6 @@
    "ticks": [
     40
    ]
-  },
-  true
- ],
- [
-  "vfx_render_audio",
-  {
-   "docId": "light"
   },
   true
  ]

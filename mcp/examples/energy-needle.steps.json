@@ -1614,6 +1614,148 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "energyneedle",
+   "type": "AudioMix",
+   "id": "sfx-mix",
+   "params": {
+    "masterGain": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyneedle",
+   "type": "AudioOutput",
+   "id": "sfx-out",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyneedle",
+   "type": "AudioSource",
+   "id": "sfx-1",
+   "params": {
+    "source": "sample",
+    "sound": "charge-1",
+    "offsetTicks": 0,
+    "durationTicks": 30,
+    "gain": 0.5,
+    "pitchRatio": 1.2,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyneedle",
+   "from": "charge.start",
+   "to": "sfx-1.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyneedle",
+   "from": "sfx-1.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyneedle",
+   "type": "AudioSource",
+   "id": "sfx-2",
+   "params": {
+    "source": "sample",
+    "sound": "blade-1",
+    "offsetTicks": 0,
+    "durationTicks": 20,
+    "gain": 0.9,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyneedle",
+   "from": "flight.start",
+   "to": "sfx-2.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyneedle",
+   "from": "sfx-2.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "energyneedle",
+   "type": "AudioSource",
+   "id": "sfx-3",
+   "params": {
+    "source": "sample",
+    "sound": "magic-5",
+    "offsetTicks": 0,
+    "durationTicks": 40,
+    "gain": 0.6,
+    "pitchRatio": 1.2,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyneedle",
+   "from": "flight.start",
+   "to": "sfx-3.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyneedle",
+   "from": "sfx-3.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyneedle",
+   "from": "sfx-mix.audio",
+   "to": "sfx-out.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "energyneedle",
+   "from": "sfx-out.audio",
+   "to": "node-output.audio"
+  }
+ ],
+ [
+  "vfx_render_audio",
+  {
+   "docId": "energyneedle"
+  },
+  true
+ ],
+ [
   "vfx_compile",
   {
    "docId": "energyneedle"

@@ -352,22 +352,6 @@
   }
  ],
  [
-  "vfx_sample_particles",
-  {
-   "docId": "rain",
-   "tick": 150,
-   "show": 0
-  },
-  true
- ],
- [
-  "vfx_preview_url",
-  {
-   "docId": "rain"
-  },
-  true
- ],
- [
   "vfx_add_node",
   {
    "docId": "rain",
@@ -392,12 +376,15 @@
   {
    "docId": "rain",
    "type": "AudioSource",
-   "id": "sfx-rain",
+   "id": "sfx-1",
    "params": {
-    "source": "noise",
-    "noiseColor": "pink",
+    "source": "sample",
+    "sound": "water-flow-2",
+    "offsetTicks": 0,
     "durationTicks": 200,
-    "gain": 2
+    "gain": 0.5,
+    "pitchRatio": 1,
+    "sampleLoop": true
    }
   }
  ],
@@ -406,29 +393,7 @@
   {
    "docId": "rain",
    "from": "sched.start",
-   "to": "sfx-rain.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "rain",
-   "type": "AudioFilter",
-   "id": "sfx-rain-f",
-   "params": {
-    "mode": "highpass",
-    "cutoffHz": 2500,
-    "cutoffEndHz": 2200,
-    "q": 0.7
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "rain",
-   "from": "sfx-rain.audio",
-   "to": "sfx-rain-f.audio"
+   "to": "sfx-1.trigger"
   }
  ],
  [
@@ -436,11 +401,11 @@
   {
    "docId": "rain",
    "type": "AudioEnvelope",
-   "id": "sfx-rain-e",
+   "id": "sfx-1-fade",
    "params": {
-    "attack": 0.4,
-    "hold": 2.3,
-    "release": 0.6,
+    "attack": 0.03,
+    "hold": 3.0533333333333337,
+    "release": 0.25,
     "curve": "linear"
    }
   }
@@ -449,15 +414,48 @@
   "vfx_connect",
   {
    "docId": "rain",
-   "from": "sfx-rain-f.audio",
-   "to": "sfx-rain-e.audio"
+   "from": "sfx-1.audio",
+   "to": "sfx-1-fade.audio"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "rain",
-   "from": "sfx-rain-e.audio",
+   "from": "sfx-1-fade.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rain",
+   "type": "AudioSource",
+   "id": "sfx-2",
+   "params": {
+    "source": "sample",
+    "sound": "splash-10",
+    "offsetTicks": 30,
+    "durationTicks": 30,
+    "gain": 0.4,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "sched.start",
+   "to": "sfx-2.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rain",
+   "from": "sfx-2.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -478,14 +476,30 @@
   }
  ],
  [
-  "vfx_compile",
+  "vfx_render_audio",
   {
    "docId": "rain"
   },
   true
  ],
  [
-  "vfx_render_audio",
+  "vfx_sample_particles",
+  {
+   "docId": "rain",
+   "tick": 150,
+   "show": 0
+  },
+  true
+ ],
+ [
+  "vfx_preview_url",
+  {
+   "docId": "rain"
+  },
+  true
+ ],
+ [
+  "vfx_compile",
   {
    "docId": "rain"
   },

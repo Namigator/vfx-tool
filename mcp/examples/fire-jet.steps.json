@@ -1584,6 +1584,137 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "AudioMix",
+   "id": "sfx-mix",
+   "params": {
+    "masterGain": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "AudioOutput",
+   "id": "sfx-out",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "AudioSource",
+   "id": "sfx-1",
+   "params": {
+    "source": "sample",
+    "sound": "fire-cast-5",
+    "offsetTicks": 0,
+    "durationTicks": 50,
+    "gain": 1,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "ignite.start",
+   "to": "sfx-1.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "sfx-1.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "AudioSource",
+   "id": "sfx-2",
+   "params": {
+    "source": "sample",
+    "sound": "fire-roar-1",
+    "offsetTicks": 4,
+    "durationTicks": 84,
+    "gain": 0.7,
+    "pitchRatio": 1,
+    "sampleLoop": true
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "emit.start",
+   "to": "sfx-2.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "AudioEnvelope",
+   "id": "sfx-2-fade",
+   "params": {
+    "attack": 0.03,
+    "hold": 1.1199999999999999,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "sfx-2.audio",
+   "to": "sfx-2-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "sfx-2-fade.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "sfx-mix.audio",
+   "to": "sfx-out.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "sfx-out.audio",
+   "to": "node-output.audio"
+  }
+ ],
+ [
+  "vfx_render_audio",
+  {
+   "docId": "firejet"
+  },
+  true
+ ],
+ [
   "vfx_compile",
   {
    "docId": "firejet"

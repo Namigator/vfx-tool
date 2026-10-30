@@ -541,12 +541,15 @@
   {
    "docId": "ice",
    "type": "AudioSource",
-   "id": "sfx-shatter",
+   "id": "sfx-1",
    "params": {
-    "source": "noise",
-    "noiseColor": "white",
-    "durationTicks": 40,
-    "gain": 1
+    "source": "sample",
+    "sound": "ice-2",
+    "offsetTicks": 0,
+    "durationTicks": 60,
+    "gain": 1,
+    "pitchRatio": 1,
+    "sampleLoop": false
    }
   }
  ],
@@ -555,58 +558,14 @@
   {
    "docId": "ice",
    "from": "burst.start",
-   "to": "sfx-shatter.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "ice",
-   "type": "AudioFilter",
-   "id": "sfx-shatter-f",
-   "params": {
-    "mode": "highpass",
-    "cutoffHz": 3500,
-    "cutoffEndHz": 7000,
-    "q": 0.8
-   }
+   "to": "sfx-1.trigger"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "ice",
-   "from": "sfx-shatter.audio",
-   "to": "sfx-shatter-f.audio"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "ice",
-   "type": "AudioEnvelope",
-   "id": "sfx-shatter-e",
-   "params": {
-    "attack": 0.001,
-    "hold": 0.03,
-    "release": 0.55,
-    "curve": "exponential"
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "ice",
-   "from": "sfx-shatter-f.audio",
-   "to": "sfx-shatter-e.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "ice",
-   "from": "sfx-shatter-e.audio",
+   "from": "sfx-1.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -615,13 +574,15 @@
   {
    "docId": "ice",
    "type": "AudioSource",
-   "id": "sfx-chime",
+   "id": "sfx-2",
    "params": {
-    "source": "oscillator",
-    "waveform": "triangle",
-    "frequencyHz": 1760,
-    "durationTicks": 90,
-    "gain": 0.35
+    "source": "sample",
+    "sound": "glass-break-6",
+    "offsetTicks": 2,
+    "durationTicks": 50,
+    "gain": 0.8,
+    "pitchRatio": 1,
+    "sampleLoop": false
    }
   }
  ],
@@ -630,163 +591,14 @@
   {
    "docId": "ice",
    "from": "burst.start",
-   "to": "sfx-chime.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "ice",
-   "type": "AudioEnvelope",
-   "id": "sfx-chime-e",
-   "params": {
-    "attack": 0.002,
-    "hold": 0.05,
-    "release": 1.3,
-    "curve": "exponential"
-   }
+   "to": "sfx-2.trigger"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "ice",
-   "from": "sfx-chime.audio",
-   "to": "sfx-chime-e.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "ice",
-   "from": "sfx-chime-e.audio",
-   "to": "sfx-mix.inputs"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "ice",
-   "type": "AudioSource",
-   "id": "sfx-chime2",
-   "params": {
-    "source": "oscillator",
-    "waveform": "sine",
-    "frequencyHz": 2637,
-    "durationTicks": 80,
-    "gain": 0.25
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "ice",
-   "from": "burst.start",
-   "to": "sfx-chime2.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "ice",
-   "type": "AudioEnvelope",
-   "id": "sfx-chime2-e",
-   "params": {
-    "attack": 0.004,
-    "hold": 0.04,
-    "release": 1.1,
-    "curve": "exponential"
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "ice",
-   "from": "sfx-chime2.audio",
-   "to": "sfx-chime2-e.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "ice",
-   "from": "sfx-chime2-e.audio",
-   "to": "sfx-mix.inputs"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "ice",
-   "type": "AudioSource",
-   "id": "sfx-crunch",
-   "params": {
-    "source": "noise",
-    "noiseColor": "pink",
-    "durationTicks": 30,
-    "gain": 0.8
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "ice",
-   "from": "burst.start",
-   "to": "sfx-crunch.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "ice",
-   "type": "AudioFilter",
-   "id": "sfx-crunch-f",
-   "params": {
-    "mode": "lowpass",
-    "cutoffHz": 2500,
-    "cutoffEndHz": 400,
-    "q": 0.8
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "ice",
-   "from": "sfx-crunch.audio",
-   "to": "sfx-crunch-f.audio"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "ice",
-   "type": "AudioEnvelope",
-   "id": "sfx-crunch-e",
-   "params": {
-    "attack": 0.002,
-    "hold": 0.03,
-    "release": 0.35,
-    "curve": "exponential"
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "ice",
-   "from": "sfx-crunch-f.audio",
-   "to": "sfx-crunch-e.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "ice",
-   "from": "sfx-crunch-e.audio",
+   "from": "sfx-2.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -807,6 +619,13 @@
   }
  ],
  [
+  "vfx_render_audio",
+  {
+   "docId": "ice"
+  },
+  true
+ ],
+ [
   "vfx_compile",
   {
    "docId": "ice"
@@ -821,13 +640,6 @@
     16,
     60
    ]
-  },
-  true
- ],
- [
-  "vfx_render_audio",
-  {
-   "docId": "ice"
   },
   true
  ]

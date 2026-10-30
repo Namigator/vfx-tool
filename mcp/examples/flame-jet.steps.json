@@ -531,12 +531,15 @@
   {
    "docId": "flame-jet",
    "type": "AudioSource",
-   "id": "sfx-roar",
+   "id": "sfx-1",
    "params": {
-    "source": "noise",
-    "noiseColor": "brown",
-    "durationTicks": 124,
-    "gain": 1.6
+    "source": "sample",
+    "sound": "fire-cast-1",
+    "offsetTicks": 0,
+    "durationTicks": 50,
+    "gain": 0.9,
+    "pitchRatio": 1,
+    "sampleLoop": false
    }
   }
  ],
@@ -545,58 +548,14 @@
   {
    "docId": "flame-jet",
    "from": "sched.start",
-   "to": "sfx-roar.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "flame-jet",
-   "type": "AudioFilter",
-   "id": "sfx-roar-f",
-   "params": {
-    "mode": "lowpass",
-    "cutoffHz": 1200,
-    "cutoffEndHz": 700,
-    "q": 0.8
-   }
+   "to": "sfx-1.trigger"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "flame-jet",
-   "from": "sfx-roar.audio",
-   "to": "sfx-roar-f.audio"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "flame-jet",
-   "type": "AudioEnvelope",
-   "id": "sfx-roar-e",
-   "params": {
-    "attack": 0.08,
-    "hold": 1.7,
-    "release": 0.35,
-    "curve": "linear"
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "flame-jet",
-   "from": "sfx-roar-f.audio",
-   "to": "sfx-roar-e.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "flame-jet",
-   "from": "sfx-roar-e.audio",
+   "from": "sfx-1.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -605,12 +564,15 @@
   {
    "docId": "flame-jet",
    "type": "AudioSource",
-   "id": "sfx-hiss",
+   "id": "sfx-2",
    "params": {
-    "source": "noise",
-    "noiseColor": "pink",
-    "durationTicks": 124,
-    "gain": 0.5
+    "source": "sample",
+    "sound": "fire-roar-1",
+    "offsetTicks": 4,
+    "durationTicks": 118,
+    "gain": 0.7,
+    "pitchRatio": 1,
+    "sampleLoop": true
    }
   }
  ],
@@ -619,29 +581,7 @@
   {
    "docId": "flame-jet",
    "from": "sched.start",
-   "to": "sfx-hiss.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "flame-jet",
-   "type": "AudioFilter",
-   "id": "sfx-hiss-f",
-   "params": {
-    "mode": "bandpass",
-    "cutoffHz": 2500,
-    "cutoffEndHz": 1800,
-    "q": 0.9
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "flame-jet",
-   "from": "sfx-hiss.audio",
-   "to": "sfx-hiss-f.audio"
+   "to": "sfx-2.trigger"
   }
  ],
  [
@@ -649,11 +589,11 @@
   {
    "docId": "flame-jet",
    "type": "AudioEnvelope",
-   "id": "sfx-hiss-e",
+   "id": "sfx-2-fade",
    "params": {
-    "attack": 0.1,
-    "hold": 1.6,
-    "release": 0.4,
+    "attack": 0.03,
+    "hold": 1.6866666666666665,
+    "release": 0.25,
     "curve": "linear"
    }
   }
@@ -662,69 +602,15 @@
   "vfx_connect",
   {
    "docId": "flame-jet",
-   "from": "sfx-hiss-f.audio",
-   "to": "sfx-hiss-e.audio"
+   "from": "sfx-2.audio",
+   "to": "sfx-2-fade.audio"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "flame-jet",
-   "from": "sfx-hiss-e.audio",
-   "to": "sfx-mix.inputs"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "flame-jet",
-   "type": "AudioSource",
-   "id": "sfx-whoomp",
-   "params": {
-    "source": "chirp",
-    "chirpStartHz": 160,
-    "chirpEndHz": 45,
-    "chirpSweep": "exponential",
-    "durationTicks": 30,
-    "gain": 1.1
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "flame-jet",
-   "from": "sched.start",
-   "to": "sfx-whoomp.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "flame-jet",
-   "type": "AudioEnvelope",
-   "id": "sfx-whoomp-e",
-   "params": {
-    "attack": 0.003,
-    "hold": 0.03,
-    "release": 0.4,
-    "curve": "exponential"
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "flame-jet",
-   "from": "sfx-whoomp.audio",
-   "to": "sfx-whoomp-e.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "flame-jet",
-   "from": "sfx-whoomp-e.audio",
+   "from": "sfx-2-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -745,6 +631,13 @@
   }
  ],
  [
+  "vfx_render_audio",
+  {
+   "docId": "flame-jet"
+  },
+  true
+ ],
+ [
   "vfx_compile",
   {
    "docId": "flame-jet"
@@ -759,13 +652,6 @@
     16,
     122
    ]
-  },
-  true
- ],
- [
-  "vfx_render_audio",
-  {
-   "docId": "flame-jet"
   },
   true
  ]

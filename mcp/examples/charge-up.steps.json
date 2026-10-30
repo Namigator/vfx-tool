@@ -404,14 +404,15 @@
   {
    "docId": "charge",
    "type": "AudioSource",
-   "id": "sfx-rise",
+   "id": "sfx-1",
    "params": {
-    "source": "chirp",
-    "chirpStartHz": 180,
-    "chirpEndHz": 1400,
-    "chirpSweep": "exponential",
+    "source": "sample",
+    "sound": "charge-2",
+    "offsetTicks": 0,
     "durationTicks": 70,
-    "gain": 0.5
+    "gain": 0.9,
+    "pitchRatio": 1,
+    "sampleLoop": false
    }
   }
  ],
@@ -420,110 +421,14 @@
   {
    "docId": "charge",
    "from": "gather.start",
-   "to": "sfx-rise.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "charge",
-   "type": "AudioEnvelope",
-   "id": "sfx-rise-e",
-   "params": {
-    "attack": 0.4,
-    "hold": 0.6,
-    "release": 0.15,
-    "curve": "linear"
-   }
+   "to": "sfx-1.trigger"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "charge",
-   "from": "sfx-rise.audio",
-   "to": "sfx-rise-e.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "charge",
-   "from": "sfx-rise-e.audio",
-   "to": "sfx-mix.inputs"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "charge",
-   "type": "AudioSource",
-   "id": "sfx-whine",
-   "params": {
-    "source": "noise",
-    "noiseColor": "pink",
-    "durationTicks": 70,
-    "gain": 0.6
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "charge",
-   "from": "gather.start",
-   "to": "sfx-whine.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "charge",
-   "type": "AudioFilter",
-   "id": "sfx-whine-f",
-   "params": {
-    "mode": "bandpass",
-    "cutoffHz": 400,
-    "cutoffEndHz": 3000,
-    "q": 3
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "charge",
-   "from": "sfx-whine.audio",
-   "to": "sfx-whine-f.audio"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "charge",
-   "type": "AudioEnvelope",
-   "id": "sfx-whine-e",
-   "params": {
-    "attack": 0.3,
-    "hold": 0.7,
-    "release": 0.2,
-    "curve": "linear"
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "charge",
-   "from": "sfx-whine-f.audio",
-   "to": "sfx-whine-e.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "charge",
-   "from": "sfx-whine-e.audio",
+   "from": "sfx-1.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -544,6 +449,13 @@
   }
  ],
  [
+  "vfx_render_audio",
+  {
+   "docId": "charge"
+  },
+  true
+ ],
+ [
   "vfx_compile",
   {
    "docId": "charge"
@@ -557,13 +469,6 @@
    "ticks": [
     50
    ]
-  },
-  true
- ],
- [
-  "vfx_render_audio",
-  {
-   "docId": "charge"
   },
   true
  ]

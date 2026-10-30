@@ -436,12 +436,15 @@
   {
    "docId": "rocks",
    "type": "AudioSource",
-   "id": "sfx-rumble",
+   "id": "sfx-1",
    "params": {
-    "source": "noise",
-    "noiseColor": "brown",
-    "durationTicks": 90,
-    "gain": 1.8
+    "source": "sample",
+    "sound": "rock-break-2",
+    "offsetTicks": 0,
+    "durationTicks": 60,
+    "gain": 1,
+    "pitchRatio": 1,
+    "sampleLoop": false
    }
   }
  ],
@@ -450,58 +453,14 @@
   {
    "docId": "rocks",
    "from": "hit.start",
-   "to": "sfx-rumble.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "rocks",
-   "type": "AudioFilter",
-   "id": "sfx-rumble-f",
-   "params": {
-    "mode": "lowpass",
-    "cutoffHz": 700,
-    "cutoffEndHz": 110,
-    "q": 0.8
-   }
+   "to": "sfx-1.trigger"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "rocks",
-   "from": "sfx-rumble.audio",
-   "to": "sfx-rumble-f.audio"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "rocks",
-   "type": "AudioEnvelope",
-   "id": "sfx-rumble-e",
-   "params": {
-    "attack": 0.005,
-    "hold": 0.1,
-    "release": 1.2,
-    "curve": "exponential"
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "rocks",
-   "from": "sfx-rumble-f.audio",
-   "to": "sfx-rumble-e.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "rocks",
-   "from": "sfx-rumble-e.audio",
+   "from": "sfx-1.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -510,14 +469,15 @@
   {
    "docId": "rocks",
    "type": "AudioSource",
-   "id": "sfx-thump",
+   "id": "sfx-2",
    "params": {
-    "source": "chirp",
-    "chirpStartHz": 90,
-    "chirpEndHz": 32,
-    "chirpSweep": "exponential",
-    "durationTicks": 36,
-    "gain": 1.2
+    "source": "sample",
+    "sound": "boom-8",
+    "offsetTicks": 0,
+    "durationTicks": 60,
+    "gain": 0.8,
+    "pitchRatio": 1,
+    "sampleLoop": false
    }
   }
  ],
@@ -526,110 +486,14 @@
   {
    "docId": "rocks",
    "from": "hit.start",
-   "to": "sfx-thump.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "rocks",
-   "type": "AudioEnvelope",
-   "id": "sfx-thump-e",
-   "params": {
-    "attack": 0.002,
-    "hold": 0.03,
-    "release": 0.5,
-    "curve": "exponential"
-   }
+   "to": "sfx-2.trigger"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "rocks",
-   "from": "sfx-thump.audio",
-   "to": "sfx-thump-e.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "rocks",
-   "from": "sfx-thump-e.audio",
-   "to": "sfx-mix.inputs"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "rocks",
-   "type": "AudioSource",
-   "id": "sfx-clatter",
-   "params": {
-    "source": "noise",
-    "noiseColor": "white",
-    "durationTicks": 70,
-    "gain": 0.35
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "rocks",
-   "from": "hit.start",
-   "to": "sfx-clatter.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "rocks",
-   "type": "AudioFilter",
-   "id": "sfx-clatter-f",
-   "params": {
-    "mode": "bandpass",
-    "cutoffHz": 1800,
-    "cutoffEndHz": 900,
-    "q": 1.5
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "rocks",
-   "from": "sfx-clatter.audio",
-   "to": "sfx-clatter-f.audio"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "rocks",
-   "type": "AudioEnvelope",
-   "id": "sfx-clatter-e",
-   "params": {
-    "attack": 0.02,
-    "hold": 0.3,
-    "release": 0.8,
-    "curve": "exponential"
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "rocks",
-   "from": "sfx-clatter-f.audio",
-   "to": "sfx-clatter-e.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "rocks",
-   "from": "sfx-clatter-e.audio",
+   "from": "sfx-2.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -650,6 +514,13 @@
   }
  ],
  [
+  "vfx_render_audio",
+  {
+   "docId": "rocks"
+  },
+  true
+ ],
+ [
   "vfx_compile",
   {
    "docId": "rocks"
@@ -664,13 +535,6 @@
     22,
     70
    ]
-  },
-  true
- ],
- [
-  "vfx_render_audio",
-  {
-   "docId": "rocks"
   },
   true
  ]

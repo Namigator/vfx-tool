@@ -236,22 +236,6 @@
   }
  ],
  [
-  "vfx_sample_particles",
-  {
-   "docId": "fountain",
-   "tick": 150,
-   "show": 0
-  },
-  true
- ],
- [
-  "vfx_preview_url",
-  {
-   "docId": "fountain"
-  },
-  true
- ],
- [
   "vfx_add_node",
   {
    "docId": "fountain",
@@ -276,12 +260,15 @@
   {
    "docId": "fountain",
    "type": "AudioSource",
-   "id": "sfx-water",
+   "id": "sfx-1",
    "params": {
-    "source": "noise",
-    "noiseColor": "white",
+    "source": "sample",
+    "sound": "water-flow-1",
+    "offsetTicks": 0,
     "durationTicks": 180,
-    "gain": 0.7
+    "gain": 0.7,
+    "pitchRatio": 1,
+    "sampleLoop": true
    }
   }
  ],
@@ -290,29 +277,7 @@
   {
    "docId": "fountain",
    "from": "sched.start",
-   "to": "sfx-water.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "fountain",
-   "type": "AudioFilter",
-   "id": "sfx-water-f",
-   "params": {
-    "mode": "bandpass",
-    "cutoffHz": 2200,
-    "cutoffEndHz": 2000,
-    "q": 0.7
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "fountain",
-   "from": "sfx-water.audio",
-   "to": "sfx-water-f.audio"
+   "to": "sfx-1.trigger"
   }
  ],
  [
@@ -320,11 +285,11 @@
   {
    "docId": "fountain",
    "type": "AudioEnvelope",
-   "id": "sfx-water-e",
+   "id": "sfx-1-fade",
    "params": {
-    "attack": 0.15,
-    "hold": 2.5,
-    "release": 0.4,
+    "attack": 0.03,
+    "hold": 2.7199999999999998,
+    "release": 0.25,
     "curve": "linear"
    }
   }
@@ -333,89 +298,15 @@
   "vfx_connect",
   {
    "docId": "fountain",
-   "from": "sfx-water-f.audio",
-   "to": "sfx-water-e.audio"
+   "from": "sfx-1.audio",
+   "to": "sfx-1-fade.audio"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "fountain",
-   "from": "sfx-water-e.audio",
-   "to": "sfx-mix.inputs"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "fountain",
-   "type": "AudioSource",
-   "id": "sfx-gurgle",
-   "params": {
-    "source": "noise",
-    "noiseColor": "brown",
-    "durationTicks": 180,
-    "gain": 0.6
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "fountain",
-   "from": "sched.start",
-   "to": "sfx-gurgle.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "fountain",
-   "type": "AudioFilter",
-   "id": "sfx-gurgle-f",
-   "params": {
-    "mode": "lowpass",
-    "cutoffHz": 600,
-    "cutoffEndHz": 500,
-    "q": 2
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "fountain",
-   "from": "sfx-gurgle.audio",
-   "to": "sfx-gurgle-f.audio"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "fountain",
-   "type": "AudioEnvelope",
-   "id": "sfx-gurgle-e",
-   "params": {
-    "attack": 0.2,
-    "hold": 2.4,
-    "release": 0.4,
-    "curve": "linear"
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "fountain",
-   "from": "sfx-gurgle-f.audio",
-   "to": "sfx-gurgle-e.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "fountain",
-   "from": "sfx-gurgle-e.audio",
+   "from": "sfx-1-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -436,14 +327,30 @@
   }
  ],
  [
-  "vfx_compile",
+  "vfx_render_audio",
   {
    "docId": "fountain"
   },
   true
  ],
  [
-  "vfx_render_audio",
+  "vfx_sample_particles",
+  {
+   "docId": "fountain",
+   "tick": 150,
+   "show": 0
+  },
+  true
+ ],
+ [
+  "vfx_preview_url",
+  {
+   "docId": "fountain"
+  },
+  true
+ ],
+ [
+  "vfx_compile",
   {
    "docId": "fountain"
   },
