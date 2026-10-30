@@ -260,3 +260,17 @@ test('trails and untextured beams: soft cross-section texture, solid when not up
   assert.match(trailXml(none), /<Content name="Texture"><url><\/url><\/Content>/);
   assert.ok(!trailXml(none).includes(DEFAULT_TEXTURE));
 });
+
+test('held sheet cell ("sheet.png#N"): its own image once uploaded, else the sheet held at cell 0', () => {
+  const fx = handBuiltEffect();
+  fx.emitters[0] = { ...fx.emitters[0], textureKey: 'glow.png#3', flipbook: { layout: 'Grid2x2', mode: 'Loop', framerate: [0, 0], startRandom: false } };
+  fx.textures = [...new Set([...fx.textures.filter(k => k !== 'flame.png'), 'glow.png#3'])];
+  const layouts = (xml: string) => xml.split('name="FlipbookLayout">1<').length - 1;
+  const sheetOnly = writeRbxmx(fx, { assetIds: { 'glow.png': '111' }, playerSource: PLAYER });
+  assert.ok(sheetOnly.includes('<url>rbxassetid://111</url>'));
+  assert.ok(sheetOnly.includes('<NumberRange name="FlipbookFramerate">0 0'));
+  const cell = writeRbxmx(fx, { assetIds: { 'glow.png': '111', 'glow.png#3': '333' }, playerSource: PLAYER });
+  assert.ok(cell.includes('<url>rbxassetid://333</url>'));
+  assert.equal(layouts(sheetOnly), 1);
+  assert.equal(layouts(cell), 0);
+});

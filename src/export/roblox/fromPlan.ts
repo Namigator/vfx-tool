@@ -141,6 +141,15 @@ function flipbookOf(layer: ParticlePreviewLayer, meanLifeSeconds: number, report
   const layout = columns === rows && [2, 4, 8].includes(columns) ? (`Grid${columns}x${rows}` as RbxFlipbook['layout']) : undefined;
   if (!layout) { report.push({ level: 'approximated', item: layer.nodeId, message: `Sprite sheet ${file} is ${columns}×${rows}; Roblox flipbooks are 2×2, 4×4 or 8×8, so it plays as a single image.` }); return { textureKey: file }; }
   const frames = columns * rows;
+  // A variant sheet with a chosen cell holds that cell whatever the mode (as the editor and Unity do). Roblox cannot
+  // start a flipbook at a set cell: cell 0 is held at framerate 0; another cell is its own image ("sheet.png#N"), and
+  // until that is uploaded rbxmx.ts keeps the sheet held at cell 0 (it played the 4 cells as an animation: a glow ball
+  // instead of the ring, feature grid 2026-10-30).
+  // No chosen cell: one random cell per particle, held (never played as an animation).
+  if (sp.sheet.kind === 'variants') {
+    const held: RbxFlipbook = { layout, mode: 'Loop', framerate: [0, 0], startRandom: sp.variant < 0 };
+    return sp.variant <= 0 ? { textureKey: file, flipbook: held } : { textureKey: `${file}#${sp.variant}`, flipbook: held };
+  }
   // 'first' holds one cell: a random static cell when the sheet is a variant set (variant < 0), else cell 0.
   if (sp.mode === 'first') return { textureKey: file, flipbook: { layout, mode: 'Loop', framerate: [0, 0], startRandom: sp.sheet.kind === 'variants' || sp.variant < 0 } };
   if (sp.mode === 'overLife') { const fps = r3(frames / Math.max(0.05, meanLifeSeconds)); return { textureKey: file, flipbook: { layout, mode: 'OneShot', framerate: [fps, fps], startRandom: sp.randomStart } }; }

@@ -207,7 +207,10 @@ function withFallbacks(effect: RobloxEffect, ids: Record<string, string> = {}): 
   return {
     ids: all,
     effect: { ...effect, emitters: effect.emitters.map(e => {
-      const out = missing(e.textureKey) && e.flipbook ? { ...e, flipbook: undefined } : e;
+      // A held sheet cell ("sheet.png#N", fromPlan.ts flipbookOf) is a single image once uploaded; until then the sheet
+      // keeps its held flipbook (cell 0) instead of drawing every cell at once.
+      const cellKey = /#\d+$/.test(e.textureKey ?? '');
+      const out = e.flipbook && (cellKey ? !!ids[e.textureKey!] : missing(e.textureKey)) ? { ...e, flipbook: undefined } : e;
       return out.recolorTexture && (!greyId(out.recolorTexture.key) || missing(out.textureKey)) ? { ...out, recolorTexture: undefined } : out;
     }) },
   };
