@@ -51,4 +51,4 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [ ] BACKLOG Roblox: Arc bolt has fewer kinks than the editor (beam segment budget) · [SAW] rbx-arc-ticks2 · 2026-10-30
 - [ ] BACKLOG Roblox (grid): prop mesh exports as a plain block (custom MeshParts need uploaded assets) · [SAW] grid · 2026-10-30
 - [ ] NEEDS OWNER: upload star-ray and sim-fireball textures to Roblox (tools/roblox-upload-textures.mjs) - spin/flipbook rows show the default sprite · 2026-10-30
-- [ ] BROKEN Unreal screen flash: IR flashEmitters + depth-test-off flash material build and import (1 emitter), but the sprite draws as a 1 px dot - its sizeCm override is not applied (probe work/unreal/probe_flash_s200.png); next: check sprite size mode for SimpleSpriteBurst in ApplyEmitterOverrides · 2026-10-30
+- [x] Unreal screen flash: huge camera-facing sprite, depth-test-off flash material, opacity linearised (IR flashEmitters) · [SAW] grid screen-flash (mean 37 vs editor 33) · 2026-10-30

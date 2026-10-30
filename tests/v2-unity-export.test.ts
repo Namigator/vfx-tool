@@ -256,7 +256,7 @@ test('screen flashes reach Unity and Godot (they were dropped everywhere)', asyn
   assert.equal(fe.length, 1);
   assert.deepEqual(fe[0].bursts, [{ tick: 28, count: 1 }]);
   assert.equal(fe[0].lifetimeSecMax, 0.1);
-  assert.deepEqual(fe[0].opacityOverLife, [{ t: 0, v: 0.15 }, { t: 1, v: 0 }]);
+  assert.equal(fe[0].opacityOverLife[0].v, 0.02); assert.equal(fe[0].opacityOverLife.at(-1)!.v, 0);
   assert.ok(fe[0].sizeCmMin >= 10000);
   assert.ok(!r.value.report.some(x => x.level === 'dropped' && x.item === 'flashes'));
   const u = unityEffectFrom(r.value);

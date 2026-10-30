@@ -26,6 +26,7 @@ import {
 const r3 = (x: number) => Math.round(x * 1000) / 1000;
 const deg = (rad: number) => (rad * 180) / Math.PI;
 const linToSrgb = (l: number) => (l <= 0.0031308 ? l * 12.92 : 1.055 * l ** (1 / 2.4) - 0.055);
+const srgbToLinear = (s: number) => (s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4);
 const safeName = (id: string) => id.replace(/[^A-Za-z0-9_]/g, '_').slice(0, 60);
 /** Screen-flash sprite size (cm): covers the view from up to ~100 m away at a 90° field of view. */
 const FLASH_SIZE_CM = 20000;
@@ -424,8 +425,9 @@ export function unrealEffectFrom(doc: EffectDocumentV2): { ok: true; value: Unre
     name: unique(`${f.name}_flash${k ? k + 1 : ''}`), suggestedTemplate: 'SimpleSpriteBurst', position: [0, 0, 0], direction: [0, 0, 1], shape: { kind: 'point' },
     rateOverTime: [], bursts: [{ tick: f.tick, count: 1 }], lifetimeSecMin: r3(Math.max(1, f.durationTicks) / 60), lifetimeSecMax: r3(Math.max(1, f.durationTicks) / 60),
     speedCmSMin: 0, speedCmSMax: 0, acceleration: [0, 0, 0], drag: 0, sizeCmMin: FLASH_SIZE_CM, sizeCmMax: FLASH_SIZE_CM,
-    sizeOverLife: [{ t: 0, v: 1 }, { t: 1, v: 1 }], colorOverLife: [{ t: 0, r: f.color[0], g: f.color[1], b: f.color[2], a: 1 }, { t: 1, r: f.color[0], g: f.color[1], b: f.color[2], a: 1 }],
-    opacityOverLife: [{ t: 0, v: f.alpha }, { t: 1, v: 0 }], spinDegMin: 0, spinDegMax: 0, angularVelocityDegSMin: 0, angularVelocityDegSMax: 0,
+    sizeOverLife: [{ t: 0, v: FLASH_SIZE_CM }, { t: 1, v: FLASH_SIZE_CM }], colorOverLife: [{ t: 0, r: f.color[0], g: f.color[1], b: f.color[2], a: 1 }, { t: 1, r: f.color[0], g: f.color[1], b: f.color[2], a: 1 }],
+    // The editor fades the tint in sRGB; Unreal blends in linear, where alpha 0.1 of white already reads as 35 % grey.
+    opacityOverLife: [0, 0.25, 0.5, 0.75, 1].map(t => ({ t, v: r3(srgbToLinear(f.alpha * (1 - t))) })), spinDegMin: 0, spinDegMax: 0, angularVelocityDegSMin: 0, angularVelocityDegSMax: 0,
     alignment: 'camera', stretchRatio: 1, blend: 'translucent', loop: false,
   }));
   if (flashes.length) report.push({ level: 'approximated', item: 'flashes', message: 'Screen flashes become a huge camera-facing sprite drawn over everything (depth test off); it tints the view only while the Source is in front of the camera.' });
