@@ -267,7 +267,12 @@ void process() {
   } else if (e.textureFile) mat.push(`albedo_texture = ${res.extTexture(`${texRoot}/${e.textureFile}`)}`);
   // Godot reads particles_anim_* only on particle billboards: a flat quad (billboard off) drew the whole sheet, several
   // partial rings (feature grid sprite-flat, 2026-10-30). Its static cell is cut out through the UVs instead.
-  const flatCell = flat && fb ? (fb.variantFrame ?? (fb.fps === 0 ? fb.startFrame : undefined)) : undefined;
+  let flatCell = flat && fb ? (fb.variantFrame ?? (fb.fps === 0 ? fb.startFrame : undefined)) : undefined;
+  // A random cell per particle on a flat quad: one cell for all (UVs cannot vary per particle here; it drew the whole sheet).
+  if (flat && fb && (fb.columns > 1 || fb.rows > 1) && (flatCell === -1 || (flatCell === undefined && fb.fps === 0 && fb.randomStartFrame))) {
+    flatCell = 0;
+    report.push({ level: 'approximated', item: e.name, message: 'Flat quads with a random sheet cell all draw the first cell in Godot.' });
+  }
   if (fb && (fb.columns > 1 || fb.rows > 1) && flatCell !== undefined && flatCell >= 0)
     mat.push(`uv1_scale = Vector3(${n(1 / fb.columns)}, ${n(1 / fb.rows)}, 1)`, `uv1_offset = Vector3(${n((flatCell % fb.columns) / fb.columns)}, ${n(Math.floor(flatCell / fb.columns) / fb.rows)}, 0)`);
   else if (fb && (fb.columns > 1 || fb.rows > 1)) mat.push(`particles_anim_h_frames = ${fb.columns}`, `particles_anim_v_frames = ${fb.rows}`, `particles_anim_loop = ${fb.loop}`);

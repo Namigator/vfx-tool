@@ -42,7 +42,7 @@ features are tracked in STATE.md / docs/v2-plan/evidence/TRACEABILITY.md, not ye
 - [ ] BACKLOG Unity (grid): Attract flings particles both ways at t30. Known: attract off matches the editor; strength x0.25-x1 looks the same; gravityFocus 1 is worse (default 0 = centre). Next idea: read Unity's ForceField gravity falloff (endRange 100 m) · [SAW] grid attract + probes · 2026-10-30
 - [ ] BACKLOG Unity (grid): light a little yellower than the editor; flat rings a little dimmer · [SAW] grid · 2026-10-29
 - [x] Godot flat sprite cell (UV cut), positioned bursts, attract, collision, noise, drag, screen flash · [SAW] grid · 2026-10-30
-- [ ] BACKLOG Godot (grid): random-cell flat quads draw the whole sheet · [SAW] grid · 2026-10-30
+- [ ] Godot: random-cell flat quads now draw one cell (cell 0) instead of the whole sheet, reported as approximated · [PROXY] scene output checked, not rendered · 2026-10-30
 - [x] Unreal: shape primitives, point cone, static ribbons, sRGB ribbon colour, flat sprites, light scale, positioned bursts, mesh particles · [SAW] grid unreal · 2026-10-30
 - [x] Unreal mesh particles: random size, random orientation (axis-angle), ambient fill in the lit material · [SAW] work/compare/ue-mesh-zoom.png · 2026-10-30
 - [ ] BACKLOG Unreal (grid): mesh rocks paler (cream vs tan) than the editor · [SAW] ue-mesh-zoom · 2026-10-30
