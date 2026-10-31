@@ -29,7 +29,9 @@ export function CurveEditor({ id, value, yMin, yMax, durationSeconds, disabled, 
   const px = (x: number) => PAD + ((x - x0) / (x1 - x0 || 1)) * (W - 2 * PAD);
   const py = (y: number) => H - PAD - ((y - lo) / (hi - lo || 1)) * (H - 2 * PAD);
   const sorted = (c: CurveValue): CurveValue => ({ ...c, keys: [...c.keys].sort((a, b) => a.x - b.x) });
-  const commit = (c: CurveValue) => { const s = sorted(c); setDraft(s); if (!onCommit(s)) setDraft(value); };
+  // A refused edit bumps rev, which re-mounts the table rows so the fields show the kept value, not the refused text.
+  const [rev, setRev] = useState(0);
+  const commit = (c: CurveValue) => { const s = sorted(c); setDraft(s); if (!onCommit(s)) { setDraft(value); setRev(r => r + 1); } };
 
   const path = draft.keys.map((k, i) => {
     if (i === 0) return `M${px(k.x)},${py(k.y)}`;
@@ -62,7 +64,7 @@ export function CurveEditor({ id, value, yMin, yMax, durationSeconds, disabled, 
   };
   const setKey = (i: number, field: 'x' | 'y', text: string) => {
     const v = Number(text);
-    if (!Number.isFinite(v)) { setDraft(value); return; }
+    if (!Number.isFinite(v)) { setDraft(value); setRev(r => r + 1); return; }
     commit({ ...draft, keys: draft.keys.map((k, j) => (j === i ? { ...k, [field]: v } : k)) });
   };
 
@@ -89,7 +91,7 @@ export function CurveEditor({ id, value, yMin, yMax, durationSeconds, disabled, 
         <thead><tr><th>{draft.domain === 'effectSeconds' ? 'Time (s)' : 'Position'}</th><th>Value</th><th /></tr></thead>
         <tbody>
           {draft.keys.map((k, i) => (
-            <tr key={`${i}-${k.x}`}>
+            <tr key={`${rev}-${i}-${k.x}`}>
               <td><input type="number" step="any" defaultValue={k.x} disabled={disabled || i === 0 || i === draft.keys.length - 1} aria-label={`Key ${i + 1} position`}
                 onBlur={e => { if (Number(e.target.value) !== k.x) setKey(i, 'x', e.target.value); }} onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} /></td>
               <td><input type="number" step="any" defaultValue={k.y} disabled={disabled} aria-label={`Key ${i + 1} value`}
@@ -111,7 +113,8 @@ export function GradientEditor({ id, value, disabled, label, onCommit }: {
 }) {
   const [draft, setDraft] = useState<GradientValue>(value);
   useEffect(() => setDraft(value), [value]);
-  const commit = (g: GradientValue) => { const s = { ...g, stops: [...g.stops].sort((a, b) => a.position - b.position) }; setDraft(s); if (!onCommit(s)) setDraft(value); };
+  const [rev, setRev] = useState(0);
+  const commit = (g: GradientValue) => { const s = { ...g, stops: [...g.stops].sort((a, b) => a.position - b.position) }; setDraft(s); if (!onCommit(s)) { setDraft(value); setRev(r => r + 1); } };
   const setStop = (i: number, patch: Partial<{ position: number; color: ColorValue }>) => commit({ ...draft, stops: draft.stops.map((s, j) => (j === i ? { ...s, ...patch } : s)) });
   const addStop = () => {
     if (draft.stops.length >= MAX_STOPS) return;
@@ -127,7 +130,7 @@ export function GradientEditor({ id, value, disabled, label, onCommit }: {
         <thead><tr><th>Position</th><th>Colour</th><th>Alpha</th><th /></tr></thead>
         <tbody>
           {draft.stops.map((s, i) => (
-            <tr key={`${i}-${s.position}`}>
+            <tr key={`${rev}-${i}-${s.position}`}>
               <td><input id={i === 0 ? id : undefined} type="number" step="any" min={0} max={1} defaultValue={s.position} aria-label={`Stop ${i + 1} position`}
                 disabled={disabled || i === 0 || i === draft.stops.length - 1}
                 onBlur={e => { const v = Number(e.target.value); if (Number.isFinite(v) && v !== s.position) setStop(i, { position: v }); }} onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} /></td>

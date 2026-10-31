@@ -8,7 +8,7 @@ import { COMPONENT_TEMPLATES, componentPlacement, eventSources, getComponent, in
 import { groupSelection } from '../graph/groupSelection.ts';
 import { insertUserComponent, saveGroupAsComponent } from '../graph/userComponents.ts';
 import { removeUserComponent, saveUserComponent, useUserComponents } from './userComponentStore.ts';
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import {
   Handle, Panel, SelectionMode, Position, ReactFlow, ReactFlowProvider, useNodesInitialized, useReactFlow,
   type Connection, type Edge, type EdgeChange, type Node, type NodeChange, type NodeProps, type Viewport,
@@ -154,7 +154,9 @@ function NodeCard({ data, selected }: NodeProps<CardNode>) {
   );
 }
 
-const nodeTypes = { card: NodeCard };
+// A card re-renders only when its own data or selection changes (not for every other card's select/drag): with
+// 200 nodes this is most of a click's cost (tools/perf-graph200.mjs).
+const nodeTypes = { card: memo(NodeCard, (a, b) => a.data === b.data && a.selected === b.selected) };
 
 /** Hold time (ms) that turns a touch into a long-press (the platform convention is about 500 ms). */
 const LONG_PRESS_MS = 500;
@@ -226,11 +228,17 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
   const nodesInitialized = useNodesInitialized();
   // The camera is local preview state, never authored/undoable. It is seeded from the saved layout once per
   // document+graph and only changes through user pan/zoom or Fit; re-renders never reapply the saved value.
+  // React Flow owns the viewport (uncontrolled): a controlled viewport re-rendered this whole canvas on every pan
+  // frame, which with 200 nodes cost most of the pan response (tools/perf-graph200.mjs).
   const viewKey = `${doc.id}\u0000${graphId}\u0000${documentEpoch}`;
-  const [camera, setCamera] = useState<{ key: string; viewport: Viewport }>(() =>
-    ({ key: viewKey, viewport: doc.editor.graphs[graphId]?.viewport ?? DEFAULT_VIEWPORT }));
-  if (camera.key !== viewKey) setCamera({ key: viewKey, viewport: doc.editor.graphs[graphId]?.viewport ?? DEFAULT_VIEWPORT });
-  const onViewportChange = useCallback((viewport: Viewport) => setCamera(c => ({ key: c.key, viewport })), []);
+  const seedViewport = (): Viewport => doc.editor.graphs[graphId]?.viewport ?? DEFAULT_VIEWPORT;
+  const [initialViewport] = useState(seedViewport);
+  const seededKey = useRef(viewKey);
+  useEffect(() => {
+    if (seededKey.current === viewKey) return;
+    seededKey.current = viewKey;
+    void flow.setViewport(seedViewport());
+  }, [viewKey, flow]);
   // React Flow measures nodes but, in controlled mode, only reports sizes as 'dimensions' changes; its
   // useNodesInitialized reads `measured` from our node objects, so those sizes must be fed back here.
   const [measured, setMeasured] = useState<Record<string, { width: number; height: number }>>({});
@@ -290,29 +298,33 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
     onEdit(`${enabled ? 'Enable' : 'Disable'} ${nodeId}`, [{ op: 'set', path: ['graphs', gi, 'nodes', ni, 'enabled'], value: enabled }]);
   }, [graph, gi, onEdit]);
 
-  const nodes: CardNode[] = useMemo(() => {
-    if (!graph) return [];
+  // Card data (signatures, issues, ports) does not depend on selection, drag or measurement, so selecting or dragging
+  // keeps every card's data object and the memoized cards skip re-rendering.
+  const cardData = useMemo(() => {
+    const out = new Map<string, CardNode['data']>();
+    if (!graph) return out;
     const touched = new Set(graph.edges.flatMap(e => [e.source.nodeId, e.target.nodeId]));
-    return graph.nodes.map((n, i) => {
+    for (const n of graph.nodes) {
       const spec = specOf(n);
       const sig = spec ? resolveSignature(n, spec, { doc, graphId }) : null;
-      const position = dragPreview[n.id] ?? layout?.nodes[n.id] ?? { x: (i % 4) * 260, y: Math.floor(i / 4) * 220 };
-      return {
-        id: n.id, type: 'card' as const, position, selected: n.id === selectedNodeId || picked.has(n.id), measured: measured[n.id],
-        deletable: false,
-        data: {
-          node: n,
-          signature: sig?.ok ? sig.value : null,
-          signatureError: sig && !sig.ok ? sig.errors.map(d => d.message).join(' ') : spec ? null : `Unregistered node type ${n.type}@${n.definitionVersion}.`,
-          locked: isLocked(n), connected: touched.has(n.id),
-          issues: issuesByNode.get(n.id) ?? [], onToggleEnabled: toggleEnabled,
-          connectedInputs: new Set(graph.edges.filter(e => e.target.nodeId === n.id).map(e => e.target.port)),
-          showAdvanced: advancedNodes.has(n.id), onToggleAdvanced: toggleAdvanced,
-          solo: soloed?.has(n.id) ?? false, ...(onToggleSolo ? { onToggleSolo } : {}),
-        },
-      };
-    });
-  }, [graph, doc, graphId, layout, dragPreview, measured, selectedNodeId, picked, issuesByNode, toggleEnabled, advancedNodes, toggleAdvanced, soloed, onToggleSolo]);
+      out.set(n.id, {
+        node: n,
+        signature: sig?.ok ? sig.value : null,
+        signatureError: sig && !sig.ok ? sig.errors.map(d => d.message).join(' ') : spec ? null : `Unregistered node type ${n.type}@${n.definitionVersion}.`,
+        locked: isLocked(n), connected: touched.has(n.id),
+        issues: issuesByNode.get(n.id) ?? [], onToggleEnabled: toggleEnabled,
+        connectedInputs: new Set(graph.edges.filter(e => e.target.nodeId === n.id).map(e => e.target.port)),
+        showAdvanced: advancedNodes.has(n.id), onToggleAdvanced: toggleAdvanced,
+        solo: soloed?.has(n.id) ?? false, ...(onToggleSolo ? { onToggleSolo } : {}),
+      });
+    }
+    return out;
+  }, [graph, doc, graphId, issuesByNode, toggleEnabled, advancedNodes, toggleAdvanced, soloed, onToggleSolo]);
+
+  const nodes: CardNode[] = useMemo(() => (graph?.nodes ?? []).map((n, i) => ({
+    id: n.id, type: 'card' as const, position: dragPreview[n.id] ?? layout?.nodes[n.id] ?? { x: (i % 4) * 260, y: Math.floor(i / 4) * 220 },
+    selected: n.id === selectedNodeId || picked.has(n.id), measured: measured[n.id], deletable: false, data: cardData.get(n.id)!,
+  })), [graph, cardData, layout, dragPreview, measured, selectedNodeId, picked]);
 
   const edges: Edge[] = useMemo(() => (graph?.edges ?? []).map(e => ({
     id: e.id, source: e.source.nodeId, sourceHandle: e.source.port, target: e.target.nodeId, targetHandle: e.target.port,
@@ -681,9 +693,16 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
               : <strong key={t.id}>{t.label}</strong>)}
           </nav>
         )}
-      <div className="gc-flow" ref={wrapper} onPointerDownCapture={e => { clickBaseRef.current = selectionRef.current; onTouchPressStart(e); }}
+      <div className="gc-flow" ref={wrapper} tabIndex={-1} onPointerDownCapture={e => { clickBaseRef.current = selectionRef.current; onTouchPressStart(e); }}
         onPointerMoveCapture={onTouchPressMove} onPointerUpCapture={cancelPress} onPointerCancelCapture={cancelPress}
         onClickCapture={e => { if (pressFiredRef.current) { pressFiredRef.current = false; e.stopPropagation(); e.preventDefault(); } }}
+        onKeyDownCapture={e => {
+          // Escape is handled before React Flow sees it: on a focused node React Flow treats Escape as a selection key
+          // and selected that node when nothing was selected (found by tools/ui-tests/t29).
+          if (e.key !== 'Escape' || (e.target as HTMLElement).closest('input, textarea, select, [contenteditable="true"]')) return;
+          e.preventDefault(); e.stopPropagation(); setMenu(null);
+          if (selectedNodeId || picked.size || selectedEdges.size) { selectionRef.current = new Set(); onSelectNode(null); setPicked(new Set()); setSelectedEdges(new Set()); } else goUp();
+        }}
         onKeyDown={e => {
         // 12 keyboard equivalents: Delete/Backspace removes the selection, Enter opens a selected group.
         const t = e.target as HTMLElement;
@@ -695,7 +714,6 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
         else if (mod && k === 'g') { e.preventDefault(); if (groupIds.length) groupPicked(); }
         else if (mod && k === 'c' && groupIds.length) { e.preventDefault(); void copy(); }
         else if (mod && k === 'v') { e.preventDefault(); void paste(); }
-        else if (e.key === 'Escape') { e.preventDefault(); setMenu(null); if (selectedNodeId || picked.size || selectedEdges.size) { onSelectNode(null); setPicked(new Set()); setSelectedEdges(new Set()); } else goUp(); }
         else if (!mod && k === 'f') { e.preventDefault(); void flow.fitView({ padding: 0.2 }); }
       }}>
       <ReactFlow<CardNode, Edge>
@@ -703,7 +721,7 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
         onNodeDragStop={onNodeDragStop} onConnect={onConnect}
         onNodeDoubleClick={(_, n) => { const def = graph.nodes.find(x => x.id === n.id); if (def?.type === GROUP_NODE_TYPE) openGraph(def.params.graphId as string, `Open ${def.label}`); }}
-        onPaneClick={() => { setMenu(null); onSelectNode(null); setSelectedEdges(new Set()); setPicked(new Set()); }}
+        onPaneClick={() => { wrapper.current?.focus({ preventScroll: true }); setMenu(null); onSelectNode(null); setSelectedEdges(new Set()); setPicked(new Set()); }}
         onNodeClick={(e, n) => {
           // Ctrl/Cmd/Shift+click toggles the node in the selection. Decided from the click itself (React Flow only
           // sees a held key), and computed from the selection before the click, so it is right either way.
@@ -728,7 +746,7 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
           if (!port) return;
           setMenu({ x: pt.clientX - r.left, y: pt.clientY - r.top, flow: flow.screenToFlowPosition({ x: pt.clientX, y: pt.clientY }), from: { nodeId: st.fromNode.id, port: port.id, side, portType: port.type } });
         }}
-        viewport={camera.viewport} onViewportChange={onViewportChange} minZoom={0.1} maxZoom={4}
+        defaultViewport={initialViewport} minZoom={0.1} maxZoom={4}
       >
         {notice && (
           <Panel position="bottom-left" className={`gc-notice gc-notice-${notice.kind}`}>

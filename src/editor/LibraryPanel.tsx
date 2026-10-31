@@ -3,7 +3,7 @@
 // undoable edit, as one Group node); Assets lists the included sprite library and this effect's imported assets
 // (imported ones can be added with Add to effect). Thumbnails are marked pending until visually accepted (12).
 import { spriteUrl } from '../assets/spriteUrl.ts';
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { BUILTIN_SPRITES } from '../assets/builtinSprites.generated.ts';
 import { assetComponent } from '../graph/assetComponent.ts';
 import { COMPONENT_TEMPLATES, insertComponent, type ComponentTemplate } from '../graph/components.ts';
@@ -37,7 +37,8 @@ const docPatches = (d: EffectDocumentV2): Patch[] => [
   { op: 'set', path: ['editor', 'graphs'], value: d.editor.graphs },
 ];
 
-export function LibraryPanel({ document: doc, graphId, onEdit, onOpenNew, onClose }: Props) {
+// Memoized: it depends on the document, not on the selection, so clicking nodes does not re-render 52 preset rows.
+export const LibraryPanel = memo(function LibraryPanel({ document: doc, graphId, onEdit, onOpenNew, onClose }: Props) {
   const [tab, setTab] = useState<Tab>('presets');
   const [query, setQuery] = useState('');
   const [note, setNote] = useState('');
@@ -103,4 +104,4 @@ export function LibraryPanel({ document: doc, graphId, onEdit, onOpenNew, onClos
       <style>{`.lib-root{width:100%;flex:1;box-sizing:border-box;display:flex;flex-direction:column;gap:6px;padding:8px;border-right:1px solid #222834;min-height:0;overflow:hidden;font-size:14px}.lib-head{display:flex;justify-content:space-between;align-items:center}.lib-tabs{display:flex;flex-wrap:wrap;gap:4px}.pv2 .lib-tab{padding:4px 8px;min-width:0}.pv2 .lib-on{background:#2a3550;border-color:#7fb4ff}.lib-search{min-height:36px;background:#10131a;color:#d6dae3;border:1px solid #333b4a;border-radius:4px;padding:0 8px;font-size:14px}.lib-list{list-style:none;margin:0;padding:0;overflow:auto;display:flex;flex-direction:column;gap:6px}.lib-row{display:flex;gap:6px;align-items:center;border:1px solid #222834;border-radius:4px;padding:6px}.lib-text{display:flex;flex-direction:column;min-width:0;flex:1}.lib-text span{font-size:12px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.lib-actions{flex:none;display:flex;gap:4px}.lib-thumb{width:40px;height:40px;flex:none;background:#000;object-fit:cover}`}</style>
     </aside>
   );
-}
+});

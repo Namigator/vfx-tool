@@ -18,17 +18,20 @@ Full text: docs/v2-plan/17-ACCEPTANCE.md (gitignored copy). Passing = every line
 
 ## Gates A-G: the plan's acceptance (docs/v2-plan/17-ACCEPTANCE.md, T01-T40 in evidence/TRACEABILITY.md), added 2026-10-30
 Order agreed with the owner: finish A-G (sound included), then Gate P. Open lines only; ticked T-items live in TRACEABILITY.
-- [ ] E / T25 Sound round 2: owner notes applied to all presets (soft magic charges, clean whooshes, thunder/low booms, electric only as short sparks, multi-gust wind, smoke silent); 43 CC0 Freesound sounds added (208 total, tools/freesound.mjs) · [RAN] every mix renders, no long bright mix, 793 tests pass · owner re-listens on https://claude.ai/artifact/JpbZZML5m8NtssA9x1tquv (round 1: 2 keep, 17 fix, 5 replace) · 2026-10-31
+- [ ] BACKLOG E / T25 Sound round 2 (owner 2026-10-31: some better, round 3 later): owner notes applied to all presets (soft magic charges, clean whooshes, thunder/low booms, electric only as short sparks, multi-gust wind, smoke silent); 43 CC0 Freesound sounds added (208 total, tools/freesound.mjs) · [RAN] every mix renders, no long bright mix, 793 tests pass · owner re-listens on https://claude.ai/artifact/JpbZZML5m8NtssA9x1tquv (round 1: 2 keep, 17 fix, 5 replace) · 2026-10-31
 - [x] T18 WAV decoding (PCM 8-32 / float, any rate, header + length limits) · [RAN] tests/v2-audio-samples.test.ts · 2026-10-30
-- [ ] T28 Curve/gradient editing: automated DOM test (mouse + keyboard) · checked by hand only
-- [ ] T29 Graph shortcuts / outline / focus navigation: automated UI test · checked by hand only
-- [ ] T17 Dissolve: a pixel assertion (render-smoke draws it, nothing asserts) · PROXY
-- [ ] T37 Focused-window fps and the 200-node graph benchmark · open
+- [x] T28 Curve/gradient editing: automated DOM test with trusted mouse + keyboard (keys typed/added/dragged/deleted, interpolation, invalid points refused, gradient stops, knob-driven field + Unbind) · [RAN] node tools/ui-test.mjs t28 15/15; fixed: a refused value stayed in the field · 2026-10-31
+- [x] T29 Graph shortcuts / outline / focus navigation: automated UI test (select, Ctrl+D, Delete, Ctrl+Z, Escape, F, middle-drag pan, Outline select + Solo, Issues link selects + focuses, Reduced effects, Enter/Escape into groups) · [RAN] node tools/ui-test.mjs 35/35 total; fixed: Escape selected the focused node, clicking empty graph lost keyboard focus · 2026-10-31
+- [x] T17 Dissolve pixel assertion: same frame before dissolveStart, mostly gone late, orange edge band mid-burn · [RAN] node tools/dissolve-pixels.mjs + [SAW] work/mcp/frames/burn-t50.png · 2026-10-31
+- [ ] T37 Benchmarks run 2026-10-31: 200-node graph (tools/perf-graph200.mjs, production build) FAILS 50 ms p95: select ~150, drag ~155, pan ~55 ms (was 950/960/210 in dev before fixes); focused-window fps 5/8 heavy effects at 16.7/16.8 ms, water-broad + arcane-lance p95 34-50 ms also headless · evidence docs/v2-plan/evidence/perf-graph200-2026-10-31.md, perf-fps-focused-2026-10-31.md
 - [ ] T11 Local simulation space · rejected by design (named error); owner to confirm it stays out
 - [ ] T35 Fire/water/shadow variants · needs owner approval (defaults approved)
 - [ ] T39 A new mixed effect built by the owner without code · needs owner
 - [ ] T40 A-05 model build test run 6 · needs owner's visual verdict
 - [ ] T14 Background simulation worker · parked by measurement (every component < 1 ms/tick); owner to confirm
+
+- [ ] BACKLOG T37: any UI state change re-renders all of PreviewV2 (a side-tab switch ~120 ms on a 207-node doc); split selection/tab state from the viewport/transport so clicks stay under 50 ms · [RAN] work/perf/floor.js · 2026-10-31
+- [ ] BACKLOG T37: water-broad and arcane-lance playback p95 34-50 ms (short hitches; headless too) · [RAN] perf-fps-headless-3-2026-10-31.md · 2026-10-31
 
 ## Gate P: publishing, added 2026-10-30 (after A-G)
 - [ ] P-01 License chosen for the tool and its exports (and third-party asset licenses listed: assets/sprites provenance)

@@ -1043,6 +1043,19 @@ export default function PreviewV2() {
     { label: 'Export Godot', title: 'Download a Godot 4 scene (.tscn with GPUParticles3D emitters and an autoplaying AnimationPlayer) plus textures, README and a report, as a .zip', onClick: () => void downloadGodot() },
   ];
 
+  // Selecting a node re-renders this component; the parts that do not depend on the selection are memoized so a
+  // click on a 200-node graph stays responsive (tools/perf-graph200.mjs): the timeline's event markers and the library.
+  const markTitle = useMemo(() => timeline.markers.map(m => `${m.kind} ${m.nodeId} @ ${m.tick}`).join('\n'), [timeline.markers]);
+  const markSpans = useMemo(() => frame.durationTicks > 0
+    ? timeline.markers.map((m, i) => <span key={i} className={`pv2-mark pv2-mark-${m.kind}`} style={{ left: `${(100 * m.tick) / frame.durationTicks}%` }} />)
+    : null, [timeline.markers, frame.durationTicks]);
+  const libraryOpenNewRef = useRef<(t: string, label: string) => void>(() => {});
+  libraryOpenNewRef.current = (t, label) => { setShelfPick(''); replace(t, label); if (phone) setMtab('preview'); };
+  const libraryCloseRef = useRef<() => void>(() => {});
+  libraryCloseRef.current = () => (phone ? setMtab('preview') : setLibraryOpen(false));
+  const onLibraryOpenNew = useCallback((t: string, label: string) => libraryOpenNewRef.current(t, label), []);
+  const onLibraryClose = useCallback(() => libraryCloseRef.current(), []);
+
   return (
     <div className={`pv2${phone ? ` pv2-phone pv2-mtab-${mtab}` : ''}`}>
       <header className="pv2-topbar">
@@ -1202,7 +1215,7 @@ export default function PreviewV2() {
           storageKey="library-rest" direction="row" defaultSize={260} min={170} otherMin={420}
           collapsed={libraryOpen && layout === 'split' ? false : 'first'} onToggleCollapse={() => setLibraryOpen(o => !o)} ariaLabel="Library panel"
           phoneShow={phone ? (mtab === 'library' ? 'first' : 'second') : undefined}
-          first={<LibraryPanel document={doc} graphId={graphId} onEdit={onEdit} onOpenNew={(t, label) => { setShelfPick(''); replace(t, label); if (phone) setMtab('preview'); }} onClose={() => (phone ? setMtab('preview') : setLibraryOpen(false))} />}
+          first={<LibraryPanel document={doc} graphId={graphId} onEdit={onEdit} onOpenNew={onLibraryOpenNew} onClose={onLibraryClose} />}
           second={
             <SplitPane
               storageKey="center-right" direction="row" defaultSize={360} min={240} otherMin={320} sizedPane="second"
@@ -1272,9 +1285,9 @@ export default function PreviewV2() {
                               aria-label="Tick" onChange={e => { vp?.seek(Number(e.target.value)); stopSound(''); }}
                             />
                             {/* Event markers and the selected part's active window (12); decorative, the list is in the title. */}
-                            <div className="pv2-marks" aria-hidden="true" title={timeline.markers.map(m => `${m.kind} ${m.nodeId} @ ${m.tick}`).join('\n')}>
+                            <div className="pv2-marks" aria-hidden="true" title={markTitle}>
                               {(() => { const w = selectedNodeId ? timeline.windows.get(selectedNodeId) ?? scheduleWindow(selectedNode) : undefined; return w && frame.durationTicks > 0 ? <span className="pv2-window" style={{ left: `${(100 * w[0]) / frame.durationTicks}%`, width: `${(100 * Math.max(1, w[1] - w[0])) / frame.durationTicks}%` }} /> : null; })()}
-                              {frame.durationTicks > 0 && timeline.markers.map((m, i) => <span key={i} className={`pv2-mark pv2-mark-${m.kind}`} style={{ left: `${(100 * m.tick) / frame.durationTicks}%` }} />)}
+                              {markSpans}
                             </div>
                           </div>
                           {/* Not a live region: per-frame tick changes must not be announced. Errors use role="alert". */}

@@ -1,6 +1,6 @@
 // Page-side probe for tools/perf-fps.mjs (evaluated by cdp-eval): plays the loaded effect once and returns the
 // requestAnimationFrame interval statistics.
-const B = t => [...document.querySelectorAll('button')].find(b => b.textContent.trim() === t);
+const B = t => [...document.querySelectorAll('button')].find(b => b.textContent.trim() === t || b.getAttribute('aria-label') === t);
 const gaps = []; let last = 0, run = true;
 const f = n => { if (last) gaps.push(n - last); last = n; if (run) requestAnimationFrame(f); };
 // Optional (?big=1 on the URL): Expand preview + Reference quality, to measure at a large canvas.

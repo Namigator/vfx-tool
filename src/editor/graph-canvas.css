@@ -51,6 +51,7 @@
 .gc-menu-title { font-size: 12px; color: #8a92a3; padding: 4px 8px; }
 /* Touch: a held finger opens our menu, not the browser's text/image callout; menu rows are finger-sized. */
 .gc-flow { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.gc-flow:focus:not(:focus-visible) { outline: none; }
 @media (pointer: coarse) {
   .gc-menu { min-width: 220px; max-height: 70vh; }
   .gc-menu button, .pv2 .gc-menu button { min-height: 44px; font-size: 15px; padding: 8px 12px; justify-content: flex-start; background: none; border: 0; border-radius: 4px; }
