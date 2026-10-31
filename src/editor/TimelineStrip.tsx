@@ -3,7 +3,7 @@
 // bar = its Start at knob; drag the right-edge handle = its length knob (Burn time, Travel time) when it has one;
 // a click without dragging selects the component's Group node; clicking an empty part of a lane seeks there.
 // Each drag commits one undoable edit on release through the same path as the Controls panel.
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { memo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import type { EffectDocumentV2 } from '../model/types.ts';
 import type { Patch as HistoryPatch } from './history.ts';
 import type { TimelineLane } from '../render/timeline.ts';
@@ -17,7 +17,7 @@ type KeyDrag = { prefix: string; from: number; to: number; x0: number; width: nu
 
 const pct = (t: number, d: number) => `${(100 * Math.max(0, Math.min(d, t))) / Math.max(1, d)}%`;
 
-export function TimelineStrip({ document: doc, lanes, tick, durationTicks, selectedNodeId, onEdit, onSelect, onSeek }: Props) {
+function TimelineStripImpl({ document: doc, lanes, tick, durationTicks, selectedNodeId, onEdit, onSelect, onSeek }: Props) {
   const [drag, setDrag] = useState<Drag | null>(null);
   const dragRef = useRef<Drag | null>(null);
   const [keyDrag, setKeyDrag] = useState<KeyDrag | null>(null);
@@ -148,3 +148,6 @@ export function TimelineStrip({ document: doc, lanes, tick, durationTicks, selec
     </div>
   );
 }
+
+// Memoized: it re-renders when its document, tick or (deferred) selection changes, not on every app render.
+export const TimelineStrip = memo(TimelineStripImpl);

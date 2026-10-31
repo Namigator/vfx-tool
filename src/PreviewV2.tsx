@@ -5,7 +5,7 @@
 import { spriteUrl } from './assets/spriteUrl.ts';
 import { soloMask } from './graph/solo.ts';
 import { pathLabelsFor } from './graph/pathLabels.ts';
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import type { Diagnostic, EffectDocumentV2 } from './model/types.ts';
 import { validateDocument } from './model/document.ts';
 import { createRegistry } from './graph/registry.ts';
@@ -743,11 +743,15 @@ export default function PreviewV2() {
     if (g.id !== canvasGraphId(cur)) onEdit(`Show ${d.nodeId}`, [{ op: 'set', path: ['editor', 'openedGraphId'], value: g.id }]);
     setSelectedNodeId(d.nodeId);
     const param = /\.params\.([A-Za-z0-9_]+)/.exec(d.fieldPath ?? '')?.[1];
-    setTimeout(() => {
-      const el = (param && document.getElementById(`ni-${d.nodeId}-${param}`)) || document.querySelector<HTMLElement>('.ni-row input, .ni-row select');
-      el?.scrollIntoView({ block: 'center' });
-      (el as HTMLElement | null)?.focus();
-    }, 60);
+    // The inspector renders from the deferred selection, so wait (up to ~1 s) for this node's fields to exist.
+    const t0 = performance.now();
+    const focusField = () => {
+      const el = (param && document.getElementById(`ni-${d.nodeId}-${param}`)) || document.querySelector<HTMLElement>(`input[id^="ni-${CSS.escape(d.nodeId!)}-"], select[id^="ni-${CSS.escape(d.nodeId!)}-"]`);
+      if (!el) { if (performance.now() - t0 < 1000) requestAnimationFrame(focusField); return; }
+      el.scrollIntoView({ block: 'center' });
+      el.focus();
+    };
+    requestAnimationFrame(focusField);
   }, [onEdit]);
 
   const undo = useCallback(() => {
@@ -932,6 +936,10 @@ export default function PreviewV2() {
   const graphId = canvasGraphId(doc);
   const graph = doc.graphs.find(g => g.id === graphId);
   const selectedNode = selectedNodeId ? graph?.nodes.find(n => n.id === selectedNodeId) : undefined;
+  // The panels that follow the selection (inspector, outline, timeline lane) render from a deferred copy: a click
+  // paints the graph selection at once and they catch up in the next render (15: 200-node input response).
+  const panelNodeId = useDeferredValue(selectedNodeId);
+  const panelNode = panelNodeId ? graph?.nodes.find(n => n.id === panelNodeId) : undefined;
   const lanes = useMemo(() => timelineLanes(doc, timeline.windows), [doc, timeline]);
 
   // Imported texture bytes: register object URLs for document assets from the local asset store.
@@ -1055,6 +1063,14 @@ export default function PreviewV2() {
   libraryCloseRef.current = () => (phone ? setMtab('preview') : setLibraryOpen(false));
   const onLibraryOpenNew = useCallback((t: string, label: string) => libraryOpenNewRef.current(t, label), []);
   const onLibraryClose = useCallback(() => libraryCloseRef.current(), []);
+  const timelineSeekRef = useRef<(t: number) => void>(() => {});
+  timelineSeekRef.current = t => { vp?.seek(Math.max(0, Math.min(frame.durationTicks, t))); stopSound(''); };
+  const onTimelineSeek = useCallback((t: number) => timelineSeekRef.current(t), []);
+  const onTimelineSelect = useCallback((nodeId: string) => {
+    const cur = historyRef.current!.snapshot();
+    if (canvasGraphId(cur) !== cur.rootGraphId) onEdit('Show the effect', [{ op: 'set', path: ['editor', 'openedGraphId'], value: cur.rootGraphId }]);
+    setSelectedNodeId(nodeId);
+  }, [onEdit]);
 
   return (
     <div className={`pv2${phone ? ` pv2-phone pv2-mtab-${mtab}` : ''}`}>
@@ -1302,9 +1318,8 @@ export default function PreviewV2() {
                           <button type="button" className="pv2-icon-btn" aria-pressed={looping} disabled={disabled} title="Replay from tick 0 when the effect ends" onClick={() => { const l = !looping; setLooping(l); vp?.setLoop(l); }}>↻</button>
                           <button type="button" className="pv2-icon-btn" aria-pressed={syncSound} disabled={!audio} title="Play the effect's sound in sync with Play/Restart" onClick={() => { const s = !syncSound; setSyncSound(s); if (!s) stopSound(''); }}>{syncSound ? '🔊' : '🔇'}</button>
                         </div>
-                        <TimelineStrip document={doc} lanes={lanes} tick={frame.tick} durationTicks={frame.durationTicks} selectedNodeId={selectedNodeId}
-                          onEdit={onEdit} onSeek={t => { vp?.seek(Math.max(0, Math.min(frame.durationTicks, t))); stopSound(''); }}
-                          onSelect={nodeId => { const cur = historyRef.current!.snapshot(); if (canvasGraphId(cur) !== cur.rootGraphId) onEdit('Show the effect', [{ op: 'set', path: ['editor', 'openedGraphId'], value: cur.rootGraphId }]); setSelectedNodeId(nodeId); }} />
+                        <TimelineStrip document={doc} lanes={lanes} tick={frame.tick} durationTicks={frame.durationTicks} selectedNodeId={panelNodeId}
+                          onEdit={onEdit} onSeek={onTimelineSeek} onSelect={onTimelineSelect} />
                       </div>
                     }
                     second={
@@ -1351,8 +1366,8 @@ export default function PreviewV2() {
                     )}
                     {rightTab === 'node' && (
                       <section aria-label="Selected node">
-                        {selectedNode ? (
-                          <NodeInspector document={doc} graphId={graphId} nodeId={selectedNode.id} onEdit={onEdit} onSelectNode={setSelectedNodeId} />
+                        {panelNode ? (
+                          <NodeInspector document={doc} graphId={graphId} nodeId={panelNode.id} onEdit={onEdit} onSelectNode={setSelectedNodeId} />
                         ) : (
                           <p className="pv2-muted">No node selected. Select a node in the graph.</p>
                         )}
@@ -1360,7 +1375,7 @@ export default function PreviewV2() {
                     )}
                     {rightTab === 'outline' && (
                       <section aria-label="Outline">
-                        <OutlinePanel document={doc} graphId={graphId} selectedNodeId={selectedNode ? selectedNode.id : undefined} onSelectNode={setSelectedNodeId} onEdit={onEdit}
+                        <OutlinePanel document={doc} graphId={graphId} selectedNodeId={panelNode ? panelNode.id : undefined} onSelectNode={setSelectedNodeId} onEdit={onEdit}
                           soloed={solo} onToggleSolo={toggleSolo} onClearSolo={() => setSolo(new Set())} />
                       </section>
                     )}

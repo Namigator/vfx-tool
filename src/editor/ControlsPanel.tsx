@@ -2,7 +2,7 @@
 // grouped by section. Numbers get a slider + number field; colours a colour picker; vectors three number fields;
 // booleans a checkbox; choices a dropdown. A drag previews locally and commits one
 // undoable edit on release (only if it moved: focusing a slider never commits its step-snapped value); the field commits on Enter/blur. Every control lists what it drives.
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { memo, useEffect, useRef, useState, type ReactElement } from 'react';
 import type { EffectDocumentV2, PublicControl } from '../model/types.ts';
 import type { Patch as HistoryPatch } from './history.ts';
 import type { FollowerTravel } from '../graph/toParticles.ts';
@@ -189,7 +189,8 @@ function ComponentAnchorRows({ doc, groupNodeId, onEdit }: { doc: Props['documen
   ))}</>;
 }
 
-export function ControlsPanel({ document: doc, onEdit, followers = [], tick = 0 }: Props) {
+// Memoized: selecting nodes or switching tabs does not change its props, so it skips re-rendering every knob row.
+export const ControlsPanel = memo(function ControlsPanel({ document: doc, onEdit, followers = [], tick = 0 }: Props) {
   const all = doc.controls.map((c, i) => [c, i] as const);
   const sections = [...new Set(all.map(([c]) => c.section))];
   const custom = doc.anchors.filter(a => a.id !== 'source' && a.id !== 'target');
@@ -270,4 +271,4 @@ export function ControlsPanel({ document: doc, onEdit, followers = [], tick = 0 
       <style>{`.cp-root{display:flex;flex-direction:column;gap:10px}.cp-section{border:1px solid #2a3140;border-radius:6px;padding:6px 8px 8px;margin:0}.cp-section legend{font-size:13px;font-weight:600;padding:0 4px}.cp-row{display:grid;grid-template-columns:minmax(64px,.9fr) minmax(36px,2fr) 56px auto;gap:6px;align-items:center;font-size:13px;margin-top:4px}.cp-row>*{min-width:0}.cp-row input[type=range]{width:100%;min-width:0;margin:0}.cp-num{width:56px}.cp-row-value{grid-template-columns:minmax(64px,.9fr) minmax(0,3fr)}.cp-vec{display:flex;gap:4px}.cp-travel{font-size:12px;opacity:.85;margin-top:4px}.cp-unit{font-size:11px;opacity:.7}.cp-row-hue{grid-template-columns:minmax(64px,.9fr) minmax(36px,2fr) 56px auto}.pv2 .cp-root button.cp-reset{margin-left:4px;font-size:11px;min-height:24px;padding:0 6px}.cp-keys{display:inline-flex;gap:2px;margin-left:3px;vertical-align:middle}.cp-unit{white-space:nowrap}.pv2 .cp-root button.cp-key,.pv2 .cp-root button.cp-key-clear{padding:0;font-size:12px;line-height:1;height:24px;width:24px;min-width:24px;min-height:24px;border-radius:3px}.cp-key-on{color:#f0b35a}.cp-key-anim{color:#8fb8ff}`}</style>
     </div>
   );
-}
+});

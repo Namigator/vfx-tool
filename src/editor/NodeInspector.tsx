@@ -5,7 +5,7 @@
 // written; resetting deletes the stored override so the registry default applies again.
 import { nodeDoc, paramDoc } from '../graph/nodeDocs.ts';
 import { COMPONENT_TEMPLATES } from '../graph/components.ts';
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactElement } from 'react';
+import { memo, useEffect, useRef, useState, type KeyboardEvent, type ReactElement } from 'react';
 import type { EffectDocumentV2, NodeDefinition, NodeSpec, ParameterSpec, ParameterValue, Unit, ColorValue, CurveValue, GradientValue } from '../model/types.ts';
 import { MAX_LABEL_CODE_POINTS } from '../model/types.ts';
 import { validateParameterValue } from '../model/values.ts';
@@ -52,7 +52,7 @@ function rangeText(spec: ParameterSpec): string {
   return parts.join(' ');
 }
 
-export default function NodeInspector({ document: doc, graphId, nodeId, onEdit, controlOverrides, onSelectNode }: NodeInspectorProps) {
+function NodeInspector({ document: doc, graphId, nodeId, onEdit, controlOverrides, onSelectNode }: NodeInspectorProps) {
   const gi = doc.graphs.findIndex(g => g.id === graphId);
   const graph = doc.graphs[gi];
   const ni = graph ? graph.nodes.findIndex(n => n.id === nodeId) : -1;
@@ -426,3 +426,7 @@ function ColorDraft({ value, onCommit, onError, ...rest }: DraftBase & {
 function plainDoc(text: string): string {
   return text.replace(/`([^`]*)`/g, '$1').replace(/\*\*([^*]*)\*\*/g, '$1');
 }
+
+// Memoized: the click that selects a node re-renders the app first with the old inspector, then this one in a
+// deferred render (PreviewV2 useDeferredValue), so the selection paints without waiting for it.
+export default memo(NodeInspector);

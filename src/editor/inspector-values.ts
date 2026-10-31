@@ -15,6 +15,20 @@ export type InspectorValue =
   /** Control-driven but resolution failed; never substitute the fallback. */
   | { kind: 'unavailable'; controlLabel: string; reason: string };
 
+// resolveParameters resolves the whole document; documents are immutable per edit, so one result per document
+// (and override map) serves every node the user selects (a 200-node graph, tools/perf-graph200.mjs).
+const resolved = new WeakMap<EffectDocumentV2, { registry: ReadonlyMap<string, NodeSpec>; overrides?: ReadonlyMap<string, ParameterValue>; res: ReturnType<typeof resolveParameters> }[]>();
+function resolveCached(doc: EffectDocumentV2, registry: ReadonlyMap<string, NodeSpec>, overrides?: ReadonlyMap<string, ParameterValue>) {
+  const list = resolved.get(doc) ?? [];
+  const hit = list.find(e => e.registry === registry && e.overrides === overrides);
+  if (hit) return hit.res;
+  const res = resolveParameters(doc, registry, overrides ? { controlOverrides: overrides } : {});
+  list.push({ registry, overrides, res });
+  if (list.length > 4) list.shift();
+  resolved.set(doc, list);
+  return res;
+}
+
 export function inspectorValues(
   doc: EffectDocumentV2,
   registry: ReadonlyMap<string, NodeSpec>,
@@ -44,7 +58,7 @@ export function inspectorValues(
   }
 
   const needResolve = [...bound.keys()].some(p => !connected.has(p));
-  const res = needResolve ? resolveParameters(doc, registry, controlOverrides ? { controlOverrides } : {}) : undefined;
+  const res = needResolve ? resolveCached(doc, registry, controlOverrides) : undefined;
   let reason = '';
   if (res && !res.ok) {
     const d = res.errors.find(e => e.nodeId === node.id) ?? res.errors[0];

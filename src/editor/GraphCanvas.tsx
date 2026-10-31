@@ -474,6 +474,13 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
     setNotice(selected.some(isLocked) ? { kind: 'info', lines: ['Protected nodes were kept.'] } : null);
   }, [doc, graph, graphId, selectedEdges, onEdit, onSelectNode]);
   const addable = useMemo(() => [...registry.values()].filter(s => s.disabledBehavior !== 'protected' && s.type !== GROUP_NODE_TYPE), []);
+  // The Add node / Add component lists never change; built once instead of on every click (tools/perf-graph200.mjs).
+  // Grouped by role, each entry carries its description (the same text as the inspector and the AI guide).
+  const nodeTypeOptions = useMemo(() => NODE_CATEGORIES.map(([cat], ci) => {
+    const list = addable.filter(s => (NODE_INFO[s.type]?.[0] ?? NODE_CATEGORIES.length - 1) === ci);
+    return list.length ? <optgroup key={cat} label={cat}>{list.map(s => <option key={registryKey(s.type, s.definitionVersion)} value={registryKey(s.type, s.definitionVersion)} title={docText(s.type)}>{s.type}</option>)}</optgroup> : null;
+  }), [addable]);
+  const builtInOptions = useMemo(() => <optgroup label="Built-in">{COMPONENT_TEMPLATES.map(c => <option key={c.id} value={c.id} title={c.description}>{c.label}</option>)}</optgroup>, []);
 
   const addNode = useCallback(() => {
     const spec = addable.find(s => registryKey(s.type, s.definitionVersion) === addType);
@@ -645,11 +652,7 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
             <span>Add node</span>
             <select value={addType} onChange={e => setAddType(e.target.value)} title={addType ? docText(addable.find(s => registryKey(s.type, s.definitionVersion) === addType)?.type ?? '') : 'Pick a node type; hover an entry to read what it does'}>
               <option value="">Choose…</option>
-              {/* Grouped by role, each entry carries its description (the same text as the inspector and the AI guide). */}
-              {NODE_CATEGORIES.map(([cat], ci) => {
-                const list = addable.filter(s => (NODE_INFO[s.type]?.[0] ?? NODE_CATEGORIES.length - 1) === ci);
-                return list.length ? <optgroup key={cat} label={cat}>{list.map(s => <option key={registryKey(s.type, s.definitionVersion)} value={registryKey(s.type, s.definitionVersion)} title={docText(s.type)}>{s.type}</option>)}</optgroup> : null;
-              })}
+              {nodeTypeOptions}
               <option value="" disabled>Group (not available yet)</option>
             </select>
           </label>
@@ -660,7 +663,7 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
             <select value={componentId} onChange={e => setComponentId(e.target.value)} disabled={graphId !== doc.rootGraphId}>
               <option value="">Choose…</option>
               {userComponents.length > 0 && <optgroup label="My components">{userComponents.map(c => <option key={c.id} value={`user:${c.id}`}>{c.name}</option>)}</optgroup>}
-              <optgroup label="Built-in">{COMPONENT_TEMPLATES.map(c => <option key={c.id} value={c.id} title={c.description}>{c.label}</option>)}</optgroup>
+              {builtInOptions}
             </select>
           </label>
           {componentId && !componentId.startsWith('user:') && graphId === doc.rootGraphId && eventSources(doc, graphId).length > 0 && (

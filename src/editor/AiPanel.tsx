@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import type { EffectDocumentV2 } from '../model/types.ts';
 import type { Patch } from './history.ts';
 import type { AiConnection, AiRequest, AiReply } from '../ai/types.ts';
@@ -34,7 +34,7 @@ const SECRETS_KEY = 'vfx-ai-secrets';
 type Secrets = { remember?: boolean; token?: string; keys?: Partial<Record<Saved['provider'] & string, string>> };
 function loadSecrets(): Secrets { try { return JSON.parse(localStorage.getItem(SECRETS_KEY) ?? '{}') as Secrets; } catch { return {}; } }
 
-export default function AiPanel({ document: doc, onEdit }: Props) {
+function AiPanel({ document: doc, onEdit }: Props) {
   // Connection settings are remembered in this browser; the API key and pairing token too unless "Remember" is off.
   const saved = useRef(loadSaved()).current, secrets = useRef(loadSecrets()).current;
   const [provider, setProvider] = useState<'openai' | 'anthropic' | 'gemini' | 'custom'>(saved.provider ?? 'openai');
@@ -144,3 +144,6 @@ export default function AiPanel({ document: doc, onEdit }: Props) {
     <style>{`.ai-panel{display:flex;flex-direction:column;gap:10px;font-size:13px}.ai-panel p{margin:4px 0;color:#aab5c8;overflow-wrap:anywhere}.ai-panel fieldset{border:0;padding:0;display:flex;flex-direction:column;gap:8px;min-width:0}.ai-panel label{display:flex;flex-direction:column;gap:4px}.ai-panel input:not([type=checkbox]),.ai-panel select,.ai-panel textarea{box-sizing:border-box;width:100%;min-width:0;background:#171c26;color:#e4eaf4;border:1px solid #3a4558;border-radius:4px;padding:7px;font:inherit}.ai-panel .ai-check{flex-direction:row;align-items:center}.ai-panel summary{cursor:pointer;margin-bottom:8px}.ai-actions{display:flex;gap:6px;flex-wrap:wrap}.ai-frames{display:flex;flex-direction:column;gap:8px}.ai-frames figure{margin:0}.ai-frames img{max-width:100%;height:auto;display:block;border-radius:4px}.ai-frames figcaption{font-size:11px;color:#aab5c8}`}</style>
   </div>;
 }
+
+// Memoized: it is always mounted (hidden when another tab is open), so it must not re-render on every selection.
+export default memo(AiPanel);
