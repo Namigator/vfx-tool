@@ -594,12 +594,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "fire-cast-1",
+     "sound": "fire-whoosh-2",
      "offsetTicks": 0,
-     "durationTicks": 50,
+     "durationTicks": 100,
      "gain": 0.9,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.3866666666666667,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -701,6 +711,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -953,41 +967,6 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
       ]
      }
     }
-   },
-   {
-    "id": "sfx-mix",
-    "type": "AudioMix",
-    "params": {
-     "masterGain": 0.9
-    }
-   },
-   {
-    "id": "sfx-out",
-    "type": "AudioOutput",
-    "params": {}
-   },
-   {
-    "id": "sfx-1",
-    "type": "AudioSource",
-    "params": {
-     "source": "sample",
-     "sound": "wind-2",
-     "offsetTicks": 0,
-     "durationTicks": 240,
-     "gain": 0.25,
-     "pitchRatio": 0.8,
-     "sampleLoop": true
-    }
-   },
-   {
-    "id": "sfx-1-fade",
-    "type": "AudioEnvelope",
-    "params": {
-     "attack": 0.03,
-     "hold": 3.7199999999999998,
-     "release": 0.25,
-     "curve": "linear"
-    }
    }
   ],
   "edges": [
@@ -1026,26 +1005,6 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    [
     "bb.visual",
     "node-output.visual"
-   ],
-   [
-    "sched.start",
-    "sfx-1.trigger"
-   ],
-   [
-    "sfx-1.audio",
-    "sfx-1-fade.audio"
-   ],
-   [
-    "sfx-1-fade.audio",
-    "sfx-mix.inputs"
-   ],
-   [
-    "sfx-mix.audio",
-    "sfx-out.audio"
-   ],
-   [
-    "sfx-out.audio",
-    "node-output.audio"
    ]
   ],
   "knobs": [
@@ -1241,7 +1200,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "water-flow-1",
+     "sound": "fountain-1",
      "offsetTicks": 0,
      "durationTicks": 180,
      "gain": 0.7,
@@ -1548,10 +1507,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "water-flow-2",
+     "sound": "rain-2",
      "offsetTicks": 0,
      "durationTicks": 200,
-     "gain": 0.5,
+     "gain": 0.6,
      "pitchRatio": 1,
      "sampleLoop": true
     }
@@ -1572,10 +1531,36 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "source": "sample",
      "sound": "splash-10",
-     "offsetTicks": 30,
-     "durationTicks": 30,
-     "gain": 0.4,
+     "offsetTicks": 24,
+     "durationTicks": 20,
+     "gain": 0.3,
      "pitchRatio": 1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "splash-9",
+     "offsetTicks": 70,
+     "durationTicks": 20,
+     "gain": 0.25,
+     "pitchRatio": 1.1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-4",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "splash-10",
+     "offsetTicks": 128,
+     "durationTicks": 20,
+     "gain": 0.25,
+     "pitchRatio": 0.9,
      "sampleLoop": false
     }
    }
@@ -1659,6 +1644,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-2.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "sched.start",
+    "sfx-3.trigger"
+   ],
+   [
+    "sfx-3.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "sched.start",
+    "sfx-4.trigger"
+   ],
+   [
+    "sfx-4.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -1967,8 +1968,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "source": "sample",
      "sound": "boom-4",
      "offsetTicks": 0,
-     "durationTicks": 70,
-     "gain": 1,
+     "durationTicks": 50,
+     "gain": 0.9,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -1978,10 +1979,33 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
+     "sound": "magic-impact-1",
+     "offsetTicks": 0,
+     "durationTicks": 150,
+     "gain": 0.8,
+     "pitchRatio": 1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-2-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 2.2199999999999998,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-3",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
      "sound": "hit-1",
      "offsetTicks": 0,
-     "durationTicks": 30,
-     "gain": 0.8,
+     "durationTicks": 20,
+     "gain": 0.5,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -2082,6 +2106,18 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-2.audio",
+    "sfx-2-fade.audio"
+   ],
+   [
+    "sfx-2-fade.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "hit.start",
+    "sfx-3.trigger"
+   ],
+   [
+    "sfx-3.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -2225,12 +2261,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "spark-2",
+     "sound": "hum-1",
      "offsetTicks": 0,
-     "durationTicks": 20,
-     "gain": 0.8,
-     "pitchRatio": 1,
-     "sampleLoop": false
+     "durationTicks": 70,
+     "gain": 0.7,
+     "pitchRatio": 1.1,
+     "sampleLoop": true
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.03,
+     "hold": 0.8866666666666667,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -2238,22 +2284,51 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "electric-loop-2",
+     "sound": "spark-2",
      "offsetTicks": 0,
-     "durationTicks": 70,
-     "gain": 0.7,
+     "durationTicks": 8,
+     "gain": 0.6,
      "pitchRatio": 1,
-     "sampleLoop": true
+     "sampleLoop": false
     }
    },
    {
-    "id": "sfx-2-fade",
-    "type": "AudioEnvelope",
+    "id": "sfx-3",
+    "type": "AudioSource",
     "params": {
-     "attack": 0.03,
-     "hold": 0.8866666666666667,
-     "release": 0.25,
-     "curve": "linear"
+     "source": "sample",
+     "sound": "spark-1",
+     "offsetTicks": 17,
+     "durationTicks": 14,
+     "gain": 0.4,
+     "pitchRatio": 1.1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-4",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "spark-2",
+     "offsetTicks": 33,
+     "durationTicks": 8,
+     "gain": 0.4,
+     "pitchRatio": 0.9,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-5",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "spark-1",
+     "offsetTicks": 52,
+     "durationTicks": 14,
+     "gain": 0.35,
+     "pitchRatio": 1,
+     "sampleLoop": false
     }
    }
   ],
@@ -2308,6 +2383,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -2316,10 +2395,30 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-2.audio",
-    "sfx-2-fade.audio"
+    "sfx-mix.inputs"
    ],
    [
-    "sfx-2-fade.audio",
+    "on.start",
+    "sfx-3.trigger"
+   ],
+   [
+    "sfx-3.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "on.start",
+    "sfx-4.trigger"
+   ],
+   [
+    "sfx-4.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "on.start",
+    "sfx-5.trigger"
+   ],
+   [
+    "sfx-5.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -2608,10 +2707,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "rock-break-2",
+     "sound": "rock-break-1",
      "offsetTicks": 0,
-     "durationTicks": 60,
-     "gain": 1,
+     "durationTicks": 30,
+     "gain": 0.8,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -2624,9 +2723,32 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sound": "boom-8",
      "offsetTicks": 0,
      "durationTicks": 60,
-     "gain": 0.8,
+     "gain": 0.9,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "thunder-5",
+     "offsetTicks": 0,
+     "durationTicks": 140,
+     "gain": 0.35,
+     "pitchRatio": 0.7,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 2.0533333333333337,
+     "release": 0.25,
+     "curve": "linear"
     }
    }
   ],
@@ -2713,6 +2835,18 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-2.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "hit.start",
+    "sfx-3.trigger"
+   ],
+   [
+    "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -2971,12 +3105,45 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "charge-2",
+     "sound": "magic-charge-1",
      "offsetTicks": 0,
-     "durationTicks": 70,
+     "durationTicks": 80,
      "gain": 0.9,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.0533333333333332,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-2",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "magic-charge-2",
+     "offsetTicks": 0,
+     "durationTicks": 75,
+     "gain": 0.35,
+     "pitchRatio": 1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-2-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.97,
+     "release": 0.25,
+     "curve": "linear"
     }
    }
   ],
@@ -3059,6 +3226,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "gather.start",
+    "sfx-2.trigger"
+   ],
+   [
+    "sfx-2.audio",
+    "sfx-2-fade.audio"
+   ],
+   [
+    "sfx-2-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -3271,20 +3454,197 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "wind-1",
+     "sound": "gust-4",
      "offsetTicks": 0,
-     "durationTicks": 220,
-     "gain": 0.8,
-     "pitchRatio": 0.9,
-     "sampleLoop": true
+     "durationTicks": 150,
+     "gain": 0.65,
+     "pitchRatio": 1,
+     "sampleLoop": false
     }
    },
    {
-    "id": "sfx-1-fade",
+    "id": "sfx-2",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "gust-1",
+     "offsetTicks": 14,
+     "durationTicks": 150,
+     "gain": 0.55,
+     "pitchRatio": 1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-2-fade",
     "type": "AudioEnvelope",
     "params": {
-     "attack": 0.03,
-     "hold": 3.3866666666666667,
+     "attack": 0.005,
+     "hold": 2.2199999999999998,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-3",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "gust-3",
+     "offsetTicks": 40,
+     "durationTicks": 150,
+     "gain": 0.65,
+     "pitchRatio": 0.85,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 2.2199999999999998,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-4",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "gust-6",
+     "offsetTicks": 59,
+     "durationTicks": 150,
+     "gain": 0.75,
+     "pitchRatio": 0.92,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-5",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "gust-3",
+     "offsetTicks": 90,
+     "durationTicks": 150,
+     "gain": 0.45,
+     "pitchRatio": 1.08,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-5-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 2.2199999999999998,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-6",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "gust-4",
+     "offsetTicks": 112,
+     "durationTicks": 148,
+     "gain": 0.45,
+     "pitchRatio": 0.8,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-7",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "gust-6",
+     "offsetTicks": 129,
+     "durationTicks": 131,
+     "gain": 0.55,
+     "pitchRatio": 0.8,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-7-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.903333333333333,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-8",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "gust-5",
+     "offsetTicks": 143,
+     "durationTicks": 117,
+     "gain": 0.45,
+     "pitchRatio": 0.85,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-8-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.67,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-9",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "gust-1",
+     "offsetTicks": 169,
+     "durationTicks": 91,
+     "gain": 0.75,
+     "pitchRatio": 1.08,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-9-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.2366666666666666,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-10",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "gust-5",
+     "offsetTicks": 188,
+     "durationTicks": 72,
+     "gain": 0.65,
+     "pitchRatio": 0.92,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-10-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.9199999999999999,
      "release": 0.25,
      "curve": "linear"
     }
@@ -3337,10 +3697,106 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
-    "sfx-1-fade.audio"
+    "sfx-mix.inputs"
    ],
    [
-    "sfx-1-fade.audio",
+    "spin.start",
+    "sfx-2.trigger"
+   ],
+   [
+    "sfx-2.audio",
+    "sfx-2-fade.audio"
+   ],
+   [
+    "sfx-2-fade.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "spin.start",
+    "sfx-3.trigger"
+   ],
+   [
+    "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "spin.start",
+    "sfx-4.trigger"
+   ],
+   [
+    "sfx-4.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "spin.start",
+    "sfx-5.trigger"
+   ],
+   [
+    "sfx-5.audio",
+    "sfx-5-fade.audio"
+   ],
+   [
+    "sfx-5-fade.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "spin.start",
+    "sfx-6.trigger"
+   ],
+   [
+    "sfx-6.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "spin.start",
+    "sfx-7.trigger"
+   ],
+   [
+    "sfx-7.audio",
+    "sfx-7-fade.audio"
+   ],
+   [
+    "sfx-7-fade.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "spin.start",
+    "sfx-8.trigger"
+   ],
+   [
+    "sfx-8.audio",
+    "sfx-8-fade.audio"
+   ],
+   [
+    "sfx-8-fade.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "spin.start",
+    "sfx-9.trigger"
+   ],
+   [
+    "sfx-9.audio",
+    "sfx-9-fade.audio"
+   ],
+   [
+    "sfx-9-fade.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "spin.start",
+    "sfx-10.trigger"
+   ],
+   [
+    "sfx-10.audio",
+    "sfx-10-fade.audio"
+   ],
+   [
+    "sfx-10-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -3682,12 +4138,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "ice-2",
+     "sound": "magic-whoosh-3",
      "offsetTicks": 0,
-     "durationTicks": 60,
-     "gain": 1,
+     "durationTicks": 50,
+     "gain": 0.8,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.5533333333333333,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -3695,10 +4161,23 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
+     "sound": "ice-2",
+     "offsetTicks": 0,
+     "durationTicks": 40,
+     "gain": 0.6,
+     "pitchRatio": 1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
      "sound": "glass-break-6",
      "offsetTicks": 2,
-     "durationTicks": 50,
-     "gain": 0.8,
+     "durationTicks": 44,
+     "gain": 0.5,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -3795,6 +4274,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -3803,6 +4286,14 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-2.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "burst.start",
+    "sfx-3.trigger"
+   ],
+   [
+    "sfx-3.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -4209,8 +4700,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "source": "sample",
      "sound": "slime-5",
      "offsetTicks": 20,
-     "durationTicks": 40,
-     "gain": 0.5,
+     "durationTicks": 25,
+     "gain": 0.4,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -4649,6 +5140,16 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "pitchRatio": 1,
      "sampleLoop": false
     }
+   },
+   {
+    "id": "sfx-2-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.72,
+     "release": 0.25,
+     "curve": "linear"
+    }
    }
   ],
   "edges": [
@@ -4742,6 +5243,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-2.audio",
+    "sfx-2-fade.audio"
+   ],
+   [
+    "sfx-2-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -5059,10 +5564,20 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "source": "sample",
      "sound": "heal-2",
      "offsetTicks": 0,
-     "durationTicks": 70,
+     "durationTicks": 100,
      "gain": 0.8,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.3866666666666667,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -5073,7 +5588,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sound": "bell-4",
      "offsetTicks": 10,
      "durationTicks": 80,
-     "gain": 0.7,
+     "gain": 0.6,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -5158,6 +5673,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -5378,12 +5897,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "magic-2",
+     "sound": "magic-whoosh-2",
      "offsetTicks": 0,
-     "durationTicks": 60,
-     "gain": 0.6,
+     "durationTicks": 80,
+     "gain": 0.7,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.0533333333333332,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -5391,11 +5920,11 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "electric-loop-1",
+     "sound": "hum-1",
      "offsetTicks": 0,
      "durationTicks": 100,
-     "gain": 0.5,
-     "pitchRatio": 0.9,
+     "gain": 0.6,
+     "pitchRatio": 1.25,
      "sampleLoop": true
     }
    },
@@ -5405,6 +5934,29 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "params": {
      "attack": 0.03,
      "hold": 1.3866666666666667,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-3",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "magic-3",
+     "offsetTicks": 6,
+     "durationTicks": 90,
+     "gain": 0.35,
+     "pitchRatio": 1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.22,
      "release": 0.25,
      "curve": "linear"
     }
@@ -5505,6 +6057,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -5517,6 +6073,18 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-2-fade.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "on.start",
+    "sfx-3.trigger"
+   ],
+   [
+    "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -5735,12 +6303,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "charge-3",
+     "sound": "magic-charge-1",
      "offsetTicks": 0,
-     "durationTicks": 60,
+     "durationTicks": 90,
      "gain": 0.8,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.22,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -5748,19 +6326,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "electric-loop-1",
+     "sound": "magic-charge-3",
      "offsetTicks": 10,
      "durationTicks": 80,
-     "gain": 0.4,
+     "gain": 0.3,
      "pitchRatio": 1,
-     "sampleLoop": true
+     "sampleLoop": false
     }
    },
    {
     "id": "sfx-2-fade",
     "type": "AudioEnvelope",
     "params": {
-     "attack": 0.03,
+     "attack": 0.005,
      "hold": 1.0533333333333332,
      "release": 0.25,
      "curve": "linear"
@@ -5850,6 +6428,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -6097,7 +6679,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "source": "sample",
      "sound": "spark-1",
      "offsetTicks": 0,
-     "durationTicks": 20,
+     "durationTicks": 14,
      "gain": 0.8,
      "pitchRatio": 1,
      "sampleLoop": false
@@ -6108,10 +6690,23 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "firework-2",
-     "offsetTicks": 0,
-     "durationTicks": 60,
+     "sound": "spark-2",
+     "offsetTicks": 22,
+     "durationTicks": 8,
      "gain": 0.5,
+     "pitchRatio": 1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "rock-fall-2",
+     "offsetTicks": 30,
+     "durationTicks": 20,
+     "gain": 0.4,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -6204,6 +6799,14 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-2.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "hit.start",
+    "sfx-3.trigger"
+   ],
+   [
+    "sfx-3.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -7251,12 +7854,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "charge-1",
+     "sound": "prestrike-1",
      "offsetTicks": 0,
-     "durationTicks": 24,
-     "gain": 0.6,
+     "durationTicks": 32,
+     "gain": 0.8,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.2533333333333333,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -7264,10 +7877,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "zap-1",
+     "sound": "thunder-1",
      "offsetTicks": 0,
-     "durationTicks": 50,
-     "gain": 1,
+     "durationTicks": 300,
+     "gain": 1.2,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -7277,35 +7890,12 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "boom-1",
-     "offsetTicks": 2,
-     "durationTicks": 90,
-     "gain": 1,
+     "sound": "spark-1",
+     "offsetTicks": 0,
+     "durationTicks": 14,
+     "gain": 0.6,
      "pitchRatio": 1,
      "sampleLoop": false
-    }
-   },
-   {
-    "id": "sfx-4",
-    "type": "AudioSource",
-    "params": {
-     "source": "sample",
-     "sound": "electric-loop-1",
-     "offsetTicks": 0,
-     "durationTicks": 30,
-     "gain": 0.4,
-     "pitchRatio": 1,
-     "sampleLoop": true
-    }
-   },
-   {
-    "id": "sfx-4-fade",
-    "type": "AudioEnvelope",
-    "params": {
-     "attack": 0.03,
-     "hold": 0.21999999999999997,
-     "release": 0.25,
-     "curve": "linear"
     }
    }
   ],
@@ -7824,6 +8414,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -7840,18 +8434,6 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-3.audio",
-    "sfx-mix.inputs"
-   ],
-   [
-    "impact.start",
-    "sfx-4.trigger"
-   ],
-   [
-    "sfx-4.audio",
-    "sfx-4-fade.audio"
-   ],
-   [
-    "sfx-4-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -8938,12 +9520,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "charge-1",
+     "sound": "prestrike-1",
      "offsetTicks": 0,
-     "durationTicks": 24,
-     "gain": 0.5,
-     "pitchRatio": 1.2,
+     "durationTicks": 32,
+     "gain": 0.6,
+     "pitchRatio": 1.1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.2533333333333333,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -8951,11 +9543,11 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "spark-1",
+     "sound": "thunder-5",
      "offsetTicks": 0,
-     "durationTicks": 26,
-     "gain": 1,
-     "pitchRatio": 1,
+     "durationTicks": 240,
+     "gain": 0.9,
+     "pitchRatio": 1.1,
      "sampleLoop": false
     }
    },
@@ -8964,11 +9556,11 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "zap-2",
+     "sound": "spark-1",
      "offsetTicks": 0,
-     "durationTicks": 40,
-     "gain": 0.8,
-     "pitchRatio": 1,
+     "durationTicks": 14,
+     "gain": 0.6,
+     "pitchRatio": 1.1,
      "sampleLoop": false
     }
    },
@@ -8977,22 +9569,12 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "electric-loop-2",
-     "offsetTicks": 0,
-     "durationTicks": 30,
+     "sound": "spark-2",
+     "offsetTicks": 7,
+     "durationTicks": 8,
      "gain": 0.4,
      "pitchRatio": 1,
-     "sampleLoop": true
-    }
-   },
-   {
-    "id": "sfx-4-fade",
-    "type": "AudioEnvelope",
-    "params": {
-     "attack": 0.03,
-     "hold": 0.21999999999999997,
-     "release": 0.25,
-     "curve": "linear"
+     "sampleLoop": false
     }
    }
   ],
@@ -9511,6 +10093,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -9530,15 +10116,11 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "sfx-mix.inputs"
    ],
    [
-    "impact.start",
+    "strike.start",
     "sfx-4.trigger"
    ],
    [
     "sfx-4.audio",
-    "sfx-4-fade.audio"
-   ],
-   [
-    "sfx-4-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -10625,12 +11207,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "charge-1",
+     "sound": "prestrike-1",
      "offsetTicks": 0,
-     "durationTicks": 33,
-     "gain": 0.7,
-     "pitchRatio": 0.85,
+     "durationTicks": 40,
+     "gain": 0.9,
+     "pitchRatio": 0.9,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.3866666666666666,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -10638,10 +11230,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "zap-1",
+     "sound": "thunder-2",
      "offsetTicks": 0,
-     "durationTicks": 50,
-     "gain": 1,
+     "durationTicks": 300,
+     "gain": 1.3,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -10651,12 +11243,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "boom-6",
-     "offsetTicks": 2,
-     "durationTicks": 110,
-     "gain": 1.2,
-     "pitchRatio": 1,
+     "sound": "thunder-3",
+     "offsetTicks": 6,
+     "durationTicks": 300,
+     "gain": 0.5,
+     "pitchRatio": 0.8,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 4.72,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -10664,22 +11266,12 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "electric-loop-1",
+     "sound": "spark-1",
      "offsetTicks": 0,
-     "durationTicks": 36,
-     "gain": 0.5,
-     "pitchRatio": 1,
-     "sampleLoop": true
-    }
-   },
-   {
-    "id": "sfx-4-fade",
-    "type": "AudioEnvelope",
-    "params": {
-     "attack": 0.03,
-     "hold": 0.31999999999999995,
-     "release": 0.25,
-     "curve": "linear"
+     "durationTicks": 14,
+     "gain": 0.6,
+     "pitchRatio": 0.9,
+     "sampleLoop": false
     }
    }
   ],
@@ -11198,6 +11790,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -11214,18 +11810,18 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
     "sfx-mix.inputs"
    ],
    [
-    "impact.start",
+    "strike.start",
     "sfx-4.trigger"
    ],
    [
     "sfx-4.audio",
-    "sfx-4-fade.audio"
-   ],
-   [
-    "sfx-4-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -12250,12 +12846,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "fire-cast-5",
+     "sound": "fire-whoosh-4",
      "offsetTicks": 0,
-     "durationTicks": 50,
-     "gain": 1,
+     "durationTicks": 90,
+     "gain": 0.9,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.22,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -12529,6 +13135,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -13586,16 +14196,39 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "fire-cast-6",
+     "sound": "fire-ignite-1",
      "offsetTicks": 0,
-     "durationTicks": 50,
-     "gain": 0.8,
+     "durationTicks": 14,
+     "gain": 0.9,
      "pitchRatio": 1,
      "sampleLoop": false
     }
    },
    {
     "id": "sfx-2",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "fire-whoosh-3",
+     "offsetTicks": 0,
+     "durationTicks": 70,
+     "gain": 0.5,
+     "pitchRatio": 1.1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-2-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.8866666666666667,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-3",
     "type": "AudioSource",
     "params": {
      "source": "sample",
@@ -13608,7 +14241,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     }
    },
    {
-    "id": "sfx-2-fade",
+    "id": "sfx-3-fade",
     "type": "AudioEnvelope",
     "params": {
      "attack": 0.03,
@@ -13868,7 +14501,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "sfx-mix.inputs"
    ],
    [
-    "emit.start",
+    "ignite.start",
     "sfx-2.trigger"
    ],
    [
@@ -13877,6 +14510,18 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-2-fade.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "emit.start",
+    "sfx-3.trigger"
+   ],
+   [
+    "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -14922,10 +15567,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "fire-cast-4",
+     "sound": "fire-ignite-2",
      "offsetTicks": 0,
-     "durationTicks": 70,
-     "gain": 1,
+     "durationTicks": 34,
+     "gain": 0.7,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -14935,20 +15580,43 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "fire-crackle-1",
-     "offsetTicks": 6,
-     "durationTicks": 36,
-     "gain": 0.5,
+     "sound": "fire-blast-2",
+     "offsetTicks": 0,
+     "durationTicks": 130,
+     "gain": 1,
      "pitchRatio": 1,
-     "sampleLoop": true
+     "sampleLoop": false
     }
    },
    {
     "id": "sfx-2-fade",
     "type": "AudioEnvelope",
     "params": {
+     "attack": 0.005,
+     "hold": 1.8866666666666665,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-3",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "fire-crackle-1",
+     "offsetTicks": 6,
+     "durationTicks": 40,
+     "gain": 0.4,
+     "pitchRatio": 1,
+     "sampleLoop": true
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
      "attack": 0.03,
-     "hold": 0.31999999999999995,
+     "hold": 0.3866666666666666,
      "release": 0.25,
      "curve": "linear"
     }
@@ -15204,7 +15872,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "sfx-mix.inputs"
    ],
    [
-    "emit.start",
+    "ignite.start",
     "sfx-2.trigger"
    ],
    [
@@ -15213,6 +15881,18 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-2-fade.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "emit.start",
+    "sfx-3.trigger"
+   ],
+   [
+    "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -16087,12 +16767,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "splash-1",
+     "sound": "splash-big-2",
      "offsetTicks": 0,
-     "durationTicks": 60,
-     "gain": 0.9,
+     "durationTicks": 100,
+     "gain": 0.8,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.3866666666666667,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -16100,7 +16790,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "water-flow-1",
+     "sound": "river-1",
      "offsetTicks": 0,
      "durationTicks": 90,
      "gain": 0.7,
@@ -16462,6 +17152,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -17342,11 +18036,11 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "water-flow-3",
+     "sound": "river-1",
      "offsetTicks": 0,
      "durationTicks": 90,
-     "gain": 0.6,
-     "pitchRatio": 1.1,
+     "gain": 0.55,
+     "pitchRatio": 1.12,
      "sampleLoop": true
     }
    },
@@ -18571,12 +19265,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "splash-5",
+     "sound": "splash-big-1",
      "offsetTicks": 0,
-     "durationTicks": 70,
-     "gain": 1,
+     "durationTicks": 110,
+     "gain": 0.9,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.5533333333333332,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -18584,7 +19288,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "water-flow-2",
+     "sound": "river-1",
      "offsetTicks": 0,
      "durationTicks": 90,
      "gain": 0.8,
@@ -18946,6 +19650,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -19825,6 +20533,16 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "pitchRatio": 1,
      "sampleLoop": false
     }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.72,
+     "release": 0.25,
+     "curve": "linear"
+    }
    }
   ],
   "edges": [
@@ -20154,6 +20872,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -20776,6 +21498,16 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     }
    },
    {
+    "id": "sfx-2-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.3866666666666666,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
     "id": "sfx-3",
     "type": "AudioSource",
     "params": {
@@ -20786,6 +21518,16 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "gain": 0.5,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.72,
+     "release": 0.25,
+     "curve": "linear"
     }
    }
   ],
@@ -20992,6 +21734,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-2.audio",
+    "sfx-2-fade.audio"
+   ],
+   [
+    "sfx-2-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -21000,6 +21746,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -21785,6 +22535,16 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "pitchRatio": 1,
      "sampleLoop": false
     }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.72,
+     "release": 0.25,
+     "curve": "linear"
+    }
    }
   ],
   "edges": [
@@ -22086,6 +22846,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -22939,12 +23703,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "freeze-1",
+     "sound": "magic-charge-1",
      "offsetTicks": 0,
      "durationTicks": 40,
-     "gain": 0.7,
-     "pitchRatio": 1,
+     "gain": 0.6,
+     "pitchRatio": 1.1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.3866666666666666,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -22952,12 +23726,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "ice-1",
+     "sound": "magic-womp-1",
      "offsetTicks": 0,
-     "durationTicks": 60,
-     "gain": 1,
+     "durationTicks": 100,
+     "gain": 0.9,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-2-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.3866666666666667,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -22965,12 +23749,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "glass-break-1",
-     "offsetTicks": 2,
-     "durationTicks": 50,
-     "gain": 0.8,
+     "sound": "ice-1",
+     "offsetTicks": 0,
+     "durationTicks": 60,
+     "gain": 0.6,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.72,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -22978,10 +23772,23 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
+     "sound": "glass-break-1",
+     "offsetTicks": 2,
+     "durationTicks": 30,
+     "gain": 0.6,
+     "pitchRatio": 1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-5",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
      "sound": "glass-break-3",
      "offsetTicks": 0,
-     "durationTicks": 50,
-     "gain": 0.8,
+     "durationTicks": 40,
+     "gain": 0.5,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -23278,6 +24085,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -23286,6 +24097,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-2.audio",
+    "sfx-2-fade.audio"
+   ],
+   [
+    "sfx-2-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -23294,14 +24109,26 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
     "sfx-mix.inputs"
    ],
    [
-    "fracture.start",
+    "erupt.start",
     "sfx-4.trigger"
    ],
    [
     "sfx-4.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "fracture.start",
+    "sfx-5.trigger"
+   ],
+   [
+    "sfx-5.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -24181,12 +25008,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "freeze-1",
+     "sound": "magic-charge-1",
      "offsetTicks": 0,
      "durationTicks": 40,
-     "gain": 0.7,
-     "pitchRatio": 1,
+     "gain": 0.6,
+     "pitchRatio": 1.1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.3866666666666666,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -24194,12 +25031,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "ice-2",
+     "sound": "magic-whoosh-1",
      "offsetTicks": 0,
-     "durationTicks": 60,
-     "gain": 1,
+     "durationTicks": 90,
+     "gain": 0.8,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-2-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.22,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -24207,10 +25054,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "glass-break-2",
-     "offsetTicks": 2,
-     "durationTicks": 50,
-     "gain": 0.8,
+     "sound": "ice-2",
+     "offsetTicks": 0,
+     "durationTicks": 40,
+     "gain": 0.6,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -24220,10 +25067,23 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
+     "sound": "glass-break-2",
+     "offsetTicks": 2,
+     "durationTicks": 25,
+     "gain": 0.5,
+     "pitchRatio": 1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-5",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
      "sound": "glass-break-4",
      "offsetTicks": 0,
-     "durationTicks": 50,
-     "gain": 0.8,
+     "durationTicks": 40,
+     "gain": 0.5,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -24520,6 +25380,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -24528,6 +25392,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-2.audio",
+    "sfx-2-fade.audio"
+   ],
+   [
+    "sfx-2-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -24539,11 +25407,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "sfx-mix.inputs"
    ],
    [
-    "fracture.start",
+    "erupt.start",
     "sfx-4.trigger"
    ],
    [
     "sfx-4.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "fracture.start",
+    "sfx-5.trigger"
+   ],
+   [
+    "sfx-5.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -25423,12 +26299,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "freeze-1",
+     "sound": "magic-charge-1",
      "offsetTicks": 0,
      "durationTicks": 40,
-     "gain": 0.7,
-     "pitchRatio": 0.9,
+     "gain": 0.6,
+     "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.3866666666666666,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -25436,12 +26322,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "ice-1",
+     "sound": "magic-womp-1",
      "offsetTicks": 0,
-     "durationTicks": 60,
-     "gain": 1,
+     "durationTicks": 100,
+     "gain": 0.9,
      "pitchRatio": 0.9,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-2-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.3866666666666667,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -25449,12 +26345,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "glass-break-5",
-     "offsetTicks": 2,
-     "durationTicks": 50,
-     "gain": 0.8,
-     "pitchRatio": 1,
+     "sound": "ice-1",
+     "offsetTicks": 0,
+     "durationTicks": 60,
+     "gain": 0.55,
+     "pitchRatio": 0.9,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.72,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -25462,10 +26368,23 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
+     "sound": "glass-break-5",
+     "offsetTicks": 2,
+     "durationTicks": 25,
+     "gain": 0.6,
+     "pitchRatio": 1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-5",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
      "sound": "glass-break-6",
      "offsetTicks": 0,
-     "durationTicks": 50,
-     "gain": 0.8,
+     "durationTicks": 44,
+     "gain": 0.5,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -25762,6 +26681,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -25770,6 +26693,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-2.audio",
+    "sfx-2-fade.audio"
+   ],
+   [
+    "sfx-2-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -25778,14 +26705,26 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
     "sfx-mix.inputs"
    ],
    [
-    "fracture.start",
+    "erupt.start",
     "sfx-4.trigger"
    ],
    [
     "sfx-4.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "fracture.start",
+    "sfx-5.trigger"
+   ],
+   [
+    "sfx-5.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -26593,10 +27532,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "rock-fall-1",
+     "sound": "rock-fall-2",
      "offsetTicks": 0,
-     "durationTicks": 30,
-     "gain": 0.6,
+     "durationTicks": 20,
+     "gain": 0.5,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -26619,12 +27558,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "rock-break-1",
+     "sound": "thunder-3",
      "offsetTicks": 0,
-     "durationTicks": 60,
-     "gain": 0.9,
-     "pitchRatio": 1,
+     "durationTicks": 200,
+     "gain": 0.55,
+     "pitchRatio": 0.6,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 3.0533333333333337,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -26632,10 +27581,23 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "rock-fall-3",
+     "sound": "rock-break-1",
+     "offsetTicks": 0,
+     "durationTicks": 30,
+     "gain": 0.6,
+     "pitchRatio": 1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-5",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "rock-fall-1",
      "offsetTicks": 25,
      "durationTicks": 50,
-     "gain": 0.6,
+     "gain": 0.45,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -26916,6 +27878,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -26924,6 +27890,14 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-4.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "erupt.start",
+    "sfx-5.trigger"
+   ],
+   [
+    "sfx-5.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -27798,7 +28772,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "source": "sample",
      "sound": "rock-fall-2",
      "offsetTicks": 0,
-     "durationTicks": 30,
+     "durationTicks": 20,
      "gain": 0.6,
      "pitchRatio": 1,
      "sampleLoop": false
@@ -27822,12 +28796,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "rock-break-2",
+     "sound": "thunder-2",
      "offsetTicks": 0,
-     "durationTicks": 60,
-     "gain": 1,
-     "pitchRatio": 1,
+     "durationTicks": 220,
+     "gain": 0.65,
+     "pitchRatio": 0.55,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 3.3866666666666667,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -27835,11 +28819,24 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "rock-fall-4",
+     "sound": "rock-break-1",
+     "offsetTicks": 0,
+     "durationTicks": 30,
+     "gain": 0.7,
+     "pitchRatio": 0.9,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-5",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "rock-fall-1",
      "offsetTicks": 25,
      "durationTicks": 50,
-     "gain": 0.7,
-     "pitchRatio": 1,
+     "gain": 0.5,
+     "pitchRatio": 0.9,
      "sampleLoop": false
     }
    }
@@ -28119,6 +29116,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -28127,6 +29128,14 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-4.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "erupt.start",
+    "sfx-5.trigger"
+   ],
+   [
+    "sfx-5.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -29001,8 +30010,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "source": "sample",
      "sound": "rock-fall-5",
      "offsetTicks": 0,
-     "durationTicks": 30,
-     "gain": 0.6,
+     "durationTicks": 15,
+     "gain": 0.4,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -29025,12 +30034,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "rock-break-3",
+     "sound": "thunder-5",
      "offsetTicks": 0,
-     "durationTicks": 50,
-     "gain": 0.8,
-     "pitchRatio": 1,
+     "durationTicks": 160,
+     "gain": 0.4,
+     "pitchRatio": 0.65,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 2.3866666666666667,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -29038,10 +30057,23 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
+     "sound": "rock-break-3",
+     "offsetTicks": 0,
+     "durationTicks": 30,
+     "gain": 0.5,
+     "pitchRatio": 1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-5",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
      "sound": "rock-fall-6",
      "offsetTicks": 20,
-     "durationTicks": 50,
-     "gain": 0.8,
+     "durationTicks": 20,
+     "gain": 0.5,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -29322,6 +30354,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -29330,6 +30366,14 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-4.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "erupt.start",
+    "sfx-5.trigger"
+   ],
+   [
+    "sfx-5.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -29992,26 +31036,98 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "wind-1",
+     "sound": "gust-3",
      "offsetTicks": 0,
-     "durationTicks": 138,
-     "gain": 0.8,
-     "pitchRatio": 1,
-     "sampleLoop": true
+     "durationTicks": 150,
+     "gain": 0.65,
+     "pitchRatio": 0.85,
+     "sampleLoop": false
     }
    },
    {
     "id": "sfx-1-fade",
     "type": "AudioEnvelope",
     "params": {
-     "attack": 0.03,
-     "hold": 2.0199999999999996,
+     "attack": 0.005,
+     "hold": 2.2199999999999998,
      "release": 0.25,
      "curve": "linear"
     }
    },
    {
     "id": "sfx-2",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "gust-6",
+     "offsetTicks": 14,
+     "durationTicks": 150,
+     "gain": 0.75,
+     "pitchRatio": 0.92,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "gust-3",
+     "offsetTicks": 40,
+     "durationTicks": 138,
+     "gain": 0.45,
+     "pitchRatio": 1.08,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 2.0199999999999996,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-4",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "gust-4",
+     "offsetTicks": 59,
+     "durationTicks": 119,
+     "gain": 0.45,
+     "pitchRatio": 0.8,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-5",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "gust-6",
+     "offsetTicks": 90,
+     "durationTicks": 88,
+     "gain": 0.55,
+     "pitchRatio": 0.8,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-5-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.1866666666666665,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-6",
     "type": "AudioSource",
     "params": {
      "source": "sample",
@@ -30238,11 +31354,51 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "sfx-mix.inputs"
    ],
    [
-    "streakwin.start",
+    "gust.start",
     "sfx-2.trigger"
    ],
    [
     "sfx-2.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "gust.start",
+    "sfx-3.trigger"
+   ],
+   [
+    "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "gust.start",
+    "sfx-4.trigger"
+   ],
+   [
+    "sfx-4.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "gust.start",
+    "sfx-5.trigger"
+   ],
+   [
+    "sfx-5.audio",
+    "sfx-5-fade.audio"
+   ],
+   [
+    "sfx-5-fade.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "streakwin.start",
+    "sfx-6.trigger"
+   ],
+   [
+    "sfx-6.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -30791,22 +31947,12 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "wind-2",
+     "sound": "gust-6",
      "offsetTicks": 0,
-     "durationTicks": 138,
-     "gain": 0.6,
-     "pitchRatio": 1.1,
-     "sampleLoop": true
-    }
-   },
-   {
-    "id": "sfx-1-fade",
-    "type": "AudioEnvelope",
-    "params": {
-     "attack": 0.03,
-     "hold": 2.0199999999999996,
-     "release": 0.25,
-     "curve": "linear"
+     "durationTicks": 150,
+     "gain": 0.55,
+     "pitchRatio": 0.8,
+     "sampleLoop": false
     }
    },
    {
@@ -30814,16 +31960,98 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "blade-3",
-     "offsetTicks": 0,
-     "durationTicks": 20,
-     "gain": 0.9,
+     "sound": "gust-5",
+     "offsetTicks": 14,
+     "durationTicks": 150,
+     "gain": 0.45,
+     "pitchRatio": 0.85,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-2-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 2.2199999999999998,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-3",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "gust-1",
+     "offsetTicks": 40,
+     "durationTicks": 138,
+     "gain": 0.75,
+     "pitchRatio": 1.08,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 2.0199999999999996,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-4",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "gust-5",
+     "offsetTicks": 59,
+     "durationTicks": 119,
+     "gain": 0.65,
+     "pitchRatio": 0.92,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-4-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.7033333333333334,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-5",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "gust-4",
+     "offsetTicks": 90,
+     "durationTicks": 88,
+     "gain": 0.65,
      "pitchRatio": 1,
      "sampleLoop": false
     }
    },
    {
-    "id": "sfx-3",
+    "id": "sfx-6",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "blade-3",
+     "offsetTicks": 0,
+     "durationTicks": 14,
+     "gain": 0.6,
+     "pitchRatio": 1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-7",
     "type": "AudioSource",
     "params": {
      "source": "sample",
@@ -31011,26 +32239,66 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
-    "sfx-1-fade.audio"
-   ],
-   [
-    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
-    "streakwin.start",
+    "gust.start",
     "sfx-2.trigger"
    ],
    [
     "sfx-2.audio",
+    "sfx-2-fade.audio"
+   ],
+   [
+    "sfx-2-fade.audio",
     "sfx-mix.inputs"
    ],
    [
-    "streakwin.start",
+    "gust.start",
     "sfx-3.trigger"
    ],
    [
     "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "gust.start",
+    "sfx-4.trigger"
+   ],
+   [
+    "sfx-4.audio",
+    "sfx-4-fade.audio"
+   ],
+   [
+    "sfx-4-fade.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "gust.start",
+    "sfx-5.trigger"
+   ],
+   [
+    "sfx-5.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "streakwin.start",
+    "sfx-6.trigger"
+   ],
+   [
+    "sfx-6.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "streakwin.start",
+    "sfx-7.trigger"
+   ],
+   [
+    "sfx-7.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -32683,8 +33951,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "source": "sample",
      "sound": "slime-3",
      "offsetTicks": 0,
-     "durationTicks": 40,
-     "gain": 0.7,
+     "durationTicks": 30,
+     "gain": 0.5,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -33504,7 +34772,7 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "bubbles-3",
+     "sound": "bubbles-5",
      "offsetTicks": 0,
      "durationTicks": 138,
      "gain": 0.6,
@@ -33529,8 +34797,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "source": "sample",
      "sound": "slime-12",
      "offsetTicks": 0,
-     "durationTicks": 40,
-     "gain": 0.7,
+     "durationTicks": 15,
+     "gain": 0.5,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -34375,8 +35643,8 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "source": "sample",
      "sound": "slime-8",
      "offsetTicks": 0,
-     "durationTicks": 40,
-     "gain": 0.7,
+     "durationTicks": 25,
+     "gain": 0.45,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -35203,12 +36471,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "heal-1",
+     "sound": "heal-2",
      "offsetTicks": 0,
-     "durationTicks": 36,
-     "gain": 0.7,
+     "durationTicks": 60,
+     "gain": 0.6,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.72,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -35216,9 +36494,9 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "bell-1",
+     "sound": "bell-5",
      "offsetTicks": 0,
-     "durationTicks": 80,
+     "durationTicks": 60,
      "gain": 0.8,
      "pitchRatio": 1,
      "sampleLoop": false
@@ -35229,12 +36507,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "magic-7",
+     "sound": "magic-1",
      "offsetTicks": 0,
-     "durationTicks": 60,
+     "durationTicks": 70,
      "gain": 0.5,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.8866666666666667,
+     "release": 0.25,
+     "curve": "linear"
     }
    }
   ],
@@ -35485,6 +36773,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -35501,6 +36793,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -36151,12 +37447,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "heal-1",
+     "sound": "heal-2",
      "offsetTicks": 0,
-     "durationTicks": 36,
-     "gain": 0.7,
-     "pitchRatio": 1,
+     "durationTicks": 60,
+     "gain": 0.6,
+     "pitchRatio": 1.1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.72,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -36164,10 +37470,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "bell-2",
+     "sound": "bell-4",
      "offsetTicks": 0,
-     "durationTicks": 60,
-     "gain": 0.8,
+     "durationTicks": 80,
+     "gain": 0.7,
      "pitchRatio": 1,
      "sampleLoop": false
     }
@@ -36177,12 +37483,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "magic-5",
+     "sound": "magic-3",
      "offsetTicks": 0,
-     "durationTicks": 60,
-     "gain": 0.5,
+     "durationTicks": 70,
+     "gain": 0.45,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.8866666666666667,
+     "release": 0.25,
+     "curve": "linear"
     }
    }
   ],
@@ -36433,6 +37749,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -36449,6 +37769,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -37101,10 +38425,20 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "source": "sample",
      "sound": "heal-2",
      "offsetTicks": 0,
-     "durationTicks": 36,
-     "gain": 0.7,
-     "pitchRatio": 1,
+     "durationTicks": 60,
+     "gain": 0.6,
+     "pitchRatio": 0.95,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.72,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -37112,11 +38446,11 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "bell-3",
+     "sound": "bell-5",
      "offsetTicks": 0,
-     "durationTicks": 100,
+     "durationTicks": 60,
      "gain": 0.8,
-     "pitchRatio": 1,
+     "pitchRatio": 0.9,
      "sampleLoop": false
     }
    },
@@ -37125,12 +38459,35 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "magic-1",
-     "offsetTicks": 0,
+     "sound": "bell-4",
+     "offsetTicks": 8,
      "durationTicks": 80,
      "gain": 0.5,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-4",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "magic-1",
+     "offsetTicks": 0,
+     "durationTicks": 90,
+     "gain": 0.5,
+     "pitchRatio": 1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-4-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.22,
+     "release": 0.25,
+     "curve": "linear"
     }
    }
   ],
@@ -37381,6 +38738,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -37397,6 +38758,18 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-3.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "pulse.start",
+    "sfx-4.trigger"
+   ],
+   [
+    "sfx-4.audio",
+    "sfx-4-fade.audio"
+   ],
+   [
+    "sfx-4-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -38209,12 +39582,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "charge-1",
+     "sound": "magic-charge-1",
      "offsetTicks": 0,
-     "durationTicks": 30,
+     "durationTicks": 34,
      "gain": 0.6,
-     "pitchRatio": 1,
+     "pitchRatio": 1.1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.2866666666666666,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -38222,12 +39605,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "magic-3",
+     "sound": "magic-whoosh-3",
      "offsetTicks": 0,
      "durationTicks": 50,
-     "gain": 0.9,
+     "gain": 0.8,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-2-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.5533333333333333,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -38235,12 +39628,45 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "swish-9",
+     "sound": "magic-3",
      "offsetTicks": 0,
-     "durationTicks": 15,
-     "gain": 0.6,
+     "durationTicks": 50,
+     "gain": 0.5,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.5533333333333333,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-4",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "magic-womp-1",
+     "offsetTicks": 0,
+     "durationTicks": 100,
+     "gain": 0.8,
+     "pitchRatio": 1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-4-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.3866666666666667,
+     "release": 0.25,
+     "curve": "linear"
     }
    }
   ],
@@ -38595,6 +40021,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -38603,6 +40033,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-2.audio",
+    "sfx-2-fade.audio"
+   ],
+   [
+    "sfx-2-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -38611,6 +40045,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "ringwin.start",
+    "sfx-4.trigger"
+   ],
+   [
+    "sfx-4.audio",
+    "sfx-4-fade.audio"
+   ],
+   [
+    "sfx-4-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -39510,12 +40960,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "charge-1",
+     "sound": "magic-charge-1",
      "offsetTicks": 0,
-     "durationTicks": 30,
+     "durationTicks": 34,
      "gain": 0.5,
-     "pitchRatio": 1.2,
+     "pitchRatio": 1.25,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.2866666666666666,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -39523,12 +40983,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "blade-1",
+     "sound": "gust-4",
      "offsetTicks": 0,
-     "durationTicks": 20,
-     "gain": 0.9,
-     "pitchRatio": 1,
+     "durationTicks": 40,
+     "gain": 0.7,
+     "pitchRatio": 1.3,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-2-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.3866666666666666,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -39536,9 +41006,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "magic-5",
+     "sound": "blade-1",
      "offsetTicks": 0,
-     "durationTicks": 40,
+     "durationTicks": 12,
+     "gain": 0.5,
+     "pitchRatio": 1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-4",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "magic-womp-3",
+     "offsetTicks": 0,
+     "durationTicks": 90,
      "gain": 0.6,
      "pitchRatio": 1.2,
      "sampleLoop": false
@@ -39896,6 +41379,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -39904,6 +41391,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-2.audio",
+    "sfx-2-fade.audio"
+   ],
+   [
+    "sfx-2-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -39912,6 +41403,14 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-3.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "ringwin.start",
+    "sfx-4.trigger"
+   ],
+   [
+    "sfx-4.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -40811,12 +42310,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "charge-1",
+     "sound": "magic-charge-1",
      "offsetTicks": 0,
-     "durationTicks": 30,
+     "durationTicks": 34,
      "gain": 0.6,
-     "pitchRatio": 0.85,
+     "pitchRatio": 0.9,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.2866666666666666,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -40827,9 +42336,19 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
      "sound": "teleport-1",
      "offsetTicks": 0,
      "durationTicks": 80,
-     "gain": 0.8,
+     "gain": 0.7,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-2-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.0533333333333332,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -40837,12 +42356,45 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "magic-4",
+     "sound": "magic-whoosh-2",
      "offsetTicks": 0,
-     "durationTicks": 60,
+     "durationTicks": 90,
      "gain": 0.6,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.22,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-4",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "magic-womp-2",
+     "offsetTicks": 0,
+     "durationTicks": 110,
+     "gain": 0.8,
+     "pitchRatio": 1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-4-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.5533333333333332,
+     "release": 0.25,
+     "curve": "linear"
     }
    }
   ],
@@ -41197,6 +42749,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -41205,6 +42761,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-2.audio",
+    "sfx-2-fade.audio"
+   ],
+   [
+    "sfx-2-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -41213,6 +42773,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "ringwin.start",
+    "sfx-4.trigger"
+   ],
+   [
+    "sfx-4.audio",
+    "sfx-4-fade.audio"
+   ],
+   [
+    "sfx-4-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -42500,12 +44076,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "fire-cast-2",
+     "sound": "fire-whoosh-1",
      "offsetTicks": 0,
-     "durationTicks": 50,
-     "gain": 1,
+     "durationTicks": 90,
+     "gain": 0.9,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.22,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -42890,6 +44476,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -43485,12 +45075,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "fire-cast-3",
+     "sound": "fire-whoosh-3",
      "offsetTicks": 0,
      "durationTicks": 60,
-     "gain": 1,
+     "gain": 0.8,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.72,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -43498,12 +45098,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "boom-2",
-     "offsetTicks": 0,
+     "sound": "fireball-pass-1",
+     "offsetTicks": 4,
      "durationTicks": 90,
-     "gain": 1.1,
+     "gain": 0.9,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-2-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.22,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -43511,16 +45121,39 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
+     "sound": "fire-blast-1",
+     "offsetTicks": 0,
+     "durationTicks": 150,
+     "gain": 1.1,
+     "pitchRatio": 1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 2.2199999999999998,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-4",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
      "sound": "fire-crackle-1",
-     "offsetTicks": 4,
+     "offsetTicks": 6,
      "durationTicks": 70,
-     "gain": 0.5,
+     "gain": 0.4,
      "pitchRatio": 1,
      "sampleLoop": true
     }
    },
    {
-    "id": "sfx-3-fade",
+    "id": "sfx-4-fade",
     "type": "AudioEnvelope",
     "params": {
      "attack": 0.03,
@@ -43693,14 +45326,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
-    "impactwin.start",
+    "flight.start",
     "sfx-2.trigger"
    ],
    [
     "sfx-2.audio",
+    "sfx-2-fade.audio"
+   ],
+   [
+    "sfx-2-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -43713,6 +45354,18 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-3-fade.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "impactwin.start",
+    "sfx-4.trigger"
+   ],
+   [
+    "sfx-4.audio",
+    "sfx-4-fade.audio"
+   ],
+   [
+    "sfx-4-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -45430,12 +47083,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "charge-2",
+     "sound": "magic-charge-1",
      "offsetTicks": 0,
-     "durationTicks": 40,
+     "durationTicks": 50,
      "gain": 0.8,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.5533333333333333,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -45443,20 +47106,20 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "electric-loop-2",
+     "sound": "magic-womp-1",
      "offsetTicks": 0,
-     "durationTicks": 46,
-     "gain": 0.6,
+     "durationTicks": 100,
+     "gain": 1,
      "pitchRatio": 1,
-     "sampleLoop": true
+     "sampleLoop": false
     }
    },
    {
     "id": "sfx-2-fade",
     "type": "AudioEnvelope",
     "params": {
-     "attack": 0.03,
-     "hold": 0.4866666666666667,
+     "attack": 0.005,
+     "hold": 1.3866666666666667,
      "release": 0.25,
      "curve": "linear"
     }
@@ -45466,12 +47129,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "magic-4",
+     "sound": "hum-1",
      "offsetTicks": 0,
-     "durationTicks": 50,
-     "gain": 0.6,
-     "pitchRatio": 1,
-     "sampleLoop": false
+     "durationTicks": 46,
+     "gain": 0.35,
+     "pitchRatio": 0.9,
+     "sampleLoop": true
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.03,
+     "hold": 0.4866666666666667,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -45479,12 +47152,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "boom-5",
+     "sound": "magic-impact-1",
      "offsetTicks": 0,
-     "durationTicks": 70,
-     "gain": 0.7,
+     "durationTicks": 160,
+     "gain": 1,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-4-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 2.3866666666666667,
+     "release": 0.25,
+     "curve": "linear"
     }
    }
   ],
@@ -46271,6 +47954,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -46291,6 +47978,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -46299,6 +47990,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-4.audio",
+    "sfx-4-fade.audio"
+   ],
+   [
+    "sfx-4-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -47959,12 +49654,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "magic-6",
+     "sound": "magic-charge-1",
      "offsetTicks": 0,
-     "durationTicks": 36,
-     "gain": 0.8,
-     "pitchRatio": 1,
+     "durationTicks": 40,
+     "gain": 0.7,
+     "pitchRatio": 1.1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.3866666666666666,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -47972,12 +49677,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "blade-2",
+     "sound": "magic-whoosh-3",
      "offsetTicks": 0,
-     "durationTicks": 20,
-     "gain": 1,
+     "durationTicks": 40,
+     "gain": 0.8,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-2-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.3866666666666666,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -47985,12 +49700,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "boom-7",
+     "sound": "blade-2",
      "offsetTicks": 0,
-     "durationTicks": 70,
-     "gain": 0.9,
+     "durationTicks": 12,
+     "gain": 0.5,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -47998,12 +49723,35 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "hit-5",
+     "sound": "boom-7",
      "offsetTicks": 0,
-     "durationTicks": 30,
-     "gain": 0.7,
+     "durationTicks": 50,
+     "gain": 0.8,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-5",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
+     "sound": "magic-womp-2",
+     "offsetTicks": 0,
+     "durationTicks": 110,
+     "gain": 0.8,
+     "pitchRatio": 1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-5-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.5533333333333332,
+     "release": 0.25,
+     "curve": "linear"
     }
    }
   ],
@@ -48594,6 +50342,10 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -48602,14 +50354,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-2.audio",
+    "sfx-2-fade.audio"
+   ],
+   [
+    "sfx-2-fade.audio",
     "sfx-mix.inputs"
    ],
    [
-    "impact.start",
+    "flight.start",
     "sfx-3.trigger"
    ],
    [
     "sfx-3.audio",
+    "sfx-3-fade.audio"
+   ],
+   [
+    "sfx-3-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -48618,6 +50378,18 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-4.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "impact.start",
+    "sfx-5.trigger"
+   ],
+   [
+    "sfx-5.audio",
+    "sfx-5-fade.audio"
+   ],
+   [
+    "sfx-5-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -49570,12 +51342,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "fire-cast-3",
+     "sound": "fire-whoosh-1",
      "offsetTicks": 0,
      "durationTicks": 60,
-     "gain": 1,
+     "gain": 0.8,
      "pitchRatio": 1,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-1-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 0.72,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -49583,12 +51365,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
-     "sound": "boom-2",
-     "offsetTicks": 0,
+     "sound": "fireball-pass-1",
+     "offsetTicks": 4,
      "durationTicks": 90,
-     "gain": 1.1,
-     "pitchRatio": 1,
+     "gain": 0.9,
+     "pitchRatio": 0.95,
      "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-2-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 1.22,
+     "release": 0.25,
+     "curve": "linear"
     }
    },
    {
@@ -49596,16 +51388,39 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
     "type": "AudioSource",
     "params": {
      "source": "sample",
+     "sound": "fire-blast-1",
+     "offsetTicks": 0,
+     "durationTicks": 150,
+     "gain": 1.1,
+     "pitchRatio": 1,
+     "sampleLoop": false
+    }
+   },
+   {
+    "id": "sfx-3-fade",
+    "type": "AudioEnvelope",
+    "params": {
+     "attack": 0.005,
+     "hold": 2.2199999999999998,
+     "release": 0.25,
+     "curve": "linear"
+    }
+   },
+   {
+    "id": "sfx-4",
+    "type": "AudioSource",
+    "params": {
+     "source": "sample",
      "sound": "fire-crackle-1",
-     "offsetTicks": 4,
+     "offsetTicks": 6,
      "durationTicks": 70,
-     "gain": 0.5,
+     "gain": 0.4,
      "pitchRatio": 1,
      "sampleLoop": true
     }
    },
    {
-    "id": "sfx-3-fade",
+    "id": "sfx-4-fade",
     "type": "AudioEnvelope",
     "params": {
      "attack": 0.03,
@@ -49870,14 +51685,22 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-1.audio",
+    "sfx-1-fade.audio"
+   ],
+   [
+    "sfx-1-fade.audio",
     "sfx-mix.inputs"
    ],
    [
-    "impactwin.start",
+    "flight.start",
     "sfx-2.trigger"
    ],
    [
     "sfx-2.audio",
+    "sfx-2-fade.audio"
+   ],
+   [
+    "sfx-2-fade.audio",
     "sfx-mix.inputs"
    ],
    [
@@ -49890,6 +51713,18 @@ export const COMPONENT_TEMPLATES: readonly ComponentTemplate[] = [
    ],
    [
     "sfx-3-fade.audio",
+    "sfx-mix.inputs"
+   ],
+   [
+    "impactwin.start",
+    "sfx-4.trigger"
+   ],
+   [
+    "sfx-4.audio",
+    "sfx-4-fade.audio"
+   ],
+   [
+    "sfx-4-fade.audio",
     "sfx-mix.inputs"
    ],
    [

@@ -2357,11 +2357,11 @@
    "id": "sfx-1",
    "params": {
     "source": "sample",
-    "sound": "charge-1",
+    "sound": "prestrike-1",
     "offsetTicks": 0,
-    "durationTicks": 24,
-    "gain": 0.5,
-    "pitchRatio": 1.2,
+    "durationTicks": 32,
+    "gain": 0.6,
+    "pitchRatio": 1.1,
     "sampleLoop": false
    }
   }
@@ -2375,10 +2375,32 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "thinfork",
+   "type": "AudioEnvelope",
+   "id": "sfx-1-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 0.2533333333333333,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
   "vfx_connect",
   {
    "docId": "thinfork",
    "from": "sfx-1.audio",
+   "to": "sfx-1-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "thinfork",
+   "from": "sfx-1-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -2390,11 +2412,11 @@
    "id": "sfx-2",
    "params": {
     "source": "sample",
-    "sound": "spark-1",
+    "sound": "thunder-5",
     "offsetTicks": 0,
-    "durationTicks": 26,
-    "gain": 1,
-    "pitchRatio": 1,
+    "durationTicks": 240,
+    "gain": 0.9,
+    "pitchRatio": 1.1,
     "sampleLoop": false
    }
   }
@@ -2423,11 +2445,11 @@
    "id": "sfx-3",
    "params": {
     "source": "sample",
-    "sound": "zap-2",
+    "sound": "spark-1",
     "offsetTicks": 0,
-    "durationTicks": 40,
-    "gain": 0.8,
-    "pitchRatio": 1,
+    "durationTicks": 14,
+    "gain": 0.6,
+    "pitchRatio": 1.1,
     "sampleLoop": false
    }
   }
@@ -2456,12 +2478,12 @@
    "id": "sfx-4",
    "params": {
     "source": "sample",
-    "sound": "electric-loop-2",
-    "offsetTicks": 0,
-    "durationTicks": 30,
+    "sound": "spark-2",
+    "offsetTicks": 7,
+    "durationTicks": 8,
     "gain": 0.4,
     "pitchRatio": 1,
-    "sampleLoop": true
+    "sampleLoop": false
    }
   }
  ],
@@ -2469,22 +2491,8 @@
   "vfx_connect",
   {
    "docId": "thinfork",
-   "from": "impact.start",
+   "from": "strike.start",
    "to": "sfx-4.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "thinfork",
-   "type": "AudioEnvelope",
-   "id": "sfx-4-fade",
-   "params": {
-    "attack": 0.03,
-    "hold": 0.21999999999999997,
-    "release": 0.25,
-    "curve": "linear"
-   }
   }
  ],
  [
@@ -2492,14 +2500,6 @@
   {
    "docId": "thinfork",
    "from": "sfx-4.audio",
-   "to": "sfx-4-fade.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "thinfork",
-   "from": "sfx-4-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],

@@ -1233,9 +1233,9 @@
     "source": "sample",
     "sound": "heal-2",
     "offsetTicks": 0,
-    "durationTicks": 36,
-    "gain": 0.7,
-    "pitchRatio": 1,
+    "durationTicks": 60,
+    "gain": 0.6,
+    "pitchRatio": 0.95,
     "sampleLoop": false
    }
   }
@@ -1249,10 +1249,32 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "lightblessing",
+   "type": "AudioEnvelope",
+   "id": "sfx-1-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 0.72,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
   "vfx_connect",
   {
    "docId": "lightblessing",
    "from": "sfx-1.audio",
+   "to": "sfx-1-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightblessing",
+   "from": "sfx-1-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -1264,11 +1286,11 @@
    "id": "sfx-2",
    "params": {
     "source": "sample",
-    "sound": "bell-3",
+    "sound": "bell-5",
     "offsetTicks": 0,
-    "durationTicks": 100,
+    "durationTicks": 60,
     "gain": 0.8,
-    "pitchRatio": 1,
+    "pitchRatio": 0.9,
     "sampleLoop": false
    }
   }
@@ -1297,8 +1319,8 @@
    "id": "sfx-3",
    "params": {
     "source": "sample",
-    "sound": "magic-1",
-    "offsetTicks": 0,
+    "sound": "bell-4",
+    "offsetTicks": 8,
     "durationTicks": 80,
     "gain": 0.5,
     "pitchRatio": 1,
@@ -1319,6 +1341,61 @@
   {
    "docId": "lightblessing",
    "from": "sfx-3.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightblessing",
+   "type": "AudioSource",
+   "id": "sfx-4",
+   "params": {
+    "source": "sample",
+    "sound": "magic-1",
+    "offsetTicks": 0,
+    "durationTicks": 90,
+    "gain": 0.5,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightblessing",
+   "from": "pulse.start",
+   "to": "sfx-4.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "lightblessing",
+   "type": "AudioEnvelope",
+   "id": "sfx-4-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 1.22,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightblessing",
+   "from": "sfx-4.audio",
+   "to": "sfx-4-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightblessing",
+   "from": "sfx-4-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],

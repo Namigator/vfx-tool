@@ -595,8 +595,8 @@
     "source": "sample",
     "sound": "slime-5",
     "offsetTicks": 20,
-    "durationTicks": 40,
-    "gain": 0.5,
+    "durationTicks": 25,
+    "gain": 0.4,
     "pitchRatio": 1,
     "sampleLoop": false
    }

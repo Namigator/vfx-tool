@@ -1611,10 +1611,10 @@
    "id": "sfx-1",
    "params": {
     "source": "sample",
-    "sound": "fire-cast-6",
+    "sound": "fire-ignite-1",
     "offsetTicks": 0,
-    "durationTicks": 50,
-    "gain": 0.8,
+    "durationTicks": 14,
+    "gain": 0.9,
     "pitchRatio": 1,
     "sampleLoop": false
    }
@@ -1644,12 +1644,12 @@
    "id": "sfx-2",
    "params": {
     "source": "sample",
-    "sound": "fire-crackle-2",
-    "offsetTicks": 4,
-    "durationTicks": 60,
-    "gain": 0.6,
-    "pitchRatio": 1,
-    "sampleLoop": true
+    "sound": "fire-whoosh-3",
+    "offsetTicks": 0,
+    "durationTicks": 70,
+    "gain": 0.5,
+    "pitchRatio": 1.1,
+    "sampleLoop": false
    }
   }
  ],
@@ -1657,7 +1657,7 @@
   "vfx_connect",
   {
    "docId": "torch",
-   "from": "emit.start",
+   "from": "ignite.start",
    "to": "sfx-2.trigger"
   }
  ],
@@ -1668,8 +1668,8 @@
    "type": "AudioEnvelope",
    "id": "sfx-2-fade",
    "params": {
-    "attack": 0.03,
-    "hold": 0.72,
+    "attack": 0.005,
+    "hold": 0.8866666666666667,
     "release": 0.25,
     "curve": "linear"
    }
@@ -1688,6 +1688,61 @@
   {
    "docId": "torch",
    "from": "sfx-2-fade.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "torch",
+   "type": "AudioSource",
+   "id": "sfx-3",
+   "params": {
+    "source": "sample",
+    "sound": "fire-crackle-2",
+    "offsetTicks": 4,
+    "durationTicks": 60,
+    "gain": 0.6,
+    "pitchRatio": 1,
+    "sampleLoop": true
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "torch",
+   "from": "emit.start",
+   "to": "sfx-3.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "torch",
+   "type": "AudioEnvelope",
+   "id": "sfx-3-fade",
+   "params": {
+    "attack": 0.03,
+    "hold": 0.72,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "torch",
+   "from": "sfx-3.audio",
+   "to": "sfx-3-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "torch",
+   "from": "sfx-3-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],

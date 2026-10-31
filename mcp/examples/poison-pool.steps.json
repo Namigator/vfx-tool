@@ -1016,7 +1016,7 @@
    "id": "sfx-1",
    "params": {
     "source": "sample",
-    "sound": "bubbles-3",
+    "sound": "bubbles-5",
     "offsetTicks": 0,
     "durationTicks": 138,
     "gain": 0.6,
@@ -1073,8 +1073,8 @@
     "source": "sample",
     "sound": "slime-12",
     "offsetTicks": 0,
-    "durationTicks": 40,
-    "gain": 0.7,
+    "durationTicks": 15,
+    "gain": 0.5,
     "pitchRatio": 1,
     "sampleLoop": false
    }

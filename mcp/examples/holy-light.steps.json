@@ -465,7 +465,7 @@
     "source": "sample",
     "sound": "heal-2",
     "offsetTicks": 0,
-    "durationTicks": 70,
+    "durationTicks": 100,
     "gain": 0.8,
     "pitchRatio": 1,
     "sampleLoop": false
@@ -481,10 +481,32 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "light",
+   "type": "AudioEnvelope",
+   "id": "sfx-1-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 1.3866666666666667,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
   "vfx_connect",
   {
    "docId": "light",
    "from": "sfx-1.audio",
+   "to": "sfx-1-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "light",
+   "from": "sfx-1-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -499,7 +521,7 @@
     "sound": "bell-4",
     "offsetTicks": 10,
     "durationTicks": 80,
-    "gain": 0.7,
+    "gain": 0.6,
     "pitchRatio": 1,
     "sampleLoop": false
    }

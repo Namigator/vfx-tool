@@ -85,8 +85,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Fire; travels from Source to Target.
 - Duration: 180 ticks (3 s) minimum; the document grows to fit it.
-- Size: 18 nodes, 24 links.
-- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×2, BillboardRenderer ×2, Drag, Emitter, Gravity, InitialProperties, Material ×2, NoiseForce, OffsetAnchor, PointLight, Schedule ×2.
+- Size: 19 nodes, 25 links.
+- Node types used: AudioEnvelope ×2, AudioMix, AudioOutput, AudioSource ×2, BillboardRenderer ×2, Drag, Emitter, Gravity, InitialProperties, Material ×2, NoiseForce, OffsetAnchor, PointLight, Schedule ×2.
 - Add with `vfx_add_component` (component "flame-jet") or open as a new effect with `vfx_new_document` component="flame-jet". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "flame-jet", a second copy gets "flame-jet-2").
 
 **Controls**
@@ -110,8 +110,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Fire; travels from Source to Target.
 - Duration: 216 ticks (3.6 s) minimum; the document grows to fit it.
-- Size: 48 nodes, 67 links.
-- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×2, BillboardRenderer ×5, Drag ×5, Emitter ×5, Gravity ×5, InitialProperties ×5, Material ×7, NoiseForce ×5, ParticleTrail, PointLight, Schedule ×3, SpriteRenderer.
+- Size: 49 nodes, 68 links.
+- Node types used: AudioEnvelope ×2, AudioMix, AudioOutput, AudioSource ×2, BillboardRenderer ×5, Drag ×5, Emitter ×5, Gravity ×5, InitialProperties ×5, Material ×7, NoiseForce ×5, ParticleTrail, PointLight, Schedule ×3, SpriteRenderer.
 - Add with `vfx_add_component` (component "fire-jet") or open as a new effect with `vfx_new_document` component="fire-jet". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "fire-jet", a second copy gets "fire-jet-2").
 
 **Controls**
@@ -138,8 +138,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Fire; travels from Source to Target.
 - Duration: 180 ticks (3 s) minimum; the document grows to fit it.
-- Size: 48 nodes, 67 links.
-- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×2, BillboardRenderer ×5, Drag ×5, Emitter ×5, Gravity ×5, InitialProperties ×5, Material ×7, NoiseForce ×5, ParticleTrail, PointLight, Schedule ×3, SpriteRenderer.
+- Size: 50 nodes, 70 links.
+- Node types used: AudioEnvelope ×2, AudioMix, AudioOutput, AudioSource ×3, BillboardRenderer ×5, Drag ×5, Emitter ×5, Gravity ×5, InitialProperties ×5, Material ×7, NoiseForce ×5, ParticleTrail, PointLight, Schedule ×3, SpriteRenderer.
 - Add with `vfx_add_component` (component "fire-torch") or open as a new effect with `vfx_new_document` component="fire-torch". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "fire-torch", a second copy gets "fire-torch-2").
 
 **Controls**
@@ -166,8 +166,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Fire; travels from Source to Target.
 - Duration: 153 ticks (2.55 s) minimum; the document grows to fit it.
-- Size: 48 nodes, 67 links.
-- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×2, BillboardRenderer ×5, Drag ×5, Emitter ×5, Gravity ×5, InitialProperties ×5, Material ×7, NoiseForce ×5, ParticleTrail, PointLight, Schedule ×3, SpriteRenderer.
+- Size: 50 nodes, 70 links.
+- Node types used: AudioEnvelope ×2, AudioMix, AudioOutput, AudioSource ×3, BillboardRenderer ×5, Drag ×5, Emitter ×5, Gravity ×5, InitialProperties ×5, Material ×7, NoiseForce ×5, ParticleTrail, PointLight, Schedule ×3, SpriteRenderer.
 - Add with `vfx_add_component` (component "fire-burst") or open as a new effect with `vfx_new_document` component="fire-burst". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "fire-burst", a second copy gets "fire-burst-2").
 
 **Controls**
@@ -194,8 +194,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Fire; travels from Source to Target.
 - Duration: 242 ticks (4.03333 s) minimum; the document grows to fit it.
-- Size: 65 nodes, 92 links.
-- Node types used: AudioEnvelope ×2, AudioMix, AudioOutput, AudioSource ×3, BillboardRenderer ×6, CameraImpulse, Drag ×5, Emitter ×5, Gravity ×4, InitialProperties ×5, Material ×9, NoiseForce ×5, OffsetAnchor ×4, ParticleEvents ×4, ParticleTrail, PointLight ×2, PropMesh ×2, Schedule ×4, SpriteRenderer.
+- Size: 66 nodes, 93 links.
+- Node types used: AudioEnvelope ×3, AudioMix, AudioOutput, AudioSource ×3, BillboardRenderer ×6, CameraImpulse, Drag ×5, Emitter ×5, Gravity ×4, InitialProperties ×5, Material ×9, NoiseForce ×5, OffsetAnchor ×4, ParticleEvents ×4, ParticleTrail, PointLight ×2, PropMesh ×2, Schedule ×4, SpriteRenderer.
 - Add with `vfx_add_component` (component "flamethrower") or open as a new effect with `vfx_new_document` component="flamethrower". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "flamethrower", a second copy gets "flamethrower-2").
 
 **Controls**
@@ -222,8 +222,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Fire; travels from Source to Target.
 - Duration: 120 ticks (2 s) minimum; the document grows to fit it.
-- Size: 30 nodes, 48 links.
-- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×3, BezierPath, BillboardRenderer ×2, Drag, Emitter ×2, Gravity ×2, GroundCollision, InitialProperties ×2, Material ×4, MotionTrail, NoiseForce, PathFollower, PointLight ×2, Schedule ×2, SpriteRenderer ×2.
+- Size: 34 nodes, 53 links.
+- Node types used: AudioEnvelope ×4, AudioMix, AudioOutput, AudioSource ×4, BezierPath, BillboardRenderer ×2, Drag, Emitter ×2, Gravity ×2, GroundCollision, InitialProperties ×2, Material ×4, MotionTrail, NoiseForce, PathFollower, PointLight ×2, Schedule ×2, SpriteRenderer ×2.
 - Add with `vfx_add_component` (component "fireball") or open as a new effect with `vfx_new_document` component="fireball". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "fireball", a second copy gets "fireball-2").
 
 **Controls**
@@ -248,8 +248,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Fire; travels from Source to Target.
 - Duration: 126 ticks (2.1 s) minimum; the document grows to fit it.
-- Size: 46 nodes, 71 links.
-- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×3, BezierPath, BillboardRenderer ×5, Drag, Emitter ×5, Gravity ×3, GroundCollision, InitialProperties ×5, Material ×8, MotionTrail, NoiseForce ×2, PathFollower, PointLight ×2, Schedule ×2, SpriteRenderer ×3.
+- Size: 50 nodes, 76 links.
+- Node types used: AudioEnvelope ×4, AudioMix, AudioOutput, AudioSource ×4, BezierPath, BillboardRenderer ×5, Drag, Emitter ×5, Gravity ×3, GroundCollision, InitialProperties ×5, Material ×8, MotionTrail, NoiseForce ×2, PathFollower, PointLight ×2, Schedule ×2, SpriteRenderer ×3.
 - Add with `vfx_add_component` (component "fireball-sim") or open as a new effect with `vfx_new_document` component="fireball-sim". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "fireball-sim", a second copy gets "fireball-sim-2").
 
 **Controls**
@@ -279,8 +279,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Lightning; travels from Source to Target.
 - Duration: 90 ticks (1.5 s) minimum; the document grows to fit it.
-- Size: 12 nodes, 18 links.
-- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×2, JaggedPath, LinePath, Material ×2, RibbonRenderer ×2, Schedule.
+- Size: 15 nodes, 24 links.
+- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×5, JaggedPath, LinePath, Material ×2, RibbonRenderer ×2, Schedule.
 - Add with `vfx_add_component` (component "arc-beam") or open as a new effect with `vfx_new_document` component="arc-beam". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "arc-beam", a second copy gets "arc-beam-2").
 
 **Controls**
@@ -300,8 +300,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Lightning; plays at Source.
 - Duration: 91 ticks (1.51667 s) minimum; the document grows to fit it.
-- Size: 17 nodes, 26 links.
-- Node types used: Anchor, Attract, AudioEnvelope, AudioMix, AudioOutput, AudioSource ×2, BillboardRenderer, Emitter, InitialProperties, JaggedPath, Material ×2, ParticlePaths, RibbonRenderer, Schedule, SpriteRenderer.
+- Size: 18 nodes, 27 links.
+- Node types used: Anchor, Attract, AudioEnvelope ×2, AudioMix, AudioOutput, AudioSource ×2, BillboardRenderer, Emitter, InitialProperties, JaggedPath, Material ×2, ParticlePaths, RibbonRenderer, Schedule, SpriteRenderer.
 - Add with `vfx_add_component` (component "charge-tethers") or open as a new effect with `vfx_new_document` component="charge-tethers". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "charge-tethers", a second copy gets "charge-tethers-2").
 
 **Controls**
@@ -324,8 +324,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Lightning; travels from Source to Target.
 - Duration: 144 ticks (2.4 s) minimum; the document grows to fit it.
-- Size: 87 nodes, 138 links.
-- Node types used: Attract, AudioEnvelope, AudioMix, AudioOutput, AudioSource ×4, BezierPath, BillboardRenderer ×3, BranchPath ×2, CameraImpulse, EffectTimeCurve ×3, Emitter ×3, Gravity ×2, GroundCollision ×2, InitialProperties ×3, JaggedPath ×6, Material ×15, MergePaths ×2, OffsetAnchor, Oscillator, ParticlePaths, ParticleTrail ×2, PointLight, RevealPath ×2, RibbonRenderer ×8, RingPath, ScalarMath ×9, Schedule ×4, ScreenFlash, SpriteRenderer ×4, Time.
+- Size: 86 nodes, 136 links.
+- Node types used: Attract, AudioEnvelope, AudioMix, AudioOutput, AudioSource ×3, BezierPath, BillboardRenderer ×3, BranchPath ×2, CameraImpulse, EffectTimeCurve ×3, Emitter ×3, Gravity ×2, GroundCollision ×2, InitialProperties ×3, JaggedPath ×6, Material ×15, MergePaths ×2, OffsetAnchor, Oscillator, ParticlePaths, ParticleTrail ×2, PointLight, RevealPath ×2, RibbonRenderer ×8, RingPath, ScalarMath ×9, Schedule ×4, ScreenFlash, SpriteRenderer ×4, Time.
 - Add with `vfx_add_component` (component "lightning-strike") or open as a new effect with `vfx_new_document` component="lightning-strike". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "lightning-strike", a second copy gets "lightning-strike-2").
 
 **Controls**
@@ -378,8 +378,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Lightning; travels from Source to Target.
 - Duration: 144 ticks (2.4 s) minimum; the document grows to fit it.
-- Size: 87 nodes, 138 links.
-- Node types used: Attract, AudioEnvelope, AudioMix, AudioOutput, AudioSource ×4, BezierPath, BillboardRenderer ×3, BranchPath ×2, CameraImpulse, EffectTimeCurve ×3, Emitter ×3, Gravity ×2, GroundCollision ×2, InitialProperties ×3, JaggedPath ×6, Material ×15, MergePaths ×2, OffsetAnchor, Oscillator, ParticlePaths, ParticleTrail ×2, PointLight, RevealPath ×2, RibbonRenderer ×8, RingPath, ScalarMath ×9, Schedule ×4, ScreenFlash, SpriteRenderer ×4, Time.
+- Size: 88 nodes, 139 links.
+- Node types used: Attract, AudioEnvelope ×2, AudioMix, AudioOutput, AudioSource ×4, BezierPath, BillboardRenderer ×3, BranchPath ×2, CameraImpulse, EffectTimeCurve ×3, Emitter ×3, Gravity ×2, GroundCollision ×2, InitialProperties ×3, JaggedPath ×6, Material ×15, MergePaths ×2, OffsetAnchor, Oscillator, ParticlePaths, ParticleTrail ×2, PointLight, RevealPath ×2, RibbonRenderer ×8, RingPath, ScalarMath ×9, Schedule ×4, ScreenFlash, SpriteRenderer ×4, Time.
 - Add with `vfx_add_component` (component "lightning-heavy-strike") or open as a new effect with `vfx_new_document` component="lightning-heavy-strike". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "lightning-heavy-strike", a second copy gets "lightning-heavy-strike-2").
 
 **Controls**
@@ -428,8 +428,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Water; plays at Source.
 - Duration: 320 ticks (5.33333 s) minimum; the document grows to fit it.
-- Size: 18 nodes, 22 links.
-- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×2, BillboardRenderer ×2, Emitter ×2, Gravity ×2, GroundCollision ×2, InitialProperties ×2, Material ×2, Schedule.
+- Size: 20 nodes, 26 links.
+- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×4, BillboardRenderer ×2, Emitter ×2, Gravity ×2, GroundCollision ×2, InitialProperties ×2, Material ×2, Schedule.
 - Add with `vfx_add_component` (component "rain-splash") or open as a new effect with `vfx_new_document` component="rain-splash". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "rain-splash", a second copy gets "rain-splash-2").
 
 **Controls**
@@ -451,8 +451,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Water; travels from Source to Target.
 - Duration: 180 ticks (3 s) minimum; the document grows to fit it.
-- Size: 64 nodes, 91 links.
-- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×2, BezierPath, BillboardRenderer ×2, Drag, EffectTimeCurve ×3, Emitter ×2, Gravity, GroundCollision, InitialProperties ×2, Material ×11, OffsetAnchor, PathFollower, PathTransform, RevealPath, RibbonRenderer ×6, RingPath ×3, ScalarMath ×9, Schedule ×7, SpriteRenderer ×2, Time ×4.
+- Size: 65 nodes, 92 links.
+- Node types used: AudioEnvelope ×2, AudioMix, AudioOutput, AudioSource ×2, BezierPath, BillboardRenderer ×2, Drag, EffectTimeCurve ×3, Emitter ×2, Gravity, GroundCollision, InitialProperties ×2, Material ×11, OffsetAnchor, PathFollower, PathTransform, RevealPath, RibbonRenderer ×6, RingPath ×3, ScalarMath ×9, Schedule ×7, SpriteRenderer ×2, Time ×4.
 - Add with `vfx_add_component` (component "water-stream") or open as a new effect with `vfx_new_document` component="water-stream". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "water-stream", a second copy gets "water-stream-2").
 
 **Controls**
@@ -503,8 +503,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Water; travels from Source to Target.
 - Duration: 180 ticks (3 s) minimum; the document grows to fit it.
-- Size: 64 nodes, 91 links.
-- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×2, BezierPath, BillboardRenderer ×2, Drag, EffectTimeCurve ×3, Emitter ×2, Gravity, GroundCollision, InitialProperties ×2, Material ×11, OffsetAnchor, PathFollower, PathTransform, RevealPath, RibbonRenderer ×6, RingPath ×3, ScalarMath ×9, Schedule ×7, SpriteRenderer ×2, Time ×4.
+- Size: 65 nodes, 92 links.
+- Node types used: AudioEnvelope ×2, AudioMix, AudioOutput, AudioSource ×2, BezierPath, BillboardRenderer ×2, Drag, EffectTimeCurve ×3, Emitter ×2, Gravity, GroundCollision, InitialProperties ×2, Material ×11, OffsetAnchor, PathFollower, PathTransform, RevealPath, RibbonRenderer ×6, RingPath ×3, ScalarMath ×9, Schedule ×7, SpriteRenderer ×2, Time ×4.
 - Add with `vfx_add_component` (component "water-broad") or open as a new effect with `vfx_new_document` component="water-broad". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "water-broad", a second copy gets "water-broad-2").
 
 **Controls**
@@ -531,8 +531,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Ice; plays at Target.
 - Duration: 150 ticks (2.5 s) minimum; the document grows to fit it.
-- Size: 20 nodes, 27 links.
-- Node types used: AudioMix, AudioOutput, AudioSource ×2, BillboardRenderer ×2, Drag, Emitter ×3, Gravity, GroundCollision, InitialProperties ×3, Material ×3, MeshRenderer, Schedule.
+- Size: 22 nodes, 30 links.
+- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×3, BillboardRenderer ×2, Drag, Emitter ×3, Gravity, GroundCollision, InitialProperties ×3, Material ×3, MeshRenderer, Schedule.
 - Add with `vfx_add_component` (component "ice-shards") or open as a new effect with `vfx_new_document` component="ice-shards". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "ice-shards", a second copy gets "ice-shards-2").
 
 **Controls**
@@ -554,8 +554,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Ice; plays at Target.
 - Duration: 192 ticks (3.2 s) minimum; the document grows to fit it.
-- Size: 57 nodes, 81 links.
-- Node types used: Attract, AudioMix, AudioOutput, AudioSource ×4, BillboardRenderer ×4, Drag ×2, Emitter ×7, Gravity ×3, GroundCollision, InitialProperties ×7, Material ×6, MeshRenderer ×4, OffsetAnchor ×4, PointLight, RibbonRenderer, RingPath, ScalarMath ×3, Schedule ×5, Time.
+- Size: 61 nodes, 86 links.
+- Node types used: Attract, AudioEnvelope ×3, AudioMix, AudioOutput, AudioSource ×5, BillboardRenderer ×4, Drag ×2, Emitter ×7, Gravity ×3, GroundCollision, InitialProperties ×7, Material ×6, MeshRenderer ×4, OffsetAnchor ×4, PointLight, RibbonRenderer, RingPath, ScalarMath ×3, Schedule ×5, Time.
 - Add with `vfx_add_component` (component "ice-eruption") or open as a new effect with `vfx_new_document` component="ice-eruption". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "ice-eruption", a second copy gets "ice-eruption-2").
 
 **Controls**
@@ -581,8 +581,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Ice; plays at Target.
 - Duration: 192 ticks (3.2 s) minimum; the document grows to fit it.
-- Size: 57 nodes, 81 links.
-- Node types used: Attract, AudioMix, AudioOutput, AudioSource ×4, BillboardRenderer ×4, Drag ×2, Emitter ×7, Gravity ×3, GroundCollision, InitialProperties ×7, Material ×6, MeshRenderer ×4, OffsetAnchor ×4, PointLight, RibbonRenderer, RingPath, ScalarMath ×3, Schedule ×5, Time.
+- Size: 60 nodes, 85 links.
+- Node types used: Attract, AudioEnvelope ×2, AudioMix, AudioOutput, AudioSource ×5, BillboardRenderer ×4, Drag ×2, Emitter ×7, Gravity ×3, GroundCollision, InitialProperties ×7, Material ×6, MeshRenderer ×4, OffsetAnchor ×4, PointLight, RibbonRenderer, RingPath, ScalarMath ×3, Schedule ×5, Time.
 - Add with `vfx_add_component` (component "ice-fan") or open as a new effect with `vfx_new_document` component="ice-fan". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "ice-fan", a second copy gets "ice-fan-2").
 
 **Controls**
@@ -608,8 +608,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Ice; plays at Target.
 - Duration: 192 ticks (3.2 s) minimum; the document grows to fit it.
-- Size: 57 nodes, 81 links.
-- Node types used: Attract, AudioMix, AudioOutput, AudioSource ×4, BillboardRenderer ×4, Drag ×2, Emitter ×7, Gravity ×3, GroundCollision, InitialProperties ×7, Material ×6, MeshRenderer ×4, OffsetAnchor ×4, PointLight, RibbonRenderer, RingPath, ScalarMath ×3, Schedule ×5, Time.
+- Size: 61 nodes, 86 links.
+- Node types used: Attract, AudioEnvelope ×3, AudioMix, AudioOutput, AudioSource ×5, BillboardRenderer ×4, Drag ×2, Emitter ×7, Gravity ×3, GroundCollision, InitialProperties ×7, Material ×6, MeshRenderer ×4, OffsetAnchor ×4, PointLight, RibbonRenderer, RingPath, ScalarMath ×3, Schedule ×5, Time.
 - Add with `vfx_add_component` (component "ice-cluster") or open as a new effect with `vfx_new_document` component="ice-cluster". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "ice-cluster", a second copy gets "ice-cluster-2").
 
 **Controls**
@@ -637,8 +637,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Earth; plays at Target.
 - Duration: 150 ticks (2.5 s) minimum; the document grows to fit it.
-- Size: 18 nodes, 23 links.
-- Node types used: AudioMix, AudioOutput, AudioSource ×2, BillboardRenderer, Drag ×2, Emitter ×2, Gravity ×2, GroundCollision, InitialProperties ×2, Material ×2, MeshRenderer, Schedule.
+- Size: 20 nodes, 26 links.
+- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×3, BillboardRenderer, Drag ×2, Emitter ×2, Gravity ×2, GroundCollision, InitialProperties ×2, Material ×2, MeshRenderer, Schedule.
 - Add with `vfx_add_component` (component "rock-burst") or open as a new effect with `vfx_new_document` component="rock-burst". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "rock-burst", a second copy gets "rock-burst-2").
 
 **Controls**
@@ -660,8 +660,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Earth; plays at Target.
 - Duration: 216 ticks (3.6 s) minimum; the document grows to fit it.
-- Size: 50 nodes, 73 links.
-- Node types used: AudioMix, AudioOutput, AudioSource ×4, BillboardRenderer ×2, Drag ×6, Emitter ×6, Gravity ×5, GroundCollision ×4, InitialProperties ×6, Material ×3, MeshRenderer ×4, NoiseForce, OffsetAnchor ×2, PointLight, Schedule ×3, SpriteRenderer.
+- Size: 52 nodes, 76 links.
+- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×5, BillboardRenderer ×2, Drag ×6, Emitter ×6, Gravity ×5, GroundCollision ×4, InitialProperties ×6, Material ×3, MeshRenderer ×4, NoiseForce, OffsetAnchor ×2, PointLight, Schedule ×3, SpriteRenderer.
 - Add with `vfx_add_component` (component "earth-upheaval") or open as a new effect with `vfx_new_document` component="earth-upheaval". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "earth-upheaval", a second copy gets "earth-upheaval-2").
 
 **Controls**
@@ -687,8 +687,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Earth; plays at Target.
 - Duration: 216 ticks (3.6 s) minimum; the document grows to fit it.
-- Size: 50 nodes, 73 links.
-- Node types used: AudioMix, AudioOutput, AudioSource ×4, BillboardRenderer ×2, Drag ×6, Emitter ×6, Gravity ×5, GroundCollision ×4, InitialProperties ×6, Material ×3, MeshRenderer ×4, NoiseForce, OffsetAnchor ×2, PointLight, Schedule ×3, SpriteRenderer.
+- Size: 52 nodes, 76 links.
+- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×5, BillboardRenderer ×2, Drag ×6, Emitter ×6, Gravity ×5, GroundCollision ×4, InitialProperties ×6, Material ×3, MeshRenderer ×4, NoiseForce, OffsetAnchor ×2, PointLight, Schedule ×3, SpriteRenderer.
 - Add with `vfx_add_component` (component "earth-heavy") or open as a new effect with `vfx_new_document` component="earth-heavy". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "earth-heavy", a second copy gets "earth-heavy-2").
 
 **Controls**
@@ -714,8 +714,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Earth; plays at Target.
 - Duration: 216 ticks (3.6 s) minimum; the document grows to fit it.
-- Size: 50 nodes, 73 links.
-- Node types used: AudioMix, AudioOutput, AudioSource ×4, BillboardRenderer ×2, Drag ×6, Emitter ×6, Gravity ×5, GroundCollision ×4, InitialProperties ×6, Material ×3, MeshRenderer ×4, NoiseForce, OffsetAnchor ×2, PointLight, Schedule ×3, SpriteRenderer.
+- Size: 52 nodes, 76 links.
+- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×5, BillboardRenderer ×2, Drag ×6, Emitter ×6, Gravity ×5, GroundCollision ×4, InitialProperties ×6, Material ×3, MeshRenderer ×4, NoiseForce, OffsetAnchor ×2, PointLight, Schedule ×3, SpriteRenderer.
 - Add with `vfx_add_component` (component "earth-gravel") or open as a new effect with `vfx_new_document` component="earth-gravel". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "earth-gravel", a second copy gets "earth-gravel-2").
 
 **Controls**
@@ -743,8 +743,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Wind; plays at Source.
 - Duration: 364 ticks (6.06667 s) minimum; the document grows to fit it.
-- Size: 12 nodes, 15 links.
-- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource, BillboardRenderer, Drag, Emitter, Gravity, InitialProperties, Material, Schedule, Vortex.
+- Size: 27 nodes, 39 links.
+- Node types used: AudioEnvelope ×7, AudioMix, AudioOutput, AudioSource ×10, BillboardRenderer, Drag, Emitter, Gravity, InitialProperties, Material, Schedule, Vortex.
 - Add with `vfx_add_component` (component "tornado") or open as a new effect with `vfx_new_document` component="tornado". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "tornado", a second copy gets "tornado-2").
 
 **Controls**
@@ -764,8 +764,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Wind; travels from Source to Target.
 - Duration: 198 ticks (3.3 s) minimum; the document grows to fit it.
-- Size: 34 nodes, 57 links.
-- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×2, BillboardRenderer ×2, Drag, EffectTimeCurve, Emitter ×2, HelixPath ×4, InitialProperties ×2, Material ×6, RibbonRenderer ×4, ScalarMath ×4, Schedule ×2, Vortex.
+- Size: 40 nodes, 67 links.
+- Node types used: AudioEnvelope ×3, AudioMix, AudioOutput, AudioSource ×6, BillboardRenderer ×2, Drag, EffectTimeCurve, Emitter ×2, HelixPath ×4, InitialProperties ×2, Material ×6, RibbonRenderer ×4, ScalarMath ×4, Schedule ×2, Vortex.
 - Add with `vfx_add_component` (component "wind-gust") or open as a new effect with `vfx_new_document` component="wind-gust". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "wind-gust", a second copy gets "wind-gust-2").
 
 **Controls**
@@ -789,8 +789,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Wind; travels from Source to Target.
 - Duration: 198 ticks (3.3 s) minimum; the document grows to fit it.
-- Size: 31 nodes, 51 links.
-- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×3, BillboardRenderer ×2, Drag, EffectTimeCurve, Emitter ×2, HelixPath ×3, InitialProperties ×2, Material ×5, RibbonRenderer ×3, ScalarMath ×3, Schedule ×2, Vortex.
+- Size: 37 nodes, 61 links.
+- Node types used: AudioEnvelope ×3, AudioMix, AudioOutput, AudioSource ×7, BillboardRenderer ×2, Drag, EffectTimeCurve, Emitter ×2, HelixPath ×3, InitialProperties ×2, Material ×5, RibbonRenderer ×3, ScalarMath ×3, Schedule ×2, Vortex.
 - Add with `vfx_add_component` (component "wind-cut") or open as a new effect with `vfx_new_document` component="wind-cut". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "wind-cut", a second copy gets "wind-cut-2").
 
 **Controls**
@@ -942,8 +942,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Shadow; plays at Target.
 - Duration: 258 ticks (4.3 s) minimum; the document grows to fit it.
-- Size: 16 nodes, 25 links.
-- Node types used: Attract, AudioEnvelope, AudioMix, AudioOutput, AudioSource ×2, BillboardRenderer, Drag, Emitter, InitialProperties, Material ×2, PointLight, Schedule, SpriteRenderer, Vortex.
+- Size: 17 nodes, 26 links.
+- Node types used: Attract, AudioEnvelope ×2, AudioMix, AudioOutput, AudioSource ×2, BillboardRenderer, Drag, Emitter, InitialProperties, Material ×2, PointLight, Schedule, SpriteRenderer, Vortex.
 - Add with `vfx_add_component` (component "shadow-vortex") or open as a new effect with `vfx_new_document` component="shadow-vortex". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "shadow-vortex", a second copy gets "shadow-vortex-2").
 
 **Controls**
@@ -967,8 +967,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Shadow; plays at Target.
 - Duration: 228 ticks (3.8 s) minimum; the document grows to fit it.
-- Size: 50 nodes, 84 links.
-- Node types used: Attract ×3, AudioEnvelope, AudioMix, AudioOutput, AudioSource ×3, BillboardRenderer ×5, Drag, Emitter ×4, Gravity, HelixPath ×5, InitialProperties ×4, Material ×7, MergePaths, OffsetAnchor ×5, RibbonRenderer ×2, Schedule ×3, SpriteRenderer ×2, Vortex.
+- Size: 51 nodes, 85 links.
+- Node types used: Attract ×3, AudioEnvelope ×2, AudioMix, AudioOutput, AudioSource ×3, BillboardRenderer ×5, Drag, Emitter ×4, Gravity, HelixPath ×5, InitialProperties ×4, Material ×7, MergePaths, OffsetAnchor ×5, RibbonRenderer ×2, Schedule ×3, SpriteRenderer ×2, Vortex.
 - Add with `vfx_add_component` (component "shadow-collapse") or open as a new effect with `vfx_new_document` component="shadow-collapse". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "shadow-collapse", a second copy gets "shadow-collapse-2").
 
 **Controls**
@@ -991,8 +991,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Shadow; plays at Target.
 - Duration: 150 ticks (2.5 s) minimum; the document grows to fit it.
-- Size: 34 nodes, 55 links.
-- Node types used: Attract ×3, AudioMix, AudioOutput, AudioSource ×3, BillboardRenderer ×5, Drag, Emitter ×4, Gravity, InitialProperties ×4, Material ×5, Schedule ×3, SpriteRenderer ×2, Vortex.
+- Size: 36 nodes, 57 links.
+- Node types used: Attract ×3, AudioEnvelope ×2, AudioMix, AudioOutput, AudioSource ×3, BillboardRenderer ×5, Drag, Emitter ×4, Gravity, InitialProperties ×4, Material ×5, Schedule ×3, SpriteRenderer ×2, Vortex.
 - Add with `vfx_add_component` (component "shadow-puff") or open as a new effect with `vfx_new_document` component="shadow-puff". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "shadow-puff", a second copy gets "shadow-puff-2").
 
 **Controls**
@@ -1015,8 +1015,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Shadow; travels from Source to Target.
 - Duration: 200 ticks (3.33333 s) minimum; the document grows to fit it.
-- Size: 47 nodes, 77 links.
-- Node types used: Attract ×3, AudioMix, AudioOutput, AudioSource ×3, BillboardRenderer ×6, Drag, Emitter ×5, Gravity, HelixPath, InitialProperties ×5, Material ×7, PathFollower, RevealPath, RibbonRenderer ×2, ScalarMath, Schedule ×4, SpriteRenderer ×2, Time, Vortex.
+- Size: 48 nodes, 78 links.
+- Node types used: Attract ×3, AudioEnvelope, AudioMix, AudioOutput, AudioSource ×3, BillboardRenderer ×6, Drag, Emitter ×5, Gravity, HelixPath, InitialProperties ×5, Material ×7, PathFollower, RevealPath, RibbonRenderer ×2, ScalarMath, Schedule ×4, SpriteRenderer ×2, Time, Vortex.
 - Add with `vfx_add_component` (component "shadow-tendril") or open as a new effect with `vfx_new_document` component="shadow-tendril". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "shadow-tendril", a second copy gets "shadow-tendril-2").
 
 **Controls**
@@ -1041,8 +1041,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Light; plays at Target.
 - Duration: 120 ticks (2 s) minimum; the document grows to fit it.
-- Size: 15 nodes, 24 links.
-- Node types used: AudioMix, AudioOutput, AudioSource ×2, BillboardRenderer, Emitter, InitialProperties, Material ×3, OffsetAnchor, PointLight, Schedule, SpriteRenderer ×2.
+- Size: 16 nodes, 25 links.
+- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×2, BillboardRenderer, Emitter, InitialProperties, Material ×3, OffsetAnchor, PointLight, Schedule, SpriteRenderer ×2.
 - Add with `vfx_add_component` (component "holy-light") or open as a new effect with `vfx_new_document` component="holy-light". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "holy-light", a second copy gets "holy-light-2").
 
 **Controls**
@@ -1066,8 +1066,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Light; plays at Target.
 - Duration: 168 ticks (2.8 s) minimum; the document grows to fit it.
-- Size: 44 nodes, 68 links.
-- Node types used: Attract, AudioMix, AudioOutput, AudioSource ×3, BillboardRenderer ×2, Drag, Emitter ×2, InitialProperties ×2, Material ×6, OffsetAnchor, PointLight, RadialPath, RevealPath, RibbonRenderer ×3, RingPath ×2, ScalarMath ×6, Schedule ×5, SpriteRenderer ×3, Time ×2.
+- Size: 46 nodes, 70 links.
+- Node types used: Attract, AudioEnvelope ×2, AudioMix, AudioOutput, AudioSource ×3, BillboardRenderer ×2, Drag, Emitter ×2, InitialProperties ×2, Material ×6, OffsetAnchor, PointLight, RadialPath, RevealPath, RibbonRenderer ×3, RingPath ×2, ScalarMath ×6, Schedule ×5, SpriteRenderer ×3, Time ×2.
 - Add with `vfx_add_component` (component "light-pulse") or open as a new effect with `vfx_new_document` component="light-pulse". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "light-pulse", a second copy gets "light-pulse-2").
 
 **Controls**
@@ -1093,8 +1093,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Light; plays at Target.
 - Duration: 168 ticks (2.8 s) minimum; the document grows to fit it.
-- Size: 44 nodes, 68 links.
-- Node types used: Attract, AudioMix, AudioOutput, AudioSource ×3, BillboardRenderer ×2, Drag, Emitter ×2, InitialProperties ×2, Material ×6, OffsetAnchor, PointLight, RadialPath, RevealPath, RibbonRenderer ×3, RingPath ×2, ScalarMath ×6, Schedule ×5, SpriteRenderer ×3, Time ×2.
+- Size: 46 nodes, 70 links.
+- Node types used: Attract, AudioEnvelope ×2, AudioMix, AudioOutput, AudioSource ×3, BillboardRenderer ×2, Drag, Emitter ×2, InitialProperties ×2, Material ×6, OffsetAnchor, PointLight, RadialPath, RevealPath, RibbonRenderer ×3, RingPath ×2, ScalarMath ×6, Schedule ×5, SpriteRenderer ×3, Time ×2.
 - Add with `vfx_add_component` (component "light-cone") or open as a new effect with `vfx_new_document` component="light-cone". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "light-cone", a second copy gets "light-cone-2").
 
 **Controls**
@@ -1120,8 +1120,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Light; plays at Target.
 - Duration: 193 ticks (3.21667 s) minimum; the document grows to fit it.
-- Size: 44 nodes, 68 links.
-- Node types used: Attract, AudioMix, AudioOutput, AudioSource ×3, BillboardRenderer ×2, Drag, Emitter ×2, InitialProperties ×2, Material ×6, OffsetAnchor, PointLight, RadialPath, RevealPath, RibbonRenderer ×3, RingPath ×2, ScalarMath ×6, Schedule ×5, SpriteRenderer ×3, Time ×2.
+- Size: 47 nodes, 72 links.
+- Node types used: Attract, AudioEnvelope ×2, AudioMix, AudioOutput, AudioSource ×4, BillboardRenderer ×2, Drag, Emitter ×2, InitialProperties ×2, Material ×6, OffsetAnchor, PointLight, RadialPath, RevealPath, RibbonRenderer ×3, RingPath ×2, ScalarMath ×6, Schedule ×5, SpriteRenderer ×3, Time ×2.
 - Add with `vfx_add_component` (component "light-blessing") or open as a new effect with `vfx_new_document` component="light-blessing". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "light-blessing", a second copy gets "light-blessing-2").
 
 **Controls**
@@ -1149,8 +1149,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Energy; plays at Source.
 - Duration: 166 ticks (2.76667 s) minimum; the document grows to fit it.
-- Size: 14 nodes, 22 links.
-- Node types used: Attract, AudioMix, AudioOutput, AudioSource, BillboardRenderer, Drag, Emitter, InitialProperties, Material ×2, PointLight, Schedule, SpriteRenderer, Vortex.
+- Size: 17 nodes, 26 links.
+- Node types used: Attract, AudioEnvelope ×2, AudioMix, AudioOutput, AudioSource ×2, BillboardRenderer, Drag, Emitter, InitialProperties, Material ×2, PointLight, Schedule, SpriteRenderer, Vortex.
 - Add with `vfx_add_component` (component "charge-up") or open as a new effect with `vfx_new_document` component="charge-up". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "charge-up", a second copy gets "charge-up-2").
 
 **Controls**
@@ -1174,8 +1174,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Energy; travels from Source to Target.
 - Duration: 120 ticks (2 s) minimum; the document grows to fit it.
-- Size: 16 nodes, 29 links.
-- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×2, HelixPath ×2, LinePath, Material ×3, RibbonRenderer ×4, Schedule.
+- Size: 19 nodes, 33 links.
+- Node types used: AudioEnvelope ×3, AudioMix, AudioOutput, AudioSource ×3, HelixPath ×2, LinePath, Material ×3, RibbonRenderer ×4, Schedule.
 - Add with `vfx_add_component` (component "helix-beam") or open as a new effect with `vfx_new_document` component="helix-beam". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "helix-beam", a second copy gets "helix-beam-2").
 
 **Controls**
@@ -1197,8 +1197,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Energy; travels from Source to Target.
 - Duration: 199 ticks (3.31667 s) minimum; the document grows to fit it.
-- Size: 54 nodes, 94 links.
-- Node types used: Attract, AudioMix, AudioOutput, AudioSource ×3, BezierPath, BillboardRenderer ×3, Drag ×2, Emitter ×4, Gravity, InitialProperties ×4, Material ×8, MotionTrail ×2, NoiseForce, ParticleTrail, PathFollower, PointLight ×2, RibbonRenderer, RingPath, ScalarMath ×3, Schedule ×6, SpriteRenderer ×6, Time.
+- Size: 59 nodes, 100 links.
+- Node types used: Attract, AudioEnvelope ×4, AudioMix, AudioOutput, AudioSource ×4, BezierPath, BillboardRenderer ×3, Drag ×2, Emitter ×4, Gravity, InitialProperties ×4, Material ×8, MotionTrail ×2, NoiseForce, ParticleTrail, PathFollower, PointLight ×2, RibbonRenderer, RingPath, ScalarMath ×3, Schedule ×6, SpriteRenderer ×6, Time.
 - Add with `vfx_add_component` (component "energy-bolt") or open as a new effect with `vfx_new_document` component="energy-bolt". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "energy-bolt", a second copy gets "energy-bolt-2").
 
 **Controls**
@@ -1227,8 +1227,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Energy; travels from Source to Target.
 - Duration: 208 ticks (3.46667 s) minimum; the document grows to fit it.
-- Size: 54 nodes, 94 links.
-- Node types used: Attract, AudioMix, AudioOutput, AudioSource ×3, BezierPath, BillboardRenderer ×3, Drag ×2, Emitter ×4, Gravity, InitialProperties ×4, Material ×8, MotionTrail ×2, NoiseForce, ParticleTrail, PathFollower, PointLight ×2, RibbonRenderer, RingPath, ScalarMath ×3, Schedule ×6, SpriteRenderer ×6, Time.
+- Size: 57 nodes, 98 links.
+- Node types used: Attract, AudioEnvelope ×2, AudioMix, AudioOutput, AudioSource ×4, BezierPath, BillboardRenderer ×3, Drag ×2, Emitter ×4, Gravity, InitialProperties ×4, Material ×8, MotionTrail ×2, NoiseForce, ParticleTrail, PathFollower, PointLight ×2, RibbonRenderer, RingPath, ScalarMath ×3, Schedule ×6, SpriteRenderer ×6, Time.
 - Add with `vfx_add_component` (component "energy-needle") or open as a new effect with `vfx_new_document` component="energy-needle". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "energy-needle", a second copy gets "energy-needle-2").
 
 **Controls**
@@ -1257,8 +1257,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Energy; travels from Source to Target.
 - Duration: 192 ticks (3.2 s) minimum; the document grows to fit it.
-- Size: 54 nodes, 94 links.
-- Node types used: Attract, AudioMix, AudioOutput, AudioSource ×3, BezierPath, BillboardRenderer ×3, Drag ×2, Emitter ×4, Gravity, InitialProperties ×4, Material ×8, MotionTrail ×2, NoiseForce, ParticleTrail, PathFollower, PointLight ×2, RibbonRenderer, RingPath, ScalarMath ×3, Schedule ×6, SpriteRenderer ×6, Time.
+- Size: 59 nodes, 100 links.
+- Node types used: Attract, AudioEnvelope ×4, AudioMix, AudioOutput, AudioSource ×4, BezierPath, BillboardRenderer ×3, Drag ×2, Emitter ×4, Gravity, InitialProperties ×4, Material ×8, MotionTrail ×2, NoiseForce, ParticleTrail, PathFollower, PointLight ×2, RibbonRenderer, RingPath, ScalarMath ×3, Schedule ×6, SpriteRenderer ×6, Time.
 - Add with `vfx_add_component` (component "energy-orb") or open as a new effect with `vfx_new_document` component="energy-orb". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "energy-orb", a second copy gets "energy-orb-2").
 
 **Controls**
@@ -1311,8 +1311,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Generic; plays at Source.
 - Duration: 450 ticks (7.5 s) minimum; the document grows to fit it.
-- Size: 12 nodes, 14 links.
-- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource, BillboardRenderer, Drag, Emitter, Gravity, InitialProperties, Material, NoiseForce, Schedule.
+- Size: 8 nodes, 9 links.
+- Node types used: BillboardRenderer, Drag, Emitter, Gravity, InitialProperties, Material, NoiseForce, Schedule.
 - Add with `vfx_add_component` (component "smoke-plume") or open as a new effect with `vfx_new_document` component="smoke-plume". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "smoke-plume", a second copy gets "smoke-plume-2").
 
 **Controls**
@@ -1333,8 +1333,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Generic; plays at Target.
 - Duration: 90 ticks (1.5 s) minimum; the document grows to fit it.
-- Size: 17 nodes, 26 links.
-- Node types used: AudioMix, AudioOutput, AudioSource ×2, BillboardRenderer, CameraImpulse, Emitter, Gravity, InitialProperties, Material ×3, OffsetAnchor, Schedule, ScreenFlash, SpriteRenderer ×2.
+- Size: 19 nodes, 29 links.
+- Node types used: AudioEnvelope, AudioMix, AudioOutput, AudioSource ×3, BillboardRenderer, CameraImpulse, Emitter, Gravity, InitialProperties, Material ×3, OffsetAnchor, Schedule, ScreenFlash, SpriteRenderer ×2.
 - Add with `vfx_add_component` (component "impact-flash") or open as a new effect with `vfx_new_document` component="impact-flash". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "impact-flash", a second copy gets "impact-flash-2").
 
 **Controls**
@@ -1356,8 +1356,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Generic; plays at Target.
 - Duration: 122 ticks (2.03333 s) minimum; the document grows to fit it.
-- Size: 20 nodes, 24 links.
-- Node types used: Anchor, AudioMix, AudioOutput, AudioSource ×2, BillboardRenderer ×2, Constant, Emitter ×2, EventDelay, Gravity, GroundCollision, InitialProperties ×2, Material ×2, MergeEvents, ScalarMath, Schedule.
+- Size: 21 nodes, 26 links.
+- Node types used: Anchor, AudioMix, AudioOutput, AudioSource ×3, BillboardRenderer ×2, Constant, Emitter ×2, EventDelay, Gravity, GroundCollision, InitialProperties ×2, Material ×2, MergeEvents, ScalarMath, Schedule.
 - Add with `vfx_add_component` (component "spark-aftershock") or open as a new effect with `vfx_new_document` component="spark-aftershock". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "spark-aftershock", a second copy gets "spark-aftershock-2").
 
 **Controls**
@@ -1379,8 +1379,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Generic; travels from Source to Target.
 - Duration: 168 ticks (2.8 s) minimum; the document grows to fit it.
-- Size: 130 nodes, 205 links.
-- Node types used: Attract, AudioEnvelope, AudioMix, AudioOutput, AudioSource ×4, BranchPath, CameraImpulse, Drag, EffectTimeCurve ×7, Emitter ×2, Gravity, GroundCollision, HelixPath ×2, InitialProperties ×2, JaggedPath ×5, LinePath, Material ×24, OffsetAnchor, Oscillator ×3, ParticlePaths, ParticleTrail ×2, PointLight ×2, RadialPath ×2, RevealPath ×5, RibbonRenderer ×18, RingPath ×3, RingRenderer ×4, ScalarMath ×23, Schedule ×6, ScreenFlash, Time ×3.
+- Size: 133 nodes, 208 links.
+- Node types used: Attract, AudioEnvelope ×4, AudioMix, AudioOutput, AudioSource ×4, BranchPath, CameraImpulse, Drag, EffectTimeCurve ×7, Emitter ×2, Gravity, GroundCollision, HelixPath ×2, InitialProperties ×2, JaggedPath ×5, LinePath, Material ×24, OffsetAnchor, Oscillator ×3, ParticlePaths, ParticleTrail ×2, PointLight ×2, RadialPath ×2, RevealPath ×5, RibbonRenderer ×18, RingPath ×3, RingRenderer ×4, ScalarMath ×23, Schedule ×6, ScreenFlash, Time ×3.
 - Add with `vfx_add_component` (component "arcane-lance") or open as a new effect with `vfx_new_document` component="arcane-lance". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "arcane-lance", a second copy gets "arcane-lance-2").
 
 **Controls**
@@ -1405,8 +1405,8 @@ Control ids shown use the default insertion prefix (the component id). Ranges ar
 
 - Family: Generic; travels from Source to Target.
 - Duration: 170 ticks (2.83333 s) minimum; the document grows to fit it.
-- Size: 101 nodes, 155 links.
-- Node types used: Attract, AudioMix, AudioOutput, AudioSource ×4, CameraImpulse, Drag ×2, EffectTimeCurve ×6, Emitter ×3, Gravity, GroundCollision, InitialProperties ×3, JaggedPath ×2, LinePath, Material ×21, MotionTrail ×7, OffsetAnchor, Oscillator ×2, ParticleTrail ×3, PathFollower, PointLight ×3, RadialPath ×2, RibbonRenderer ×7, RingPath ×3, RingRenderer ×4, ScalarMath ×10, Schedule ×7, ScreenFlash, Time ×2.
+- Size: 106 nodes, 161 links.
+- Node types used: Attract, AudioEnvelope ×4, AudioMix, AudioOutput, AudioSource ×5, CameraImpulse, Drag ×2, EffectTimeCurve ×6, Emitter ×3, Gravity, GroundCollision, InitialProperties ×3, JaggedPath ×2, LinePath, Material ×21, MotionTrail ×7, OffsetAnchor, Oscillator ×2, ParticleTrail ×3, PathFollower, PointLight ×3, RadialPath ×2, RibbonRenderer ×7, RingPath ×3, RingRenderer ×4, ScalarMath ×10, Schedule ×7, ScreenFlash, Time ×2.
 - Add with `vfx_add_component` (component "force-lance") or open as a new effect with `vfx_new_document` component="force-lance". Set a control with `vfx_set_control` using its **control id** (below; ids shown for an effect where the component keeps its default prefix "force-lance", a second copy gets "force-lance-2").
 
 **Controls**

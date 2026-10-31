@@ -73,7 +73,7 @@ test('sound-carrying components share one audio mix/output, so several can be co
   assert.equal(g.nodes.filter(n => n.type === 'AudioOutput').length, 1);
   const a = compileAudio(valid(d), { samples: loadSoundsNode(soundsUsed(d)) });
   if (!a.ok) assert.fail(JSON.stringify(a.errors.slice(0, 3)));
-  assert.equal(a.value.kind === 'mix' && a.value.voices.length, 6, 'both fireballs contribute their three voices');
+  assert.equal(a.value.kind === 'mix' && a.value.voices.length, 8, 'both fireballs contribute their four voices');
 });
 
 test('grouped insertion: one Group node in root, internals in a child graph, same compiled systems, knobs still drive it', () => {

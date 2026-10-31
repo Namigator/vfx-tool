@@ -407,9 +407,9 @@
    "id": "sfx-1",
    "params": {
     "source": "sample",
-    "sound": "charge-2",
+    "sound": "magic-charge-1",
     "offsetTicks": 0,
-    "durationTicks": 70,
+    "durationTicks": 80,
     "gain": 0.9,
     "pitchRatio": 1,
     "sampleLoop": false
@@ -425,10 +425,87 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "charge",
+   "type": "AudioEnvelope",
+   "id": "sfx-1-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 1.0533333333333332,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
   "vfx_connect",
   {
    "docId": "charge",
    "from": "sfx-1.audio",
+   "to": "sfx-1-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "charge",
+   "from": "sfx-1-fade.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "charge",
+   "type": "AudioSource",
+   "id": "sfx-2",
+   "params": {
+    "source": "sample",
+    "sound": "magic-charge-2",
+    "offsetTicks": 0,
+    "durationTicks": 75,
+    "gain": 0.35,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "charge",
+   "from": "gather.start",
+   "to": "sfx-2.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "charge",
+   "type": "AudioEnvelope",
+   "id": "sfx-2-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 0.97,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "charge",
+   "from": "sfx-2.audio",
+   "to": "sfx-2-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "charge",
+   "from": "sfx-2-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],

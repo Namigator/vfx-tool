@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Builds the built-in sound library from tools/sound-library.json: every `pick` pattern selects files of one CC0 pack
 // under work/sounds-raw (downloaded once, see the JSON note), converts each with ffmpeg to assets/sounds/<prefix>-<n>.wav
-// (48 kHz mono PCM16, leading/trailing silence trimmed at -50 dB, cut to maxSec with a 30 ms fade, peak -1 dBFS) and
+// (48 kHz mono PCM16, rumble under 30 Hz removed, optionally started at startSec, leading/trailing silence trimmed at
+// -50 dB, cut to maxSec with a fadeSec (default 30 ms) fade-out, -16 LUFS / peak -1 dBFS) and
 // writes assets/sounds/manifest.json (id, file, duration, tags, usage, provenance) plus src/audio/soundLibrary.generated.ts.
 //   node tools/build-sounds.mjs
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -24,14 +25,18 @@ for (const pick of lib.pick) {
   const byBase = new Map();
   for (const f of files.sort()) { const b = basename(f).replace(AUDIO, ''); if (!byBase.has(b) || rank(f) < rank(byBase.get(b))) byBase.set(b, f); }
   [...byBase.values()].forEach((src, k) => {
-    const id = `${pick.prefix}-${k + 1}`, file = `${id}.wav`, cut = pick.maxSec ? ['-t', String(pick.maxSec)] : [];
-    const fade = pick.maxSec ? `,afade=t=out:st=${pick.maxSec - 0.03}:d=0.03` : '';
-    const filter = `silenceremove=start_periods=1:start_threshold=-50dB,areverse,silenceremove=start_periods=1:start_threshold=-50dB,areverse${fade},loudnorm=I=-16:TP=-1:LRA=11,alimiter=limit=0.89`;
-    const r = spawnSync('ffmpeg', ['-v', 'error', '-y', '-i', src, '-ac', '1', '-ar', '48000', ...cut, '-af', filter, '-ar', '48000', '-c:a', 'pcm_s16le', join(OUT, file)], { encoding: 'utf8' });
+    const id = pick.id ?? `${pick.prefix}-${k + 1}`, file = `${id}.wav`, cut = pick.maxSec ? ['-t', String(pick.maxSec)] : [];
+    const seek = pick.startSec ? ['-ss', String(pick.startSec)] : [];
+    const fade = pick.maxSec ? `,afade=t=out:st=${pick.maxSec - (pick.fadeSec ?? 0.03)}:d=${pick.fadeSec ?? 0.03}` : '';
+    const filter = `highpass=f=30,silenceremove=start_periods=1:start_threshold=-50dB,areverse,silenceremove=start_periods=1:start_threshold=-50dB,areverse${fade},loudnorm=I=-16:TP=-1:LRA=11,alimiter=limit=0.89`;
+    const r = spawnSync('ffmpeg', ['-v', 'error', '-y', ...seek, '-i', src, '-ac', '1', '-ar', '48000', ...cut, '-af', filter, '-ar', '48000', '-c:a', 'pcm_s16le', join(OUT, file)], { encoding: 'utf8' });
     if (r.status !== 0 || !existsSync(join(OUT, file))) { console.error(`  ${id}: ffmpeg failed ${r.stderr?.slice(-200)}`); return; }
     const frames = (statSync(join(OUT, file)).size - 44) / 2;
+    // Freesound files carry their own author and page in a sidecar written by tools/freesound.mjs.
+    const sidecar = src.replace(AUDIO, '.json'), side = existsSync(sidecar) ? JSON.parse(readFileSync(sidecar, 'utf8')) : null;
     sounds.push({ id, file, durationSec: Math.round(frames / 480) / 100, tags: pick.tags, usage: pick.usage,
-      provenance: { origin: 'third-party', license: pick.license ?? 'CC0 1.0', author: pack.author, source: pack.url, originalFile: src.slice(RAW.length + 1).replace(/\\/g, '/') } });
+      provenance: { origin: 'third-party', license: side?.license ?? pick.license ?? 'CC0 1.0', author: side?.author ?? pack.author,
+        source: side?.url ?? pack.url, ...(side ? { title: side.title } : {}), originalFile: src.slice(RAW.length + 1).replace(/\\/g, '/') } });
   });
 }
 writeFileSync(join(OUT, 'manifest.json'), JSON.stringify({ builder: 'tools/build-sounds.mjs', sampleRate: 48000, channels: 1, sounds }, null, 1) + '\n');

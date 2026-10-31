@@ -2357,11 +2357,11 @@
    "id": "sfx-1",
    "params": {
     "source": "sample",
-    "sound": "charge-1",
+    "sound": "prestrike-1",
     "offsetTicks": 0,
-    "durationTicks": 33,
-    "gain": 0.7,
-    "pitchRatio": 0.85,
+    "durationTicks": 40,
+    "gain": 0.9,
+    "pitchRatio": 0.9,
     "sampleLoop": false
    }
   }
@@ -2375,10 +2375,32 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "heavy",
+   "type": "AudioEnvelope",
+   "id": "sfx-1-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 0.3866666666666666,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
   "vfx_connect",
   {
    "docId": "heavy",
    "from": "sfx-1.audio",
+   "to": "sfx-1-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "heavy",
+   "from": "sfx-1-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -2390,10 +2412,10 @@
    "id": "sfx-2",
    "params": {
     "source": "sample",
-    "sound": "zap-1",
+    "sound": "thunder-2",
     "offsetTicks": 0,
-    "durationTicks": 50,
-    "gain": 1,
+    "durationTicks": 300,
+    "gain": 1.3,
     "pitchRatio": 1,
     "sampleLoop": false
    }
@@ -2423,11 +2445,11 @@
    "id": "sfx-3",
    "params": {
     "source": "sample",
-    "sound": "boom-6",
-    "offsetTicks": 2,
-    "durationTicks": 110,
-    "gain": 1.2,
-    "pitchRatio": 1,
+    "sound": "thunder-3",
+    "offsetTicks": 6,
+    "durationTicks": 300,
+    "gain": 0.5,
+    "pitchRatio": 0.8,
     "sampleLoop": false
    }
   }
@@ -2441,10 +2463,32 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "heavy",
+   "type": "AudioEnvelope",
+   "id": "sfx-3-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 4.72,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
   "vfx_connect",
   {
    "docId": "heavy",
    "from": "sfx-3.audio",
+   "to": "sfx-3-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "heavy",
+   "from": "sfx-3-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -2456,12 +2500,12 @@
    "id": "sfx-4",
    "params": {
     "source": "sample",
-    "sound": "electric-loop-1",
+    "sound": "spark-1",
     "offsetTicks": 0,
-    "durationTicks": 36,
-    "gain": 0.5,
-    "pitchRatio": 1,
-    "sampleLoop": true
+    "durationTicks": 14,
+    "gain": 0.6,
+    "pitchRatio": 0.9,
+    "sampleLoop": false
    }
   }
  ],
@@ -2469,22 +2513,8 @@
   "vfx_connect",
   {
    "docId": "heavy",
-   "from": "impact.start",
+   "from": "strike.start",
    "to": "sfx-4.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "heavy",
-   "type": "AudioEnvelope",
-   "id": "sfx-4-fade",
-   "params": {
-    "attack": 0.03,
-    "hold": 0.31999999999999995,
-    "release": 0.25,
-    "curve": "linear"
-   }
   }
  ],
  [
@@ -2492,14 +2522,6 @@
   {
    "docId": "heavy",
    "from": "sfx-4.audio",
-   "to": "sfx-4-fade.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "heavy",
-   "from": "sfx-4-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],

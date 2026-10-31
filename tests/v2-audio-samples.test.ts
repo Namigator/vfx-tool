@@ -63,7 +63,7 @@ test('the shipped sound library: every file exists, decodes at 48 kHz, and is CC
   for (const s of manifest.sounds) {
     assert.ok(existsSync(`assets/sounds/${s.file}`), s.file);
     assert.match(s.provenance.license, /^CC0/, `${s.id} license`);
-    assert.ok(s.provenance.author && /^https:\/\/opengameart\.org\//.test(s.provenance.source), `${s.id} provenance`);
+    assert.ok(s.provenance.author && /^https:\/\/(opengameart\.org\/|freesound\.org\/people\/[^/]+\/sounds\/\d+\/)/.test(s.provenance.source), `${s.id} provenance`);
   }
   const some = loadSoundsNode([SOUND_LIBRARY[0].id, SOUND_LIBRARY.at(-1)!.id]);
   assert.equal(some.size, 2);

@@ -1586,11 +1586,11 @@
    "id": "sfx-1",
    "params": {
     "source": "sample",
-    "sound": "freeze-1",
+    "sound": "magic-charge-1",
     "offsetTicks": 0,
     "durationTicks": 40,
-    "gain": 0.7,
-    "pitchRatio": 1,
+    "gain": 0.6,
+    "pitchRatio": 1.1,
     "sampleLoop": false
    }
   }
@@ -1604,10 +1604,32 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "icefan",
+   "type": "AudioEnvelope",
+   "id": "sfx-1-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 0.3866666666666666,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
   "vfx_connect",
   {
    "docId": "icefan",
    "from": "sfx-1.audio",
+   "to": "sfx-1-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icefan",
+   "from": "sfx-1-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -1619,10 +1641,10 @@
    "id": "sfx-2",
    "params": {
     "source": "sample",
-    "sound": "ice-2",
+    "sound": "magic-whoosh-1",
     "offsetTicks": 0,
-    "durationTicks": 60,
-    "gain": 1,
+    "durationTicks": 90,
+    "gain": 0.8,
     "pitchRatio": 1,
     "sampleLoop": false
    }
@@ -1637,10 +1659,32 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "icefan",
+   "type": "AudioEnvelope",
+   "id": "sfx-2-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 1.22,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
   "vfx_connect",
   {
    "docId": "icefan",
    "from": "sfx-2.audio",
+   "to": "sfx-2-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icefan",
+   "from": "sfx-2-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -1652,10 +1696,10 @@
    "id": "sfx-3",
    "params": {
     "source": "sample",
-    "sound": "glass-break-2",
-    "offsetTicks": 2,
-    "durationTicks": 50,
-    "gain": 0.8,
+    "sound": "ice-2",
+    "offsetTicks": 0,
+    "durationTicks": 40,
+    "gain": 0.6,
     "pitchRatio": 1,
     "sampleLoop": false
    }
@@ -1685,10 +1729,43 @@
    "id": "sfx-4",
    "params": {
     "source": "sample",
+    "sound": "glass-break-2",
+    "offsetTicks": 2,
+    "durationTicks": 25,
+    "gain": 0.5,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icefan",
+   "from": "erupt.start",
+   "to": "sfx-4.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "icefan",
+   "from": "sfx-4.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "icefan",
+   "type": "AudioSource",
+   "id": "sfx-5",
+   "params": {
+    "source": "sample",
     "sound": "glass-break-4",
     "offsetTicks": 0,
-    "durationTicks": 50,
-    "gain": 0.8,
+    "durationTicks": 40,
+    "gain": 0.5,
     "pitchRatio": 1,
     "sampleLoop": false
    }
@@ -1699,14 +1776,14 @@
   {
    "docId": "icefan",
    "from": "fracture.start",
-   "to": "sfx-4.trigger"
+   "to": "sfx-5.trigger"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "icefan",
-   "from": "sfx-4.audio",
+   "from": "sfx-5.audio",
    "to": "sfx-mix.inputs"
   }
  ],

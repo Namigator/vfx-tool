@@ -2357,10 +2357,10 @@
    "id": "sfx-1",
    "params": {
     "source": "sample",
-    "sound": "charge-1",
+    "sound": "prestrike-1",
     "offsetTicks": 0,
-    "durationTicks": 24,
-    "gain": 0.6,
+    "durationTicks": 32,
+    "gain": 0.8,
     "pitchRatio": 1,
     "sampleLoop": false
    }
@@ -2375,10 +2375,32 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "bolt",
+   "type": "AudioEnvelope",
+   "id": "sfx-1-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 0.2533333333333333,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
   "vfx_connect",
   {
    "docId": "bolt",
    "from": "sfx-1.audio",
+   "to": "sfx-1-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "bolt",
+   "from": "sfx-1-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -2390,10 +2412,10 @@
    "id": "sfx-2",
    "params": {
     "source": "sample",
-    "sound": "zap-1",
+    "sound": "thunder-1",
     "offsetTicks": 0,
-    "durationTicks": 50,
-    "gain": 1,
+    "durationTicks": 300,
+    "gain": 1.2,
     "pitchRatio": 1,
     "sampleLoop": false
    }
@@ -2423,10 +2445,10 @@
    "id": "sfx-3",
    "params": {
     "source": "sample",
-    "sound": "boom-1",
-    "offsetTicks": 2,
-    "durationTicks": 90,
-    "gain": 1,
+    "sound": "spark-1",
+    "offsetTicks": 0,
+    "durationTicks": 14,
+    "gain": 0.6,
     "pitchRatio": 1,
     "sampleLoop": false
    }
@@ -2445,61 +2467,6 @@
   {
    "docId": "bolt",
    "from": "sfx-3.audio",
-   "to": "sfx-mix.inputs"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "bolt",
-   "type": "AudioSource",
-   "id": "sfx-4",
-   "params": {
-    "source": "sample",
-    "sound": "electric-loop-1",
-    "offsetTicks": 0,
-    "durationTicks": 30,
-    "gain": 0.4,
-    "pitchRatio": 1,
-    "sampleLoop": true
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "bolt",
-   "from": "impact.start",
-   "to": "sfx-4.trigger"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "bolt",
-   "type": "AudioEnvelope",
-   "id": "sfx-4-fade",
-   "params": {
-    "attack": 0.03,
-    "hold": 0.21999999999999997,
-    "release": 0.25,
-    "curve": "linear"
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "bolt",
-   "from": "sfx-4.audio",
-   "to": "sfx-4-fade.audio"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "bolt",
-   "from": "sfx-4-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],

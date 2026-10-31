@@ -356,7 +356,7 @@
   {
    "id": "cannon-1",
    "file": "cannon-1.wav",
-   "durationSec": 0.82,
+   "durationSec": 0.81,
    "tags": [
     "impact",
     "launch"
@@ -634,7 +634,7 @@
   {
    "id": "splash-6",
    "file": "splash-6.wav",
-   "durationSec": 0.35,
+   "durationSec": 0.34,
    "tags": [
     "water",
     "impact"
@@ -1056,7 +1056,7 @@
   {
    "id": "slime-7",
    "file": "slime-7.wav",
-   "durationSec": 0.26,
+   "durationSec": 0.25,
    "tags": [
     "poison",
     "slime",
@@ -1516,7 +1516,7 @@
   {
    "id": "hit-2",
    "file": "hit-2.wav",
-   "durationSec": 0.46,
+   "durationSec": 0.45,
    "tags": [
     "impact"
    ],
@@ -1612,7 +1612,7 @@
   {
    "id": "hit-8",
    "file": "hit-8.wav",
-   "durationSec": 0.17,
+   "durationSec": 0.18,
    "tags": [
     "impact"
    ],
@@ -1831,7 +1831,7 @@
   {
    "id": "zap-3",
    "file": "zap-3.wav",
-   "durationSec": 1.3,
+   "durationSec": 1.28,
    "tags": [
     "lightning",
     "impact",
@@ -1957,7 +1957,7 @@
   {
    "id": "charge-3",
    "file": "charge-3.wav",
-   "durationSec": 1.27,
+   "durationSec": 1.26,
    "tags": [
     "charge",
     "energy",
@@ -1992,7 +1992,7 @@
   {
    "id": "magic-1",
    "file": "magic-1.wav",
-   "durationSec": 1.59,
+   "durationSec": 1.58,
    "tags": [
     "arcane",
     "magic",
@@ -2905,6 +2905,815 @@
     "author": "rubberduck",
     "source": "https://opengameart.org/content/80-cc0-rpg-sfx",
     "originalFile": "80-cc0-rpg-sfx/unz/blade_03.ogg"
+   }
+  },
+  {
+   "id": "thunder-1",
+   "file": "thunder-1.wav",
+   "durationSec": 5,
+   "tags": [
+    "lightning",
+    "thunder",
+    "impact"
+   ],
+   "usage": "close thunder crack + rumble (lightning boom)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "loganzsound",
+    "source": "https://freesound.org/people/loganzsound/sounds/840628/",
+    "title": "Closeup Thunder Strike 01",
+    "originalFile": "freesound/840628.mp3"
+   }
+  },
+  {
+   "id": "thunder-2",
+   "file": "thunder-2.wav",
+   "durationSec": 5,
+   "tags": [
+    "lightning",
+    "thunder",
+    "impact"
+   ],
+   "usage": "explosive close thunder crack + rumble",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "TRP",
+    "source": "https://freesound.org/people/TRP/sounds/574412/",
+    "title": "Thunder big crack explosive close ms 77mel 190903.flac",
+    "originalFile": "freesound/574412.mp3"
+   }
+  },
+  {
+   "id": "thunder-3",
+   "file": "thunder-3.wav",
+   "durationSec": 5,
+   "tags": [
+    "lightning",
+    "thunder",
+    "impact"
+   ],
+   "usage": "thunderclap with rolling rumble",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "Fission9",
+    "source": "https://freesound.org/people/Fission9/sounds/534023/",
+    "title": "Thunderclap",
+    "originalFile": "freesound/534023.mp3"
+   }
+  },
+  {
+   "id": "thunder-4",
+   "file": "thunder-4.wav",
+   "durationSec": 4.5,
+   "tags": [
+    "lightning",
+    "thunder",
+    "impact"
+   ],
+   "usage": "thunder blast",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "bajko",
+    "source": "https://freesound.org/people/bajko/sounds/399656/",
+    "title": "sfx_thunder blast.wav",
+    "originalFile": "freesound/399656.mp3"
+   }
+  },
+  {
+   "id": "thunder-5",
+   "file": "thunder-5.wav",
+   "durationSec": 3.94,
+   "tags": [
+    "lightning",
+    "thunder",
+    "impact"
+   ],
+   "usage": "thunder crack, shorter tail",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "netaj",
+    "source": "https://freesound.org/people/netaj/sounds/193170/",
+    "title": "thunder",
+    "originalFile": "freesound/193170.mp3"
+   }
+  },
+  {
+   "id": "prestrike-1",
+   "file": "prestrike-1.wav",
+   "durationSec": 0.55,
+   "tags": [
+    "lightning",
+    "charge",
+    "crackle"
+   ],
+   "usage": "static sizzle that builds right before a lightning strike",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "TRP",
+    "source": "https://freesound.org/people/TRP/sounds/574412/",
+    "title": "Thunder big crack explosive close ms 77mel 190903.flac",
+    "originalFile": "freesound/574412.mp3"
+   }
+  },
+  {
+   "id": "fire-whoosh-1",
+   "file": "fire-whoosh-1.wav",
+   "durationSec": 2.5,
+   "tags": [
+    "fire",
+    "cast",
+    "whoosh"
+   ],
+   "usage": "clean fire whoosh (cast / launch)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "LookIMadeAThing",
+    "source": "https://freesound.org/people/LookIMadeAThing/sounds/260554/",
+    "title": "Basic Fire whoosh",
+    "originalFile": "freesound/260554.mp3"
+   }
+  },
+  {
+   "id": "fire-whoosh-2",
+   "file": "fire-whoosh-2.wav",
+   "durationSec": 2.81,
+   "tags": [
+    "fire",
+    "cast",
+    "whoosh"
+   ],
+   "usage": "clean fire whoosh, longer",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "LookIMadeAThing",
+    "source": "https://freesound.org/people/LookIMadeAThing/sounds/260555/",
+    "title": "Basic Fire Whoosh 2",
+    "originalFile": "freesound/260555.mp3"
+   }
+  },
+  {
+   "id": "fire-whoosh-3",
+   "file": "fire-whoosh-3.wav",
+   "durationSec": 1.6,
+   "tags": [
+    "fire",
+    "cast",
+    "whoosh"
+   ],
+   "usage": "clean fire whoosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "LookIMadeAThing",
+    "source": "https://freesound.org/people/LookIMadeAThing/sounds/260584/",
+    "title": "Basic Fire whoosh 3",
+    "originalFile": "freesound/260584.mp3"
+   }
+  },
+  {
+   "id": "fire-whoosh-4",
+   "file": "fire-whoosh-4.wav",
+   "durationSec": 2.48,
+   "tags": [
+    "fire",
+    "cast",
+    "whoosh"
+   ],
+   "usage": "fire whoosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "hnhnh",
+    "source": "https://freesound.org/people/hnhnh/sounds/244926/",
+    "title": "fire-whoosh.wav",
+    "originalFile": "freesound/244926.mp3"
+   }
+  },
+  {
+   "id": "fireball-pass-1",
+   "file": "fireball-pass-1.wav",
+   "durationSec": 2.96,
+   "tags": [
+    "fire",
+    "whoosh",
+    "flight"
+   ],
+   "usage": "fireball flying past (whoosh by)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "julianmateo_",
+    "source": "https://freesound.org/people/julianmateo_/sounds/522705/",
+    "title": "Fireball, Woosh, Pass, fast",
+    "originalFile": "freesound/522705.mp3"
+   }
+  },
+  {
+   "id": "fireball-pass-2",
+   "file": "fireball-pass-2.wav",
+   "durationSec": 0.97,
+   "tags": [
+    "fire",
+    "whoosh",
+    "flight"
+   ],
+   "usage": "short fireball whoosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "wjl",
+    "source": "https://freesound.org/people/wjl/sounds/267887/",
+    "title": "Short-Fireball-Woosh.flac",
+    "originalFile": "freesound/267887.mp3"
+   }
+  },
+  {
+   "id": "fire-ignite-1",
+   "file": "fire-ignite-1.wav",
+   "durationSec": 0.22,
+   "tags": [
+    "fire",
+    "ignite"
+   ],
+   "usage": "soft torch ignite",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "ldezem",
+    "source": "https://freesound.org/people/ldezem/sounds/386385/",
+    "title": "Torch - Ignite flame on soft",
+    "originalFile": "freesound/386385.mp3"
+   }
+  },
+  {
+   "id": "fire-ignite-2",
+   "file": "fire-ignite-2.wav",
+   "durationSec": 0.55,
+   "tags": [
+    "fire",
+    "ignite",
+    "burst"
+   ],
+   "usage": "fire burst flash",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "Za-Games",
+    "source": "https://freesound.org/people/Za-Games/sounds/539972/",
+    "title": "Fire Burst Flash",
+    "originalFile": "freesound/539972.mp3"
+   }
+  },
+  {
+   "id": "fire-blast-1",
+   "file": "fire-blast-1.wav",
+   "durationSec": 2.95,
+   "tags": [
+    "fire",
+    "explosion",
+    "impact"
+   ],
+   "usage": "fire explosion",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "ReadeOnly",
+    "source": "https://freesound.org/people/ReadeOnly/sounds/186932/",
+    "title": "fire_explosion.wav",
+    "originalFile": "freesound/186932.mp3"
+   }
+  },
+  {
+   "id": "fire-blast-2",
+   "file": "fire-blast-2.wav",
+   "durationSec": 2.35,
+   "tags": [
+    "fire",
+    "burst"
+   ],
+   "usage": "flame burst",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "magnuswaker",
+    "source": "https://freesound.org/people/magnuswaker/sounds/592572/",
+    "title": "Flame Burst",
+    "originalFile": "freesound/592572.mp3"
+   }
+  },
+  {
+   "id": "fire-magic-1",
+   "file": "fire-magic-1.wav",
+   "durationSec": 0.85,
+   "tags": [
+    "fire",
+    "magic",
+    "cast"
+   ],
+   "usage": "fire magic cast",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "qubodup",
+    "source": "https://freesound.org/people/qubodup/sounds/442872/",
+    "title": "Fire Magic",
+    "originalFile": "freesound/442872.mp3"
+   }
+  },
+  {
+   "id": "magic-whoosh-1",
+   "file": "magic-whoosh-1.wav",
+   "durationSec": 1.63,
+   "tags": [
+    "arcane",
+    "whoosh",
+    "womp"
+   ],
+   "usage": "deep magic whoosh (womp)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "Khrinx",
+    "source": "https://freesound.org/people/Khrinx/sounds/523978/",
+    "title": "Deep whosh - Short",
+    "originalFile": "freesound/523978.mp3"
+   }
+  },
+  {
+   "id": "magic-whoosh-2",
+   "file": "magic-whoosh-2.wav",
+   "durationSec": 2.09,
+   "tags": [
+    "arcane",
+    "whoosh",
+    "womp"
+   ],
+   "usage": "deep whoosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "Kinoton",
+    "source": "https://freesound.org/people/Kinoton/sounds/558827/",
+    "title": "Deep Whoosh #5",
+    "originalFile": "freesound/558827.mp3"
+   }
+  },
+  {
+   "id": "magic-whoosh-3",
+   "file": "magic-whoosh-3.wav",
+   "durationSec": 0.87,
+   "tags": [
+    "arcane",
+    "whoosh"
+   ],
+   "usage": "quick magic whoosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "DustyWind",
+    "source": "https://freesound.org/people/DustyWind/sounds/715784/",
+    "title": "Magic Whoosh",
+    "originalFile": "freesound/715784.mp3"
+   }
+  },
+  {
+   "id": "magic-womp-1",
+   "file": "magic-womp-1.wav",
+   "durationSec": 1.94,
+   "tags": [
+    "arcane",
+    "impact",
+    "womp"
+   ],
+   "usage": "magic strike womp",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "Aleks41",
+    "source": "https://freesound.org/people/Aleks41/sounds/406063/",
+    "title": "Magic Strike.wav",
+    "originalFile": "freesound/406063.mp3"
+   }
+  },
+  {
+   "id": "magic-womp-2",
+   "file": "magic-womp-2.wav",
+   "durationSec": 1.96,
+   "tags": [
+    "arcane",
+    "impact",
+    "womp"
+   ],
+   "usage": "magic smite",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "spookymodem",
+    "source": "https://freesound.org/people/spookymodem/sounds/249819/",
+    "title": "Magic Smite.wav",
+    "originalFile": "freesound/249819.mp3"
+   }
+  },
+  {
+   "id": "magic-womp-3",
+   "file": "magic-womp-3.wav",
+   "durationSec": 1.56,
+   "tags": [
+    "arcane",
+    "cast",
+    "womp"
+   ],
+   "usage": "magic spell cast",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "qubodup",
+    "source": "https://freesound.org/people/qubodup/sounds/442774/",
+    "title": "Magic Spell",
+    "originalFile": "freesound/442774.mp3"
+   }
+  },
+  {
+   "id": "magic-impact-1",
+   "file": "magic-impact-1.wav",
+   "durationSec": 2.82,
+   "tags": [
+    "arcane",
+    "impact",
+    "boom"
+   ],
+   "usage": "cinematic transition hit (deep boom)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "AudioPapkin",
+    "source": "https://freesound.org/people/AudioPapkin/sounds/648534/",
+    "title": "Transition Hit SFX -001.wav",
+    "originalFile": "freesound/648534.mp3"
+   }
+  },
+  {
+   "id": "magic-impact-2",
+   "file": "magic-impact-2.wav",
+   "durationSec": 2.57,
+   "tags": [
+    "arcane",
+    "whoosh",
+    "boom"
+   ],
+   "usage": "whoosh into boom",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "Capashen",
+    "source": "https://freesound.org/people/Capashen/sounds/118934/",
+    "title": "whoosh+boom.wav",
+    "originalFile": "freesound/118934.mp3"
+   }
+  },
+  {
+   "id": "magic-impact-3",
+   "file": "magic-impact-3.wav",
+   "durationSec": 3.96,
+   "tags": [
+    "arcane",
+    "shadow",
+    "impact"
+   ],
+   "usage": "dark deep woosh impact",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "julianmateo_",
+    "source": "https://freesound.org/people/julianmateo_/sounds/522691/",
+    "title": "Woosh, Dark, Impact, Deep, Ghost",
+    "originalFile": "freesound/522691.mp3"
+   }
+  },
+  {
+   "id": "magic-charge-1",
+   "file": "magic-charge-1.wav",
+   "durationSec": 2.51,
+   "tags": [
+    "charge",
+    "arcane",
+    "swell"
+   ],
+   "usage": "soft magical focus swell (charge-up)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "Iridiuss",
+    "source": "https://freesound.org/people/Iridiuss/sounds/519415/",
+    "title": "Magical focus energy",
+    "originalFile": "freesound/519415.mp3"
+   }
+  },
+  {
+   "id": "magic-charge-2",
+   "file": "magic-charge-2.wav",
+   "durationSec": 2.23,
+   "tags": [
+    "charge",
+    "arcane",
+    "riser"
+   ],
+   "usage": "short riser (charge-up)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "syntheffects",
+    "source": "https://freesound.org/people/syntheffects/sounds/685256/",
+    "title": "Riser sound effect short.wav",
+    "originalFile": "freesound/685256.mp3"
+   }
+  },
+  {
+   "id": "magic-charge-3",
+   "file": "magic-charge-3.wav",
+   "durationSec": 2.8,
+   "tags": [
+    "charge",
+    "energy",
+    "swell"
+   ],
+   "usage": "energy charge-up",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "BrickDeveloper171",
+    "source": "https://freesound.org/people/BrickDeveloper171/sounds/610361/",
+    "title": "Charge up",
+    "originalFile": "freesound/610361.mp3"
+   }
+  },
+  {
+   "id": "fountain-1",
+   "file": "fountain-1.wav",
+   "durationSec": 4,
+   "tags": [
+    "water",
+    "loop",
+    "bed"
+   ],
+   "usage": "water fountain spray bed",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "jhumbucker",
+    "source": "https://freesound.org/people/jhumbucker/sounds/193784/",
+    "title": "Water fountain",
+    "originalFile": "freesound/193784.mp3"
+   }
+  },
+  {
+   "id": "river-1",
+   "file": "river-1.wav",
+   "durationSec": 4,
+   "tags": [
+    "water",
+    "loop",
+    "bed"
+   ],
+   "usage": "river flow bed",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "Duasun",
+    "source": "https://freesound.org/people/Duasun/sounds/462666/",
+    "title": "River flow",
+    "originalFile": "freesound/462666.mp3"
+   }
+  },
+  {
+   "id": "rain-1",
+   "file": "rain-1.wav",
+   "durationSec": 3.22,
+   "tags": [
+    "water",
+    "rain",
+    "loop",
+    "bed"
+   ],
+   "usage": "light rain bed",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "Jeffreys2",
+    "source": "https://freesound.org/people/Jeffreys2/sounds/137022/",
+    "title": "Light rain.wav",
+    "originalFile": "freesound/137022.mp3"
+   }
+  },
+  {
+   "id": "rain-2",
+   "file": "rain-2.wav",
+   "durationSec": 3.9,
+   "tags": [
+    "water",
+    "rain",
+    "loop",
+    "bed"
+   ],
+   "usage": "rain bed",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "lennyboy",
+    "source": "https://freesound.org/people/lennyboy/sounds/244028/",
+    "title": "Rain001.ogg",
+    "originalFile": "freesound/244028.mp3"
+   }
+  },
+  {
+   "id": "splash-big-1",
+   "file": "splash-big-1.wav",
+   "durationSec": 2.11,
+   "tags": [
+    "water",
+    "impact"
+   ],
+   "usage": "big water splash",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "qubodup",
+    "source": "https://freesound.org/people/qubodup/sounds/442773/",
+    "title": "Big Water Splash",
+    "originalFile": "freesound/442773.mp3"
+   }
+  },
+  {
+   "id": "splash-big-2",
+   "file": "splash-big-2.wav",
+   "durationSec": 1.93,
+   "tags": [
+    "water",
+    "impact"
+   ],
+   "usage": "splash",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "petenice",
+    "source": "https://freesound.org/people/petenice/sounds/9508/",
+    "title": "SPLASH.wav",
+    "originalFile": "freesound/9508.mp3"
+   }
+  },
+  {
+   "id": "gust-1",
+   "file": "gust-1.wav",
+   "durationSec": 3.51,
+   "tags": [
+    "wind",
+    "gust"
+   ],
+   "usage": "single wind gust (no rising tail)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "crashoverride6",
+    "source": "https://freesound.org/people/crashoverride6/sounds/146932/",
+    "title": "Wind Gust",
+    "originalFile": "freesound/146932.mp3"
+   }
+  },
+  {
+   "id": "gust-2",
+   "file": "gust-2.wav",
+   "durationSec": 5,
+   "tags": [
+    "wind",
+    "gust"
+   ],
+   "usage": "gust of wind",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "Tony B kksm",
+    "source": "https://freesound.org/people/Tony%20B%20kksm/sounds/80937/",
+    "title": "gust of wind.wav",
+    "originalFile": "freesound/80937.mp3"
+   }
+  },
+  {
+   "id": "gust-3",
+   "file": "gust-3.wav",
+   "durationSec": 3.98,
+   "tags": [
+    "wind",
+    "gust"
+   ],
+   "usage": "wind gust",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "wintuh",
+    "source": "https://freesound.org/people/wintuh/sounds/471854/",
+    "title": "Wind gust",
+    "originalFile": "freesound/471854.mp3"
+   }
+  },
+  {
+   "id": "gust-4",
+   "file": "gust-4.wav",
+   "durationSec": 1.25,
+   "tags": [
+    "wind",
+    "gust",
+    "whoosh"
+   ],
+   "usage": "short airy woosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "florianreichelt",
+    "source": "https://freesound.org/people/florianreichelt/sounds/683096/",
+    "title": "Woosh",
+    "originalFile": "freesound/683096.mp3"
+   }
+  },
+  {
+   "id": "gust-5",
+   "file": "gust-5.wav",
+   "durationSec": 3.27,
+   "tags": [
+    "wind",
+    "gust"
+   ],
+   "usage": "short wind woosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "NIKOKnecht",
+    "source": "https://freesound.org/people/NIKOKnecht/sounds/569109/",
+    "title": "Short Wind/Air Woosh | A gust of wind",
+    "originalFile": "freesound/569109.mp3"
+   }
+  },
+  {
+   "id": "gust-6",
+   "file": "gust-6.wav",
+   "durationSec": 1.87,
+   "tags": [
+    "wind",
+    "whoosh"
+   ],
+   "usage": "swoosh",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "Halgrimm",
+    "source": "https://freesound.org/people/Halgrimm/sounds/169867/",
+    "title": "swoosh",
+    "originalFile": "freesound/169867.mp3"
+   }
+  },
+  {
+   "id": "hum-1",
+   "file": "hum-1.wav",
+   "durationSec": 3,
+   "tags": [
+    "energy",
+    "loop",
+    "hum"
+   ],
+   "usage": "low energy hum bed (beams)",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "qubodup",
+    "source": "https://freesound.org/people/qubodup/sounds/861428/",
+    "title": "battle mode space ship background hum loop",
+    "originalFile": "freesound/861428.mp3"
+   }
+  },
+  {
+   "id": "hum-2",
+   "file": "hum-2.wav",
+   "durationSec": 2.06,
+   "tags": [
+    "energy",
+    "loop",
+    "hum"
+   ],
+   "usage": "short deep hum",
+   "provenance": {
+    "origin": "third-party",
+    "license": "CC0 1.0",
+    "author": "Mikes-MultiMedia",
+    "source": "https://freesound.org/people/Mikes-MultiMedia/sounds/349704/",
+    "title": "short deep humming.mp3",
+    "originalFile": "freesound/349704.mp3"
    }
   }
  ]

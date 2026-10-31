@@ -1,1133 +1,288 @@
 {
- "note": "Sound design per preset recipe (mcp/examples/<id>.steps.json): recorded CC0 library sounds (assets/sounds) cued at the recipe's own Schedule starts. Each layer: [sound, cue Schedule id, offsetTicks, durationTicks, gain, pitch?, loop?]. tools/apply-preset-sounds.mjs replaces each recipe's audio block with these. Judged by ear by the owner (Gate E); edit here and re-run.",
+ "note": "Sound design per preset recipe (mcp/examples/<id>.steps.json): recorded CC0 library sounds (assets/sounds) cued at the recipe's own Schedule starts. Each layer: [sound, cue Schedule id, offsetTicks, durationTicks, gain, pitch?, loop?]. tools/apply-preset-sounds.mjs replaces each recipe's audio block with these. Judged by ear by the owner (Gate E); edit here and re-run. Rules from the owner's Gate E notes (2026-10-30): no long bright sounds (over 0.3 s with most energy above 2 kHz: the electric charges/loops, rpg fire casts, zap); charges are soft magical swells; casts and projectiles get a whoosh; impacts get a real low BOOM (thunder for lightning); electric only as short spark accents; long wind is many uneven gusts; smoke is silent.",
  "masterGain": 0.9,
  "presets": {
   "fireball": [
-   [
-    "fire-cast-3",
-    "flight",
-    0,
-    60,
-    1
-   ],
-   [
-    "boom-2",
-    "impactwin",
-    0,
-    90,
-    1.1
-   ],
-   [
-    "fire-crackle-1",
-    "impactwin",
-    4,
-    70,
-    0.5,
-    1,
-    true
-   ]
+   ["fire-whoosh-3", "flight", 0, 60, 0.8],
+   ["fireball-pass-1", "flight", 4, 90, 0.9],
+   ["fire-blast-1", "impactwin", 0, 150, 1.1],
+   ["fire-crackle-1", "impactwin", 6, 70, 0.4, 1, true]
   ],
   "fireball-sim": [
-   [
-    "fire-cast-3",
-    "flight",
-    0,
-    60,
-    1
-   ],
-   [
-    "boom-2",
-    "impactwin",
-    0,
-    90,
-    1.1
-   ],
-   [
-    "fire-crackle-1",
-    "impactwin",
-    4,
-    70,
-    0.5,
-    1,
-    true
-   ]
+   ["fire-whoosh-1", "flight", 0, 60, 0.8],
+   ["fireball-pass-1", "flight", 4, 90, 0.9, 0.95],
+   ["fire-blast-1", "impactwin", 0, 150, 1.1],
+   ["fire-crackle-1", "impactwin", 6, 70, 0.4, 1, true]
   ],
   "flame-jet": [
-   [
-    "fire-cast-1",
-    "sched",
-    0,
-    50,
-    0.9
-   ],
-   [
-    "fire-roar-1",
-    "sched",
-    4,
-    118,
-    0.7,
-    1,
-    true
-   ]
+   ["fire-whoosh-2", "sched", 0, 100, 0.9],
+   ["fire-roar-1", "sched", 4, 118, 0.7, 1, true]
   ],
   "flamethrower": [
-   [
-    "fire-cast-2",
-    "ignite",
-    0,
-    50,
-    1
-   ],
-   [
-    "fire-roar-1",
-    "emit",
-    4,
-    100,
-    0.8,
-    1,
-    true
-   ],
-   [
-    "fire-crackle-2",
-    "emit",
-    6,
-    100,
-    0.4,
-    1,
-    true
-   ]
+   ["fire-whoosh-1", "ignite", 0, 90, 0.9],
+   ["fire-roar-1", "emit", 4, 100, 0.8, 1, true],
+   ["fire-crackle-2", "emit", 6, 100, 0.4, 1, true]
   ],
   "fire-burst": [
-   [
-    "fire-cast-4",
-    "ignite",
-    0,
-    70,
-    1
-   ],
-   [
-    "fire-crackle-1",
-    "emit",
-    6,
-    36,
-    0.5,
-    1,
-    true
-   ]
+   ["fire-ignite-2", "ignite", 0, 34, 0.7],
+   ["fire-blast-2", "ignite", 0, 130, 1],
+   ["fire-crackle-1", "emit", 6, 40, 0.4, 1, true]
   ],
   "fire-jet": [
-   [
-    "fire-cast-5",
-    "ignite",
-    0,
-    50,
-    1
-   ],
-   [
-    "fire-roar-1",
-    "emit",
-    4,
-    84,
-    0.7,
-    1,
-    true
-   ]
+   ["fire-whoosh-4", "ignite", 0, 90, 0.9],
+   ["fire-roar-1", "emit", 4, 84, 0.7, 1, true]
   ],
   "fire-torch": [
-   [
-    "fire-cast-6",
-    "ignite",
-    0,
-    50,
-    0.8
-   ],
-   [
-    "fire-crackle-2",
-    "emit",
-    4,
-    60,
-    0.6,
-    1,
-    true
-   ]
+   ["fire-ignite-1", "ignite", 0, 14, 0.9],
+   ["fire-whoosh-3", "ignite", 0, 70, 0.5, 1.1],
+   ["fire-crackle-2", "emit", 4, 60, 0.6, 1, true]
   ],
   "water-stream": [
-   [
-    "splash-1",
-    "splashwin",
-    0,
-    60,
-    0.9
-   ],
-   [
-    "water-flow-1",
-    "flow",
-    0,
-    90,
-    0.7,
-    1,
-    true
-   ]
+   ["splash-big-2", "splashwin", 0, 100, 0.8],
+   ["river-1", "flow", 0, 90, 0.7, 1, true]
   ],
   "water-narrow": [
-   [
-    "splash-9",
-    "splashwin",
-    0,
-    40,
-    0.8
-   ],
-   [
-    "water-flow-3",
-    "flow",
-    0,
-    90,
-    0.6,
-    1.1,
-    true
-   ]
+   ["splash-9", "splashwin", 0, 40, 0.8],
+   ["river-1", "flow", 0, 90, 0.55, 1.12, true]
   ],
   "water-broad": [
-   [
-    "splash-5",
-    "splashwin",
-    0,
-    70,
-    1
-   ],
-   [
-    "water-flow-2",
-    "flow",
-    0,
-    90,
-    0.8,
-    0.9,
-    true
-   ]
+   ["splash-big-1", "splashwin", 0, 110, 0.9],
+   ["river-1", "flow", 0, 90, 0.8, 0.9, true]
   ],
   "rain-splash": [
-   [
-    "water-flow-2",
-    "sched",
-    0,
-    200,
-    0.5,
-    1,
-    true
-   ],
-   [
-    "splash-10",
-    "sched",
-    30,
-    30,
-    0.4
-   ]
+   ["rain-2", "sched", 0, 200, 0.6, 1, true],
+   ["splash-10", "sched", 24, 20, 0.3],
+   ["splash-9", "sched", 70, 20, 0.25, 1.1],
+   ["splash-10", "sched", 128, 20, 0.25, 0.9]
   ],
   "fountain": [
-   [
-    "water-flow-1",
-    "sched",
-    0,
-    180,
-    0.7,
-    1,
-    true
-   ]
+   ["fountain-1", "sched", 0, 180, 0.7, 1, true]
   ],
   "ice-eruption": [
-   [
-    "freeze-1",
-    "charge",
-    0,
-    40,
-    0.7
-   ],
-   [
-    "ice-1",
-    "erupt",
-    0,
-    60,
-    1
-   ],
-   [
-    "glass-break-1",
-    "erupt",
-    2,
-    50,
-    0.8
-   ],
-   [
-    "glass-break-3",
-    "fracture",
-    0,
-    50,
-    0.8
-   ]
+   ["magic-charge-1", "charge", 0, 40, 0.6, 1.1],
+   ["magic-womp-1", "erupt", 0, 100, 0.9],
+   ["ice-1", "erupt", 0, 60, 0.6],
+   ["glass-break-1", "erupt", 2, 30, 0.6],
+   ["glass-break-3", "fracture", 0, 40, 0.5]
   ],
   "ice-fan": [
-   [
-    "freeze-1",
-    "charge",
-    0,
-    40,
-    0.7
-   ],
-   [
-    "ice-2",
-    "erupt",
-    0,
-    60,
-    1
-   ],
-   [
-    "glass-break-2",
-    "erupt",
-    2,
-    50,
-    0.8
-   ],
-   [
-    "glass-break-4",
-    "fracture",
-    0,
-    50,
-    0.8
-   ]
+   ["magic-charge-1", "charge", 0, 40, 0.6, 1.1],
+   ["magic-whoosh-1", "erupt", 0, 90, 0.8],
+   ["ice-2", "erupt", 0, 40, 0.6],
+   ["glass-break-2", "erupt", 2, 25, 0.5],
+   ["glass-break-4", "fracture", 0, 40, 0.5]
   ],
   "ice-cluster": [
-   [
-    "freeze-1",
-    "charge",
-    0,
-    40,
-    0.7,
-    0.9
-   ],
-   [
-    "ice-1",
-    "erupt",
-    0,
-    60,
-    1,
-    0.9
-   ],
-   [
-    "glass-break-5",
-    "erupt",
-    2,
-    50,
-    0.8
-   ],
-   [
-    "glass-break-6",
-    "fracture",
-    0,
-    50,
-    0.8
-   ]
+   ["magic-charge-1", "charge", 0, 40, 0.6, 1],
+   ["magic-womp-1", "erupt", 0, 100, 0.9, 0.9],
+   ["ice-1", "erupt", 0, 60, 0.55, 0.9],
+   ["glass-break-5", "erupt", 2, 25, 0.6],
+   ["glass-break-6", "fracture", 0, 44, 0.5]
   ],
   "ice-shards": [
-   [
-    "ice-2",
-    "burst",
-    0,
-    60,
-    1
-   ],
-   [
-    "glass-break-6",
-    "burst",
-    2,
-    50,
-    0.8
-   ]
+   ["magic-whoosh-3", "burst", 0, 50, 0.8],
+   ["ice-2", "burst", 0, 40, 0.6],
+   ["glass-break-6", "burst", 2, 44, 0.5]
   ],
   "earth-upheaval": [
-   [
-    "rock-fall-1",
-    "pulsewin",
-    0,
-    30,
-    0.6
-   ],
-   [
-    "boom-3",
-    "erupt",
-    0,
-    80,
-    1.1
-   ],
-   [
-    "rock-break-1",
-    "erupt",
-    0,
-    60,
-    0.9
-   ],
-   [
-    "rock-fall-3",
-    "erupt",
-    25,
-    50,
-    0.6
-   ]
+   ["rock-fall-2", "pulsewin", 0, 20, 0.5],
+   ["boom-3", "erupt", 0, 80, 1.1],
+   ["thunder-3", "erupt", 0, 200, 0.55, 0.6],
+   ["rock-break-1", "erupt", 0, 30, 0.6],
+   ["rock-fall-1", "erupt", 25, 50, 0.45]
   ],
   "earth-heavy": [
-   [
-    "rock-fall-2",
-    "pulsewin",
-    0,
-    30,
-    0.6
-   ],
-   [
-    "boom-10",
-    "erupt",
-    0,
-    80,
-    1.2
-   ],
-   [
-    "rock-break-2",
-    "erupt",
-    0,
-    60,
-    1
-   ],
-   [
-    "rock-fall-4",
-    "erupt",
-    25,
-    50,
-    0.7
-   ]
+   ["rock-fall-2", "pulsewin", 0, 20, 0.6],
+   ["boom-10", "erupt", 0, 80, 1.2],
+   ["thunder-2", "erupt", 0, 220, 0.65, 0.55],
+   ["rock-break-1", "erupt", 0, 30, 0.7, 0.9],
+   ["rock-fall-1", "erupt", 25, 50, 0.5, 0.9]
   ],
   "earth-gravel": [
-   [
-    "rock-fall-5",
-    "pulsewin",
-    0,
-    30,
-    0.6
-   ],
-   [
-    "boom-8",
-    "erupt",
-    0,
-    60,
-    0.8
-   ],
-   [
-    "rock-break-3",
-    "erupt",
-    0,
-    50,
-    0.8
-   ],
-   [
-    "rock-fall-6",
-    "erupt",
-    20,
-    50,
-    0.8
-   ]
+   ["rock-fall-5", "pulsewin", 0, 15, 0.4],
+   ["boom-8", "erupt", 0, 60, 0.8],
+   ["thunder-5", "erupt", 0, 160, 0.4, 0.65],
+   ["rock-break-3", "erupt", 0, 30, 0.5],
+   ["rock-fall-6", "erupt", 20, 20, 0.5]
   ],
   "rock-burst": [
-   [
-    "rock-break-2",
-    "hit",
-    0,
-    60,
-    1
-   ],
-   [
-    "boom-8",
-    "hit",
-    0,
-    60,
-    0.8
-   ]
+   ["rock-break-1", "hit", 0, 30, 0.8],
+   ["boom-8", "hit", 0, 60, 0.9],
+   ["thunder-5", "hit", 0, 140, 0.35, 0.7]
   ],
   "lightning-strike": [
-   [
-    "charge-1",
-    "charge",
-    0,
-    24,
-    0.6
-   ],
-   [
-    "zap-1",
-    "strike",
-    0,
-    50,
-    1
-   ],
-   [
-    "boom-1",
-    "strike",
-    2,
-    90,
-    1
-   ],
-   [
-    "electric-loop-1",
-    "impact",
-    0,
-    30,
-    0.4,
-    1,
-    true
-   ]
+   ["prestrike-1", "charge", 0, 32, 0.8],
+   ["thunder-1", "strike", 0, 300, 1.2],
+   ["spark-1", "strike", 0, 14, 0.6]
   ],
   "lightning-thin-fork": [
-   [
-    "charge-1",
-    "charge",
-    0,
-    24,
-    0.5,
-    1.2
-   ],
-   [
-    "spark-1",
-    "strike",
-    0,
-    26,
-    1
-   ],
-   [
-    "zap-2",
-    "strike",
-    0,
-    40,
-    0.8
-   ],
-   [
-    "electric-loop-2",
-    "impact",
-    0,
-    30,
-    0.4,
-    1,
-    true
-   ]
+   ["prestrike-1", "charge", 0, 32, 0.6, 1.1],
+   ["thunder-5", "strike", 0, 240, 0.9, 1.1],
+   ["spark-1", "strike", 0, 14, 0.6, 1.1],
+   ["spark-2", "strike", 7, 8, 0.4]
   ],
   "lightning-heavy-strike": [
-   [
-    "charge-1",
-    "charge",
-    0,
-    33,
-    0.7,
-    0.85
-   ],
-   [
-    "zap-1",
-    "strike",
-    0,
-    50,
-    1
-   ],
-   [
-    "boom-6",
-    "strike",
-    2,
-    110,
-    1.2
-   ],
-   [
-    "electric-loop-1",
-    "impact",
-    0,
-    36,
-    0.5,
-    1,
-    true
-   ]
+   ["prestrike-1", "charge", 0, 40, 0.9, 0.9],
+   ["thunder-2", "strike", 0, 300, 1.3],
+   ["thunder-3", "strike", 6, 300, 0.5, 0.8],
+   ["spark-1", "strike", 0, 14, 0.6, 0.9]
   ],
   "arc-beam": [
-   [
-    "spark-2",
-    "on",
-    0,
-    20,
-    0.8
-   ],
-   [
-    "electric-loop-2",
-    "on",
-    0,
-    70,
-    0.7,
-    1,
-    true
-   ]
+   ["hum-1", "on", 0, 70, 0.7, 1.1, true],
+   ["spark-2", "on", 0, 8, 0.6],
+   ["spark-1", "on", 17, 14, 0.4, 1.1],
+   ["spark-2", "on", 33, 8, 0.4, 0.9],
+   ["spark-1", "on", 52, 14, 0.35]
   ],
   "helix-beam": [
-   [
-    "magic-2",
-    "on",
-    0,
-    60,
-    0.6
-   ],
-   [
-    "electric-loop-1",
-    "on",
-    0,
-    100,
-    0.5,
-    0.9,
-    true
-   ]
+   ["magic-whoosh-2", "on", 0, 80, 0.7],
+   ["hum-1", "on", 0, 100, 0.6, 1.25, true],
+   ["magic-3", "on", 6, 90, 0.35]
   ],
   "spark-trails": [
-   [
-    "spark-1",
-    "sched",
-    0,
-    20,
-    0.6
-   ]
+   ["spark-1", "sched", 0, 20, 0.6]
   ],
   "sparks": [
-   [
-    "spark-2",
-    "sched",
-    0,
-    20,
-    0.6
-   ]
+   ["spark-2", "sched", 0, 20, 0.6]
   ],
   "charge-up": [
-   [
-    "charge-2",
-    "gather",
-    0,
-    70,
-    0.9
-   ]
+   ["magic-charge-1", "gather", 0, 80, 0.9],
+   ["magic-charge-2", "gather", 0, 75, 0.35]
   ],
   "charge-tethers": [
-   [
-    "charge-3",
-    "go",
-    0,
-    60,
-    0.8
-   ],
-   [
-    "electric-loop-1",
-    "go",
-    10,
-    80,
-    0.4,
-    1,
-    true
-   ]
+   ["magic-charge-1", "go", 0, 90, 0.8],
+   ["magic-charge-3", "go", 10, 80, 0.3]
   ],
   "energy-bolt": [
-   [
-    "charge-1",
-    "charge",
-    0,
-    30,
-    0.6
-   ],
-   [
-    "magic-3",
-    "flight",
-    0,
-    50,
-    0.9
-   ],
-   [
-    "swish-9",
-    "flight",
-    0,
-    15,
-    0.6
-   ]
+   ["magic-charge-1", "charge", 0, 34, 0.6, 1.1],
+   ["magic-whoosh-3", "flight", 0, 50, 0.8],
+   ["magic-3", "flight", 0, 50, 0.5],
+   ["magic-womp-1", "ringwin", 0, 100, 0.8]
   ],
   "energy-needle": [
-   [
-    "charge-1",
-    "charge",
-    0,
-    30,
-    0.5,
-    1.2
-   ],
-   [
-    "blade-1",
-    "flight",
-    0,
-    20,
-    0.9
-   ],
-   [
-    "magic-5",
-    "flight",
-    0,
-    40,
-    0.6,
-    1.2
-   ]
+   ["magic-charge-1", "charge", 0, 34, 0.5, 1.25],
+   ["gust-4", "flight", 0, 40, 0.7, 1.3],
+   ["blade-1", "flight", 0, 12, 0.5],
+   ["magic-womp-3", "ringwin", 0, 90, 0.6, 1.2]
   ],
   "energy-orb": [
-   [
-    "charge-1",
-    "charge",
-    0,
-    30,
-    0.6,
-    0.85
-   ],
-   [
-    "teleport-1",
-    "flight",
-    0,
-    80,
-    0.8
-   ],
-   [
-    "magic-4",
-    "flight",
-    0,
-    60,
-    0.6
-   ]
+   ["magic-charge-1", "charge", 0, 34, 0.6, 0.9],
+   ["teleport-1", "flight", 0, 80, 0.7],
+   ["magic-whoosh-2", "flight", 0, 90, 0.6],
+   ["magic-womp-2", "ringwin", 0, 110, 0.8]
   ],
   "impact-flash": [
-   [
-    "boom-4",
-    "hit",
-    0,
-    70,
-    1
-   ],
-   [
-    "hit-1",
-    "hit",
-    0,
-    30,
-    0.8
-   ]
+   ["boom-4", "hit", 0, 50, 0.9],
+   ["magic-impact-1", "hit", 0, 150, 0.8],
+   ["hit-1", "hit", 0, 20, 0.5]
   ],
   "light-pulse": [
-   [
-    "heal-1",
-    "charge",
-    0,
-    36,
-    0.7
-   ],
-   [
-    "bell-1",
-    "pulse",
-    0,
-    80,
-    0.8
-   ],
-   [
-    "magic-7",
-    "pulse",
-    0,
-    60,
-    0.5
-   ]
+   ["heal-2", "charge", 0, 60, 0.6],
+   ["bell-5", "pulse", 0, 60, 0.8],
+   ["magic-1", "pulse", 0, 70, 0.5]
   ],
   "light-cone": [
-   [
-    "heal-1",
-    "charge",
-    0,
-    36,
-    0.7
-   ],
-   [
-    "bell-2",
-    "pulse",
-    0,
-    60,
-    0.8
-   ],
-   [
-    "magic-5",
-    "pulse",
-    0,
-    60,
-    0.5
-   ]
+   ["heal-2", "charge", 0, 60, 0.6, 1.1],
+   ["bell-4", "pulse", 0, 80, 0.7],
+   ["magic-3", "pulse", 0, 70, 0.45]
   ],
   "light-blessing": [
-   [
-    "heal-2",
-    "charge",
-    0,
-    36,
-    0.7
-   ],
-   [
-    "bell-3",
-    "pulse",
-    0,
-    100,
-    0.8
-   ],
-   [
-    "magic-1",
-    "pulse",
-    0,
-    80,
-    0.5
-   ]
+   ["heal-2", "charge", 0, 60, 0.6, 0.95],
+   ["bell-5", "pulse", 0, 60, 0.8, 0.9],
+   ["bell-4", "pulse", 8, 80, 0.5],
+   ["magic-1", "pulse", 0, 90, 0.5]
   ],
   "holy-light": [
-   [
-    "heal-2",
-    "pulse",
-    0,
-    70,
-    0.8
-   ],
-   [
-    "bell-4",
-    "pulse",
-    10,
-    80,
-    0.7
-   ]
+   ["heal-2", "pulse", 0, 100, 0.8],
+   ["bell-4", "pulse", 10, 80, 0.6]
   ],
   "arcane-lance": [
-   [
-    "charge-2",
-    "charge",
-    0,
-    40,
-    0.8
-   ],
-   [
-    "electric-loop-2",
-    "beam",
-    0,
-    46,
-    0.6,
-    1,
-    true
-   ],
-   [
-    "magic-4",
-    "beam",
-    0,
-    50,
-    0.6
-   ],
-   [
-    "boom-5",
-    "impact",
-    0,
-    70,
-    0.7
-   ]
+   ["magic-charge-1", "charge", 0, 50, 0.8],
+   ["magic-womp-1", "beam", 0, 100, 1],
+   ["hum-1", "beam", 0, 46, 0.35, 0.9, true],
+   ["magic-impact-1", "impact", 0, 160, 1]
   ],
   "force-lance": [
-   [
-    "magic-6",
-    "charge",
-    0,
-    36,
-    0.8
-   ],
-   [
-    "blade-2",
-    "flight",
-    0,
-    20,
-    1
-   ],
-   [
-    "boom-7",
-    "impact",
-    0,
-    70,
-    0.9
-   ],
-   [
-    "hit-5",
-    "impact",
-    0,
-    30,
-    0.7
-   ]
+   ["magic-charge-1", "charge", 0, 40, 0.7, 1.1],
+   ["magic-whoosh-3", "flight", 0, 40, 0.8],
+   ["blade-2", "flight", 0, 12, 0.5],
+   ["boom-7", "impact", 0, 50, 0.8],
+   ["magic-womp-2", "impact", 0, 110, 0.8]
   ],
   "poison-caustic": [
-   [
-    "bubbles-1",
-    "active",
-    0,
-    138,
-    0.6,
-    1,
-    true
-   ],
-   [
-    "slime-3",
-    "bubblewin",
-    0,
-    40,
-    0.7
-   ]
+   ["bubbles-1", "active", 0, 138, 0.6, 1, true],
+   ["slime-3", "bubblewin", 0, 30, 0.5]
   ],
   "poison-plume": [
-   [
-    "bubbles-2",
-    "active",
-    0,
-    138,
-    0.6,
-    1,
-    true
-   ],
-   [
-    "slime-8",
-    "bubblewin",
-    0,
-    40,
-    0.7
-   ]
+   ["bubbles-2", "active", 0, 138, 0.6, 1, true],
+   ["slime-8", "bubblewin", 0, 25, 0.45]
   ],
   "poison-pool": [
-   [
-    "bubbles-3",
-    "active",
-    0,
-    138,
-    0.6,
-    1,
-    true
-   ],
-   [
-    "slime-12",
-    "bubblewin",
-    0,
-    40,
-    0.7
-   ]
+   ["bubbles-5", "active", 0, 138, 0.6, 1, true],
+   ["slime-12", "bubblewin", 0, 15, 0.5]
   ],
   "poison-cloud": [
-   [
-    "bubbles-4",
-    "seep",
-    0,
-    200,
-    0.5,
-    1,
-    true
-   ],
-   [
-    "slime-5",
-    "seep",
-    20,
-    40,
-    0.5
-   ]
+   ["bubbles-4", "seep", 0, 200, 0.5, 1, true],
+   ["slime-5", "seep", 20, 25, 0.4]
   ],
   "shadow-puff": [
-   [
-    "shade-1",
-    "active",
-    0,
-    60,
-    0.8
-   ],
-   [
-    "shade-5",
-    "collapse",
-    0,
-    40,
-    0.8
-   ],
-   [
-    "power-down-1",
-    "collapse",
-    0,
-    60,
-    0.5
-   ]
+   ["shade-1", "active", 0, 60, 0.8],
+   ["shade-5", "collapse", 0, 40, 0.8],
+   ["power-down-1", "collapse", 0, 60, 0.5]
   ],
   "shadow-tendril": [
-   [
-    "shade-8",
-    "active",
-    0,
-    110,
-    0.7
-   ],
-   [
-    "shade-12",
-    "collapse",
-    0,
-    60,
-    0.8
-   ],
-   [
-    "power-down-1",
-    "collapse",
-    0,
-    60,
-    0.5
-   ]
+   ["shade-8", "active", 0, 110, 0.7],
+   ["shade-12", "collapse", 0, 60, 0.8],
+   ["power-down-1", "collapse", 0, 60, 0.5]
   ],
   "shadow-vortex": [
-   [
-    "shade-9",
-    "gather",
-    0,
-    150,
-    0.6,
-    1,
-    true
-   ],
-   [
-    "power-down-1",
-    "gather",
-    110,
-    60,
-    0.6
-   ]
+   ["shade-9", "gather", 0, 150, 0.6, 1, true],
+   ["power-down-1", "gather", 110, 60, 0.6]
   ],
   "wind-gust": [
-   [
-    "wind-1",
-    "gust",
-    0,
-    138,
-    0.8,
-    1,
-    true
-   ],
-   [
-    "swish-3",
-    "streakwin",
-    0,
-    15,
-    0.6
-   ]
+   ["gust-3", "gust", 0, 150, 0.65, 0.85],
+   ["gust-6", "gust", 14, 150, 0.75, 0.92],
+   ["gust-3", "gust", 40, 138, 0.45, 1.08],
+   ["gust-4", "gust", 59, 119, 0.45, 0.8],
+   ["gust-6", "gust", 90, 88, 0.55, 0.8],
+   ["swish-3", "streakwin", 0, 15, 0.6]
   ],
   "wind-cut": [
-   [
-    "wind-2",
-    "gust",
-    0,
-    138,
-    0.6,
-    1.1,
-    true
-   ],
-   [
-    "blade-3",
-    "streakwin",
-    0,
-    20,
-    0.9
-   ],
-   [
-    "swish-6",
-    "streakwin",
-    20,
-    15,
-    0.6
-   ]
+   ["gust-6", "gust", 0, 150, 0.55, 0.8],
+   ["gust-5", "gust", 14, 150, 0.45, 0.85],
+   ["gust-1", "gust", 40, 138, 0.75, 1.08],
+   ["gust-5", "gust", 59, 119, 0.65, 0.92],
+   ["gust-4", "gust", 90, 88, 0.65, 1],
+   ["blade-3", "streakwin", 0, 14, 0.6],
+   ["swish-6", "streakwin", 20, 15, 0.6]
   ],
   "wind-whirl": [
-   [
-    "wind-3",
-    "gust",
-    0,
-    138,
-    0.8,
-    1,
-    true
-   ],
-   [
-    "swish-9",
-    "streakwin",
-    0,
-    15,
-    0.6
-   ],
-   [
-    "swish-11",
-    "streakwin",
-    30,
-    15,
-    0.5
-   ]
+   ["wind-3", "gust", 0, 138, 0.8, 1, true],
+   ["swish-9", "streakwin", 0, 15, 0.6],
+   ["swish-11", "streakwin", 30, 15, 0.5]
   ],
   "tornado": [
-   [
-    "wind-1",
-    "spin",
-    0,
-    220,
-    0.8,
-    0.9,
-    true
-   ]
+   ["gust-4", "spin", 0, 150, 0.65, 1],
+   ["gust-1", "spin", 14, 150, 0.55, 1],
+   ["gust-3", "spin", 40, 150, 0.65, 0.85],
+   ["gust-6", "spin", 59, 150, 0.75, 0.92],
+   ["gust-3", "spin", 90, 150, 0.45, 1.08],
+   ["gust-4", "spin", 112, 148, 0.45, 0.8],
+   ["gust-6", "spin", 129, 131, 0.55, 0.8],
+   ["gust-5", "spin", 143, 117, 0.45, 0.85],
+   ["gust-1", "spin", 169, 91, 0.75, 1.08],
+   ["gust-5", "spin", 188, 72, 0.65, 0.92]
   ],
-  "smoke": [
-   [
-    "wind-2",
-    "sched",
-    0,
-    240,
-    0.25,
-    0.8,
-    true
-   ]
-  ],
+  "smoke": [],
   "shadow-vortex-full": [
-   [
-    "shade-9",
-    "active",
-    0,
-    138,
-    0.6,
-    1,
-    true
-   ],
-   [
-    "shade-13",
-    "collapse",
-    0,
-    60,
-    0.8
-   ],
-   [
-    "power-down-1",
-    "collapse",
-    0,
-    60,
-    0.6
-   ]
+   ["shade-9", "active", 0, 138, 0.6, 1, true],
+   ["shade-13", "collapse", 0, 60, 0.8],
+   ["power-down-1", "collapse", 0, 60, 0.6]
   ],
   "event-chain": [
-   [
-    "spark-1",
-    "hit",
-    0,
-    20,
-    0.8
-   ],
-   [
-    "firework-2",
-    "hit",
-    0,
-    60,
-    0.5
-   ]
+   ["spark-1", "hit", 0, 14, 0.8],
+   ["spark-2", "hit", 22, 8, 0.5],
+   ["rock-fall-2", "hit", 30, 20, 0.4]
   ]
  }
 }

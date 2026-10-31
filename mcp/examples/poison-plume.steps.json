@@ -1073,8 +1073,8 @@
     "source": "sample",
     "sound": "slime-8",
     "offsetTicks": 0,
-    "durationTicks": 40,
-    "gain": 0.7,
+    "durationTicks": 25,
+    "gain": 0.45,
     "pitchRatio": 1,
     "sampleLoop": false
    }

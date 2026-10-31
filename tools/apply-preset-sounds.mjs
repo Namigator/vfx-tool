@@ -9,7 +9,8 @@ import { join, resolve } from 'node:path';
 
 const ROOT = resolve(import.meta.dirname, '..'), EX = join(ROOT, 'mcp/examples');
 const design = JSON.parse(readFileSync(join(ROOT, 'tools/preset-sounds.json'), 'utf8'));
-const lib = new Set(JSON.parse(readFileSync(join(ROOT, 'assets/sounds/manifest.json'), 'utf8')).sounds.map(s => s.id));
+const libSec = new Map(JSON.parse(readFileSync(join(ROOT, 'assets/sounds/manifest.json'), 'utf8')).sounds.map(s => [s.id, s.durationSec]));
+const lib = { has: id => libSec.has(id) };
 const only = process.argv.slice(2);
 for (const [id, layers] of Object.entries(design.presets)) {
   if (only.length && !only.includes(id)) continue;
@@ -21,8 +22,14 @@ for (const [id, layers] of Object.entries(design.presets)) {
   const touches = s => s[0] === 'vfx_connect' && ([s[1].from, s[1].to].some(e => audioIds.has(String(e).split('.')[0])) || s[1].to === 'node-output.audio');
   const kept = steps.filter(s => !(s[0] === 'vfx_add_node' && audioIds.has(s[1].id)) && !touches(s) && s[0] !== 'vfx_render_audio');
   const scheds = new Set(kept.filter(s => s[0] === 'vfx_add_node' && s[1].type === 'Schedule').map(s => s[1].id));
+  if (!layers.length) {
+    // A silent preset (smoke): strip the audio and add nothing.
+    writeFileSync(file, JSON.stringify(raw.steps ? { ...raw, steps: kept } : kept, null, 1) + '\n');
+    console.log(`${id}: ${audioIds.size} old audio nodes -> silent`);
+    continue;
+  }
   const add = [];
-  const node = (type, nid, params) => add.push(['vfx_add_node', { docId, type, id: nid, params }]);
+  const node =(type, nid, params) => add.push(['vfx_add_node', { docId, type, id: nid, params }]);
   const wire = (from, to) => add.push(['vfx_connect', { docId, from, to }]);
   node('AudioMix', 'sfx-mix', { masterGain: design.masterGain });
   node('AudioOutput', 'sfx-out', {});
@@ -32,10 +39,11 @@ for (const [id, layers] of Object.entries(design.presets)) {
     const src = `sfx-${k + 1}`;
     node('AudioSource', src, { source: 'sample', sound, offsetTicks, durationTicks, gain, pitchRatio: pitch, sampleLoop: loop });
     wire(`${cue}.start`, `${src}.trigger`);
-    if (loop) {
-      // A bed fades out over its last 0.25 s instead of stopping dead at Duration.
-      const env = `${src}-fade`, sec = durationTicks / 60;
-      node('AudioEnvelope', env, { attack: 0.03, hold: Math.max(0, sec - 0.28), release: 0.25, curve: 'linear' });
+    const sec = durationTicks / 60;
+    if (loop || libSec.get(sound) / pitch > sec + 0.02) {
+      // A bed, or a sound cut short by Duration, fades out over its last 0.25 s instead of stopping dead.
+      const env = `${src}-fade`;
+      node('AudioEnvelope', env, { attack: loop ? 0.03 : 0.005, hold: Math.max(0, sec - 0.28), release: 0.25, curve: 'linear' });
       wire(`${src}.audio`, `${env}.audio`); wire(`${env}.audio`, 'sfx-mix.inputs');
     } else wire(`${src}.audio`, 'sfx-mix.inputs');
   });

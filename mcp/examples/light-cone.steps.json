@@ -1231,11 +1231,11 @@
    "id": "sfx-1",
    "params": {
     "source": "sample",
-    "sound": "heal-1",
+    "sound": "heal-2",
     "offsetTicks": 0,
-    "durationTicks": 36,
-    "gain": 0.7,
-    "pitchRatio": 1,
+    "durationTicks": 60,
+    "gain": 0.6,
+    "pitchRatio": 1.1,
     "sampleLoop": false
    }
   }
@@ -1249,10 +1249,32 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "AudioEnvelope",
+   "id": "sfx-1-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 0.72,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
   "vfx_connect",
   {
    "docId": "lightcone",
    "from": "sfx-1.audio",
+   "to": "sfx-1-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "sfx-1-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -1264,10 +1286,10 @@
    "id": "sfx-2",
    "params": {
     "source": "sample",
-    "sound": "bell-2",
+    "sound": "bell-4",
     "offsetTicks": 0,
-    "durationTicks": 60,
-    "gain": 0.8,
+    "durationTicks": 80,
+    "gain": 0.7,
     "pitchRatio": 1,
     "sampleLoop": false
    }
@@ -1297,10 +1319,10 @@
    "id": "sfx-3",
    "params": {
     "source": "sample",
-    "sound": "magic-5",
+    "sound": "magic-3",
     "offsetTicks": 0,
-    "durationTicks": 60,
-    "gain": 0.5,
+    "durationTicks": 70,
+    "gain": 0.45,
     "pitchRatio": 1,
     "sampleLoop": false
    }
@@ -1315,10 +1337,32 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "lightcone",
+   "type": "AudioEnvelope",
+   "id": "sfx-3-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 0.8866666666666667,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
   "vfx_connect",
   {
    "docId": "lightcone",
    "from": "sfx-3.audio",
+   "to": "sfx-3-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "lightcone",
+   "from": "sfx-3-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],

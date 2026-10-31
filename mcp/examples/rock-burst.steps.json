@@ -439,10 +439,10 @@
    "id": "sfx-1",
    "params": {
     "source": "sample",
-    "sound": "rock-break-2",
+    "sound": "rock-break-1",
     "offsetTicks": 0,
-    "durationTicks": 60,
-    "gain": 1,
+    "durationTicks": 30,
+    "gain": 0.8,
     "pitchRatio": 1,
     "sampleLoop": false
    }
@@ -475,7 +475,7 @@
     "sound": "boom-8",
     "offsetTicks": 0,
     "durationTicks": 60,
-    "gain": 0.8,
+    "gain": 0.9,
     "pitchRatio": 1,
     "sampleLoop": false
    }
@@ -494,6 +494,61 @@
   {
    "docId": "rocks",
    "from": "sfx-2.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "AudioSource",
+   "id": "sfx-3",
+   "params": {
+    "source": "sample",
+    "sound": "thunder-5",
+    "offsetTicks": 0,
+    "durationTicks": 140,
+    "gain": 0.35,
+    "pitchRatio": 0.7,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "hit.start",
+   "to": "sfx-3.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "rocks",
+   "type": "AudioEnvelope",
+   "id": "sfx-3-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 2.0533333333333337,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "sfx-3.audio",
+   "to": "sfx-3-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "rocks",
+   "from": "sfx-3-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],

@@ -1611,10 +1611,10 @@
    "id": "sfx-1",
    "params": {
     "source": "sample",
-    "sound": "fire-cast-5",
+    "sound": "fire-whoosh-4",
     "offsetTicks": 0,
-    "durationTicks": 50,
-    "gain": 1,
+    "durationTicks": 90,
+    "gain": 0.9,
     "pitchRatio": 1,
     "sampleLoop": false
    }
@@ -1629,10 +1629,32 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "firejet",
+   "type": "AudioEnvelope",
+   "id": "sfx-1-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 1.22,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
   "vfx_connect",
   {
    "docId": "firejet",
    "from": "sfx-1.audio",
+   "to": "sfx-1-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "firejet",
+   "from": "sfx-1-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],

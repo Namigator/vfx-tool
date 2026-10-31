@@ -284,12 +284,12 @@
    "id": "sfx-1",
    "params": {
     "source": "sample",
-    "sound": "wind-1",
+    "sound": "gust-4",
     "offsetTicks": 0,
-    "durationTicks": 220,
-    "gain": 0.8,
-    "pitchRatio": 0.9,
-    "sampleLoop": true
+    "durationTicks": 150,
+    "gain": 0.65,
+    "pitchRatio": 1,
+    "sampleLoop": false
    }
   }
  ],
@@ -302,14 +302,47 @@
   }
  ],
  [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "sfx-1.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "AudioSource",
+   "id": "sfx-2",
+   "params": {
+    "source": "sample",
+    "sound": "gust-1",
+    "offsetTicks": 14,
+    "durationTicks": 150,
+    "gain": 0.55,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "spin.start",
+   "to": "sfx-2.trigger"
+  }
+ ],
+ [
   "vfx_add_node",
   {
    "docId": "tornado",
    "type": "AudioEnvelope",
-   "id": "sfx-1-fade",
+   "id": "sfx-2-fade",
    "params": {
-    "attack": 0.03,
-    "hold": 3.3866666666666667,
+    "attack": 0.005,
+    "hold": 2.2199999999999998,
     "release": 0.25,
     "curve": "linear"
    }
@@ -319,15 +352,411 @@
   "vfx_connect",
   {
    "docId": "tornado",
-   "from": "sfx-1.audio",
-   "to": "sfx-1-fade.audio"
+   "from": "sfx-2.audio",
+   "to": "sfx-2-fade.audio"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "tornado",
-   "from": "sfx-1-fade.audio",
+   "from": "sfx-2-fade.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "AudioSource",
+   "id": "sfx-3",
+   "params": {
+    "source": "sample",
+    "sound": "gust-3",
+    "offsetTicks": 40,
+    "durationTicks": 150,
+    "gain": 0.65,
+    "pitchRatio": 0.85,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "spin.start",
+   "to": "sfx-3.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "AudioEnvelope",
+   "id": "sfx-3-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 2.2199999999999998,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "sfx-3.audio",
+   "to": "sfx-3-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "sfx-3-fade.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "AudioSource",
+   "id": "sfx-4",
+   "params": {
+    "source": "sample",
+    "sound": "gust-6",
+    "offsetTicks": 59,
+    "durationTicks": 150,
+    "gain": 0.75,
+    "pitchRatio": 0.92,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "spin.start",
+   "to": "sfx-4.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "sfx-4.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "AudioSource",
+   "id": "sfx-5",
+   "params": {
+    "source": "sample",
+    "sound": "gust-3",
+    "offsetTicks": 90,
+    "durationTicks": 150,
+    "gain": 0.45,
+    "pitchRatio": 1.08,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "spin.start",
+   "to": "sfx-5.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "AudioEnvelope",
+   "id": "sfx-5-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 2.2199999999999998,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "sfx-5.audio",
+   "to": "sfx-5-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "sfx-5-fade.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "AudioSource",
+   "id": "sfx-6",
+   "params": {
+    "source": "sample",
+    "sound": "gust-4",
+    "offsetTicks": 112,
+    "durationTicks": 148,
+    "gain": 0.45,
+    "pitchRatio": 0.8,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "spin.start",
+   "to": "sfx-6.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "sfx-6.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "AudioSource",
+   "id": "sfx-7",
+   "params": {
+    "source": "sample",
+    "sound": "gust-6",
+    "offsetTicks": 129,
+    "durationTicks": 131,
+    "gain": 0.55,
+    "pitchRatio": 0.8,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "spin.start",
+   "to": "sfx-7.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "AudioEnvelope",
+   "id": "sfx-7-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 1.903333333333333,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "sfx-7.audio",
+   "to": "sfx-7-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "sfx-7-fade.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "AudioSource",
+   "id": "sfx-8",
+   "params": {
+    "source": "sample",
+    "sound": "gust-5",
+    "offsetTicks": 143,
+    "durationTicks": 117,
+    "gain": 0.45,
+    "pitchRatio": 0.85,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "spin.start",
+   "to": "sfx-8.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "AudioEnvelope",
+   "id": "sfx-8-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 1.67,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "sfx-8.audio",
+   "to": "sfx-8-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "sfx-8-fade.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "AudioSource",
+   "id": "sfx-9",
+   "params": {
+    "source": "sample",
+    "sound": "gust-1",
+    "offsetTicks": 169,
+    "durationTicks": 91,
+    "gain": 0.75,
+    "pitchRatio": 1.08,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "spin.start",
+   "to": "sfx-9.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "AudioEnvelope",
+   "id": "sfx-9-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 1.2366666666666666,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "sfx-9.audio",
+   "to": "sfx-9-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "sfx-9-fade.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "AudioSource",
+   "id": "sfx-10",
+   "params": {
+    "source": "sample",
+    "sound": "gust-5",
+    "offsetTicks": 188,
+    "durationTicks": 72,
+    "gain": 0.65,
+    "pitchRatio": 0.92,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "spin.start",
+   "to": "sfx-10.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "tornado",
+   "type": "AudioEnvelope",
+   "id": "sfx-10-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 0.9199999999999999,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "sfx-10.audio",
+   "to": "sfx-10-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "tornado",
+   "from": "sfx-10-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],

@@ -3121,11 +3121,11 @@
    "id": "sfx-1",
    "params": {
     "source": "sample",
-    "sound": "magic-6",
+    "sound": "magic-charge-1",
     "offsetTicks": 0,
-    "durationTicks": 36,
-    "gain": 0.8,
-    "pitchRatio": 1,
+    "durationTicks": 40,
+    "gain": 0.7,
+    "pitchRatio": 1.1,
     "sampleLoop": false
    }
   }
@@ -3139,10 +3139,32 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "flance",
+   "type": "AudioEnvelope",
+   "id": "sfx-1-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 0.3866666666666666,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
   "vfx_connect",
   {
    "docId": "flance",
    "from": "sfx-1.audio",
+   "to": "sfx-1-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flance",
+   "from": "sfx-1-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -3154,10 +3176,10 @@
    "id": "sfx-2",
    "params": {
     "source": "sample",
-    "sound": "blade-2",
+    "sound": "magic-whoosh-3",
     "offsetTicks": 0,
-    "durationTicks": 20,
-    "gain": 1,
+    "durationTicks": 40,
+    "gain": 0.8,
     "pitchRatio": 1,
     "sampleLoop": false
    }
@@ -3172,10 +3194,32 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "flance",
+   "type": "AudioEnvelope",
+   "id": "sfx-2-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 0.3866666666666666,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
   "vfx_connect",
   {
    "docId": "flance",
    "from": "sfx-2.audio",
+   "to": "sfx-2-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flance",
+   "from": "sfx-2-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -3187,10 +3231,10 @@
    "id": "sfx-3",
    "params": {
     "source": "sample",
-    "sound": "boom-7",
+    "sound": "blade-2",
     "offsetTicks": 0,
-    "durationTicks": 70,
-    "gain": 0.9,
+    "durationTicks": 12,
+    "gain": 0.5,
     "pitchRatio": 1,
     "sampleLoop": false
    }
@@ -3200,8 +3244,22 @@
   "vfx_connect",
   {
    "docId": "flance",
-   "from": "impact.start",
+   "from": "flight.start",
    "to": "sfx-3.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flance",
+   "type": "AudioEnvelope",
+   "id": "sfx-3-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 0,
+    "release": 0.25,
+    "curve": "linear"
+   }
   }
  ],
  [
@@ -3209,6 +3267,14 @@
   {
    "docId": "flance",
    "from": "sfx-3.audio",
+   "to": "sfx-3-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flance",
+   "from": "sfx-3-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],
@@ -3220,10 +3286,10 @@
    "id": "sfx-4",
    "params": {
     "source": "sample",
-    "sound": "hit-5",
+    "sound": "boom-7",
     "offsetTicks": 0,
-    "durationTicks": 30,
-    "gain": 0.7,
+    "durationTicks": 50,
+    "gain": 0.8,
     "pitchRatio": 1,
     "sampleLoop": false
    }
@@ -3242,6 +3308,61 @@
   {
    "docId": "flance",
    "from": "sfx-4.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flance",
+   "type": "AudioSource",
+   "id": "sfx-5",
+   "params": {
+    "source": "sample",
+    "sound": "magic-womp-2",
+    "offsetTicks": 0,
+    "durationTicks": 110,
+    "gain": 0.8,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flance",
+   "from": "impact.start",
+   "to": "sfx-5.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "flance",
+   "type": "AudioEnvelope",
+   "id": "sfx-5-fade",
+   "params": {
+    "attack": 0.005,
+    "hold": 1.5533333333333332,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flance",
+   "from": "sfx-5.audio",
+   "to": "sfx-5-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "flance",
+   "from": "sfx-5-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],

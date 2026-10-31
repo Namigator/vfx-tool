@@ -248,12 +248,12 @@
    "id": "sfx-1",
    "params": {
     "source": "sample",
-    "sound": "spark-2",
+    "sound": "hum-1",
     "offsetTicks": 0,
-    "durationTicks": 20,
-    "gain": 0.8,
-    "pitchRatio": 1,
-    "sampleLoop": false
+    "durationTicks": 70,
+    "gain": 0.7,
+    "pitchRatio": 1.1,
+    "sampleLoop": true
    }
   }
  ],
@@ -266,44 +266,11 @@
   }
  ],
  [
-  "vfx_connect",
-  {
-   "docId": "beam",
-   "from": "sfx-1.audio",
-   "to": "sfx-mix.inputs"
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "beam",
-   "type": "AudioSource",
-   "id": "sfx-2",
-   "params": {
-    "source": "sample",
-    "sound": "electric-loop-2",
-    "offsetTicks": 0,
-    "durationTicks": 70,
-    "gain": 0.7,
-    "pitchRatio": 1,
-    "sampleLoop": true
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "beam",
-   "from": "on.start",
-   "to": "sfx-2.trigger"
-  }
- ],
- [
   "vfx_add_node",
   {
    "docId": "beam",
    "type": "AudioEnvelope",
-   "id": "sfx-2-fade",
+   "id": "sfx-1-fade",
    "params": {
     "attack": 0.03,
     "hold": 0.8866666666666667,
@@ -316,15 +283,147 @@
   "vfx_connect",
   {
    "docId": "beam",
-   "from": "sfx-2.audio",
-   "to": "sfx-2-fade.audio"
+   "from": "sfx-1.audio",
+   "to": "sfx-1-fade.audio"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "beam",
-   "from": "sfx-2-fade.audio",
+   "from": "sfx-1-fade.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "AudioSource",
+   "id": "sfx-2",
+   "params": {
+    "source": "sample",
+    "sound": "spark-2",
+    "offsetTicks": 0,
+    "durationTicks": 8,
+    "gain": 0.6,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "on.start",
+   "to": "sfx-2.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "sfx-2.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "AudioSource",
+   "id": "sfx-3",
+   "params": {
+    "source": "sample",
+    "sound": "spark-1",
+    "offsetTicks": 17,
+    "durationTicks": 14,
+    "gain": 0.4,
+    "pitchRatio": 1.1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "on.start",
+   "to": "sfx-3.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "sfx-3.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "AudioSource",
+   "id": "sfx-4",
+   "params": {
+    "source": "sample",
+    "sound": "spark-2",
+    "offsetTicks": 33,
+    "durationTicks": 8,
+    "gain": 0.4,
+    "pitchRatio": 0.9,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "on.start",
+   "to": "sfx-4.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "sfx-4.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "beam",
+   "type": "AudioSource",
+   "id": "sfx-5",
+   "params": {
+    "source": "sample",
+    "sound": "spark-1",
+    "offsetTicks": 52,
+    "durationTicks": 14,
+    "gain": 0.35,
+    "pitchRatio": 1,
+    "sampleLoop": false
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "on.start",
+   "to": "sfx-5.trigger"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "beam",
+   "from": "sfx-5.audio",
    "to": "sfx-mix.inputs"
   }
  ],

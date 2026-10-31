@@ -1611,10 +1611,10 @@
    "id": "sfx-1",
    "params": {
     "source": "sample",
-    "sound": "fire-cast-4",
+    "sound": "fire-ignite-2",
     "offsetTicks": 0,
-    "durationTicks": 70,
-    "gain": 1,
+    "durationTicks": 34,
+    "gain": 0.7,
     "pitchRatio": 1,
     "sampleLoop": false
    }
@@ -1644,12 +1644,12 @@
    "id": "sfx-2",
    "params": {
     "source": "sample",
-    "sound": "fire-crackle-1",
-    "offsetTicks": 6,
-    "durationTicks": 36,
-    "gain": 0.5,
+    "sound": "fire-blast-2",
+    "offsetTicks": 0,
+    "durationTicks": 130,
+    "gain": 1,
     "pitchRatio": 1,
-    "sampleLoop": true
+    "sampleLoop": false
    }
   }
  ],
@@ -1657,7 +1657,7 @@
   "vfx_connect",
   {
    "docId": "fireburst",
-   "from": "emit.start",
+   "from": "ignite.start",
    "to": "sfx-2.trigger"
   }
  ],
@@ -1668,8 +1668,8 @@
    "type": "AudioEnvelope",
    "id": "sfx-2-fade",
    "params": {
-    "attack": 0.03,
-    "hold": 0.31999999999999995,
+    "attack": 0.005,
+    "hold": 1.8866666666666665,
     "release": 0.25,
     "curve": "linear"
    }
@@ -1688,6 +1688,61 @@
   {
    "docId": "fireburst",
    "from": "sfx-2-fade.audio",
+   "to": "sfx-mix.inputs"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fireburst",
+   "type": "AudioSource",
+   "id": "sfx-3",
+   "params": {
+    "source": "sample",
+    "sound": "fire-crackle-1",
+    "offsetTicks": 6,
+    "durationTicks": 40,
+    "gain": 0.4,
+    "pitchRatio": 1,
+    "sampleLoop": true
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireburst",
+   "from": "emit.start",
+   "to": "sfx-3.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "fireburst",
+   "type": "AudioEnvelope",
+   "id": "sfx-3-fade",
+   "params": {
+    "attack": 0.03,
+    "hold": 0.3866666666666666,
+    "release": 0.25,
+    "curve": "linear"
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireburst",
+   "from": "sfx-3.audio",
+   "to": "sfx-3-fade.audio"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "fireburst",
+   "from": "sfx-3-fade.audio",
    "to": "sfx-mix.inputs"
   }
  ],

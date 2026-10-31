@@ -215,7 +215,7 @@ export const SOUND_LIBRARY: LibrarySound[] = [
  {
   "id": "cannon-1",
   "file": "cannon-1.wav",
-  "durationSec": 0.82,
+  "durationSec": 0.81,
   "tags": [
    "impact",
    "launch"
@@ -381,7 +381,7 @@ export const SOUND_LIBRARY: LibrarySound[] = [
  {
   "id": "splash-6",
   "file": "splash-6.wav",
-  "durationSec": 0.35,
+  "durationSec": 0.34,
   "tags": [
    "water",
    "impact"
@@ -635,7 +635,7 @@ export const SOUND_LIBRARY: LibrarySound[] = [
  {
   "id": "slime-7",
   "file": "slime-7.wav",
-  "durationSec": 0.26,
+  "durationSec": 0.25,
   "tags": [
    "poison",
    "slime",
@@ -913,7 +913,7 @@ export const SOUND_LIBRARY: LibrarySound[] = [
  {
   "id": "hit-2",
   "file": "hit-2.wav",
-  "durationSec": 0.46,
+  "durationSec": 0.45,
   "tags": [
    "impact"
   ],
@@ -967,7 +967,7 @@ export const SOUND_LIBRARY: LibrarySound[] = [
  {
   "id": "hit-8",
   "file": "hit-8.wav",
-  "durationSec": 0.17,
+  "durationSec": 0.18,
   "tags": [
    "impact"
   ],
@@ -1095,7 +1095,7 @@ export const SOUND_LIBRARY: LibrarySound[] = [
  {
   "id": "zap-3",
   "file": "zap-3.wav",
-  "durationSec": 1.3,
+  "durationSec": 1.28,
   "tags": [
    "lightning",
    "impact",
@@ -1172,7 +1172,7 @@ export const SOUND_LIBRARY: LibrarySound[] = [
  {
   "id": "charge-3",
   "file": "charge-3.wav",
-  "durationSec": 1.27,
+  "durationSec": 1.26,
   "tags": [
    "charge",
    "energy",
@@ -1193,7 +1193,7 @@ export const SOUND_LIBRARY: LibrarySound[] = [
  {
   "id": "magic-1",
   "file": "magic-1.wav",
-  "durationSec": 1.59,
+  "durationSec": 1.58,
   "tags": [
    "arcane",
    "magic",
@@ -1750,6 +1750,471 @@ export const SOUND_LIBRARY: LibrarySound[] = [
    "whoosh"
   ],
   "usage": "sharp blade swish (wind cut)"
+ },
+ {
+  "id": "thunder-1",
+  "file": "thunder-1.wav",
+  "durationSec": 5,
+  "tags": [
+   "lightning",
+   "thunder",
+   "impact"
+  ],
+  "usage": "close thunder crack + rumble (lightning boom)"
+ },
+ {
+  "id": "thunder-2",
+  "file": "thunder-2.wav",
+  "durationSec": 5,
+  "tags": [
+   "lightning",
+   "thunder",
+   "impact"
+  ],
+  "usage": "explosive close thunder crack + rumble"
+ },
+ {
+  "id": "thunder-3",
+  "file": "thunder-3.wav",
+  "durationSec": 5,
+  "tags": [
+   "lightning",
+   "thunder",
+   "impact"
+  ],
+  "usage": "thunderclap with rolling rumble"
+ },
+ {
+  "id": "thunder-4",
+  "file": "thunder-4.wav",
+  "durationSec": 4.5,
+  "tags": [
+   "lightning",
+   "thunder",
+   "impact"
+  ],
+  "usage": "thunder blast"
+ },
+ {
+  "id": "thunder-5",
+  "file": "thunder-5.wav",
+  "durationSec": 3.94,
+  "tags": [
+   "lightning",
+   "thunder",
+   "impact"
+  ],
+  "usage": "thunder crack, shorter tail"
+ },
+ {
+  "id": "prestrike-1",
+  "file": "prestrike-1.wav",
+  "durationSec": 0.55,
+  "tags": [
+   "lightning",
+   "charge",
+   "crackle"
+  ],
+  "usage": "static sizzle that builds right before a lightning strike"
+ },
+ {
+  "id": "fire-whoosh-1",
+  "file": "fire-whoosh-1.wav",
+  "durationSec": 2.5,
+  "tags": [
+   "fire",
+   "cast",
+   "whoosh"
+  ],
+  "usage": "clean fire whoosh (cast / launch)"
+ },
+ {
+  "id": "fire-whoosh-2",
+  "file": "fire-whoosh-2.wav",
+  "durationSec": 2.81,
+  "tags": [
+   "fire",
+   "cast",
+   "whoosh"
+  ],
+  "usage": "clean fire whoosh, longer"
+ },
+ {
+  "id": "fire-whoosh-3",
+  "file": "fire-whoosh-3.wav",
+  "durationSec": 1.6,
+  "tags": [
+   "fire",
+   "cast",
+   "whoosh"
+  ],
+  "usage": "clean fire whoosh"
+ },
+ {
+  "id": "fire-whoosh-4",
+  "file": "fire-whoosh-4.wav",
+  "durationSec": 2.48,
+  "tags": [
+   "fire",
+   "cast",
+   "whoosh"
+  ],
+  "usage": "fire whoosh"
+ },
+ {
+  "id": "fireball-pass-1",
+  "file": "fireball-pass-1.wav",
+  "durationSec": 2.96,
+  "tags": [
+   "fire",
+   "whoosh",
+   "flight"
+  ],
+  "usage": "fireball flying past (whoosh by)"
+ },
+ {
+  "id": "fireball-pass-2",
+  "file": "fireball-pass-2.wav",
+  "durationSec": 0.97,
+  "tags": [
+   "fire",
+   "whoosh",
+   "flight"
+  ],
+  "usage": "short fireball whoosh"
+ },
+ {
+  "id": "fire-ignite-1",
+  "file": "fire-ignite-1.wav",
+  "durationSec": 0.22,
+  "tags": [
+   "fire",
+   "ignite"
+  ],
+  "usage": "soft torch ignite"
+ },
+ {
+  "id": "fire-ignite-2",
+  "file": "fire-ignite-2.wav",
+  "durationSec": 0.55,
+  "tags": [
+   "fire",
+   "ignite",
+   "burst"
+  ],
+  "usage": "fire burst flash"
+ },
+ {
+  "id": "fire-blast-1",
+  "file": "fire-blast-1.wav",
+  "durationSec": 2.95,
+  "tags": [
+   "fire",
+   "explosion",
+   "impact"
+  ],
+  "usage": "fire explosion"
+ },
+ {
+  "id": "fire-blast-2",
+  "file": "fire-blast-2.wav",
+  "durationSec": 2.35,
+  "tags": [
+   "fire",
+   "burst"
+  ],
+  "usage": "flame burst"
+ },
+ {
+  "id": "fire-magic-1",
+  "file": "fire-magic-1.wav",
+  "durationSec": 0.85,
+  "tags": [
+   "fire",
+   "magic",
+   "cast"
+  ],
+  "usage": "fire magic cast"
+ },
+ {
+  "id": "magic-whoosh-1",
+  "file": "magic-whoosh-1.wav",
+  "durationSec": 1.63,
+  "tags": [
+   "arcane",
+   "whoosh",
+   "womp"
+  ],
+  "usage": "deep magic whoosh (womp)"
+ },
+ {
+  "id": "magic-whoosh-2",
+  "file": "magic-whoosh-2.wav",
+  "durationSec": 2.09,
+  "tags": [
+   "arcane",
+   "whoosh",
+   "womp"
+  ],
+  "usage": "deep whoosh"
+ },
+ {
+  "id": "magic-whoosh-3",
+  "file": "magic-whoosh-3.wav",
+  "durationSec": 0.87,
+  "tags": [
+   "arcane",
+   "whoosh"
+  ],
+  "usage": "quick magic whoosh"
+ },
+ {
+  "id": "magic-womp-1",
+  "file": "magic-womp-1.wav",
+  "durationSec": 1.94,
+  "tags": [
+   "arcane",
+   "impact",
+   "womp"
+  ],
+  "usage": "magic strike womp"
+ },
+ {
+  "id": "magic-womp-2",
+  "file": "magic-womp-2.wav",
+  "durationSec": 1.96,
+  "tags": [
+   "arcane",
+   "impact",
+   "womp"
+  ],
+  "usage": "magic smite"
+ },
+ {
+  "id": "magic-womp-3",
+  "file": "magic-womp-3.wav",
+  "durationSec": 1.56,
+  "tags": [
+   "arcane",
+   "cast",
+   "womp"
+  ],
+  "usage": "magic spell cast"
+ },
+ {
+  "id": "magic-impact-1",
+  "file": "magic-impact-1.wav",
+  "durationSec": 2.82,
+  "tags": [
+   "arcane",
+   "impact",
+   "boom"
+  ],
+  "usage": "cinematic transition hit (deep boom)"
+ },
+ {
+  "id": "magic-impact-2",
+  "file": "magic-impact-2.wav",
+  "durationSec": 2.57,
+  "tags": [
+   "arcane",
+   "whoosh",
+   "boom"
+  ],
+  "usage": "whoosh into boom"
+ },
+ {
+  "id": "magic-impact-3",
+  "file": "magic-impact-3.wav",
+  "durationSec": 3.96,
+  "tags": [
+   "arcane",
+   "shadow",
+   "impact"
+  ],
+  "usage": "dark deep woosh impact"
+ },
+ {
+  "id": "magic-charge-1",
+  "file": "magic-charge-1.wav",
+  "durationSec": 2.51,
+  "tags": [
+   "charge",
+   "arcane",
+   "swell"
+  ],
+  "usage": "soft magical focus swell (charge-up)"
+ },
+ {
+  "id": "magic-charge-2",
+  "file": "magic-charge-2.wav",
+  "durationSec": 2.23,
+  "tags": [
+   "charge",
+   "arcane",
+   "riser"
+  ],
+  "usage": "short riser (charge-up)"
+ },
+ {
+  "id": "magic-charge-3",
+  "file": "magic-charge-3.wav",
+  "durationSec": 2.8,
+  "tags": [
+   "charge",
+   "energy",
+   "swell"
+  ],
+  "usage": "energy charge-up"
+ },
+ {
+  "id": "fountain-1",
+  "file": "fountain-1.wav",
+  "durationSec": 4,
+  "tags": [
+   "water",
+   "loop",
+   "bed"
+  ],
+  "usage": "water fountain spray bed"
+ },
+ {
+  "id": "river-1",
+  "file": "river-1.wav",
+  "durationSec": 4,
+  "tags": [
+   "water",
+   "loop",
+   "bed"
+  ],
+  "usage": "river flow bed"
+ },
+ {
+  "id": "rain-1",
+  "file": "rain-1.wav",
+  "durationSec": 3.22,
+  "tags": [
+   "water",
+   "rain",
+   "loop",
+   "bed"
+  ],
+  "usage": "light rain bed"
+ },
+ {
+  "id": "rain-2",
+  "file": "rain-2.wav",
+  "durationSec": 3.9,
+  "tags": [
+   "water",
+   "rain",
+   "loop",
+   "bed"
+  ],
+  "usage": "rain bed"
+ },
+ {
+  "id": "splash-big-1",
+  "file": "splash-big-1.wav",
+  "durationSec": 2.11,
+  "tags": [
+   "water",
+   "impact"
+  ],
+  "usage": "big water splash"
+ },
+ {
+  "id": "splash-big-2",
+  "file": "splash-big-2.wav",
+  "durationSec": 1.93,
+  "tags": [
+   "water",
+   "impact"
+  ],
+  "usage": "splash"
+ },
+ {
+  "id": "gust-1",
+  "file": "gust-1.wav",
+  "durationSec": 3.51,
+  "tags": [
+   "wind",
+   "gust"
+  ],
+  "usage": "single wind gust (no rising tail)"
+ },
+ {
+  "id": "gust-2",
+  "file": "gust-2.wav",
+  "durationSec": 5,
+  "tags": [
+   "wind",
+   "gust"
+  ],
+  "usage": "gust of wind"
+ },
+ {
+  "id": "gust-3",
+  "file": "gust-3.wav",
+  "durationSec": 3.98,
+  "tags": [
+   "wind",
+   "gust"
+  ],
+  "usage": "wind gust"
+ },
+ {
+  "id": "gust-4",
+  "file": "gust-4.wav",
+  "durationSec": 1.25,
+  "tags": [
+   "wind",
+   "gust",
+   "whoosh"
+  ],
+  "usage": "short airy woosh"
+ },
+ {
+  "id": "gust-5",
+  "file": "gust-5.wav",
+  "durationSec": 3.27,
+  "tags": [
+   "wind",
+   "gust"
+  ],
+  "usage": "short wind woosh"
+ },
+ {
+  "id": "gust-6",
+  "file": "gust-6.wav",
+  "durationSec": 1.87,
+  "tags": [
+   "wind",
+   "whoosh"
+  ],
+  "usage": "swoosh"
+ },
+ {
+  "id": "hum-1",
+  "file": "hum-1.wav",
+  "durationSec": 3,
+  "tags": [
+   "energy",
+   "loop",
+   "hum"
+  ],
+  "usage": "low energy hum bed (beams)"
+ },
+ {
+  "id": "hum-2",
+  "file": "hum-2.wav",
+  "durationSec": 2.06,
+  "tags": [
+   "energy",
+   "loop",
+   "hum"
+  ],
+  "usage": "short deep hum"
  }
 ];
 export const SOUND_IDS = SOUND_LIBRARY.map(s => s.id);

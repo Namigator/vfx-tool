@@ -1729,11 +1729,11 @@
    "id": "sfx-2",
    "params": {
     "source": "sample",
-    "sound": "water-flow-3",
+    "sound": "river-1",
     "offsetTicks": 0,
     "durationTicks": 90,
-    "gain": 0.6,
-    "pitchRatio": 1.1,
+    "gain": 0.55,
+    "pitchRatio": 1.12,
     "sampleLoop": true
    }
   }
