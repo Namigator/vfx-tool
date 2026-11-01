@@ -42,7 +42,7 @@ Order agreed with the owner: finish A-G (sound included), then Gate P. Open line
 - [ ] P-06 Pricing / distribution decision (free site, paid packs, Roblox store, itch.io, Unity Asset Store, Fab) · owner
 - [ ] P-07 Support contact + issue tracker link
 - [ ] P-08 Roblox store items: moderation appeals answered; seller-requirements setting (owner dashboard) · owner
-- [ ] P-09 Version tag + changelog for the first public release
+- [ ] P-09 Version tag + changelog for the first public release · DRAFT CHANGELOG.md 2026-11-01 (0.1.0, feature list + known limits); tag at release · owner
 
 
 - [x] Force Lance preset (thrown spear, tight purple helix closed at the tip) · owner: "looks much better" + [SAW] stills · 2026-10-21
