@@ -34,7 +34,7 @@ Order agreed with the owner: finish A-G (sound included), then Gate P. Open line
 - [ ] BACKLOG T37: water-broad and arcane-lance playback p95 34-50 ms (short hitches; headless too) · [RAN] perf-fps-headless-3-2026-10-31.md · 2026-10-31
 
 ## Gate P: publishing, added 2026-10-30 (after A-G)
-- [ ] P-01 License chosen for the tool and its exports (and third-party asset licenses listed: assets/sprites provenance) · asset half done 2026-11-01: licenses/README.md lists generated vs CC0 sprites/sounds with per-file manifests; tool licence = owner
+- [x] P-01 License chosen for the tool and its exports (and third-party asset licenses listed: assets/sprites provenance) · owner 2026-11-01: proprietary (LICENSE.md); exports free to use in users' games; assets listed in licenses/README.md
 - [ ] P-02 Terms / privacy note for the hosted site (what is stored: browser storage only?) · DRAFT PRIVACY.md 2026-11-01 (from the code: browser storage only; AI requests + feedback leave the device); owner: host logs, contact
 - [ ] P-03 Public README: what it is, how to run, engine export guides (Roblox, Unity built-in/URP, Godot, Unreal plugin) · README updated 2026-11-01 (52 components, 4 engine import table, assets, privacy); needs a screenshot/clip (P-05) · owner read
 - [ ] P-04 First-time-user check of the deployed site: open, build from Blank, export to each engine, import it

@@ -79,5 +79,5 @@ Unity: the built-in pipeline has no bloom, so add Bloom (URP Volume or Post Proc
 ## Privacy, licence and support
 
 - Privacy: [PRIVACY.md](PRIVACY.md). Everything stays in your browser except AI-assistant requests and feedback you send.
-- Licence for the tool itself: not chosen yet.
+- Licence: proprietary, all rights reserved ([LICENSE.md](LICENSE.md)). Effects you make and export are yours to use in your games.
 - Feedback and bug reports: the **Feedback** button in the editor.
