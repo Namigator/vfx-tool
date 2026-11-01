@@ -5,11 +5,14 @@ them to game engines.
 
 **Try it:** https://demo.xpo.dev/avi/vfx-tool/
 
-- 49 ready-made components across ten elements (fire, lightning, water, ice, earth, wind, poison, shadow, light,
+- 52 ready-made components across ten elements (fire, lightning, water, ice, earth, wind, poison, shadow, light,
   energy), each with a few friendly knobs, colour pickers and keyframes.
 - A node graph underneath for full control, a deterministic 60 Hz simulation and a Three.js preview with glow.
-- Exports: portable `.vfxpack`, sprite sheets / PNG sequences / GIF / MP4, Roblox models (with an aiming API),
-  and Unreal Engine (Niagara, in progress).
+- Exports: portable `.vfxpack`, sprite sheets / PNG sequences / GIF / MP4, and engine packages for Roblox (models
+  with an aiming API), Unreal Engine 5 (Niagara, via the bundled importer plugin), Godot 4 (a scene) and Unity 6
+  (a prefab, via the bundled importer). Each engine package has a `report.md` listing what it approximates or leaves out.
+- Sounds: effects can carry layered sound in the editor (208 CC0 samples included); engine exports and video do not
+  include sound yet.
 - An MCP server so AI agents can do everything the editor can, with a written guide for them.
 
 ## Run it locally
@@ -44,8 +47,16 @@ the `vfx_guide` tool. `node mcp/run-steps.mjs <file>` runs a scripted list of to
 
 ## Exporting
 
-See [docs/ai-guide/export.md](docs/ai-guide/export.md): packs, media, Roblox (`EffectPlayer.play(model, nil,
-{ source, target, speed, scale })`) and Unreal.
+Step-by-step import guides for every target are in [docs/ai-guide/export.md](docs/ai-guide/export.md):
+
+| Target | You get | Import |
+|---|---|---|
+| Roblox | a model + `EffectPlayer` module | insert the model; `EffectPlayer.play(model, nil, { source, target, speed, scale })` |
+| Unreal Engine 5 | `effect.json` + textures | install `integrations/unreal` (VfxStudioImporter plugin), then import the folder |
+| Godot 4 | `.tscn` scene + textures | copy to `res://vfx_studio/<name>/` and instance the scene |
+| Unity 6 | `effect.unity.json` + textures | copy `integrations/unity/VfxStudio` into Assets once, then **Tools > VFX Studio > Import Effect...** |
+
+Unity: the built-in pipeline has no bloom, so add Bloom (URP Volume or Post Processing) for the editor's glow.
 
 ## Project layout
 
@@ -54,12 +65,19 @@ See [docs/ai-guide/export.md](docs/ai-guide/export.md): packs, media, Roblox (`E
 - `src/runtime/` deterministic particle and path simulation
 - `src/render/` preview viewport (particles, ribbons, meshes, lights, glow)
 - `src/editor/`, `src/PreviewV2.tsx` the editor UI
-- `src/export/` Roblox, media and Unreal exporters
+- `src/export/` media, Roblox, Unreal, Godot and Unity exporters; `integrations/` the Unreal and Unity importers
 - `mcp/` MCP server and examples; `tools/` build tools and generators; `tests/` the test suite
 - `docs/ai-guide/` the guide; `docs/references/` the two reference effects the components were tuned against
-- `licenses/` third-party licences; every included sprite is procedurally generated
+- `licenses/` third-party licences and the included assets' sources ([licenses/README.md](licenses/README.md)): most sprites
+  and all meshes are generated in code; 6 flipbooks and all 208 sounds are CC0, with per-file provenance
 
 ## Known limits
 
-- Sound works technically but the effect sounds are not tuned yet.
+- Effect sounds are on their second tuning round; some presets still need better picks.
 - The preview simulates in world space only.
+
+## Privacy, licence and support
+
+- Privacy: [PRIVACY.md](PRIVACY.md). Everything stays in your browser except AI-assistant requests and feedback you send.
+- Licence for the tool itself: not chosen yet.
+- Feedback and bug reports: the **Feedback** button in the editor.
