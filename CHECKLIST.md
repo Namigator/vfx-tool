@@ -30,7 +30,7 @@ Order agreed with the owner: finish A-G (sound included), then Gate P. Open line
 - [ ] T40 A-05 model build test run 6 · needs owner's visual verdict
 - [ ] T14 Background simulation worker · parked by measurement (every component < 1 ms/tick); owner to confirm
 
-- [ ] BACKLOG T37: 200-node clicks still ~130-150 ms p95 (benchmark) / INP p50 ~96 ms (floor 32 ms). Done 2026-10-31: cards, outline rows, library, controls, AI, inspector, timeline memoized; inspector/outline/timeline follow a deferred selection; parameter resolution cached per document. JS per click is now small (prod profile); the rest is paint/composite of ~7,000 DOM elements + the live 3D canvas. Next lever: compact cards when zoomed out (CSS test: INP p50 112 -> 80 ms) · [RAN] work/perf/inp2.js, tools/perf-graph200.mjs · 2026-10-31
+- [ ] BACKLOG T37: 200-node clicks: select INP p50 64 / p95 ~90-130 ms vs a 40-48 ms no-op floor (was 112 ms p50); benchmark select p95 ~105-125, pan ~50 (that measure's floor is ~50). Done 2026-11-01: compact cards below 50% zoom (title + handles only), on top of the 2026-10-31 memoization/deferral. Still over the 50 ms p95 target; rest is paint/composite next to the live 3D canvas · [RAN] tools/perf-graph200.mjs · 2026-11-01
 - [ ] BACKLOG T37: water-broad and arcane-lance playback p95 34-50 ms (short hitches; headless too) · [RAN] perf-fps-headless-3-2026-10-31.md · 2026-10-31
 
 ## Gate P: publishing, added 2026-10-30 (after A-G)

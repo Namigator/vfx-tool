@@ -18,6 +18,11 @@ const pane = document.querySelector('.react-flow').getBoundingClientRect();
 const clickable = nodes.filter(n => { const r = n.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2; return x > pane.left && x < pane.right && y > pane.top && y < pane.bottom && document.elementFromPoint(x, y)?.closest('.react-flow__node') === n; });
 const at = n => { const r = n.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
 
+// Event Timing (the browser's own input-to-next-paint, as INP) for the same clicks, and for clicks on plain text
+// that do nothing: that floor is what any click costs in this setup.
+const evDur = new Map();
+new PerformanceObserver(l => { for (const e of l.getEntries()) if (e.interactionId) evDur.set(e.interactionId, Math.max(evDur.get(e.interactionId) ?? 0, e.duration)); }).observe({ type: 'event', durationThreshold: 16 });
+const inpOf = async fn => { evDur.clear(); await fn(); await sleep(400); return [...evDur.values()]; };
 const select = [];
 for (let i = 0; i < 30; i++) {
   const n = clickable[(i * 7) % clickable.length], [x, y] = at(n);
@@ -27,6 +32,10 @@ for (let i = 0; i < 30; i++) {
   select.push(await untilPainted(() => n.classList.contains('selected'), t0));
   await sleep(60);
 }
+const selectInp = [...evDur.values()];
+const plain = [...document.querySelectorAll('span, p')].find(e => /Saved locally|Saved/.test(e.textContent) && !e.children.length);
+const floorInp = await inpOf(async () => { for (let i = 0; i < 12; i++) { const r = plain.getBoundingClientRect(); const x = r.left + 4, y = r.top + r.height / 2;
+  await cdp('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 }); await cdp('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 }); await sleep(150); } });
 const dragNode = clickable[0]; let [dx, dy] = at(dragNode);
 const drag = [];
 await cdp('Input.dispatchMouseEvent', { type: 'mousePressed', x: dx, y: dy, button: 'left', buttons: 1, clickCount: 1 });
@@ -47,4 +56,4 @@ for (let i = 1; i <= 30; i++) {
 }
 await cdp('Input.dispatchMouseEvent', { type: 'mouseReleased', x: px + 150, y: py - 60, button: 'middle', clickCount: 1 });
 const stat = a => ({ n: a.filter(Number.isFinite).length, missed: a.filter(v => !Number.isFinite(v)).length, p50: q(a.filter(Number.isFinite), 0.5), p95: q(a.filter(Number.isFinite), 0.95), max: q(a.filter(Number.isFinite), 1) });
-return { drawnNodes: nodes.length, clickable: clickable.length, usableMs, select: stat(select), drag: stat(drag), pan: stat(pan), ua: navigator.userAgent, dpr: devicePixelRatio, size: [innerWidth, innerHeight] };
+return { drawnNodes: nodes.length, clickable: clickable.length, usableMs, select: stat(select), selectInp: stat(selectInp), floorInp: stat(floorInp), drag: stat(drag), pan: stat(pan), ua: navigator.userAgent, dpr: devicePixelRatio, size: [innerWidth, innerHeight] };

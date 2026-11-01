@@ -10,7 +10,7 @@ import { insertUserComponent, saveGroupAsComponent } from '../graph/userComponen
 import { removeUserComponent, saveUserComponent, useUserComponents } from './userComponentStore.ts';
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import {
-  Handle, Panel, SelectionMode, Position, ReactFlow, ReactFlowProvider, useNodesInitialized, useReactFlow,
+  Handle, Panel, SelectionMode, Position, ReactFlow, ReactFlowProvider, useNodesInitialized, useReactFlow, useStore,
   type Connection, type Edge, type EdgeChange, type Node, type NodeChange, type NodeProps, type Viewport,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -62,6 +62,9 @@ const registry = createRegistry();
 /** Diagnostics that make a tentative connection invalid rather than merely incomplete. */
 const BLOCKING_CODES = new Set<Diagnostic['code']>(['TYPE_MISMATCH', 'DOMAIN_MISMATCH', 'MULTIPLE_DRIVERS', 'GRAPH_CYCLE', 'DUPLICATE_ID']);
 const DEFAULT_VIEWPORT = { x: 0, y: 0, zoom: 1 };
+/** Below this zoom card text is unreadable anyway, so cards show only a big title and their handles (graph-canvas.css
+ *  .gc-compact): far fewer elements to style and paint, which keeps clicks fast on big graphs (tools/perf-graph200.mjs). */
+const COMPACT_ZOOM = 0.5;
 
 const specOf = (n: NodeDefinition): NodeSpec | undefined => registry.get(registryKey(n.type, n.definitionVersion));
 /** Protected nodes (EffectOutput, group bridges) are not deletable; a Group is deleted together with its own graph. */
@@ -226,6 +229,8 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
   }, []);
   const [advancedNodes, setAdvancedNodes] = useState<ReadonlySet<string>>(new Set());
   const nodesInitialized = useNodesInitialized();
+  // A boolean selector: the canvas re-renders only when the zoom crosses the threshold, not on every zoom step.
+  const compact = useStore(s => s.transform[2] < COMPACT_ZOOM);
   // The camera is local preview state, never authored/undoable. It is seeded from the saved layout once per
   // document+graph and only changes through user pan/zoom or Fit; re-renders never reapply the saved value.
   // React Flow owns the viewport (uncontrolled): a controlled viewport re-rendered this whole canvas on every pan
@@ -696,7 +701,7 @@ function Canvas({ document: doc, graphId, selectedNodeId, onSelectNode, onEdit, 
               : <strong key={t.id}>{t.label}</strong>)}
           </nav>
         )}
-      <div className="gc-flow" ref={wrapper} tabIndex={-1} onPointerDownCapture={e => { clickBaseRef.current = selectionRef.current; onTouchPressStart(e); }}
+      <div className={`gc-flow${compact ? ' gc-compact' : ''}`} ref={wrapper} tabIndex={-1} onPointerDownCapture={e => { clickBaseRef.current = selectionRef.current; onTouchPressStart(e); }}
         onPointerMoveCapture={onTouchPressMove} onPointerUpCapture={cancelPress} onPointerCancelCapture={cancelPress}
         onClickCapture={e => { if (pressFiredRef.current) { pressFiredRef.current = false; e.stopPropagation(); e.preventDefault(); } }}
         onKeyDownCapture={e => {

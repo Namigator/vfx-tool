@@ -32,13 +32,15 @@ Target: input response p95 ≤ 50 ms with 200 visible nodes. Result: **${pass ? 
 
 Response = time from sending a trusted mouse event (DevTools \`Input.dispatchMouseEvent\`) to the second animation frame after the DOM shows its
 result (node selected / node moved / viewport moved), so each sample includes the DevTools round trip and a full paint. 30 samples each.
+INP columns: the browser's Event Timing duration (input to next paint) for the same select clicks, and for clicks on plain text that do
+nothing, i.e. the floor of this setup (headless Chrome, real GPU).
 Document: built-in components inserted ungrouped (\`work/perf/graph200.json\`, ${count} nodes on one graph). Headless Chrome, real GPU, 1920×1080.
 Hardware: ${cpus()[0].model.trim()} ×${cpus().length}, ${Math.round(totalmem() / 2 ** 30)} GB RAM, GPU ${gpu}, Windows ${release()}. Browser: ${runs[0].ua.match(/Chrome\/[\d.]+/)?.[0]}.
 Reproduce: \`node tools/perf-graph200.mjs\` with the dev server running.
 
-| run | nodes drawn | usable after load (ms) | select p50 / p95 / max | drag p50 / p95 / max | pan p50 / p95 / max |
-| --- | --- | --- | --- | --- | --- |
-${runs.map((r, i) => `| ${i + 1} | ${r.drawnNodes} | ${r.usableMs} | ${r.select.p50} / ${r.select.p95} / ${r.select.max} | ${r.drag.p50} / ${r.drag.p95} / ${r.drag.max} | ${r.pan.p50} / ${r.pan.p95} / ${r.pan.max} |`).join('\n')}
+| run | nodes drawn | usable after load (ms) | select p50 / p95 / max | drag p50 / p95 / max | pan p50 / p95 / max | select INP p50 / p95 | no-op click INP p50 / p95 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+${runs.map((r, i) => `| ${i + 1} | ${r.drawnNodes} | ${r.usableMs} | ${r.select.p50} / ${r.select.p95} / ${r.select.max} | ${r.drag.p50} / ${r.drag.p95} / ${r.drag.max} | ${r.pan.p50} / ${r.pan.p95} / ${r.pan.max} | ${r.selectInp.p50} / ${r.selectInp.p95} | ${r.floorInp.p50} / ${r.floorInp.p95} |`).join('\n')}
 `);
 console.log(pass ? 'GRAPH200 PASS' : 'GRAPH200 FAIL');
 process.exit(pass ? 0 : 1);
