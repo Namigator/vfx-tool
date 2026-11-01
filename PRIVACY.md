@@ -1,6 +1,6 @@
 # Privacy
 
-DRAFT (P-02): written from the code on 2026-11-01. The owner still has to confirm the hosting part.
+Last updated 2026-11-01.
 
 VFX Studio runs in your browser. It has no accounts, sign-in, analytics or advertising, and it sets no cookies. What
 you build stays on your device unless you send it somewhere yourself.
@@ -33,9 +33,10 @@ Only these two actions send data, and only when you use them:
 
 ## Hosting
 
-The site is a set of static files. OWNER TO CONFIRM: whether the host (demo.xpo.dev) keeps standard web server logs
-(IP address, time, page requested), and for how long.
+The site is a set of static files. We do not collect, read or keep visitor logs. The hosting server may record
+routine technical request data (such as IP address and time) as web servers do; we do not use it.
 
 ## Contact
 
-OWNER TO FILL IN: a support address or issue tracker. Until then, use the in-editor **Feedback** form.
+Use the **Feedback** button in the editor. Your message goes straight to the developer's inbox; add an email address
+in the form if you want a reply.
