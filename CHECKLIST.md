@@ -37,7 +37,7 @@ Order agreed with the owner: finish A-G (sound included), then Gate P. Open line
 - [x] P-01 License chosen for the tool and its exports (and third-party asset licenses listed: assets/sprites provenance) · owner 2026-11-01: proprietary (LICENSE.md); exports free to use in users' games; assets listed in licenses/README.md
 - [ ] P-02 Terms / privacy note for the hosted site (what is stored: browser storage only?) · DRAFT PRIVACY.md 2026-11-01 (from the code: browser storage only; AI requests + feedback leave the device); owner: host logs, contact
 - [ ] P-03 Public README: what it is, how to run, engine export guides (Roblox, Unity built-in/URP, Godot, Unreal plugin) · README updated 2026-11-01 (52 components, 4 engine import table, assets, privacy); needs a screenshot/clip (P-05) · owner read
-- [ ] P-04 First-time-user check of the deployed site: open, build from Blank, export to each engine, import it
+- [x] P-04 First-time-user check of the deployed site: open, build from Blank, export to each engine, import it · 2026-11-01 live site (5444ebf): New + Flame jet + 4 exports download [RAN] tools/first-user-check.mjs; downloads import: Godot [SAW] work/godot/Untitled_effect.png, Unreal [SAW] work/unreal/Untitled_effect.png, Roblox roblox-check pass [RAN]; Unity skipped (owner: editor licence expired)
 - [ ] P-05 Landing / store page with a demo clip and screenshots per engine (promo pipeline: F:/Dev2/Promotions)
 - [ ] P-06 Pricing / distribution decision (free site, paid packs, Roblox store, itch.io, Unity Asset Store, Fab) · owner
 - [ ] P-07 Support contact + issue tracker link
