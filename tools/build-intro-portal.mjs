@@ -12,7 +12,10 @@ const curve = (domain, keys) => ({ domain, interpolation: 'linear', keys: keys.m
 const gradient = stops => ({ stops: stops.map(([position, srgb, alpha]) => ({ position, color: { srgb, alpha } })) });
 const steps = [];
 const call = (name, args, print) => steps.push(print ? [name, { docId: doc, ...args }, true] : [name, { docId: doc, ...args }]);
-const node = (type, id, params = {}) => call('vfx_add_node', { type, id, params });
+// Spark density: every Emitter's rate and burst are scaled by this (the intro must stay smooth on modest GPUs).
+const DENSITY = Number(process.env.PORTAL_DENSITY ?? 0.5);
+const dense = (type, params) => type !== 'Emitter' ? params : { ...params, ...(params.rate ? { rate: Math.round(params.rate * DENSITY) } : {}), ...(params.burst ? { burst: Math.max(1, Math.round(params.burst * DENSITY)) } : {}) };
+const node = (type, id, params = {}) => call('vfx_add_node', { type, id, params: dense(type, params) });
 const wire = (from, to) => call('vfx_connect', { from, to });
 const toOutput = id => wire(`${id}.visual`, 'node-output.visual');
 

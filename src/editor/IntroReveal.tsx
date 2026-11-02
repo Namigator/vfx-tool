@@ -6,7 +6,7 @@ import introText from '../intro/intro.json?raw';
 
 type IntroConfig = {
   camera: { position: [number, number, number]; target: [number, number, number]; fov: number };
-  handoffTick: number; openSeconds: number; holeInset: number; afterPreset: string;
+  handoffTick: number; openSeconds: number; holeInset: number;
 };
 export const INTRO: IntroConfig = JSON.parse(introText);
 

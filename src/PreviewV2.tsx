@@ -47,10 +47,9 @@ import { mergeDiagnostics } from './render/layerOrder.ts';
 import { timelineInfo, timelineLanes, type TimelineInfo } from './render/timeline.ts';
 import { TimelineStrip } from './editor/TimelineStrip.tsx';
 import { Tutorial } from './editor/Tutorial.tsx';
-import { INTRO, IntroReveal } from './editor/IntroReveal.tsx';
+import { IntroReveal } from './editor/IntroReveal.tsx';
 import portalText from './intro/portal.vfx.json?raw';
 import { INTRO_SEEN_KEY, shouldShowIntro } from './editor/introGate.ts';
-import { COMPONENT_TEMPLATES, insertComponent } from './graph/components.ts';
 import { FeedbackDialog } from './editor/FeedbackDialog.tsx';
 import { parseFeedbackHash } from './feedback.ts';
 import { SplitPane } from './editor/SplitPane.tsx';
@@ -158,12 +157,6 @@ function isTextTarget(t: EventTarget | null): boolean {
   return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
 }
 
-/** A preset as a fresh document (what the Library's Open does). */
-function presetDocument(id: string): EffectDocumentV2 {
-  const t = COMPONENT_TEMPLATES.find(c => c.id === id);
-  return t ? { ...insertComponent({ ...createBlankDocument(), name: t.label }, t, undefined, { group: true }).doc, name: t.label } : createBlankDocument();
-}
-
 export default function PreviewV2() {
   const hostRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -171,8 +164,10 @@ export default function PreviewV2() {
   const historyRef = useRef<DocumentHistory | null>(null);
   /** Set when the latest draft was unreadable and an older revision was restored (13 recovery). */
   const recoveredFromRef = useRef<string | null>(null);
-  /** First visit: the Portal intro plays full-screen (IntroReveal), then the editor opens on INTRO.afterPreset. */
+  /** First visit: the Portal intro plays over the editor (IntroReveal), then the tutorial opens. */
   const introRef = useRef<boolean | null>(null);
+  /** First visit (with or without the intro): the tutorial opens once the editor is showing. */
+  const tourFirstRef = useRef(false);
   const portalRef = useRef<EffectDocumentV2 | null>(null);
   if (historyRef.current === null) {
     const q = new URLSearchParams(window.location.search), demo = q.get('demo');
@@ -190,9 +185,10 @@ export default function PreviewV2() {
     const portal = () => { try { const v = validateDocument(JSON.parse(portalText), { registry: createRegistry() }); return v.ok ? v.value : null; } catch { return null; } };
     portalRef.current = first && !reduced ? portal() : null;
     introRef.current = portalRef.current !== null;
-    // First run: the after-intro preset, looping behind the Portal intro (none with reduced motion); otherwise the
+    tourFirstRef.current = first;
+    // First run: a blank effect behind the Portal intro (none with reduced motion), then the tutorial; otherwise the
     // draft, else a blank effect and the Library offers the presets.
-    historyRef.current = new DocumentHistory(demo === 'lightning' ? createLightningAudioDemoDocument() : demo === 'forces' ? createForcesDemoDocument() : first ? presetDocument(INTRO.afterPreset) : saved ?? createBlankDocument());
+    historyRef.current = new DocumentHistory(demo === 'lightning' ? createLightningAudioDemoDocument() : demo === 'forces' ? createForcesDemoDocument() : first ? createBlankDocument() : saved ?? createBlankDocument());
   }
   const [doc, setDoc] = useState<EffectDocumentV2>(() => historyRef.current!.snapshot());
   const [text, setText] = useState(() => toText(doc));
@@ -209,31 +205,6 @@ export default function PreviewV2() {
   const [introOn, setIntroOn] = useState(() => introRef.current === true);
   const introFinishRef = useRef<() => void>(() => {});
   const endIntro = useCallback(() => introFinishRef.current(), []);
-  // A first visit opens with the after-intro preset looping (seen through the portal, then in the editor). The
-  // first compiles (as sounds and textures arrive) stop playback, so it is restarted whenever it stops during the
-  // first 8 seconds; after that the visitor's own pauses are left alone.
-  const firstVisitRef = useRef(introRef.current);
-  useEffect(() => {
-    if (!firstVisitRef.current) return;
-    const until = performance.now() + 8000;
-    let raf = 0;
-    const keep = () => {
-      if (performance.now() > until) { firstVisitRef.current = false; return; }
-      const v = viewportRef.current;
-      if (v && compiledRef.current) { v.setLoop(true); if (!v.isPlaying) v.play(); }
-      raf = requestAnimationFrame(keep);
-    };
-    setLooping(true);
-    raf = requestAnimationFrame(keep);
-    const stop = () => { firstVisitRef.current = false; cancelAnimationFrame(raf); };
-    // The visitor taking over (a click after the intro, a key) ends the nudging.
-    const takeOver = () => { if (!document.querySelector('.pv2-intro-cover')) stop(); };
-    window.addEventListener('pointerdown', takeOver);
-    window.addEventListener('keydown', takeOver);
-    return () => { stop(); window.removeEventListener('pointerdown', takeOver); window.removeEventListener('keydown', takeOver); };
-  }, []);
-  const compiledRef = useRef(false);
-  compiledRef.current = compiled;
   const [gpuLost, setGpuLost] = useState(false);
   /** 12: reduced effects (no screen flash / camera shake); starts from the system prefers-reduced-motion setting. */
   const [reducedEffects, setReducedEffects] = useState(() => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -283,7 +254,8 @@ export default function PreviewV2() {
     try { localStorage.setItem('pv2-layout', l); } catch { /* private mode */ }
   }, []);
   const [pip, setPip] = useState<'s' | 'm' | 'l' | 'hidden'>('m');
-  const [tutorialOpen, setTutorialOpen] = useState(false);
+  // A first visit without the intro (reduced motion) opens the tutorial straight away; with it, when it ends.
+  const [tutorialOpen, setTutorialOpen] = useState(() => tourFirstRef.current && !introRef.current);
   // A "#feedback=..." link (handed out by the MCP tool vfx_submit_feedback) opens the form pre-filled.
   const [feedbackInitial] = useState(() => typeof location === 'undefined' ? null : parseFeedbackHash(location.hash));
   const [feedbackOpen, setFeedbackOpen] = useState(feedbackInitial !== null);
@@ -869,6 +841,7 @@ export default function PreviewV2() {
   introFinishRef.current = () => {
     try { localStorage.setItem(INTRO_SEEN_KEY, '1'); } catch { /* private mode */ }
     setIntroOn(false);
+    setTutorialOpen(true);
   };
 
   // Viewport lifetime; dispose is idempotent so StrictMode double-mount is safe.

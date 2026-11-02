@@ -38,11 +38,26 @@ function assertText(value: unknown, name: string): asserts value is string {
 
 const encoder = new TextEncoder();
 
+// Particle ids and random keys are hashed every tick and every frame; results are memoised (the function is pure),
+// and the memo is dropped when it grows past HASH_MEMO_LIMIT so long sessions stay bounded.
+const hashMemo = new Map<string, number>();
+const HASH_MEMO_LIMIT = 200_000;
+
 /** FNV-1a 32-bit over the UTF-8 bytes of text. */
 export function fnv1a32Utf8(text: string): number {
   assertText(text, 'text');
-  let h = FNV1A_OFFSET_BASIS;
-  for (const b of encoder.encode(text)) h = Math.imul(h ^ b, FNV1A_PRIME) >>> 0;
+  const known = hashMemo.get(text);
+  if (known !== undefined) return known;
+  let h = FNV1A_OFFSET_BASIS, ascii = true;
+  // ASCII (every id and key the engine makes) hashes from char codes; other text goes through UTF-8 bytes.
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if (c > 0x7f) { ascii = false; break; }
+    h = Math.imul(h ^ c, FNV1A_PRIME) >>> 0;
+  }
+  if (!ascii) { h = FNV1A_OFFSET_BASIS; for (const b of encoder.encode(text)) h = Math.imul(h ^ b, FNV1A_PRIME) >>> 0; }
+  if (hashMemo.size >= HASH_MEMO_LIMIT) hashMemo.clear();
+  hashMemo.set(text, h);
   return h;
 }
 

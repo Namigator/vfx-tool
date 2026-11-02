@@ -1,8 +1,19 @@
 {
   "comment": "First-visit intro. portal.vfx.json is built by tools/build-intro-portal.mjs through the MCP tools. The hole in the black cover opens over openSeconds once the ring has traced, at holeInset x the ring radius, and the intro ends at handoffTick (or when the hole covers the page).",
-  "camera": { "position": [0, 1.5, 7], "target": [0, 1.5, 0], "fov": 50 },
+  "camera": {
+    "position": [
+      0,
+      1.5,
+      7
+    ],
+    "target": [
+      0,
+      1.5,
+      0
+    ],
+    "fov": 50
+  },
   "handoffTick": 165,
   "openSeconds": 0.35,
-  "holeInset": 0.96,
-  "afterPreset": "fireball"
+  "holeInset": 0.96
 }

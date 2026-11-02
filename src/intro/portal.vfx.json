@@ -471,7 +471,7 @@
             "coneAngle": 1.1,
             "radius": 0.04,
             "burst": 0,
-            "rate": 1500,
+            "rate": 750,
             "speedMin": 1.2,
             "speedMax": 4.5,
             "lifetimeMin": 0.25,
@@ -763,7 +763,7 @@
           "params": {
             "shape": "sphere",
             "radius": 0.05,
-            "burst": 260,
+            "burst": 130,
             "speedMin": 2,
             "speedMax": 7,
             "lifetimeMin": 0.3,
@@ -889,7 +889,7 @@
           "params": {
             "shape": "path",
             "burst": 0,
-            "rate": 4000,
+            "rate": 2000,
             "rateOverWindow": {
               "domain": "normalized",
               "interpolation": "linear",
@@ -1033,7 +1033,7 @@
           "params": {
             "shape": "path",
             "burst": 0,
-            "rate": 2600,
+            "rate": 1300,
             "coneAngle": 3.141592653589793,
             "speedMin": 0.05,
             "speedMax": 0.5,
@@ -1204,7 +1204,7 @@
           "params": {
             "shape": "path",
             "burst": 0,
-            "rate": 900,
+            "rate": 450,
             "coneAngle": 3.141592653589793,
             "speedMin": 0.3,
             "speedMax": 1.5,
@@ -1358,7 +1358,7 @@
           "params": {
             "shape": "path",
             "burst": 0,
-            "rate": 1600,
+            "rate": 800,
             "coneAngle": 3.141592653589793,
             "speedMin": 0.05,
             "speedMax": 0.4,
@@ -1560,7 +1560,7 @@
           "params": {
             "shape": "path",
             "burst": 0,
-            "rate": 3000,
+            "rate": 1500,
             "rateOverWindow": {
               "domain": "normalized",
               "interpolation": "linear",
@@ -1704,7 +1704,7 @@
           "params": {
             "shape": "path",
             "burst": 0,
-            "rate": 3000,
+            "rate": 1500,
             "rateOverWindow": {
               "domain": "normalized",
               "interpolation": "linear",
@@ -1848,7 +1848,7 @@
           "params": {
             "shape": "path",
             "burst": 0,
-            "rate": 3000,
+            "rate": 1500,
             "rateOverWindow": {
               "domain": "normalized",
               "interpolation": "linear",
@@ -1992,7 +1992,7 @@
           "params": {
             "shape": "path",
             "burst": 0,
-            "rate": 3000,
+            "rate": 1500,
             "rateOverWindow": {
               "domain": "normalized",
               "interpolation": "linear",

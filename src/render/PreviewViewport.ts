@@ -1705,9 +1705,12 @@ export class PreviewViewport {
         m[o + 15] = 1;
       }
       l.mesh.count = n;
-      l.mesh.instanceMatrix.needsUpdate = true;
-      opAttr.needsUpdate = true;
-      colAttr.needsUpdate = true; spinAttr.needsUpdate = true; velAttr.needsUpdate = true; cellAttr.needsUpdate = true; mixAttr.needsUpdate = true; seedAttr.needsUpdate = true;
+      // Upload only the live particles' slice of each pool-sized buffer, not the whole pool.
+      for (const a of [l.mesh.instanceMatrix, opAttr, colAttr, spinAttr, velAttr, cellAttr, mixAttr, seedAttr]) {
+        a.clearUpdateRanges();
+        if (n > 0) a.addUpdateRange(0, n * a.itemSize);
+        a.needsUpdate = true;
+      }
     }
     this.#updateTrails(alpha);
     this.#applyAnimation(alpha);
