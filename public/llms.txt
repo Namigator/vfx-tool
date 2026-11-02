@@ -1,0 +1,39 @@
+# VFX Studio
+
+> Free browser tool for making game visual effects (spells, fire, lightning, water, ice, magic, impacts) and exporting them to Roblox, Unreal Engine 5 (Niagara), Unity 6 and Godot 4. It ships an MCP server with 55 tools, so AI agents such as Claude, ChatGPT/Codex, Gemini or Cursor can build, render, look at and export effects themselves.
+
+- Try it (no install, no account): https://demo.xpo.dev/avi/vfx-tool/
+- Source and MCP server: https://github.com/Namigator/vfx-tool
+- Price: free. Runs in Chrome or Edge.
+
+## What it does
+
+- 52 ready-made components across ten elements (fire, lightning, water, ice, earth, wind, poison, shadow, light, energy). Each has a few friendly knobs, colour pickers and keyframes.
+- A node graph underneath for full control, a deterministic 60 Hz particle and path simulation, and a Three.js preview with glow.
+- One effect, four engines: Roblox (a model plus an EffectPlayer module with an aiming API), Unreal Engine 5 (Niagara system via the bundled importer plugin), Unity 6 (a prefab via the bundled importer) and Godot 4 (a .tscn scene). Each engine package includes a report.md listing what it approximates.
+- Media export: sprite sheets, PNG sequences, GIF and MP4. Portable .vfxpack files.
+- Layered sound in the editor (208 CC0 samples).
+- A built-in AI assistant panel that can edit the effect for you.
+
+## For AI agents (MCP)
+
+The `vfx` MCP server exposes every editor action as a `vfx_*` tool: documents, nodes, knobs, components, keyframes, imports, compile, and export to all four engines. `vfx_render_frames` and `vfx_contact_sheet` render frames headlessly so the agent can see what it built, and `vfx_compare_images` checks it against a reference. `vfx_guide` serves a written guide on making effects look good.
+
+Setup: clone the repository, run `pnpm install`, and the repository's `.mcp.json` registers the server (`mcp/vfx-mcp-reload.mjs`) for Claude Code and other MCP clients.
+
+- [Guide for AI agents](https://github.com/Namigator/vfx-tool/blob/main/docs/ai-guide/README.md): reading order and the five rules
+- [MCP tool reference](https://github.com/Namigator/vfx-tool/blob/main/docs/ai-guide/reference/mcp-tools.md): every tool and its arguments
+- [Workflow](https://github.com/Namigator/vfx-tool/blob/main/docs/ai-guide/workflow.md): build, compile, render, look, adjust
+- [Look guide](https://github.com/Namigator/vfx-tool/blob/main/docs/ai-guide/look.md): what makes effects read well
+- [Recipes](https://github.com/Namigator/vfx-tool/tree/main/docs/ai-guide/recipes): fire, sparks, lightning, water, ice, energy, holy, impacts and more
+
+## Export guides
+
+- [Exporting to Roblox, Unreal, Unity and Godot](https://github.com/Namigator/vfx-tool/blob/main/docs/ai-guide/export.md)
+- [Editor map](https://github.com/Namigator/vfx-tool/blob/main/docs/ai-guide/editor.md)
+
+## Optional
+
+- [Components reference](https://github.com/Namigator/vfx-tool/blob/main/docs/ai-guide/reference/components.md)
+- [Node reference](https://github.com/Namigator/vfx-tool/blob/main/docs/ai-guide/reference/nodes.md)
+- [Privacy note](https://github.com/Namigator/vfx-tool/blob/main/PRIVACY.md)
