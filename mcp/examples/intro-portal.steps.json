@@ -28,6 +28,18 @@
   }
  ],
  [
+  "vfx_set_params",
+  {
+   "docId": "intro-portal",
+   "nodeId": "node-output",
+   "params": {
+    "glowStrength": 0.65,
+    "glowRadius": 0.2,
+    "glowLimit": 2
+   }
+  }
+ ],
+ [
   "vfx_add_node",
   {
    "docId": "intro-portal",
@@ -152,7 +164,7 @@
     "template": "RibbonUnlit",
     "blend": "additive",
     "tint": {
-     "srgb": "#FFE6B0",
+     "srgb": "#FFF4DC",
      "alpha": 1
     },
     "emission": 1,
@@ -167,7 +179,7 @@
    "type": "RibbonRenderer",
    "id": "core",
    "params": {
-    "width": 0.05,
+    "width": 0.035,
     "endFade": 0.02
    }
   }
@@ -182,11 +194,11 @@
     "template": "RibbonUnlit",
     "blend": "additive",
     "tint": {
-     "srgb": "#FF6A10",
+     "srgb": "#FF7418",
      "alpha": 1
     },
-    "emission": 0.7,
-    "opacity": 0.45
+    "emission": 0.8,
+    "opacity": 0.16
    }
   }
  ],
@@ -197,7 +209,7 @@
    "type": "RibbonRenderer",
    "id": "halo",
    "params": {
-    "width": 0.26,
+    "width": 0.16,
     "endFade": 0.02
    }
   }
@@ -255,7 +267,7 @@
   {
    "docId": "intro-portal",
    "type": "EffectTimeCurve",
-   "id": "growin",
+   "id": "growout",
    "params": {
     "curve": {
      "domain": "effectSeconds",
@@ -263,42 +275,18 @@
      "keys": [
       {
        "x": 0,
-       "y": 0.1056
+       "y": 0.132
       },
       {
        "x": 1.8,
-       "y": 0.1056
+       "y": 0.132
       },
       {
        "x": 2.25,
-       "y": 0.3
+       "y": 0.35200000000000004
       },
       {
        "x": 2.7,
-       "y": 0.95
-      }
-     ]
-    }
-   }
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "intro-portal",
-   "type": "EffectTimeCurve",
-   "id": "tracein",
-   "params": {
-    "curve": {
-     "domain": "effectSeconds",
-     "interpolation": "linear",
-     "keys": [
-      {
-       "x": 0.3,
-       "y": 0
-      },
-      {
-       "x": 1.15,
        "y": 1
       }
      ]
@@ -311,7 +299,7 @@
   {
    "docId": "intro-portal",
    "type": "RingPath",
-   "id": "ringin",
+   "id": "ringout",
    "params": {
     "radius": 10,
     "samples": 160,
@@ -328,9 +316,32 @@
   "vfx_add_node",
   {
    "docId": "intro-portal",
-   "type": "RevealPath",
-   "id": "revealin",
-   "params": {}
+   "type": "EffectTimeCurve",
+   "id": "dashfade",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0.8999999999999999,
+       "y": 0
+      },
+      {
+       "x": 1.2,
+       "y": 1
+      },
+      {
+       "x": 2.3,
+       "y": 1
+      },
+      {
+       "x": 2.7,
+       "y": 0
+      }
+     ]
+    }
+   }
   }
  ],
  [
@@ -338,15 +349,15 @@
   {
    "docId": "intro-portal",
    "type": "Material",
-   "id": "innermat",
+   "id": "dashmat",
    "params": {
     "template": "RibbonUnlit",
     "blend": "additive",
     "tint": {
-     "srgb": "#FFB040",
+     "srgb": "#FF8A30",
      "alpha": 1
     },
-    "emission": 0.8,
+    "emission": 0.9,
     "opacity": 0.6
    }
   }
@@ -356,10 +367,10 @@
   {
    "docId": "intro-portal",
    "type": "RibbonRenderer",
-   "id": "inner",
+   "id": "dash",
    "params": {
-    "width": 0.02,
-    "endFade": 0.02
+    "width": 0.014,
+    "endFade": 0
    }
   }
  ],
@@ -368,54 +379,46 @@
   {
    "docId": "intro-portal",
    "from": "node-source.out",
-   "to": "ringin.center"
+   "to": "ringout.center"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "intro-portal",
-   "from": "growin.value",
-   "to": "ringin.radiusScale"
+   "from": "growout.value",
+   "to": "ringout.radiusScale"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "intro-portal",
-   "from": "ringin.paths",
-   "to": "revealin.paths"
+   "from": "dashfade.value",
+   "to": "dashmat.opacity"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "intro-portal",
-   "from": "tracein.value",
-   "to": "revealin.fraction"
+   "from": "ringout.paths",
+   "to": "dash.paths"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "intro-portal",
-   "from": "revealin.paths",
-   "to": "inner.paths"
+   "from": "dashmat.material",
+   "to": "dash.material"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "intro-portal",
-   "from": "innermat.material",
-   "to": "inner.material"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "intro-portal",
-   "from": "inner.visual",
+   "from": "dash.visual",
    "to": "node-output.visual"
   }
  ],
@@ -445,129 +448,6 @@
   }
  ],
  [
-  "vfx_add_node",
-  {
-   "docId": "intro-portal",
-   "type": "Emitter",
-   "id": "headsparks",
-   "params": {
-    "shape": "sphere",
-    "radius": 0.03,
-    "burst": 0,
-    "rate": 1100,
-    "speedMin": 0.6,
-    "speedMax": 3.2,
-    "lifetimeMin": 0.25,
-    "lifetimeMax": 0.7
-   }
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "intro-portal",
-   "type": "InitialProperties",
-   "id": "headip",
-   "params": {
-    "sizeMin": 0.018,
-    "sizeMax": 0.034
-   }
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "intro-portal",
-   "type": "Gravity",
-   "id": "headgrav",
-   "params": {}
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "intro-portal",
-   "type": "Drag",
-   "id": "headdrag",
-   "params": {
-    "coefficient": 1.2
-   }
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "intro-portal",
-   "type": "Material",
-   "id": "mathead",
-   "params": {
-    "blend": "additive",
-    "emission": 1
-   }
-  }
- ],
- [
-  "vfx_add_node",
-  {
-   "docId": "intro-portal",
-   "type": "BillboardRenderer",
-   "id": "bbhead",
-   "params": {
-    "alignment": "velocity",
-    "stretchRatio": 6,
-    "pivot": 0.85,
-    "colorOverLife": {
-     "stops": [
-      {
-       "position": 0,
-       "color": {
-        "srgb": "#FFFFFF",
-        "alpha": 1
-       }
-      },
-      {
-       "position": 0.25,
-       "color": {
-        "srgb": "#FFD27A",
-        "alpha": 1
-       }
-      },
-      {
-       "position": 0.65,
-       "color": {
-        "srgb": "#FF7A12",
-        "alpha": 0.85
-       }
-      },
-      {
-       "position": 1,
-       "color": {
-        "srgb": "#7A1A00",
-        "alpha": 0
-       }
-      }
-     ]
-    }
-   }
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "intro-portal",
-   "from": "mathead.material",
-   "to": "bbhead.material"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "intro-portal",
-   "from": "bbhead.visual",
-   "to": "node-output.visual"
-  }
- ],
- [
   "vfx_connect",
   {
    "docId": "intro-portal",
@@ -584,6 +464,223 @@
   }
  ],
  [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Material",
+   "id": "headglowmat",
+   "params": {
+    "blend": "additive",
+    "emission": 1.3,
+    "opacity": 1,
+    "tint": {
+     "srgb": "#FFE2A8",
+     "alpha": 1
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "SpriteRenderer",
+   "id": "headglow",
+   "params": {
+    "size": 0.22,
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.08,
+       "y": 1
+      },
+      {
+       "x": 0.92,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Material",
+   "id": "tailmat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "emission": 1.2,
+    "opacity": 0.9,
+    "tint": {
+     "srgb": "#FFD890",
+     "alpha": 1
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "MotionTrail",
+   "id": "tail",
+   "params": {
+    "history": 0.18,
+    "width": 0.06,
+    "endFade": 0.5,
+    "widthOverTrail": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 1,
+       "y": 1
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "head.anchor",
+   "to": "headglow.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "tracewin.window",
+   "to": "headglow.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "headglow.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "head.anchor",
+   "to": "tail.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "tracewin.window",
+   "to": "tail.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "tail.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "headglowmat.material",
+   "to": "headglow.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "tailmat.material",
+   "to": "tail.material"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Emitter",
+   "id": "headsparks",
+   "params": {
+    "shape": "cone",
+    "axisMode": "motionBackward",
+    "coneAngle": 1.1,
+    "radius": 0.04,
+    "burst": 0,
+    "rate": 1500,
+    "speedMin": 1.2,
+    "speedMax": 4.5,
+    "lifetimeMin": 0.25,
+    "lifetimeMax": 0.75
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "InitialProperties",
+   "id": "headip",
+   "params": {
+    "sizeMin": 0.016,
+    "sizeMax": 0.032
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Gravity",
+   "id": "headgrav",
+   "params": {
+    "acceleration": [
+     0,
+     -6,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Drag",
+   "id": "headdrag",
+   "params": {
+    "coefficient": 1.4
+   }
+  }
+ ],
+ [
   "vfx_connect",
   {
    "docId": "intro-portal",
@@ -597,6 +694,80 @@
    "docId": "intro-portal",
    "from": "tracewin.window",
    "to": "headsparks.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Material",
+   "id": "headmat",
+   "params": {
+    "blend": "additive",
+    "emission": 1.2,
+    "opacity": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "BillboardRenderer",
+   "id": "headbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 6,
+    "pivot": 0.8,
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFF2D0",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.25,
+       "color": {
+        "srgb": "#FFB040",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.7,
+       "color": {
+        "srgb": "#FF5A0A",
+        "alpha": 0.8
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#6A1000",
+        "alpha": 0
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "headmat.material",
+   "to": "headbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "headbb.visual",
+   "to": "node-output.visual"
   }
  ],
  [
@@ -628,7 +799,651 @@
   {
    "docId": "intro-portal",
    "from": "headdrag.particles",
-   "to": "bbhead.particles"
+   "to": "headbb.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "OffsetAnchor",
+   "id": "closept",
+   "params": {
+    "offset": [
+     1.2,
+     0,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "node-source.out",
+   "to": "closept.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Schedule",
+   "id": "flarewin",
+   "params": {
+    "startTicks": 56,
+    "durationTicks": 24,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Material",
+   "id": "flaremat",
+   "params": {
+    "blend": "additive",
+    "emission": 1.2,
+    "opacity": 1,
+    "tint": {
+     "srgb": "#FFE6B8",
+     "alpha": 1
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "SpriteRenderer",
+   "id": "flare",
+   "params": {
+    "size": 0.5,
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.3
+      },
+      {
+       "x": 0.12,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0.6
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.06,
+       "y": 0.8
+      },
+      {
+       "x": 0.3,
+       "y": 0.25
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Material",
+   "id": "glintmat",
+   "params": {
+    "template": "SpriteTextured",
+    "sprite": "star-ray",
+    "blend": "additive",
+    "emission": 0.9,
+    "opacity": 1,
+    "tint": {
+     "srgb": "#FFD9A0",
+     "alpha": 1
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "SpriteRenderer",
+   "id": "glint",
+   "params": {
+    "size": 1.4,
+    "spin": 1.5,
+    "sizeOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.2
+      },
+      {
+       "x": 0.15,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0.5
+      }
+     ]
+    },
+    "opacityOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.1,
+       "y": 1
+      },
+      {
+       "x": 0.5,
+       "y": 0.4
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "closept.out",
+   "to": "flare.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "flarewin.window",
+   "to": "flare.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "flaremat.material",
+   "to": "flare.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "flare.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "closept.out",
+   "to": "glint.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "flarewin.window",
+   "to": "glint.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "glintmat.material",
+   "to": "glint.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "glint.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Schedule",
+   "id": "closehit",
+   "params": {
+    "startTicks": 57,
+    "mode": "once"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Emitter",
+   "id": "closeburst",
+   "params": {
+    "shape": "sphere",
+    "radius": 0.05,
+    "burst": 260,
+    "speedMin": 2,
+    "speedMax": 7,
+    "lifetimeMin": 0.3,
+    "lifetimeMax": 0.9
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "InitialProperties",
+   "id": "closeip",
+   "params": {
+    "sizeMin": 0.018,
+    "sizeMax": 0.036
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Gravity",
+   "id": "closegrav",
+   "params": {
+    "acceleration": [
+     0,
+     -5,
+     0
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Drag",
+   "id": "closedrag",
+   "params": {
+    "coefficient": 1.8
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "closept.out",
+   "to": "closeburst.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "closehit.start",
+   "to": "closeburst.trigger"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Material",
+   "id": "closemat",
+   "params": {
+    "blend": "additive",
+    "emission": 1.2,
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "BillboardRenderer",
+   "id": "closebb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 6,
+    "pivot": 0.8,
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFFFFF",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.2,
+       "color": {
+        "srgb": "#FFE9B0",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.55,
+       "color": {
+        "srgb": "#FF9A2A",
+        "alpha": 0.9
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#B02800",
+        "alpha": 0
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "closemat.material",
+   "to": "closebb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "closebb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "closeburst.particles",
+   "to": "closeip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "closeip.particles",
+   "to": "closegrav.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "closegrav.particles",
+   "to": "closedrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "closedrag.particles",
+   "to": "closebb.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Schedule",
+   "id": "ignitewin",
+   "params": {
+    "startTicks": 57,
+    "durationTicks": 5,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Emitter",
+   "id": "ignite",
+   "params": {
+    "shape": "path",
+    "burst": 0,
+    "rate": 4000,
+    "rateOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 2
+      },
+      {
+       "x": 1,
+       "y": 2
+      }
+     ]
+    },
+    "coneAngle": 3.141592653589793,
+    "speedMin": 0.2,
+    "speedMax": 1.2,
+    "lifetimeMin": 0.2,
+    "lifetimeMax": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "InitialProperties",
+   "id": "igniteip",
+   "params": {
+    "sizeMin": 0.014,
+    "sizeMax": 0.026
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Vortex",
+   "id": "igniteswirl",
+   "params": {
+    "axis": [
+     0,
+     0,
+     1
+    ],
+    "tangential": 40,
+    "inward": -14,
+    "falloff": 20
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Drag",
+   "id": "ignitedrag",
+   "params": {
+    "coefficient": 2.5
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "ring.paths",
+   "to": "ignite.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "ignitewin.window",
+   "to": "ignite.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "node-source.out",
+   "to": "igniteswirl.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Material",
+   "id": "ignitemat",
+   "params": {
+    "blend": "additive",
+    "emission": 1.2,
+    "opacity": 0.3
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "BillboardRenderer",
+   "id": "ignitebb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 6,
+    "pivot": 0.8,
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFFFFF",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.2,
+       "color": {
+        "srgb": "#FFE9B0",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.55,
+       "color": {
+        "srgb": "#FF9A2A",
+        "alpha": 0.9
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#B02800",
+        "alpha": 0
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "ignitemat.material",
+   "to": "ignitebb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "ignitebb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "ignite.particles",
+   "to": "igniteip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "igniteip.particles",
+   "to": "igniteswirl.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "igniteswirl.particles",
+   "to": "ignitedrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "ignitedrag.particles",
+   "to": "ignitebb.particles"
   }
  ],
  [
@@ -639,7 +1454,7 @@
    "id": "spinwin",
    "params": {
     "startTicks": 51,
-    "durationTicks": 69,
+    "durationTicks": 52,
     "mode": "window"
    }
   }
@@ -649,25 +1464,293 @@
   {
    "docId": "intro-portal",
    "type": "Emitter",
-   "id": "ringsparks",
+   "id": "churn",
    "params": {
     "shape": "path",
     "burst": 0,
-    "rate": 1600,
-    "speedMin": 0.1,
-    "speedMax": 0.9,
-    "lifetimeMin": 0.2,
-    "lifetimeMax": 0.5,
+    "rate": 2600,
+    "coneAngle": 3.141592653589793,
+    "speedMin": 0.05,
+    "speedMax": 0.5,
+    "lifetimeMin": 0.12,
+    "lifetimeMax": 0.32,
     "rateOverWindow": {
      "domain": "normalized",
      "interpolation": "linear",
      "keys": [
       {
        "x": 0,
-       "y": 0.3
+       "y": 0.6
       },
       {
-       "x": 0.3,
+       "x": 0.15,
+       "y": 2
+      },
+      {
+       "x": 0.92,
+       "y": 2
+      },
+      {
+       "x": 1,
+       "y": 0.4
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "InitialProperties",
+   "id": "churnip",
+   "params": {
+    "sizeMin": 0.008,
+    "sizeMax": 0.016
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Vortex",
+   "id": "churnswirl",
+   "params": {
+    "axis": [
+     0,
+     0,
+     1
+    ],
+    "tangential": 75,
+    "inward": -3,
+    "falloff": 20
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Drag",
+   "id": "churndrag",
+   "params": {
+    "coefficient": 4
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "ring.paths",
+   "to": "churn.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "spinwin.window",
+   "to": "churn.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "node-source.out",
+   "to": "churnswirl.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Material",
+   "id": "churnmat",
+   "params": {
+    "blend": "additive",
+    "emission": 1.2,
+    "opacity": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "BillboardRenderer",
+   "id": "churnbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 9,
+    "pivot": 0.8,
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFF2D0",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.25,
+       "color": {
+        "srgb": "#FFB040",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.7,
+       "color": {
+        "srgb": "#FF5A0A",
+        "alpha": 0.8
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#6A1000",
+        "alpha": 0
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "churnmat.material",
+   "to": "churnbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "churnbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "churn.particles",
+   "to": "churnip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "churnip.particles",
+   "to": "churnswirl.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "churnswirl.particles",
+   "to": "churndrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "churndrag.particles",
+   "to": "churnbb.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Material",
+   "id": "churntrailmat",
+   "params": {
+    "template": "SpriteUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFB860",
+     "alpha": 1
+    },
+    "emission": 1,
+    "opacity": 0.8
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "ParticleTrail",
+   "id": "churntrail",
+   "params": {
+    "history": 0.06,
+    "width": 0.012,
+    "maxPoints": 12,
+    "endFade": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "churndrag.particles",
+   "to": "churntrail.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "churntrailmat.material",
+   "to": "churntrail.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "churntrail.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Emitter",
+   "id": "fling",
+   "params": {
+    "shape": "path",
+    "burst": 0,
+    "rate": 900,
+    "coneAngle": 3.141592653589793,
+    "speedMin": 0.3,
+    "speedMax": 1.5,
+    "lifetimeMin": 0.45,
+    "lifetimeMax": 1,
+    "rateOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.5
+      },
+      {
+       "x": 0.15,
        "y": 1
       },
       {
@@ -688,10 +1771,10 @@
   {
    "docId": "intro-portal",
    "type": "InitialProperties",
-   "id": "ringip",
+   "id": "flingip",
    "params": {
-    "sizeMin": 0.014,
-    "sizeMax": 0.028
+    "sizeMin": 0.016,
+    "sizeMax": 0.03
    }
   }
  ],
@@ -700,15 +1783,15 @@
   {
    "docId": "intro-portal",
    "type": "Vortex",
-   "id": "swirl",
+   "id": "flingswirl",
    "params": {
     "axis": [
      0,
      0,
      1
     ],
-    "tangential": 28,
-    "inward": -5,
+    "tangential": 22,
+    "inward": -14,
     "falloff": 20
    }
   }
@@ -717,10 +1800,14 @@
   "vfx_add_node",
   {
    "docId": "intro-portal",
-   "type": "Drag",
-   "id": "ringdrag",
+   "type": "Gravity",
+   "id": "flinggrav",
    "params": {
-    "coefficient": 1.5
+    "acceleration": [
+     0,
+     -5.5,
+     0
+    ]
    }
   }
  ],
@@ -728,11 +1815,47 @@
   "vfx_add_node",
   {
    "docId": "intro-portal",
+   "type": "Drag",
+   "id": "flingdrag",
+   "params": {
+    "coefficient": 1.6
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "ring.paths",
+   "to": "fling.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "spinwin.window",
+   "to": "fling.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "node-source.out",
+   "to": "flingswirl.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
    "type": "Material",
-   "id": "matring",
+   "id": "flingmat",
    "params": {
     "blend": "additive",
-    "emission": 1
+    "emission": 1.2,
+    "opacity": 1
    }
   }
  ],
@@ -741,38 +1864,38 @@
   {
    "docId": "intro-portal",
    "type": "BillboardRenderer",
-   "id": "bbring",
+   "id": "flingbb",
    "params": {
     "alignment": "velocity",
-    "stretchRatio": 6,
-    "pivot": 0.85,
+    "stretchRatio": 5,
+    "pivot": 0.8,
     "colorOverLife": {
      "stops": [
       {
        "position": 0,
        "color": {
-        "srgb": "#FFFFFF",
+        "srgb": "#FFF2D0",
         "alpha": 1
        }
       },
       {
        "position": 0.25,
        "color": {
-        "srgb": "#FFD27A",
+        "srgb": "#FFB040",
         "alpha": 1
        }
       },
       {
-       "position": 0.65,
+       "position": 0.7,
        "color": {
-        "srgb": "#FF7A12",
-        "alpha": 0.85
+        "srgb": "#FF5A0A",
+        "alpha": 0.8
        }
       },
       {
        "position": 1,
        "color": {
-        "srgb": "#7A1A00",
+        "srgb": "#6A1000",
         "alpha": 0
        }
       }
@@ -785,15 +1908,15 @@
   "vfx_connect",
   {
    "docId": "intro-portal",
-   "from": "matring.material",
-   "to": "bbring.material"
+   "from": "flingmat.material",
+   "to": "flingbb.material"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "intro-portal",
-   "from": "bbring.visual",
+   "from": "flingbb.visual",
    "to": "node-output.visual"
   }
  ],
@@ -801,8 +1924,129 @@
   "vfx_connect",
   {
    "docId": "intro-portal",
-   "from": "ring.paths",
-   "to": "ringsparks.paths"
+   "from": "fling.particles",
+   "to": "flingip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "flingip.particles",
+   "to": "flingswirl.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "flingswirl.particles",
+   "to": "flinggrav.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "flinggrav.particles",
+   "to": "flingdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "flingdrag.particles",
+   "to": "flingbb.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Emitter",
+   "id": "counter",
+   "params": {
+    "shape": "path",
+    "burst": 0,
+    "rate": 1600,
+    "coneAngle": 3.141592653589793,
+    "speedMin": 0.05,
+    "speedMax": 0.4,
+    "lifetimeMin": 0.15,
+    "lifetimeMax": 0.35,
+    "rateOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0.25,
+       "y": 1
+      },
+      {
+       "x": 0.92,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "InitialProperties",
+   "id": "counterip",
+   "params": {
+    "sizeMin": 0.01,
+    "sizeMax": 0.02
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Vortex",
+   "id": "counterswirl",
+   "params": {
+    "axis": [
+     0,
+     0,
+     1
+    ],
+    "tangential": -55,
+    "inward": -2,
+    "falloff": 20
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Drag",
+   "id": "counterdrag",
+   "params": {
+    "coefficient": 4
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "ringout.paths",
+   "to": "counter.paths"
   }
  ],
  [
@@ -810,23 +2054,7 @@
   {
    "docId": "intro-portal",
    "from": "spinwin.window",
-   "to": "ringsparks.window"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "intro-portal",
-   "from": "ringsparks.particles",
-   "to": "ringip.particles"
-  }
- ],
- [
-  "vfx_connect",
-  {
-   "docId": "intro-portal",
-   "from": "ringip.particles",
-   "to": "swirl.particles"
+   "to": "counter.window"
   }
  ],
  [
@@ -834,23 +2062,1043 @@
   {
    "docId": "intro-portal",
    "from": "node-source.out",
-   "to": "swirl.anchor"
+   "to": "counterswirl.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Material",
+   "id": "countermat",
+   "params": {
+    "blend": "additive",
+    "emission": 1.2,
+    "opacity": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "BillboardRenderer",
+   "id": "counterbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 8,
+    "pivot": 0.8,
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFF2D0",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.25,
+       "color": {
+        "srgb": "#FFB040",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.7,
+       "color": {
+        "srgb": "#FF5A0A",
+        "alpha": 0.8
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#6A1000",
+        "alpha": 0
+       }
+      }
+     ]
+    }
+   }
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "intro-portal",
-   "from": "swirl.particles",
-   "to": "ringdrag.particles"
+   "from": "countermat.material",
+   "to": "counterbb.material"
   }
  ],
  [
   "vfx_connect",
   {
    "docId": "intro-portal",
-   "from": "ringdrag.particles",
-   "to": "bbring.particles"
+   "from": "counterbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "counter.particles",
+   "to": "counterip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "counterip.particles",
+   "to": "counterswirl.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "counterswirl.particles",
+   "to": "counterdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "counterdrag.particles",
+   "to": "counterbb.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "EffectTimeCurve",
+   "id": "growlead",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.1224
+      },
+      {
+       "x": 1.75,
+       "y": 0.1224
+      },
+      {
+       "x": 2.2,
+       "y": 0.3264
+      },
+      {
+       "x": 2.6500000000000004,
+       "y": 1
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "RingPath",
+   "id": "ringlead",
+   "params": {
+    "radius": 10,
+    "samples": 160,
+    "orientation": [
+     0.7071068,
+     0,
+     0,
+     0.7071068
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "node-source.out",
+   "to": "ringlead.center"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "growlead.value",
+   "to": "ringlead.radiusScale"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Schedule",
+   "id": "shedwin0",
+   "params": {
+    "startTicks": 115,
+    "durationTicks": 3,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Emitter",
+   "id": "shed0",
+   "params": {
+    "shape": "path",
+    "burst": 0,
+    "rate": 3000,
+    "rateOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 3
+      },
+      {
+       "x": 1,
+       "y": 3
+      }
+     ]
+    },
+    "coneAngle": 3.141592653589793,
+    "speedMin": 0.05,
+    "speedMax": 0.4,
+    "lifetimeMin": 0.12,
+    "lifetimeMax": 0.28
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "ringlead.paths",
+   "to": "shed0.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shedwin0.window",
+   "to": "shed0.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "InitialProperties",
+   "id": "shedip0",
+   "params": {
+    "sizeMin": 0.02,
+    "sizeMax": 0.04
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Vortex",
+   "id": "shedswirl0",
+   "params": {
+    "axis": [
+     0,
+     0,
+     1
+    ],
+    "tangential": 45,
+    "inward": -30,
+    "falloff": 20
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Drag",
+   "id": "sheddrag0",
+   "params": {
+    "coefficient": 2
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "node-source.out",
+   "to": "shedswirl0.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Material",
+   "id": "shed0fxmat",
+   "params": {
+    "blend": "additive",
+    "emission": 1.2,
+    "opacity": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "BillboardRenderer",
+   "id": "shed0fxbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 6,
+    "pivot": 0.8,
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFF2D0",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.25,
+       "color": {
+        "srgb": "#FFB040",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.7,
+       "color": {
+        "srgb": "#FF5A0A",
+        "alpha": 0.8
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#6A1000",
+        "alpha": 0
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shed0fxmat.material",
+   "to": "shed0fxbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shed0fxbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shed0.particles",
+   "to": "shedip0.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shedip0.particles",
+   "to": "shedswirl0.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shedswirl0.particles",
+   "to": "sheddrag0.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "sheddrag0.particles",
+   "to": "shed0fxbb.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Schedule",
+   "id": "shedwin1",
+   "params": {
+    "startTicks": 122,
+    "durationTicks": 3,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Emitter",
+   "id": "shed1",
+   "params": {
+    "shape": "path",
+    "burst": 0,
+    "rate": 3000,
+    "rateOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 3
+      },
+      {
+       "x": 1,
+       "y": 3
+      }
+     ]
+    },
+    "coneAngle": 3.141592653589793,
+    "speedMin": 0.05,
+    "speedMax": 0.4,
+    "lifetimeMin": 0.12,
+    "lifetimeMax": 0.28
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "ringlead.paths",
+   "to": "shed1.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shedwin1.window",
+   "to": "shed1.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "InitialProperties",
+   "id": "shedip1",
+   "params": {
+    "sizeMin": 0.02,
+    "sizeMax": 0.04
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Vortex",
+   "id": "shedswirl1",
+   "params": {
+    "axis": [
+     0,
+     0,
+     1
+    ],
+    "tangential": 45,
+    "inward": -30,
+    "falloff": 20
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Drag",
+   "id": "sheddrag1",
+   "params": {
+    "coefficient": 2
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "node-source.out",
+   "to": "shedswirl1.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Material",
+   "id": "shed1fxmat",
+   "params": {
+    "blend": "additive",
+    "emission": 1.2,
+    "opacity": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "BillboardRenderer",
+   "id": "shed1fxbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 6,
+    "pivot": 0.8,
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFF2D0",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.25,
+       "color": {
+        "srgb": "#FFB040",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.7,
+       "color": {
+        "srgb": "#FF5A0A",
+        "alpha": 0.8
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#6A1000",
+        "alpha": 0
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shed1fxmat.material",
+   "to": "shed1fxbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shed1fxbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shed1.particles",
+   "to": "shedip1.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shedip1.particles",
+   "to": "shedswirl1.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shedswirl1.particles",
+   "to": "sheddrag1.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "sheddrag1.particles",
+   "to": "shed1fxbb.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Schedule",
+   "id": "shedwin2",
+   "params": {
+    "startTicks": 130,
+    "durationTicks": 3,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Emitter",
+   "id": "shed2",
+   "params": {
+    "shape": "path",
+    "burst": 0,
+    "rate": 3000,
+    "rateOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 3
+      },
+      {
+       "x": 1,
+       "y": 3
+      }
+     ]
+    },
+    "coneAngle": 3.141592653589793,
+    "speedMin": 0.05,
+    "speedMax": 0.4,
+    "lifetimeMin": 0.12,
+    "lifetimeMax": 0.28
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "ringlead.paths",
+   "to": "shed2.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shedwin2.window",
+   "to": "shed2.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "InitialProperties",
+   "id": "shedip2",
+   "params": {
+    "sizeMin": 0.02,
+    "sizeMax": 0.04
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Vortex",
+   "id": "shedswirl2",
+   "params": {
+    "axis": [
+     0,
+     0,
+     1
+    ],
+    "tangential": 45,
+    "inward": -30,
+    "falloff": 20
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Drag",
+   "id": "sheddrag2",
+   "params": {
+    "coefficient": 2
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "node-source.out",
+   "to": "shedswirl2.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Material",
+   "id": "shed2fxmat",
+   "params": {
+    "blend": "additive",
+    "emission": 1.2,
+    "opacity": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "BillboardRenderer",
+   "id": "shed2fxbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 6,
+    "pivot": 0.8,
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFF2D0",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.25,
+       "color": {
+        "srgb": "#FFB040",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.7,
+       "color": {
+        "srgb": "#FF5A0A",
+        "alpha": 0.8
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#6A1000",
+        "alpha": 0
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shed2fxmat.material",
+   "to": "shed2fxbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shed2fxbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shed2.particles",
+   "to": "shedip2.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shedip2.particles",
+   "to": "shedswirl2.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shedswirl2.particles",
+   "to": "sheddrag2.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "sheddrag2.particles",
+   "to": "shed2fxbb.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Schedule",
+   "id": "shedwin3",
+   "params": {
+    "startTicks": 137,
+    "durationTicks": 3,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Emitter",
+   "id": "shed3",
+   "params": {
+    "shape": "path",
+    "burst": 0,
+    "rate": 3000,
+    "rateOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 3
+      },
+      {
+       "x": 1,
+       "y": 3
+      }
+     ]
+    },
+    "coneAngle": 3.141592653589793,
+    "speedMin": 0.05,
+    "speedMax": 0.4,
+    "lifetimeMin": 0.12,
+    "lifetimeMax": 0.28
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "ringlead.paths",
+   "to": "shed3.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shedwin3.window",
+   "to": "shed3.window"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "InitialProperties",
+   "id": "shedip3",
+   "params": {
+    "sizeMin": 0.02,
+    "sizeMax": 0.04
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Vortex",
+   "id": "shedswirl3",
+   "params": {
+    "axis": [
+     0,
+     0,
+     1
+    ],
+    "tangential": 45,
+    "inward": -30,
+    "falloff": 20
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Drag",
+   "id": "sheddrag3",
+   "params": {
+    "coefficient": 2
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "node-source.out",
+   "to": "shedswirl3.anchor"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Material",
+   "id": "shed3fxmat",
+   "params": {
+    "blend": "additive",
+    "emission": 1.2,
+    "opacity": 0.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "BillboardRenderer",
+   "id": "shed3fxbb",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 6,
+    "pivot": 0.8,
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFF2D0",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.25,
+       "color": {
+        "srgb": "#FFB040",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.7,
+       "color": {
+        "srgb": "#FF5A0A",
+        "alpha": 0.8
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#6A1000",
+        "alpha": 0
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shed3fxmat.material",
+   "to": "shed3fxbb.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shed3fxbb.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shed3.particles",
+   "to": "shedip3.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shedip3.particles",
+   "to": "shedswirl3.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "shedswirl3.particles",
+   "to": "sheddrag3.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "sheddrag3.particles",
+   "to": "shed3fxbb.particles"
   }
  ],
  [
@@ -865,14 +3113,14 @@
   {
    "docId": "intro-portal",
    "ticks": [
-    12,
-    30,
-    50,
-    80,
-    110,
-    125,
-    140,
-    160
+    20,
+    40,
+    58,
+    66,
+    85,
+    108,
+    122,
+    136
    ],
    "camera": {
     "position": [
