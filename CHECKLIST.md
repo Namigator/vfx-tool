@@ -40,7 +40,7 @@ Order agreed with the owner: finish A-G (sound included), then Gate P. Open line
 - [x] P-04 First-time-user check of the deployed site: open, build from Blank, export to each engine, import it · 2026-11-01 live site (5444ebf): New + Flame jet + 4 exports download [RAN] tools/first-user-check.mjs; downloads import: Godot [SAW] work/godot/Untitled_effect.png, Unreal [SAW] work/unreal/Untitled_effect.png, Roblox roblox-check pass [RAN]; Unity skipped (owner: editor licence expired)
 - [ ] P-05 Landing / store page with a demo clip and screenshots per engine (promo pipeline: F:/Dev2/Promotions)
 - [x] P-06 Pricing / distribution decision · owner 2026-11-01: free for now; money later. Google search: metadata + sitemap added, Search Console verification = owner
-- [ ] Discoverability pack: flipbook logo, share card (og-image), llms.txt, JSON-LD (app + FAQ), crawlable fallback text · [SAW] share card + logo render · live site untested · 2026-11-02
+- [x] Discoverability pack: flipbook logo, share card (og-image), llms.txt, JSON-LD (app + FAQ), crawlable fallback text · [SAW] share card + logo render · [RAN] live: llms.txt, og-image, icons, JSON-LD served; editor still loads [SAW] · 2026-11-02
 - [x] P-07 Support contact · owner 2026-11-01: the in-editor Feedback form (Web3Forms -> owner inbox) is the support channel; linked from README and PRIVACY.md
 - [ ] P-08 Roblox store items · 2026-11-01 [RAN] toolbox API: Arcane Bloom, Inferno and both Free packs all visible (appeals cleared); Storm/Frost/Shadow never listed ("Seller does not meet marketplace publishing requirements") · owner: Creator Dashboard
 - [ ] P-09 Version tag + changelog for the first public release · DRAFT CHANGELOG.md 2026-11-01 (0.1.0, feature list + known limits); tag at release · owner
