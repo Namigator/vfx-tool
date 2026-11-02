@@ -1,24 +1,29 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- A 2x2 flipbook sheet: four frames of one burst (spark, flare, blast, ring). -->
   <defs>
-    <linearGradient id="star" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#8ff4ff"/>
-      <stop offset="0.5" stop-color="#a98bff"/>
-      <stop offset="1" stop-color="#ff5fd2"/>
-    </linearGradient>
-    <radialGradient id="bloom" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#c77dff" stop-opacity="0.55"/>
-      <stop offset="0.6" stop-color="#7a3cff" stop-opacity="0.12"/>
-      <stop offset="1" stop-color="#7a3cff" stop-opacity="0"/>
+    <radialGradient id="hot">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="0.25" stop-color="#ffd0f0"/>
+      <stop offset="0.55" stop-color="#ff3fbf" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#ff3fbf" stop-opacity="0"/>
     </radialGradient>
-    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="14"/>
-    </filter>
   </defs>
-  <rect width="512" height="512" rx="112" fill="#0c0e12"/>
-  <circle cx="256" cy="256" r="230" fill="url(#bloom)"/>
-  <path d="M256 70C270 206 306 242 442 256 306 270 270 306 256 442 242 306 206 270 70 256 206 242 242 206 256 70Z" fill="url(#star)" filter="url(#glow)" opacity="0.8"/>
-  <path d="M256 70C270 206 306 242 442 256 306 270 270 306 256 442 242 306 206 270 70 256 206 242 242 206 256 70Z" fill="url(#star)"/>
-  <path d="M256 170C261 232 280 251 342 256 280 261 261 280 256 342 251 280 232 261 170 256 232 251 251 232 256 170Z" fill="#ffffff" opacity="0.9"/>
-  <path d="M386 104C389 128 396 135 420 138 396 141 389 148 386 172 383 148 376 141 352 138 376 135 383 128 386 104Z" fill="#8ff4ff"/>
-  <circle cx="138" cy="380" r="13" fill="#ff5fd2"/>
+  <rect width="512" height="512" rx="40" fill="#3d3d3f"/>
+  <rect x="40" y="40" width="432" height="432" rx="6" fill="#000"/>
+  <path d="M256 40V472M40 256H472" stroke="#3d3d3f" stroke-width="8"/>
+  <!-- frame 1: spark -->
+  <circle cx="148" cy="148" r="34" fill="url(#hot)"/>
+  <!-- frame 2: flare -->
+  <circle cx="364" cy="148" r="62" fill="url(#hot)"/>
+  <path d="M364 96V200M312 148H416M327 111l74 74M401 111l-74 74" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
+  <!-- frame 3: blast -->
+  <circle cx="148" cy="364" r="96" fill="url(#hot)"/>
+  <path d="M148 272V456M56 364H240M83 299l130 130M213 299 83 429" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+  <!-- frame 4: ring and embers -->
+  <circle cx="364" cy="364" r="70" fill="none" stroke="#ff3fbf" stroke-width="10" opacity="0.9"/>
+  <circle cx="364" cy="364" r="70" fill="none" stroke="#ffd0f0" stroke-width="3"/>
+  <circle cx="318" cy="318" r="6" fill="#ffd0f0"/>
+  <circle cx="420" cy="338" r="5" fill="#ff8fdc"/>
+  <circle cx="392" cy="420" r="6" fill="#ffd0f0"/>
+  <circle cx="330" cy="404" r="4" fill="#ff8fdc"/>
 </svg>
