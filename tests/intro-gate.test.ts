@@ -11,6 +11,7 @@ test('first-visit intro: shows only on a clean first open', () => {
   assert.equal(shouldShowIntro(store(false), '?doc=x.json', false), false, 'document links (MCP, review) skip it');
   assert.equal(shouldShowIntro(store(false), '?demo=lightning', false), false);
   assert.equal(shouldShowIntro(store(false), '?intro=0', false), false, '?intro=0 turns it off');
+  assert.equal(shouldShowIntro(store(true), '?intro=1', true), true, '?intro=1 forces it for review');
   assert.equal(shouldShowIntro(undefined, '', false), true, 'no storage: still shows once per load');
   assert.equal(shouldShowIntro({ getItem: () => { throw new Error('blocked'); } }, '', false), false, 'blocked storage: never risk a repeat');
 });

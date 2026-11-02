@@ -186,7 +186,7 @@ export default function PreviewV2() {
       return t ? { ...insertComponent({ ...createBlankDocument(), name: t.label }, t, undefined, { group: true }).doc, name: t.label } : createBlankDocument();
     };
     // First run: the intro preset (see IntroReveal); otherwise a blank effect and the Library offers the presets.
-    historyRef.current = new DocumentHistory(demo === 'lightning' ? createLightningAudioDemoDocument() : demo === 'forces' ? createForcesDemoDocument() : saved ?? (introRef.current ? introDoc() : createBlankDocument()));
+    historyRef.current = new DocumentHistory(demo === 'lightning' ? createLightningAudioDemoDocument() : demo === 'forces' ? createForcesDemoDocument() : introRef.current ? introDoc() : saved ?? createBlankDocument());
   }
   const [doc, setDoc] = useState<EffectDocumentV2>(() => historyRef.current!.snapshot());
   const [text, setText] = useState(() => toText(doc));
