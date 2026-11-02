@@ -1,0 +1,1201 @@
+{
+  "format": "vfx-studio",
+  "schemaVersion": 2,
+  "runtimeVersion": "2.0.0",
+  "id": "intro-portal",
+  "name": "Portal",
+  "tags": [],
+  "seed": 7,
+  "rootTransform": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "scale": 1
+  },
+  "anchors": [
+    {
+      "id": "source",
+      "name": "Source",
+      "position": [
+        0,
+        1.5,
+        0
+      ]
+    },
+    {
+      "id": "target",
+      "name": "Target",
+      "position": [
+        3,
+        1,
+        0
+      ]
+    }
+  ],
+  "durationTicks": 180,
+  "rootGraphId": "graph-root",
+  "graphs": [
+    {
+      "id": "graph-root",
+      "inputs": [],
+      "outputs": [],
+      "nodes": [
+        {
+          "id": "node-source",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Source",
+          "enabled": true,
+          "randomStreamId": "rs-source",
+          "params": {
+            "anchorId": "source"
+          }
+        },
+        {
+          "id": "node-target",
+          "type": "Anchor",
+          "definitionVersion": 1,
+          "label": "Target",
+          "enabled": true,
+          "randomStreamId": "rs-target",
+          "params": {
+            "anchorId": "target"
+          }
+        },
+        {
+          "id": "node-output",
+          "type": "EffectOutput",
+          "definitionVersion": 1,
+          "label": "Output",
+          "enabled": true,
+          "randomStreamId": "rs-output",
+          "params": {}
+        },
+        {
+          "id": "grow",
+          "type": "EffectTimeCurve",
+          "definitionVersion": 1,
+          "label": "grow",
+          "enabled": true,
+          "randomStreamId": "rs-grow",
+          "params": {
+            "curve": {
+              "domain": "effectSeconds",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.12
+                },
+                {
+                  "x": 1.8,
+                  "y": 0.12
+                },
+                {
+                  "x": 2.25,
+                  "y": 0.32
+                },
+                {
+                  "x": 2.7,
+                  "y": 1
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "trace",
+          "type": "EffectTimeCurve",
+          "definitionVersion": 1,
+          "label": "trace",
+          "enabled": true,
+          "randomStreamId": "rs-trace",
+          "params": {
+            "curve": {
+              "domain": "effectSeconds",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0.15,
+                  "y": 0
+                },
+                {
+                  "x": 0.95,
+                  "y": 1
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "ring",
+          "type": "RingPath",
+          "definitionVersion": 1,
+          "label": "ring",
+          "enabled": true,
+          "randomStreamId": "rs-ring",
+          "params": {
+            "radius": 10,
+            "samples": 160,
+            "orientation": [
+              0.7071068,
+              0,
+              0,
+              0.7071068
+            ]
+          }
+        },
+        {
+          "id": "reveal",
+          "type": "RevealPath",
+          "definitionVersion": 1,
+          "label": "reveal",
+          "enabled": true,
+          "randomStreamId": "rs-reveal",
+          "params": {}
+        },
+        {
+          "id": "coremat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "coremat",
+          "enabled": true,
+          "randomStreamId": "rs-coremat",
+          "params": {
+            "template": "RibbonUnlit",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#FFE6B0",
+              "alpha": 1
+            },
+            "emission": 1,
+            "opacity": 1
+          }
+        },
+        {
+          "id": "core",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "core",
+          "enabled": true,
+          "randomStreamId": "rs-core",
+          "params": {
+            "width": 0.05,
+            "endFade": 0.02
+          }
+        },
+        {
+          "id": "halomat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "halomat",
+          "enabled": true,
+          "randomStreamId": "rs-halomat",
+          "params": {
+            "template": "RibbonUnlit",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#FF6A10",
+              "alpha": 1
+            },
+            "emission": 0.7,
+            "opacity": 0.45
+          }
+        },
+        {
+          "id": "halo",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "halo",
+          "enabled": true,
+          "randomStreamId": "rs-halo",
+          "params": {
+            "width": 0.26,
+            "endFade": 0.02
+          }
+        },
+        {
+          "id": "growin",
+          "type": "EffectTimeCurve",
+          "definitionVersion": 1,
+          "label": "growin",
+          "enabled": true,
+          "randomStreamId": "rs-growin",
+          "params": {
+            "curve": {
+              "domain": "effectSeconds",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.1056
+                },
+                {
+                  "x": 1.8,
+                  "y": 0.1056
+                },
+                {
+                  "x": 2.25,
+                  "y": 0.3
+                },
+                {
+                  "x": 2.7,
+                  "y": 0.95
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "tracein",
+          "type": "EffectTimeCurve",
+          "definitionVersion": 1,
+          "label": "tracein",
+          "enabled": true,
+          "randomStreamId": "rs-tracein",
+          "params": {
+            "curve": {
+              "domain": "effectSeconds",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0.3,
+                  "y": 0
+                },
+                {
+                  "x": 1.15,
+                  "y": 1
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "ringin",
+          "type": "RingPath",
+          "definitionVersion": 1,
+          "label": "ringin",
+          "enabled": true,
+          "randomStreamId": "rs-ringin",
+          "params": {
+            "radius": 10,
+            "samples": 160,
+            "orientation": [
+              0.7071068,
+              0,
+              0,
+              0.7071068
+            ]
+          }
+        },
+        {
+          "id": "revealin",
+          "type": "RevealPath",
+          "definitionVersion": 1,
+          "label": "revealin",
+          "enabled": true,
+          "randomStreamId": "rs-revealin",
+          "params": {}
+        },
+        {
+          "id": "innermat",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "innermat",
+          "enabled": true,
+          "randomStreamId": "rs-innermat",
+          "params": {
+            "template": "RibbonUnlit",
+            "blend": "additive",
+            "tint": {
+              "srgb": "#FFB040",
+              "alpha": 1
+            },
+            "emission": 0.8,
+            "opacity": 0.6
+          }
+        },
+        {
+          "id": "inner",
+          "type": "RibbonRenderer",
+          "definitionVersion": 1,
+          "label": "inner",
+          "enabled": true,
+          "randomStreamId": "rs-inner",
+          "params": {
+            "width": 0.02,
+            "endFade": 0.02
+          }
+        },
+        {
+          "id": "tracewin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "tracewin",
+          "enabled": true,
+          "randomStreamId": "rs-tracewin",
+          "params": {
+            "startTicks": 9,
+            "durationTicks": 48,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "head",
+          "type": "PathFollower",
+          "definitionVersion": 1,
+          "label": "head",
+          "enabled": true,
+          "randomStreamId": "rs-head",
+          "params": {
+            "durationTicks": 48,
+            "easing": "easeOut"
+          }
+        },
+        {
+          "id": "headsparks",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "headsparks",
+          "enabled": true,
+          "randomStreamId": "rs-headsparks",
+          "params": {
+            "shape": "sphere",
+            "radius": 0.03,
+            "burst": 0,
+            "rate": 1100,
+            "speedMin": 0.6,
+            "speedMax": 3.2,
+            "lifetimeMin": 0.25,
+            "lifetimeMax": 0.7
+          }
+        },
+        {
+          "id": "headip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "headip",
+          "enabled": true,
+          "randomStreamId": "rs-headip",
+          "params": {
+            "sizeMin": 0.018,
+            "sizeMax": 0.034
+          }
+        },
+        {
+          "id": "headgrav",
+          "type": "Gravity",
+          "definitionVersion": 1,
+          "label": "headgrav",
+          "enabled": true,
+          "randomStreamId": "rs-headgrav",
+          "params": {}
+        },
+        {
+          "id": "headdrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "headdrag",
+          "enabled": true,
+          "randomStreamId": "rs-headdrag",
+          "params": {
+            "coefficient": 1.2
+          }
+        },
+        {
+          "id": "mathead",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "mathead",
+          "enabled": true,
+          "randomStreamId": "rs-mathead",
+          "params": {
+            "blend": "additive",
+            "emission": 1
+          }
+        },
+        {
+          "id": "bbhead",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "bbhead",
+          "enabled": true,
+          "randomStreamId": "rs-bbhead",
+          "params": {
+            "alignment": "velocity",
+            "stretchRatio": 6,
+            "pivot": 0.85,
+            "colorOverLife": {
+              "stops": [
+                {
+                  "position": 0,
+                  "color": {
+                    "srgb": "#FFFFFF",
+                    "alpha": 1
+                  }
+                },
+                {
+                  "position": 0.25,
+                  "color": {
+                    "srgb": "#FFD27A",
+                    "alpha": 1
+                  }
+                },
+                {
+                  "position": 0.65,
+                  "color": {
+                    "srgb": "#FF7A12",
+                    "alpha": 0.85
+                  }
+                },
+                {
+                  "position": 1,
+                  "color": {
+                    "srgb": "#7A1A00",
+                    "alpha": 0
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "spinwin",
+          "type": "Schedule",
+          "definitionVersion": 1,
+          "label": "spinwin",
+          "enabled": true,
+          "randomStreamId": "rs-spinwin",
+          "params": {
+            "startTicks": 51,
+            "durationTicks": 69,
+            "mode": "window"
+          }
+        },
+        {
+          "id": "ringsparks",
+          "type": "Emitter",
+          "definitionVersion": 1,
+          "label": "ringsparks",
+          "enabled": true,
+          "randomStreamId": "rs-ringsparks",
+          "params": {
+            "shape": "path",
+            "burst": 0,
+            "rate": 1600,
+            "speedMin": 0.1,
+            "speedMax": 0.9,
+            "lifetimeMin": 0.2,
+            "lifetimeMax": 0.5,
+            "rateOverWindow": {
+              "domain": "normalized",
+              "interpolation": "linear",
+              "keys": [
+                {
+                  "x": 0,
+                  "y": 0.3
+                },
+                {
+                  "x": 0.3,
+                  "y": 1
+                },
+                {
+                  "x": 0.9,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "ringip",
+          "type": "InitialProperties",
+          "definitionVersion": 1,
+          "label": "ringip",
+          "enabled": true,
+          "randomStreamId": "rs-ringip",
+          "params": {
+            "sizeMin": 0.014,
+            "sizeMax": 0.028
+          }
+        },
+        {
+          "id": "swirl",
+          "type": "Vortex",
+          "definitionVersion": 1,
+          "label": "swirl",
+          "enabled": true,
+          "randomStreamId": "rs-swirl",
+          "params": {
+            "axis": [
+              0,
+              0,
+              1
+            ],
+            "tangential": 28,
+            "inward": -5,
+            "falloff": 20
+          }
+        },
+        {
+          "id": "ringdrag",
+          "type": "Drag",
+          "definitionVersion": 1,
+          "label": "ringdrag",
+          "enabled": true,
+          "randomStreamId": "rs-ringdrag",
+          "params": {
+            "coefficient": 1.5
+          }
+        },
+        {
+          "id": "matring",
+          "type": "Material",
+          "definitionVersion": 1,
+          "label": "matring",
+          "enabled": true,
+          "randomStreamId": "rs-matring",
+          "params": {
+            "blend": "additive",
+            "emission": 1
+          }
+        },
+        {
+          "id": "bbring",
+          "type": "BillboardRenderer",
+          "definitionVersion": 1,
+          "label": "bbring",
+          "enabled": true,
+          "randomStreamId": "rs-bbring",
+          "params": {
+            "alignment": "velocity",
+            "stretchRatio": 6,
+            "pivot": 0.85,
+            "colorOverLife": {
+              "stops": [
+                {
+                  "position": 0,
+                  "color": {
+                    "srgb": "#FFFFFF",
+                    "alpha": 1
+                  }
+                },
+                {
+                  "position": 0.25,
+                  "color": {
+                    "srgb": "#FFD27A",
+                    "alpha": 1
+                  }
+                },
+                {
+                  "position": 0.65,
+                  "color": {
+                    "srgb": "#FF7A12",
+                    "alpha": 0.85
+                  }
+                },
+                {
+                  "position": 1,
+                  "color": {
+                    "srgb": "#7A1A00",
+                    "alpha": 0
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-node-source-ring",
+          "source": {
+            "nodeId": "node-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "ring",
+            "port": "center"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-grow-ring",
+          "source": {
+            "nodeId": "grow",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "ring",
+            "port": "radiusScale"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-ring-reveal",
+          "source": {
+            "nodeId": "ring",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "reveal",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-trace-reveal",
+          "source": {
+            "nodeId": "trace",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "reveal",
+            "port": "fraction"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-reveal-core",
+          "source": {
+            "nodeId": "reveal",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "core",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-coremat-core",
+          "source": {
+            "nodeId": "coremat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "core",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-core-node-output",
+          "source": {
+            "nodeId": "core",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "node-output",
+            "port": "visual"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-reveal-halo",
+          "source": {
+            "nodeId": "reveal",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "halo",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-halomat-halo",
+          "source": {
+            "nodeId": "halomat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "halo",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-halo-node-output",
+          "source": {
+            "nodeId": "halo",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "node-output",
+            "port": "visual"
+          },
+          "order": 1
+        },
+        {
+          "id": "edge-node-source-ringin",
+          "source": {
+            "nodeId": "node-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "ringin",
+            "port": "center"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-growin-ringin",
+          "source": {
+            "nodeId": "growin",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "ringin",
+            "port": "radiusScale"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-ringin-revealin",
+          "source": {
+            "nodeId": "ringin",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "revealin",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-tracein-revealin",
+          "source": {
+            "nodeId": "tracein",
+            "port": "value"
+          },
+          "target": {
+            "nodeId": "revealin",
+            "port": "fraction"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-revealin-inner",
+          "source": {
+            "nodeId": "revealin",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "inner",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-innermat-inner",
+          "source": {
+            "nodeId": "innermat",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "inner",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-inner-node-output",
+          "source": {
+            "nodeId": "inner",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "node-output",
+            "port": "visual"
+          },
+          "order": 2
+        },
+        {
+          "id": "edge-mathead-bbhead",
+          "source": {
+            "nodeId": "mathead",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "bbhead",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-bbhead-node-output",
+          "source": {
+            "nodeId": "bbhead",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "node-output",
+            "port": "visual"
+          },
+          "order": 3
+        },
+        {
+          "id": "edge-ring-head",
+          "source": {
+            "nodeId": "ring",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "head",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-tracewin-head",
+          "source": {
+            "nodeId": "tracewin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "head",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-head-headsparks",
+          "source": {
+            "nodeId": "head",
+            "port": "anchor"
+          },
+          "target": {
+            "nodeId": "headsparks",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-tracewin-headsparks",
+          "source": {
+            "nodeId": "tracewin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "headsparks",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-headsparks-headip",
+          "source": {
+            "nodeId": "headsparks",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "headip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-headip-headgrav",
+          "source": {
+            "nodeId": "headip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "headgrav",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-headgrav-headdrag",
+          "source": {
+            "nodeId": "headgrav",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "headdrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-headdrag-bbhead",
+          "source": {
+            "nodeId": "headdrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "bbhead",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-matring-bbring",
+          "source": {
+            "nodeId": "matring",
+            "port": "material"
+          },
+          "target": {
+            "nodeId": "bbring",
+            "port": "material"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-bbring-node-output",
+          "source": {
+            "nodeId": "bbring",
+            "port": "visual"
+          },
+          "target": {
+            "nodeId": "node-output",
+            "port": "visual"
+          },
+          "order": 4
+        },
+        {
+          "id": "edge-ring-ringsparks",
+          "source": {
+            "nodeId": "ring",
+            "port": "paths"
+          },
+          "target": {
+            "nodeId": "ringsparks",
+            "port": "paths"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-spinwin-ringsparks",
+          "source": {
+            "nodeId": "spinwin",
+            "port": "window"
+          },
+          "target": {
+            "nodeId": "ringsparks",
+            "port": "window"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-ringsparks-ringip",
+          "source": {
+            "nodeId": "ringsparks",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ringip",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-ringip-swirl",
+          "source": {
+            "nodeId": "ringip",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "swirl",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-node-source-swirl",
+          "source": {
+            "nodeId": "node-source",
+            "port": "out"
+          },
+          "target": {
+            "nodeId": "swirl",
+            "port": "anchor"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-swirl-ringdrag",
+          "source": {
+            "nodeId": "swirl",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "ringdrag",
+            "port": "particles"
+          },
+          "order": 0
+        },
+        {
+          "id": "edge-ringdrag-bbring",
+          "source": {
+            "nodeId": "ringdrag",
+            "port": "particles"
+          },
+          "target": {
+            "nodeId": "bbring",
+            "port": "particles"
+          },
+          "order": 0
+        }
+      ]
+    }
+  ],
+  "controls": [],
+  "assets": [],
+  "editor": {
+    "graphs": {
+      "graph-root": {
+        "nodes": {
+          "node-source": {
+            "x": 0,
+            "y": 0
+          },
+          "node-target": {
+            "x": 0,
+            "y": 160
+          },
+          "node-output": {
+            "x": 1040,
+            "y": 0
+          },
+          "grow": {
+            "x": 780,
+            "y": 320
+          },
+          "trace": {
+            "x": 1040,
+            "y": 320
+          },
+          "ring": {
+            "x": 1300,
+            "y": 320
+          },
+          "reveal": {
+            "x": 1560,
+            "y": 320
+          },
+          "coremat": {
+            "x": 0,
+            "y": 500
+          },
+          "core": {
+            "x": 260,
+            "y": 500
+          },
+          "halomat": {
+            "x": 520,
+            "y": 500
+          },
+          "halo": {
+            "x": 780,
+            "y": 500
+          },
+          "growin": {
+            "x": 1040,
+            "y": 500
+          },
+          "tracein": {
+            "x": 1300,
+            "y": 500
+          },
+          "ringin": {
+            "x": 1560,
+            "y": 500
+          },
+          "revealin": {
+            "x": 0,
+            "y": 680
+          },
+          "innermat": {
+            "x": 260,
+            "y": 680
+          },
+          "inner": {
+            "x": 520,
+            "y": 680
+          },
+          "tracewin": {
+            "x": 780,
+            "y": 680
+          },
+          "head": {
+            "x": 1040,
+            "y": 680
+          },
+          "headsparks": {
+            "x": 1300,
+            "y": 680
+          },
+          "headip": {
+            "x": 1560,
+            "y": 680
+          },
+          "headgrav": {
+            "x": 0,
+            "y": 860
+          },
+          "headdrag": {
+            "x": 260,
+            "y": 860
+          },
+          "mathead": {
+            "x": 520,
+            "y": 860
+          },
+          "bbhead": {
+            "x": 780,
+            "y": 860
+          },
+          "spinwin": {
+            "x": 1040,
+            "y": 860
+          },
+          "ringsparks": {
+            "x": 1300,
+            "y": 860
+          },
+          "ringip": {
+            "x": 1560,
+            "y": 860
+          },
+          "swirl": {
+            "x": 0,
+            "y": 1040
+          },
+          "ringdrag": {
+            "x": 260,
+            "y": 1040
+          },
+          "matring": {
+            "x": 520,
+            "y": 1040
+          },
+          "bbring": {
+            "x": 780,
+            "y": 1040
+          }
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      }
+    },
+    "openedGraphId": "graph-root"
+  }
+}

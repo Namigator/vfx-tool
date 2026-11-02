@@ -1,0 +1,901 @@
+[
+ [
+  "vfx_new_document",
+  {
+   "template": "blank",
+   "id": "intro-portal"
+  }
+ ],
+ [
+  "vfx_set_document",
+  {
+   "docId": "intro-portal",
+   "durationTicks": 180,
+   "seed": 7,
+   "name": "Portal"
+  }
+ ],
+ [
+  "vfx_set_anchor",
+  {
+   "docId": "intro-portal",
+   "anchorId": "source",
+   "position": [
+    0,
+    1.5,
+    0
+   ]
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "EffectTimeCurve",
+   "id": "grow",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.12
+      },
+      {
+       "x": 1.8,
+       "y": 0.12
+      },
+      {
+       "x": 2.25,
+       "y": 0.32
+      },
+      {
+       "x": 2.7,
+       "y": 1
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "EffectTimeCurve",
+   "id": "trace",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0.15,
+       "y": 0
+      },
+      {
+       "x": 0.95,
+       "y": 1
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "RingPath",
+   "id": "ring",
+   "params": {
+    "radius": 10,
+    "samples": 160,
+    "orientation": [
+     0.7071068,
+     0,
+     0,
+     0.7071068
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "RevealPath",
+   "id": "reveal",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "node-source.out",
+   "to": "ring.center"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "grow.value",
+   "to": "ring.radiusScale"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "ring.paths",
+   "to": "reveal.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "trace.value",
+   "to": "reveal.fraction"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Material",
+   "id": "coremat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFE6B0",
+     "alpha": 1
+    },
+    "emission": 1,
+    "opacity": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "RibbonRenderer",
+   "id": "core",
+   "params": {
+    "width": 0.05,
+    "endFade": 0.02
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Material",
+   "id": "halomat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FF6A10",
+     "alpha": 1
+    },
+    "emission": 0.7,
+    "opacity": 0.45
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "RibbonRenderer",
+   "id": "halo",
+   "params": {
+    "width": 0.26,
+    "endFade": 0.02
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "reveal.paths",
+   "to": "core.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "coremat.material",
+   "to": "core.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "core.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "reveal.paths",
+   "to": "halo.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "halomat.material",
+   "to": "halo.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "halo.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "EffectTimeCurve",
+   "id": "growin",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.1056
+      },
+      {
+       "x": 1.8,
+       "y": 0.1056
+      },
+      {
+       "x": 2.25,
+       "y": 0.3
+      },
+      {
+       "x": 2.7,
+       "y": 0.95
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "EffectTimeCurve",
+   "id": "tracein",
+   "params": {
+    "curve": {
+     "domain": "effectSeconds",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0.3,
+       "y": 0
+      },
+      {
+       "x": 1.15,
+       "y": 1
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "RingPath",
+   "id": "ringin",
+   "params": {
+    "radius": 10,
+    "samples": 160,
+    "orientation": [
+     0.7071068,
+     0,
+     0,
+     0.7071068
+    ]
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "RevealPath",
+   "id": "revealin",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Material",
+   "id": "innermat",
+   "params": {
+    "template": "RibbonUnlit",
+    "blend": "additive",
+    "tint": {
+     "srgb": "#FFB040",
+     "alpha": 1
+    },
+    "emission": 0.8,
+    "opacity": 0.6
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "RibbonRenderer",
+   "id": "inner",
+   "params": {
+    "width": 0.02,
+    "endFade": 0.02
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "node-source.out",
+   "to": "ringin.center"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "growin.value",
+   "to": "ringin.radiusScale"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "ringin.paths",
+   "to": "revealin.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "tracein.value",
+   "to": "revealin.fraction"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "revealin.paths",
+   "to": "inner.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "innermat.material",
+   "to": "inner.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "inner.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Schedule",
+   "id": "tracewin",
+   "params": {
+    "startTicks": 9,
+    "durationTicks": 48,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "PathFollower",
+   "id": "head",
+   "params": {
+    "durationTicks": 48,
+    "easing": "easeOut"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Emitter",
+   "id": "headsparks",
+   "params": {
+    "shape": "sphere",
+    "radius": 0.03,
+    "burst": 0,
+    "rate": 1100,
+    "speedMin": 0.6,
+    "speedMax": 3.2,
+    "lifetimeMin": 0.25,
+    "lifetimeMax": 0.7
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "InitialProperties",
+   "id": "headip",
+   "params": {
+    "sizeMin": 0.018,
+    "sizeMax": 0.034
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Gravity",
+   "id": "headgrav",
+   "params": {}
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Drag",
+   "id": "headdrag",
+   "params": {
+    "coefficient": 1.2
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Material",
+   "id": "mathead",
+   "params": {
+    "blend": "additive",
+    "emission": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "BillboardRenderer",
+   "id": "bbhead",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 6,
+    "pivot": 0.85,
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFFFFF",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.25,
+       "color": {
+        "srgb": "#FFD27A",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.65,
+       "color": {
+        "srgb": "#FF7A12",
+        "alpha": 0.85
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#7A1A00",
+        "alpha": 0
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "mathead.material",
+   "to": "bbhead.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "bbhead.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "ring.paths",
+   "to": "head.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "tracewin.window",
+   "to": "head.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "head.anchor",
+   "to": "headsparks.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "tracewin.window",
+   "to": "headsparks.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "headsparks.particles",
+   "to": "headip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "headip.particles",
+   "to": "headgrav.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "headgrav.particles",
+   "to": "headdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "headdrag.particles",
+   "to": "bbhead.particles"
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Schedule",
+   "id": "spinwin",
+   "params": {
+    "startTicks": 51,
+    "durationTicks": 69,
+    "mode": "window"
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Emitter",
+   "id": "ringsparks",
+   "params": {
+    "shape": "path",
+    "burst": 0,
+    "rate": 1600,
+    "speedMin": 0.1,
+    "speedMax": 0.9,
+    "lifetimeMin": 0.2,
+    "lifetimeMax": 0.5,
+    "rateOverWindow": {
+     "domain": "normalized",
+     "interpolation": "linear",
+     "keys": [
+      {
+       "x": 0,
+       "y": 0.3
+      },
+      {
+       "x": 0.3,
+       "y": 1
+      },
+      {
+       "x": 0.9,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 0
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "InitialProperties",
+   "id": "ringip",
+   "params": {
+    "sizeMin": 0.014,
+    "sizeMax": 0.028
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Vortex",
+   "id": "swirl",
+   "params": {
+    "axis": [
+     0,
+     0,
+     1
+    ],
+    "tangential": 28,
+    "inward": -5,
+    "falloff": 20
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Drag",
+   "id": "ringdrag",
+   "params": {
+    "coefficient": 1.5
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "Material",
+   "id": "matring",
+   "params": {
+    "blend": "additive",
+    "emission": 1
+   }
+  }
+ ],
+ [
+  "vfx_add_node",
+  {
+   "docId": "intro-portal",
+   "type": "BillboardRenderer",
+   "id": "bbring",
+   "params": {
+    "alignment": "velocity",
+    "stretchRatio": 6,
+    "pivot": 0.85,
+    "colorOverLife": {
+     "stops": [
+      {
+       "position": 0,
+       "color": {
+        "srgb": "#FFFFFF",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.25,
+       "color": {
+        "srgb": "#FFD27A",
+        "alpha": 1
+       }
+      },
+      {
+       "position": 0.65,
+       "color": {
+        "srgb": "#FF7A12",
+        "alpha": 0.85
+       }
+      },
+      {
+       "position": 1,
+       "color": {
+        "srgb": "#7A1A00",
+        "alpha": 0
+       }
+      }
+     ]
+    }
+   }
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "matring.material",
+   "to": "bbring.material"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "bbring.visual",
+   "to": "node-output.visual"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "ring.paths",
+   "to": "ringsparks.paths"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "spinwin.window",
+   "to": "ringsparks.window"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "ringsparks.particles",
+   "to": "ringip.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "ringip.particles",
+   "to": "swirl.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "node-source.out",
+   "to": "swirl.anchor"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "swirl.particles",
+   "to": "ringdrag.particles"
+  }
+ ],
+ [
+  "vfx_connect",
+  {
+   "docId": "intro-portal",
+   "from": "ringdrag.particles",
+   "to": "bbring.particles"
+  }
+ ],
+ [
+  "vfx_compile",
+  {
+   "docId": "intro-portal"
+  },
+  true
+ ],
+ [
+  "vfx_contact_sheet",
+  {
+   "docId": "intro-portal",
+   "ticks": [
+    12,
+    30,
+    50,
+    80,
+    110,
+    125,
+    140,
+    160
+   ],
+   "camera": {
+    "position": [
+     0,
+     1.5,
+     7
+    ],
+    "target": [
+     0,
+     1.5,
+     0
+    ],
+    "fov": 50
+   }
+  },
+  true
+ ],
+ [
+  "vfx_save_document",
+  {
+   "docId": "intro-portal",
+   "path": "src/intro/portal.vfx.json"
+  },
+  true
+ ]
+]

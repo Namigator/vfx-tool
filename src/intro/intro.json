@@ -1,0 +1,6 @@
+{
+  "comment": "First-visit intro. portal.vfx.json is built by tools/build-intro-portal.mjs through the MCP tools. The editor opens at handoffTick, once the ring has widened past the screen.",
+  "camera": { "position": [0, 1.5, 7], "target": [0, 1.5, 0], "fov": 50 },
+  "handoffTick": 152,
+  "afterPreset": "fireball"
+}

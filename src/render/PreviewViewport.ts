@@ -1845,6 +1845,8 @@ export class PreviewViewport {
   setLoop(on: boolean): void { this.#looping = on; }
   /** 12 view tools: floor grid on/off (preview only). */
   setGrid(on: boolean): void { this.#grid.visible = on; for (const m of this.#markers) m.visible = on; }
+  /** Shows or hides the floor plane (the first-visit intro plays its effect on an empty black stage). */
+  setFloor(on: boolean): void { this.#ground.visible = on; if (!this.#disposed) this.#emitFrame(true); }
   /** 12 transport speed (.25x/.5x/1x); preview-only, kept across recompiles. */
   #speed = 1;
   setSpeed(speed: number): void { this.#speed = speed; this.#clock?.setSpeed(speed); }

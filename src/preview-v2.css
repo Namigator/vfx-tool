@@ -308,20 +308,5 @@
 .pv2-feedback textarea { width: 100%; box-sizing: border-box; resize: vertical; font: inherit; }
 .pv2-feedback > div { display: flex; gap: 6px; }
 
-/* First-visit intro (IntroReveal): the preview shows through a window in a dark cover, then the window widens. */
-.pv2-intro { position: fixed; inset: 0; z-index: 1000; cursor: pointer; overflow: hidden; transition: opacity 250ms ease; }
-.pv2-intro-fade { opacity: 0; }
-.pv2-intro-window {
-  position: absolute; border-radius: 14px;
-  box-shadow: 0 0 0 1.5px rgba(255, 95, 210, 0.6), 0 0 0 200vmax #1a1024;
-}
-.pv2-intro-open .pv2-intro-window, .pv2-intro-fade .pv2-intro-window {
-  left: 0 !important; top: 0 !important; width: 100vw !important; height: 100vh !important; border-radius: 0;
-  box-shadow: 0 0 0 0 rgba(255, 95, 210, 0), 0 0 0 200vmax rgba(26, 16, 36, 0);
-  transition: left 1000ms cubic-bezier(.2,.8,.2,1), top 1000ms cubic-bezier(.2,.8,.2,1), width 1000ms cubic-bezier(.2,.8,.2,1), height 1000ms cubic-bezier(.2,.8,.2,1), border-radius 1000ms ease, box-shadow 1000ms ease-in;
-}
-.pv2-intro-label { position: absolute; left: 0; right: 0; text-align: center; padding: 0 16px; transition: opacity 300ms ease; }
-.pv2-intro-open .pv2-intro-label, .pv2-intro-fade .pv2-intro-label { opacity: 0; }
-.pv2-intro-name { font-size: clamp(28px, 5vw, 44px); font-weight: 800; font-stretch: 125%; letter-spacing: -0.5px; color: #fff; }
-.pv2-intro-line { margin-top: 8px; font-size: clamp(14px, 2vw, 18px); color: #d9c8e6; }
-.pv2-intro-on .pv2-view-overlay { visibility: hidden; }
+/* First-visit intro (IntroReveal): the 3D view fills the screen while the Portal effect plays. */
+.pv2-intro-on .pv2-host { position: fixed; inset: 0; z-index: 1000; cursor: pointer; }
