@@ -47,6 +47,9 @@ import { mergeDiagnostics } from './render/layerOrder.ts';
 import { timelineInfo, timelineLanes, type TimelineInfo } from './render/timeline.ts';
 import { TimelineStrip } from './editor/TimelineStrip.tsx';
 import { Tutorial } from './editor/Tutorial.tsx';
+import { IntroReveal } from './editor/IntroReveal.tsx';
+import { INTRO_SEEN_KEY, shouldShowIntro } from './editor/introGate.ts';
+import { COMPONENT_TEMPLATES, insertComponent } from './graph/components.ts';
 import { FeedbackDialog } from './editor/FeedbackDialog.tsx';
 import { parseFeedbackHash } from './feedback.ts';
 import { SplitPane } from './editor/SplitPane.tsx';
@@ -154,6 +157,9 @@ function isTextTarget(t: EventTarget | null): boolean {
   return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
 }
 
+/** The preset a first-time visitor sees playing in the intro. */
+const INTRO_PRESET = 'fireball';
+
 export default function PreviewV2() {
   const hostRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -161,6 +167,8 @@ export default function PreviewV2() {
   const historyRef = useRef<DocumentHistory | null>(null);
   /** Set when the latest draft was unreadable and an older revision was restored (13 recovery). */
   const recoveredFromRef = useRef<string | null>(null);
+  /** First visit: open with the intro preset playing behind IntroReveal instead of a blank effect. */
+  const introRef = useRef<boolean | null>(null);
   if (historyRef.current === null) {
     const q = new URLSearchParams(window.location.search), demo = q.get('demo');
     // Demo/doc URLs win; otherwise the last local draft (if it still validates), else the F01 fixture.
@@ -171,7 +179,14 @@ export default function PreviewV2() {
       if (r?.recoveredFrom) recoveredFromRef.current = r.recoveredFrom;
       return r?.value ?? null;
     };
-    historyRef.current = new DocumentHistory(demo === 'lightning' ? createLightningAudioDemoDocument() : demo === 'forces' ? createForcesDemoDocument() : draft() ?? createBlankDocument()); // First run: a blank effect; the Library offers the presets.
+    const saved = demo ? null : draft();
+    introRef.current = shouldShowIntro(typeof localStorage === 'undefined' ? undefined : localStorage, window.location.search, saved !== null);
+    const introDoc = () => {
+      const t = COMPONENT_TEMPLATES.find(c => c.id === INTRO_PRESET);
+      return t ? { ...insertComponent({ ...createBlankDocument(), name: t.label }, t, undefined, { group: true }).doc, name: t.label } : createBlankDocument();
+    };
+    // First run: the intro preset (see IntroReveal); otherwise a blank effect and the Library offers the presets.
+    historyRef.current = new DocumentHistory(demo === 'lightning' ? createLightningAudioDemoDocument() : demo === 'forces' ? createForcesDemoDocument() : saved ?? (introRef.current ? introDoc() : createBlankDocument()));
   }
   const [doc, setDoc] = useState<EffectDocumentV2>(() => historyRef.current!.snapshot());
   const [text, setText] = useState(() => toText(doc));
@@ -185,6 +200,10 @@ export default function PreviewV2() {
   const [fatal, setFatal] = useState('');
   const [frame, setFrame] = useState<PreviewFrameInfo>(EMPTY_FRAME);
   const [compiled, setCompiled] = useState(false);
+  const [introOn, setIntroOn] = useState(() => introRef.current === true);
+  const introPlayedRef = useRef(false);
+  const introTarget = useCallback(() => hostRef.current, []);
+  const endIntro = useCallback(() => { setIntroOn(false); try { localStorage.setItem(INTRO_SEEN_KEY, '1'); } catch { /* private mode */ } }, []);
   const [gpuLost, setGpuLost] = useState(false);
   /** 12: reduced effects (no screen flash / camera shake); starts from the system prefers-reduced-motion setting. */
   const [reducedEffects, setReducedEffects] = useState(() => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -194,6 +213,18 @@ export default function PreviewV2() {
   const [mediaOpen, setMediaOpen] = useState(false);
   const [syncSound, setSyncSound] = useState(true);
   const [looping, setLooping] = useState(false);
+  // The intro preset plays on loop; a recompile while sounds and textures arrive stops playback, so the intro
+  // restarts it every frame until it opens.
+  const compiledRef = useRef(false);
+  compiledRef.current = compiled;
+  const keepIntroPlaying = useCallback(() => {
+    const vp = viewportRef.current;
+    if (!vp || !compiledRef.current || vp.isPlaying) return;
+    if (!introPlayedRef.current) { introPlayedRef.current = true; setLooping(true); }
+    vp.setLoop(true); vp.play();
+  }, []);
+  /** The Fireball lands around tick 40; the intro opens on that impact. */
+  const introAtImpact = useCallback(() => { const t = viewportRef.current?.currentTick ?? 0; return t >= 38 && t <= 60; }, []);
   /** 12 transport: playback speed and "New seed on cast" (preview-only; the saved seed never changes). */
   const [speed, setSpeed] = useState(1);
   const [newSeed, setNewSeed] = useState(false);
@@ -1073,7 +1104,7 @@ export default function PreviewV2() {
   }, [onEdit]);
 
   return (
-    <div className={`pv2${phone ? ` pv2-phone pv2-mtab-${mtab}` : ''}`}>
+    <div className={`pv2${phone ? ` pv2-phone pv2-mtab-${mtab}` : ''}${introOn ? ' pv2-intro-on' : ''}`}>
       <header className="pv2-topbar">
         <div className="pv2-topbar-brand">
           <strong className="pv2-appname">VFX Studio</strong>
@@ -1456,6 +1487,7 @@ export default function PreviewV2() {
           ))}
         </nav>
       )}
+      {introOn && <IntroReveal target={introTarget} holdMs={1800} onTick={keepIntroPlaying} openWhen={introAtImpact} onDone={endIntro} />}
     </div>
   );
 }

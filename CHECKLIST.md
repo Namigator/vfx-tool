@@ -41,6 +41,7 @@ Order agreed with the owner: finish A-G (sound included), then Gate P. Open line
 - [ ] P-05 Landing / store page with a demo clip and screenshots per engine (promo pipeline: F:/Dev2/Promotions)
 - [x] P-06 Pricing / distribution decision · owner 2026-11-01: free for now; money later. Google search: metadata + sitemap added, Search Console verification = owner
 - [x] Discoverability pack: flipbook logo, share card (og-image), llms.txt, JSON-LD (app + FAQ), crawlable fallback text · [SAW] share card + logo render · [RAN] live: llms.txt, og-image, icons, JSON-LD served; editor still loads [SAW] · 2026-11-02
+- [ ] First-visit intro: Fireball plays in a window, opens into the editor on impact; click/key skips; once only · [SAW] desktop + phone frames, [RAN] 60 fps open with GPU, click skip · not deployed · 2026-11-02
 - [x] P-07 Support contact · owner 2026-11-01: the in-editor Feedback form (Web3Forms -> owner inbox) is the support channel; linked from README and PRIVACY.md
 - [ ] P-08 Roblox store items · 2026-11-01 [RAN] toolbox API: Arcane Bloom, Inferno and both Free packs all visible (appeals cleared); Storm/Frost/Shadow never listed ("Seller does not meet marketplace publishing requirements") · owner: Creator Dashboard
 - [ ] P-09 Version tag + changelog for the first public release · DRAFT CHANGELOG.md 2026-11-01 (0.1.0, feature list + known limits); tag at release · owner
