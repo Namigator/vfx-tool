@@ -308,5 +308,12 @@
 .pv2-feedback textarea { width: 100%; box-sizing: border-box; resize: vertical; font: inherit; }
 .pv2-feedback > div { display: flex; gap: 6px; }
 
-/* First-visit intro (IntroReveal): the 3D view fills the screen while the Portal effect plays. */
-.pv2-intro-on .pv2-host { position: fixed; inset: 0; z-index: 1000; cursor: pointer; }
+/* First-visit intro (IntroReveal). No stacking context on the wrapper: the portal canvas must screen-blend with the
+   editor itself, so only its light shows and its black disappears. The cover is black except for the hole. */
+.pv2-intro { display: contents; }
+.pv2-intro-cover {
+  position: fixed; inset: 0; z-index: 1000; background: #000; cursor: pointer;
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent calc(var(--intro-hole, 0px) - 1px), #000 var(--intro-hole, 0px));
+  mask-image: radial-gradient(circle at 50% 50%, transparent calc(var(--intro-hole, 0px) - 1px), #000 var(--intro-hole, 0px));
+}
+.pv2-intro-portal { position: fixed; inset: 0; z-index: 1001; mix-blend-mode: screen; pointer-events: none; }

@@ -1827,9 +1827,10 @@ export class PreviewViewport {
   };
 
   /** 12 "dark/light background" inspection: arena backdrop and floor colours only; effects are unchanged. */
-  setBackground(mode: 'dark' | 'light'): void {
+  setBackground(mode: 'dark' | 'light' | 'black'): void {
     const light = mode === 'light';
-    (this.#scene.background as THREE.Color).set(light ? 0xb9bec8 : 0x0b0d12);
+    // black: pure black, so the canvas can be screen-blended over the page (the first-visit intro).
+    (this.#scene.background as THREE.Color).set(light ? 0xb9bec8 : mode === 'black' ? 0x000000 : 0x0b0d12);
     this.#ground.material.color.set(light ? 0x8a9099 : 0x10131a);
     if (!this.#disposed) this.#emitFrame(true);
   }

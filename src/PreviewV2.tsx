@@ -173,6 +173,7 @@ export default function PreviewV2() {
   const recoveredFromRef = useRef<string | null>(null);
   /** First visit: the Portal intro plays full-screen (IntroReveal), then the editor opens on INTRO.afterPreset. */
   const introRef = useRef<boolean | null>(null);
+  const portalRef = useRef<EffectDocumentV2 | null>(null);
   if (historyRef.current === null) {
     const q = new URLSearchParams(window.location.search), demo = q.get('demo');
     // Demo/doc URLs win; otherwise the last local draft (if it still validates), else the F01 fixture.
@@ -187,11 +188,11 @@ export default function PreviewV2() {
     const first = shouldShowIntro(typeof localStorage === 'undefined' ? undefined : localStorage, window.location.search, saved !== null);
     const reduced = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const portal = () => { try { const v = validateDocument(JSON.parse(portalText), { registry: createRegistry() }); return v.ok ? v.value : null; } catch { return null; } };
-    const intro = first && !reduced ? portal() : null;
-    introRef.current = intro !== null;
-    // First run: the Portal intro (or, with reduced motion, straight to the after-intro preset); otherwise the
+    portalRef.current = first && !reduced ? portal() : null;
+    introRef.current = portalRef.current !== null;
+    // First run: the after-intro preset, looping behind the Portal intro (none with reduced motion); otherwise the
     // draft, else a blank effect and the Library offers the presets.
-    historyRef.current = new DocumentHistory(demo === 'lightning' ? createLightningAudioDemoDocument() : demo === 'forces' ? createForcesDemoDocument() : intro ?? (first ? presetDocument(INTRO.afterPreset) : saved ?? createBlankDocument()));
+    historyRef.current = new DocumentHistory(demo === 'lightning' ? createLightningAudioDemoDocument() : demo === 'forces' ? createForcesDemoDocument() : first ? presetDocument(INTRO.afterPreset) : saved ?? createBlankDocument());
   }
   const [doc, setDoc] = useState<EffectDocumentV2>(() => historyRef.current!.snapshot());
   const [text, setText] = useState(() => toText(doc));
@@ -206,11 +207,33 @@ export default function PreviewV2() {
   const [frame, setFrame] = useState<PreviewFrameInfo>(EMPTY_FRAME);
   const [compiled, setCompiled] = useState(false);
   const [introOn, setIntroOn] = useState(() => introRef.current === true);
-  const introViewport = useCallback(() => viewportRef.current, []);
-  const compiledRef = useRef(false);
-  compiledRef.current = compiled;
   const introFinishRef = useRef<() => void>(() => {});
   const endIntro = useCallback(() => introFinishRef.current(), []);
+  // A first visit opens with the after-intro preset looping (seen through the portal, then in the editor). The
+  // first compiles (as sounds and textures arrive) stop playback, so it is restarted whenever it stops during the
+  // first 8 seconds; after that the visitor's own pauses are left alone.
+  const firstVisitRef = useRef(introRef.current);
+  useEffect(() => {
+    if (!firstVisitRef.current) return;
+    const until = performance.now() + 8000;
+    let raf = 0;
+    const keep = () => {
+      if (performance.now() > until) { firstVisitRef.current = false; return; }
+      const v = viewportRef.current;
+      if (v && compiledRef.current) { v.setLoop(true); if (!v.isPlaying) v.play(); }
+      raf = requestAnimationFrame(keep);
+    };
+    setLooping(true);
+    raf = requestAnimationFrame(keep);
+    const stop = () => { firstVisitRef.current = false; cancelAnimationFrame(raf); };
+    // The visitor taking over (a click after the intro, a key) ends the nudging.
+    const takeOver = () => { if (!document.querySelector('.pv2-intro-cover')) stop(); };
+    window.addEventListener('pointerdown', takeOver);
+    window.addEventListener('keydown', takeOver);
+    return () => { stop(); window.removeEventListener('pointerdown', takeOver); window.removeEventListener('keydown', takeOver); };
+  }, []);
+  const compiledRef = useRef(false);
+  compiledRef.current = compiled;
   const [gpuLost, setGpuLost] = useState(false);
   /** 12: reduced effects (no screen flash / camera shake); starts from the system prefers-reduced-motion setting. */
   const [reducedEffects, setReducedEffects] = useState(() => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -843,29 +866,9 @@ export default function PreviewV2() {
     }
   }, [replace]);
   replaceRef.current = replace;
-  // End of the intro: the editor appears with the after-intro preset looping, framed from the default view.
   introFinishRef.current = () => {
     try { localStorage.setItem(INTRO_SEEN_KEY, '1'); } catch { /* private mode */ }
     setIntroOn(false);
-    setGrid(true);
-    const vp = viewportRef.current;
-    vp?.setGrid(true);
-    vp?.setFloor(true);
-    if (!replace(toText(presetDocument(INTRO.afterPreset)), 'Open preset after the intro')) return;
-    setLooping(true);
-    // The preset compiles after this render, and a recompile stops playback: keep starting it until it runs.
-    let tries = 0, framed = false;
-    const start = () => {
-      const v = viewportRef.current;
-      if (v && compiledRef.current) {
-        if (!framed) { framed = true; v.resetView(); v.newDocument(); }
-        v.setLoop(true);
-        if (v.isPlaying && v.currentTick > 2) return;
-        if (!v.isPlaying) v.play();
-      }
-      if (++tries < 240) requestAnimationFrame(start);
-    };
-    requestAnimationFrame(start);
   };
 
   // Viewport lifetime; dispose is idempotent so StrictMode double-mount is safe.
@@ -1123,7 +1126,7 @@ export default function PreviewV2() {
   }, [onEdit]);
 
   return (
-    <div className={`pv2${phone ? ` pv2-phone pv2-mtab-${mtab}` : ''}${introOn ? ' pv2-intro-on' : ''}`}>
+    <div className={`pv2${phone ? ` pv2-phone pv2-mtab-${mtab}` : ''}`}>
       <header className="pv2-topbar">
         <div className="pv2-topbar-brand">
           <strong className="pv2-appname">VFX Studio</strong>
@@ -1506,7 +1509,7 @@ export default function PreviewV2() {
           ))}
         </nav>
       )}
-      {introOn && <IntroReveal viewport={introViewport} ready={compiled} onFinish={endIntro} />}
+      {introOn && portalRef.current && <IntroReveal portal={portalRef.current} onFinish={endIntro} />}
     </div>
   );
 }
